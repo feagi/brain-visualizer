@@ -535,7 +535,7 @@ func _process(delta: float) -> void:
 	if _manipulation_active:
 		var enter_down := Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER)
 		if enter_down and not _enter_key_latched:
-			_finish_manipulation_drag_and_confirm()
+			_finish_manipulation_drag_and_confirm(true)
 		_enter_key_latched = enter_down
 	else:
 		_enter_key_latched = false
@@ -1395,7 +1395,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
 			if close_body != null:
 				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
-					_finish_manipulation_drag_and_confirm()
+					_finish_manipulation_drag_and_confirm(true)
 				continue
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
@@ -1415,7 +1415,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if _manipulation_active and is_instance_valid(hit_body):
 				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) and hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
-						_finish_manipulation_drag_and_confirm()
+						_finish_manipulation_drag_and_confirm(true)
 					continue
 				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
@@ -1616,6 +1616,7 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		false,  # do not auto-frame on create during manipulation
 		false  # do not auto-frame during user drag
 	)
+	_update_manipulation_position_label()
 
 	_manipulation_gizmo = UI_BrainMonitor_RuntimeTransformGizmo.new()
 	_manipulation_gizmo.setup(
@@ -1653,6 +1654,8 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 			_manipulation_preview.queue_free()
 		if is_instance_valid(_manipulation_gizmo):
 			_manipulation_gizmo.queue_free()
+	if _UI_layer_for_BM and _UI_layer_for_BM.has_method("clear_manipulation_position"):
+		_UI_layer_for_BM.clear_manipulation_position()
 	_manipulation_preview = null
 	_manipulation_gizmo = null
 
@@ -1787,6 +1790,7 @@ func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover
 				new_pos.z += step_delta
 		_manipulation_current_pos = new_pos
 		_manipulation_preview.set_new_position(new_pos)
+		_update_manipulation_position_label()
 	else:
 		var new_dims := _manipulation_current_dims
 		match _manipulation_axis:
@@ -1803,7 +1807,11 @@ func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover
 	_manipulation_start_pos = _manipulation_current_pos
 	_manipulation_start_dims = _manipulation_current_dims
 
-func _finish_manipulation_drag_and_confirm() -> void:
+func _update_manipulation_position_label() -> void:
+	if _UI_layer_for_BM and _UI_layer_for_BM.has_method("show_manipulation_position"):
+		_UI_layer_for_BM.show_manipulation_position(_manipulation_area, _manipulation_current_pos)
+
+func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 	if not _manipulation_active:
 		return
 	_manipulation_dragging = false
@@ -1830,14 +1838,14 @@ func _finish_manipulation_drag_and_confirm() -> void:
 	var candidate_pos := Vector3i(int(round(feagi_vec.x)), int(round(feagi_vec.y)), int(round(feagi_vec.z)))
 
 	if _manipulation_mode == MANIPULATION_MODE.MOVE:
-		if candidate_pos == _manipulation_start_pos:
+		if candidate_pos == _manipulation_start_pos and not force_commit:
 			_end_manipulation_session(true)
 			return
 		_apply_move(candidate_pos)
 		return
 
 	# RESIZE
-	if candidate_dims == _manipulation_start_dims:
+	if candidate_dims == _manipulation_start_dims and not force_commit:
 		_end_manipulation_session(true)
 		return
 	if _would_overflow_capacity(candidate_dims):
@@ -1846,7 +1854,7 @@ func _finish_manipulation_drag_and_confirm() -> void:
 			"Cannot apply: resize would exceed NPU capacity.\n\nReduce dimensions or free up neurons elsewhere."
 		))
 		return
-	_prompt_confirm_and_apply_resize(candidate_dims)
+		_prompt_confirm_and_apply_resize(candidate_dims)
 
 func _apply_move(new_pos: Vector3i) -> void:
 	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
@@ -1866,6 +1874,9 @@ func _apply_move(new_pos: Vector3i) -> void:
 			"Saved position but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
 		))
 		return
+	# Update local cache so BV visuals move immediately.
+	if _manipulation_area != null:
+		_manipulation_area.FEAGI_change_coordinates_3D(new_pos)
 	_end_manipulation_session(true)
 
 func _prompt_confirm_and_apply_resize(new_dims: Vector3i) -> void:

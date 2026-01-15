@@ -103,3 +103,12 @@ func clear_plate_hover() -> void:
 	# Optional: do not clear if cortical context is showing
 	# For now, we clear unconditionally when plate hover ends
 	_mouse_context_label.text = ""
+
+## Show manipulation position during 3D relocate/resize.
+func show_manipulation_position(cortical_area: AbstractCorticalArea, position_3d: Vector3i) -> void:
+	if cortical_area == null:
+		return
+	_mouse_context_label.text = "Move - " + cortical_area.friendly_name + "  " + str(position_3d)
+
+func clear_manipulation_position() -> void:
+	_mouse_context_label.text = ""
