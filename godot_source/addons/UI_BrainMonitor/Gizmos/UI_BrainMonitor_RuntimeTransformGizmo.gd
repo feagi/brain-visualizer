@@ -15,6 +15,7 @@ const META_KIND: StringName = &"bv_gizmo_kind"
 const KIND_MOVE: StringName = &"move"
 const KIND_RESIZE: StringName = &"resize"
 const KIND_CLOSE: StringName = &"close"
+const CLOSE_LAYER: int = 1 << 20
 
 var _mode: MODE = MODE.MOVE
 var _axis_length: float = 0.0
@@ -112,6 +113,7 @@ func _add_axis(axis: AXIS, color: Color, dir: Vector3, axis_length: float, shaft
 	axis_root.add_child(body)
 
 func _add_close_handle(axis_length: float) -> void:
+	## Close handle is a camera-facing sprite + collider for click.
 	var close_root := Node3D.new()
 	close_root.name = "CloseHandle"
 	add_child(close_root)
@@ -127,8 +129,8 @@ func _add_close_handle(axis_length: float) -> void:
 	var body := StaticBody3D.new()
 	body.name = "Pick_Close"
 	body.set_meta(META_KIND, KIND_CLOSE)
-	body.collision_layer = 1
-	body.collision_mask = 1
+	body.collision_layer = CLOSE_LAYER
+	body.collision_mask = CLOSE_LAYER
 	body.input_ray_pickable = true
 	var shape := CollisionShape3D.new()
 	var pick_sphere := SphereShape3D.new()
@@ -142,12 +144,14 @@ func _add_close_handle(axis_length: float) -> void:
 
 ## Update close handle placement to face the camera and remain clickable.
 func update_close_handle(world_pos: Vector3, camera_pos: Vector3) -> void:
+	## Called by the 3D scene to reposition the close handle.
 	if _close_root == null:
 		return
 	_close_root.global_position = world_pos
 
 ## Grow/shrink close handle on hover so it's clearly interactive.
 func set_close_hovered(is_hovered: bool) -> void:
+	## Grow/shrink close handle on hover so it's clearly interactive.
 	if _close_root == null or _close_hovered == is_hovered:
 		return
 	_close_hovered = is_hovered
@@ -159,6 +163,7 @@ func set_close_hovered(is_hovered: bool) -> void:
 
 ## Builds a white X with a circular outline as a Sprite3D texture.
 func _create_close_icon_texture() -> Texture2D:
+	## Builds a white X with a circular outline as a Sprite3D texture.
 	var size := 128
 	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))

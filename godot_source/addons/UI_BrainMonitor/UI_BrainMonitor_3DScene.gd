@@ -540,6 +540,19 @@ func _process(delta: float) -> void:
 	else:
 		_enter_key_latched = false
 
+## Raycast only against the close handle collider.
+func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody3D:
+	var close_query := PhysicsRayQueryParameters3D.new()
+	close_query.from = ray_query.from
+	close_query.to = ray_query.to
+	close_query.collision_mask = UI_BrainMonitor_RuntimeTransformGizmo.CLOSE_LAYER
+	close_query.collide_with_areas = false
+	close_query.collide_with_bodies = true
+	var hit: Dictionary = _world_3D.direct_space_state.intersect_ray(close_query)
+	if hit.is_empty():
+		return null
+	return hit[&"collider"] as StaticBody3D
+
 func _on_container_mouse_entered() -> void:
 	if _pancake_cam:
 		_pancake_cam.set_mouse_hover_state(true)
@@ -1151,14 +1164,12 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if _manipulation_active and _manipulation_dragging and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN in bm_input_event.all_buttons_being_held:
 				_process_manipulation_drag(bm_input_event)
 				continue
+			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if _manipulation_active and _manipulation_gizmo != null and _manipulation_gizmo.has_method("set_close_hovered"):
 				var hover_close := false
-				if not hit.is_empty():
-					var hit_body: StaticBody3D = hit[&"collider"]
-					if is_instance_valid(hit_body) and hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND):
-						if hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
-							hover_close = true
+				if close_body != null:
+					hover_close = true
 				_manipulation_gizmo.set_close_hovered(hover_close)
 			var source_bm = BV.UI.qc_guide_source_bm
 			# Compute end point and hover state if either we own the guide or we need to draw a bridge
@@ -1381,6 +1392,11 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			
 			
 			
+			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
+			if close_body != null:
+				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
+					_finish_manipulation_drag_and_confirm()
+				continue
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
 				# Clicking over nothing
@@ -1663,7 +1679,7 @@ func _update_manipulation_gizmo_transform() -> void:
 	if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
 		var camera_pos: Vector3 = _pancake_cam.global_position
 		var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
-		var close_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 1.0, 0.0) + toward_camera * (axis_len * 2.0)
+		var close_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
 		_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
 
 func _get_gizmo_scale_for_camera(target_pos: Vector3) -> float:
@@ -1815,12 +1831,14 @@ func _finish_manipulation_drag_and_confirm() -> void:
 
 	if _manipulation_mode == MANIPULATION_MODE.MOVE:
 		if candidate_pos == _manipulation_start_pos:
+			_end_manipulation_session(true)
 			return
 		_apply_move(candidate_pos)
 		return
 
 	# RESIZE
 	if candidate_dims == _manipulation_start_dims:
+		_end_manipulation_session(true)
 		return
 	if _would_overflow_capacity(candidate_dims):
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
