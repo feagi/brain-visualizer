@@ -16,6 +16,8 @@ var _synapse_count: TextInput
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
 var _activity_rendering_toggle: TextureButton
+const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
+var _list_popup: FilterableListPopup
 
 
 func _ready():
@@ -123,14 +125,19 @@ func _view_selected(new_state: TempSplit.STATES) -> void:
 	request_UI_mode.emit(new_state)
 
 func _open_inputs() -> void:
-	BV.WM.spawn_cortical_view_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+	var items := _build_topbar_cortical_items(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+	_open_dropdown_for_items($Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList, items, "Filter inputs...", func(area: AbstractCorticalArea):
+		_focus_cortical_from_topbar(area)
+	)
 
 func _open_create_input() -> void:
 	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
 
 func _open_brain_regions() -> void:
-	# Placeholder: open circuits manager/view when implemented
-	BV.WM.spawn_brain_regions_view()
+	var items := _build_topbar_region_items()
+	_open_dropdown_for_items($Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList, items, "Filter circuits...", func(region: BrainRegion):
+		_focus_region_from_topbar(region)
+	)
 
 func _open_create_brain_region() -> void:
 	# Open create circuit window using main circuit as parent and no preselected objects
@@ -141,7 +148,10 @@ func _open_create_brain_region() -> void:
 #VisConfig.UI_manager.window_manager.spawn_create_cortical()
 
 func _open_outputs() -> void:
-	BV.WM.spawn_cortical_view_filtered(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+	var items := _build_topbar_cortical_items(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+	_open_dropdown_for_items($Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList, items, "Filter outputs...", func(area: AbstractCorticalArea):
+		_focus_cortical_from_topbar(area)
+	)
 
 func _open_create_output() -> void:
 	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
@@ -248,6 +258,109 @@ func _recursive_find_cortical_areas(node: Node, cortical_areas: Array) -> void:
 
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
+
+
+## Create and attach the reusable list popup if needed.
+func _ensure_list_popup() -> void:
+	if _list_popup != null:
+		return
+	_list_popup = PREFAB_FILTERABLE_LIST_POPUP.instantiate()
+	add_child(_list_popup)
+
+
+## Open the dropdown with the provided items.
+func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable) -> void:
+	_ensure_list_popup()
+	_list_popup.open_with_items(anchor_button, items, selection_handler, placeholder_text)
+
+
+## Build dropdown items for all regions in the cache.
+func _build_topbar_region_items() -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	var regions: Array[BrainRegion] = []
+	regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.values())
+	for region in regions:
+		items.append({"label": region.friendly_name, "payload": region})
+	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return String(a.get("label", "")).to_lower() < String(b.get("label", "")).to_lower()
+	)
+	return items
+
+
+## Build dropdown items for cortical areas of the given type.
+func _build_topbar_cortical_items(area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	var areas: Array[AbstractCorticalArea] = FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(area_type)
+	areas.sort_custom(func(a: AbstractCorticalArea, b: AbstractCorticalArea) -> bool:
+		return String(a.friendly_name).to_lower() < String(b.friendly_name).to_lower()
+	)
+	for area in areas:
+		items.append({"label": area.friendly_name, "payload": area})
+	return items
+
+
+## Focus the selected region in the active view.
+func _focus_region_from_topbar(region: BrainRegion) -> void:
+	var cb := _get_active_cb()
+	if cb != null:
+		cb.focus_on_region(region)
+		return
+	var bm := BV.UI.get_active_brain_monitor()
+	if bm != null and bm.get_pancake_camera():
+		bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+
+
+## Focus the selected cortical area in the active view.
+func _focus_cortical_from_topbar(area: AbstractCorticalArea) -> void:
+	var cb := _get_active_cb()
+	if cb != null:
+		cb.focus_on_cortical_area(area)
+		return
+	var bm := BV.UI.get_active_brain_monitor()
+	if bm != null and bm.get_pancake_camera():
+		var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+		bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
+
+
+## Find the active Circuit Builder tab if one is focused.
+func _get_active_cb() -> CircuitBuilder:
+	return _search_for_active_cb_in_view(BV.UI.root_UI_view)
+
+
+## Recursively search for the active Circuit Builder tab in a UIView.
+func _search_for_active_cb_in_view(ui_view: UIView) -> CircuitBuilder:
+	if ui_view == null:
+		return null
+	if ui_view.mode == UIView.MODE.TAB:
+		var tab_container = ui_view._get_primary_child() as UITabContainer
+		if tab_container != null and tab_container.get_tab_count() > 0:
+			var active_control = tab_container.get_tab_control(tab_container.current_tab)
+			if active_control is CircuitBuilder:
+				return active_control as CircuitBuilder
+	elif ui_view.mode == UIView.MODE.SPLIT:
+		var primary_child = ui_view._get_primary_child()
+		if primary_child is UIView:
+			var result = _search_for_active_cb_in_view(primary_child as UIView)
+			if result != null:
+				return result
+		elif primary_child is UITabContainer:
+			var tab_container = primary_child as UITabContainer
+			if tab_container.get_tab_count() > 0:
+				var active_control = tab_container.get_tab_control(tab_container.current_tab)
+				if active_control is CircuitBuilder:
+					return active_control as CircuitBuilder
+		var secondary_child = ui_view._get_secondary_child()
+		if secondary_child is UIView:
+			var result2 = _search_for_active_cb_in_view(secondary_child as UIView)
+			if result2 != null:
+				return result2
+		elif secondary_child is UITabContainer:
+			var tab_container2 = secondary_child as UITabContainer
+			if tab_container2.get_tab_count() > 0:
+				var active_control2 = tab_container2.get_tab_control(tab_container2.current_tab)
+				if active_control2 is CircuitBuilder:
+					return active_control2 as CircuitBuilder
+	return null
 
 	
 func _update_neuron_count_current(val: int) -> void:
