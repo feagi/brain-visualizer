@@ -38,6 +38,17 @@ func _ready() -> void:
 	_btn_inputs_add = $TextureButton_Inputs
 	_btn_outputs_list = $OutputsList
 	_btn_outputs_add = $TextureButton_Outputs
+	_btn_brain_regions_list.tooltip_text = "Select circuit"
+	_btn_brain_regions_add.tooltip_text = "Add circuit"
+	_btn_interconnect_list.tooltip_text = "Select interconnect area"
+	_btn_interconnect_add.tooltip_text = "Add interconnect area"
+	_btn_memory_list.tooltip_text = "Select memory area"
+	_btn_memory_add.tooltip_text = "Add memory area"
+	_btn_inputs_list.tooltip_text = "Select input area"
+	_btn_inputs_add.tooltip_text = "Add input area"
+	_btn_outputs_list.tooltip_text = "Select output area"
+	_btn_outputs_add.tooltip_text = "Add output area"
+	_btn_rearrange_layout.tooltip_text = "Rearrange Circuit Builder layout"
 
 	# Ensure the combo captures events within its bounds; individual buttons will stop events
 	mouse_filter = Control.MOUSE_FILTER_STOP
