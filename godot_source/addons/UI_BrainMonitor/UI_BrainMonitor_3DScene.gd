@@ -150,6 +150,33 @@ func _update_subviewport_size() -> void:
 func get_pancake_camera() -> UI_BrainMonitor_PancakeCamera:
 	return _pancake_cam
 
+
+## Focus camera on a cortical area with framing when possible.
+func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
+	if area == null:
+		return
+	var viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(area.cortical_ID, null)
+	if viz != null and is_instance_valid(viz):
+		var aabb := _compute_world_aabb(viz)
+		if aabb.size != Vector3.ZERO:
+			_frame_camera_to_aabb(aabb)
+			return
+	var center_pos := Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+	_pancake_cam.teleport_to_look_at_without_changing_angle(center_pos)
+
+
+## Focus camera on a brain region with framing when possible.
+func focus_on_brain_region(region: BrainRegion) -> void:
+	if region == null:
+		return
+	var region_frame = _brain_region_visualizations_by_ID.get(region.region_ID, null)
+	if region_frame != null and is_instance_valid(region_frame):
+		var aabb := _compute_world_aabb(region_frame)
+		if aabb.size != Vector3.ZERO:
+			_frame_camera_to_aabb(aabb)
+			return
+	_pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+
 func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	_should_show_combo_buttons = show_combo_buttons
 	_representing_region = region

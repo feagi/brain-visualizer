@@ -288,15 +288,89 @@ func _draw() -> void:
 
 func _focus_region(region: BrainRegion) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
-		_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+		if _bm_scene.has_method("focus_on_brain_region"):
+			_bm_scene.focus_on_brain_region(region)
+		else:
+			_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 		return
+	if _is_3d_context:
+		var active_bm := BV.UI.get_active_brain_monitor()
+		if active_bm and active_bm.get_pancake_camera():
+			if active_bm.has_method("focus_on_brain_region"):
+				active_bm.focus_on_brain_region(region)
+			else:
+				active_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+			return
 	if (not _is_3d_context) and _cb_scene:
 		_cb_scene.focus_on_region(region)
+		return
+	if not _is_3d_context:
+		var active_cb := _get_active_cb_from_ui()
+		if active_cb:
+			active_cb.focus_on_region(region)
 
 func _focus_cortical(area: AbstractCorticalArea) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
-		var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
-		_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
+		if _bm_scene.has_method("focus_on_cortical_area"):
+			_bm_scene.focus_on_cortical_area(area)
+		else:
+			var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+			_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
 		return
+	if _is_3d_context:
+		var active_bm := BV.UI.get_active_brain_monitor()
+		if active_bm and active_bm.get_pancake_camera():
+			if active_bm.has_method("focus_on_cortical_area"):
+				active_bm.focus_on_cortical_area(area)
+			else:
+				var center_pos2 = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+				active_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos2)
+			return
 	if (not _is_3d_context) and _cb_scene:
 		_cb_scene.focus_on_cortical_area(area)
+		return
+	if not _is_3d_context:
+		var active_cb := _get_active_cb_from_ui()
+		if active_cb:
+			active_cb.focus_on_cortical_area(area)
+
+
+## Find the active Circuit Builder tab if needed.
+func _get_active_cb_from_ui() -> CircuitBuilder:
+	return _search_for_active_cb_in_view(BV.UI.root_UI_view)
+
+
+## Recursively search for the active Circuit Builder tab in a UIView.
+func _search_for_active_cb_in_view(ui_view: UIView) -> CircuitBuilder:
+	if ui_view == null:
+		return null
+	if ui_view.mode == UIView.MODE.TAB:
+		var tab_container = ui_view._get_primary_child() as UITabContainer
+		if tab_container != null and tab_container.get_tab_count() > 0:
+			var active_control = tab_container.get_tab_control(tab_container.current_tab)
+			if active_control is CircuitBuilder:
+				return active_control as CircuitBuilder
+	elif ui_view.mode == UIView.MODE.SPLIT:
+		var primary_child = ui_view._get_primary_child()
+		if primary_child is UIView:
+			var result = _search_for_active_cb_in_view(primary_child as UIView)
+			if result != null:
+				return result
+		elif primary_child is UITabContainer:
+			var tab_container = primary_child as UITabContainer
+			if tab_container.get_tab_count() > 0:
+				var active_control = tab_container.get_tab_control(tab_container.current_tab)
+				if active_control is CircuitBuilder:
+					return active_control as CircuitBuilder
+		var secondary_child = ui_view._get_secondary_child()
+		if secondary_child is UIView:
+			var result2 = _search_for_active_cb_in_view(secondary_child as UIView)
+			if result2 != null:
+				return result2
+		elif secondary_child is UITabContainer:
+			var tab_container2 = secondary_child as UITabContainer
+			if tab_container2.get_tab_count() > 0:
+				var active_control2 = tab_container2.get_tab_control(tab_container2.current_tab)
+				if active_control2 is CircuitBuilder:
+					return active_control2 as CircuitBuilder
+	return null

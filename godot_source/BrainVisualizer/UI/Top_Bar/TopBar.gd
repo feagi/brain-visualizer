@@ -301,25 +301,33 @@ func _build_topbar_cortical_items(area_type: AbstractCorticalArea.CORTICAL_AREA_
 
 ## Focus the selected region in the active view.
 func _focus_region_from_topbar(region: BrainRegion) -> void:
+	var bm := BV.UI.get_active_brain_monitor()
+	if bm != null:
+		if bm.has_method("focus_on_brain_region"):
+			bm.focus_on_brain_region(region)
+			return
+		if bm.get_pancake_camera():
+			bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+		return
 	var cb := _get_active_cb()
 	if cb != null:
 		cb.focus_on_region(region)
-		return
-	var bm := BV.UI.get_active_brain_monitor()
-	if bm != null and bm.get_pancake_camera():
-		bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 
 
 ## Focus the selected cortical area in the active view.
 func _focus_cortical_from_topbar(area: AbstractCorticalArea) -> void:
+	var bm := BV.UI.get_active_brain_monitor()
+	if bm != null:
+		if bm.has_method("focus_on_cortical_area"):
+			bm.focus_on_cortical_area(area)
+			return
+		if bm.get_pancake_camera():
+			var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+			bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
+		return
 	var cb := _get_active_cb()
 	if cb != null:
 		cb.focus_on_cortical_area(area)
-		return
-	var bm := BV.UI.get_active_brain_monitor()
-	if bm != null and bm.get_pancake_camera():
-		var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
-		bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
 
 
 ## Find the active Circuit Builder tab if one is focused.

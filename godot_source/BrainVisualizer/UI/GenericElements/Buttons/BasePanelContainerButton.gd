@@ -3,7 +3,7 @@ class_name BasePanelContainerButton
 
 signal pressed()
 
-const PLATE_COLOR: Color = Color("272727")
+const PLATE_COLOR: Color = Color("252525")
 const PLATE_PADDING: int = 10
 const HOVER_SCALE: float = 1.03
 const HOVER_TWEEN_SECONDS: float = 0.08
