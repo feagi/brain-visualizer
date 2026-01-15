@@ -115,8 +115,8 @@ func execute_json() -> void:
 		frame_time += frame["time"]
 		
 	generated_animation.length = frame_time
-	var lin_interp_option: OptionButton = $HBoxContainer2/move_interp
-	var rot_interp_option: OptionButton = $HBoxContainer3/rot_interp
+	var lin_interp_option: OptionButton = get_node("../MovementInterp/move_interp") as OptionButton
+	var rot_interp_option: OptionButton = get_node("../RotationInterp/rot_interp") as OptionButton
 	var lin_interp: Animation.InterpolationType = lin_interp_option.get_selected_id() as Animation.InterpolationType
 	var rot_interp: Animation.InterpolationType = rot_interp_option.get_selected_id() as Animation.InterpolationType
 	generated_animation.track_set_interpolation_type(0, lin_interp)
@@ -147,7 +147,7 @@ func execute_json() -> void:
 	player.play(anim_name)
 
 func _append_camera_transform(cam_position: Vector3, cam_rotation: Quaternion) -> void:
-	var tran_time_node: FloatInput = $transition_time
+	var tran_time_node: FloatInput = get_node("../TransitionTime/transition_time") as FloatInput
 	var counter: IntInput = $HBoxContainer/num_animation_points
 	_stored_positions.append(cam_position)
 	_stored_rotations.append(cam_rotation)
