@@ -13,6 +13,7 @@ var _btn_interconnect_list: BasePanelContainerButton
 var _btn_interconnect_add: TextureButton
 var _btn_memory_list: BasePanelContainerButton
 var _btn_memory_add: TextureButton
+var _btn_rearrange_layout: TextureButton
 var _btn_inputs_list: BasePanelContainerButton
 var _btn_inputs_add: TextureButton
 var _btn_outputs_list: BasePanelContainerButton
@@ -32,6 +33,7 @@ func _ready() -> void:
 	_btn_interconnect_add = $TextureButton_Interconnect
 	_btn_memory_list = $MemoryAreasList
 	_btn_memory_add = $TextureButton_Memory
+	_btn_rearrange_layout = $TextureButton_Rearrange
 	_btn_inputs_list = $InputsList
 	_btn_inputs_add = $TextureButton_Inputs
 	_btn_outputs_list = $OutputsList
@@ -46,6 +48,7 @@ func _ready() -> void:
 	_btn_interconnect_add.pressed.connect(_add_interconnect_area)
 	_btn_memory_list.pressed.connect(_open_memory_areas)
 	_btn_memory_add.pressed.connect(_add_memory_area)
+	_btn_rearrange_layout.pressed.connect(_request_relayout)
 	_btn_inputs_list.pressed.connect(_open_inputs)
 	_btn_inputs_add.pressed.connect(_add_input_area)
 	_btn_outputs_list.pressed.connect(_open_outputs)
@@ -95,11 +98,12 @@ func _update_buttons_state() -> void:
 		_btn_interconnect_add.disabled = true
 		_btn_memory_list.disabled = true
 		_btn_memory_add.disabled = true
+		_btn_rearrange_layout.disabled = true
 		_btn_inputs_list.disabled = true
 		_btn_inputs_add.disabled = true
 		_btn_outputs_list.disabled = true
 		_btn_outputs_add.disabled = true
-		_set_visibility_for_context(false, false)
+		_set_visibility_for_context(false, false, false)
 		return
 	# Listing is always enabled (direct-only; will be empty if none)
 	_btn_brain_regions_list.disabled = false
@@ -108,13 +112,14 @@ func _update_buttons_state() -> void:
 	_btn_interconnect_add.disabled = false
 	_btn_memory_list.disabled = false
 	_btn_memory_add.disabled = false
+	_btn_rearrange_layout.disabled = false
 	_btn_inputs_list.disabled = false
 	_btn_inputs_add.disabled = false
 	_btn_outputs_list.disabled = false
 	_btn_outputs_add.disabled = false
 	# Root region shows Inputs/Outputs; non-root shows Interconnect/Memory
 	var is_root := _is_root_region()
-	_set_visibility_for_context(not is_root, is_root)
+	_set_visibility_for_context(not is_root, is_root, not _is_3d_context)
 
 ## Open circuits dropdown for the current region.
 func _open_brain_regions() -> void:
@@ -191,6 +196,22 @@ func _add_output_area() -> void:
 	print("BrainObjectsCombo: Opening create output window for region:", context_region.region_ID)
 	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
 
+func _request_relayout() -> void:
+	if _is_3d_context:
+		return
+	var cb := _cb_scene if _cb_scene != null else _get_active_cb_from_ui()
+	if cb == null:
+		return
+	var popup_message: StringName = "This will rearrange all nodes in the Circuit Builder view and update their saved 2D positions.\n\nProceed?"
+	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Rearrange Circuit Builder",
+		popup_message,
+		func(): cb.relayout_nodes(),
+		"Rearrange",
+		"Cancel"
+	)
+	BV.WM.spawn_popup(popup_definition)
+
 func _is_root_region() -> bool:
 	if context_region == null:
 		return false
@@ -199,7 +220,7 @@ func _is_root_region() -> bool:
 	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	return root_region != null and root_region == context_region
 
-func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs_and_outputs: bool) -> void:
+func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs_and_outputs: bool, show_rearrange_layout: bool) -> void:
 	# Circuits always visible
 	$BrainRegionsList.visible = true
 	if _btn_brain_regions_add:
@@ -211,6 +232,8 @@ func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs
 	$MemoryAreasList.visible = show_interconnect_and_memory
 	if _btn_memory_add:
 		_btn_memory_add.visible = show_interconnect_and_memory
+	if _btn_rearrange_layout:
+		_btn_rearrange_layout.visible = show_rearrange_layout
 	# Inputs/Outputs visibility
 	$InputsList.visible = show_inputs_and_outputs
 	if _btn_inputs_add:
