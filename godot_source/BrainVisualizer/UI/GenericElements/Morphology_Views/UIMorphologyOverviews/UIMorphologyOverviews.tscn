@@ -19,7 +19,7 @@ controls_to_scale_by_min_size = [NodePath("SelectedDetails/Details/MarginContain
 [node name="Listings" type="VBoxContainer" parent="."]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 12
 
 [node name="ListHeader" type="Label" parent="Listings"]
 layout_mode = 2
@@ -42,8 +42,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
+[node name="SelectedHeader" type="Label" parent="SelectedDetails"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Selected Rule"
+
 [node name="HBoxContainer" type="HBoxContainer" parent="SelectedDetails"]
 layout_mode = 2
+theme_override_constants/separation = 8
 
 [node name="Gap" type="Control" parent="SelectedDetails/HBoxContainer"]
 custom_minimum_size = Vector2(4, 0)
@@ -51,7 +57,12 @@ layout_mode = 2
 
 [node name="Name" type="Label" parent="SelectedDetails/HBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
 text = "No Connectivity Rule Loaded!"
+
+[node name="Separator" type="HSeparator" parent="SelectedDetails"]
+layout_mode = 2
 
 [node name="Details" type="PanelContainer" parent="SelectedDetails"]
 layout_mode = 2
@@ -102,7 +113,7 @@ layout_mode = 2
 [node name="Buttons" type="HBoxContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer"]
 layout_mode = 2
 alignment = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 12
 
 [node name="Delete" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons" instance=ExtResource("7_26hxb")]
 layout_mode = 2
