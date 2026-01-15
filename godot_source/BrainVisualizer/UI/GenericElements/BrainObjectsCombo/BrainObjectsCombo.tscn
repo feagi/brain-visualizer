@@ -5,6 +5,9 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="3_icon_region"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/interconnected.png" id="4_icon_interconnect"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="5_plus_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_plus_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="5_plus_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_plus_d"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="7_icon_input"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_icon_output"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png" id="6_icon_memory"]
@@ -38,6 +41,9 @@ text = "Circuits"
 custom_minimum_size = Vector2(32, 32)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
+texture_pressed = ExtResource("5_plus_c")
+texture_hover = ExtResource("5_plus_h")
+texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 metadata/ignore_parent_press = true
@@ -66,6 +72,9 @@ text = "Inputs"
 custom_minimum_size = Vector2(32, 32)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
+texture_pressed = ExtResource("5_plus_c")
+texture_hover = ExtResource("5_plus_h")
+texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 metadata/ignore_parent_press = true
@@ -94,6 +103,9 @@ text = "Interconnect Areas"
 custom_minimum_size = Vector2(32, 32)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
+texture_pressed = ExtResource("5_plus_c")
+texture_hover = ExtResource("5_plus_h")
+texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 metadata/ignore_parent_press = true
@@ -123,6 +135,9 @@ text = "Memory Areas"
 custom_minimum_size = Vector2(32, 32)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
+texture_pressed = ExtResource("5_plus_c")
+texture_hover = ExtResource("5_plus_h")
+texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 metadata/ignore_parent_press = true
@@ -151,6 +166,9 @@ text = "Outputs"
 custom_minimum_size = Vector2(32, 32)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
+texture_pressed = ExtResource("5_plus_c")
+texture_hover = ExtResource("5_plus_h")
+texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 metadata/ignore_parent_press = true
