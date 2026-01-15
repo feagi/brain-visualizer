@@ -62,12 +62,13 @@ alignment = 1
 vertical = true
 
 [node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
-custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_type_variation = &"TextureRect_ConnectivityRule"
 texture = ExtResource("4_0ajep")
 expand_mode = 1
+stretch_mode = 5
 
 [node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
 layout_mode = 2
@@ -107,12 +108,13 @@ alignment = 1
 vertical = true
 
 [node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
-custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_type_variation = &"TextureRect_ConnectivityRule"
 texture = ExtResource("5_63qii")
 expand_mode = 1
+stretch_mode = 5
 
 [node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
 layout_mode = 2
