@@ -44,6 +44,12 @@ text = "Select Connectivity Rule Type:"
 [node name="Separator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 
+[node name="CoreConnectivityRulesLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+size_flags_horizontal = 3
+text = "Core connectivity rules"
+
 [node name="Options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 alignment = 1

@@ -37,6 +37,7 @@ var _step3_morphology_details: MorphologyGenericDetails
 var _step4_button: Button
 
 # Horizontal icon shortcut bar for Core (system) morphologies
+var _core_bar_label: Label
 var _core_bar: ScrollContainer
 var _core_icons: HBoxContainer
 
@@ -63,6 +64,7 @@ func _ready() -> void:
 	_step3_morphology_view = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/SmartMorphologyView")
 	_step3_morphology_details = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails")
 	_step4_button = _window_internals.get_node("Establish")
+	_core_bar_label = _window_internals.get_node_or_null("CoreConnectivityRulesLabel")
 	_core_bar = _window_internals.get_node("CoreMorphologiesBar")
 	_core_icons = _window_internals.get_node("CoreMorphologiesBar/Icons")
 	
@@ -131,19 +133,19 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 		POSSIBLE_STATES.SOURCE:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
-			_core_bar.visible = false
+			_set_core_bar_visibility(false)
 			_setting_source()
 
 		POSSIBLE_STATES.DESTINATION:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
-			_core_bar.visible = false
+			_set_core_bar_visibility(false)
 			_setting_destination()
 
 		POSSIBLE_STATES.MORPHOLOGY:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
-			_core_bar.visible = true
+			_set_core_bar_visibility(true)
 			_setting_morphology()
 		POSSIBLE_STATES.EDIT_MORPHOLOGY:
 			_step3_morphology_container.visible = !_step3_morphology_container.visible
@@ -152,7 +154,7 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			_toggle_add_buttons(true)
 			_step4_button.disabled = false
 			# Keep the core morphology icon bar visible so user can reselect
-			_core_bar.visible = true
+			_set_core_bar_visibility(true)
 		_:
 			push_error("UI: WINDOWS: WindowQuickConnect in unknown state!")
 	
@@ -183,13 +185,13 @@ func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
 	var mapping_defaults: MappingRestrictionDefault = MappingRestrictionsAPI.get_defaults_between_cortical_areas(_source, _destination)
 	_selected_morphology = null
-	_step3_label.text = " Please Select A Morphology..."
+	_step3_label.text = " Please Select a Connectivity Rule..."
 	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	
 	# ✅ CRITICAL FIX: Make the morphology container visible so the list appears
 	_step3_morphology_container.visible = true
 	# Show and (re)populate the Core Morphologies icon bar
-	_core_bar.visible = true
+	_set_core_bar_visibility(true)
 	
 	# Get restrictions with proper null checking
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
@@ -212,6 +214,11 @@ func _on_morphology_cache_changed(_m: BaseMorphology) -> void:
 		return
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
 	_populate_core_morphology_icons(restrictions)
+
+func _set_core_bar_visibility(visible: bool) -> void:
+	_core_bar.visible = visible
+	if _core_bar_label != null:
+		_core_bar_label.visible = visible
 
 ## Priority order for core morphologies (user-defined)
 const CORE_MORPHOLOGY_PRIORITY = [
@@ -322,14 +329,14 @@ func _create_icon_widget_for_morphology(morphology_id: StringName, morphology: B
 	button.texture_normal = texture
 	button.ignore_texture_size = true
 	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	button.custom_minimum_size = Vector2(160, 160) # leave room for label inside 100px row
+	button.custom_minimum_size = Vector2(320, 320) # leave room for label inside 200px row
 	button.tooltip_text = str(morphology_id)
 	button.pressed.connect(Callable(self, "_on_core_icon_pressed").bind(morphology))
 	var name_label := Label.new()
 	name_label.text = str(morphology.name)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var slot := VBoxContainer.new()
-	slot.custom_minimum_size = Vector2(90, 100)
+	slot.custom_minimum_size = Vector2(180, 200)
 	slot.size_flags_vertical = 0
 	slot.alignment = BoxContainer.ALIGNMENT_CENTER
 	slot.add_child(button)

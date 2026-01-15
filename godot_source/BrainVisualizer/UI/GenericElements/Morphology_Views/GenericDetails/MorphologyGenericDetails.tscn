@@ -21,18 +21,6 @@ custom_minimum_size = Vector2(300, 256)
 layout_mode = 2
 editable = false
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="UsageAndImage"]
-layout_mode = 2
-
-[node name="gap" type="Control" parent="UsageAndImage/VBoxContainer2"]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
-
-[node name="Current_Morphology_image" type="TextureRect" parent="UsageAndImage/VBoxContainer2"]
-custom_minimum_size = Vector2(256, 256)
-layout_mode = 2
-expand_mode = 4
-
 [node name="Description_Label" type="Label" parent="."]
 layout_mode = 2
 text = "Description:"
