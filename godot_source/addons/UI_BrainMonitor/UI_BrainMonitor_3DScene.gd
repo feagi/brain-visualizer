@@ -173,7 +173,7 @@ func focus_on_brain_region(region: BrainRegion) -> void:
 	if region_frame != null and is_instance_valid(region_frame):
 		var aabb := _compute_world_aabb(region_frame)
 		if aabb.size != Vector3.ZERO:
-			_frame_camera_to_aabb(aabb)
+			_frame_camera_to_aabb_with_padding(aabb, 1.1, 0.0)
 			return
 	_pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 
@@ -595,21 +595,8 @@ func _auto_frame_camera_to_objects() -> void:
 	var half_w: float = max(0.01, aabb.size.x * 0.5)
 	var half_h: float = max(0.01, aabb.size.y * 0.5)
 	var half_d: float = max(0.01, aabb.size.z * 0.5)
-	# Required distances to fit width and height
-	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
-	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
-	# Apply learned multipliers from your samples
-	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
-	# No extra depth margin needed for straight-on framing
-	# distance unchanged
-	# Padding and clamps (very tight framing with a tiny margin)
-	# Enforce minimum and relative caps
-	var min_dist: float = auto_frame_min_dist
-	var max_dist: float = 3000.0
-	# Also cap distance relative to scene size to avoid overly far framing
-	var diag: float = aabb.size.length()
-	var rel_cap: float = diag * 1.5
-	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
+	# Compute distance with balanced padding and depth accommodation.
+	var distance: float = _compute_frame_distance_for_aabb(aabb, vfov_rad, hfov_rad)
 	# Set camera position and orientation (level, centered in Y)
 	var cam_pos := center + (dir_hint * distance)
 	cam_pos.y = center.y
@@ -728,22 +715,61 @@ func _frame_camera_to_aabb(aabb: AABB) -> void:
 	# Half extents
 	var half_w: float = max(0.01, aabb.size.x * 0.5)
 	var half_h: float = max(0.01, aabb.size.y * 0.5)
-	# Required distances to fit width and height
-	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
-	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
-	# Apply learned multipliers from auto_frame
-	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
-	# Padding and clamps
-	var min_dist: float = auto_frame_min_dist
-	var max_dist: float = 3000.0
-	var diag: float = aabb.size.length()
-	var rel_cap: float = diag * 1.5
-	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
+	# Compute distance with balanced padding and depth accommodation.
+	var distance: float = _compute_frame_distance_for_aabb(aabb, vfov_rad, hfov_rad)
 	# Set camera position and orientation (level, centered in Y)
 	var cam_pos := center + (dir_hint * distance)
 	cam_pos.y = center.y
 	_pancake_cam.global_position = cam_pos
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
+
+
+## Frame the camera to an AABB with explicit padding controls.
+func _frame_camera_to_aabb_with_padding(aabb: AABB, padding_factor: float, depth_padding_factor: float) -> void:
+	if _pancake_cam == null:
+		return
+	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
+		return
+	var center := aabb.position + (aabb.size / 2.0)
+	var up := Vector3.UP
+	var dir_hint := Vector3(0, 0, 1)
+	var fov_used: float = _pancake_cam.fov
+	if fov_used < 5.0:
+		fov_used = 70.0
+	var vfov_rad: float = deg_to_rad(fov_used)
+	var vp_size := _pancake_cam.get_viewport().get_visible_rect().size
+	var aspect: float = vp_size.x / max(1.0, vp_size.y)
+	var hfov_rad: float = 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
+	var half_w: float = max(0.01, aabb.size.x * 0.5)
+	var half_h: float = max(0.01, aabb.size.y * 0.5)
+	var half_d: float = max(0.01, aabb.size.z * 0.5)
+	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
+	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
+	var distance: float = max(dist_by_h, dist_by_w) * padding_factor
+	distance += half_d * depth_padding_factor
+	var min_dist: float = max(half_d * 1.05, auto_frame_min_dist * 0.5)
+	var max_dist: float = 3000.0
+	distance = clamp(distance, min_dist, max_dist)
+	var cam_pos := center + (dir_hint * distance)
+	cam_pos.y = center.y
+	_pancake_cam.global_position = cam_pos
+	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
+
+
+## Compute framing distance with balanced padding and depth.
+func _compute_frame_distance_for_aabb(aabb: AABB, vfov_rad: float, hfov_rad: float) -> float:
+	var half_w: float = max(0.01, aabb.size.x * 0.5)
+	var half_h: float = max(0.01, aabb.size.y * 0.5)
+	var half_d: float = max(0.01, aabb.size.z * 0.5)
+	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
+	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
+	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
+	# Depth padding so near faces don't clip.
+	distance += half_d * 0.75
+	# Allow smaller distances for tiny objects; prevent extremely close shots.
+	var min_dist: float = max(half_d * 1.1, auto_frame_min_dist * 0.5)
+	var max_dist: float = 3000.0
+	return clamp(distance, min_dist, max_dist)
 	_pancake_cam.current = true
 	_pancake_cam.near = 0.05
 
