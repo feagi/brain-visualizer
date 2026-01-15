@@ -12,7 +12,7 @@ const PREFAB_NODE_REGIONIO: PackedScene = preload("res://BrainVisualizer/UI/Circ
 const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")#WARNING DELETE ME
 const PREFAB_ENDPOINT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLineEndpoint/CBLineEndPoint.tscn")
 const PREFAB_NODE_PORT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLine/CBLineInterTerminal.tscn")
-const LAYOUT_COLUMN_GAP: float = 220.0
+const LAYOUT_COLUMN_GAP: float = 480.0
 const LAYOUT_ROW_GAP: float = 48.0
 
 var representing_region: BrainRegion:
@@ -173,6 +173,8 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
 
 func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
+	if _representing_region != null and _representing_region.is_root_region():
+		return
 	if link.parent_region != representing_region:
 		return
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
@@ -201,6 +203,8 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	line.setup(source_endpoint, destination_terminal.active_port, link)
 
 func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
+	if _representing_region != null and _representing_region.is_root_region():
+		return
 	if link.parent_region != representing_region:
 		return
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
@@ -420,11 +424,12 @@ func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
 	_center_on_graph_element(node)
 	_bring_node_to_front_and_jiggle(node)
 
-## Rearrange all nodes into columns (outputs left, interconnect/memory/regions middle, inputs right).
+	## Rearrange all nodes into columns (inputs left, interconnect/memory/regions middle, outputs right).
 func relayout_nodes() -> void:
 	var layout_positions: Dictionary = _compute_relayout_positions()
 	if layout_positions.is_empty():
 		return
+	_log_relayout_debug(layout_positions)
 	var update_payload: Dictionary = {}
 	for node in layout_positions.keys():
 		var new_pos: Vector2 = layout_positions[node]
@@ -443,15 +448,19 @@ func _compute_relayout_positions() -> Dictionary:
 	nodes.assign(_cortical_nodes.values())
 	for region_node in _subregion_nodes.values():
 		nodes.append(region_node)
-	if nodes.is_empty():
+	var region_io_nodes: Array[CBAbstractNode] = _collect_region_io_nodes()
+	if nodes.is_empty() and region_io_nodes.is_empty():
 		return {}
 	var adjacency: Dictionary = _build_cortical_adjacency()
 	var outputs: Array[CBNodeConnectableBase] = []
 	var inputs: Array[CBNodeConnectableBase] = []
+	var inner_outputs: Array[CBAbstractNode] = []
+	var inner_inputs: Array[CBAbstractNode] = []
 	var middle: Array[CBNodeConnectableBase] = []
 	for node in nodes:
 		if node is CBNodeCorticalArea:
 			var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
+			var area_id_lower := String(area.cortical_ID).to_lower()
 			match(area.cortical_type):
 				AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 					outputs.append(node)
@@ -460,28 +469,73 @@ func _compute_relayout_positions() -> Dictionary:
 				AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 					middle.append(node)
 				_:
-					middle.append(node)
+					if area_id_lower.begins_with("i"):
+						inputs.append(node)
+					elif area_id_lower.begins_with("o"):
+						outputs.append(node)
+					else:
+						middle.append(node)
 		else:
 			middle.append(node)
+	for io_node in region_io_nodes:
+		if _is_region_io_input(io_node):
+			inner_inputs.append(io_node)
+		else:
+			inner_outputs.append(io_node)
 	var min_x := _compute_min_x(nodes)
 	var min_y := _compute_min_y(nodes)
 	var left_x := min_x
-	var middle_x := left_x + _compute_max_width(outputs) + LAYOUT_COLUMN_GAP
-	var right_x := middle_x + _compute_max_width(middle) + LAYOUT_COLUMN_GAP
-	var ordered_middle := _sort_nodes_by_barycenter(middle, adjacency, {})
+	var inner_left_x := left_x + _compute_max_width(inputs) + LAYOUT_COLUMN_GAP
+	var middle_x := inner_left_x + _compute_max_width_region_io(inner_inputs) + LAYOUT_COLUMN_GAP
+	var inner_right_x := middle_x + _compute_max_width(middle) + LAYOUT_COLUMN_GAP
+	var right_x := inner_right_x + _compute_max_width_region_io(inner_outputs) + LAYOUT_COLUMN_GAP
+	# Place IO columns first, then position interconnects between them.
+	var ordered_inputs := _sort_nodes_by_current_y(inputs)
+	var ordered_outputs := _sort_nodes_by_current_y(outputs)
+	var input_positions := _layout_column(ordered_inputs, left_x, min_y)
+	var output_positions := _layout_column(ordered_outputs, right_x, min_y)
+	var inner_input_positions := _layout_column_region_io(_sort_region_io_by_current_y(inner_inputs), inner_left_x, min_y)
+	var inner_output_positions := _layout_column_region_io(_sort_region_io_by_current_y(inner_outputs), inner_right_x, min_y)
+	var io_y_map := _build_target_y_map(input_positions)
+	for node in output_positions.keys():
+		io_y_map[node] = (output_positions[node] as Vector2).y
+	for node in inner_input_positions.keys():
+		io_y_map[node] = (inner_input_positions[node] as Vector2).y
+	for node in inner_output_positions.keys():
+		io_y_map[node] = (inner_output_positions[node] as Vector2).y
+	var ordered_middle := _sort_nodes_by_barycenter(middle, adjacency, io_y_map)
 	var middle_positions := _layout_column(ordered_middle, middle_x, min_y)
-	var middle_y_map := _build_target_y_map(middle_positions)
-	var ordered_outputs := _sort_nodes_by_barycenter(outputs, adjacency, middle_y_map)
-	var ordered_inputs := _sort_nodes_by_barycenter(inputs, adjacency, middle_y_map)
-	var output_positions := _layout_column(ordered_outputs, left_x, min_y)
-	var input_positions := _layout_column(ordered_inputs, right_x, min_y)
 	var layout_positions: Dictionary = {}
 	for node in output_positions.keys():
 		layout_positions[node] = output_positions[node]
+	for node in inner_output_positions.keys():
+		layout_positions[node] = inner_output_positions[node]
 	for node in middle_positions.keys():
 		layout_positions[node] = middle_positions[node]
+	for node in inner_input_positions.keys():
+		layout_positions[node] = inner_input_positions[node]
 	for node in input_positions.keys():
 		layout_positions[node] = input_positions[node]
+	# Enforce strict column placement for all cortical areas.
+	for node in nodes:
+		if node is CBNodeCorticalArea:
+			var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
+			var area_id_lower := String(area.cortical_ID).to_lower()
+			var id_is_input := area_id_lower.begins_with("i")
+			var id_is_output := area_id_lower.begins_with("o")
+			var target_x := middle_x
+			if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+				target_x = left_x
+			elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+				target_x = right_x
+			elif id_is_input:
+				target_x = left_x
+			elif id_is_output:
+				target_x = right_x
+			_set_node_column_x(layout_positions, node, target_x)
+	for io_node in region_io_nodes:
+		var io_target_x := inner_left_x if _is_region_io_input(io_node) else inner_right_x
+		_set_node_column_x(layout_positions, io_node, io_target_x)
 	return layout_positions
 
 func _build_cortical_adjacency() -> Dictionary:
@@ -535,6 +589,138 @@ func _layout_column(nodes: Array[CBNodeConnectableBase], column_x: float, start_
 		cursor_y += node.size.y + LAYOUT_ROW_GAP
 	return positions
 
+func _layout_column_region_io(nodes: Array[CBAbstractNode], column_x: float, start_y: float) -> Dictionary:
+	var positions: Dictionary = {}
+	var cursor_y: float = start_y
+	for node in nodes:
+		positions[node] = Vector2(column_x, cursor_y)
+		cursor_y += node.size.y + LAYOUT_ROW_GAP
+	return positions
+
+func _sort_region_io_by_current_y(nodes: Array[CBAbstractNode]) -> Array[CBAbstractNode]:
+	var sortable: Array[Dictionary] = []
+	for node in nodes:
+		sortable.append({"node": node, "y": node.position_offset.y})
+	sortable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("y", 0.0)) < float(b.get("y", 0.0))
+	)
+	var ordered: Array[CBAbstractNode] = []
+	for item in sortable:
+		ordered.append(item["node"])
+	return ordered
+
+func _sort_nodes_by_current_y(nodes: Array[CBNodeConnectableBase]) -> Array[CBNodeConnectableBase]:
+	var sortable: Array[Dictionary] = []
+	for node in nodes:
+		sortable.append({"node": node, "y": node.position_offset.y})
+	sortable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("y", 0.0)) < float(b.get("y", 0.0))
+	)
+	var ordered: Array[CBNodeConnectableBase] = []
+	for item in sortable:
+		ordered.append(item["node"])
+	return ordered
+
+func _set_node_column_x(layout_positions: Dictionary, node: GraphElement, target_x: float) -> void:
+	var new_position := Vector2(target_x, node.position_offset.y)
+	if layout_positions.has(node):
+		new_position.y = (layout_positions[node] as Vector2).y
+	layout_positions[node] = new_position
+
+func _collect_region_io_nodes() -> Array[CBAbstractNode]:
+	var nodes: Array[CBAbstractNode] = []
+	for child in get_children():
+		if child is CBRegionIONode or child is CBNodeRegionIO:
+			nodes.append(child)
+	return nodes
+
+func _is_region_io_input(node: Node) -> bool:
+	if node is CBRegionIONode:
+		return (node as CBRegionIONode)._is_region_input
+	if node is CBNodeRegionIO:
+		return (node as CBNodeRegionIO)._is_input
+	return false
+
+func _log_relayout_debug(layout_positions: Dictionary) -> void:
+	var inputs: Array[String] = []
+	var outputs: Array[String] = []
+	var middle: Array[String] = []
+	var inner_inputs: Array[String] = []
+	var inner_outputs: Array[String] = []
+	var all_nodes: Array[CBNodeConnectableBase] = []
+	all_nodes.assign(_cortical_nodes.values())
+	for region_node in _subregion_nodes.values():
+		all_nodes.append(region_node)
+	var region_io_nodes: Array[CBAbstractNode] = _collect_region_io_nodes()
+	for node in all_nodes:
+		var entry := _format_relayout_entry(node, layout_positions)
+		if node is CBNodeCorticalArea:
+			var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
+			var area_id_lower := String(area.cortical_ID).to_lower()
+			if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or area_id_lower.begins_with("i"):
+				inputs.append(entry)
+			elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU or area_id_lower.begins_with("o"):
+				outputs.append(entry)
+			else:
+				middle.append(entry)
+		else:
+			middle.append(entry)
+	for io_node in region_io_nodes:
+		var io_entry := _format_relayout_entry(io_node, layout_positions)
+		if _is_region_io_input(io_node):
+			inner_inputs.append(io_entry)
+		else:
+			inner_outputs.append(io_entry)
+	var log_entry := {
+		"relayout": "complete",
+		"region": _representing_region.region_ID if _representing_region != null else "unknown",
+		"columns": {
+			"inputs_left": inputs,
+			"inputs_inner": inner_inputs,
+			"intermediate": middle,
+			"outputs_inner": inner_outputs,
+			"outputs_right": outputs
+		}
+	}
+	print("CB_RELAYOUT_DEBUG: %s" % JSON.stringify(log_entry))
+
+func _format_relayout_entry(node: GraphElement, layout_positions: Dictionary) -> String:
+	var pos: Vector2 = layout_positions.get(node, node.position_offset)
+	if node is CBNodeCorticalArea:
+		var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
+		var type_label: String = _cortical_type_to_label(area.cortical_type)
+		return "%s|%s|%s|%s" % [
+			String(area.cortical_ID),
+			type_label,
+			String(area.friendly_name),
+			str(pos)
+		]
+	if node is CBNodeRegion:
+		var region: BrainRegion = (node as CBNodeRegion).representing_region
+		return "REGION|%s|%s|%s" % [String(region.region_ID), String(region.friendly_name), str(pos)]
+	if node is CBRegionIONode:
+		var io_label := "INPUT" if _is_region_io_input(node as CBAbstractNode) else "OUTPUT"
+		return "REGION_IO|%s|%s" % [io_label, str(pos)]
+	if node is CBNodeRegionIO:
+		var internal_label := "INPUT" if _is_region_io_input(node as CBAbstractNode) else "OUTPUT"
+		return "REGION_INTERNAL_IO|%s|%s" % [internal_label, str(pos)]
+	return "NODE|%s|%s" % [String(node.name), str(pos)]
+
+func _cortical_type_to_label(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> String:
+	match(cortical_type):
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			return "IPU"
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			return "OPU"
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			return "CUSTOM"
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			return "MEMORY"
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
+			return "CORE"
+		_:
+			return "UNKNOWN"
+
 func _build_target_y_map(positions: Dictionary) -> Dictionary:
 	var target_map: Dictionary = {}
 	for node in positions.keys():
@@ -554,6 +740,12 @@ func _compute_min_y(nodes: Array[CBNodeConnectableBase]) -> float:
 	return min_y
 
 func _compute_max_width(nodes: Array[CBNodeConnectableBase]) -> float:
+	var max_width: float = 0.0
+	for node in nodes:
+		max_width = max(max_width, node.size.x)
+	return max_width
+
+func _compute_max_width_region_io(nodes: Array[CBAbstractNode]) -> float:
 	var max_width: float = 0.0
 	for node in nodes:
 		max_width = max(max_width, node.size.x)
