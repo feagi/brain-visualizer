@@ -246,6 +246,11 @@ func _build_region_items() -> Array[Dictionary]:
 		regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.values())
 		for region in regions:
 			items.append({"label": region.friendly_name, "payload": region})
+	if items.is_empty():
+		var fallback_regions: Array[BrainRegion] = []
+		fallback_regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.values())
+		for region in fallback_regions:
+			items.append({"label": region.friendly_name, "payload": region})
 	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return String(a.get("label", "")).to_lower() < String(b.get("label", "")).to_lower()
 	)
@@ -260,6 +265,8 @@ func _build_cortical_items_for_type(area_type: AbstractCorticalArea.CORTICAL_ARE
 			if area.cortical_type == area_type:
 				areas.append(area)
 	else:
+		areas = FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(area_type)
+	if areas.is_empty():
 		areas = FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(area_type)
 	areas.sort_custom(func(a: AbstractCorticalArea, b: AbstractCorticalArea) -> bool:
 		return String(a.friendly_name).to_lower() < String(b.friendly_name).to_lower()
