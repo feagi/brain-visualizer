@@ -47,6 +47,10 @@ func set_view(state: STATES) -> void:
 			#split_offset = int(BV.UI.screen_size.x / 2.0)
 			collapsed = false
 
+## Close the split view and return to single screen.
+func close_split_view() -> void:
+	set_view(STATES.CB_CLOSED)
+
 func _screen_size_change(new_screen_size: Vector2) -> void:
 	var old_size: Vector2 = size
 	var ratio: float

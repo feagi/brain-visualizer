@@ -223,9 +223,35 @@ func get_tab_IDX_as_control(idx: int) -> Control:
 
 #endregion
 func _on_user_close_tab(tab_idx: int) -> void:
-	_remove_control_view_as_tab(get_tab_IDX_as_control(tab_idx))
+	var target = get_tab_IDX_as_control(tab_idx)
+	if target is UI_BrainMonitor_3DScene:
+		var bm := target as UI_BrainMonitor_3DScene
+		if bm.representing_region != null and bm.representing_region.is_root_region():
+			var temp_split := BV.UI.get_node("CB_Holder") as TempSplit
+			if temp_split != null:
+				temp_split.close_split_view()
+			return
+	if target is CircuitBuilder:
+		var cb := target as CircuitBuilder
+		if cb.representing_region != null and cb.representing_region.is_root_region():
+			var temp_split_cb := BV.UI.get_node("CB_Holder") as TempSplit
+			if temp_split_cb != null:
+				temp_split_cb.close_split_view()
+			return
+	_remove_control_view_as_tab(target)
 
 func _on_top_tab_change(_tab_index: int) -> void:
+	var top_control = get_tab_IDX_as_control(_tab_index)
+	if top_control is UI_BrainMonitor_3DScene:
+		var bm := top_control as UI_BrainMonitor_3DScene
+		if bm.representing_region != null and bm.representing_region.is_root_region():
+			_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
+			return
+	if top_control is CircuitBuilder:
+		var cb := top_control as CircuitBuilder
+		if cb.representing_region != null and cb.representing_region.is_root_region():
+			_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
+			return
 	if is_current_top_view_root_region():
 		_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_NEVER
 	else:
