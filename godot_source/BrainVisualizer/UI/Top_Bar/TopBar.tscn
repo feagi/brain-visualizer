@@ -215,6 +215,11 @@ texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="Spacer_AfterAddBrainAreas" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+
 [node name="ChangeSize" type="PanelContainer" parent="."]
 visible = false
 layout_mode = 2

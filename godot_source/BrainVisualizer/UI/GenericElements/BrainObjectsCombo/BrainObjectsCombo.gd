@@ -22,6 +22,7 @@ var _btn_outputs_add: TextureButton
 const HOVER_SCALE := Vector2(1.15, 1.15)
 const NORMAL_SCALE := Vector2(1.0, 1.0)
 const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
+const REARRANGE_SIZE_SCALE: float = 1.2
 
 var _list_popup: FilterableListPopup
 
@@ -33,7 +34,7 @@ func _ready() -> void:
 	_btn_interconnect_add = $TextureButton_Interconnect
 	_btn_memory_list = $MemoryAreasList
 	_btn_memory_add = $TextureButton_Memory
-	_btn_rearrange_layout = $TextureButton_Rearrange
+	_btn_rearrange_layout = $RearrangePanel/MarginContainer/TextureButton_Rearrange
 	_btn_inputs_list = $InputsList
 	_btn_inputs_add = $TextureButton_Inputs
 	_btn_outputs_list = $OutputsList
@@ -78,6 +79,7 @@ func _ready() -> void:
 func _on_theme_changed(new_theme: Theme) -> void:
 	theme = new_theme
 	_apply_theme_sizes_recursive(self)
+	_apply_rearrange_button_size()
 
 func _apply_theme_sizes_recursive(node: Node) -> void:
 	for child in node.get_children():
@@ -86,6 +88,13 @@ func _apply_theme_sizes_recursive(node: Node) -> void:
 		elif child is TextureRect:
 			(child as TextureRect).custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(child, "TextureRect")
 		_apply_theme_sizes_recursive(child)
+
+## Make the rearrange button slightly larger than standard.
+func _apply_rearrange_button_size() -> void:
+	if _btn_rearrange_layout == null:
+		return
+	var base_size := BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(_btn_rearrange_layout, "TextureButton")
+	_btn_rearrange_layout.custom_minimum_size = base_size * REARRANGE_SIZE_SCALE
 
 func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> void:
 	_is_3d_context = true
