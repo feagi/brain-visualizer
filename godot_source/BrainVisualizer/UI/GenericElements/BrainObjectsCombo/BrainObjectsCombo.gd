@@ -22,23 +22,23 @@ var _btn_outputs_add: TextureButton
 const HOVER_SCALE := Vector2(1.15, 1.15)
 const NORMAL_SCALE := Vector2(1.0, 1.0)
 const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
-const REARRANGE_SIZE_SCALE: float = 1.2
+const REARRANGE_SIZE_SCALE: float = 1.0
 
 var _list_popup: FilterableListPopup
 
 ## Wire the combo buttons and dropdown popup.
 func _ready() -> void:
-	_btn_brain_regions_list = $BrainRegionsList
-	_btn_brain_regions_add = $TextureButton_BrainRegions
-	_btn_interconnect_list = $InterconnectAreasList
-	_btn_interconnect_add = $TextureButton_Interconnect
-	_btn_memory_list = $MemoryAreasList
-	_btn_memory_add = $TextureButton_Memory
+	_btn_brain_regions_list = $MainGroup/MarginContainer/ButtonsRow/BrainRegionsList
+	_btn_brain_regions_add = $MainGroup/MarginContainer/ButtonsRow/TextureButton_BrainRegions
+	_btn_interconnect_list = $InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList
+	_btn_interconnect_add = $InterconnectGroup/MarginContainer/ButtonsRow/TextureButton_Interconnect
+	_btn_memory_list = $MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList
+	_btn_memory_add = $MemoryGroup/MarginContainer/ButtonsRow/TextureButton_Memory
 	_btn_rearrange_layout = $RearrangePanel/MarginContainer/TextureButton_Rearrange
-	_btn_inputs_list = $InputsList
-	_btn_inputs_add = $TextureButton_Inputs
-	_btn_outputs_list = $OutputsList
-	_btn_outputs_add = $TextureButton_Outputs
+	_btn_inputs_list = $MainGroup/MarginContainer/ButtonsRow/InputsList
+	_btn_inputs_add = $MainGroup/MarginContainer/ButtonsRow/TextureButton_Inputs
+	_btn_outputs_list = $MainGroup/MarginContainer/ButtonsRow/OutputsList
+	_btn_outputs_add = $MainGroup/MarginContainer/ButtonsRow/TextureButton_Outputs
 	_btn_brain_regions_list.tooltip_text = "Select circuit"
 	_btn_brain_regions_add.tooltip_text = "Add circuit"
 	_btn_interconnect_list.tooltip_text = "Select interconnect area"
@@ -242,23 +242,28 @@ func _is_root_region() -> bool:
 
 func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs_and_outputs: bool, show_rearrange_layout: bool) -> void:
 	# Circuits always visible
-	$BrainRegionsList.visible = true
+	if _btn_brain_regions_list:
+		_btn_brain_regions_list.visible = true
 	if _btn_brain_regions_add:
 		_btn_brain_regions_add.visible = true
 	# Interconnect/Memory visibility
-	$InterconnectAreasList.visible = show_interconnect_and_memory
+	if _btn_interconnect_list:
+		_btn_interconnect_list.visible = show_interconnect_and_memory
 	if _btn_interconnect_add:
 		_btn_interconnect_add.visible = show_interconnect_and_memory
-	$MemoryAreasList.visible = show_interconnect_and_memory
+	if _btn_memory_list:
+		_btn_memory_list.visible = show_interconnect_and_memory
 	if _btn_memory_add:
 		_btn_memory_add.visible = show_interconnect_and_memory
 	if _btn_rearrange_layout:
 		_btn_rearrange_layout.visible = show_rearrange_layout
 	# Inputs/Outputs visibility
-	$InputsList.visible = show_inputs_and_outputs
+	if _btn_inputs_list:
+		_btn_inputs_list.visible = show_inputs_and_outputs
 	if _btn_inputs_add:
 		_btn_inputs_add.visible = show_inputs_and_outputs
-	$OutputsList.visible = show_inputs_and_outputs
+	if _btn_outputs_list:
+		_btn_outputs_list.visible = show_inputs_and_outputs
 	if _btn_outputs_add:
 		_btn_outputs_add.visible = show_inputs_and_outputs
 
