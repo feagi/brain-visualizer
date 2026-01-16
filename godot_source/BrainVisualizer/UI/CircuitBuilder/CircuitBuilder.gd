@@ -35,6 +35,8 @@ var _multi_relocate_node_start_positions: Dictionary = {}
 var _multi_relocate_nodes: Array[CBNodeConnectableBase] = []
 var _suppress_move_buffer: bool = false
 var _initial_fit_done: bool = false
+var _initial_fit_in_progress: bool = false
+const INITIAL_FIT_RETRY_MAX: int = 12
 
 var _mouse_clicked_background: bool = false
 var _mouse_clicked_prev_position: Vector2
@@ -52,15 +54,21 @@ func _ready():
 	node_deselected.connect(_node_deselect)
 	visibility_changed.connect(_attempt_initial_fit)
 	resized.connect(_attempt_initial_fit)
+	child_entered_tree.connect(_attempt_initial_fit)
 	if has_node("BrainObjectsCombo"):
 		_combo = $BrainObjectsCombo
 		if _representing_region != null:
 			_combo.set_2d_context(self, _representing_region)
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and is_visible_in_tree():
+		request_initial_fit()
+
 
 
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
+	_initial_fit_done = false
 	if _combo:
 		_combo.set_2d_context(self, _representing_region)
 	
@@ -1020,6 +1028,9 @@ func _fit_circuit_to_viewport() -> void:
 	await get_tree().process_frame
 	if size == Vector2.ZERO:
 		return
+	var view_px: Vector2 = size
+	if view_px == Vector2.ZERO:
+		return
 	var elements: Array[GraphElement] = []
 	for child in get_children():
 		if child is GraphElement:
@@ -1028,13 +1039,17 @@ func _fit_circuit_to_viewport() -> void:
 		return
 	var min_pos: Vector2 = elements[0].position_offset
 	var max_pos: Vector2 = elements[0].position_offset + elements[0].size
+	var sum_centers: Vector2 = Vector2.ZERO
+	var element_count: int = 0
 	for element in elements:
 		min_pos.x = min(min_pos.x, element.position_offset.x)
 		min_pos.y = min(min_pos.y, element.position_offset.y)
 		max_pos.x = max(max_pos.x, element.position_offset.x + element.size.x)
 		max_pos.y = max(max_pos.y, element.position_offset.y + element.size.y)
+		sum_centers += element.position_offset + (element.size * 0.5)
+		element_count += 1
 	var bounds_size: Vector2 = max_pos - min_pos
-	var viewport_px: Vector2 = size
+	var viewport_px: Vector2 = view_px
 	var padded_size: Vector2 = bounds_size + initial_fit_padding
 	var fit_zoom_x: float = viewport_px.x / max(padded_size.x, 1.0)
 	var fit_zoom_y: float = viewport_px.y / max(padded_size.y, 1.0)
@@ -1048,15 +1063,67 @@ func _fit_circuit_to_viewport() -> void:
 	target_zoom = clamp(target_zoom, min_z, max_z)
 	self.zoom = target_zoom
 	var bounds_center: Vector2 = min_pos + (bounds_size * 0.5)
-	var viewport_content_units: Vector2 = viewport_px / max(self.zoom, 0.0001)
-	scroll_offset = bounds_center - (viewport_content_units * 0.5)
+	var average_center: Vector2 = bounds_center
+	if element_count > 0:
+		average_center = sum_centers / float(element_count)
+	var zoom_value: float = max(self.zoom, 0.0001)
+	var viewport_center_px: Vector2 = viewport_px * 0.5
+	scroll_offset = (average_center * zoom_value) - viewport_center_px
+	if not _initial_fit_done:
+		print(
+			"CB_FIT_DEBUG: avg_center=",
+			average_center,
+			" zoom=",
+			zoom_value,
+			" viewport_center_px=",
+			viewport_center_px,
+			" scroll_offset=",
+			scroll_offset
+		)
+
+func _get_visible_global_rect(base_rect: Rect2) -> Rect2:
+	var visible_rect: Rect2 = base_rect
+	var viewport_rect: Rect2 = get_viewport().get_visible_rect()
+	visible_rect = visible_rect.intersection(viewport_rect)
+	var parent_control: Control = get_parent_control()
+	while parent_control != null:
+		var parent_rect: Rect2 = parent_control.get_global_rect()
+		visible_rect = visible_rect.intersection(parent_rect)
+		parent_control = parent_control.get_parent_control()
+	return visible_rect
+
+func _global_to_local(point: Vector2) -> Vector2:
+	return get_global_transform_with_canvas().affine_inverse() * point
 
 func _attempt_initial_fit() -> void:
-	if _initial_fit_done or !is_visible_in_tree():
+	if _initial_fit_done or _initial_fit_in_progress or !is_visible_in_tree():
 		return
+	_initial_fit_in_progress = true
+	await _run_initial_fit_retries()
+	_initial_fit_in_progress = false
+
+## Try multiple frames until elements exist and size is ready.
+func _run_initial_fit_retries() -> void:
+	for _i in range(INITIAL_FIT_RETRY_MAX):
+		if await _try_fit_once():
+			_initial_fit_done = true
+			return
+		await get_tree().process_frame
+
+## Returns true when we successfully fit content.
+func _try_fit_once() -> bool:
 	if size == Vector2.ZERO:
-		return
-	await get_tree().process_frame
+		return false
+	var elements: Array[GraphElement] = []
+	for child in get_children():
+		if child is GraphElement:
+			elements.append(child)
+	if elements.is_empty():
+		return false
 	await _fit_circuit_to_viewport()
-	_initial_fit_done = true
+	return true
+
+func request_initial_fit() -> void:
+	_initial_fit_done = false
+	call_deferred("_attempt_initial_fit")
 #endregion

@@ -111,6 +111,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_rogx1")
 
+
 [node name="LoadingOverlay" type="BoxContainer" parent="UIManager/TempLoadingScreen"]
 layout_mode = 2
 alignment = 2
@@ -169,5 +170,12 @@ layout_mode = 2
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Initializing..."
+
+[node name="CopyrightLabel" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+text = "© Neuraville Inc."
 
 [connection signal="request_UI_mode" from="UIManager/TopBar" to="UIManager/CB_Holder" method="set_view"]

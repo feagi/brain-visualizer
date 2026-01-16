@@ -78,6 +78,7 @@ func spawn_CB_of_region(region: BrainRegion) -> void:
 	new_cb.setup(region)
 	#CURSED
 	_add_control_view_as_tab(new_cb)
+	new_cb.request_initial_fit()
 
 ## If BM of given region exists, brings it to the top. Otherwise, instantiates it and brings it to the top
 func show_BM_of_region(region: BrainRegion) -> void:
@@ -249,6 +250,7 @@ func _on_top_tab_change(_tab_index: int) -> void:
 			return
 	if top_control is CircuitBuilder:
 		var cb := top_control as CircuitBuilder
+		cb.request_initial_fit()
 		if cb.representing_region != null and cb.representing_region.is_root_region():
 			_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
 			return
