@@ -123,6 +123,12 @@ size_flags_vertical = 3
 alignment = 1
 theme_override_constants/separation = 18
 
+[node name="TitleLabel" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 60
+text = "FEAGI Brain Visualizer"
+
 [node name="Label" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
