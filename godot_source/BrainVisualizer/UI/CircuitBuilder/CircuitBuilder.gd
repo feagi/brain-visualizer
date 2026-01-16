@@ -5,6 +5,7 @@ class_name CircuitBuilder
 @export var move_time_delay_before_update_FEAGI: float = 5.0
 @export var keyboard_movement_speed: Vector2 = Vector2(1,1)
 @export var keyboard_move_speed: float = 50.0
+@export var initial_fit_padding: Vector2 = Vector2(128, 128)
 
 const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
 const PREFAB_NODE_BRAINREGION: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.tscn")
@@ -33,6 +34,7 @@ var _multi_relocate_anchor_mouse: Vector2 = Vector2.ZERO
 var _multi_relocate_node_start_positions: Dictionary = {}
 var _multi_relocate_nodes: Array[CBNodeConnectableBase] = []
 var _suppress_move_buffer: bool = false
+var _initial_fit_done: bool = false
 
 var _mouse_clicked_background: bool = false
 var _mouse_clicked_prev_position: Vector2
@@ -48,6 +50,8 @@ func _ready():
 	connection_request.connect(_on_connection_request)
 	node_selected.connect(_node_select)
 	node_deselected.connect(_node_deselect)
+	visibility_changed.connect(_attempt_initial_fit)
+	resized.connect(_attempt_initial_fit)
 	if has_node("BrainObjectsCombo"):
 		_combo = $BrainObjectsCombo
 		if _representing_region != null:
@@ -92,6 +96,7 @@ func setup(region: BrainRegion) -> void:
 	region.output_link_added.connect(_CACHE_link_parent_output_added)
 	region.input_open_link_added.connect(_CACHE_link_region_input_open_added)
 	region.output_open_link_added.connect(_CACHE_link_region_output_open_added)
+	call_deferred("_attempt_initial_fit")
 	
 
 #region Responses to Cache Signals
@@ -1009,4 +1014,49 @@ func _center_on_graph_element(element: GraphElement) -> void:
 	var viewport_content_units: Vector2 = viewport_px / max(self.zoom, 0.0001)
 	# Center scroll so node center is in the middle of the visible area
 	scroll_offset = node_center_local - (viewport_content_units / 2.0)
+
+func _fit_circuit_to_viewport() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if size == Vector2.ZERO:
+		return
+	var elements: Array[GraphElement] = []
+	for child in get_children():
+		if child is GraphElement:
+			elements.append(child)
+	if elements.is_empty():
+		return
+	var min_pos: Vector2 = elements[0].position_offset
+	var max_pos: Vector2 = elements[0].position_offset + elements[0].size
+	for element in elements:
+		min_pos.x = min(min_pos.x, element.position_offset.x)
+		min_pos.y = min(min_pos.y, element.position_offset.y)
+		max_pos.x = max(max_pos.x, element.position_offset.x + element.size.x)
+		max_pos.y = max(max_pos.y, element.position_offset.y + element.size.y)
+	var bounds_size: Vector2 = max_pos - min_pos
+	var viewport_px: Vector2 = size
+	var padded_size: Vector2 = bounds_size + initial_fit_padding
+	var fit_zoom_x: float = viewport_px.x / max(padded_size.x, 1.0)
+	var fit_zoom_y: float = viewport_px.y / max(padded_size.y, 1.0)
+	var target_zoom: float = min(fit_zoom_x, fit_zoom_y)
+	var min_z: float = 0.2
+	var max_z: float = 2.0
+	if "min_zoom" in self:
+		min_z = self.min_zoom
+	if "max_zoom" in self:
+		max_z = self.max_zoom
+	target_zoom = clamp(target_zoom, min_z, max_z)
+	self.zoom = target_zoom
+	var bounds_center: Vector2 = min_pos + (bounds_size * 0.5)
+	var viewport_content_units: Vector2 = viewport_px / max(self.zoom, 0.0001)
+	scroll_offset = bounds_center - (viewport_content_units * 0.5)
+
+func _attempt_initial_fit() -> void:
+	if _initial_fit_done or !is_visible_in_tree():
+		return
+	if size == Vector2.ZERO:
+		return
+	await get_tree().process_frame
+	await _fit_circuit_to_viewport()
+	_initial_fit_done = true
 #endregion
