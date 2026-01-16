@@ -3,6 +3,11 @@ class_name UIManager
 ## Manages UI aspects of BV as a whole
 
 const PREFAB_CB: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn")
+const MOUSE_CONTEXT_FONT_SIZE: int = 32
+const MOUSE_CONTEXT_OUTLINE_SIZE: int = 2
+const MOUSE_CONTEXT_MARGIN_PX: int = 10
+const MOUSE_CONTEXT_MAX_WIDTH_PX: int = 1200
+const MOUSE_CONTEXT_HEIGHT_PX: int = 44
 
 # TODO dev menu - build_settings_object
 
@@ -48,6 +53,8 @@ var _window_manager
 var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
+var _mouse_context_label: Label
+var _active_hover_bm: UI_BrainMonitor_3DScene = null
 
 # CRITICAL: Track whether 3D scene has been successfully instantiated
 # This prevents hiding the loading screen before the 3D scene is actually ready
@@ -101,6 +108,7 @@ func _ready():
 	_fps_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_fps_label.add_theme_font_size_override("font_size", 16)
 	add_child(_fps_label)
+	_setup_mouse_context_label()
 	
 	# Connect cortical area cache signals
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(_proxy_notification_cortical_area_added)
@@ -121,6 +129,58 @@ func _ready():
 	
 
 #endregion
+
+## Initializes the global mouse hover label shown in the screen corner.
+func _setup_mouse_context_label() -> void:
+	_mouse_context_label = Label.new()
+	_mouse_context_label.name = "MouseContextHUD"
+	_mouse_context_label.anchors_preset = Control.PRESET_BOTTOM_LEFT
+	_mouse_context_label.anchor_left = 0.0
+	_mouse_context_label.anchor_top = 1.0
+	_mouse_context_label.anchor_right = 0.0
+	_mouse_context_label.anchor_bottom = 1.0
+	_mouse_context_label.offset_left = float(MOUSE_CONTEXT_MARGIN_PX)
+	_mouse_context_label.offset_top = -float(MOUSE_CONTEXT_HEIGHT_PX)
+	_mouse_context_label.offset_right = float(MOUSE_CONTEXT_MAX_WIDTH_PX)
+	_mouse_context_label.offset_bottom = -float(MOUSE_CONTEXT_MARGIN_PX)
+	_mouse_context_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_mouse_context_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_mouse_context_label.add_theme_color_override("font_color", Color.WHITE)
+	_mouse_context_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_mouse_context_label.add_theme_constant_override("outline_size", MOUSE_CONTEXT_OUTLINE_SIZE)
+	_mouse_context_label.add_theme_font_size_override("font_size", MOUSE_CONTEXT_FONT_SIZE)
+	_mouse_context_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mouse_context_label.text = ""
+	_mouse_context_label.z_index = 80
+	add_child(_mouse_context_label)
+
+## Marks which brain monitor currently owns hover updates.
+func set_active_hover_bm(bm: UI_BrainMonitor_3DScene) -> void:
+	_active_hover_bm = bm
+
+## Clears hover ownership and the label when a BM loses hover.
+func clear_active_hover_bm(bm: UI_BrainMonitor_3DScene) -> void:
+	if _active_hover_bm != bm:
+		return
+	_active_hover_bm = null
+	if _mouse_context_label:
+		_mouse_context_label.text = ""
+
+## Updates the global hover label from the active brain monitor only.
+func update_mouse_context(text: String, source_bm: UI_BrainMonitor_3DScene) -> void:
+	if _mouse_context_label == null:
+		return
+	if _active_hover_bm != null and source_bm != _active_hover_bm:
+		return
+	_mouse_context_label.text = text
+
+## Clears the global hover label if the active monitor requests it.
+func clear_mouse_context(source_bm: UI_BrainMonitor_3DScene) -> void:
+	if _mouse_context_label == null:
+		return
+	if _active_hover_bm != null and source_bm != _active_hover_bm:
+		return
+	_mouse_context_label.text = ""
 
 
 ## Interactions with FEAGICORE

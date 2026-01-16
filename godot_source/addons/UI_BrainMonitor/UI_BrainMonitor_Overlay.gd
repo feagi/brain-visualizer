@@ -5,8 +5,38 @@ class_name UI_BrainMonitor_Overlay
 var _mouse_context_label: Label
 var _fdp_deserializer: FeagiDataDeserializer = null
 
+func _process(_delta: float) -> void:
+	# Keep overlay size synced to viewport size (hover label is now global).
+	var viewport := get_parent().get_parent() as SubViewport # Overlay -> UI_Canvas -> SubViewport
+	if viewport:
+		var viewport_size := Vector2(viewport.size)
+		if size != viewport_size:
+			size = viewport_size
+		if position != Vector2.ZERO:
+			position = Vector2.ZERO
+
 func _ready() -> void:
 	_mouse_context_label = $Bottom_Row/MouseContext
+	
+	# Reparent label to overlay root to ensure it stays on top and ignores container layout
+	var bottom_row := $Bottom_Row
+	if bottom_row and _mouse_context_label.get_parent() == bottom_row:
+		bottom_row.remove_child(_mouse_context_label)
+		add_child(_mouse_context_label)
+	
+	_mouse_context_label.set_anchors_preset(Control.PRESET_TOP_LEFT, false)
+	
+	# Force label to be bright white and visible
+	_mouse_context_label.add_theme_color_override("font_color", Color.WHITE)
+	_mouse_context_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_mouse_context_label.add_theme_constant_override("outline_size", 2)
+	_mouse_context_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mouse_context_label.visible = false
+	
+	# Allow mouse events to pass through overlay to 3D scene
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$Bottom_Row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mouse_context_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	# Initialize FDP deserializer for decoding voxel values
 	if ClassDB.class_exists("FeagiDataDeserializer"):
@@ -16,11 +46,39 @@ func _ready() -> void:
 
 ## Clear all text
 func clear() -> void:
-	_mouse_context_label.text = ""
+	_clear_global_context()
+
+## Returns the owning brain monitor for this overlay.
+func _get_owning_bm() -> UI_BrainMonitor_3DScene:
+	var viewport := get_parent().get_parent() as SubViewport
+	if viewport == null:
+		return null
+	return viewport.get_parent() as UI_BrainMonitor_3DScene
+
+## Updates the global hover label using this overlay's context.
+func _set_global_context(text: String) -> void:
+	if BV == null or BV.UI == null:
+		return
+	var bm := _get_owning_bm()
+	if bm == null:
+		return
+	BV.UI.update_mouse_context(text, bm)
+
+## Clears the global hover label for this overlay.
+func _clear_global_context() -> void:
+	if BV == null or BV.UI == null:
+		return
+	var bm := _get_owning_bm()
+	if bm == null:
+		return
+	BV.UI.clear_mouse_context(bm)
 
 func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron_coordinate: Vector3i) -> void:
+	if _mouse_context_label == null:
+		return
+	
 	if cortical_area.cortical_type not in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
-		_mouse_context_label.text = "Area - " + cortical_area.friendly_name + "  " + str(neuron_coordinate)
+		_set_global_context("Area - " + cortical_area.friendly_name + "  " + str(neuron_coordinate))
 		return
 	var text: String = "Area - " + cortical_area.friendly_name + " " + str(neuron_coordinate) + " "
 	if cortical_area is IPUCorticalArea:
@@ -88,32 +146,32 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 				var value = fdp_result.get("value", 0.0)
 				text += " | FDP:%s CH:%d Value:%.2f%%" % [fdp_version, channel, value]
 	
-	_mouse_context_label.text = text
+	_set_global_context(text)
 
 ## Show plate hover context (region name + plate kind)
 func show_plate_hover(region_name: String, plate_kind: String) -> void:
 	var kind := plate_kind.strip_edges()
 	if kind == "":
-		_mouse_context_label.text = "Circuit - " + region_name
+		_set_global_context("Circuit - " + region_name)
 		return
-	_mouse_context_label.text = "Circuit - " + region_name + " (" + kind + ")"
+	_set_global_context("Circuit - " + region_name + " (" + kind + ")")
 
 ## Clear plate hover context (only if no cortical hover text is present)
 func clear_plate_hover() -> void:
 	# Optional: do not clear if cortical context is showing
 	# For now, we clear unconditionally when plate hover ends
-	_mouse_context_label.text = ""
+	_clear_global_context()
 
 ## Show manipulation position during 3D relocate/resize.
 func show_manipulation_position(cortical_area: AbstractCorticalArea, position_3d: Vector3i) -> void:
 	if cortical_area == null:
 		return
-	_mouse_context_label.text = "Move - " + cortical_area.friendly_name + "  " + str(position_3d)
+	_set_global_context("Move - " + cortical_area.friendly_name + "  " + str(position_3d))
 
 func clear_manipulation_position() -> void:
-	_mouse_context_label.text = ""
+	_clear_global_context()
 
 func show_manipulation_dimensions(cortical_area: AbstractCorticalArea, dimensions_3d: Vector3i) -> void:
 	if cortical_area == null:
 		return
-	_mouse_context_label.text = "Resize - " + cortical_area.friendly_name + "  " + str(dimensions_3d)
+	_set_global_context("Resize - " + cortical_area.friendly_name + "  " + str(dimensions_3d))

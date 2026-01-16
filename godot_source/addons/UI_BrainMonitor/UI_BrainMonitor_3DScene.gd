@@ -98,7 +98,7 @@ static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
 
 func _ready() -> void:
 	_node_3D_root = $SubViewport/Center
-	_UI_layer_for_BM = $SubViewport/BM_UI
+	_UI_layer_for_BM = $SubViewport/UI_Canvas/BM_UI
 	# Keep SubViewport size in sync with container for consistent UI scaling.
 	resized.connect(_update_subviewport_size)
 	_update_subviewport_size()
@@ -123,6 +123,9 @@ func _ready() -> void:
 		
 		# Ensure SubViewport has a World3D with proper environment
 		var subviewport = $SubViewport as SubViewport
+		# Tabbed brain monitors need local input coordinates for correct hover.
+		if BV.UI.temp_root_bm != null and BV.UI.temp_root_bm != self:
+			subviewport.handle_input_locally = true
 		if subviewport.world_3d == null:
 			# Tab brain monitors need SEPARATE World3D to avoid seeing main content
 			if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
@@ -528,6 +531,7 @@ func _process(delta: float) -> void:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
 	if _manipulation_active and (_manipulation_gizmo == null or _manipulation_preview == null):
 		_manipulation_active = false
+	_emit_tab_hover_event()
 	
 	
 	# Update combo context after setup has region
@@ -558,14 +562,41 @@ func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody
 		return null
 	return hit[&"collider"] as StaticBody3D
 
+func _emit_tab_hover_event() -> void:
+	if _pancake_cam == null or BV == null or BV.UI == null:
+		return
+	if BV.UI.temp_root_bm == null or BV.UI.temp_root_bm == self:
+		return
+	var subviewport := $SubViewport as SubViewport
+	if subviewport == null:
+		return
+	var mouse_pos := subviewport.get_mouse_position()
+	var local_rect := Rect2(Vector2.ZERO, subviewport.size)
+	if not local_rect.has_point(mouse_pos):
+		return
+	
+	# Ensure overlay exists before processing hover
+	_ensure_ui_overlay()
+	if _UI_layer_for_BM == null:
+		print("⚠️ [TAB HOVER] No overlay found for tab %s" % name)
+	
+	var ray_start: Vector3 = _pancake_cam.project_ray_origin(mouse_pos)
+	var ray_end: Vector3 = ray_start + (_pancake_cam.project_ray_normal(mouse_pos) * UI_BrainMonitor_PancakeCamera.RAYCAST_LENGTH)
+	
+	var hover_event := UI_BrainMonitor_InputEvent_Hover.new([], ray_start, ray_end)
+	_process_user_input([hover_event])
+
 func _ensure_ui_overlay() -> void:
-	if _UI_layer_for_BM == null and has_node("SubViewport/BM_UI"):
-		_UI_layer_for_BM = get_node("SubViewport/BM_UI")
+	if _UI_layer_for_BM == null:
+		if has_node("SubViewport/UI_Canvas/BM_UI"):
+			_UI_layer_for_BM = get_node("SubViewport/UI_Canvas/BM_UI")
 
 func _on_container_mouse_entered() -> void:
 	if _pancake_cam:
 		_pancake_cam.set_mouse_hover_state(true)
 	_is_mouse_hovering_viewport = true
+	if BV != null and BV.UI != null:
+		BV.UI.set_active_hover_bm(self)
 	# Track the last entry position in this SubViewport in pixels
 	var sv: SubViewport = $SubViewport
 	_qc_last_mouse_entry_pos = sv.get_mouse_position()
@@ -574,6 +605,8 @@ func _on_container_mouse_exited() -> void:
 	if _pancake_cam:
 		_pancake_cam.set_mouse_hover_state(false)
 	_is_mouse_hovering_viewport = false
+	if BV != null and BV.UI != null:
+		BV.UI.clear_active_hover_bm(self)
 	# Reset bridge and entry tracking when leaving this viewport
 	_clear_bridge_segment()
 	_qc_last_mouse_entry_pos = Vector2.ZERO
@@ -1315,7 +1348,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var typed_arr: Array[Vector3i] = [neuron_coordinate_mousing_over]
 					currently_mousing_over_neurons[hit_parent_parent] = typed_arr
 				
-				_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
+				if _UI_layer_for_BM != null:
+					_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)
 			
 			# Check if we hit a brain region frame (by checking script global name)
 			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":

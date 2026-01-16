@@ -26,4 +26,7 @@ func get_ray_query() -> PhysicsRayQueryParameters3D:
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.new()
 	query.from = ray_start_point
 	query.to = ray_end_point
+	query.collision_mask = 0x7FFFFFFF
+	query.collide_with_areas = true
+	query.collide_with_bodies = true
 	return query
