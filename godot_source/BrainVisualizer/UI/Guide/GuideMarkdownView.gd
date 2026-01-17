@@ -16,6 +16,8 @@ func _ready() -> void:
 	# Cache the base font size once at initialization to prevent compounding
 	_base_font_size = _resolve_initial_font_size()
 	add_theme_color_override("default_color", Color(0.92, 0.94, 0.98))
+	# Add better line spacing for readability
+	add_theme_constant_override("line_separation", int(_base_font_size * 0.3))
 	print("GuideMarkdownView: Initialized with base font size %d" % _base_font_size)
 
 ## Load and render a markdown file.
@@ -66,21 +68,48 @@ func _on_meta_clicked(meta: Variant) -> void:
 func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -> String:
 	var lines := markdown_text.split("\n", true)
 	var output_lines: Array[String] = []
+	var in_list := false
+	
 	for raw_line in lines:
 		var line := raw_line
-		if line.strip_edges().begins_with("#"):
+		var trimmed := line.strip_edges()
+		
+		# Handle headings
+		if trimmed.begins_with("#"):
+			if in_list:
+				in_list = false
 			var heading_level := _count_heading_level(line)
 			var title := line.substr(heading_level).strip_edges()
+			output_lines.append("")
 			output_lines.append(_format_heading(title, heading_level))
 			output_lines.append("")
 			continue
+		
+		# Handle empty lines
+		if trimmed == "":
+			if in_list:
+				in_list = false
+			output_lines.append("")
+			continue
+		
+		# Process inline formatting
 		line = _replace_images(line, markdown_path)
 		line = _replace_links(line, markdown_path)
 		line = _replace_bold(line)
 		line = _replace_italics(line)
 		line = _replace_inline_code(line)
-		line = _replace_bullets(line)
-		output_lines.append(line)
+		
+		# Handle bullets with proper indentation
+		if trimmed.begins_with("- "):
+			if not in_list:
+				in_list = true
+			var bullet_text := trimmed.substr(2).strip_edges()
+			output_lines.append("  • " + bullet_text)
+		else:
+			if in_list:
+				in_list = false
+			output_lines.append(line)
+	
 	var result := "\n".join(output_lines)
 	print("GuideMarkdownView: Conversion complete, %d output lines" % output_lines.size())
 	return result
@@ -99,9 +128,22 @@ func _format_heading(title: String, level: int) -> String:
 	var base_size := _base_font_size
 	if base_size <= 0:
 		base_size = 20
-	var step := int(base_size * 0.18)
-	var size := maxi(int(base_size * 1.15), base_size + step * (2 - level))
-	return "[font_size=%d][b]%s[/b][/font_size]" % [size, title]
+	
+	# Scale heading sizes based on level
+	var size: int
+	match level:
+		1:
+			size = int(base_size * 1.8)  # H1: 80% larger
+		2:
+			size = int(base_size * 1.5)  # H2: 50% larger
+		3:
+			size = int(base_size * 1.3)  # H3: 30% larger
+		_:
+			size = int(base_size * 1.15) # H4+: 15% larger
+	
+	# Add color for headings to make them stand out
+	var color := "8ab4f8"  # Light blue color
+	return "[font_size=%d][b][color=#%s]%s[/color][/b][/font_size]" % [size, color, title]
 
 ## Convert markdown bold markers to BBCode.
 func _replace_bold(line: String) -> String:
@@ -111,16 +153,10 @@ func _replace_bold(line: String) -> String:
 func _replace_italics(line: String) -> String:
 	return _replace_regex(line, "(?<!\\*)\\*([^\\*]+)\\*(?!\\*)", "[i]$1[/i]")
 
-## Convert markdown inline code markers to BBCode.
+## Convert markdown inline code markers to BBCode with background.
 func _replace_inline_code(line: String) -> String:
-	return _replace_regex(line, "`([^`]+)`", "[code]$1[/code]")
-
-## Convert markdown bullet lines to a bulleted prefix.
-func _replace_bullets(line: String) -> String:
-	var trimmed := line.strip_edges()
-	if trimmed.begins_with("- "):
-		return "- " + trimmed.substr(2)
-	return line
+	# Make inline code stand out with monospace and slight color difference
+	return _replace_regex(line, "`([^`]+)`", "[code][bgcolor=#2a2e35]$1[/bgcolor][/code]")
 
 ## Resolve the initial theme font size once at startup.
 ## This is only called in _ready() to cache the base font size.
@@ -146,7 +182,8 @@ func _replace_links(line: String, markdown_path: String) -> String:
 		var label := match.get_string(1)
 		var raw_path := match.get_string(2)
 		var resolved := _resolve_relative_path(markdown_path, raw_path)
-		return "[url=%s]%s[/url]" % [resolved, label]
+		# Make links blue and underlined
+		return "[url=%s][color=#4a9eff][u]%s[/u][/color][/url]" % [resolved, label]
 	)
 
 ## Resolve a markdown relative path against the current markdown file.
