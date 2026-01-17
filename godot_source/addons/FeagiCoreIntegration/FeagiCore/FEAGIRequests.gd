@@ -495,6 +495,42 @@ func get_regions_summary() -> FeagiRequestOutput:
 
 #endregion
 
+#region Cortical area geometry (lightweight)
+
+## Fetches the cortical area geometry without reloading the entire genome
+func get_cortical_area_geometry() -> FeagiRequestOutput:
+	# Network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
+	var cortical_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
+	var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_request)
+	await cortical_worker.worker_done
+	var cortical_data: FeagiRequestOutput = cortical_worker.retrieve_output_and_close()
+	_return_if_HTTP_failed_and_automatically_handle(cortical_data)
+	return cortical_data
+
+#endregion
+
+#region Morphology summary (lightweight)
+
+## Fetches morphology summary without reloading the entire genome
+func get_morphologies_summary() -> FeagiRequestOutput:
+	# Network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
+	var morphologies_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_morphology_morphologies)
+	var morphologies_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(morphologies_request)
+	await morphologies_worker.worker_done
+	var morphologies_data: FeagiRequestOutput = morphologies_worker.retrieve_output_and_close()
+	_return_if_HTTP_failed_and_automatically_handle(morphologies_data)
+	return morphologies_data
+
+#endregion
+
 #region Mapping summary (lightweight)
 
 ## Fetches the cortical mapping summary without reloading the entire genome

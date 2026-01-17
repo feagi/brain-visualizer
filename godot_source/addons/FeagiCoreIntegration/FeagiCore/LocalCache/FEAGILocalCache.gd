@@ -337,6 +337,15 @@ var _had_valid_session: bool = false  # Track if we ever had a valid session (to
 var _last_genome_change_time: int = 0  # Time of last change detection
 var _genome_change_cooldown_ms: int = 10000  # 10 second cooldown
 
+# Hash change detection tracking (event-driven hashes from health_check)
+var _previous_brain_regions_hash: int = 0
+var _previous_cortical_areas_hash: int = 0
+var _previous_brain_geometry_hash: int = 0
+var _previous_morphologies_hash: int = 0
+var _previous_cortical_mappings_hash: int = 0
+var _hash_refresh_in_flight: Dictionary = {}
+var _pending_hash_values: Dictionary = {}
+
 var _pending_amalgamation: StringName = ""
 
 ## Given a dict form feagi of health info, update cached health values
@@ -464,6 +473,8 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 
 			_previous_feagi_session = current_feagi_session
 			_previous_genome_num = current_genome_num
+	
+	_process_hash_change_detection(health)
 	
 	# DEBUG: Show health check details for amalgamation tracking (only when relevant)
 	if _pending_amalgamation != "":
@@ -753,6 +764,186 @@ func _refresh_single_brain_region_cache(region: BrainRegion) -> void:
 	
 	# Derive input/output designations from current cortical mappings and connections
 	_update_brain_region_io_designations_from_local_mappings(region)
+
+## Checks health hashes and triggers targeted cache refreshes
+func _process_hash_change_detection(health: Dictionary) -> void:
+	if not _should_process_hash_refreshes():
+		return
+	
+	_previous_brain_regions_hash = _check_hash_and_queue(
+		&"brain_regions_hash",
+		health.get("brain_regions_hash", null),
+		_previous_brain_regions_hash,
+		&"_refresh_brain_regions_from_feagi"
+	)
+	_previous_cortical_areas_hash = _check_hash_and_queue(
+		&"cortical_areas_hash",
+		health.get("cortical_areas_hash", null),
+		_previous_cortical_areas_hash,
+		&"_refresh_cortical_areas_from_feagi"
+	)
+	_previous_brain_geometry_hash = _check_hash_and_queue(
+		&"brain_geometry_hash",
+		health.get("brain_geometry_hash", null),
+		_previous_brain_geometry_hash,
+		&"_refresh_brain_geometry_from_feagi"
+	)
+	_previous_morphologies_hash = _check_hash_and_queue(
+		&"morphologies_hash",
+		health.get("morphologies_hash", null),
+		_previous_morphologies_hash,
+		&"_refresh_morphologies_from_feagi"
+	)
+	_previous_cortical_mappings_hash = _check_hash_and_queue(
+		&"cortical_mappings_hash",
+		health.get("cortical_mappings_hash", null),
+		_previous_cortical_mappings_hash,
+		&"_refresh_mappings_from_feagi"
+	)
+
+## Determines if hash-driven refreshes should run
+func _should_process_hash_refreshes() -> bool:
+	if not FeagiCore:
+		return false
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
+		return false
+	if not FeagiCore.network or not FeagiCore.requests:
+		return false
+	if cortical_areas.available_cortical_areas.size() == 0:
+		return false
+	return true
+
+## Evaluates hash changes and schedules refresh when mismatch is detected
+func _check_hash_and_queue(hash_key: StringName, current_value: Variant, previous_value: int, refresh_method: StringName) -> int:
+	if current_value == null:
+		return previous_value
+	
+	var current_hash: int = int(current_value)
+	if previous_value == 0:
+		return current_hash
+	
+	if current_hash != previous_value:
+		_queue_hash_refresh(hash_key, current_hash, refresh_method)
+	
+	return previous_value
+
+## Queue a hash refresh if one is not already running for the given key
+func _queue_hash_refresh(hash_key: StringName, new_hash: int, refresh_method: StringName) -> void:
+	if _hash_refresh_in_flight.get(hash_key, false):
+		_pending_hash_values[hash_key] = new_hash
+		return
+	
+	_hash_refresh_in_flight[hash_key] = true
+	_pending_hash_values[hash_key] = new_hash
+	call_deferred("_run_hash_refresh", hash_key, refresh_method)
+
+## Runs the refresh method and updates the hash when successful
+func _run_hash_refresh(hash_key: StringName, refresh_method: StringName) -> void:
+	var result: FeagiRequestOutput = await call(refresh_method)
+	if result.success:
+		_set_previous_hash_value(hash_key, int(_pending_hash_values.get(hash_key, 0)))
+	_hash_refresh_in_flight.erase(hash_key)
+
+## Applies the latest successful hash value to the tracked state
+func _set_previous_hash_value(hash_key: StringName, value: int) -> void:
+	match hash_key:
+		&"brain_regions_hash":
+			_previous_brain_regions_hash = value
+		&"cortical_areas_hash":
+			_previous_cortical_areas_hash = value
+		&"brain_geometry_hash":
+			_previous_brain_geometry_hash = value
+		&"morphologies_hash":
+			_previous_morphologies_hash = value
+		&"cortical_mappings_hash":
+			_previous_cortical_mappings_hash = value
+		_:
+			pass
+
+## Refresh brain regions (and dependent cortical areas) from FEAGI
+func _refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
+	var regions_output: FeagiRequestOutput = await FeagiCore.requests.get_regions_summary()
+	if regions_output.has_errored or not regions_output.success:
+		return regions_output
+	
+	var regions_summary: Dictionary = regions_output.decode_response_as_dict()
+	brain_regions.FEAGI_clear_all_regions()
+	var area_mapping: Dictionary = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary)
+	brain_regions.FEAGI_load_all_partial_mapping_sets(regions_summary)
+	
+	var cortical_output: FeagiRequestOutput = await FeagiCore.requests.get_cortical_area_geometry()
+	if cortical_output.has_errored or not cortical_output.success:
+		return cortical_output
+	
+	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), area_mapping)
+	return cortical_output
+
+## Refresh cortical areas and properties from FEAGI
+func _refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
+	var cortical_output: FeagiRequestOutput = await FeagiCore.requests.get_cortical_area_geometry()
+	if cortical_output.has_errored or not cortical_output.success:
+		return cortical_output
+	
+	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), {})
+	return cortical_output
+
+## Refresh brain geometry (positions/dimensions) from FEAGI
+func _refresh_brain_geometry_from_feagi() -> FeagiRequestOutput:
+	return await _refresh_cortical_areas_from_feagi()
+
+## Refresh morphologies from FEAGI
+func _refresh_morphologies_from_feagi() -> FeagiRequestOutput:
+	var morphologies_output: FeagiRequestOutput = await FeagiCore.requests.get_morphologies_summary()
+	if morphologies_output.has_errored or not morphologies_output.success:
+		return morphologies_output
+	
+	morphologies.update_morphology_cache_from_summary(morphologies_output.decode_response_as_dict())
+	return morphologies_output
+
+## Refresh cortical mappings from FEAGI
+func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
+	var mappings_output: FeagiRequestOutput = await FeagiCore.requests.get_mapping_summary()
+	if mappings_output.has_errored or not mappings_output.success:
+		return mappings_output
+	
+	mapping_data.FEAGI_delete_all_mappings()
+	mapping_data.FEAGI_load_all_mappings(mappings_output.decode_response_as_dict())
+	return mappings_output
+
+## Update cortical areas cache using summary data without wiping the entire genome
+func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_region_ID_mapping: Dictionary) -> void:
+	var existing_ids: Array = cortical_areas.available_cortical_areas.keys()
+	for existing_id in existing_ids:
+		if not area_summary_data.has(existing_id):
+			cortical_areas.remove_cortical_area(existing_id)
+	
+	for cortical_area_ID in area_summary_data.keys():
+		var area_JSON_summary: Dictionary = area_summary_data[cortical_area_ID]
+		if cortical_area_ID in cortical_areas.available_cortical_areas:
+			cortical_areas.FEAGI_update_cortical_area_from_dict(area_JSON_summary)
+		else:
+			var parent_region = _resolve_parent_region_for_area(area_JSON_summary, cortical_area_ID, area_ID_to_region_ID_mapping)
+			if parent_region == null:
+				push_error("CORE CACHE: Unable to resolve parent region for new cortical area %s" % cortical_area_ID)
+				continue
+			cortical_areas.FEAGI_add_cortical_area_from_dict(area_JSON_summary, parent_region, cortical_area_ID)
+
+## Resolve parent region for a cortical area using API data or fallback mapping
+func _resolve_parent_region_for_area(area_JSON_summary: Dictionary, cortical_area_ID: StringName, area_ID_to_region_ID_mapping: Dictionary) -> BrainRegion:
+	var parent_region_id: StringName = ""
+	if "parent_region_id" in area_JSON_summary and area_JSON_summary["parent_region_id"] != null:
+		parent_region_id = area_JSON_summary["parent_region_id"]
+	elif cortical_area_ID in area_ID_to_region_ID_mapping:
+		parent_region_id = area_ID_to_region_ID_mapping[cortical_area_ID]
+	else:
+		var root_region = brain_regions.get_root_region()
+		if root_region == null:
+			return null
+		parent_region_id = root_region.region_ID
+	
+	if not brain_regions.available_brain_regions.has(parent_region_id):
+		return null
+	return brain_regions.available_brain_regions[parent_region_id]
 
 ## Updates brain region input/output designations based on current local mapping cache
 func _update_brain_region_io_designations_from_local_mappings(region: BrainRegion) -> void:

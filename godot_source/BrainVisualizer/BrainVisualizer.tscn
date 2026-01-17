@@ -127,13 +127,13 @@ theme_override_constants/separation = 18
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 60
-text = "FEAGI Brain Visualizer"
+text = "FEAGI BRAIN VISUALIZER"
 
 [node name="Label" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 40
-text = "Loading..."
+text = " "
 
 [node name="WarningPanel" type="PanelContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
@@ -174,7 +174,7 @@ layout_mode = 2
 
 [node name="StatusLabel" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 24
 text = "Initializing..."
 
 [node name="BottomCenterOverlay" type="Control" parent="UIManager/TempLoadingScreen"]
@@ -199,7 +199,7 @@ offset_bottom = -6.0
 grow_horizontal = 0
 grow_vertical = 0
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 text = "© Neuraville Inc."
 
 [connection signal="request_UI_mode" from="UIManager/TopBar" to="UIManager/CB_Holder" method="set_view"]

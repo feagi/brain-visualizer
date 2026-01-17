@@ -137,7 +137,7 @@ text = "Core connectivity rules"
 
 [node name="CoreMorphologiesBar" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
-custom_minimum_size = Vector2(0, 400)
+custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
 horizontal_scroll_mode = 2
 vertical_scroll_mode = 0
