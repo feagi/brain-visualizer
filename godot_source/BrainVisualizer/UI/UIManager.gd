@@ -55,7 +55,6 @@ var _notification_system: NotificationSystem
 var _version_label: Label
 var _mouse_context_label: Label
 var _active_hover_bm: UI_BrainMonitor_3DScene = null
-var _guide_overlay: GuideOverlay
 
 # CRITICAL: Track whether 3D scene has been successfully instantiated
 # This prevents hiding the loading screen before the 3D scene is actually ready
@@ -84,13 +83,10 @@ func _ready():
 	_notification_system = $NotificationSystem
 	_top_bar = $TopBar
 	_window_manager = $WindowManager
-	_guide_overlay = $GuideOverlay
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
 	_selection_system = SelectionSystem.new()
 	_loading_status_label = $TempLoadingScreen/LoadingOverlay/Bottom_Row/StatusLabel
-	if _guide_overlay != null:
-		_guide_overlay.close_requested.connect(_on_guide_overlay_closed)
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -569,29 +565,6 @@ func show_developer_menu():
 	_window_manager.spawn_developer_options()
 
 ## Show the guide overlay with markdown content.
-func show_guide_overlay() -> void:
-	if _guide_overlay == null:
-		push_error("UIManager: Guide overlay not found.")
-		return
-	_guide_overlay.show_overlay()
-
-## Hide the guide overlay.
-func hide_guide_overlay() -> void:
-	if _guide_overlay == null:
-		push_error("UIManager: Guide overlay not found.")
-		return
-	_guide_overlay.hide_overlay()
-
-## Toggle the guide overlay visibility.
-func toggle_guide_overlay() -> void:
-	if _guide_overlay == null:
-		push_error("UIManager: Guide overlay not found.")
-		return
-	_guide_overlay.toggle_overlay()
-
-## Handle the overlay close action.
-func _on_guide_overlay_closed() -> void:
-	pass
 
 
 
@@ -824,8 +797,6 @@ func _load_new_theme(theme: Theme) -> void:
 		$TempLoadingScreen.theme = _loaded_theme
 	if has_node("/root/BrainVisualizer/UIManager/ScaleControl"):
 		$ScaleControl.theme = _loaded_theme
-	if has_node("/root/BrainVisualizer/UIManager/GuideOverlay"):
-		$GuideOverlay.theme = _loaded_theme
 
 	$VersionLabel.theme = theme
 	theme_changed.emit(theme)

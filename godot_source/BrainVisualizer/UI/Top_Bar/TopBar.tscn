@@ -438,6 +438,6 @@ layout_mode = 2
 [connection signal="toggled" from="ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle" to="." method="_placeholder_toggle_changed"]
 [connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Options" to="." method="_open_options"]
 [connection signal="pressed" from="CameraAnimationsPanel/MarginContainer/CameraAnimations" to="." method="_open_camera_animations"]
-[connection signal="pressed" from="GuidePanel/MarginContainer/GuideButton" to="." method="_open_user_guide"]
+[connection signal="pressed" from="GuidePanel/MarginContainer/GuideButton" to="." method="_open_guide"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

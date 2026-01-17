@@ -168,9 +168,8 @@ func _open_options() -> void:
 func _open_camera_animations() -> void:
 	BV.WM.spawn_camera_animations()
 
-## Open the user guide overlay.
-func _open_user_guide() -> void:
-	BV.UI.toggle_guide_overlay()
+func _open_guide() -> void:
+	BV.WM.spawn_guide()
 
 #func _FEAGI_retireved_latency(latency_ms: int) -> void:
 #	_latency_field.current_int = latency_ms

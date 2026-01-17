@@ -25,6 +25,7 @@ const _PREFAB_ADV_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisuali
 const _PREFAB_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.tscn")
 const _PREFAB_VIEW_PREVIEWS: PackedScene = preload("res://BrainVisualizer/UI/Windows/ViewPreviews/WindowViewPreviews.tscn")
 const _PREFAB_CAMERA_ANIMATIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.tscn")
+const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.tscn")
 
 
 var loaded_windows: Dictionary
@@ -39,6 +40,10 @@ func spawn_options() -> void:
 func spawn_camera_animations() -> void:
 	var cam_window: WindowCameraAnimations = _default_spawn_window(_PREFAB_CAMERA_ANIMATIONS, WindowCameraAnimations.WINDOW_NAME) as WindowCameraAnimations
 	cam_window.setup()
+
+func spawn_guide() -> void:
+	var guide_window: WindowGuide = _default_spawn_window(_PREFAB_GUIDE, WindowGuide.WINDOW_NAME) as WindowGuide
+	guide_window.setup()
 
 func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) -> void:
 	var cortical_window: AdvancedCorticalProperties = _default_spawn_window(_PREFAB_ADV_CORTICAL_PROPERTIES, AdvancedCorticalProperties.WINDOW_NAME) as AdvancedCorticalProperties
