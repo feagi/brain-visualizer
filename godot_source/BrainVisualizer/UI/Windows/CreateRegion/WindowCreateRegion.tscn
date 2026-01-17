@@ -13,8 +13,8 @@
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="10_d4k8w"]
 
 [node name="WindowCreateRegion" type="VBoxContainer"]
-offset_right = 468.0
-offset_bottom = 293.0
+offset_right = 520.0
+offset_bottom = 330.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
@@ -34,31 +34,31 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Parent Region"
-
-[node name="RegionDropDown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-script = ExtResource("3_16rxf")
-
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Region Name"
+text = "Circuit Name"
 
 [node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 script = ExtResource("3_yyqls")
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Parent Circuit"
+
+[node name="RegionDropDown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+script = ExtResource("3_16rxf")
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2

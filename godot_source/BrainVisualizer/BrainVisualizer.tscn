@@ -11,6 +11,7 @@
 [ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://BrainVisualizer/UI/sky.tres" id="7_wiv4s"]
 [ext_resource type="PackedScene" uid="uid://c8scale_control" path="res://BrainVisualizer/UI/ScaleControl/ScaleControl.tscn" id="8_scale"]
 [ext_resource type="Script" uid="uid://ceahb5atex4dj" path="res://BrainVisualizer/UI/Windows/WindowManager.gd" id="9_eg4r6"]
+[ext_resource type="PackedScene" uid="uid://c4q5m1v1d2j0x" path="res://BrainVisualizer/UI/Guide/GuideOverlay.tscn" id="10_guide_overlay"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ouwte"]
 shader = ExtResource("7_wiv4s")
@@ -82,6 +83,9 @@ mouse_filter = 2
 mouse_filter = 2
 
 [node name="ScaleControl" parent="UIManager" instance=ExtResource("8_scale")]
+
+[node name="GuideOverlay" parent="UIManager" instance=ExtResource("10_guide_overlay")]
+visible = false
 
 [node name="WindowManager" type="Node" parent="UIManager"]
 script = ExtResource("9_eg4r6")

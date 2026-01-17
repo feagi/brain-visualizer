@@ -26,6 +26,10 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="28_cam_anim_h"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="29_cam_anim_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="30_cam_anim_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_S.jpg" id="31_guide_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_H.jpg" id="32_guide_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_C.jpg" id="33_guide_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_D.jpg" id="34_guide_d"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="22_eye_s"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="23_eye_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="24_eye_h"]
@@ -316,6 +320,27 @@ texture_pressed = ExtResource("29_cam_anim_c")
 texture_hover = ExtResource("28_cam_anim_h")
 texture_disabled = ExtResource("30_cam_anim_d")
 
+[node name="GuidePanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="GuidePanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="GuideButton" type="TextureRect" parent="GuidePanel/MarginContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "User Guide"
+texture = ExtResource("31_guide_s")
+expand_mode = 3
+script = ExtResource("20_6yf7l")
+texture_normal = ExtResource("31_guide_s")
+texture_pressed = ExtResource("33_guide_c")
+texture_hover = ExtResource("32_guide_h")
+texture_disabled = ExtResource("34_guide_d")
+
 [node name="DetailsPanel" type="PanelContainer" parent="."]
 layout_mode = 2
 
@@ -413,5 +438,6 @@ layout_mode = 2
 [connection signal="toggled" from="ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle" to="." method="_placeholder_toggle_changed"]
 [connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Options" to="." method="_open_options"]
 [connection signal="pressed" from="CameraAnimationsPanel/MarginContainer/CameraAnimations" to="." method="_open_camera_animations"]
+[connection signal="pressed" from="GuidePanel/MarginContainer/GuideButton" to="." method="_open_user_guide"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

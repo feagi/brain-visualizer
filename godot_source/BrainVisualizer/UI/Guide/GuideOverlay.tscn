@@ -1,0 +1,102 @@
+[gd_scene load_steps=3 format=3 uid="uid://c4q5m1v1d2j0x"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Guide/GuideOverlay.gd" id="1_guide_overlay"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Guide/GuideMarkdownView.gd" id="2_guide_markdown"]
+
+[node name="GuideOverlay" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 200
+script = ExtResource("1_guide_overlay")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="OverlayPanel" type="PanelContainer" parent="."]
+anchors_preset = 15
+anchor_left = 0.05
+anchor_top = 0.05
+anchor_right = 0.95
+anchor_bottom = 0.95
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelMargin" type="MarginContainer" parent="OverlayPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="PanelContent" type="VBoxContainer" parent="OverlayPanel/PanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="OverlayPanel/PanelMargin/PanelContent/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
+text = "User Guide"
+
+[node name="CloseButton" type="Button" parent="OverlayPanel/PanelMargin/PanelContent/Header"]
+layout_mode = 2
+text = "Close"
+
+[node name="GuideContent" type="HSplitContainer" parent="OverlayPanel/PanelMargin/PanelContent"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 320
+theme_override_constants/separation = 18
+
+[node name="GuideSidebar" type="VBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="SearchBar" type="LineEdit" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar"]
+layout_mode = 2
+placeholder_text = "Search guides..."
+
+[node name="TopicsScroll" type="ScrollContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TopicsList" type="VBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar/TopicsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="GuideBody" type="PanelContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ContentScroll" type="ScrollContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody"]
+layout_mode = 2
+
+[node name="ContentMargin" type="MarginContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody/ContentScroll"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="GuideMarkdownView" type="RichTextLabel" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody/ContentScroll/ContentMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+script = ExtResource("2_guide_markdown")

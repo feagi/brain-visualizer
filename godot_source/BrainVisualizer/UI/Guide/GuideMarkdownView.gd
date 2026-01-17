@@ -1,0 +1,146 @@
+extends RichTextLabel
+class_name GuideMarkdownView
+
+signal markdown_link_clicked(target_path: String)
+
+var _current_markdown_path: String = ""
+
+## Configure the label defaults for guide rendering.
+func _ready() -> void:
+	bbcode_enabled = true
+	scroll_active = false
+	fit_content = true
+	autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	meta_clicked.connect(_on_meta_clicked)
+
+## Load and render a markdown file.
+func load_markdown(markdown_path: String) -> void:
+	_current_markdown_path = markdown_path
+	var file := FileAccess.open(markdown_path, FileAccess.READ)
+	if file == null:
+		push_error("GuideMarkdownView: Unable to read markdown at %s." % markdown_path)
+		text = ""
+		return
+	var markdown_text := file.get_as_text()
+	text = _convert_markdown_to_bbcode(markdown_text, markdown_path)
+
+## Display a short message when no guide content is available.
+func show_message(message: String) -> void:
+	_current_markdown_path = ""
+	text = "[i]%s[/i]" % message
+
+## Handle link clicks inside the rendered markdown.
+func _on_meta_clicked(meta: Variant) -> void:
+	if typeof(meta) != TYPE_STRING:
+		return
+	var target_path: String = meta
+	if target_path == "":
+		return
+	markdown_link_clicked.emit(target_path)
+
+## Convert markdown text into BBCode for RichTextLabel rendering.
+func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -> String:
+	var lines := markdown_text.split("\n", false)
+	var output_lines: Array[String] = []
+	for raw_line in lines:
+		var line := raw_line
+		if line.strip_edges().begins_with("#"):
+			var heading_level := _count_heading_level(line)
+			var title := line.substr(heading_level).strip_edges()
+			output_lines.append(_format_heading(title, heading_level))
+			continue
+		line = _replace_images(line, markdown_path)
+		line = _replace_links(line, markdown_path)
+		line = _replace_bold(line)
+		line = _replace_italics(line)
+		line = _replace_inline_code(line)
+		line = _replace_bullets(line)
+		output_lines.append(line)
+	return "\n".join(output_lines)
+
+## Count heading markers for a markdown heading line.
+func _count_heading_level(line: String) -> int:
+	var count := 0
+	for i in range(line.length()):
+		if line[i] != "#":
+			break
+		count += 1
+	return maxi(1, count)
+
+## Format a markdown heading into BBCode with size scaling.
+func _format_heading(title: String, level: int) -> String:
+	var base_size := 34
+	var step := 4
+	var size := maxi(18, base_size - (level - 1) * step)
+	return "[font_size=%d][b]%s[/b][/font_size]" % [size, title]
+
+## Convert markdown bold markers to BBCode.
+func _replace_bold(line: String) -> String:
+	return _replace_regex(line, "\\*\\*([^\\*]+)\\*\\*", "[b]$1[/b]")
+
+## Convert markdown italics markers to BBCode.
+func _replace_italics(line: String) -> String:
+	return _replace_regex(line, "(?<!\\*)\\*([^\\*]+)\\*(?!\\*)", "[i]$1[/i]")
+
+## Convert markdown inline code markers to BBCode.
+func _replace_inline_code(line: String) -> String:
+	return _replace_regex(line, "`([^`]+)`", "[code]$1[/code]")
+
+## Convert markdown bullet lines to a bulleted prefix.
+func _replace_bullets(line: String) -> String:
+	var trimmed := line.strip_edges()
+	if trimmed.begins_with("- "):
+		return "- " + trimmed.substr(2)
+	return line
+
+## Convert markdown image syntax to BBCode image tags.
+func _replace_images(line: String, markdown_path: String) -> String:
+	return _replace_regex_callback(line, "!\\[([^\\]]*)\\]\\(([^\\)]+)\\)", func(match: RegExMatch) -> String:
+		var raw_path := match.get_string(2)
+		var resolved := _resolve_relative_path(markdown_path, raw_path)
+		return "[img]%s[/img]" % resolved
+	)
+
+## Convert markdown link syntax to BBCode URL tags.
+func _replace_links(line: String, markdown_path: String) -> String:
+	return _replace_regex_callback(line, "\\[([^\\]]+)\\]\\(([^\\)]+)\\)", func(match: RegExMatch) -> String:
+		var label := match.get_string(1)
+		var raw_path := match.get_string(2)
+		var resolved := _resolve_relative_path(markdown_path, raw_path)
+		return "[url=%s]%s[/url]" % [resolved, label]
+	)
+
+## Resolve a markdown relative path against the current markdown file.
+func _resolve_relative_path(markdown_path: String, raw_path: String) -> String:
+	if raw_path.begins_with("res://") or raw_path.begins_with("http://") or raw_path.begins_with("https://"):
+		return raw_path
+	if markdown_path == "":
+		return raw_path
+	var base_dir := markdown_path.get_base_dir()
+	var joined := base_dir.path_join(raw_path)
+	return joined.simplify_path()
+
+## Replace regex matches with a fixed replacement string.
+func _replace_regex(line: String, pattern: String, replacement: String) -> String:
+	var regex := RegEx.new()
+	var err := regex.compile(pattern)
+	if err != OK:
+		push_error("GuideMarkdownView: Regex compile failed for pattern: %s" % pattern)
+		return line
+	return regex.sub(line, replacement, true)
+
+## Replace regex matches using a callback for dynamic replacements.
+func _replace_regex_callback(line: String, pattern: String, replacer: Callable) -> String:
+	var regex := RegEx.new()
+	var err := regex.compile(pattern)
+	if err != OK:
+		push_error("GuideMarkdownView: Regex compile failed for pattern: %s" % pattern)
+		return line
+	var result := ""
+	var last_index := 0
+	for match in regex.search_all(line):
+		result += line.substr(last_index, match.get_start() - last_index)
+		result += replacer.call(match)
+		last_index = match.get_end()
+	result += line.substr(last_index)
+	return result

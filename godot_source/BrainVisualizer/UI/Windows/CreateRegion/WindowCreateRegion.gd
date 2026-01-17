@@ -23,6 +23,7 @@ func _ready():
 
 func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = []) -> void:
 	_setup_base_window(WINDOW_NAME)
+	_name_box.call_deferred("grab_focus")
 	_region_drop_down.set_selected_region(parent_region)
 	for selected in selected_items:
 		_scroll_section.add_text_button_with_delete(selected, selected.friendly_name, Callable())
