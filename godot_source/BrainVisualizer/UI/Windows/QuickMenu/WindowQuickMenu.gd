@@ -18,19 +18,19 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 	_selection_context = context
 	print("🔍 QuickMenu: _selection assigned, size: %d, mode: %s" % [_selection.size(), _mode])
 	
-	var details_button: TextureButton = _window_internals.get_node('HBoxContainer/Details')
-	var open_3d_tab_button: TextureButton = _window_internals.get_node('HBoxContainer/Open3DTab')
-	var quick_connect_button: TextureButton = _window_internals.get_node('HBoxContainer/QuickConnect')
-	var quick_connect_CA_N_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_CA_N")
-	var quick_connect_N_CA_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_N_CA")
-	var quick_connect_N_N_button: TextureButton = _window_internals.get_node("HBoxContainer/QuickConnect_N_N")
-	var move_to_region_button: TextureButton = _window_internals.get_node('HBoxContainer/AddToRegion')
-	var clone_button: TextureButton = _window_internals.get_node('HBoxContainer/Clone')
-	_btn_relocate_2d = _window_internals.get_node_or_null("HBoxContainer/Relocate2D") as TextureButton
-	_btn_move_3d = _window_internals.get_node_or_null("HBoxContainer/Move3D") as TextureButton
-	_btn_resize_3d = _window_internals.get_node_or_null("HBoxContainer/Resize3D") as TextureButton
-	var reset_button: TextureButton = _window_internals.get_node('HBoxContainer/Reset')
-	var delete_button: TextureButton = _window_internals.get_node('HBoxContainer/Delete')
+	var details_button: TextureButton = _window_internals.get_node('ToolbarGrid/Details')
+	var open_3d_tab_button: TextureButton = _window_internals.get_node('ToolbarGrid/Open3DTab')
+	var quick_connect_button: TextureButton = _window_internals.get_node('ToolbarGrid/QuickConnect')
+	var quick_connect_CA_N_button: TextureButton = _window_internals.get_node("ToolbarGrid/QuickConnect_CA_N")
+	var quick_connect_N_CA_button: TextureButton = _window_internals.get_node("ToolbarGrid/QuickConnect_N_CA")
+	var quick_connect_N_N_button: TextureButton = _window_internals.get_node("ToolbarGrid/QuickConnect_N_N")
+	var move_to_region_button: TextureButton = _window_internals.get_node('ToolbarGrid/AddToRegion')
+	var clone_button: TextureButton = _window_internals.get_node('ToolbarGrid/Clone')
+	_btn_relocate_2d = _window_internals.get_node_or_null("ToolbarGrid/Relocate2D") as TextureButton
+	_btn_move_3d = _window_internals.get_node_or_null("ToolbarGrid/Move3D") as TextureButton
+	_btn_resize_3d = _window_internals.get_node_or_null("ToolbarGrid/Resize3D") as TextureButton
+	var reset_button: TextureButton = _window_internals.get_node('ToolbarGrid/Reset')
+	var delete_button: TextureButton = _window_internals.get_node('ToolbarGrid/Delete')
 	
 	quick_connect_CA_N_button.pressed.connect(_button_quick_connect_neuron.bind(WindowQuickConnectNeuron.MODE.CORTICAL_AREA_TO_NEURONS))
 	quick_connect_N_CA_button.pressed.connect(_button_quick_connect_neuron.bind(WindowQuickConnectNeuron.MODE.NEURONS_TO_CORTICAL_AREA))

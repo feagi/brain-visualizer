@@ -72,11 +72,12 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ToolbarGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+columns = 6
 alignment = 1
 
-[node name="Details" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Details" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "View Cortical Area Details"
@@ -89,7 +90,7 @@ texture_disabled = ExtResource("6_evlmv")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="Open3DTab" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Open3DTab" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Open Circuit in 3D Tab"
@@ -102,7 +103,7 @@ texture_disabled = ExtResource("26_3d_bm_d")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="QuickConnect" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="QuickConnect" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Connect Cortical Area Towards..."
@@ -115,7 +116,7 @@ texture_disabled = ExtResource("10_op4fb")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="QuickConnect_CA_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="QuickConnect_CA_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Connect Cortical Area Towards Neurons...."
@@ -128,7 +129,7 @@ texture_disabled = ExtResource("14_gwbaj")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="QuickConnect_N_CA" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="QuickConnect_N_CA" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Connect Cortical Area Neurons Towards..."
@@ -141,7 +142,7 @@ texture_disabled = ExtResource("18_ycwpx")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="QuickConnect_N_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="QuickConnect_N_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Connect A Cortical Area Neuron Towards Neurons..."
@@ -154,7 +155,7 @@ texture_disabled = ExtResource("22_yp6aw")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="AddToRegion" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="AddToRegion" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Add to a circuit..."
@@ -167,7 +168,7 @@ texture_disabled = ExtResource("14_03052")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="Clone" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Clone" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Clone Cortical Area..."
@@ -180,7 +181,7 @@ texture_disabled = ExtResource("14_acjss")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="Relocate2D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Relocate2D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Relocate selected areas (2D)"
@@ -193,7 +194,7 @@ texture_disabled = ExtResource("31_move_icon_d")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="Move3D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Move3D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Move Cortical Area (3D)"
@@ -206,7 +207,7 @@ texture_disabled = ExtResource("31_move_icon_d")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="Resize3D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Resize3D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Resize Cortical Area (3D)"
@@ -219,7 +220,7 @@ texture_disabled = ExtResource("34_resize_icon_d")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="Reset" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Reset" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Reset selected cortical areas to default values"
@@ -232,7 +233,7 @@ texture_disabled = ExtResource("38_reset_d")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="Delete" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Delete" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Delete this Cortical Area..."
@@ -245,13 +246,13 @@ texture_disabled = ExtResource("18_7ekap")
 ignore_texture_size = true
 stretch_mode = 5
 
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Details" to="." method="_button_details"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Open3DTab" to="." method="_button_open_3d_tab"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/QuickConnect" to="." method="_button_quick_connect"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/AddToRegion" to="." method="_button_add_to_region"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Clone" to="." method="_button_clone"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Relocate2D" to="." method="_button_relocate_2d"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Move3D" to="." method="_button_move_3d"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Resize3D" to="." method="_button_resize_3d"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Reset" to="." method="_button_reset"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Delete" to="." method="_button_delete"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Details" to="." method="_button_details"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Open3DTab" to="." method="_button_open_3d_tab"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/QuickConnect" to="." method="_button_quick_connect"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/AddToRegion" to="." method="_button_add_to_region"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Clone" to="." method="_button_clone"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Relocate2D" to="." method="_button_relocate_2d"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Move3D" to="." method="_button_move_3d"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Resize3D" to="." method="_button_resize_3d"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Reset" to="." method="_button_reset"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Delete" to="." method="_button_delete"]
