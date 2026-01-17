@@ -11,7 +11,8 @@ Draggable and resizable user guide window for Brain Visualizer.
   - Minimum size: 600x400 pixels
 - **Toolbar Controls**:
   - **Search Bar**: Search through guide topics and content (searches both titles and full text)
-  - **Text Size Controls**: +/- buttons to increase/decrease font size (0.5x to 2.0x)
+  - **Text Size Controls**: Small **A** / Large **A** buttons to decrease/increase font size (0.5x to 2.0x)
+    - Matches the UI scale control style in the main toolbar
   - **Expandable**: Room for future toolbar additions
 - **25/75 Split Layout**: Fixed sidebar (25%) with topic list, content area (75%) for markdown
 - **Markdown Support**: Headings, bold, italics, bullets, links, inline code, images

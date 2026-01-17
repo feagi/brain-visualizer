@@ -16,7 +16,7 @@ right content area for markdown rendering.
    - **Search bar**: Full-text search through both topic titles and content
      - Shows result count in placeholder when searching
      - Content is cached for fast searching
-   - **Text size controls**: +/- buttons for dynamic font scaling
+   - **Text size controls**: Small A / Large A buttons for dynamic font scaling (matches main UI scale controls)
    - Expandable for future features
 
 2. **Content Area** (HBoxContainer with 25/75 split):

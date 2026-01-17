@@ -45,14 +45,16 @@ text = "Text Size:"
 vertical_alignment = 1
 
 [node name="FontSizeDecrease" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-text = "-"
 tooltip_text = "Decrease text size"
+text = "A"
 
 [node name="FontSizeIncrease" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-text = "+"
 tooltip_text = "Increase text size"
+text = "A"
 
 [node name="GuideContent" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2

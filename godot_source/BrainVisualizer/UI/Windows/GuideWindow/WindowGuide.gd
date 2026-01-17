@@ -46,11 +46,22 @@ func setup() -> void:
 	_font_size_decrease_btn.pressed.connect(_on_decrease_font_size)
 	_font_size_increase_btn.pressed.connect(_on_increase_font_size)
 	
+	# Style the font size buttons to show A at different sizes
+	_apply_font_size_button_styles()
+	
 	_setup_resize_handle()
 	
 	_refresh_topics()
 	call_deferred("_update_sidebar_width")
 	resized.connect(_update_sidebar_width)
+
+## Style the font size buttons with different A sizes (small and large).
+func _apply_font_size_button_styles() -> void:
+	# Small A for decrease button
+	_font_size_decrease_btn.add_theme_font_size_override("font_size", 14)
+	
+	# Large A for increase button
+	_font_size_increase_btn.add_theme_font_size_override("font_size", 24)
 
 ## Create resize handles (bottom-right corner and right edge).
 func _setup_resize_handle() -> void:
