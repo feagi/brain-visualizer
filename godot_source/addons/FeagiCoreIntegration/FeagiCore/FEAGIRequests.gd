@@ -1646,6 +1646,8 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	var updated_id: StringName = response_dict.get("cortical_id", editing_ID)
 	var previous_id: StringName = response_dict.get("previous_cortical_id", editing_ID)
 	if updated_id != previous_id:
+		print("BV [NEURAL-CODING]: FEAGI remapped cortical ID %s -> %s" % [previous_id, updated_id])
+	if updated_id != previous_id:
 		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(previous_id, updated_id)
 	print("FEAGI REQUEST: PUT succeeded for %s, re-fetching from FEAGI to sync cache" % updated_id)
 	await get_cortical_area(updated_id)

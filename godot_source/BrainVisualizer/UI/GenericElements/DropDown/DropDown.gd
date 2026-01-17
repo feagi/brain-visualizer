@@ -21,6 +21,8 @@ var _default_width: float
 
 func _ready():
 	options = initial_items
+	if not item_selected.is_connected(_user_selected_item):
+		item_selected.connect(_user_selected_item)
 	BV.UI.theme_changed.connect(_on_theme_change)
 	_on_theme_change()
 

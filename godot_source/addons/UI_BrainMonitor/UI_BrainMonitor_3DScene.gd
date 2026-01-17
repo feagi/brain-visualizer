@@ -1558,11 +1558,13 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)
 	for previously_moused_over_volume in _previously_moused_over_volumes:
 		if previously_moused_over_volume not in currently_moused_over_volumes:
-			previously_moused_over_volume.set_hover_over_volume_state(false)
+			if previously_moused_over_volume != null and is_instance_valid(previously_moused_over_volume):
+				previously_moused_over_volume.set_hover_over_volume_state(false)
 	for currently_moused_over_volume in currently_moused_over_volumes:
 		if currently_moused_over_volume not in _previously_moused_over_volumes:
-			currently_moused_over_volume.set_hover_over_volume_state(true)
-	_previously_moused_over_volumes = currently_moused_over_volumes
+			if currently_moused_over_volume != null and is_instance_valid(currently_moused_over_volume):
+				currently_moused_over_volume.set_hover_over_volume_state(true)
+	_previously_moused_over_volumes = currently_moused_over_volumes.filter(func(volume): return volume != null and is_instance_valid(volume))
 	
 	# highlight neurons that are moused over (and unhighlight what wasnt)
 	currently_mousing_over_neurons.merge(_previously_moused_over_cortical_area_neurons, false)

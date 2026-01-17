@@ -474,6 +474,14 @@ func _send_update(send_button: Button) -> void:
 				# Normal single area update
 				var cortical_id = _cortical_area_refs[0].cortical_ID
 				var update_data = _growing_cortical_update[send_button.name]
+				if send_button == _button_coding_send:
+					update_data = _finalize_neuron_coding_update(update_data, _cortical_area_refs[0])
+					if update_data.is_empty():
+						send_button.disabled = false
+						return
+					var new_id = update_data.get("new_cortical_id", "")
+					if new_id != "":
+						print("BV [NEURAL-CODING]: Requesting ID update %s -> %s" % [cortical_id, new_id])
 				print("UI: Attempting to update cortical area '%s' with data: %s" % [cortical_id, update_data])
 				
 				var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(cortical_id, update_data)
@@ -747,22 +755,10 @@ func _refresh_from_cache_neuron_coding() -> void:
 	if len(_cortical_area_refs) != 1:
 		return
 	var area = _cortical_area_refs[0]
-	print("BV [NEURAL-CODING]: Refresh for %s | type=%s | signage_opts=%d behavior_opts=%d type_opts=%d | signage='%s' behavior='%s' type='%s'" % [
-		area.cortical_ID,
-		AbstractCorticalArea.cortical_type_to_str(area.cortical_type),
-		area.coding_signage_options.size(),
-		area.coding_behavior_options.size(),
-		area.coding_type_options.size(),
-		area.coding_signage,
-		area.coding_behavior,
-		area.coding_type
-	])
 	if area.coding_signage_options.is_empty() or area.coding_behavior_options.is_empty() or area.coding_type_options.is_empty():
-		print("BV [NEURAL-CODING]: Hiding section for %s (missing options)" % area.cortical_ID)
 		_section_neuron_coding.visible = false
 		return
 	_section_neuron_coding.visible = true
-	print("BV [NEURAL-CODING]: Showing section for %s" % area.cortical_ID)
 	
 	if _dropdown_coding_signage != null:
 		_dropdown_coding_signage.options = area.coding_signage_options
@@ -800,31 +796,33 @@ func _build_neuron_coding_update() -> Dictionary:
 	var behavior = String(_dropdown_coding_behavior.selected_item)
 	var coding_type = String(_dropdown_coding_type.selected_item)
 	
+	return {
+		"coding_signage": signage,
+		"coding_behavior": behavior,
+		"coding_type": coding_type
+	}
+
+func _finalize_neuron_coding_update(update_data: Dictionary, area: AbstractCorticalArea) -> Dictionary:
+	var signage = update_data.get("coding_signage", "")
+	var behavior = update_data.get("coding_behavior", "")
+	var coding_type = update_data.get("coding_type", "")
+	if signage == "" or behavior == "" or coding_type == "":
+		return {}
 	var resolver: Object = null
 	if ClassDB.class_exists("FeagiDataDeserializer"):
 		resolver = ClassDB.instantiate("FeagiDataDeserializer")
-	
 	if resolver == null or not resolver.has_method("compute_io_cortical_id"):
 		push_error("AdvancedCorticalProperties: FeagiDataDeserializer not available for cortical ID computation")
 		return {}
-	
 	var result: Dictionary = resolver.call("compute_io_cortical_id", area.cortical_ID, signage, behavior, coding_type)
 	if !result.get("success", false):
 		push_error("AdvancedCorticalProperties: Failed to compute cortical ID: %s" % result.get("error", "unknown"))
 		return {}
-	
 	var new_id = result.get("cortical_id", "")
 	if new_id == "":
 		return {}
-	if new_id == String(area.cortical_ID):
-		return {}
-	
-	return {
-		"coding_signage": signage,
-		"coding_behavior": behavior,
-		"coding_type": coding_type,
-		"new_cortical_id": new_id
-	}
+	update_data["new_cortical_id"] = new_id
+	return update_data
 
 #endregion
 #region Summary
@@ -833,6 +831,8 @@ func _build_neuron_coding_update() -> Dictionary:
 @export var _line_cortical_name: TextInput
 @export var _region_button: Button
 @export var _line_cortical_ID: TextInput
+@export var _line_unit_id: TextInput
+@export var _line_subunit_id: TextInput
 @export var _line_cortical_type: TextInput
 @export var _device_count_section: HBoxContainer
 @export var _device_count: IntSpinBox
@@ -847,9 +847,6 @@ func _build_neuron_coding_update() -> Dictionary:
 
 # IPU/OPU-specific decoded ID fields (created programmatically)
 var _ipu_opu_info_container: VBoxContainer = null
-var _label_cortical_subtype: Label = null
-var _label_unit_id: Label = null
-var _label_group_id: Label = null
 
 func _init_summary() -> void:
 	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE =  AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs)
@@ -863,8 +860,13 @@ func _init_summary() -> void:
 	
 	# Detect and setup isvi segment management
 	_detect_and_setup_isvi_segment()
-	
-	_connect_control_to_update_button(_line_voxel_neuron_density, "cortical_neuron_per_vox_count", _button_summary_send)
+	var is_all_io = _are_all_io_areas()
+	if _line_voxel_neuron_density != null:
+		var voxel_row = _line_voxel_neuron_density.get_parent()
+		if voxel_row != null:
+			voxel_row.visible = not is_all_io
+	if not is_all_io:
+		_connect_control_to_update_button(_line_voxel_neuron_density, "cortical_neuron_per_vox_count", _button_summary_send)
 	_connect_control_to_update_button(_line_synaptic_attractivity, "cortical_synaptic_attractivity", _button_summary_send)
 	
 	# TODO renable region button, but check to make sure all types can be moved
@@ -875,6 +877,10 @@ func _init_summary() -> void:
 		_line_cortical_name.editable = false
 		_region_button.text = "Multiple Selected"
 		_line_cortical_ID.text = "Multiple Selected"
+		if _line_unit_id != null:
+			_line_unit_id.text = "Multiple Selected"
+		if _line_subunit_id != null:
+			_line_subunit_id.text = "Multiple Selected"
 		_vector_position.editable = false # TODO show multiple values
 		if _vector_visualization_voxel_granularity != null:
 			_vector_visualization_voxel_granularity.editable = false # TODO show multiple values
@@ -916,6 +922,8 @@ func _init_ipu_opu_decoded_info() -> void:
 	var area = _cortical_area_refs[0]
 	if area.cortical_type not in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 		return
+	# No decoded fields are shown in summary (subtype/unit removed)
+	return
 	
 	# Find the parent container to insert our new section (after cortical type row)
 	var cortical_type_row = _line_cortical_type.get_parent()
@@ -947,13 +955,15 @@ func _init_ipu_opu_decoded_info() -> void:
 		return value_label
 	
 	# Create all label rows (avoid duplicating coding info shown in Neuron Coding)
-	_label_cortical_subtype = create_label_row.call("Subtype:")
-	_label_unit_id = create_label_row.call("Unit ID:", true)
-	_label_group_id = create_label_row.call("Group ID:", true)
 
 func _refresh_from_cache_summary() -> void:
-	
-	_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
+	var is_all_io = _are_all_io_areas()
+	if _line_voxel_neuron_density != null:
+		var voxel_row = _line_voxel_neuron_density.get_parent()
+		if voxel_row != null:
+			voxel_row.visible = not is_all_io
+	if not is_all_io:
+		_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
 	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
 	
 	# Debug: Check cortical_subtype value after refresh
@@ -967,12 +977,26 @@ func _refresh_from_cache_summary() -> void:
 		_line_cortical_name.text = "Multiple Selected"
 		_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
 		_update_control_with_value_from_areas(_vector_visualization_voxel_granularity, "", "visualization_voxel_granularity")
+		if _line_unit_id != null:
+			_line_unit_id.text = "Multiple Selected"
+		if _line_subunit_id != null:
+			_line_subunit_id.text = "Multiple Selected"
 		#TODO connect size vector
 	else:
 		# single
 		_line_cortical_name.text = _cortical_area_refs[0].friendly_name
 		_region_button.text = _cortical_area_refs[0].current_parent_region.friendly_name
 		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
+		if _line_unit_id != null:
+			if is_all_io:
+				_line_unit_id.text = str(_cortical_area_refs[0].group_id)
+			else:
+				_line_unit_id.text = "-"
+		if _line_subunit_id != null:
+			if is_all_io:
+				_line_subunit_id.text = str(_cortical_area_refs[0].unit_id)
+			else:
+				_line_subunit_id.text = "-"
 		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
 		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
 		# Set visualization_voxel_granularity directly like position and dimensions
@@ -1000,24 +1024,11 @@ func _user_edit_region(selected_objects: Array[GenomeObject]) -> void:
 
 func _refresh_ipu_opu_decoded_info() -> void:
 	# Only update if we have the UI elements and a single area
-	if _label_cortical_subtype == null or len(_cortical_area_refs) != 1:
+	if _ipu_opu_info_container == null or len(_cortical_area_refs) != 1:
 		return
 	
-	var area = _cortical_area_refs[0]
-	
-	# Check if decoded info is available
-	if area.has_decoded_id_info:
-		_label_cortical_subtype.text = area.cortical_subtype
-		_label_unit_id.text = str(area.unit_id)
-		_label_group_id.text = str(area.group_id)
-		
-		# Make container visible
-		if _ipu_opu_info_container:
-			_ipu_opu_info_container.visible = true
-	else:
-		# Hide if no decoded info available yet
-		if _ipu_opu_info_container:
-			_ipu_opu_info_container.visible = false
+	# No decoded fields are shown in summary (subtype/unit removed)
+	_ipu_opu_info_container.visible = false
 
 
 func _enable_3D_preview(): #NOTE only currently works with single
