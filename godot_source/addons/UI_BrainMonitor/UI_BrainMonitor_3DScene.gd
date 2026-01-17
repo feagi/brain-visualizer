@@ -2354,8 +2354,15 @@ func _is_area_input_output_of_child_region(area: AbstractCorticalArea) -> bool:
 
 ## Cache reload event handler - refreshes all cortical area connections AND creates new brain regions
 func _on_cache_reloaded_refresh_all_connections() -> void:
+	print("BV CACHE: cache_reloaded received; refreshing 3D scene")
 	# CRITICAL: Check for new brain regions that need visualization after cloning
 	_create_missing_brain_region_visualizations()
+	# Rebuild cortical area visuals to guarantee sync with refreshed cache
+	for cortical_viz in _cortical_visualizations_by_ID.values():
+		if cortical_viz != null and is_instance_valid(cortical_viz):
+			cortical_viz.queue_free()
+	_cortical_visualizations_by_ID.clear()
+	_add_missing_cortical_area_visualizations()
 	
 	# Force refresh connections for all currently hovered cortical areas
 	for cortical_viz in _cortical_visualizations_by_ID.values():
@@ -2363,6 +2370,36 @@ func _on_cache_reloaded_refresh_all_connections() -> void:
 			if cortical_viz._is_volume_moused_over:
 				cortical_viz._hide_neural_connections()
 				cortical_viz._show_neural_connections()
+
+## Creates visualizations for any new cortical areas in this region after cache refresh
+func _add_missing_cortical_area_visualizations() -> void:
+	if not _representing_region:
+		return
+	
+	# Refresh representing region reference to the latest cache object
+	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.brain_regions:
+		var fresh_region = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(_representing_region.region_ID)
+		if fresh_region and fresh_region != _representing_region:
+			_representing_region = fresh_region
+	
+	# Add areas directly in this region
+	var added_any = false
+	for area in _representing_region.contained_cortical_areas:
+		if area.cortical_ID not in _cortical_visualizations_by_ID:
+			added_any = true
+		_add_cortical_area(area)
+	
+	# Add I/O areas from child regions that should appear in this region
+	for child_region in _representing_region.contained_regions:
+		for area in child_region.contained_cortical_areas:
+			if _is_area_input_output_of_specific_child_region(area, child_region):
+				if area.cortical_ID not in _cortical_visualizations_by_ID:
+					added_any = true
+				_add_cortical_area(area)
+	
+	if added_any:
+		call_deferred("_auto_frame_camera_to_objects")
+		call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 ## Creates visualizations for any new brain regions that don't have them yet (e.g., after cloning)
 func _create_missing_brain_region_visualizations() -> void:

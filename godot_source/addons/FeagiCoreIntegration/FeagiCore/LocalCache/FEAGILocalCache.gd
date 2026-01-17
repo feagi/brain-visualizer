@@ -823,6 +823,7 @@ func _check_hash_and_queue(hash_key: StringName, current_value: Variant, previou
 		return current_hash
 	
 	if current_hash != previous_value:
+		print("HASH CHANGE DETECTED: %s %d -> %d (refresh=%s)" % [hash_key, previous_value, current_hash, refresh_method])
 		_queue_hash_refresh(hash_key, current_hash, refresh_method)
 	
 	return previous_value
@@ -839,8 +840,19 @@ func _queue_hash_refresh(hash_key: StringName, new_hash: int, refresh_method: St
 
 ## Runs the refresh method and updates the hash when successful
 func _run_hash_refresh(hash_key: StringName, refresh_method: StringName) -> void:
-	var result: FeagiRequestOutput = await call(refresh_method)
-	if result.success:
+	var call_result = call(refresh_method)
+	if typeof(call_result) == TYPE_OBJECT and call_result.has_signal("completed"):
+		call_result.completed.connect(_on_hash_refresh_completed.bind(hash_key), CONNECT_ONE_SHOT)
+		return
+	_finalize_hash_refresh(hash_key, call_result)
+
+## Handles completion of async hash refresh calls
+func _on_hash_refresh_completed(result: Variant, hash_key: StringName) -> void:
+	_finalize_hash_refresh(hash_key, result)
+
+## Applies refresh results and updates tracked hash values
+func _finalize_hash_refresh(hash_key: StringName, result: Variant) -> void:
+	if result is FeagiRequestOutput and result.success:
 		_set_previous_hash_value(hash_key, int(_pending_hash_values.get(hash_key, 0)))
 	_hash_refresh_in_flight.erase(hash_key)
 
@@ -870,12 +882,15 @@ func _refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
 	brain_regions.FEAGI_clear_all_regions()
 	var area_mapping: Dictionary = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary)
 	brain_regions.FEAGI_load_all_partial_mapping_sets(regions_summary)
+	_connect_to_existing_brain_region_signals()
 	
 	var cortical_output: FeagiRequestOutput = await FeagiCore.requests.get_cortical_area_geometry()
 	if cortical_output.has_errored or not cortical_output.success:
 		return cortical_output
 	
 	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), area_mapping)
+	print("HASH REFRESH: cache_reloaded emitted for brain_regions_hash")
+	cache_reloaded.emit()
 	return cortical_output
 
 ## Refresh cortical areas and properties from FEAGI
@@ -885,6 +900,8 @@ func _refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
 		return cortical_output
 	
 	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), {})
+	print("HASH REFRESH: cache_reloaded emitted for cortical_areas_hash")
+	cache_reloaded.emit()
 	return cortical_output
 
 ## Refresh brain geometry (positions/dimensions) from FEAGI
@@ -898,6 +915,8 @@ func _refresh_morphologies_from_feagi() -> FeagiRequestOutput:
 		return morphologies_output
 	
 	morphologies.update_morphology_cache_from_summary(morphologies_output.decode_response_as_dict())
+	print("HASH REFRESH: cache_reloaded emitted for morphologies_hash")
+	cache_reloaded.emit()
 	return morphologies_output
 
 ## Refresh cortical mappings from FEAGI
@@ -908,6 +927,8 @@ func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
 	
 	mapping_data.FEAGI_delete_all_mappings()
 	mapping_data.FEAGI_load_all_mappings(mappings_output.decode_response_as_dict())
+	print("HASH REFRESH: cache_reloaded emitted for cortical_mappings_hash")
+	cache_reloaded.emit()
 	return mappings_output
 
 ## Update cortical areas cache using summary data without wiping the entire genome
