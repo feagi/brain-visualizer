@@ -831,6 +831,7 @@ func _finalize_neuron_coding_update(update_data: Dictionary, area: AbstractCorti
 @export var _line_cortical_name: TextInput
 @export var _region_button: Button
 @export var _line_cortical_ID: TextInput
+@export var _line_unit_code: TextInput
 @export var _line_unit_id: TextInput
 @export var _line_subunit_id: TextInput
 @export var _line_cortical_type: TextInput
@@ -965,6 +966,14 @@ func _refresh_from_cache_summary() -> void:
 	if not is_all_io:
 		_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
 	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
+	if _line_unit_id != null:
+		var unit_row = _line_unit_id.get_parent()
+		if unit_row != null:
+			unit_row.visible = is_all_io
+	if _line_subunit_id != null:
+		var subunit_row = _line_subunit_id.get_parent()
+		if subunit_row != null:
+			subunit_row.visible = is_all_io
 	
 	# Debug: Check cortical_subtype value after refresh
 	if len(_cortical_area_refs) == 1:
@@ -977,9 +986,11 @@ func _refresh_from_cache_summary() -> void:
 		_line_cortical_name.text = "Multiple Selected"
 		_update_control_with_value_from_areas(_vector_dimensions_nonspin, "", "dimensions_3D")
 		_update_control_with_value_from_areas(_vector_visualization_voxel_granularity, "", "visualization_voxel_granularity")
-		if _line_unit_id != null:
+		if _line_unit_code != null:
+			_line_unit_code.text = "Multiple Selected"
+		if is_all_io and _line_unit_id != null:
 			_line_unit_id.text = "Multiple Selected"
-		if _line_subunit_id != null:
+		if is_all_io and _line_subunit_id != null:
 			_line_subunit_id.text = "Multiple Selected"
 		#TODO connect size vector
 	else:
@@ -987,16 +998,17 @@ func _refresh_from_cache_summary() -> void:
 		_line_cortical_name.text = _cortical_area_refs[0].friendly_name
 		_region_button.text = _cortical_area_refs[0].current_parent_region.friendly_name
 		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
+		if _line_unit_code != null:
+			if is_all_io:
+				_line_unit_code.text = _cortical_area_refs[0].cortical_subtype
+			else:
+				_line_unit_code.text = "-"
 		if _line_unit_id != null:
 			if is_all_io:
 				_line_unit_id.text = str(_cortical_area_refs[0].group_id)
-			else:
-				_line_unit_id.text = "-"
 		if _line_subunit_id != null:
 			if is_all_io:
 				_line_subunit_id.text = str(_cortical_area_refs[0].unit_id)
-			else:
-				_line_subunit_id.text = "-"
 		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
 		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
 		# Set visualization_voxel_granularity directly like position and dimensions
