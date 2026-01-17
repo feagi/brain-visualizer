@@ -8,7 +8,7 @@ signal close_requested
 var _search_bar: LineEdit
 var _topic_container: VBoxContainer
 var _markdown_view: GuideMarkdownView
-var _split_container: HSplitContainer
+var _sidebar: VBoxContainer
 var _title_label: Label
 var _topics: Array[Dictionary] = []
 
@@ -17,25 +17,24 @@ func _ready() -> void:
 	_search_bar = $OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar/SearchBar
 	_topic_container = $OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar/TopicsScroll/TopicsList
 	_markdown_view = $OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody/ContentScroll/ContentMargin/GuideMarkdownView
-	_split_container = $OverlayPanel/PanelMargin/PanelContent/GuideContent
+	_sidebar = $OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar
 	_title_label = $OverlayPanel/PanelMargin/PanelContent/Header/TitleLabel
 	$OverlayPanel/PanelMargin/PanelContent/Header/CloseButton.pressed.connect(_on_close_pressed)
 	_search_bar.text_changed.connect(_on_search_changed)
 	_markdown_view.markdown_link_clicked.connect(_on_markdown_link_clicked)
 	visible = false
-	resized.connect(_on_resized)
-	if _split_container != null:
-		_split_container.resized.connect(_apply_split_ratio)
 	_refresh_topics()
-	call_deferred("_apply_split_ratio")
 	_apply_header_scaling()
+	# Set sidebar width dynamically after scene loads
+	call_deferred("_update_sidebar_width")
+	resized.connect(_update_sidebar_width)
 
 ## Show the guide overlay and focus the search bar.
 func show_overlay() -> void:
 	visible = true
 	_search_bar.grab_focus()
-	call_deferred("_apply_split_ratio")
 	_apply_header_scaling()
+	call_deferred("_update_sidebar_width")
 
 ## Hide the guide overlay.
 func hide_overlay() -> void:
@@ -70,20 +69,23 @@ func _refresh_topics() -> void:
 		return
 	_open_markdown(_topics[0]["path"])
 
-## Resize the split panel to enforce 25/75 split.
-func _on_resized() -> void:
-	call_deferred("_apply_split_ratio")
-
-## Enforce left panel at exactly 25% of total width.
-func _apply_split_ratio() -> void:
-	if _split_container == null:
+## Update sidebar width to be exactly 25% of the overlay width.
+func _update_sidebar_width() -> void:
+	if _sidebar == null:
 		return
 	await get_tree().process_frame
-	if _split_container.size.x <= 10.0:
+	# Get the overlay panel width (the parent container)
+	var overlay_panel: PanelContainer = $OverlayPanel
+	if overlay_panel == null:
 		return
-	var target_offset := int(_split_container.size.x * 0.25)
-	_split_container.split_offset = target_offset
-	print("GuideOverlay: Applied split offset %d for width %d (25%%)" % [target_offset, _split_container.size.x])
+	var total_width: float = overlay_panel.size.x
+	if total_width <= 10.0:
+		return
+	
+	# Set sidebar to exactly 25% of total width (minus margins)
+	var sidebar_width := int(total_width * 0.25)
+	_sidebar.custom_minimum_size.x = sidebar_width
+	print("GuideOverlay: Setting fixed sidebar width to %d pixels (25%% of %d)" % [sidebar_width, int(total_width)])
 
 ## Scale header text to match UI size.
 func _apply_header_scaling() -> void:

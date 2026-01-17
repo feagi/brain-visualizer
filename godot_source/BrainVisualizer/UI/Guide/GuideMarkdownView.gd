@@ -13,7 +13,8 @@ func _ready() -> void:
 	fit_content = true
 	autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	meta_clicked.connect(_on_meta_clicked)
-	_base_font_size = _resolve_theme_font_size()
+	# Cache the base font size once at initialization to prevent compounding
+	_base_font_size = _resolve_initial_font_size()
 	add_theme_color_override("default_color", Color(0.92, 0.94, 0.98))
 	print("GuideMarkdownView: Initialized with base font size %d" % _base_font_size)
 
@@ -21,9 +22,9 @@ func _ready() -> void:
 func load_markdown(markdown_path: String) -> void:
 	print("GuideMarkdownView: Loading markdown from: %s" % markdown_path)
 	_current_markdown_path = markdown_path
-	_base_font_size = _resolve_theme_font_size()
+	# Use cached base font size, don't recalculate
 	add_theme_font_size_override("normal_font_size", _base_font_size)
-	print("GuideMarkdownView: Using font size: %d" % _base_font_size)
+	print("GuideMarkdownView: Using cached font size: %d" % _base_font_size)
 	
 	var file := FileAccess.open(markdown_path, FileAccess.READ)
 	if file == null:
@@ -48,7 +49,7 @@ func load_markdown(markdown_path: String) -> void:
 ## Display a short message when no guide content is available.
 func show_message(message: String) -> void:
 	_current_markdown_path = ""
-	_base_font_size = _resolve_theme_font_size()
+	# Use cached base font size
 	text = "[i]%s[/i]" % message
 	custom_minimum_size = Vector2(0.0, float(get_content_height()))
 
@@ -121,13 +122,14 @@ func _replace_bullets(line: String) -> String:
 		return "- " + trimmed.substr(2)
 	return line
 
-## Resolve the theme font size so markdown scales with UI theme.
-func _resolve_theme_font_size() -> int:
+## Resolve the initial theme font size once at startup.
+## This is only called in _ready() to cache the base font size.
+func _resolve_initial_font_size() -> int:
+	# Get the base theme size from the theme (not from any override)
 	var size := get_theme_font_size("normal_font_size", "RichTextLabel")
 	if size > 0:
 		return int(size * 1.35)
-	if has_theme_font_size_override("normal_font_size"):
-		return int(get_theme_font_size("normal_font_size") * 1.35)
+	# Fallback to default if no theme size found
 	return 24
 
 ## Convert markdown image syntax to BBCode image tags.

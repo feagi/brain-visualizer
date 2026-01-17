@@ -67,15 +67,16 @@ text = "User Guide"
 layout_mode = 2
 text = "Close"
 
-[node name="GuideContent" type="HSplitContainer" parent="OverlayPanel/PanelMargin/PanelContent"]
+[node name="GuideContent" type="HBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent"]
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 0
 theme_override_constants/separation = 18
 
 [node name="GuideSidebar" type="VBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent"]
+custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 0
+size_flags_stretch_ratio = 0.0
 theme_override_constants/separation = 12
 
 [node name="SearchBar" type="LineEdit" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar"]
@@ -94,6 +95,7 @@ theme_override_constants/separation = 6
 [node name="GuideBody" type="PanelContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
 
 [node name="ContentScroll" type="ScrollContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody"]
 layout_mode = 2
