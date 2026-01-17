@@ -5,6 +5,7 @@ signal markdown_link_clicked(target_path: String)
 
 var _current_markdown_path: String = ""
 var _base_font_size: int = 0
+var _font_scale: float = 1.0  # User-adjustable scale multiplier
 
 ## Configure the label defaults for guide rendering.
 func _ready() -> void:
@@ -24,9 +25,10 @@ func _ready() -> void:
 func load_markdown(markdown_path: String) -> void:
 	print("GuideMarkdownView: Loading markdown from: %s" % markdown_path)
 	_current_markdown_path = markdown_path
-	# Use cached base font size, don't recalculate
-	add_theme_font_size_override("normal_font_size", _base_font_size)
-	print("GuideMarkdownView: Using cached font size: %d" % _base_font_size)
+	# Apply cached base font size with user scale multiplier
+	var scaled_font_size := int(_base_font_size * _font_scale)
+	add_theme_font_size_override("normal_font_size", scaled_font_size)
+	print("GuideMarkdownView: Using font size: %d (base: %d, scale: %.1fx)" % [scaled_font_size, _base_font_size, _font_scale])
 	
 	var file := FileAccess.open(markdown_path, FileAccess.READ)
 	if file == null:
@@ -45,13 +47,22 @@ func load_markdown(markdown_path: String) -> void:
 	
 	text = bbcode
 	await get_tree().process_frame
-	custom_minimum_size = Vector2(600.0, float(get_content_height()))
+	custom_minimum_size = Vector2(0.0, float(get_content_height()))
 	print("GuideMarkdownView: Set content height to %d" % get_content_height())
+
+## Set the user-adjustable font scale multiplier and reload current content.
+func set_font_scale(scale: float) -> void:
+	_font_scale = scale
+	# Reload current markdown with new scale
+	if _current_markdown_path != "":
+		load_markdown(_current_markdown_path)
 
 ## Display a short message when no guide content is available.
 func show_message(message: String) -> void:
 	_current_markdown_path = ""
-	# Use cached base font size
+	# Use cached base font size with scale
+	var scaled_font_size := int(_base_font_size * _font_scale)
+	add_theme_font_size_override("normal_font_size", scaled_font_size)
 	text = "[i]%s[/i]" % message
 	custom_minimum_size = Vector2(0.0, float(get_content_height()))
 
@@ -125,7 +136,7 @@ func _count_heading_level(line: String) -> int:
 
 ## Format a markdown heading into BBCode with size scaling.
 func _format_heading(title: String, level: int) -> String:
-	var base_size := _base_font_size
+	var base_size := int(_base_font_size * _font_scale)
 	if base_size <= 0:
 		base_size = 20
 	

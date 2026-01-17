@@ -11,26 +11,39 @@ var _search_bar: LineEdit
 var _topic_container: VBoxContainer
 var _markdown_view: GuideMarkdownView
 var _sidebar: VBoxContainer
+var _font_size_decrease_btn: Button
+var _font_size_increase_btn: Button
 var _topics: Array[Dictionary] = []
+var _font_size_scale: float = 1.0  # User-adjustable font scale multiplier
 
 # Window resizing
-var _resize_handle: Panel
+var _resize_handle_corner: Panel
+var _resize_handle_right: Panel
 var _resizing: bool = false
 var _resize_start_mouse: Vector2 = Vector2.ZERO
 var _resize_start_size: Vector2 = Vector2.ZERO
 var _resize_margin: int = 16
+var _resize_mode: String = ""  # "corner" or "right"
 
 ## Initialize and setup the guide window.
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
 	
-	_search_bar = $WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar/SearchBar
+	# Toolbar references
+	_search_bar = $WindowPanel/WindowMargin/WindowInternals/GuideToolbar/SearchBar
+	_font_size_decrease_btn = $WindowPanel/WindowMargin/WindowInternals/GuideToolbar/FontSizeDecrease
+	_font_size_increase_btn = $WindowPanel/WindowMargin/WindowInternals/GuideToolbar/FontSizeIncrease
+	
+	# Content references
 	_topic_container = $WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar/TopicsScroll/TopicsList
 	_markdown_view = $WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody/ContentScroll/ContentMargin/GuideMarkdownView
 	_sidebar = $WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar
 	
+	# Wire signals
 	_search_bar.text_changed.connect(_on_search_changed)
 	_markdown_view.markdown_link_clicked.connect(_on_markdown_link_clicked)
+	_font_size_decrease_btn.pressed.connect(_on_decrease_font_size)
+	_font_size_increase_btn.pressed.connect(_on_increase_font_size)
 	
 	_setup_resize_handle()
 	
@@ -38,42 +51,61 @@ func setup() -> void:
 	call_deferred("_update_sidebar_width")
 	resized.connect(_update_sidebar_width)
 
-## Create resize handle in bottom-right corner.
+## Create resize handles (bottom-right corner and right edge).
 func _setup_resize_handle() -> void:
-	_resize_handle = Panel.new()
-	_resize_handle.name = "ResizeHandle"
-	_resize_handle.custom_minimum_size = Vector2(_resize_margin, _resize_margin)
-	_resize_handle.mouse_filter = Control.MOUSE_FILTER_PASS
-	_resize_handle.mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE
-	_resize_handle.gui_input.connect(_on_resize_handle_gui_input)
+	# Bottom-right corner handle
+	_resize_handle_corner = Panel.new()
+	_resize_handle_corner.name = "ResizeHandleCorner"
+	_resize_handle_corner.custom_minimum_size = Vector2(_resize_margin, _resize_margin)
+	_resize_handle_corner.mouse_filter = Control.MOUSE_FILTER_PASS
+	_resize_handle_corner.mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE
+	_resize_handle_corner.gui_input.connect(_on_resize_corner_gui_input)
 	
-	# Add visual grip indicator
-	var grip_icon := Control.new()
-	grip_icon.name = "GripIcon"
-	grip_icon.custom_minimum_size = Vector2(_resize_margin, _resize_margin)
-	grip_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	grip_icon.draw.connect(_draw_resize_grip.bind(grip_icon))
-	_resize_handle.add_child(grip_icon)
+	# Add visual grip indicator for corner
+	var grip_icon_corner := Control.new()
+	grip_icon_corner.name = "GripIconCorner"
+	grip_icon_corner.custom_minimum_size = Vector2(_resize_margin, _resize_margin)
+	grip_icon_corner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grip_icon_corner.draw.connect(_draw_resize_grip_corner.bind(grip_icon_corner))
+	_resize_handle_corner.add_child(grip_icon_corner)
 	
-	add_child(_resize_handle)
-	_resize_handle.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_resize_handle.offset_left = -_resize_margin
-	_resize_handle.offset_top = -_resize_margin
-	_resize_handle.z_index = 1000
+	add_child(_resize_handle_corner)
+	_resize_handle_corner.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_resize_handle_corner.offset_left = -_resize_margin
+	_resize_handle_corner.offset_top = -_resize_margin
+	_resize_handle_corner.z_index = 1000
+	
+	# Right edge handle
+	_resize_handle_right = Panel.new()
+	_resize_handle_right.name = "ResizeHandleRight"
+	_resize_handle_right.custom_minimum_size = Vector2(_resize_margin, 0)
+	_resize_handle_right.mouse_filter = Control.MOUSE_FILTER_PASS
+	_resize_handle_right.mouse_default_cursor_shape = Control.CURSOR_HSIZE
+	_resize_handle_right.gui_input.connect(_on_resize_right_gui_input)
+	
+	add_child(_resize_handle_right)
+	_resize_handle_right.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+	_resize_handle_right.offset_left = -_resize_margin
+	_resize_handle_right.offset_right = 0
+	_resize_handle_right.offset_top = 0
+	_resize_handle_right.offset_bottom = -_resize_margin  # Stop before corner handle
+	_resize_handle_right.z_index = 999
 
-## Handle resize dragging.
-func _on_resize_handle_gui_input(event: InputEvent) -> void:
+## Handle corner resize dragging (both width and height).
+func _on_resize_corner_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
 				_resizing = true
+				_resize_mode = "corner"
 				_resize_start_mouse = get_global_mouse_position()
 				_resize_start_size = size
 			else:
 				_resizing = false
+				_resize_mode = ""
 	
-	elif event is InputEventMouseMotion and _resizing:
+	elif event is InputEventMouseMotion and _resizing and _resize_mode == "corner":
 		var delta := get_global_mouse_position() - _resize_start_mouse
 		var new_size := _resize_start_size + delta
 		
@@ -84,8 +116,33 @@ func _on_resize_handle_gui_input(event: InputEvent) -> void:
 		size = new_size
 		custom_minimum_size = new_size
 
+## Handle right edge resize dragging (width only).
+func _on_resize_right_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			if mb.pressed:
+				_resizing = true
+				_resize_mode = "right"
+				_resize_start_mouse = get_global_mouse_position()
+				_resize_start_size = size
+			else:
+				_resizing = false
+				_resize_mode = ""
+	
+	elif event is InputEventMouseMotion and _resizing and _resize_mode == "right":
+		var delta := get_global_mouse_position() - _resize_start_mouse
+		var new_size := _resize_start_size
+		new_size.x += delta.x  # Only change width
+		
+		# Enforce minimum width
+		new_size.x = max(new_size.x, MIN_WINDOW_WIDTH)
+		
+		size = new_size
+		custom_minimum_size = new_size
+
 ## Draw resize grip indicator in bottom-right corner.
-func _draw_resize_grip(control: Control) -> void:
+func _draw_resize_grip_corner(control: Control) -> void:
 	var grip_color := Color(0.6, 0.6, 0.6, 0.9)
 	var square_size := 8
 	
@@ -211,3 +268,17 @@ func _extract_title(markdown_path: String) -> String:
 func _is_markdown_path(path: String) -> bool:
 	var extension := path.get_extension().to_lower()
 	return extension == "md" or extension == "markdown"
+
+## Increase the font size scale for markdown content.
+func _on_increase_font_size() -> void:
+	_font_size_scale += 0.1
+	_font_size_scale = min(_font_size_scale, 2.0)  # Max 2x scale
+	_markdown_view.set_font_scale(_font_size_scale)
+	print("WindowGuide: Font size increased to %.1fx" % _font_size_scale)
+
+## Decrease the font size scale for markdown content.
+func _on_decrease_font_size() -> void:
+	_font_size_scale -= 0.1
+	_font_size_scale = max(_font_size_scale, 0.5)  # Min 0.5x scale
+	_markdown_view.set_font_scale(_font_size_scale)
+	print("WindowGuide: Font size decreased to %.1fx" % _font_size_scale)

@@ -30,6 +30,30 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 layout_mode = 2
 theme_override_constants/separation = 12
 
+[node name="GuideToolbar" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SearchBar" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search guides..."
+
+[node name="FontSizeLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+layout_mode = 2
+text = "Text Size:"
+vertical_alignment = 1
+
+[node name="FontSizeDecrease" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+layout_mode = 2
+text = "-"
+tooltip_text = "Decrease text size"
+
+[node name="FontSizeIncrease" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+layout_mode = 2
+text = "+"
+tooltip_text = "Increase text size"
+
 [node name="GuideContent" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -40,10 +64,6 @@ custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_constants/separation = 12
-
-[node name="SearchBar" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar"]
-layout_mode = 2
-placeholder_text = "Search guides..."
 
 [node name="TopicsScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar"]
 layout_mode = 2
@@ -61,16 +81,19 @@ size_flags_stretch_ratio = 1.0
 
 [node name="ContentScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody/ContentScroll"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
 [node name="GuideMarkdownView" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody/ContentScroll/ContentMargin"]
-custom_minimum_size = Vector2(600, 400)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
