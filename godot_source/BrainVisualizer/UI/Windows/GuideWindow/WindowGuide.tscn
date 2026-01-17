@@ -1,0 +1,80 @@
+[gd_scene load_steps=4 format=3 uid="uid://guide_window_scene"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.gd" id="1_guide"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Guide/GuideMarkdownView.gd" id="3_markdown"]
+
+[node name="WindowGuide" type="VBoxContainer"]
+custom_minimum_size = Vector2(1000, 600)
+offset_right = 1000.0
+offset_bottom = 600.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_guide")
+window_spawn_location = Vector2i(140, 100)
+
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+layout_mode = 2
+title = "User Guide"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="GuideContent" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="GuideSidebar" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 12
+
+[node name="SearchBar" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar"]
+layout_mode = 2
+placeholder_text = "Search guides..."
+
+[node name="TopicsScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TopicsList" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar/TopicsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="GuideBody" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+
+[node name="ContentScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody"]
+layout_mode = 2
+
+[node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody/ContentScroll"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="GuideMarkdownView" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody/ContentScroll/ContentMargin"]
+custom_minimum_size = Vector2(600, 400)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+script = ExtResource("3_markdown")
