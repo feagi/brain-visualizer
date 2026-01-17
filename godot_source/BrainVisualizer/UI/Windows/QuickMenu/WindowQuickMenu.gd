@@ -29,6 +29,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 	_btn_relocate_2d = _window_internals.get_node_or_null("HBoxContainer/Relocate2D") as TextureButton
 	_btn_move_3d = _window_internals.get_node_or_null("HBoxContainer/Move3D") as TextureButton
 	_btn_resize_3d = _window_internals.get_node_or_null("HBoxContainer/Resize3D") as TextureButton
+	var reset_button: TextureButton = _window_internals.get_node('HBoxContainer/Reset')
 	var delete_button: TextureButton = _window_internals.get_node('HBoxContainer/Delete')
 	
 	quick_connect_CA_N_button.pressed.connect(_button_quick_connect_neuron.bind(WindowQuickConnectNeuron.MODE.CORTICAL_AREA_TO_NEURONS))
@@ -48,6 +49,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
+			reset_button.visible = true
 			var is_circuit_builder_context := _selection_context in [
 				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK,
 				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_DRAG
@@ -61,6 +63,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			quick_connect_button.tooltip_text = "Connect Cortical Area Towards..."
 			move_to_region_button.tooltip_text = "Add to a region..."
 			clone_button.tooltip_text = "Clone Cortical Area..."
+			reset_button.tooltip_text = "Reset this Cortical Area..."
 			delete_button.tooltip_text = "Delete this Cortical Area..."
 			
 			# 🚨 SAFETY CHECK: This should never happen due to earlier check, but be defensive
@@ -101,6 +104,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				
 			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
+			reset_button.visible = false
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = false
 			if _btn_move_3d != null:
@@ -125,6 +129,9 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			_titlebar.title = region.friendly_name
 
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			reset_button.visible = true
+			reset_button.disabled = false
+			reset_button.tooltip_text = "Reset selected cortical areas..."
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = true
 				_btn_relocate_2d.disabled = false
@@ -153,6 +160,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
+			reset_button.visible = false
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = true
 				_btn_relocate_2d.disabled = false
@@ -173,6 +181,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			_titlebar.title = "Selected multiple regions"
 
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
+			reset_button.visible = false
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = true
 				_btn_relocate_2d.disabled = false
@@ -262,6 +271,21 @@ func _button_add_to_region() -> void:
 
 func _button_delete() -> void:
 	BV.WM.spawn_confirm_deletion(_selection)
+	close_window()
+
+## Resets selected cortical areas to their default values.
+func _button_reset() -> void:
+	if FeagiCore == null or FeagiCore.requests == null:
+		BV.NOTIF.add_notification("Reset unavailable: FEAGI is not ready")
+		close_window()
+		return
+	var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+	if areas.is_empty():
+		BV.NOTIF.add_notification("No cortical areas selected to reset")
+		close_window()
+		return
+	FeagiCore.requests.mass_reset_cortical_areas(areas)
+	BV.NOTIF.add_notification("Resetting cortical areas...")
 	close_window()
 
 func _button_open_3d_tab() -> void:

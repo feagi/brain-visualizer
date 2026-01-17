@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://bj1avx68qlh3o"]
+[gd_scene load_steps=37 format=3 uid="uid://bj1avx68qlh3o"]
 
 [ext_resource type="Script" uid="uid://btgwngla7l4ph" path="res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.gd" id="1_mwcmr"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_c4mg3"]
@@ -26,6 +26,10 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="23_4pkn4"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="24_m25xf"]
 [ext_resource type="Script" uid="uid://b2m6s0g2q0a0r" path="res://BrainVisualizer/UI/GenericElements/DropDown/DropDown.gd" id="25_4f9l1"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Reset_S.jpg" id="26_2s1u0"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Reset_C.jpg" id="27_gj4k3"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Reset_H.jpg" id="28_vfe4b"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Reset_D.jpg" id="29_6e3b5"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4txug"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
@@ -1165,25 +1169,6 @@ editable = false
 tooltip_text = "Subunit ID = sub-area index within a unit (e.g., segmented vision tiles)."
 script = ExtResource("8_2af2m")
 
-[node name="Delete" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone"]
-layout_mode = 2
-
-[node name="DeleteText" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "DELETE Cortical Area"
-
-[node name="DeleteButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete"]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 2
-theme_type_variation = &"TextureButton_icon"
-texture_normal = ExtResource("21_rudp3")
-texture_pressed = ExtResource("22_gf55e")
-texture_hover = ExtResource("23_4pkn4")
-texture_disabled = ExtResource("24_m25xf")
-ignore_texture_size = true
-stretch_mode = 0
-
 [node name="Reset" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone"]
 layout_mode = 2
 
@@ -1193,6 +1178,25 @@ size_flags_horizontal = 3
 text = "Reset Cortical Area"
 
 [node name="ResetButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Reset"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("26_2s1u0")
+texture_pressed = ExtResource("27_gj4k3")
+texture_hover = ExtResource("28_vfe4b")
+texture_disabled = ExtResource("29_6e3b5")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Delete" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone"]
+layout_mode = 2
+
+[node name="DeleteText" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "DELETE Cortical Area"
+
+[node name="DeleteButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 theme_type_variation = &"TextureButton_icon"
