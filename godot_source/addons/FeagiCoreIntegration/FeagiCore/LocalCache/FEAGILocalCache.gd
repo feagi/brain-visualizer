@@ -679,6 +679,19 @@ func _set_IPU_OPU_to_capability_key_mappings(IPU_mappings: Dictionary, OPU_mappi
 		var OPU_cortical_IDs: Array = OPU_mappings[OPU_ID]
 		for OPU_cortical_ID in OPU_cortical_IDs:
 			_OPU_cortical_ID_to_capability_key[OPU_cortical_ID] = OPU_ID
+
+## Remap a cortical ID across cache structures (used when FEAGI changes cortical ID).
+func FEAGI_remap_cortical_id(old_id: StringName, new_id: StringName) -> void:
+	if old_id == new_id:
+		return
+	cortical_areas.FEAGI_update_cortical_area_id(old_id, new_id)
+	mapping_data.FEAGI_remap_cortical_id(old_id, new_id)
+	if _IPU_cortical_ID_to_capability_key.has(old_id):
+		_IPU_cortical_ID_to_capability_key[new_id] = _IPU_cortical_ID_to_capability_key[old_id]
+		_IPU_cortical_ID_to_capability_key.erase(old_id)
+	if _OPU_cortical_ID_to_capability_key.has(old_id):
+		_OPU_cortical_ID_to_capability_key[new_id] = _OPU_cortical_ID_to_capability_key[old_id]
+		_OPU_cortical_ID_to_capability_key.erase(old_id)
 	
 
 #endregion

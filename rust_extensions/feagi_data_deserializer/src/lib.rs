@@ -4,9 +4,12 @@ use godot::classes::MultiMesh;
 use feagi_serialization::FeagiSerializable;
 use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 use feagi_structures::genomic::cortical_area::CorticalID;
+use feagi_structures::genomic::cortical_area::descriptors::{
+    CorticalSubUnitIndex, CorticalUnitIndex,
+};
 use feagi_structures::genomic::cortical_area::IOCorticalAreaConfigurationFlag;
 use feagi_structures::genomic::cortical_area::io_cortical_area_configuration_flag::{
-    IOCorticalAreaConfigurationFlagBitmask, PercentageNeuronPositioning,
+    FrameChangeHandling, IOCorticalAreaConfigurationFlagBitmask, PercentageNeuronPositioning,
 };
 
 // Rayon is only available on native platforms (not WASM)
@@ -986,6 +989,214 @@ impl FeagiDataDeserializer {
         result.set("fdp_version", FDP_VERSION);
         result.set("error", "");
         
+        result
+    }
+
+    /// Compute a new IO cortical ID using FDP's canonical encoding rules.
+    ///
+    /// This preserves unit identifiers and updates the encoding configuration
+    /// based on the selected signage/behavior/type options.
+    ///
+    /// Returns: Dictionary {success: bool, cortical_id: String, error: String}
+    #[func]
+    pub fn compute_io_cortical_id(
+        &self,
+        cortical_id: GString,
+        coding_signage: GString,
+        coding_behavior: GString,
+        coding_type: GString,
+    ) -> Dictionary {
+        let mut result = Dictionary::new();
+        let id_str = cortical_id.to_string();
+
+        let cortical_id_obj = match CorticalID::try_from_base_64(&id_str) {
+            Ok(id) => id,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("Invalid cortical ID: {}", e));
+                result.set("cortical_id", "");
+                return result;
+            }
+        };
+
+        let bytes = cortical_id_obj.as_bytes();
+        let is_input = bytes[0] == b'i';
+        let is_output = bytes[0] == b'o';
+        if !is_input && !is_output {
+            result.set("success", false);
+            result.set("error", "Not an IPU/OPU cortical ID");
+            result.set("cortical_id", "");
+            return result;
+        }
+
+        let current_flag = match cortical_id_obj.extract_io_data_flag() {
+            Ok(flag) => flag,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("Unable to decode IO configuration: {}", e));
+                result.set("cortical_id", "");
+                return result;
+            }
+        };
+
+        let signage_raw = coding_signage.to_string().to_lowercase();
+        let behavior_raw = coding_behavior.to_string().to_lowercase();
+        let coding_type_raw = coding_type.to_string().to_lowercase();
+
+        let parse_frame = |raw: &str| -> Option<FrameChangeHandling> {
+            match raw.trim() {
+                "absolute" => Some(FrameChangeHandling::Absolute),
+                "incremental" => Some(FrameChangeHandling::Incremental),
+                _ => None,
+            }
+        };
+        let parse_positioning = |raw: &str| -> Option<PercentageNeuronPositioning> {
+            match raw.trim() {
+                "linear" => Some(PercentageNeuronPositioning::Linear),
+                "fractional" => Some(PercentageNeuronPositioning::Fractional),
+                _ => None,
+            }
+        };
+        let parse_signage = |raw: &str| -> Option<bool> {
+            if raw.contains("unsigned") {
+                Some(false)
+            } else if raw.contains("signed") {
+                Some(true)
+            } else {
+                None
+            }
+        };
+
+        let frame_override = parse_frame(&behavior_raw);
+        let positioning_override = parse_positioning(&coding_type_raw);
+        let signage_override = parse_signage(&signage_raw);
+
+        let new_flag = match current_flag {
+            IOCorticalAreaConfigurationFlag::Percentage(frame, positioning) => {
+                let signed = signage_override.unwrap_or(false);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::Percentage2D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(false);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage2D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage2D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::Percentage3D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(false);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage3D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage3D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::Percentage4D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(false);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage4D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage4D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::SignedPercentage(frame, positioning) => {
+                let signed = signage_override.unwrap_or(true);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::SignedPercentage2D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(true);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage2D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage2D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::SignedPercentage3D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(true);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage3D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage3D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::SignedPercentage4D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(true);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage4D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage4D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::CartesianPlane(frame) => {
+                if signage_raw != "cartesian plane" && signage_raw != "not applicable" {
+                    result.set("success", false);
+                    result.set("error", "coding_signage not supported for Cartesian Plane");
+                    result.set("cortical_id", "");
+                    return result;
+                }
+                let next_frame = frame_override.unwrap_or(frame);
+                IOCorticalAreaConfigurationFlag::CartesianPlane(next_frame)
+            }
+            IOCorticalAreaConfigurationFlag::Misc(frame) => {
+                if signage_raw != "misc" && signage_raw != "not applicable" {
+                    result.set("success", false);
+                    result.set("error", "coding_signage not supported for Misc");
+                    result.set("cortical_id", "");
+                    return result;
+                }
+                let next_frame = frame_override.unwrap_or(frame);
+                IOCorticalAreaConfigurationFlag::Misc(next_frame)
+            }
+            IOCorticalAreaConfigurationFlag::Boolean => {
+                if signage_raw != "boolean" && signage_raw != "not applicable" {
+                    result.set("success", false);
+                    result.set("error", "coding_signage not supported for Boolean");
+                    result.set("cortical_id", "");
+                    return result;
+                }
+                IOCorticalAreaConfigurationFlag::Boolean
+            }
+        };
+
+        let unit_identifier = [bytes[1], bytes[2], bytes[3]];
+        let subunit_idx = bytes[6];
+        let unit_idx = bytes[7];
+
+        let new_id = new_flag.as_io_cortical_id(
+            is_input,
+            unit_identifier,
+            CorticalUnitIndex::from(unit_idx),
+            CorticalSubUnitIndex::from(subunit_idx),
+        );
+
+        result.set("success", true);
+        result.set("cortical_id", new_id.as_base_64());
+        result.set("error", "");
         result
     }
 }

@@ -71,6 +71,14 @@ var _input_chain_links: Array[ConnectionChainLink]
 var _output_chain_links: Array[ConnectionChainLink]
 var _UI_is_highlighted: bool = false
 
+#region FEAGI ID Updates
+
+## Update this object's genome ID from FEAGI (cache-managed).
+func FEAGI_update_genome_id(new_id: StringName) -> void:
+	_genome_ID = new_id
+
+#endregion
+
 #region Static Functions
 
 ## Check if 2 Genome Object have the same parent region

@@ -95,6 +95,20 @@ func FEAGI_delete_mappings(source: AbstractCorticalArea, destination: AbstractCo
 	_established_mappings[source.cortical_ID].erase(destination.cortical_ID)
 	if len(_established_mappings[source.cortical_ID]) == 0:
 		_established_mappings.erase(source.cortical_ID)
+
+## Remap a cortical ID across cached mapping keys.
+func FEAGI_remap_cortical_id(old_id: StringName, new_id: StringName) -> void:
+	if old_id == new_id:
+		return
+	if _established_mappings.has(old_id):
+		var existing = _established_mappings[old_id]
+		_established_mappings.erase(old_id)
+		_established_mappings[new_id] = existing
+	for source_id in _established_mappings.keys():
+		if _established_mappings[source_id].has(old_id):
+			var existing_mapping = _established_mappings[source_id][old_id]
+			_established_mappings[source_id].erase(old_id)
+			_established_mappings[source_id][new_id] = existing_mapping
 	
 
 ## Returns true if the given cortical areas have a mapping defined in cache between them, else false

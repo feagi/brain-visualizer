@@ -254,6 +254,21 @@ func FEAGI_update_cortical_area_from_dict(all_cortical_area_properties: Dictiona
 	_available_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
 	cortical_area_mass_updated.emit(_available_cortical_areas[changing_ID])
 
+## Remap a cortical area ID in cache (used when FEAGI changes cortical ID).
+func FEAGI_update_cortical_area_id(old_id: StringName, new_id: StringName) -> void:
+	if old_id == new_id:
+		return
+	if old_id not in _available_cortical_areas.keys():
+		push_error("FEAGI CACHE: Unable to remap missing cortical area %s" % old_id)
+		return
+	if new_id in _available_cortical_areas.keys():
+		push_error("FEAGI CACHE: Cannot remap cortical area to existing ID %s" % new_id)
+		return
+	var area: AbstractCorticalArea = _available_cortical_areas[old_id]
+	_available_cortical_areas.erase(old_id)
+	area.FEAGI_update_genome_id(new_id)
+	_available_cortical_areas[new_id] = area
+
 ## Removes a cortical area by ID and emits a signal that this was done. Should only be called from FEAGI!
 func remove_cortical_area(removed_cortical_ID: StringName) -> void:
 	if removed_cortical_ID not in _available_cortical_areas.keys():

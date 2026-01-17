@@ -33,6 +33,17 @@ func _ready():
 	super()
 	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES)
 
+func _are_all_io_areas() -> bool:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return false
+	for area in _cortical_area_refs:
+		if area.cortical_type not in [
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU,
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+		]:
+			return false
+	return true
+
 	
 
 ## Load in initial values of the cortical area from Cache
@@ -61,10 +72,15 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	# init sections (that are relevant given the selected)
 	_init_summary()
 	_init_monitoring()
-	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
-		_init_firing_parameters()
-	else:
+	if _are_all_io_areas():
 		_section_firing_parameters.visible = false
+		_init_neuron_coding()
+	else:
+		if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
+			_init_firing_parameters()
+		else:
+			_section_firing_parameters.visible = false
+		_section_neuron_coding.visible = false
 	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_memory_parameters"):
 		_init_memory()
 		_memory_section_enabled = true
@@ -138,7 +154,9 @@ func _refresh_all_relevant() -> void:
 	_refresh_from_cache_summary() # all cortical areas have these
 	_refresh_from_cache_monitoring()
 	
-	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
+	if _are_all_io_areas():
+		_refresh_from_cache_neuron_coding()
+	elif AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
 		_refresh_from_cache_firing_parameters()
 	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_memory_parameters"):
 		_refresh_from_cache_memory()
@@ -317,6 +335,10 @@ func _set_control_to_value(control: Control, value: Variant) -> void:
 		return
 	if control is IntSpinBox:
 		(control as IntSpinBox).value = value
+		return
+	if control is DropDown:
+		if value != null:
+			(control as DropDown).set_option(StringName(str(value)))
 		
 
 func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringName, send_update_button: Button) -> void:
@@ -348,6 +370,10 @@ func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringN
 		return
 	if control is IntSpinBox:
 		(control as IntSpinBox).value_changed.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
+		return
+	if control is DropDown:
+		(control as DropDown).option_changed.connect(_add_to_dict_to_send.bindv([send_update_button, FEAGI_key_name]))
+		return
 	
 func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
 	if !send_button.name in _growing_cortical_update:
@@ -695,6 +721,112 @@ func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
 #endregion
 
 
+#region Neuron Coding
+
+func _init_neuron_coding() -> void:
+	if _section_neuron_coding == null:
+		return
+	if len(_cortical_area_refs) != 1:
+		_section_neuron_coding.visible = false
+		return
+	_section_neuron_coding.visible = true
+	_refresh_from_cache_neuron_coding()
+	
+	# Connect dropdowns
+	if _dropdown_coding_signage != null:
+		_dropdown_coding_signage.option_changed.connect(_on_coding_option_changed.unbind(1))
+	if _dropdown_coding_behavior != null:
+		_dropdown_coding_behavior.option_changed.connect(_on_coding_option_changed.unbind(1))
+	if _dropdown_coding_type != null:
+		_dropdown_coding_type.option_changed.connect(_on_coding_option_changed.unbind(1))
+	
+	if _button_coding_send != null:
+		_button_coding_send.pressed.connect(_send_update.bind(_button_coding_send))
+
+func _refresh_from_cache_neuron_coding() -> void:
+	if len(_cortical_area_refs) != 1:
+		return
+	var area = _cortical_area_refs[0]
+	print("BV [NEURAL-CODING]: Refresh for %s | type=%s | signage_opts=%d behavior_opts=%d type_opts=%d | signage='%s' behavior='%s' type='%s'" % [
+		area.cortical_ID,
+		AbstractCorticalArea.cortical_type_to_str(area.cortical_type),
+		area.coding_signage_options.size(),
+		area.coding_behavior_options.size(),
+		area.coding_type_options.size(),
+		area.coding_signage,
+		area.coding_behavior,
+		area.coding_type
+	])
+	if area.coding_signage_options.is_empty() or area.coding_behavior_options.is_empty() or area.coding_type_options.is_empty():
+		print("BV [NEURAL-CODING]: Hiding section for %s (missing options)" % area.cortical_ID)
+		_section_neuron_coding.visible = false
+		return
+	_section_neuron_coding.visible = true
+	print("BV [NEURAL-CODING]: Showing section for %s" % area.cortical_ID)
+	
+	if _dropdown_coding_signage != null:
+		_dropdown_coding_signage.options = area.coding_signage_options
+		_dropdown_coding_signage.set_option(StringName(area.coding_signage))
+	if _dropdown_coding_behavior != null:
+		_dropdown_coding_behavior.options = area.coding_behavior_options
+		_dropdown_coding_behavior.set_option(StringName(area.coding_behavior))
+	if _dropdown_coding_type != null:
+		_dropdown_coding_type.options = area.coding_type_options
+		_dropdown_coding_type.set_option(StringName(area.coding_type))
+
+func _on_coding_option_changed(_index: int) -> void:
+	if _button_coding_send == null:
+		return
+	var update_data = _build_neuron_coding_update()
+	if update_data.is_empty():
+		return
+	_growing_cortical_update[_button_coding_send.name] = update_data
+	_button_coding_send.disabled = false
+
+func _build_neuron_coding_update() -> Dictionary:
+	if len(_cortical_area_refs) != 1:
+		return {}
+	var area = _cortical_area_refs[0]
+	if area.cortical_type not in [
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU,
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+	]:
+		return {}
+	
+	if _dropdown_coding_signage == null or _dropdown_coding_behavior == null or _dropdown_coding_type == null:
+		return {}
+	
+	var signage = String(_dropdown_coding_signage.selected_item)
+	var behavior = String(_dropdown_coding_behavior.selected_item)
+	var coding_type = String(_dropdown_coding_type.selected_item)
+	
+	var resolver: Object = null
+	if ClassDB.class_exists("FeagiDataDeserializer"):
+		resolver = ClassDB.instantiate("FeagiDataDeserializer")
+	
+	if resolver == null or not resolver.has_method("compute_io_cortical_id"):
+		push_error("AdvancedCorticalProperties: FeagiDataDeserializer not available for cortical ID computation")
+		return {}
+	
+	var result: Dictionary = resolver.call("compute_io_cortical_id", area.cortical_ID, signage, behavior, coding_type)
+	if !result.get("success", false):
+		push_error("AdvancedCorticalProperties: Failed to compute cortical ID: %s" % result.get("error", "unknown"))
+		return {}
+	
+	var new_id = result.get("cortical_id", "")
+	if new_id == "":
+		return {}
+	if new_id == String(area.cortical_ID):
+		return {}
+	
+	return {
+		"coding_signage": signage,
+		"coding_behavior": behavior,
+		"coding_type": coding_type,
+		"new_cortical_id": new_id
+	}
+
+#endregion
 #region Summary
 
 @export var _section_summary: VerticalCollapsibleHiding
@@ -716,9 +848,8 @@ func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
 # IPU/OPU-specific decoded ID fields (created programmatically)
 var _ipu_opu_info_container: VBoxContainer = null
 var _label_cortical_subtype: Label = null
-var _label_encoding_type: Label = null
-var _label_encoding_format: Label = null
 var _label_unit_id: Label = null
+var _label_group_id: Label = null
 
 func _init_summary() -> void:
 	var type: AbstractCorticalArea.CORTICAL_AREA_TYPE =  AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs)
@@ -815,13 +946,10 @@ func _init_ipu_opu_decoded_info() -> void:
 		
 		return value_label
 	
-	# Create all label rows (removed "Cortical" prefix, swapped Unit/Group order)
+	# Create all label rows (avoid duplicating coding info shown in Neuron Coding)
 	_label_cortical_subtype = create_label_row.call("Subtype:")
-	var encoding_label = "Encoding:" if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU else "Decoding:"
-	_label_encoding_type = create_label_row.call(encoding_label)
-	_label_encoding_format = create_label_row.call("Format:")
-	_label_unit_id = create_label_row.call("Unit ID:", true)  # Swapped order, right-justified
-	_label_unit_id = create_label_row.call("Unit ID:", true)    # Swapped order, right-justified
+	_label_unit_id = create_label_row.call("Unit ID:", true)
+	_label_group_id = create_label_row.call("Group ID:", true)
 
 func _refresh_from_cache_summary() -> void:
 	
@@ -880,10 +1008,8 @@ func _refresh_ipu_opu_decoded_info() -> void:
 	# Check if decoded info is available
 	if area.has_decoded_id_info:
 		_label_cortical_subtype.text = area.cortical_subtype
-		_label_encoding_type.text = area.encoding_type
-		_label_encoding_format.text = area.encoding_format
-		_label_unit_id.text = str(area.group_id)  # group_id property stores unit index
-		_label_unit_id.text = str(area.unit_id)    # Swapped order
+		_label_unit_id.text = str(area.unit_id)
+		_label_group_id.text = str(area.group_id)
 		
 		# Make container visible
 		if _ipu_opu_info_container:
@@ -926,6 +1052,12 @@ func _enable_3D_preview(): #NOTE only currently works with single
 @export var _line_Threshold_Inc: Vector3fField
 @export var _button_MP_Accumulation: ToggleButton
 @export var _button_firing_send: Button
+
+@export var _section_neuron_coding: VerticalCollapsibleHiding
+@export var _dropdown_coding_signage: DropDown
+@export var _dropdown_coding_behavior: DropDown
+@export var _dropdown_coding_type: DropDown
+@export var _button_coding_send: Button
 
 
 func _init_firing_parameters() -> void:

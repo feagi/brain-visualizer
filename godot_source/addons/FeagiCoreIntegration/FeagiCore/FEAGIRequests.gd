@@ -989,6 +989,9 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 		return FEAGI_response_data
 	
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	var response_cortical_id: StringName = checking_cortical_ID
+	if response.has("cortical_id") and response["cortical_id"] != null:
+		response_cortical_id = response["cortical_id"]
 	
 	# Log visualization_voxel_granularity if present
 	if "visualization_voxel_granularity" in response:
@@ -1008,13 +1011,29 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 				properties_dict[key] = response[key]
 				if key == "visualization_voxel_granularity":
 					print("🔵 FEAGI REQUEST: Passing visualization_voxel_granularity to cache for %s: %s (type: %s)" % [checking_cortical_ID, response[key], typeof(response[key])])
-	properties_dict["cortical_id"] = checking_cortical_ID  # Add the ID to the properties dict
+	if "coding_options" in properties_dict:
+		var coding_options = properties_dict["coding_options"]
+		if coding_options is Dictionary:
+			print("BV [NEURAL-CODING][API]: %s coding_options keys=%s signage=%s behavior=%s type=%s" % [
+				checking_cortical_ID,
+				coding_options.keys(),
+				coding_options.get("signage_options", "MISSING"),
+				coding_options.get("behavior_options", "MISSING"),
+				coding_options.get("coding_type_options", "MISSING")
+			])
+		else:
+			print("BV [NEURAL-CODING][API]: %s coding_options unexpected type=%s" % [checking_cortical_ID, typeof(coding_options)])
+	else:
+		print("BV [NEURAL-CODING][API]: %s coding_options missing" % checking_cortical_ID)
+	properties_dict["cortical_id"] = response_cortical_id  # Add the authoritative ID to the properties dict
+	if response_cortical_id != checking_cortical_ID and checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(checking_cortical_ID, response_cortical_id)
 	
 	# Check if cortical area exists in cache - if not, create it; if yes, update it
-	if checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+	if response_cortical_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
 		# Prevent incorrect reassignment to root if backend omits true parent region
 		# If server reports parent_region_id as root but cache shows a non-root parent, trust cache
-		var existing_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[checking_cortical_ID]
+		var existing_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[response_cortical_id]
 		if properties_dict.has("parent_region_id"):
 			var reported_parent: StringName = properties_dict["parent_region_id"]
 			var current_parent: StringName = existing_area.current_parent_region.region_ID if existing_area != null and existing_area.current_parent_region != null else BrainRegion.ROOT_REGION_ID
@@ -1044,7 +1063,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			return FeagiRequestOutput.requirement_fail("INVALID_PARENT_REGION")
 		
 		var parent_region: BrainRegion = parent_region_data as BrainRegion
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(properties_dict, parent_region, checking_cortical_ID)
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(properties_dict, parent_region, response_cortical_id)
 	return FEAGI_response_data
 
 ### Requests information on multiple cortical areas
@@ -1106,6 +1125,20 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:
 			area_data["cortical_id"] = StringName(cortical_id)
+		if "coding_options" in area_data:
+			var coding_options = area_data["coding_options"]
+			if coding_options is Dictionary:
+				print("BV [NEURAL-CODING][API][MULTI]: %s coding_options keys=%s signage=%s behavior=%s type=%s" % [
+					cortical_id,
+					coding_options.keys(),
+					coding_options.get("signage_options", "MISSING"),
+					coding_options.get("behavior_options", "MISSING"),
+					coding_options.get("coding_type_options", "MISSING")
+				])
+			else:
+				print("BV [NEURAL-CODING][API][MULTI]: %s coding_options unexpected type=%s" % [cortical_id, typeof(coding_options)])
+		else:
+			print("BV [NEURAL-CODING][API][MULTI]: %s coding_options missing" % cortical_id)
 		print("🔵 FEAGI REQUEST: [MULTI] Updating cache for %s with visualization_voxel_granularity: %s" % [cortical_id, area_data.get("visualization_voxel_granularity", "NOT PRESENT")])
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(area_data)
 	
@@ -1609,9 +1642,14 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 		return FEAGI_response_data
 	
 	# Re-fetch the cortical area from FEAGI to ensure cache is synchronized with backend
-	print("FEAGI REQUEST: PUT succeeded for %s, re-fetching from FEAGI to sync cache" % editing_ID)
-	await get_cortical_area(editing_ID)
-	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
+	var response_dict: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	var updated_id: StringName = response_dict.get("cortical_id", editing_ID)
+	var previous_id: StringName = response_dict.get("previous_cortical_id", editing_ID)
+	if updated_id != previous_id:
+		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(previous_id, updated_id)
+	print("FEAGI REQUEST: PUT succeeded for %s, re-fetching from FEAGI to sync cache" % updated_id)
+	await get_cortical_area(updated_id)
+	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ updated_id])
 	return FEAGI_response_data
 
 func update_cortical_areas(editing_areas: Array[AbstractCorticalArea], properties: Dictionary) -> FeagiRequestOutput:
