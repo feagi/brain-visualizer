@@ -9,6 +9,7 @@ var _search_bar: LineEdit
 var _topic_container: VBoxContainer
 var _markdown_view: GuideMarkdownView
 var _split_container: HSplitContainer
+var _title_label: Label
 var _topics: Array[Dictionary] = []
 
 ## Initialize the overlay layout and load guide topics.
@@ -17,17 +18,24 @@ func _ready() -> void:
 	_topic_container = $OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar/TopicsScroll/TopicsList
 	_markdown_view = $OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody/ContentScroll/ContentMargin/GuideMarkdownView
 	_split_container = $OverlayPanel/PanelMargin/PanelContent/GuideContent
+	_title_label = $OverlayPanel/PanelMargin/PanelContent/Header/TitleLabel
 	$OverlayPanel/PanelMargin/PanelContent/Header/CloseButton.pressed.connect(_on_close_pressed)
 	_search_bar.text_changed.connect(_on_search_changed)
 	_markdown_view.markdown_link_clicked.connect(_on_markdown_link_clicked)
 	visible = false
 	resized.connect(_on_resized)
+	if _split_container != null:
+		_split_container.resized.connect(_apply_split_ratio)
 	_refresh_topics()
+	call_deferred("_apply_split_ratio")
+	_apply_header_scaling()
 
 ## Show the guide overlay and focus the search bar.
 func show_overlay() -> void:
 	visible = true
 	_search_bar.grab_focus()
+	call_deferred("_apply_split_ratio")
+	_apply_header_scaling()
 
 ## Hide the guide overlay.
 func hide_overlay() -> void:
@@ -62,10 +70,29 @@ func _refresh_topics() -> void:
 		return
 	_open_markdown(_topics[0]["path"])
 
-## Resize the split panel to keep the guide body at 60% width.
+## Resize the split panel to enforce 25/75 split.
 func _on_resized() -> void:
-	var split_offset := int(size.x * 0.4)
-	_split_container.split_offset = split_offset
+	call_deferred("_apply_split_ratio")
+
+## Enforce left panel at exactly 25% of total width.
+func _apply_split_ratio() -> void:
+	if _split_container == null:
+		return
+	await get_tree().process_frame
+	if _split_container.size.x <= 10.0:
+		return
+	var target_offset := int(_split_container.size.x * 0.25)
+	_split_container.split_offset = target_offset
+	print("GuideOverlay: Applied split offset %d for width %d (25%%)" % [target_offset, _split_container.size.x])
+
+## Scale header text to match UI size.
+func _apply_header_scaling() -> void:
+	if _title_label == null:
+		return
+	var header_size := _title_label.get_theme_font_size("font_size", "Label_Header")
+	if header_size <= 0:
+		header_size = 30
+	_title_label.add_theme_font_size_override("font_size", int(header_size * 1.4))
 
 ## Filter guide topics by the search query.
 func _on_search_changed(query: String) -> void:
@@ -80,20 +107,26 @@ func _on_search_changed(query: String) -> void:
 
 ## Open the selected guide markdown.
 func _on_topic_selected(markdown_path: String) -> void:
+	print("GuideOverlay: Topic selected: %s" % markdown_path)
 	_open_markdown(markdown_path)
 
 ## Resolve markdown links to other guide files.
 func _on_markdown_link_clicked(target_path: String) -> void:
+	print("GuideOverlay: Markdown link clicked: %s" % target_path)
 	if _is_markdown_path(target_path):
 		_open_markdown(target_path)
 
 ## Load and display a markdown file.
 func _open_markdown(markdown_path: String) -> void:
+	print("GuideOverlay: Opening markdown: %s" % markdown_path)
 	if markdown_path == "":
+		push_error("GuideOverlay: Empty markdown path")
 		return
-	if not ResourceLoader.exists(markdown_path):
+	if not FileAccess.file_exists(markdown_path):
 		push_error("GuideOverlay: Markdown path not found: %s" % markdown_path)
+		_markdown_view.show_message("Guide file not found: %s" % markdown_path)
 		return
+	print("GuideOverlay: File exists, loading...")
 	_markdown_view.load_markdown(markdown_path)
 
 ## Collect all markdown files within the guides directory.

@@ -824,6 +824,8 @@ func _load_new_theme(theme: Theme) -> void:
 		$TempLoadingScreen.theme = _loaded_theme
 	if has_node("/root/BrainVisualizer/UIManager/ScaleControl"):
 		$ScaleControl.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/GuideOverlay"):
+		$GuideOverlay.theme = _loaded_theme
 
 	$VersionLabel.theme = theme
 	theme_changed.emit(theme)

@@ -3,6 +3,17 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Guide/GuideOverlay.gd" id="1_guide_overlay"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Guide/GuideMarkdownView.gd" id="2_guide_markdown"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_guide_panel"]
+bg_color = Color(0.08, 0.1, 0.14, 0.58)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 6
+content_margin_top = 6
+content_margin_right = 6
+content_margin_bottom = 6
+
 [node name="GuideOverlay" type="Control"]
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,7 +31,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0, 0, 0, 0.65)
+color = Color(0, 0, 0, 0.15)
 
 [node name="OverlayPanel" type="PanelContainer" parent="."]
 anchors_preset = 15
@@ -30,6 +41,7 @@ anchor_right = 0.95
 anchor_bottom = 0.95
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_guide_panel")
 
 [node name="PanelMargin" type="MarginContainer" parent="OverlayPanel"]
 layout_mode = 2
@@ -58,7 +70,7 @@ text = "Close"
 [node name="GuideContent" type="HSplitContainer" parent="OverlayPanel/PanelMargin/PanelContent"]
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 320
+split_offset = 0
 theme_override_constants/separation = 18
 
 [node name="GuideSidebar" type="VBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent"]
@@ -95,8 +107,10 @@ theme_override_constants/margin_bottom = 12
 
 [node name="GuideMarkdownView" type="RichTextLabel" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody/ContentScroll/ContentMargin"]
 layout_mode = 2
+custom_minimum_size = Vector2(600, 400)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 bbcode_enabled = true
 fit_content = true
+scroll_active = false
 script = ExtResource("2_guide_markdown")

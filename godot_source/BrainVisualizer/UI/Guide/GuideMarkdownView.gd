@@ -4,30 +4,53 @@ class_name GuideMarkdownView
 signal markdown_link_clicked(target_path: String)
 
 var _current_markdown_path: String = ""
+var _base_font_size: int = 0
 
 ## Configure the label defaults for guide rendering.
 func _ready() -> void:
 	bbcode_enabled = true
-	scroll_active = false
+	scroll_active = true
 	fit_content = true
 	autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	meta_clicked.connect(_on_meta_clicked)
+	_base_font_size = _resolve_theme_font_size()
+	add_theme_color_override("default_color", Color(0.92, 0.94, 0.98))
+	print("GuideMarkdownView: Initialized with base font size %d" % _base_font_size)
 
 ## Load and render a markdown file.
 func load_markdown(markdown_path: String) -> void:
+	print("GuideMarkdownView: Loading markdown from: %s" % markdown_path)
 	_current_markdown_path = markdown_path
+	_base_font_size = _resolve_theme_font_size()
+	add_theme_font_size_override("normal_font_size", _base_font_size)
+	print("GuideMarkdownView: Using font size: %d" % _base_font_size)
+	
 	var file := FileAccess.open(markdown_path, FileAccess.READ)
 	if file == null:
-		push_error("GuideMarkdownView: Unable to read markdown at %s." % markdown_path)
-		text = ""
+		var error := FileAccess.get_open_error()
+		push_error("GuideMarkdownView: Unable to read markdown at %s. Error: %d" % [markdown_path, error])
+		text = "[color=red]Error: Could not load guide file[/color]"
 		return
+	
 	var markdown_text := file.get_as_text()
-	text = _convert_markdown_to_bbcode(markdown_text, markdown_path)
+	file.close()
+	print("GuideMarkdownView: Read %d characters from file" % markdown_text.length())
+	
+	var bbcode := _convert_markdown_to_bbcode(markdown_text, markdown_path)
+	print("GuideMarkdownView: Converted to %d characters of BBCode" % bbcode.length())
+	print("GuideMarkdownView: First 200 chars: %s" % bbcode.substr(0, 200))
+	
+	text = bbcode
+	await get_tree().process_frame
+	custom_minimum_size = Vector2(600.0, float(get_content_height()))
+	print("GuideMarkdownView: Set content height to %d" % get_content_height())
 
 ## Display a short message when no guide content is available.
 func show_message(message: String) -> void:
 	_current_markdown_path = ""
+	_base_font_size = _resolve_theme_font_size()
 	text = "[i]%s[/i]" % message
+	custom_minimum_size = Vector2(0.0, float(get_content_height()))
 
 ## Handle link clicks inside the rendered markdown.
 func _on_meta_clicked(meta: Variant) -> void:
@@ -40,7 +63,7 @@ func _on_meta_clicked(meta: Variant) -> void:
 
 ## Convert markdown text into BBCode for RichTextLabel rendering.
 func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -> String:
-	var lines := markdown_text.split("\n", false)
+	var lines := markdown_text.split("\n", true)
 	var output_lines: Array[String] = []
 	for raw_line in lines:
 		var line := raw_line
@@ -48,6 +71,7 @@ func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -
 			var heading_level := _count_heading_level(line)
 			var title := line.substr(heading_level).strip_edges()
 			output_lines.append(_format_heading(title, heading_level))
+			output_lines.append("")
 			continue
 		line = _replace_images(line, markdown_path)
 		line = _replace_links(line, markdown_path)
@@ -56,7 +80,9 @@ func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -
 		line = _replace_inline_code(line)
 		line = _replace_bullets(line)
 		output_lines.append(line)
-	return "\n".join(output_lines)
+	var result := "\n".join(output_lines)
+	print("GuideMarkdownView: Conversion complete, %d output lines" % output_lines.size())
+	return result
 
 ## Count heading markers for a markdown heading line.
 func _count_heading_level(line: String) -> int:
@@ -69,9 +95,11 @@ func _count_heading_level(line: String) -> int:
 
 ## Format a markdown heading into BBCode with size scaling.
 func _format_heading(title: String, level: int) -> String:
-	var base_size := 34
-	var step := 4
-	var size := maxi(18, base_size - (level - 1) * step)
+	var base_size := _base_font_size
+	if base_size <= 0:
+		base_size = 20
+	var step := int(base_size * 0.18)
+	var size := maxi(int(base_size * 1.15), base_size + step * (2 - level))
 	return "[font_size=%d][b]%s[/b][/font_size]" % [size, title]
 
 ## Convert markdown bold markers to BBCode.
@@ -92,6 +120,15 @@ func _replace_bullets(line: String) -> String:
 	if trimmed.begins_with("- "):
 		return "- " + trimmed.substr(2)
 	return line
+
+## Resolve the theme font size so markdown scales with UI theme.
+func _resolve_theme_font_size() -> int:
+	var size := get_theme_font_size("normal_font_size", "RichTextLabel")
+	if size > 0:
+		return int(size * 1.35)
+	if has_theme_font_size_override("normal_font_size"):
+		return int(get_theme_font_size("normal_font_size") * 1.35)
+	return 24
 
 ## Convert markdown image syntax to BBCode image tags.
 func _replace_images(line: String, markdown_path: String) -> String:
