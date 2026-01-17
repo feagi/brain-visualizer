@@ -13,12 +13,14 @@ right content area for markdown rendering.
 ## Layout Structure
 
 1. **Top Toolbar** (HBoxContainer):
-   - Search bar for filtering topics
-   - Text size controls (+/- buttons)
+   - **Search bar**: Full-text search through both topic titles and content
+     - Shows result count in placeholder when searching
+     - Content is cached for fast searching
+   - **Text size controls**: +/- buttons for dynamic font scaling
    - Expandable for future features
 
 2. **Content Area** (HBoxContainer with 25/75 split):
-   - Left sidebar (25%): Topic list with scroll
+   - Left sidebar (25%): Topic list with scroll (filtered by search)
    - Right content area (75%): Markdown rendering with scroll
 
 ## Content

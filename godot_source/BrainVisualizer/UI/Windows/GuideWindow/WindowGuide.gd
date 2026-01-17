@@ -15,6 +15,7 @@ var _font_size_decrease_btn: Button
 var _font_size_increase_btn: Button
 var _topics: Array[Dictionary] = []
 var _font_size_scale: float = 1.0  # User-adjustable font scale multiplier
+var _content_cache: Dictionary = {}  # Cache markdown content for search performance
 
 # Window resizing
 var _resize_handle_corner: Panel
@@ -156,9 +157,11 @@ func _draw_resize_grip_corner(control: Control) -> void:
 ## Load markdown topics from disk and populate the sidebar.
 func _refresh_topics() -> void:
 	_topics.clear()
+	_content_cache.clear()
 	for child in _topic_container.get_children():
 		child.queue_free()
 	var markdown_files := _collect_markdown_files(guides_directory)
+	print("WindowGuide: Loading %d guide topics..." % markdown_files.size())
 	for markdown_path in markdown_files:
 		var title := _extract_title(markdown_path)
 		var button := GuideTopicButton.new()
@@ -170,6 +173,9 @@ func _refresh_topics() -> void:
 			"path": markdown_path,
 			"button": button,
 		})
+		# Pre-cache content for faster searching
+		_content_cache[markdown_path] = _read_file_content(markdown_path).to_lower()
+	print("WindowGuide: Cached %d guide files for search" % _content_cache.size())
 	if _topics.is_empty():
 		_markdown_view.show_message("No guide topics found.")
 		return
@@ -189,16 +195,43 @@ func _update_sidebar_width() -> void:
 	var sidebar_width := int(total_width * 0.25)
 	_sidebar.custom_minimum_size.x = sidebar_width
 
-## Filter guide topics by the search query.
+## Filter guide topics by the search query (searches both title and content).
 func _on_search_changed(query: String) -> void:
 	var normalized := query.strip_edges().to_lower()
+	var visible_count := 0
+	
 	for topic in _topics:
 		var title: String = topic["title"]
+		var path: String = topic["path"]
 		var button: GuideTopicButton = topic["button"]
+		
 		if normalized == "":
 			button.visible = true
+			visible_count += 1
 			continue
-		button.visible = title.to_lower().find(normalized) >= 0
+		
+		# Search in title first (faster)
+		if title.to_lower().find(normalized) >= 0:
+			button.visible = true
+			visible_count += 1
+			continue
+		
+		# Search in content (use cache for performance)
+		if not _content_cache.has(path):
+			_content_cache[path] = _read_file_content(path).to_lower()
+		
+		var content: String = _content_cache[path]
+		if content.find(normalized) >= 0:
+			button.visible = true
+			visible_count += 1
+		else:
+			button.visible = false
+	
+	# Update search bar placeholder with result count
+	if normalized != "":
+		_search_bar.placeholder_text = "Search guides... (%d results)" % visible_count
+	else:
+		_search_bar.placeholder_text = "Search guides..."
 
 ## Open the selected guide markdown.
 func _on_topic_selected(markdown_path: String) -> void:
@@ -263,6 +296,16 @@ func _extract_title(markdown_path: String) -> String:
 				heading_level += 1
 			return line.substr(heading_level).strip_edges()
 	return markdown_path.get_file()
+
+## Read the full content of a markdown file.
+func _read_file_content(markdown_path: String) -> String:
+	var file := FileAccess.open(markdown_path, FileAccess.READ)
+	if file == null:
+		push_error("WindowGuide: Unable to read markdown content at %s." % markdown_path)
+		return ""
+	var content := file.get_as_text()
+	file.close()
+	return content
 
 ## Check if a path points to a markdown file.
 func _is_markdown_path(path: String) -> bool:
