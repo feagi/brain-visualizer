@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://xy35ep21wxy"]
+[gd_scene load_steps=14 format=3 uid="uid://xy35ep21wxy"]
 
 [ext_resource type="Script" uid="uid://dkpx8psa1xbfm" path="res://BrainVisualizer/BrainVisualizer.gd" id="1_234dh"]
 [ext_resource type="PackedScene" uid="uid://fksp0qyuwqxy" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.tscn" id="1_rjw0f"]
@@ -63,6 +63,7 @@ offset_top = 103.0
 offset_right = 1280.0
 offset_bottom = 720.0
 mouse_filter = 2
+touch_dragger_enabled = false
 script = ExtResource("6_r3y8u")
 
 [node name="Control" type="Control" parent="UIManager/CB_Holder"]
@@ -102,12 +103,14 @@ grow_vertical = 0
 horizontal_alignment = 2
 
 [node name="TempLoadingScreen" type="PanelContainer" parent="UIManager"]
+z_index = 100
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_rogx1")
+
 
 [node name="LoadingOverlay" type="BoxContainer" parent="UIManager/TempLoadingScreen"]
 layout_mode = 2
@@ -120,11 +123,17 @@ size_flags_vertical = 3
 alignment = 1
 theme_override_constants/separation = 18
 
+[node name="TitleLabel" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 60
+text = "FEAGI BRAIN VISUALIZER"
+
 [node name="Label" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 40
-text = "Loading..."
+text = " "
 
 [node name="WarningPanel" type="PanelContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
@@ -165,7 +174,32 @@ layout_mode = 2
 
 [node name="StatusLabel" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 24
 text = "Initializing..."
+
+[node name="BottomCenterOverlay" type="Control" parent="UIManager/TempLoadingScreen"]
+z_index = 101
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CopyrightLabel" type="Label" parent="UIManager/TempLoadingScreen/BottomCenterOverlay"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -26.0
+offset_right = 140.0
+offset_bottom = -6.0
+grow_horizontal = 0
+grow_vertical = 0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+text = "© 2026 Neuraville Inc."
 
 [connection signal="request_UI_mode" from="UIManager/TopBar" to="UIManager/CB_Holder" method="set_view"]

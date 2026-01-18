@@ -7,8 +7,10 @@ enum WEBSOCKET_HEALTH {
 	RETRYING
 }
 
-const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 10000000
-const DEF_SOCKET_BUFFER_SIZE: int = 10000000
+# Must accommodate large visualization frames (e.g., MRI/NIFTI payloads).
+# Keep this comfortably above expected max frame size to avoid immediate disconnects.
+const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 67108864 # 64 MiB
+const DEF_SOCKET_BUFFER_SIZE: int = 67108864 # 64 MiB
 const DEF_PING_INTERVAL_SECONDS: float = 2.0
 const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string via websocket if genome is reloaded / changed
 const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
@@ -20,6 +22,7 @@ signal FEAGI_sent_direct_neural_points(cortical_ID: StringName, points_data: Pac
 signal FEAGI_sent_direct_neural_points_bulk(cortical_ID: StringName, x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array)
 signal feagi_requesting_reset()
 signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
+signal shm_visualization_enabled(shm_path: String)
 
 
 var socket_health: WEBSOCKET_HEALTH:
@@ -82,6 +85,14 @@ var _shm_debug_logs: bool = false
 
 # Rate-limited WS backlog diagnostics (logging only)
 var _ws_last_backlog_log_ms: int = 0
+var _ws_disabled_by_shm_notice_printed: bool = false
+
+# WS receive diagnostics (rate-limited)
+var _ws_last_rx_log_ms: int = 0
+const _WS_RX_LOG_INTERVAL_MS: int = 1000
+var _ws_last_apply_log_ms: int = 0
+const _WS_APPLY_LOG_INTERVAL_MS: int = 1000
+const _WS_DIAGNOSTICS_ENABLED: bool = false
 
 # SHM update rate tracking
 var _shm_updates_received: int = 0
@@ -94,6 +105,12 @@ const _SHM_FRAME_WINDOW_SIZE: int = 10
 # SHM polling throttle (to match negotiated rate)
 var _shm_last_poll_time: float = 0.0
 var _shm_poll_interval: float = 0.0  # Calculated from negotiated rate
+
+# SHM diagnostics (rate-limited)
+var _shm_last_rx_log_ms: int = 0
+const _SHM_RX_LOG_INTERVAL_MS: int = 1000
+var _shm_last_apply_log_ms: int = 0
+const _SHM_APPLY_LOG_INTERVAL_MS: int = 1000
 
 
 func _ready():
@@ -262,6 +279,23 @@ func _process(_delta: float):
 				continue
 
 			# Decode newest binary packet (if any)
+			# Rate-limited WS receive diagnostics (high-signal for "BV shows no power" debugging):
+			# - Confirms BV is receiving frames at all
+			# - Shows payload size and first byte (2 = FeagiByteContainer v2, 11 = raw Type 11)
+			# - Avoids log spam by printing at most once per second
+			var now_ms_rx := Time.get_ticks_msec()
+			if _WS_DIAGNOSTICS_ENABLED and drained_packets > 0 and now_ms_rx - _ws_last_rx_log_ms >= _WS_RX_LOG_INTERVAL_MS:
+				_ws_last_rx_log_ms = now_ms_rx
+				if newest_binary_len > 0:
+					var fb := int(newest_binary[0])
+					print("[WS-RX] packets=%d bytes=%d newest_len=%d first_byte=%d backlog_start=%d" % [
+						drained_packets, drained_bytes, newest_binary_len, fb, backlog_start
+					])
+				else:
+					print("[WS-RX] packets=%d bytes=%d (no binary payload; likely text-only frames) backlog_start=%d" % [
+						drained_packets, drained_bytes, backlog_start
+					])
+
 			if newest_binary_len > 0:
 				if not _rust_deserializer:
 					push_error("❌ [WS] Rust deserializer not available!")
@@ -274,6 +308,18 @@ func _process(_delta: float):
 							_bv_fast_dimensions_by_id,
 							true # clear_all_before_apply
 						)
+						# Rate-limited decode/apply diagnostics to pinpoint "receiving but not rendering".
+						# This will tell us if Rust decoded/applied any areas at all (and if it errored).
+						var now_ms_apply := Time.get_ticks_msec()
+						if _WS_DIAGNOSTICS_ENABLED and now_ms_apply - _ws_last_apply_log_ms >= _WS_APPLY_LOG_INTERVAL_MS:
+							_ws_last_apply_log_ms = now_ms_apply
+							var ok_apply := bool(perf.get("success", false))
+							var err_apply := String(perf.get("error", ""))
+							var areas_applied := int(perf.get("areas_applied", 0))
+							var neurons_applied := int(perf.get("neurons_applied", 0))
+							print("[WS-APPLY] ok=%s areas_applied=%d neurons_applied=%d err='%s'" % [
+								str(ok_apply), areas_applied, neurons_applied, err_apply
+							])
 						# Memory areas may not have a registered MultiMesh in the desktop fast-path cache.
 						# To ensure memory jelly animation still reacts to activity, route MEMORY areas through
 						# the standard bulk-array path (signals) using decoded Type11 data (no hardcoded IDs).
@@ -426,6 +472,13 @@ func setup(feagi_socket_address: StringName) -> void:
 
 ## Starts a connection
 func connect_websocket() -> void:
+	# If SHM neuron visualization is active, we do not require a WebSocket connection.
+	# Keep SHM polling active, but skip WS connect attempts (prevents noisy retry spam).
+	if _use_shared_mem:
+		if not _ws_disabled_by_shm_notice_printed:
+			_ws_disabled_by_shm_notice_printed = true
+			print("[%s] [WS] WebSocket connect suppressed (SHM active)" % _get_timestamp())
+		return
 	if _socket_web_address == "":
 		push_error("FEAGI WS: No address specified!")
 		return
@@ -487,6 +540,41 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 	# SAFETY CHECK: Ensure we have data before processing
 	if bytes.size() == 0:
 		push_error("FEAGI: Cannot process empty byte array!")
+		return
+
+	# FEAGI Byte Container v2 (first byte == 2)
+	# This is a wrapper format used by FEAGI (SHM/WS) that can contain one or more structures.
+	# Format (from feagi-serialization::FeagiByteContainer):
+	# - [0]   version (u8) == 2
+	# - [1:3] increment_counter (u16 LE)
+	# - [3]   struct_count (u8)
+	# - then struct_count * u32 LE lengths
+	# - then each structure payload (each payload begins with structure type, e.g., 1 or 11)
+	if bytes[0] == 2:
+		if bytes.size() < 4:
+			push_error("FEAGI: Invalid ByteContainer v2 (too short)")
+			return
+		var struct_count := int(bytes[3])
+		if struct_count <= 0:
+			# Valid empty container
+			return
+		var lookup_len := 4 * struct_count
+		var header_total := 4 + lookup_len
+		if bytes.size() < header_total:
+			push_error("FEAGI: Invalid ByteContainer v2 (header truncated)")
+			return
+		var data_off := header_total
+		for i in range(struct_count):
+			var len_off := 4 + i * 4
+			var struct_len := int(bytes.decode_u32(len_off))
+			if struct_len <= 0:
+				continue
+			if data_off + struct_len > bytes.size():
+				push_error("FEAGI: Invalid ByteContainer v2 (structure out of bounds)")
+				return
+			var struct_bytes := bytes.slice(data_off, data_off + struct_len)
+			_process_wrapped_byte_structure(struct_bytes, from_shm)
+			data_off += struct_len
 		return
 	
 	## respond as per type
@@ -631,6 +719,27 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 				if !decoded_result.success:
 					print("   ❌ ERROR: Type 11 decode failed: ", decoded_result.error)
 					return
+
+				# Rate-limited SHM decode diagnostics (high-signal for "large scale shows nothing").
+				# Only logs when the packet came from SHM.
+				if from_shm:
+					var now_ms_shm_apply := Time.get_ticks_msec()
+					if now_ms_shm_apply - _shm_last_apply_log_ms >= _SHM_APPLY_LOG_INTERVAL_MS:
+						_shm_last_apply_log_ms = now_ms_shm_apply
+						var areas_dict: Dictionary = decoded_result.get("areas", {})
+						var area_count := areas_dict.size() if typeof(areas_dict) == TYPE_DICTIONARY else 0
+						var power_points := 0
+						if typeof(areas_dict) == TYPE_DICTIONARY:
+							for k in areas_dict.keys():
+								var clean_id := String(k).strip_edges().replace("'", "").replace('"', "")
+								if AbstractCorticalArea.is_power_area(clean_id):
+									var a_any: Variant = areas_dict.get(k)
+									var a: Dictionary = a_any as Dictionary
+									var x_arr: PackedInt32Array = a.get("x_array", PackedInt32Array())
+									power_points = x_arr.size()
+									break
+						print("[SHM-APPLY] ok=true areas=%d power_points=%d" % [area_count, power_points])
+
 				# Process each decoded cortical area with DIRECT bulk arrays (no conversion loops!)
 				for cortical_id in decoded_result.areas.keys():
 					var area_data = decoded_result.areas[cortical_id]
@@ -658,6 +767,9 @@ func _get_timestamp() -> String:
 	return "%02d:%02d:%02d.%03d" % [time.hour, time.minute, time.second, Time.get_ticks_msec() % 1000]
 
 func _reconnect_websocket() -> void:
+	# If SHM neuron visualization is active, do not attempt WS reconnects.
+	if _use_shared_mem:
+		return
 	# Debug call stack to see what's triggering multiple calls
 	var stack = get_stack()
 	var caller = "unknown"
@@ -686,7 +798,8 @@ func _looks_like_feagi_ws_payload(bytes: PackedByteArray) -> bool:
 	if bytes.size() == 0:
 		return false
 	var t := int(bytes[0])
-	return t == 1 or t == 8 or t == 9 or t == 10 or t == 11
+	# 2 is FeagiByteContainer v2 wrapper (contains 1/11 internally)
+	return t == 1 or t == 2 or t == 8 or t == 9 or t == 10 or t == 11
 
 func _is_probably_text(bytes: PackedByteArray) -> bool:
 	# Heuristic: small (<= 256) and all ASCII/whitespace
@@ -841,6 +954,7 @@ func _try_open_shm_path() -> void:
 	_shm_last_rate_log_time = Time.get_ticks_msec() / 1000.0
 	
 	print("𒓉 [WS] Using SHM neuron visualization: ", p, " magic=", magic, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size, " first_seq=", first_seq)
+	shm_visualization_enabled.emit(p)
 	# Reset path notices to show SHM active on next _process tick
 	_shm_notice_printed = false
 	_ws_notice_printed = true
@@ -853,6 +967,26 @@ func _poll_shm_once() -> void:
 	var h := _shm_file.get_buffer(_shm_header_size)
 	if h.size() < 32:
 		return
+	# Detect SHM layout changes (e.g., FEAGI auto-resized slot size for large frames).
+	# If FEAGI recreates the SHM file with a new slot_size/num_slots, we MUST reopen and
+	# reinitialize offsets; otherwise we will seek into the wrong positions and decode garbage.
+	var hdr_num_slots := int(h.decode_u32(12))
+	var hdr_slot_size := int(h.decode_u32(16))
+	if hdr_num_slots > 0 and hdr_slot_size > 0:
+		if hdr_num_slots != _shm_num_slots or hdr_slot_size != _shm_slot_size:
+			print("[SHM] Detected SHM layout change: slots %d→%d slot_size %d→%d. Reopening %s" % [
+				_shm_num_slots, hdr_num_slots, _shm_slot_size, hdr_slot_size, _shm_path
+			])
+			_shm_file = null
+			var f2 := FileAccess.open(_shm_path, FileAccess.READ)
+			if f2 != null:
+				_shm_file = f2
+				_shm_num_slots = hdr_num_slots
+				_shm_slot_size = hdr_slot_size
+				_shm_last_seq = _decode_u64_le(h, 20) - 1
+				_shm_missed_cycles = 0
+				_shm_no_new_reported = false
+			return
 	var frame_seq := _decode_u64_le(h, 20)
 	if frame_seq <= _shm_last_seq:
 		_shm_missed_cycles += 1
@@ -892,6 +1026,16 @@ func _poll_shm_once() -> void:
 	_shm_last_seq = frame_seq
 	_shm_no_new_reported = false
 	_shm_missed_cycles = 0
+
+	# Rate-limited SHM receive diagnostics for large payloads (e.g., MRI/NIFTI frames).
+	# Confirms we received a payload and shows first byte (2=v2 container, 11=raw Type11).
+	var now_ms_shm_rx := Time.get_ticks_msec()
+	if now_ms_shm_rx - _shm_last_rx_log_ms >= _SHM_RX_LOG_INTERVAL_MS:
+		_shm_last_rx_log_ms = now_ms_shm_rx
+		var fb := int(payload[0]) if payload.size() > 0 else -1
+		print("[SHM-RX] seq=%d payload_len=%d first_byte=%d slot_size=%d" % [
+			frame_seq, payload_len, fb, _shm_slot_size
+		])
 	
 	# Track update rate with timestamps and instantaneous FPS
 	_shm_updates_received += 1

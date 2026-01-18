@@ -30,7 +30,12 @@ func setup(cortical_area_ref: AbstractCorticalArea) -> void:
 func _on_single_left_click() -> void:
 	if _dragged:
 		return
-	BV.UI.selection_system.clear_all_highlighted()
+	var is_multi := Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_SHIFT)
+	if not is_multi:
+		var cb_parent = get_parent()
+		if cb_parent is CircuitBuilder:
+			(cb_parent as CircuitBuilder)._select_single_graph_element(self)
+		BV.UI.selection_system.clear_all_highlighted()
 	BV.UI.selection_system.add_to_highlighted(_representing_cortical_area)
 	BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK)
 
@@ -54,6 +59,7 @@ const IPU_BOX_COLOR: Color = Color(0.25882352941176473, 0.25882352941176473, 0.2
 const CUSTOM_BOX_COLOR: Color = Color(0, 0.32941176470588235, 0.5764705882352941)
 const MEMORY_BOX_COLOR: Color = Color(0.5803921568627451, 0.06666666666666667, 0)
 const OPU_BOX_COLOR: Color = Color(0.5803921568627451, 0.3215686274509804, 0)
+const CORE_BOX_COLOR: Color = Color(0.0, 0.204, 0.384)
 
 ## Set the color depnding on cortical type
 func _setup_node_color(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
@@ -68,7 +74,7 @@ func _setup_node_color(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			style_box.bg_color = OPU_BOX_COLOR
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
-			pass #TODO Define an actual color here at some point!
+			style_box.bg_color = CORE_BOX_COLOR
 		_:
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
 			pass

@@ -43,6 +43,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
 text = " 1. Please Select A Source Area..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
@@ -74,6 +75,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
 text = " 2. Please Select A Destination Area..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
@@ -105,6 +107,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
 text = " 3. Please Select A Connectivity Rule..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
@@ -125,9 +128,16 @@ stretch_mode = 0
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
+[node name="CoreConnectivityRulesLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+size_flags_horizontal = 3
+text = "Core connectivity rules"
+
 [node name="CoreMorphologiesBar" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
-custom_minimum_size = Vector2(0, 200)
+custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
 horizontal_scroll_mode = 2
 vertical_scroll_mode = 0

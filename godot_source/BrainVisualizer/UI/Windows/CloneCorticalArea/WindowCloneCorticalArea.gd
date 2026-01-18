@@ -45,13 +45,33 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	if active_bm == null:
 		push_error("WindowCloneCorticalArea: No brain monitor available for preview creation!")
 		return
-	_preview = active_bm.create_preview(_field_3d_location.current_vector, _cloning_cortical_area.dimensions_3D, false, _cloning_cortical_area.cortical_type, _cloning_cortical_area)
+	# Do NOT auto-frame the camera during clone: creating/moving the clone preview should not reset user view.
+	_preview = active_bm.create_preview(
+		_field_3d_location.current_vector,
+		_cloning_cortical_area.dimensions_3D,
+		false,
+		_cloning_cortical_area.cortical_type,
+		_cloning_cortical_area,
+		false, # auto_frame_on_create
+		true  # auto_frame_on_interaction
+	)
 	_preview.connect_UI_signals(move_signals, resize_signals, closing_signals)
 
 
 func _clone_pressed():
 	#TODO check for conflicting name and alert user
-	await FeagiCore.requests.clone_cortical_area(_cloning_cortical_area, _field_cortical_name.text, _field_2d_location.current_vector, _field_3d_location.current_vector, FeagiCore.feagi_local_cache.brain_regions.get_root_region(), _field_wiring_toggle.button_pressed) #TODO remove root region
+	var target_parent_region: BrainRegion = _cloning_cortical_area.current_parent_region
+	if target_parent_region == null:
+		push_error("WindowCloneCorticalArea: Cannot clone '%s' because its parent region is null" % _cloning_cortical_area.cortical_ID)
+		return
+	await FeagiCore.requests.clone_cortical_area(
+		_cloning_cortical_area,
+		_field_cortical_name.text,
+		_field_2d_location.current_vector,
+		_field_3d_location.current_vector,
+		target_parent_region,
+		_field_wiring_toggle.button_pressed
+	)
 	# Explicitly clean up preview before closing window
 	_cleanup_preview()
 	close_window()

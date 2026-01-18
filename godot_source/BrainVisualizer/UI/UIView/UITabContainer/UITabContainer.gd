@@ -6,6 +6,8 @@ const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/Brain
 const ICON_CB: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png")
 const ICON_BM: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png")
 const TAB_ICON_MAX_WIDTH_BASE_PX: int = 20
+const TAB_H_SEPARATION_BASE_PX: int = 12
+const TAB_LEFT_PADDING_BASE_PX: int = 6
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
 signal requested_view_region_as_CB(region: BrainRegion, request_origin: UITabContainer)
@@ -35,6 +37,19 @@ func _theme_updated(new_theme: Theme) -> void:
 	if _tab_bar != null:
 		_tab_bar.theme = new_theme
 		_apply_tab_icon_max_width()
+		var scaled_sep: int = int(round(float(TAB_H_SEPARATION_BASE_PX) * BV.UI.loaded_theme_scale.x))
+		_tab_bar.add_theme_constant_override("h_separation", scaled_sep)
+		var scaled_padding: int = int(round(float(TAB_LEFT_PADDING_BASE_PX) * BV.UI.loaded_theme_scale.x))
+		var selected_tab = _tab_bar.get_theme_stylebox("tab_selected")
+		if selected_tab != null:
+			var selected_override = selected_tab.duplicate()
+			selected_override.content_margin_left = scaled_padding
+			_tab_bar.add_theme_stylebox_override("tab_selected", selected_override)
+		var unselected_tab = _tab_bar.get_theme_stylebox("tab_unselected")
+		if unselected_tab != null:
+			var unselected_override = unselected_tab.duplicate()
+			unselected_override.content_margin_left = scaled_padding
+			_tab_bar.add_theme_stylebox_override("tab_unselected", unselected_override)
 
 func _apply_tab_icon_max_width() -> void:
 	if _tab_bar == null:
@@ -63,6 +78,7 @@ func spawn_CB_of_region(region: BrainRegion) -> void:
 	new_cb.setup(region)
 	#CURSED
 	_add_control_view_as_tab(new_cb)
+	new_cb.request_initial_fit()
 
 ## If BM of given region exists, brings it to the top. Otherwise, instantiates it and brings it to the top
 func show_BM_of_region(region: BrainRegion) -> void:
@@ -208,9 +224,36 @@ func get_tab_IDX_as_control(idx: int) -> Control:
 
 #endregion
 func _on_user_close_tab(tab_idx: int) -> void:
-	_remove_control_view_as_tab(get_tab_IDX_as_control(tab_idx))
+	var target = get_tab_IDX_as_control(tab_idx)
+	if target is UI_BrainMonitor_3DScene:
+		var bm := target as UI_BrainMonitor_3DScene
+		if bm.representing_region != null and bm.representing_region.is_root_region():
+			var temp_split := BV.UI.get_node("CB_Holder") as TempSplit
+			if temp_split != null:
+				temp_split.close_split_view()
+			return
+	if target is CircuitBuilder:
+		var cb := target as CircuitBuilder
+		if cb.representing_region != null and cb.representing_region.is_root_region():
+			var temp_split_cb := BV.UI.get_node("CB_Holder") as TempSplit
+			if temp_split_cb != null:
+				temp_split_cb.close_split_view()
+			return
+	_remove_control_view_as_tab(target)
 
 func _on_top_tab_change(_tab_index: int) -> void:
+	var top_control = get_tab_IDX_as_control(_tab_index)
+	if top_control is UI_BrainMonitor_3DScene:
+		var bm := top_control as UI_BrainMonitor_3DScene
+		if bm.representing_region != null and bm.representing_region.is_root_region():
+			_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
+			return
+	if top_control is CircuitBuilder:
+		var cb := top_control as CircuitBuilder
+		cb.request_initial_fit()
+		if cb.representing_region != null and cb.representing_region.is_root_region():
+			_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_ACTIVE_ONLY
+			return
 	if is_current_top_view_root_region():
 		_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_NEVER
 	else:

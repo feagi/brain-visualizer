@@ -92,7 +92,6 @@ var _memory_inactive_rim_intensity: float
 var _memory_inactive_jello_strength: float
 
 func setup(area: AbstractCorticalArea) -> void:
-	print("🧠 DIRECTPOINTS RENDERER SETUP for cortical area: %s" % area.cortical_ID)
 	# Store cortical area properties for later use
 	_cortical_area_type = area.cortical_type
 	_cortical_area_id = area.cortical_ID
@@ -117,9 +116,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	_rust_processor = ClassDB.instantiate("FeagiDataDeserializer")
 	_warning_threshold = _visualization_settings.performance_warning_threshold
-	
-	print("   🦀 [%s] Rust processor initialized - unlimited neurons, warning threshold: %d" % [_cortical_area_id, _warning_threshold])
-	
+
 	# Create static body for collision detection
 	_static_body = StaticBody3D.new()
 	_static_body.name = "DirectPointsBody"
@@ -331,7 +328,6 @@ func setup(area: AbstractCorticalArea) -> void:
 	# This is the authoritative source (updated from FEAGI API), not the health check cache
 	if FeagiCore:
 		FeagiCore.delay_between_bursts_updated.connect(_on_delay_between_bursts_changed)
-		print("   ⏱️  Connected to delay_between_bursts_updated signal for dynamic updates")
 	
 	# Setup visibility timer for neuron firing timeout
 	_visibility_timer = Timer.new()
@@ -361,7 +357,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
+		bv_update_friendly_name_label_position()
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
@@ -373,7 +369,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		new_dimensions = Vector3i.ONE
 	super(new_dimensions)
-	
+
 	# Refresh visualization_voxel_granularity from cache and update mesh if needed.
 	# (BV allows editing this at runtime; don't rely on dimension changes to refresh mesh.)
 	_refresh_visualization_voxel_granularity_from_cache()
@@ -382,6 +378,11 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space
 	
+	# CRITICAL FIX: Ensure _static_body remains visible after dimension updates
+	# This prevents the area from disappearing when properties are updated
+	if not _static_body.visible:
+		_static_body.visible = true
+
 	# Update collision shape size (but preserve custom sizes for special areas)
 	var collision_shape = _static_body.get_child(0) as CollisionShape3D
 	if collision_shape and collision_shape.shape is BoxShape3D:
@@ -399,7 +400,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
-		_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
+		bv_update_friendly_name_label_position()
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
@@ -410,6 +411,28 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 	
 	# print("DirectPoints voxel renderer dimensions updated: ", new_dimensions)  # Suppressed - called too frequently
+
+## Keeps the friendly-name label below the cortical area, but snaps its Z to the camera-facing edge
+## (avoids the label sitting at the center of the cortical depth).
+func bv_update_friendly_name_label_position() -> void:
+	if _static_body == null or _friendly_name_label == null:
+		return
+	if _should_use_png_icon_by_id(_cortical_area_id):
+		return
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var cam := viewport.get_camera_3d()
+	if cam == null:
+		return
+	
+	var y_offset: float = -(_static_body.scale.y / 2.0 + 2.0)
+	# Renderer base class extends Node (not Node3D), so compute camera relation in the StaticBody3D's space.
+	var cam_in_body_local: Vector3 = _static_body.to_local(cam.global_position)
+	var z_sign: float = -1.0 if cam_in_body_local.z < 0.0 else 1.0
+	var z_edge: float = _static_body.position.z + z_sign * (_static_body.scale.z / 2.0)
+	
+	_friendly_name_label.position = Vector3(_static_body.position.x, _static_body.position.y + y_offset, z_edge)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# This method handles legacy SVO data for backward compatibility

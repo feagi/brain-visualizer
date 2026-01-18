@@ -50,6 +50,20 @@ func _init():
 		print("✅ NETWORKING: genome_reset_request_recieved signal emitted")
 	)
 	add_child(websocket_API)
+	websocket_API.shm_visualization_enabled.connect(_on_shm_visualization_enabled)
+
+func _on_shm_visualization_enabled(_path: String) -> void:
+	# SHM is now active; BV no longer requires WebSocket connectivity for neuron visualization.
+	_transport_mode = TRANSPORT_MODE.SHARED_MEMORY
+	# Ensure SHM polling runs (it lives in FEAGIWebSocketAPI._process()).
+	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
+	# If WS was in retry mode, stop it (reduces log spam / avoids UI disconnect loops).
+	websocket_API.disconnect_websocket()
+	# If we were waiting on WS, treat connection as healthy (HTTP already validated).
+	if _connection_state != CONNECTION_STATE.HEALTHY:
+		var prev = _connection_state
+		_connection_state = CONNECTION_STATE.HEALTHY
+		connection_state_changed.emit(prev, CONNECTION_STATE.HEALTHY)
 
 ## Used to validate if a potential connection to FEAGI would be viable. Activates [FEAGIHTTPAPI] to do a healthcheck to verify.
 ## If viable, proceeds with connection. Returns if sucessful
@@ -183,14 +197,16 @@ func _call_register_agent_for_shm() -> bool:
 	# STEP 1: Query FEAGI's burst frequency BEFORE registration
 	var feagi_hz = await _get_feagi_burst_frequency()
 	if feagi_hz <= 0.0:
-		print("𒓉 [REG] ⚠️ Failed to get FEAGI burst frequency, defaulting to 60 Hz request")
-		feagi_hz = 60.0
+		print("𒓉 [REG] ⚠️ Failed to get FEAGI burst frequency, defaulting to 20 Hz request")
+		feagi_hz = 20.0
 	
-	# STEP 2: Calculate requested rate = min(feagi_frequency, 60)
-	# - If FEAGI < 60 Hz → request FEAGI's exact rate
-	# - If FEAGI >= 60 Hz → cap at 60 Hz (BV's max)
-	var requested_hz = min(feagi_hz, 60.0)
-	print("𒓉 [REG] FEAGI running at %.1f Hz, BV will request %.1f Hz (capped at 60 Hz)" % [feagi_hz, requested_hz])
+	# STEP 2: Calculate requested rate = min(feagi_frequency, 20)
+	# - If FEAGI < 20 Hz → request FEAGI's exact rate
+	# - If FEAGI >= 20 Hz → cap at 20 Hz (BV default)
+	var requested_hz = min(feagi_hz, 20.0)
+	print("𒓉 [REG] FEAGI running at %.1f Hz, BV will request %.1f Hz (capped at 20 Hz)" % [feagi_hz, requested_hz])
+	# Ensure SHM polling has a negotiated rate even if registration response omits `rates`
+	set_meta("_negotiated_viz_hz", requested_hz)
 	
 	# Build registration payload (matches FEAGI 2.0 infrastructure agent schema)
 	var payload := {
@@ -207,7 +223,9 @@ func _call_register_agent_for_shm() -> bool:
 			}
 		},
 		"metadata": {"request_shared_memory": true},
-		"chosen_transport": "websocket"  # BV prefers WebSocket over ZMQ
+		# Request HYBRID so FEAGI returns shm_paths when available; BV will switch to SHM and skip WS.
+		# If FEAGI cannot provide SHM, it will still advertise WebSocket in transports and BV will connect via WS.
+		"chosen_transport": "hybrid"
 	}
 	# Avoid chained member resolution at parse time; guard address_list
 	var addr_list = http_API.get("address_list")
@@ -242,12 +260,12 @@ func _call_register_agent_for_shm() -> bool:
 		var rates: Dictionary = resp["rates"]
 		if rates.has("visualization"):
 			var viz_rates: Dictionary = rates["visualization"]
-			var requested_hz_response = viz_rates.get("requested_hz", 60.0)
+			var requested_hz_response = viz_rates.get("requested_hz", 20.0)
 			var feagi_hz_from_response = viz_rates.get("feagi_hz", 0.0)
-			var negotiated_hz_response = viz_rates.get("negotiated_hz", 60.0)
+			var negotiated_hz_response = viz_rates.get("negotiated_hz", 20.0)
 			print("𒓉 [RATE-NEGO] Visualization rate negotiation:")
 			print("  FEAGI burst: %.1f Hz" % feagi_hz_from_response)
-			print("  BV requested: %.1f Hz (min(FEAGI, 60))" % requested_hz_response)
+			print("  BV requested: %.1f Hz (min(FEAGI, 20))" % requested_hz_response)
 			print("  Negotiated: %.1f Hz" % negotiated_hz_response)
 			# Store negotiated rate for future use (e.g., timing expectations)
 			set_meta("_negotiated_viz_hz", negotiated_hz_response)
@@ -356,6 +374,9 @@ func _HTTP_health_changed(_prev_health: FEAGIHTTPAPI.HTTP_HEALTH, current_health
 
 func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, current_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH) -> void:
 	print("FEAGI NETWORK: 📡 _WS_health_changed received: %s → %s" % [FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[_previous_health], FEAGIWebSocketAPI.WEBSOCKET_HEALTH.keys()[current_health]])
+	# In SHM mode, WS connectivity is not required for neuron visualization.
+	if _transport_mode == TRANSPORT_MODE.SHARED_MEMORY:
+		return
 	print("FEAGI NETWORK: Current connection state before WS change: %s" % CONNECTION_STATE.keys()[_connection_state])
 	print("FEAGI NETWORK: Current transport mode: %s" % TRANSPORT_MODE.keys()[_transport_mode])
 	

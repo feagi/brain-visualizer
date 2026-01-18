@@ -723,17 +723,12 @@ func _reposition_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalAr
 	# Position the renderers at the new location (now snapped to plate Z)
 	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
 		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
-		if cortical_viz._dda_renderer._friendly_name_label != null:
-			# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
-			var label_y_offset = -(cortical_viz._dda_renderer._static_body.scale.y / 2.0 + 2.0)
-			cortical_viz._dda_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
 	
 	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
 		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
-		if cortical_viz._directpoints_renderer._friendly_name_label != null:
-			# Label positioned below cortical area: -(scale.y / 2.0 + 2.0)
-			var label_y_offset = -(cortical_viz._directpoints_renderer._static_body.scale.y / 2.0 + 2.0)
-			cortical_viz._directpoints_renderer._friendly_name_label.global_position = desired_world_pos + Vector3(0, label_y_offset, 0)
+	
+	# Keep labels below the cortical area, but ensure they sit at the camera-facing edge of the cortical depth.
+	cortical_viz.bv_update_friendly_name_label_positions()
 
 func _get_plate_global_z(is_input: bool) -> float:
 	# Fetch the exact Z from the plate nodes to avoid drift
@@ -2083,7 +2078,8 @@ func _on_cortical_area_removed(area: AbstractCorticalArea) -> void:
 
 ## Forces a complete refresh of the brain region (public method for external calls)
 func force_refresh() -> void:
-	print("🔄 FORCE REFRESH: External refresh requested for region '%s'" % _representing_region.friendly_name)
+	if not FEAGIRequests._clone_operation_in_progress:
+		print("🔄 FORCE REFRESH: External refresh requested for region '%s'" % _representing_region.friendly_name)
 	_refresh_frame_contents()
 
 ## Starts monitoring connections for changes that could affect I/O status
@@ -2112,17 +2108,30 @@ func _start_connection_monitoring() -> void:
 func _connect_area_signals(area: AbstractCorticalArea) -> void:
 	# Connect to concrete mapping structure change signals on the cortical area
 	if area.has_signal("afferent_input_cortical_area_added"):
+		# Backward safety: older versions bound the area, which caused signature mismatch
+		var old_cb_aff_add := _on_area_connections_changed.bind(area)
+		if area.afferent_input_cortical_area_added.is_connected(old_cb_aff_add):
+			area.afferent_input_cortical_area_added.disconnect(old_cb_aff_add)
 		if not area.afferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
-			area.afferent_input_cortical_area_added.connect(_on_area_connections_changed.bind(area))
+			area.afferent_input_cortical_area_added.connect(_on_area_connections_changed)
 	if area.has_signal("efferent_input_cortical_area_added"):
+		var old_cb_eff_add := _on_area_connections_changed.bind(area)
+		if area.efferent_input_cortical_area_added.is_connected(old_cb_eff_add):
+			area.efferent_input_cortical_area_added.disconnect(old_cb_eff_add)
 		if not area.efferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
-			area.efferent_input_cortical_area_added.connect(_on_area_connections_changed.bind(area))
+			area.efferent_input_cortical_area_added.connect(_on_area_connections_changed)
 	if area.has_signal("afferent_input_cortical_area_removed"):
+		var old_cb_aff_rem := _on_area_connections_changed.bind(area)
+		if area.afferent_input_cortical_area_removed.is_connected(old_cb_aff_rem):
+			area.afferent_input_cortical_area_removed.disconnect(old_cb_aff_rem)
 		if not area.afferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
-			area.afferent_input_cortical_area_removed.connect(_on_area_connections_changed.bind(area))
+			area.afferent_input_cortical_area_removed.connect(_on_area_connections_changed)
 	if area.has_signal("efferent_input_cortical_area_removed"):
+		var old_cb_eff_rem := _on_area_connections_changed.bind(area)
+		if area.efferent_input_cortical_area_removed.is_connected(old_cb_eff_rem):
+			area.efferent_input_cortical_area_removed.disconnect(old_cb_eff_rem)
 		if not area.efferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
-			area.efferent_input_cortical_area_removed.connect(_on_area_connections_changed.bind(area))
+			area.efferent_input_cortical_area_removed.connect(_on_area_connections_changed)
 
 	# Also connect to dimension changes which might affect positioning
 	var cb_dim := _on_area_dimensions_changed.bind(area)
@@ -2134,22 +2143,30 @@ func _connect_area_signals(area: AbstractCorticalArea) -> void:
 func _disconnect_area_signals(area: AbstractCorticalArea) -> void:
 	if area == null:
 		return
-	# Recreate the same bound callables used during connect
+	# Backward safety: disconnect both legacy (bound) and current (unbound) callables.
 	var cb_conn := _on_area_connections_changed.bind(area)
 	var cb_dim := _on_area_dimensions_changed.bind(area)
 	# Mapping structure change signals
 	if area.has_signal("afferent_input_cortical_area_added"):
 		if area.afferent_input_cortical_area_added.is_connected(cb_conn):
 			area.afferent_input_cortical_area_added.disconnect(cb_conn)
+		if area.afferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
+			area.afferent_input_cortical_area_added.disconnect(_on_area_connections_changed)
 	if area.has_signal("efferent_input_cortical_area_added"):
 		if area.efferent_input_cortical_area_added.is_connected(cb_conn):
 			area.efferent_input_cortical_area_added.disconnect(cb_conn)
+		if area.efferent_input_cortical_area_added.is_connected(_on_area_connections_changed):
+			area.efferent_input_cortical_area_added.disconnect(_on_area_connections_changed)
 	if area.has_signal("afferent_input_cortical_area_removed"):
 		if area.afferent_input_cortical_area_removed.is_connected(cb_conn):
 			area.afferent_input_cortical_area_removed.disconnect(cb_conn)
+		if area.afferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
+			area.afferent_input_cortical_area_removed.disconnect(_on_area_connections_changed)
 	if area.has_signal("efferent_input_cortical_area_removed"):
 		if area.efferent_input_cortical_area_removed.is_connected(cb_conn):
 			area.efferent_input_cortical_area_removed.disconnect(cb_conn)
+		if area.efferent_input_cortical_area_removed.is_connected(_on_area_connections_changed):
+			area.efferent_input_cortical_area_removed.disconnect(_on_area_connections_changed)
 	# Dimension change signal
 	if area.dimensions_3D_updated.is_connected(cb_dim):
 		area.dimensions_3D_updated.disconnect(cb_dim)
@@ -2163,7 +2180,7 @@ func _on_global_mapping_changed(mapping: InterCorticalMappingSet) -> void:
 	var src := mapping.source_cortical_area
 	var dst := mapping.destination_cortical_area
 	if _representing_region and (src in _representing_region.contained_cortical_areas or dst in _representing_region.contained_cortical_areas):
-		print("🌐 GLOBAL MAPPING CHANGE: Refreshing region '%s' due to mapping %s -> %s" % [_representing_region.friendly_name, src.cortical_ID, dst.cortical_ID])
+		# Suppressed spam log during clone
 		_check_io_status_and_refresh()
 
 
@@ -2171,14 +2188,13 @@ func _on_global_mapping_changed(mapping: InterCorticalMappingSet) -> void:
 func _on_region_partial_mappings_changed(_param) -> void:
 	if not _connection_monitoring_enabled:
 		return
-	print("🧭 REGION PARTIAL MAPPINGS CHANGED: Triggering refresh for region '%s'" % _representing_region.friendly_name)
+	# Suppressed spam log during clone
 	_check_io_status_and_refresh()
 
 
 ## Checks if I/O status has changed and refreshes if needed
 func _check_io_status_and_refresh() -> void:
-	print("🔍 CHECKING I/O STATUS: Analyzing current vs previous I/O configuration")
-	# Force refresh - the I/O detection logic will handle determining conflicts
+	# Suppressed spam log during clone
 	force_refresh()
 
 ## Validates that all plates are properly aligned
@@ -2212,6 +2228,11 @@ func _validate_plate_alignment() -> void:
 
 ## Refreshes the entire frame contents
 func _refresh_frame_contents() -> void:
+	# CRITICAL: Skip refresh during active clone operations to prevent freeing the new visualization
+	if FEAGIRequests._clone_operation_in_progress:
+		# Suppressed spam log during clone
+		return
+	
 	print("🔄 REFRESH: Starting frame content refresh for region '%s'" % _representing_region.friendly_name)
 	
 	# Log current partial mappings state for debugging
@@ -2472,14 +2493,13 @@ func debug_current_system_state() -> void:
 	print("    🔴 Conflict container: %s" % ("EXISTS" if _conflict_areas_container else "NULL"))
 
 ## Called when connections change for an area in this region (with monitoring control)
-func _on_area_connections_changed(area: AbstractCorticalArea) -> void:
+func _on_area_connections_changed(_other_area: AbstractCorticalArea, _mapping_set: InterCorticalMappingSet) -> void:
 	if not _connection_monitoring_enabled:
-		print("🔇 MONITORING: Ignoring connection change for %s (monitoring disabled)" % area.cortical_ID)
+		# Avoid noisy output for mapping refresh storms.
 		return
 	if is_queued_for_deletion() or not is_inside_tree():
 		return
 		
-	print("🔗 CONNECTION CHANGE: Area %s connections changed, checking I/O status" % area.cortical_ID)
 	# Small delay to ensure connection changes are fully processed
 	call_deferred("_check_io_status_and_refresh")
 

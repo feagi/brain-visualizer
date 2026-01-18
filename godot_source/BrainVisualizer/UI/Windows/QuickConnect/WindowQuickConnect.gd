@@ -37,8 +37,11 @@ var _step3_morphology_details: MorphologyGenericDetails
 var _step4_button: Button
 
 # Horizontal icon shortcut bar for Core (system) morphologies
+var _core_bar_label: Label
 var _core_bar: ScrollContainer
 var _core_icons: HBoxContainer
+var _core_icon_buttons: Array[TextureButton] = []
+var _selected_core_icon_button: TextureButton = null
 
 var _current_state: POSSIBLE_STATES = POSSIBLE_STATES.IDLE
 var _finished_selecting: bool = false
@@ -63,6 +66,7 @@ func _ready() -> void:
 	_step3_morphology_view = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/SmartMorphologyView")
 	_step3_morphology_details = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails")
 	_step4_button = _window_internals.get_node("Establish")
+	_core_bar_label = _window_internals.get_node_or_null("CoreConnectivityRulesLabel")
 	_core_bar = _window_internals.get_node("CoreMorphologiesBar")
 	_core_icons = _window_internals.get_node("CoreMorphologiesBar/Icons")
 	
@@ -131,19 +135,19 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 		POSSIBLE_STATES.SOURCE:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
-			_core_bar.visible = false
+			_set_core_bar_visibility(false)
 			_setting_source()
 
 		POSSIBLE_STATES.DESTINATION:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
-			_core_bar.visible = false
+			_set_core_bar_visibility(false)
 			_setting_destination()
 
 		POSSIBLE_STATES.MORPHOLOGY:
 			_toggle_add_buttons(false)
 			_step4_button.disabled = true
-			_core_bar.visible = true
+			_set_core_bar_visibility(true)
 			_setting_morphology()
 		POSSIBLE_STATES.EDIT_MORPHOLOGY:
 			_step3_morphology_container.visible = !_step3_morphology_container.visible
@@ -152,7 +156,7 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			_toggle_add_buttons(true)
 			_step4_button.disabled = false
 			# Keep the core morphology icon bar visible so user can reselect
-			_core_bar.visible = true
+			_set_core_bar_visibility(true)
 		_:
 			push_error("UI: WINDOWS: WindowQuickConnect in unknown state!")
 	
@@ -183,13 +187,13 @@ func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
 	var mapping_defaults: MappingRestrictionDefault = MappingRestrictionsAPI.get_defaults_between_cortical_areas(_source, _destination)
 	_selected_morphology = null
-	_step3_label.text = " Please Select A Morphology..."
+	_step3_label.text = " Please Select a Connectivity Rule..."
 	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	
 	# ✅ CRITICAL FIX: Make the morphology container visible so the list appears
 	_step3_morphology_container.visible = true
 	# Show and (re)populate the Core Morphologies icon bar
-	_core_bar.visible = true
+	_set_core_bar_visibility(true)
 	
 	# Get restrictions with proper null checking
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
@@ -213,6 +217,11 @@ func _on_morphology_cache_changed(_m: BaseMorphology) -> void:
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
 	_populate_core_morphology_icons(restrictions)
 
+func _set_core_bar_visibility(visible: bool) -> void:
+	_core_bar.visible = visible
+	if _core_bar_label != null:
+		_core_bar_label.visible = visible
+
 ## Priority order for core morphologies (user-defined)
 const CORE_MORPHOLOGY_PRIORITY = [
 	"projector",
@@ -230,12 +239,18 @@ const CORE_MORPHOLOGY_PRIORITY = [
 	# Rest will be sorted alphabetically
 ]
 
+const CORE_ICON_NORMAL_MODULATE := Color(1, 1, 1, 1)
+const CORE_ICON_HOVER_MODULATE := Color(1.12, 1.12, 1.12, 1)
+const CORE_ICON_SELECTED_MODULATE := Color(1.2, 1.2, 1.2, 1)
+
 ## Populates the horizontal icon bar with only CORE (system) morphologies.
 ## If restrictions are provided, the set is intersected with allowed names and excludes disallowed ones.
 func _populate_core_morphology_icons(restrictions: MappingRestrictionCorticalMorphology = null) -> void:
 	# Clear previous icons
 	for child in _core_icons.get_children():
 		child.queue_free()
+	_core_icon_buttons.clear()
+	_selected_core_icon_button = null
 
 	# Determine allowed names if restricted
 	var allowed_names: Array[StringName] = []
@@ -322,18 +337,55 @@ func _create_icon_widget_for_morphology(morphology_id: StringName, morphology: B
 	button.texture_normal = texture
 	button.ignore_texture_size = true
 	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	button.custom_minimum_size = Vector2(160, 160) # leave room for label inside 100px row
+	button.custom_minimum_size = Vector2(0, 0)
 	button.tooltip_text = str(morphology_id)
-	button.pressed.connect(Callable(self, "_on_core_icon_pressed").bind(morphology))
+	button.focus_mode = Control.FOCUS_ALL
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.toggle_mode = true
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.modulate = CORE_ICON_NORMAL_MODULATE
+	var border_style := StyleBoxFlat.new()
+	border_style.border_width_left = 1
+	border_style.border_width_right = 1
+	border_style.border_width_top = 1
+	border_style.border_width_bottom = 1
+	border_style.border_color = Color(0.7, 0.7, 0.7, 1)
+	border_style.bg_color = Color(0, 0, 0, 0)
+	var selected_border_style := StyleBoxFlat.new()
+	selected_border_style.border_width_left = 1
+	selected_border_style.border_width_right = 1
+	selected_border_style.border_width_top = 1
+	selected_border_style.border_width_bottom = 1
+	selected_border_style.border_color = Color(0.2, 0.8, 0.45, 1)
+	selected_border_style.bg_color = Color(0, 0, 0, 0)
+	var border_panel := PanelContainer.new()
+	border_panel.custom_minimum_size = Vector2(320, 240) # tighter vertical footprint so label sits closer
+	border_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	border_panel.add_theme_stylebox_override("panel", border_style)
+	border_panel.set_meta("border_normal", border_style)
+	border_panel.set_meta("border_selected", selected_border_style)
+	border_panel.add_child(button)
+	button.set_meta("border_panel", border_panel)
+	button.pressed.connect(Callable(self, "_on_core_icon_pressed").bind(morphology, button))
 	var name_label := Label.new()
 	name_label.text = str(morphology.name)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var slot := VBoxContainer.new()
-	slot.custom_minimum_size = Vector2(90, 100)
+	slot.custom_minimum_size = Vector2(180, 0)
 	slot.size_flags_vertical = 0
 	slot.alignment = BoxContainer.ALIGNMENT_CENTER
-	slot.add_child(button)
+	slot.add_theme_constant_override("separation", 0)
+	slot.mouse_filter = Control.MOUSE_FILTER_STOP
+	slot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	slot.gui_input.connect(Callable(self, "_on_core_icon_slot_input").bind(morphology, button))
+	slot.mouse_entered.connect(Callable(self, "_set_core_icon_hover").bind(button, true))
+	slot.mouse_exited.connect(Callable(self, "_set_core_icon_hover").bind(button, false))
+	button.mouse_entered.connect(Callable(self, "_set_core_icon_hover").bind(button, true))
+	button.mouse_exited.connect(Callable(self, "_set_core_icon_hover").bind(button, false))
+	slot.add_child(border_panel)
 	slot.add_child(name_label)
+	_core_icon_buttons.append(button)
 	return slot
 
 ## Sort morphology names by priority order
@@ -361,10 +413,53 @@ func _sort_morphologies_by_priority(names: Array) -> Array:
 	return sorted
 
 ## When a core-icon shortcut is pressed, select it in the list to drive existing flows.
-func _on_core_icon_pressed(morphology: BaseMorphology) -> void:
+func _on_core_icon_pressed(morphology: BaseMorphology, button: TextureButton) -> void:
 	if morphology == null:
 		return
+	_set_core_icon_selected(button)
 	_step3_scroll.select_morphology(morphology)
+	_set_morphology(morphology)
+
+## Ensures the entire icon tile (image + label) is clickable.
+func _on_core_icon_slot_input(event: InputEvent, morphology: BaseMorphology, button: TextureButton) -> void:
+	if morphology == null:
+		return
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+			_on_core_icon_pressed(morphology, button)
+
+## Visual hover feedback so the icon tiles feel clickable.
+func _set_core_icon_hover(button: TextureButton, is_hovered: bool) -> void:
+	if button == null:
+		return
+	if button == _selected_core_icon_button:
+		button.modulate = CORE_ICON_SELECTED_MODULATE
+		return
+	button.modulate = CORE_ICON_HOVER_MODULATE if is_hovered else CORE_ICON_NORMAL_MODULATE
+
+## Keep a visible selected state for the last chosen icon.
+func _set_core_icon_selected(button: TextureButton) -> void:
+	if button == null:
+		return
+	for icon_button in _core_icon_buttons:
+		if icon_button == null:
+			continue
+		var icon_panel: PanelContainer = icon_button.get_meta("border_panel", null) as PanelContainer
+		if icon_panel:
+			var normal_style: StyleBoxFlat = icon_panel.get_meta("border_normal", null) as StyleBoxFlat
+			if normal_style:
+				icon_panel.add_theme_stylebox_override("panel", normal_style as StyleBox)
+		icon_button.button_pressed = false
+		icon_button.modulate = CORE_ICON_NORMAL_MODULATE
+	button.button_pressed = true
+	button.modulate = CORE_ICON_SELECTED_MODULATE
+	var selected_panel: PanelContainer = button.get_meta("border_panel", null) as PanelContainer
+	if selected_panel:
+		var selected_style: StyleBoxFlat = selected_panel.get_meta("border_selected", null) as StyleBoxFlat
+		if selected_style:
+			selected_panel.add_theme_stylebox_override("panel", selected_style as StyleBox)
+	_selected_core_icon_button = button
 
 func _set_source(cortical_area: AbstractCorticalArea) -> void:
 	_source = cortical_area

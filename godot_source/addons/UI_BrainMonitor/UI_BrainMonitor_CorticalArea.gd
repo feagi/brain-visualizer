@@ -25,6 +25,30 @@ var _connection_curves: Array[Node3D] = []  # Store all connection curve nodes
 var _are_connections_visible: bool = false
 var _pulse_tweens: Array[Tween] = []  # Store pulse animation tweens
 
+# I/O direction indicator (magenta pulsing arrow above boundary areas)
+var _io_direction_indicator: Node3D = null
+var _io_direction_indicator_material: StandardMaterial3D = null
+var _io_direction_indicator_mode: StringName = &"none" # "none" | "input" | "output" | "bidirectional"
+var _io_direction_indicator_base_scale: Vector3 = Vector3.ONE
+var _io_direction_indicator_label: Label3D = null
+
+# Tunables for arrow look/feel
+const IO_ARROW_COLOR: Color = Color(0.827, 0.706, 0.196, 0.85)  # Mustard yellow, semi-transparent
+const IO_ARROW_EMISSION_COLOR: Color = Color(0.827, 0.706, 0.196, 1.0)
+const IO_ARROW_PULSE_PERIOD_MS: float = 3000.0
+const IO_ARROW_ALPHA_MIN: float = 0.15
+const IO_ARROW_ALPHA_MAX: float = 0.75
+const IO_ARROW_EMISSION_MIN: float = 1.2
+const IO_ARROW_EMISSION_MAX: float = 3.2
+const IO_ARROW_SIZE_MULTIPLIER: float = 3.0
+const IO_ARROW_SIZE_MIN_RADIUS: float = 0.07
+const IO_ARROW_SIZE_MAX_RADIUS: float = 0.22
+const IO_ARROW_SIZE_MIN_SHAFT_H: float = 0.18
+const IO_ARROW_SIZE_MAX_SHAFT_H: float = 0.85
+const IO_ARROW_SIZE_MIN_HEAD_H: float = 0.12
+const IO_ARROW_SIZE_MAX_HEAD_H: float = 0.55
+const IO_ARROW_LABEL_Y_GAP_MULT: float = 0.65  # Extra spacing above arrow head(s), in head-height units
+
 # Distance-based scaling for pulse spheres (flow animation)
 const PULSE_DISTANCE_SCALE_ENABLED: bool = true
 const PULSE_DISTANCE_REF: float = 50.0
@@ -147,6 +171,14 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 			defined_cortical_area.recursive_cortical_area_removed.connect(_on_mapping_changed)
 		# print("🔗 CONNECTED: Mapping change signals for real-time curve updates")  # Suppressed - causes output overflow
 
+	# Keep I/O direction indicator updated as the area moves/resizes (and after initial parenting settles).
+	if defined_cortical_area:
+		if not defined_cortical_area.coordinates_3D_updated.is_connected(_refresh_io_direction_indicator):
+			defined_cortical_area.coordinates_3D_updated.connect(_refresh_io_direction_indicator)
+		if not defined_cortical_area.dimensions_3D_updated.is_connected(_refresh_io_direction_indicator):
+			defined_cortical_area.dimensions_3D_updated.connect(_refresh_io_direction_indicator)
+	call_deferred("_refresh_io_direction_indicator")
+
 func _exit_tree() -> void:
 	# Unregister desktop WS fast-path references only on actual teardown.
 	#
@@ -159,6 +191,25 @@ func _exit_tree() -> void:
 	# `is_queued_for_deletion()` is true for real teardown (queue_free / scene shutdown), but false for re-parent.
 	if _representing_cortial_area != null and is_queued_for_deletion():
 		_representing_cortial_area.BV_unregister_directpoints_renderer()
+
+func _process(_delta: float) -> void:
+	# Pulse the I/O indicator (if present) without relying on Tweens (robust to re-parenting).
+	if _io_direction_indicator_material == null or _io_direction_indicator == null:
+		return
+	if not is_instance_valid(_io_direction_indicator):
+		_io_direction_indicator = null
+		_io_direction_indicator_material = null
+		_io_direction_indicator_base_scale = Vector3.ONE
+		set_process(false)
+		return
+	var phase: float = float(Time.get_ticks_msec()) / IO_ARROW_PULSE_PERIOD_MS
+	var s: float = 0.5 - 0.5 * cos(phase * TAU)  # 0..1 smooth pulse
+	var c := _io_direction_indicator_material.albedo_color
+	c.a = lerpf(IO_ARROW_ALPHA_MIN, IO_ARROW_ALPHA_MAX, s)
+	_io_direction_indicator_material.albedo_color = c
+	_io_direction_indicator_material.emission_energy = lerpf(IO_ARROW_EMISSION_MIN, IO_ARROW_EMISSION_MAX, s)
+	# Keep the arrow from inheriting the cortical area's Z-scale by applying an inverse base scale.
+	_io_direction_indicator.scale = _io_direction_indicator_base_scale * lerpf(0.95, 1.05, s)
 
 func _schedule_directpoints_fastpath_registration_retry(defined_cortical_area: AbstractCorticalArea) -> void:
 	# Keep retries bounded and quiet.
@@ -181,12 +232,465 @@ func _retry_directpoints_fastpath_registration(defined_cortical_area: AbstractCo
 	var dims := _directpoints_renderer.call("bv_get_dimensions") as Vector3
 	defined_cortical_area.BV_register_directpoints_renderer(_directpoints_renderer, mm, dims)
 
+## Creates/updates a magenta pulsing arrow above boundary I/O areas.
+## - Input: arrow points down toward the area
+## - Output: arrow points up away from the area
+## - Both: bidirectional (double-headed)
+## Skips indicators for areas currently positioned on brain-region plates.
+func _refresh_io_direction_indicator(_unused = null) -> void:
+	# Skip indicators for plate-positioned areas (explicit user requirement).
+	if _is_on_brain_region_plate():
+		_clear_io_direction_indicator()
+		return
+
+	var region := _get_containing_region_context()
+	if region == null or _representing_cortial_area == null:
+		_clear_io_direction_indicator()
+		return
+
+	# Determine IO directionality: connections from/to areas outside the containing region.
+	var is_input := _has_afferent_from_outside_region(_representing_cortial_area, region)
+	var is_output := _has_efferent_to_outside_region(_representing_cortial_area, region)
+
+	# Always show on IPU/OPU areas (directional override).
+	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+		is_input = true
+	if _representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+		is_output = true
+
+	var mode: StringName = &"none"
+	if is_input and is_output:
+		mode = &"bidirectional"
+	elif is_input:
+		mode = &"input"
+	elif is_output:
+		mode = &"output"
+
+	if mode == &"none":
+		_clear_io_direction_indicator()
+		return
+
+	# If mode changed, rebuild geometry.
+	if mode != _io_direction_indicator_mode:
+		_clear_io_direction_indicator()
+		_io_direction_indicator_mode = mode
+		_create_io_direction_indicator(mode)
+
+	_update_io_direction_indicator_transform(mode)
+
+func _create_io_direction_indicator(mode: StringName) -> void:
+	var parent_body := _get_best_static_body_for_indicator()
+	if parent_body == null:
+		return
+
+	var root := Node3D.new()
+	root.name = "IODirectionIndicator"
+
+	# Shared material for all pieces (magenta, unshaded, transparent, emissive).
+	var mat := StandardMaterial3D.new()
+	mat.flags_unshaded = true
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.emission_enabled = true
+	mat.albedo_color = IO_ARROW_COLOR
+	mat.emission = IO_ARROW_EMISSION_COLOR
+	mat.emission_energy = IO_ARROW_EMISSION_MIN
+
+	# Shaft
+	var shaft := MeshInstance3D.new()
+	shaft.name = "ArrowShaft"
+	var shaft_mesh := CylinderMesh.new()
+	shaft_mesh.height = IO_ARROW_SIZE_MIN_SHAFT_H
+	shaft_mesh.top_radius = IO_ARROW_SIZE_MIN_RADIUS
+	shaft_mesh.bottom_radius = IO_ARROW_SIZE_MIN_RADIUS
+	shaft_mesh.radial_segments = 10
+	shaft.mesh = shaft_mesh
+	shaft.material_override = mat
+	root.add_child(shaft)
+
+	# Head(s) (cone via CylinderMesh top_radius=0)
+	if mode == &"bidirectional":
+		var head_up := MeshInstance3D.new()
+		head_up.name = "ArrowHeadUp"
+		var head_mesh_up := CylinderMesh.new()
+		head_mesh_up.height = IO_ARROW_SIZE_MIN_HEAD_H
+		head_mesh_up.top_radius = 0.0
+		head_mesh_up.bottom_radius = IO_ARROW_SIZE_MIN_RADIUS * 1.35
+		head_mesh_up.radial_segments = 10
+		head_up.mesh = head_mesh_up
+		head_up.material_override = mat
+		head_up.position = Vector3.ZERO
+		root.add_child(head_up)
+
+		var head_down := MeshInstance3D.new()
+		head_down.name = "ArrowHeadDown"
+		var head_mesh_down := head_mesh_up.duplicate() as CylinderMesh
+		head_down.mesh = head_mesh_down
+		head_down.material_override = mat
+		head_down.position = Vector3.ZERO
+		head_down.rotation = Vector3(PI, 0.0, 0.0)
+		root.add_child(head_down)
+	else:
+		var head := MeshInstance3D.new()
+		head.name = "ArrowHead"
+		var head_mesh := CylinderMesh.new()
+		head_mesh.height = IO_ARROW_SIZE_MIN_HEAD_H
+		head_mesh.top_radius = 0.0
+		head_mesh.bottom_radius = IO_ARROW_SIZE_MIN_RADIUS * 1.35
+		head_mesh.radial_segments = 10
+		head.mesh = head_mesh
+		head.material_override = mat
+		head.position = Vector3.ZERO
+		root.add_child(head)
+
+	parent_body.add_child(root)
+	_io_direction_indicator = root
+	_io_direction_indicator_material = mat
+	_io_direction_indicator_label = _create_io_direction_indicator_label(mode)
+	set_process(true)
+
+func _update_io_direction_indicator_transform(mode: StringName) -> void:
+	if _io_direction_indicator == null or not is_instance_valid(_io_direction_indicator):
+		return
+
+	var parent_body := _get_best_static_body_for_indicator()
+	if parent_body == null:
+		return
+
+	# Compute visual bounds in WORLD space (so sizing is not affected by parent scaling).
+	var bounds_world := _compute_world_visual_aabb(parent_body)
+	var top_y_world: float = bounds_world.position.y + bounds_world.size.y
+	# Sizing decision must ignore Z (explicit requirement). Use only X/Y dimensions.
+	var base_width_x: float = maxf(0.01, bounds_world.size.x)
+	var base_height_y: float = maxf(0.01, bounds_world.size.y)
+
+	# Scale arrow relative to the cortical area's actual rendered size.
+	var radius: float = clampf(
+		base_width_x * 0.12 * IO_ARROW_SIZE_MULTIPLIER,
+		IO_ARROW_SIZE_MIN_RADIUS * IO_ARROW_SIZE_MULTIPLIER,
+		IO_ARROW_SIZE_MAX_RADIUS * IO_ARROW_SIZE_MULTIPLIER
+	)
+	var shaft_h: float = clampf(
+		base_height_y * 0.35 * IO_ARROW_SIZE_MULTIPLIER,
+		IO_ARROW_SIZE_MIN_SHAFT_H * IO_ARROW_SIZE_MULTIPLIER,
+		IO_ARROW_SIZE_MAX_SHAFT_H * IO_ARROW_SIZE_MULTIPLIER
+	)
+	var head_h: float = clampf(
+		base_height_y * 0.18 * IO_ARROW_SIZE_MULTIPLIER,
+		IO_ARROW_SIZE_MIN_HEAD_H * IO_ARROW_SIZE_MULTIPLIER,
+		IO_ARROW_SIZE_MAX_HEAD_H * IO_ARROW_SIZE_MULTIPLIER
+	)
+	var gap: float = clampf(base_height_y * 0.08, 0.10, 0.45)
+
+	_update_io_direction_indicator_geometry(mode, radius, shaft_h, head_h)
+
+	# Place indicator immediately above the cortical area (small gap) in WORLD coordinates.
+	var total_height: float = shaft_h + head_h
+	if mode == &"bidirectional":
+		total_height = shaft_h + (2.0 * head_h)
+	var center_y_world: float = top_y_world + gap + (total_height * 0.5)
+	
+	# Align X with the friendly-name label's plated positioning (when available).
+	var label := _get_friendly_name_label()
+	var edge_world: Vector3 = parent_body.global_position
+	if label != null and is_instance_valid(label):
+		# Use the label's X/Z position since it is already camera-aware (snapped to camera-facing edge).
+		edge_world = Vector3(label.global_position.x, edge_world.y, label.global_position.z)
+	else:
+		# Fall back to the same camera-facing-edge logic used by the label renderers.
+		var viewport := get_viewport()
+		if viewport != null:
+			var cam := viewport.get_camera_3d()
+			if cam != null:
+				var cam_in_body_local: Vector3 = parent_body.to_local(cam.global_position)
+				var z_sign: float = -1.0 if cam_in_body_local.z < 0.0 else 1.0
+				# parent_body.global_transform.basis.z already includes scale; half-depth is basis.z * 0.5.
+				var half_depth_vec_world: Vector3 = parent_body.global_transform.basis.z * 0.5
+				var edge_pos_world: Vector3 = parent_body.global_position + (z_sign * half_depth_vec_world)
+				edge_world = Vector3(edge_pos_world.x, edge_world.y, edge_pos_world.z)
+
+	_io_direction_indicator.global_position = Vector3(edge_world.x, center_y_world, edge_world.z)
+
+	# Prevent inherited non-uniform scaling (especially Z) from thickening the arrow.
+	var parent_scale: Vector3 = parent_body.global_transform.basis.get_scale()
+	if parent_scale.x == 0.0 or parent_scale.y == 0.0 or parent_scale.z == 0.0:
+		_clear_io_direction_indicator()
+		return
+	_io_direction_indicator_base_scale = Vector3(
+		1.0 / absf(parent_scale.x),
+		1.0 / absf(parent_scale.y),
+		1.0 / absf(parent_scale.z)
+	)
+	_update_io_direction_indicator_label(mode, shaft_h, head_h)
+	_update_io_direction_indicator_label_visibility()
+
+	# Orient direction
+	if mode == &"input":
+		# Input arrow points DOWN toward the area.
+		_io_direction_indicator.rotation = Vector3(PI, 0.0, 0.0)
+	elif mode == &"output":
+		# Output arrow points UP away from the area.
+		_io_direction_indicator.rotation = Vector3.ZERO
+	else:
+		# Bidirectional indicator is symmetric; keep upright.
+		_io_direction_indicator.rotation = Vector3.ZERO
+
+func _get_friendly_name_label() -> Label3D:
+	# These renderer members are used elsewhere (e.g., UI_BrainMonitor_3DScene), so it's safe to reference.
+	if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
+		return _dda_renderer._friendly_name_label
+	if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:
+		return _directpoints_renderer._friendly_name_label
+	return null
+
+func _create_io_direction_indicator_label(mode: StringName) -> Label3D:
+	if _io_direction_indicator == null or not is_instance_valid(_io_direction_indicator):
+		return null
+	var label := Label3D.new()
+	label.name = "IODirectionLabel"
+	# Keep label independent of arrow rotation/scale so it always appears above in world space.
+	label.top_level = true
+	label.font_size = 256
+	label.font = load("res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf")
+	label.modulate = Color.WHITE
+	label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.alpha_scissor_threshold = 0.5
+	label.no_depth_test = false
+	label.render_priority = 2  # Render after the arrow geometry
+	label.visible = false  # Only shown on hover
+	label.text = _io_direction_indicator_label_text(mode)
+	_io_direction_indicator.add_child(label)
+	return label
+
+func _io_direction_indicator_label_text(mode: StringName) -> String:
+	if mode == &"input":
+		return "Input Area"
+	if mode == &"output":
+		return "Output Area"
+	if mode == &"bidirectional":
+		return "Input/Output Area"
+	return ""
+
+func _update_io_direction_indicator_label(mode: StringName, shaft_h: float, head_h: float) -> void:
+	if _io_direction_indicator_label == null or not is_instance_valid(_io_direction_indicator_label):
+		return
+	if _io_direction_indicator == null or not is_instance_valid(_io_direction_indicator):
+		return
+	_io_direction_indicator_label.text = _io_direction_indicator_label_text(mode)
+	# Position label above the arrow in WORLD space (avoids inheriting arrow flips/scales).
+	var total_h: float = shaft_h + head_h
+	if mode == &"bidirectional":
+		total_h = shaft_h + (2.0 * head_h)
+	var y_above: float = (total_h / 2.0) + (head_h * IO_ARROW_LABEL_Y_GAP_MULT)
+	_io_direction_indicator_label.global_position = _io_direction_indicator.global_position + Vector3(0.0, y_above, 0.0)
+
+func _update_io_direction_indicator_label_visibility() -> void:
+	if _io_direction_indicator_label == null or not is_instance_valid(_io_direction_indicator_label):
+		return
+	# Only show label when the cortical area itself is hovered (consistent with hover highlighting).
+	_io_direction_indicator_label.visible = _is_volume_moused_over and _io_direction_indicator_mode != &"none"
+
+func _update_io_direction_indicator_geometry(mode: StringName, radius: float, shaft_h: float, head_h: float) -> void:
+	var shaft := _io_direction_indicator.get_node_or_null("ArrowShaft") as MeshInstance3D
+	if shaft != null:
+		var shaft_mesh := CylinderMesh.new()
+		shaft_mesh.height = shaft_h
+		shaft_mesh.top_radius = radius
+		shaft_mesh.bottom_radius = radius
+		shaft_mesh.radial_segments = 10
+		shaft.mesh = shaft_mesh
+		shaft.position = Vector3.ZERO
+
+	if mode == &"bidirectional":
+		var head_up := _io_direction_indicator.get_node_or_null("ArrowHeadUp") as MeshInstance3D
+		var head_down := _io_direction_indicator.get_node_or_null("ArrowHeadDown") as MeshInstance3D
+		if head_up != null:
+			var mesh_up := CylinderMesh.new()
+			mesh_up.height = head_h
+			mesh_up.top_radius = 0.0
+			mesh_up.bottom_radius = radius * 1.35
+			mesh_up.radial_segments = 10
+			head_up.mesh = mesh_up
+			head_up.position = Vector3(0.0, (shaft_h / 2.0) + (head_h / 2.0), 0.0)
+		if head_down != null:
+			var mesh_down := CylinderMesh.new()
+			mesh_down.height = head_h
+			mesh_down.top_radius = 0.0
+			mesh_down.bottom_radius = radius * 1.35
+			mesh_down.radial_segments = 10
+			head_down.mesh = mesh_down
+			head_down.position = Vector3(0.0, -((shaft_h / 2.0) + (head_h / 2.0)), 0.0)
+			head_down.rotation = Vector3(PI, 0.0, 0.0)
+	else:
+		var head := _io_direction_indicator.get_node_or_null("ArrowHead") as MeshInstance3D
+		if head != null:
+			var head_mesh := CylinderMesh.new()
+			head_mesh.height = head_h
+			head_mesh.top_radius = 0.0
+			head_mesh.bottom_radius = radius * 1.35
+			head_mesh.radial_segments = 10
+			head.mesh = head_mesh
+			head.position = Vector3(0.0, (shaft_h / 2.0) + (head_h / 2.0), 0.0)
+
+## Computes a merged local-space AABB for all MeshInstance3D descendants under `root`.
+## Falls back to a small default AABB if no meshes are found yet.
+func _compute_local_visual_aabb(root: Node3D) -> AABB:
+	var merged := AABB()
+	var has_any := false
+	if root == null or not is_instance_valid(root):
+		return AABB(Vector3(-0.5, 0.0, -0.5), Vector3(1.0, 1.0, 1.0))
+
+	var root_inv := root.global_transform.affine_inverse()
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n := stack.pop_back()
+		for child in n.get_children():
+			stack.append(child)
+		if n is MeshInstance3D:
+			var mi := n as MeshInstance3D
+			if mi.mesh == null:
+				continue
+			var aabb := mi.get_aabb()
+			# Transform AABB into root-local space.
+			var rel_xform := root_inv * mi.global_transform
+			var local_aabb: AABB = _aabb_transformed_by_transform3d(aabb, rel_xform)
+			if not has_any:
+				merged = local_aabb
+				has_any = true
+			else:
+				merged = merged.merge(local_aabb)
+
+	if not has_any:
+		return AABB(Vector3(-0.5, 0.0, -0.5), Vector3(1.0, 1.0, 1.0))
+	return merged
+
+## Transform an AABB by a Transform3D by transforming its 8 corners and recomputing bounds.
+func _aabb_transformed_by_transform3d(aabb: AABB, xform: Transform3D) -> AABB:
+	var p: Vector3 = aabb.position
+	var s: Vector3 = aabb.size
+	var min_v := Vector3(INF, INF, INF)
+	var max_v := Vector3(-INF, -INF, -INF)
+
+	for ix in [0, 1]:
+		for iy in [0, 1]:
+			for iz in [0, 1]:
+				var corner := Vector3(
+					p.x + (s.x if ix == 1 else 0.0),
+					p.y + (s.y if iy == 1 else 0.0),
+					p.z + (s.z if iz == 1 else 0.0)
+				)
+				var tc: Vector3 = xform * corner
+				min_v = Vector3(minf(min_v.x, tc.x), minf(min_v.y, tc.y), minf(min_v.z, tc.z))
+				max_v = Vector3(maxf(max_v.x, tc.x), maxf(max_v.y, tc.y), maxf(max_v.z, tc.z))
+
+	return AABB(min_v, max_v - min_v)
+
+func _clear_io_direction_indicator() -> void:
+	_io_direction_indicator_mode = &"none"
+	if _io_direction_indicator != null and is_instance_valid(_io_direction_indicator):
+		_io_direction_indicator.queue_free()
+	_io_direction_indicator = null
+	_io_direction_indicator_material = null
+	_io_direction_indicator_base_scale = Vector3.ONE
+	_io_direction_indicator_label = null
+	set_process(false)
+
+## Computes a merged WORLD-space AABB for all MeshInstance3D descendants under `root`.
+func _compute_world_visual_aabb(root: Node3D) -> AABB:
+	var merged := AABB()
+	var has_any := false
+	if root == null or not is_instance_valid(root):
+		return AABB(Vector3.ZERO, Vector3.ONE)
+
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n := stack.pop_back()
+		for child in n.get_children():
+			stack.append(child)
+		if n is MeshInstance3D:
+			var mi := n as MeshInstance3D
+			if mi.mesh == null:
+				continue
+			var aabb := mi.get_aabb()
+			var world_aabb: AABB = _aabb_transformed_by_transform3d(aabb, mi.global_transform)
+			if not has_any:
+				merged = world_aabb
+				has_any = true
+			else:
+				merged = merged.merge(world_aabb)
+
+	if not has_any:
+		return AABB(Vector3.ZERO, Vector3.ONE)
+	return merged
+
+func _get_best_static_body_for_indicator() -> StaticBody3D:
+	if _dda_renderer != null and _dda_renderer.get("_static_body") != null and _dda_renderer._static_body != null:
+		return _dda_renderer._static_body
+	if _directpoints_renderer != null and _directpoints_renderer.get("_static_body") != null and _directpoints_renderer._static_body != null:
+		return _directpoints_renderer._static_body
+	return null
+
+func _is_on_brain_region_plate() -> bool:
+	# Prefer renderer-side detection (keeps consistent with plate logic in renderers).
+	if _directpoints_renderer != null and _directpoints_renderer.has_method("_is_on_brain_region_plate"):
+		return bool(_directpoints_renderer.call("_is_on_brain_region_plate"))
+	if _dda_renderer != null and _dda_renderer.has_method("_is_on_brain_region_plate"):
+		return bool(_dda_renderer.call("_is_on_brain_region_plate"))
+	# Fallback: climb parent chain and look for plate containers (InputAreas/OutputAreas/ConflictAreas).
+	var current_parent := get_parent()
+	while current_parent != null:
+		if current_parent.name == "InputAreas" or current_parent.name == "OutputAreas" or current_parent.name == "ConflictAreas":
+			return true
+		current_parent = current_parent.get_parent()
+	return false
+
+func _get_containing_region_context() -> BrainRegion:
+	# Prefer the nearest brain-region frame (subregion context). Otherwise, use the main BM 3D scene's region.
+	var current := get_parent()
+	while current != null:
+		if current is UI_BrainMonitor_BrainRegion3D:
+			var viz := current as UI_BrainMonitor_BrainRegion3D
+			return viz.representing_region
+		if current is UI_BrainMonitor_3DScene:
+			var bm := current as UI_BrainMonitor_3DScene
+			return bm.representing_region
+		current = current.get_parent()
+	return null
+
+func _has_afferent_from_outside_region(area: AbstractCorticalArea, region: BrainRegion) -> bool:
+	if area == null or region == null:
+		return false
+	for source_area: AbstractCorticalArea in area.afferent_mappings.keys():
+		if source_area == null:
+			continue
+		if not region.is_cortical_area_in_region_recursive(source_area):
+			return true
+	return false
+
+func _has_efferent_to_outside_region(area: AbstractCorticalArea, region: BrainRegion) -> bool:
+	if area == null or region == null:
+		return false
+	for dest_area: AbstractCorticalArea in area.efferent_mappings.keys():
+		if dest_area == null:
+			continue
+		if not region.is_cortical_area_in_region_recursive(dest_area):
+			return true
+	return false
+
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:
 	if _dda_renderer != null:
 		_dda_renderer.update_position_with_new_FEAGI_coordinate(new_position)
 	if _directpoints_renderer != null:
 		_directpoints_renderer.update_position_with_new_FEAGI_coordinate(new_position)
+
+## Repositions the area name labels so they sit below the cortical area but at the camera-facing edge of its depth.
+func bv_update_friendly_name_label_positions() -> void:
+	if _dda_renderer != null:
+		_dda_renderer.bv_update_friendly_name_label_position()
+	if _directpoints_renderer != null:
+		_directpoints_renderer.bv_update_friendly_name_label_position()
 
 func set_hover_over_volume_state(is_moused_over: bool, is_global_mode: bool = false) -> void:
 	if is_moused_over == _is_volume_moused_over:
@@ -196,6 +700,7 @@ func set_hover_over_volume_state(is_moused_over: bool, is_global_mode: bool = fa
 		_dda_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
 	if _directpoints_renderer != null:
 		_directpoints_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
+	_update_io_direction_indicator_label_visibility()
 	
 	# Show/hide neural connection curves on hover
 	if is_moused_over:
@@ -410,10 +915,44 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 
 ## Create a 3D curve connecting two points
 func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
-	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
-	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
-	var plasticity_type = "PLASTIC" if is_plastic else "NON-PLASTIC"
+	
+	# If inhibitory and excitatory coexist between two areas, render two independent arcs.
+	# - Excitatory: green
+	# - Inhibitory: red
+	# The arcs use a slightly different bend to remain visually distinguishable.
+	var has_inhibitory := false
+	var has_excitatory := false
+	if mapping_set != null and not mapping_set.mappings.is_empty():
+		has_inhibitory = mapping_set.is_any_PSP_multiplier_negative()
+		has_excitatory = mapping_set.is_any_PSP_multiplier_positive()
+	
+	if has_inhibitory and has_excitatory:
+		var mixed_node := Node3D.new()
+		var plastic_prefix = "PLA_" if is_plastic else "STD_"
+		mixed_node.name = "MIXED_" + plastic_prefix + connection_id
+		
+		# Slightly different bend multipliers for separation
+		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, is_global_mode, 0.43)
+		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, is_global_mode, 0.37)
+		mixed_node.add_child(excitatory_curve)
+		mixed_node.add_child(inhibitory_curve)
+		return mixed_node
+	
+	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
+	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, is_global_mode, 0.4)
+
+## Internal helper that creates a single visual arc for a connection.
+## arc_height_multiplier controls the curve bend height relative to distance (e.g. 0.4 = 40% of distance).
+func _create_connection_curve_variant(
+	start_pos: Vector3,
+	end_pos: Vector3,
+	connection_id: StringName,
+	is_inhibitory: bool,
+	is_plastic: bool,
+	is_global_mode: bool,
+	arc_height_multiplier: float
+) -> Node3D:
 	
 	# Create a container for the curve segments
 	var connection_node = Node3D.new()
@@ -427,7 +966,7 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 	var mid_point = (start_pos + end_pos) / 2.0
 	
 	# Create an upward arc - arc height based on distance
-	var arc_height = distance * 0.4  # 40% of distance for nice arc
+	var arc_height = distance * arc_height_multiplier
 	var control_point = mid_point + Vector3(0, arc_height, 0)
 	
 	# For plastic connections, add wobble effect by modifying control point and segments
@@ -859,10 +1398,41 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 
 ## Create a recursive (self-looping) connection
 func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
-	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
-	var connection_type = "INHIBITORY" if is_inhibitory else "EXCITATORY"
-	var plasticity_type = "PLASTIC" if is_plastic else "NON-PLASTIC"
+	
+	# If inhibitory and excitatory coexist in the recursive mapping set, render two loops
+	# separated slightly in height so both remain visible.
+	var has_inhibitory := false
+	var has_excitatory := false
+	if mapping_set != null and not mapping_set.mappings.is_empty():
+		has_inhibitory = mapping_set.is_any_PSP_multiplier_negative()
+		has_excitatory = mapping_set.is_any_PSP_multiplier_positive()
+	
+	if has_inhibitory and has_excitatory:
+		var mixed_loop := Node3D.new()
+		var plastic_prefix = "PLA_" if is_plastic else "STD_"
+		mixed_loop.name = "MIXED_RECURS_" + plastic_prefix + area_id
+		
+		var loop_height_separation := 0.6  # Small vertical separation between E/I loops
+		var excitatory_loop = _create_recursive_loop_variant(center_pos, area_id, false, is_plastic, is_global_mode, loop_height_separation)
+		var inhibitory_loop = _create_recursive_loop_variant(center_pos, area_id, true, is_plastic, is_global_mode, -loop_height_separation)
+		mixed_loop.add_child(excitatory_loop)
+		mixed_loop.add_child(inhibitory_loop)
+		return mixed_loop
+	
+	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
+	return _create_recursive_loop_variant(center_pos, area_id, is_inhibitory, is_plastic, is_global_mode, 0.0)
+
+## Internal helper that creates a single recursive loop visual.
+## loop_height_offset vertically shifts the loop relative to its default loop height.
+func _create_recursive_loop_variant(
+	center_pos: Vector3,
+	area_id: StringName,
+	is_inhibitory: bool,
+	is_plastic: bool,
+	is_global_mode: bool,
+	loop_height_offset: float
+) -> Node3D:
 	
 	# Create a container for the loop
 	var loop_node = Node3D.new()
@@ -872,7 +1442,7 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 	
 	# Create a circular loop around the cortical area
 	var loop_radius = 3.0  # Radius of the loop around the area
-	var loop_height = 2.0  # Height above the area center
+	var loop_height = 2.0 + loop_height_offset  # Height above the area center
 	var num_segments = 16  # More segments for smooth circle
 	
 	# Calculate loop points in a circle
@@ -971,13 +1541,15 @@ func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: boo
 		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
 		material.emission = Color(0.5, 0.5, 0.5)     # Gray emission
 	elif is_inhibitory:
-		# Inhibitory recursive connections - Dark red/maroon
-		material.albedo_color = Color(0.8, 0.2, 0.2, 0.9)  # Dark red
-		material.emission = Color(0.6, 0.1, 0.1)
+		# Inhibitory recursive connections - Red
+		# Keep consistent with non-recursive inhibitory connections.
+		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
+		material.emission = Color(1.0, 0.2, 0.2)
 	else:
-		# Excitatory recursive connections - Purple/Magenta color (distinct from regular green)
-		material.albedo_color = Color(1.0, 0.3, 1.0, 0.9)  # Bright magenta
-		material.emission = Color(0.8, 0.2, 0.8)
+		# Excitatory recursive connections - Green
+		# Keep consistent with non-recursive excitatory connections.
+		material.albedo_color = Color(0.2, 1.0, 0.3, 0.9)  # Bright green
+		material.emission = Color(0.2, 1.0, 0.3)
 	
 	material.emission_enabled = true
 	material.emission_energy = 2.5
@@ -1249,6 +1821,10 @@ func _cleanup_cache_connections() -> void:
 			_representing_cortial_area.recursive_cortical_area_added.disconnect(_on_mapping_changed)
 		if _representing_cortial_area.recursive_cortical_area_removed.is_connected(_on_mapping_changed):
 			_representing_cortial_area.recursive_cortical_area_removed.disconnect(_on_mapping_changed)
+		if _representing_cortial_area.coordinates_3D_updated.is_connected(_refresh_io_direction_indicator):
+			_representing_cortial_area.coordinates_3D_updated.disconnect(_refresh_io_direction_indicator)
+		if _representing_cortial_area.dimensions_3D_updated.is_connected(_refresh_io_direction_indicator):
+			_representing_cortial_area.dimensions_3D_updated.disconnect(_refresh_io_direction_indicator)
 
 #region Cache Event Handlers
 
@@ -1258,6 +1834,7 @@ func _on_cache_reloaded() -> void:
 	if _is_volume_moused_over:
 		_hide_neural_connections()  # Clear old curves
 		_show_neural_connections()  # Rebuild with fresh cache data
+	_refresh_io_direction_indicator()
 
 ## Called when mapping connections change in real-time
 func _on_mapping_changed(_area = null, _mapping_set = null) -> void:
@@ -1265,5 +1842,6 @@ func _on_mapping_changed(_area = null, _mapping_set = null) -> void:
 	if _is_volume_moused_over:
 		_hide_neural_connections()  # Clear old curves
 		_show_neural_connections()  # Rebuild with updated mappings
+	_refresh_io_direction_indicator()
 		
 #endregion

@@ -404,13 +404,61 @@ func _fetch_template_metadata() -> void:
 		_template_metadata = {}
 
 func _ensure_subunit_configs_container() -> void:
-	"""Create the per-subunit config UI container once."""
+	"""Create the per-subunit config UI container once with collapsible panel."""
 	if _subunit_configs_container != null and is_instance_valid(_subunit_configs_container):
 		return
+	
+	# Create collapsible section wrapper
+	var collapsible_wrapper = VBoxContainer.new()
+	collapsible_wrapper.name = "SubunitConfigsWrapper"
+	collapsible_wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_child(collapsible_wrapper)
+	
+	# Create header with toggle button
+	var header_container = HBoxContainer.new()
+	header_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	collapsible_wrapper.add_child(header_container)
+	
+	# Toggle button (triangle icon)
+	var toggle_button = TextureButton.new()
+	toggle_button.name = "CodingSettingsToggle"
+	toggle_button.custom_minimum_size = Vector2(24, 24)
+	toggle_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	toggle_button.texture_normal = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png")
+	toggle_button.texture_pressed = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_C.png")
+	toggle_button.texture_hover = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_H.png")
+	toggle_button.ignore_texture_size = true
+	toggle_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	header_container.add_child(toggle_button)
+	
+	# Header label
+	var header_label = Label.new()
+	header_label.text = "Advanced Coding Settings"
+	header_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	header_container.add_child(header_label)
+	
+	# Create the actual container for subunit configs (initially hidden)
 	_subunit_configs_container = VBoxContainer.new()
 	_subunit_configs_container.name = "SubunitConfigs"
 	_subunit_configs_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	add_child(_subunit_configs_container)
+	_subunit_configs_container.visible = false  # Start collapsed
+	collapsible_wrapper.add_child(_subunit_configs_container)
+	
+	# Connect toggle button
+	toggle_button.pressed.connect(func():
+		var is_open = !_subunit_configs_container.visible
+		_subunit_configs_container.visible = is_open
+		# Update triangle direction
+		if is_open:
+			toggle_button.texture_normal = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Down_S.png")
+			toggle_button.texture_pressed = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Down_C.png")
+			toggle_button.texture_hover = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Down_H.png")
+		else:
+			toggle_button.texture_normal = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png")
+			toggle_button.texture_pressed = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_C.png")
+			toggle_button.texture_hover = load("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_H.png")
+	)
 
 func _clear_subunit_dropdowns() -> void:
 	if _subunit_configs_container == null:
@@ -464,6 +512,11 @@ func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
 	var sorted_keys: Array = subunits.keys()
 	sorted_keys.sort_custom(func(a, b): return int(a) < int(b))
 
+	# Add spacing at top of content
+	var spacer_top = Control.new()
+	spacer_top.custom_minimum_size = Vector2(0, 8)
+	_subunit_configs_container.add_child(spacer_top)
+
 	for subunit_key in sorted_keys:
 		var subunit: Dictionary = subunits.get(subunit_key, {})
 		var supported_types: Array = subunit.get("supported_data_types", [])
@@ -474,26 +527,88 @@ func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
 		var rel_pos: Array = subunit.get("relative_position", [0, 0, 0])
 		var dims: Array = subunit.get("channel_dimensions_default", [1, 1, 1])
 
-		var row = HBoxContainer.new()
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# Create a panel container for each subunit for better visual separation
+		var subunit_panel = PanelContainer.new()
+		subunit_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		
+		var subunit_margin = MarginContainer.new()
+		subunit_margin.add_theme_constant_override("margin_left", 8)
+		subunit_margin.add_theme_constant_override("margin_right", 8)
+		subunit_margin.add_theme_constant_override("margin_top", 6)
+		subunit_margin.add_theme_constant_override("margin_bottom", 6)
+		subunit_panel.add_child(subunit_margin)
+		
+		var subunit_vbox = VBoxContainer.new()
+		subunit_vbox.add_theme_constant_override("separation", 6)
+		subunit_margin.add_child(subunit_vbox)
 
+		# Subunit header with clearer information (uses standard 16pt)
 		var title = Label.new()
-		title.custom_minimum_size = Vector2(220, 0)
-		title.text = "Subunit %s  rel=%s  dims=%s" % [str(subunit_key), str(rel_pos), str(dims)]
-		title.autowrap_mode = TextServer.AUTOWRAP_WORD
-		row.add_child(title)
+		title.text = "Subunit %s" % str(subunit_key)
+		subunit_vbox.add_child(title)
+		
+		# Technical details in subdued text (uses standard 16pt)
+		var details = Label.new()
+		details.text = "Position: %s  •  Dimensions: %s" % [str(rel_pos), str(dims)]
+		details.modulate = Color(0.7, 0.7, 0.7)
+		subunit_vbox.add_child(details)
+		
+		# Small separator
+		var mini_spacer = Control.new()
+		mini_spacer.custom_minimum_size = Vector2(0, 4)
+		subunit_vbox.add_child(mini_spacer)
 
+		# Create labeled fields for each dropdown
 		var variant_dd = OptionButton.new()
 		var frame_dd = OptionButton.new()
 		var pos_dd = OptionButton.new()
-		variant_dd.custom_minimum_size = Vector2(140, 0)
-		frame_dd.custom_minimum_size = Vector2(120, 0)
-		pos_dd.custom_minimum_size = Vector2(120, 0)
-
-		row.add_child(variant_dd)
-		row.add_child(frame_dd)
-		row.add_child(pos_dd)
-		_subunit_configs_container.add_child(row)
+		
+		# Data Type Variant field
+		var variant_container = HBoxContainer.new()
+		variant_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var variant_label = Label.new()
+		variant_label.text = "Data Type:"
+		variant_label.custom_minimum_size = Vector2(100, 0)
+		variant_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		variant_dd.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		variant_dd.tooltip_text = "How data values are encoded (signed/unsigned/binary)"
+		variant_container.add_child(variant_label)
+		variant_container.add_child(variant_dd)
+		subunit_vbox.add_child(variant_container)
+		
+		# Frame Handling field
+		var frame_container = HBoxContainer.new()
+		frame_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var frame_label = Label.new()
+		frame_label.text = "Frame Mode:"
+		frame_label.custom_minimum_size = Vector2(100, 0)
+		frame_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		frame_dd.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		frame_dd.tooltip_text = "How frame changes are processed (absolute/differential)"
+		frame_container.add_child(frame_label)
+		frame_container.add_child(frame_dd)
+		subunit_vbox.add_child(frame_container)
+		
+		# Positioning field (conditional)
+		var pos_container = HBoxContainer.new()
+		pos_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var pos_label = Label.new()
+		pos_label.text = "Positioning:"
+		pos_label.custom_minimum_size = Vector2(100, 0)
+		pos_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		pos_dd.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		pos_dd.tooltip_text = "How percentage values are positioned spatially"
+		pos_container.add_child(pos_label)
+		pos_container.add_child(pos_dd)
+		subunit_vbox.add_child(pos_container)
+		
+		_subunit_configs_container.add_child(subunit_panel)
+		
+		# Add spacing between subunits
+		if subunit_key != sorted_keys[-1]:
+			var spacer = Control.new()
+			spacer.custom_minimum_size = Vector2(0, 8)
+			_subunit_configs_container.add_child(spacer)
 
 		var variants: Array[String] = []
 		var frames: Array[String] = []
@@ -523,11 +638,11 @@ func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
 			frame_dd.add_item(f)
 
 		if positionings.size() == 0:
-			pos_dd.visible = false
+			pos_container.visible = false
 		else:
 			for p in positionings:
 				pos_dd.add_item(p)
-			pos_dd.visible = true
+			pos_container.visible = true
 
 		var sub_idx: int = int(subunit_key)
 		_subunit_rows[sub_idx] = {

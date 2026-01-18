@@ -13,6 +13,7 @@ var _btn_interconnect_list: BasePanelContainerButton
 var _btn_interconnect_add: TextureButton
 var _btn_memory_list: BasePanelContainerButton
 var _btn_memory_add: TextureButton
+var _btn_rearrange_layout: TextureButton
 var _btn_inputs_list: BasePanelContainerButton
 var _btn_inputs_add: TextureButton
 var _btn_outputs_list: BasePanelContainerButton
@@ -20,106 +21,51 @@ var _btn_outputs_add: TextureButton
 
 const HOVER_SCALE := Vector2(1.15, 1.15)
 const NORMAL_SCALE := Vector2(1.0, 1.0)
+const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
+const REARRANGE_SIZE_SCALE: float = 1.0
 
+var _list_popup: FilterableListPopup
+
+## Wire the combo buttons and dropdown popup.
 func _ready() -> void:
-	_btn_brain_regions_list = $BrainRegionsList
-	_btn_brain_regions_add = $TextureButton_BrainRegions
-	_btn_interconnect_list = $InterconnectAreasList
-	_btn_interconnect_add = $TextureButton_Interconnect
-	_btn_memory_list = $MemoryAreasList
-	_btn_memory_add = $TextureButton_Memory
-	_btn_inputs_list = $InputsList
-	_btn_inputs_add = $TextureButton_Inputs
-	_btn_outputs_list = $OutputsList
-	_btn_outputs_add = $TextureButton_Outputs
+	_btn_brain_regions_list = $MainGroup/MarginContainer/ButtonsRow/BrainRegionsList
+	_btn_brain_regions_add = $MainGroup/MarginContainer/ButtonsRow/TextureButton_BrainRegions
+	_btn_interconnect_list = $InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList
+	_btn_interconnect_add = $InterconnectGroup/MarginContainer/ButtonsRow/TextureButton_Interconnect
+	_btn_memory_list = $MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList
+	_btn_memory_add = $MemoryGroup/MarginContainer/ButtonsRow/TextureButton_Memory
+	_btn_rearrange_layout = $RearrangePanel/MarginContainer/TextureButton_Rearrange
+	_btn_inputs_list = $MainGroup/MarginContainer/ButtonsRow/InputsList
+	_btn_inputs_add = $MainGroup/MarginContainer/ButtonsRow/TextureButton_Inputs
+	_btn_outputs_list = $MainGroup/MarginContainer/ButtonsRow/OutputsList
+	_btn_outputs_add = $MainGroup/MarginContainer/ButtonsRow/TextureButton_Outputs
+	_btn_brain_regions_list.tooltip_text = "Select circuit"
+	_btn_brain_regions_add.tooltip_text = "Add circuit"
+	_btn_interconnect_list.tooltip_text = "Select interconnect area"
+	_btn_interconnect_add.tooltip_text = "Add interconnect area"
+	_btn_memory_list.tooltip_text = "Select memory area"
+	_btn_memory_add.tooltip_text = "Add memory area"
+	_btn_inputs_list.tooltip_text = "Select input area"
+	_btn_inputs_add.tooltip_text = "Add input area"
+	_btn_outputs_list.tooltip_text = "Select output area"
+	_btn_outputs_add.tooltip_text = "Add output area"
+	_btn_rearrange_layout.tooltip_text = "Rearrange Circuit Builder layout"
 
 	# Ensure the combo captures events within its bounds; individual buttons will stop events
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	_btn_interconnect_add.mouse_filter = Control.MOUSE_FILTER_STOP
-	_btn_interconnect_add.z_index = 100
-	_btn_memory_add.mouse_filter = Control.MOUSE_FILTER_STOP
-	_btn_memory_add.z_index = 100
-	_btn_inputs_add.mouse_filter = Control.MOUSE_FILTER_STOP
-	_btn_inputs_add.z_index = 100
-	_btn_outputs_add.mouse_filter = Control.MOUSE_FILTER_STOP
-	_btn_outputs_add.z_index = 100
 
 	_btn_brain_regions_list.pressed.connect(_open_brain_regions)
 	_btn_brain_regions_add.pressed.connect(_add_brain_region)
 	_btn_interconnect_list.pressed.connect(_open_interconnect_areas)
+	_btn_interconnect_add.pressed.connect(_add_interconnect_area)
 	_btn_memory_list.pressed.connect(_open_memory_areas)
+	_btn_memory_add.pressed.connect(_add_memory_area)
+	_btn_rearrange_layout.pressed.connect(_request_relayout)
 	_btn_inputs_list.pressed.connect(_open_inputs)
+	_btn_inputs_add.pressed.connect(_add_input_area)
 	_btn_outputs_list.pressed.connect(_open_outputs)
-	# Robust press handling with debug
-	_btn_interconnect_add.pressed.connect(func():
-		print("BrainObjectsCombo: pressed interconnect add")
-		_add_interconnect_area()
-	)
-	_btn_interconnect_add.button_down.connect(func(): print("BrainObjectsCombo: button_down interconnect add"))
-	_btn_interconnect_add.button_up.connect(func(): print("BrainObjectsCombo: button_up interconnect add"))
-	_btn_interconnect_add.mouse_entered.connect(func():
-		print("BrainObjectsCombo: hover interconnect add")
-		_apply_hover_visual(_btn_interconnect_add, true)
-	)
-	_btn_interconnect_add.mouse_exited.connect(func():
-		print("BrainObjectsCombo: leave interconnect add")
-		_apply_hover_visual(_btn_interconnect_add, false)
-	)
-
-	_btn_memory_add.pressed.connect(func():
-		print("BrainObjectsCombo: pressed memory add")
-		_add_memory_area()
-	)
-	_btn_memory_add.button_down.connect(func(): print("BrainObjectsCombo: button_down memory add"))
-	_btn_memory_add.button_up.connect(func(): print("BrainObjectsCombo: button_up memory add"))
-	_btn_memory_add.mouse_entered.connect(func():
-		print("BrainObjectsCombo: hover memory add")
-		_apply_hover_visual(_btn_memory_add, true)
-	)
-	_btn_memory_add.mouse_exited.connect(func():
-		print("BrainObjectsCombo: leave memory add")
-		_apply_hover_visual(_btn_memory_add, false)
-	)
-
-	_btn_inputs_add.pressed.connect(func():
-		print("BrainObjectsCombo: pressed input add")
-		_add_input_area()
-	)
-	_btn_inputs_add.button_down.connect(func(): print("BrainObjectsCombo: button_down input add"))
-	_btn_inputs_add.button_up.connect(func(): print("BrainObjectsCombo: button_up input add"))
-	_btn_inputs_add.mouse_entered.connect(func():
-		print("BrainObjectsCombo: hover input add")
-		_apply_hover_visual(_btn_inputs_add, true)
-	)
-	_btn_inputs_add.mouse_exited.connect(func():
-		print("BrainObjectsCombo: leave input add")
-		_apply_hover_visual(_btn_inputs_add, false)
-	)
-
-	_btn_outputs_add.pressed.connect(func():
-		print("BrainObjectsCombo: pressed output add")
-		_add_output_area()
-	)
-	_btn_outputs_add.button_down.connect(func(): print("BrainObjectsCombo: button_down output add"))
-	_btn_outputs_add.button_up.connect(func(): print("BrainObjectsCombo: button_up output add"))
-	_btn_outputs_add.mouse_entered.connect(func():
-		print("BrainObjectsCombo: hover output add")
-		_apply_hover_visual(_btn_outputs_add, true)
-	)
-	_btn_outputs_add.mouse_exited.connect(func():
-		print("BrainObjectsCombo: leave output add")
-		_apply_hover_visual(_btn_outputs_add, false)
-	)
-	# Hover visuals for Add Circuits (Brain Regions) button
-	_btn_brain_regions_add.mouse_entered.connect(func():
-		print("BrainObjectsCombo: hover circuits add")
-		_apply_hover_visual(_btn_brain_regions_add, true)
-	)
-	_btn_brain_regions_add.mouse_exited.connect(func():
-		print("BrainObjectsCombo: leave circuits add")
-		_apply_hover_visual(_btn_brain_regions_add, false)
-	)
-
+	_btn_outputs_add.pressed.connect(_add_output_area)
+	_ensure_list_popup()
 	_update_buttons_state()
 	queue_redraw()
 	# Ensure background redraws on resize/theme changes for consistent back plate
@@ -133,6 +79,7 @@ func _ready() -> void:
 func _on_theme_changed(new_theme: Theme) -> void:
 	theme = new_theme
 	_apply_theme_sizes_recursive(self)
+	_apply_rearrange_button_size()
 
 func _apply_theme_sizes_recursive(node: Node) -> void:
 	for child in node.get_children():
@@ -142,18 +89,27 @@ func _apply_theme_sizes_recursive(node: Node) -> void:
 			(child as TextureRect).custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(child, "TextureRect")
 		_apply_theme_sizes_recursive(child)
 
+## Make the rearrange button slightly larger than standard.
+func _apply_rearrange_button_size() -> void:
+	if _btn_rearrange_layout == null:
+		return
+	var base_size := BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(_btn_rearrange_layout, "TextureButton")
+	_btn_rearrange_layout.custom_minimum_size = base_size * REARRANGE_SIZE_SCALE
+
 func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> void:
 	_is_3d_context = true
 	_bm_scene = bm_scene
 	context_region = region
 	_update_buttons_state()
 
+## Switch to 2D context and refresh listings.
 func set_2d_context(cb_scene: CircuitBuilder, region: BrainRegion) -> void:
 	_is_3d_context = false
 	_cb_scene = cb_scene
 	context_region = region
 	_update_buttons_state()
 
+## Enable or disable buttons based on whether a region is active.
 func _update_buttons_state() -> void:
 	if context_region == null:
 		_btn_brain_regions_list.disabled = true
@@ -162,39 +118,37 @@ func _update_buttons_state() -> void:
 		_btn_interconnect_add.disabled = true
 		_btn_memory_list.disabled = true
 		_btn_memory_add.disabled = true
+		_btn_rearrange_layout.disabled = true
 		_btn_inputs_list.disabled = true
 		_btn_inputs_add.disabled = true
 		_btn_outputs_list.disabled = true
 		_btn_outputs_add.disabled = true
-		_set_visibility_for_context(false, false) # hide all specialized by default
+		_set_visibility_for_context(false, false, false)
 		return
-	# Allow cortical area creation in any region; enforce type restrictions in creation window
-	_btn_interconnect_add.disabled = false
-	_btn_memory_add.disabled = false
-	_btn_inputs_add.disabled = false
-	_btn_outputs_add.disabled = false
 	# Listing is always enabled (direct-only; will be empty if none)
 	_btn_brain_regions_list.disabled = false
-	_btn_interconnect_list.disabled = false
-	_btn_memory_list.disabled = false
-	_btn_inputs_list.disabled = false
-	_btn_outputs_list.disabled = false
-	# Regions can always be created
 	_btn_brain_regions_add.disabled = false
-
-	# Set visibility based on context (3D vs 2D) and whether region is root
+	_btn_interconnect_list.disabled = false
+	_btn_interconnect_add.disabled = false
+	_btn_memory_list.disabled = false
+	_btn_memory_add.disabled = false
+	_btn_rearrange_layout.disabled = false
+	_btn_inputs_list.disabled = false
+	_btn_inputs_add.disabled = false
+	_btn_outputs_list.disabled = false
+	_btn_outputs_add.disabled = false
+	# Root region shows Inputs/Outputs; non-root shows Interconnect/Memory
 	var is_root := _is_root_region()
-	if _is_3d_context:
-		# 3D: root shows Circuits + Inputs + Outputs; subregions show Circuits + Interconnect + Memory
-		_set_visibility_for_context(not is_root, is_root)
-	else:
-		# 2D CB: root shows Circuits + Inputs + Outputs; non-root shows Circuits + Interconnect + Memory
-		_set_visibility_for_context(not is_root, is_root)
+	_set_visibility_for_context(not is_root, is_root, not _is_3d_context)
 
+## Open circuits dropdown for the current region.
 func _open_brain_regions() -> void:
 	if context_region == null:
 		return
-	BV.WM.spawn_brain_regions_view_with_context(context_region, func(region: BrainRegion): _focus_region(region))
+	var items := _build_region_items()
+	_open_dropdown_for_items(_btn_brain_regions_list, items, "Filter circuits...", func(region: BrainRegion):
+		_focus_region(region)
+	)
 
 func _add_brain_region() -> void:
 	if context_region == null:
@@ -202,40 +156,40 @@ func _add_brain_region() -> void:
 	var selected_objects: Array[GenomeObject] = []
 	BV.WM.spawn_create_region(context_region, selected_objects)
 
+## Open interconnect areas dropdown for the current region.
 func _open_interconnect_areas() -> void:
 	if context_region == null:
 		return
-	BV.WM.spawn_cortical_view_with_context_filtered(
-		context_region,
-		func(area: AbstractCorticalArea): _focus_cortical(area),
-		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
+	var items := _build_cortical_items_for_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
+	_open_dropdown_for_items(_btn_interconnect_list, items, "Filter interconnect areas...", func(area: AbstractCorticalArea):
+		_focus_cortical(area)
 	)
 
+## Open memory areas dropdown for the current region.
 func _open_memory_areas() -> void:
 	if context_region == null:
 		return
-	BV.WM.spawn_cortical_view_with_context_filtered(
-		context_region,
-		func(area: AbstractCorticalArea): _focus_cortical(area),
-		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	var items := _build_cortical_items_for_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+	_open_dropdown_for_items(_btn_memory_list, items, "Filter memory areas...", func(area: AbstractCorticalArea):
+		_focus_cortical(area)
 	)
 
+## Open input areas dropdown for the current region.
 func _open_inputs() -> void:
 	if context_region == null:
 		return
-	BV.WM.spawn_cortical_view_with_context_filtered(
-		context_region,
-		func(area: AbstractCorticalArea): _focus_cortical(area),
-		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
+	var items := _build_cortical_items_for_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+	_open_dropdown_for_items(_btn_inputs_list, items, "Filter inputs...", func(area: AbstractCorticalArea):
+		_focus_cortical(area)
 	)
 
+## Open output areas dropdown for the current region.
 func _open_outputs() -> void:
 	if context_region == null:
 		return
-	BV.WM.spawn_cortical_view_with_context_filtered(
-		context_region,
-		func(area: AbstractCorticalArea): _focus_cortical(area),
-		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+	var items := _build_cortical_items_for_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+	_open_dropdown_for_items(_btn_outputs_list, items, "Filter outputs...", func(area: AbstractCorticalArea):
+		_focus_cortical(area)
 	)
 
 func _add_interconnect_area() -> void:
@@ -262,6 +216,22 @@ func _add_output_area() -> void:
 	print("BrainObjectsCombo: Opening create output window for region:", context_region.region_ID)
 	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
 
+func _request_relayout() -> void:
+	if _is_3d_context:
+		return
+	var cb := _cb_scene if _cb_scene != null else _get_active_cb_from_ui()
+	if cb == null:
+		return
+	var popup_message: StringName = "This will rearrange all nodes in the Circuit Builder view and update their saved 2D positions.\n\nProceed?"
+	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Rearrange Circuit Builder",
+		popup_message,
+		func(): cb.relayout_nodes(),
+		"Rearrange",
+		"Cancel"
+	)
+	BV.WM.spawn_popup(popup_definition)
+
 func _is_root_region() -> bool:
 	if context_region == null:
 		return false
@@ -270,24 +240,88 @@ func _is_root_region() -> bool:
 	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	return root_region != null and root_region == context_region
 
-func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs_and_outputs: bool) -> void:
+func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs_and_outputs: bool, show_rearrange_layout: bool) -> void:
 	# Circuits always visible
-	$BrainRegionsList.visible = true
-	$TextureButton_BrainRegions.visible = true
+	if _btn_brain_regions_list:
+		_btn_brain_regions_list.visible = true
+	if _btn_brain_regions_add:
+		_btn_brain_regions_add.visible = true
 	# Interconnect/Memory visibility
-	$InterconnectAreasList.visible = show_interconnect_and_memory
-	$TextureButton_Interconnect.visible = show_interconnect_and_memory
-	$MemoryAreasList.visible = show_interconnect_and_memory
-	$TextureButton_Memory.visible = show_interconnect_and_memory
+	if _btn_interconnect_list:
+		_btn_interconnect_list.visible = show_interconnect_and_memory
+	if _btn_interconnect_add:
+		_btn_interconnect_add.visible = show_interconnect_and_memory
+	if _btn_memory_list:
+		_btn_memory_list.visible = show_interconnect_and_memory
+	if _btn_memory_add:
+		_btn_memory_add.visible = show_interconnect_and_memory
+	if _btn_rearrange_layout:
+		_btn_rearrange_layout.visible = show_rearrange_layout
 	# Inputs/Outputs visibility
-	$InputsList.visible = show_inputs_and_outputs
-	$TextureButton_Inputs.visible = show_inputs_and_outputs
-	$OutputsList.visible = show_inputs_and_outputs
-	$TextureButton_Outputs.visible = show_inputs_and_outputs
+	if _btn_inputs_list:
+		_btn_inputs_list.visible = show_inputs_and_outputs
+	if _btn_inputs_add:
+		_btn_inputs_add.visible = show_inputs_and_outputs
+	if _btn_outputs_list:
+		_btn_outputs_list.visible = show_inputs_and_outputs
+	if _btn_outputs_add:
+		_btn_outputs_add.visible = show_inputs_and_outputs
 
 func _apply_hover_visual(button: Control, hovered: bool) -> void:
 	# Subtle scale-up on hover to match main 3D view visual feedback style
 	button.scale = HOVER_SCALE if hovered else NORMAL_SCALE
+
+## Create and attach the reusable list popup if needed.
+func _ensure_list_popup() -> void:
+	if _list_popup != null:
+		return
+	_list_popup = PREFAB_FILTERABLE_LIST_POPUP.instantiate()
+	add_child(_list_popup)
+
+## Open the dropdown with the provided items.
+func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable) -> void:
+	_ensure_list_popup()
+	_list_popup.open_with_items(anchor_button, items, selection_handler, placeholder_text)
+
+## Build dropdown items for child regions.
+func _build_region_items() -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	if context_region != null:
+		for region in context_region.contained_regions:
+			items.append({"label": region.friendly_name, "payload": region})
+	else:
+		var regions: Array[BrainRegion] = []
+		regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.values())
+		for region in regions:
+			items.append({"label": region.friendly_name, "payload": region})
+	if items.is_empty():
+		var fallback_regions: Array[BrainRegion] = []
+		fallback_regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.values())
+		for region in fallback_regions:
+			items.append({"label": region.friendly_name, "payload": region})
+	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return String(a.get("label", "")).to_lower() < String(b.get("label", "")).to_lower()
+	)
+	return items
+
+## Build dropdown items for cortical areas of the given type.
+func _build_cortical_items_for_type(area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	var areas: Array[AbstractCorticalArea] = []
+	if context_region != null:
+		for area in context_region.contained_cortical_areas:
+			if area.cortical_type == area_type:
+				areas.append(area)
+	else:
+		areas = FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(area_type)
+	if areas.is_empty():
+		areas = FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(area_type)
+	areas.sort_custom(func(a: AbstractCorticalArea, b: AbstractCorticalArea) -> bool:
+		return String(a.friendly_name).to_lower() < String(b.friendly_name).to_lower()
+	)
+	for area in areas:
+		items.append({"label": area.friendly_name, "payload": area})
+	return items
 
 func _draw() -> void:
 	# Draw a themed back plate behind the combo buttons, matching root scene styling
@@ -302,15 +336,97 @@ func _draw() -> void:
 
 func _focus_region(region: BrainRegion) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
-		_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+		if _bm_scene.has_method("focus_on_brain_region"):
+			_bm_scene.focus_on_brain_region(region)
+			if _bm_scene.has_method("flash_indicator_for_brain_region"):
+				_bm_scene.flash_indicator_for_brain_region(region)
+		else:
+			_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 		return
+	if _is_3d_context:
+		var active_bm := BV.UI.get_active_brain_monitor()
+		if active_bm and active_bm.get_pancake_camera():
+			if active_bm.has_method("focus_on_brain_region"):
+				active_bm.focus_on_brain_region(region)
+				if active_bm.has_method("flash_indicator_for_brain_region"):
+					active_bm.flash_indicator_for_brain_region(region)
+			else:
+				active_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+			return
 	if (not _is_3d_context) and _cb_scene:
 		_cb_scene.focus_on_region(region)
+		return
+	if not _is_3d_context:
+		var active_cb := _get_active_cb_from_ui()
+		if active_cb:
+			active_cb.focus_on_region(region)
 
 func _focus_cortical(area: AbstractCorticalArea) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
-		var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
-		_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
+		if _bm_scene.has_method("focus_on_cortical_area"):
+			_bm_scene.focus_on_cortical_area(area)
+			if _bm_scene.has_method("flash_indicator_for_cortical_area"):
+				_bm_scene.flash_indicator_for_cortical_area(area)
+		else:
+			var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+			_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
 		return
+	if _is_3d_context:
+		var active_bm := BV.UI.get_active_brain_monitor()
+		if active_bm and active_bm.get_pancake_camera():
+			if active_bm.has_method("focus_on_cortical_area"):
+				active_bm.focus_on_cortical_area(area)
+				if active_bm.has_method("flash_indicator_for_cortical_area"):
+					active_bm.flash_indicator_for_cortical_area(area)
+			else:
+				var center_pos2 = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+				active_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos2)
+			return
 	if (not _is_3d_context) and _cb_scene:
 		_cb_scene.focus_on_cortical_area(area)
+		return
+	if not _is_3d_context:
+		var active_cb := _get_active_cb_from_ui()
+		if active_cb:
+			active_cb.focus_on_cortical_area(area)
+
+
+## Find the active Circuit Builder tab if needed.
+func _get_active_cb_from_ui() -> CircuitBuilder:
+	return _search_for_active_cb_in_view(BV.UI.root_UI_view)
+
+
+## Recursively search for the active Circuit Builder tab in a UIView.
+func _search_for_active_cb_in_view(ui_view: UIView) -> CircuitBuilder:
+	if ui_view == null:
+		return null
+	if ui_view.mode == UIView.MODE.TAB:
+		var tab_container = ui_view._get_primary_child() as UITabContainer
+		if tab_container != null and tab_container.get_tab_count() > 0:
+			var active_control = tab_container.get_tab_control(tab_container.current_tab)
+			if active_control is CircuitBuilder:
+				return active_control as CircuitBuilder
+	elif ui_view.mode == UIView.MODE.SPLIT:
+		var primary_child = ui_view._get_primary_child()
+		if primary_child is UIView:
+			var result = _search_for_active_cb_in_view(primary_child as UIView)
+			if result != null:
+				return result
+		elif primary_child is UITabContainer:
+			var tab_container = primary_child as UITabContainer
+			if tab_container.get_tab_count() > 0:
+				var active_control = tab_container.get_tab_control(tab_container.current_tab)
+				if active_control is CircuitBuilder:
+					return active_control as CircuitBuilder
+		var secondary_child = ui_view._get_secondary_child()
+		if secondary_child is UIView:
+			var result2 = _search_for_active_cb_in_view(secondary_child as UIView)
+			if result2 != null:
+				return result2
+		elif secondary_child is UITabContainer:
+			var tab_container2 = secondary_child as UITabContainer
+			if tab_container2.get_tab_count() > 0:
+				var active_control2 = tab_container2.get_tab_control(tab_container2.current_tab)
+				if active_control2 is CircuitBuilder:
+					return active_control2 as CircuitBuilder
+	return null

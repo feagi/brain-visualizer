@@ -85,6 +85,30 @@ var unit_id: int:
 var group_id: int:
 	get: return _group_id
 
+## IO coding signage (e.g., "Percentage Signed", "Percentage Unsigned")
+var coding_signage: String:
+	get: return _coding_signage
+
+## IO coding behavior ("Absolute" or "Incremental")
+var coding_behavior: String:
+	get: return _coding_behavior
+
+## IO coding type ("Linear" or "Fractional")
+var coding_type: String:
+	get: return _coding_type
+
+## Allowed IO coding signage options (for dropdowns)
+var coding_signage_options: Array[StringName]:
+	get: return _coding_signage_options
+
+## Allowed IO coding behavior options (for dropdowns)
+var coding_behavior_options: Array[StringName]:
+	get: return _coding_behavior_options
+
+## Allowed IO coding type options (for dropdowns)
+var coding_type_options: Array[StringName]:
+	get: return _coding_type_options
+
 var has_decoded_id_info: bool:
 	get: return _cortical_subtype != ""
 
@@ -173,6 +197,12 @@ var _encoding_type: String = ""
 var _encoding_format: String = ""
 var _unit_id: int = -1
 var _group_id: int = -1
+var _coding_signage: String = ""
+var _coding_behavior: String = ""
+var _coding_type: String = ""
+var _coding_signage_options: Array[StringName] = []
+var _coding_behavior_options: Array[StringName] = []
+var _coding_type_options: Array[StringName] = []
 
 # Visualization voxel granularity for large-area rendering (default is 1x1x1)
 var _visualization_voxel_granularity: Vector3i = Vector3i(1, 1, 1)  # Default is 1x1x1
@@ -427,7 +457,6 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 	# Visualization voxel granularity - default is 1x1x1 if not present or null
 	if "visualization_voxel_granularity" in data.keys():
 		var value = data["visualization_voxel_granularity"]
-		print("🔵 CACHE: Processing visualization_voxel_granularity for %s: value=%s, type=%s" % [cortical_ID, value, typeof(value)])
 		if value != null:
 			# Handle array format [x, y, z] from API (tuple serializes as array in JSON)
 			# Value can be int or float, so convert to float first then int
@@ -438,10 +467,8 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 				# Treat 0,0,0 as default (1,1,1) - API might return 0,0,0 for default
 				if x == 0 and y == 0 and z == 0:
 					_visualization_voxel_granularity = Vector3i(1, 1, 1)
-					print("🔵 CACHE: Converted 0,0,0 to default 1,1,1 for %s" % cortical_ID)
 				else:
 					_visualization_voxel_granularity = Vector3i(x, y, z)
-					print("🔵 CACHE: Set visualization_voxel_granularity to %s for %s" % [_visualization_voxel_granularity, cortical_ID])
 			# Handle dictionary format {"x": x, "y": y, "z": z} (backup)
 			elif value is Dictionary and value.has("x") and value.has("y") and value.has("z"):
 				var x = int(float(value["x"])) if value["x"] != null else 1
@@ -523,12 +550,76 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		var value = data["group_id"]
 		if value != null:
 			_group_id = int(value)
+
+	if "coding_signage" in data.keys():
+		var value = data["coding_signage"]
+		if value != null:
+			_coding_signage = String(value)
+
+	if "coding_behavior" in data.keys():
+		var value = data["coding_behavior"]
+		if value != null:
+			_coding_behavior = String(value)
+
+	if "coding_type" in data.keys():
+		var value = data["coding_type"]
+		if value != null:
+			_coding_type = String(value)
+
+	if "coding_signage_options" in data.keys():
+		var value = data["coding_signage_options"]
+		if value is Array:
+			var options: Array[StringName] = []
+			for item in value:
+				options.append(StringName(str(item)))
+			_coding_signage_options = options
+
+	if "coding_behavior_options" in data.keys():
+		var value = data["coding_behavior_options"]
+		if value is Array:
+			var options: Array[StringName] = []
+			for item in value:
+				options.append(StringName(str(item)))
+			_coding_behavior_options = options
+
+	if "coding_type_options" in data.keys():
+		var value = data["coding_type_options"]
+		if value is Array:
+			var options: Array[StringName] = []
+			for item in value:
+				options.append(StringName(str(item)))
+			_coding_type_options = options
+
+	if "coding_options" in data.keys():
+		var value = data["coding_options"]
+		if value is Dictionary:
+			if value.has("signage_options") and value["signage_options"] is Array:
+				var options: Array[StringName] = []
+				for item in value["signage_options"]:
+					options.append(StringName(str(item)))
+				_coding_signage_options = options
+			if value.has("behavior_options") and value["behavior_options"] is Array:
+				var options: Array[StringName] = []
+				for item in value["behavior_options"]:
+					options.append(StringName(str(item)))
+				_coding_behavior_options = options
+			if value.has("coding_type_options") and value["coding_type_options"] is Array:
+				var options: Array[StringName] = []
+				for item in value["coding_type_options"]:
+					options.append(StringName(str(item)))
+				_coding_type_options = options
+	
+	if _coding_signage_options.is_empty() and (_coding_behavior_options.size() > 0 or _coding_type_options.size() > 0):
+		print("BV [NEURAL-CODING][CACHE]: Missing signage_options for %s; behavior_opts=%d type_opts=%d" % [
+			cortical_ID,
+			_coding_behavior_options.size(),
+			_coding_type_options.size()
+		])
 	
 	# Visualization voxel granularity for large-area rendering (also handled in FEAGI_apply_full_dictionary for updates)
 	# Visualization voxel granularity - default is 1x1x1 if not present or null
 	if "visualization_voxel_granularity" in data.keys():
 		var value = data["visualization_voxel_granularity"]
-		print("🔵 CACHE: Processing visualization_voxel_granularity for %s: value=%s, type=%s" % [cortical_ID, value, typeof(value)])
 		if value != null:
 			# Handle array format [x, y, z] from API (tuple serializes as array in JSON)
 			# Value can be int or float, so convert to float first then int
@@ -539,10 +630,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 				# Treat 0,0,0 as default (1,1,1) - API might return 0,0,0 for default
 				if x == 0 and y == 0 and z == 0:
 					_visualization_voxel_granularity = Vector3i(1, 1, 1)
-					print("🔵 CACHE: Converted 0,0,0 to default 1,1,1 for %s" % cortical_ID)
 				else:
 					_visualization_voxel_granularity = Vector3i(x, y, z)
-					print("🔵 CACHE: Set visualization_voxel_granularity to %s for %s" % [_visualization_voxel_granularity, cortical_ID])
 			# Handle dictionary format {"x": x, "y": y, "z": z} (backup)
 			elif value is Dictionary and value.has("x") and value.has("y") and value.has("z"):
 				var x = int(float(value["x"])) if value["x"] != null else 1

@@ -1,11 +1,15 @@
 use godot::prelude::*;
 use godot::classes::MultiMesh;
 // FeagiByteContainer is imported within functions where needed
+use feagi_serialization::FeagiSerializable;
 use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 use feagi_structures::genomic::cortical_area::CorticalID;
+use feagi_structures::genomic::cortical_area::descriptors::{
+    CorticalSubUnitIndex, CorticalUnitIndex,
+};
 use feagi_structures::genomic::cortical_area::IOCorticalAreaConfigurationFlag;
 use feagi_structures::genomic::cortical_area::io_cortical_area_configuration_flag::{
-    IOCorticalAreaConfigurationFlagBitmask, PercentageNeuronPositioning,
+    FrameChangeHandling, IOCorticalAreaConfigurationFlagBitmask, PercentageNeuronPositioning,
 };
 
 // Rayon is only available on native platforms (not WASM)
@@ -28,7 +32,6 @@ pub struct FeagiDataDeserializer {
 #[godot_api]
 impl IRefCounted for FeagiDataDeserializer {
     fn init(base: Base<RefCounted>) -> Self {
-        godot_print!("🦀 FEAGI Rust Data Deserializer v0.0.50-beta.52 initialized!");
         Self { base }
     }
 }
@@ -99,7 +102,7 @@ impl FeagiDataDeserializer {
         }
         
         // Detect format based on first byte
-        let _first_byte = rust_buffer[0];
+        let first_byte = rust_buffer[0];
         
         // Log for debugging
         let _preview: String = rust_buffer.iter()
@@ -110,110 +113,66 @@ impl FeagiDataDeserializer {
         // godot_print!("🦀 [PROC] Buf: {} bytes, first byte: 0x{:02x}, preview: {}", 
         //             rust_buffer.len(), first_byte, preview);
         
-        // ARCHITECTURE: FEAGI → Serialize → LZ4 compress (MANDATORY) → ZMQ → Bridge PASSTHROUGH → BV → LZ4 decompress (MANDATORY)
-        // NO FALLBACKS: Data MUST be LZ4 compressed
-        
-        // Step 1: LZ4 decompression (mandatory, no fallback)
-        // Format: [4-byte size header (little-endian)] + [LZ4 compressed data]
-        // Extract uncompressed size and compressed data
-        let (uncompressed_size, compressed_data) = if rust_buffer.len() >= 4 {
-            let size = u32::from_le_bytes([rust_buffer[0], rust_buffer[1], rust_buffer[2], rust_buffer[3]]) as i32;
-            // godot_print!("🦀 [DECODE] LZ4 header: uncompressed_size={}, compressed_size={}", size, rust_buffer.len() - 4);
-            (Some(size), &rust_buffer[4..])
-        } else {
-            godot_error!("🦀 [DECODE] Buffer too short for size header");
-            return self.create_error_dict("Buffer too short for LZ4 size header".to_string());
-        };
-        
-        let data_to_deserialize = match std::panic::catch_unwind(|| {
-            lz4::block::decompress(compressed_data, uncompressed_size)
-        }) {
-            Ok(Ok(d)) if !d.is_empty() => {
-                // godot_print!("🦀 [DECODE] LZ4: {} → {} bytes", rust_buffer.len(), d.len());
-                d
-            }
-            Ok(Ok(_)) => {
-                godot_error!("🦀 [DECODE] LZ4 returned empty");
-                return self.create_error_dict("LZ4 decompression returned empty data".to_string());
-            }
-            Ok(Err(e)) => {
-                godot_error!("🦀 [DECODE] LZ4 FAILED: {:?}", e);
-                return self.create_error_dict(format!("LZ4 decompression failed: {:?}", e));
-            }
-            Err(_) => {
-                godot_error!("🦀 [DECODE] LZ4 PANICKED");
-                return self.create_error_dict("LZ4 decompression panicked".to_string());
-            }
-        };
-        
-        // Step 2: Extract from FeagiByteContainer (version 2 container format)
-        // ARCHITECTURE: FEAGI now wraps all data in FeagiByteContainer
-        // godot_print!("🦀 [DECODE] Starting FeagiByteContainer extraction, data size: {}", data_to_deserialize.len());
-        // let preview: String = data_to_deserialize.iter()
-        //     .take(20)
-        //     .map(|b| format!("{:02x}", b))
-        //     .collect::<Vec<_>>()
-        //     .join(" ");
-        // godot_print!("🦀 [DECODE] Decompressed data preview: {}", preview);
-        // godot_print!("🦀 [DECODE] First 4 bytes as u8: [{}, {}, {}, {}]", 
-        //     data_to_deserialize.get(0).unwrap_or(&0),
-        //     data_to_deserialize.get(1).unwrap_or(&0),
-        //     data_to_deserialize.get(2).unwrap_or(&0),
-        //     data_to_deserialize.get(3).unwrap_or(&0)
-        // );
-        
-        // Wrap FeagiByteContainer extraction in catch_unwind to handle panics gracefully.
-        // Perf: avoid cloning the decompressed payload and avoid cloning the decoded neuron map.
-        // We convert to Godot PackedArrays while the container/boxed struct is still alive.
+        // Canonical pipeline (transport-independent):
+        // - FEAGI produces FeagiByteContainer v2 (first byte == 2) containing Type 11 structures
+        // - SHM transports the bytes as-is (no compression required)
+        // - WS may optionally compress at the transport layer, but BV should only decode the canonical bytes
+        //
+        // Therefore, we do NOT require LZ4 here. We decode either:
+        // - FeagiByteContainer v2 (first byte == 2)
+        // - Raw Type 11 struct bytes (first byte == 11) if the container was unwrapped upstream
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
             use feagi_serialization::FeagiByteContainer;
+            use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 
-            let mut byte_container = FeagiByteContainer::new_empty();
-            let mut data_vec = data_to_deserialize;
+            if first_byte == 2 {
+                // FeagiByteContainer v2
+                let mut byte_container = FeagiByteContainer::new_empty();
+                let mut data_vec = rust_buffer;
 
-            // Load bytes into container (move via swap; no extra payload clone)
-            if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
-                std::mem::swap(bytes, &mut data_vec);
-                Ok(())
-            }) {
-                return Err(format!("{:?}", e));
+                if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+                    std::mem::swap(bytes, &mut data_vec);
+                    Ok(())
+                }) {
+                    return Err(format!("{:?}", e));
+                }
+
+                let num_structures = byte_container
+                    .try_get_number_contained_structures()
+                    .map_err(|e| format!("{:?}", e))?;
+                if num_structures == 0 {
+                    return Err("Empty container".to_string());
+                }
+
+                let boxed_struct = byte_container
+                    .try_create_new_struct_from_index(0)
+                    .map_err(|e| format!("{:?}", e))?;
+
+                let neuron_data = boxed_struct
+                    .as_any()
+                    .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
+                    .ok_or_else(|| "Wrong structure type".to_string())?;
+
+                Ok(self.convert_neuron_data_to_godot(neuron_data))
+            } else if first_byte == 11 {
+                // Raw Type 11 struct bytes
+                let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
+                neuron_data
+                    .try_deserialize_and_update_self_from_byte_slice(&rust_buffer)
+                    .map_err(|e| format!("{:?}", e))?;
+                Ok(self.convert_neuron_data_to_godot(&neuron_data))
+            } else {
+                Err(format!("Unsupported first byte: {}", first_byte))
             }
-
-            // Get structure count
-            let num_structures = match byte_container.try_get_number_contained_structures() {
-                Ok(n) => n,
-                Err(e) => return Err(format!("{:?}", e)),
-            };
-
-            if num_structures == 0 {
-                return Err("Empty container".to_string());
-            }
-
-            // Extract first structure
-            let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
-                Ok(s) => s,
-                Err(e) => return Err(format!("{:?}", e)),
-            };
-
-            // Downcast to CorticalMappedXYZPNeuronVoxels
-            let neuron_data = match boxed_struct
-                .as_any()
-                .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
-            {
-                Some(nd) => nd,
-                None => return Err("Wrong structure type".to_string()),
-            };
-
-            Ok(self.convert_neuron_data_to_godot(neuron_data))
         })) {
             Ok(Ok(dict)) => dict,
             Ok(Err(e)) => {
-                godot_error!("🦀 [DECODE] FeagiByteContainer extraction failed: {}", e);
-                self.create_error_dict(format!("FeagiByteContainer error: {}", e))
+                godot_error!("🦀 [DECODE] Type 11 decode failed: {}", e);
+                self.create_error_dict(e)
             }
             Err(_) => {
-                godot_error!("🦀 [DECODE] FeagiByteContainer extraction PANICKED!");
-                self.create_error_dict("FeagiByteContainer panic".to_string())
+                godot_error!("🦀 [DECODE] Type 11 decode PANICKED!");
+                self.create_error_dict("Type 11 decode panic".to_string())
             }
         }
     }
@@ -254,48 +213,74 @@ impl FeagiDataDeserializer {
         
         // Convert PackedByteArray to Vec<u8>
         let rust_buffer: Vec<u8> = buffer.to_vec();
-        
-        // Extract from FeagiByteContainer (version 2 container format)
-        use feagi_serialization::FeagiByteContainer;
-        
-        let mut byte_container = FeagiByteContainer::new_empty();
-        let mut data_vec = rust_buffer;
-        
-        if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
-            std::mem::swap(bytes, &mut data_vec);
-            Ok(())
-        }) {
-            godot_error!("🦀 Failed to load FeagiByteContainer: {:?}", e);
+        if rust_buffer.is_empty() {
             return self.create_visualization_error_dict(
-                format!("FeagiByteContainer error: {:?}", e),
-                start_time.elapsed().as_micros() as i64
+                "Empty buffer".to_string(),
+                start_time.elapsed().as_micros() as i64,
             );
         }
+        let first_byte = rust_buffer[0];
         
-        let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
-            Ok(s) => s,
-            Err(e) => {
-                godot_error!("🦀 Failed to extract structure: {:?}", e);
+        // Canonical pipeline (transport-independent):
+        // - FeagiByteContainer v2 (first byte == 2) containing Type 11
+        // - Or raw Type 11 (first byte == 11) if upstream unwrapped the container
+        // Always materialize an owned CorticalMappedXYZPNeuronVoxels so we can safely
+        // use it for the duration of this function without borrowing temporary objects.
+        let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if first_byte == 2 {
+            use feagi_serialization::FeagiByteContainer;
+            let mut byte_container = FeagiByteContainer::new_empty();
+            let mut data_vec = rust_buffer;
+            if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+                std::mem::swap(bytes, &mut data_vec);
+                Ok(())
+            }) {
+                godot_error!("🦀 Failed to load FeagiByteContainer: {:?}", e);
                 return self.create_visualization_error_dict(
-                    format!("Structure extract error: {:?}", e),
-                    start_time.elapsed().as_micros() as i64
+                    format!("FeagiByteContainer error: {:?}", e),
+                    start_time.elapsed().as_micros() as i64,
                 );
             }
-        };
-        
-        let neuron_data = match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
-            Some(nd) => nd,
-            None => {
-                godot_error!("🦀 Structure is not CorticalMappedXYZPNeuronVoxels");
+            let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
+                Ok(s) => s,
+                Err(e) => {
+                    godot_error!("🦀 Failed to extract structure: {:?}", e);
+                    return self.create_visualization_error_dict(
+                        format!("Structure extract error: {:?}", e),
+                        start_time.elapsed().as_micros() as i64,
+                    );
+                }
+            };
+            match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
+                Some(nd) => nd.clone(),
+                None => {
+                    godot_error!("🦀 Structure is not CorticalMappedXYZPNeuronVoxels");
+                    return self.create_visualization_error_dict(
+                        "Wrong structure type".to_string(),
+                        start_time.elapsed().as_micros() as i64,
+                    );
+                }
+            }
+        } else if first_byte == 11 {
+            let mut nd = CorticalMappedXYZPNeuronVoxels::new();
+            if let Err(e) = nd.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
+                godot_error!("🦀 Type 11 deserialize failed: {:?}", e);
                 return self.create_visualization_error_dict(
-                    "Wrong structure type".to_string(),
-                    start_time.elapsed().as_micros() as i64
+                    format!("Type 11 deserialize error: {:?}", e),
+                    start_time.elapsed().as_micros() as i64,
                 );
             }
+            nd
+        } else {
+            godot_error!("🦀 Unsupported payload first byte: {}", first_byte);
+            return self.create_visualization_error_dict(
+                format!("Unsupported payload first byte: {}", first_byte),
+                start_time.elapsed().as_micros() as i64,
+            );
         };
+        let neuron_data_ref: &CorticalMappedXYZPNeuronVoxels = &neuron_data_owned;
         
         // Count total neurons
-        let total_neurons: usize = neuron_data.mappings.values()
+        let total_neurons: usize = neuron_data_ref.mappings.values()
             .map(|arr| arr.len())
             .sum();
         
@@ -321,7 +306,7 @@ impl FeagiDataDeserializer {
         
         // Collect all neurons into a flat vector
         let mut all_neurons = Vec::with_capacity(process_count);
-        for (_, neuron_array) in neuron_data.mappings.iter() {
+        for (_, neuron_array) in neuron_data_ref.mappings.iter() {
             for neuron in neuron_array.iter() {
                 if all_neurons.len() >= process_count {
                     break;
@@ -495,75 +480,63 @@ impl FeagiDataDeserializer {
         out.set("area_counts", Dictionary::new());
 
         let rust_buffer: Vec<u8> = buffer.to_vec();
-        if rust_buffer.len() < 4 {
-            out.set("error", "Buffer too short for LZ4 size header");
+        if rust_buffer.is_empty() {
+            out.set("error", "Empty buffer");
             out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
             return out;
         }
-
-        let uncompressed_size =
-            u32::from_le_bytes([rust_buffer[0], rust_buffer[1], rust_buffer[2], rust_buffer[3]])
-                as i32;
-        let compressed_data = &rust_buffer[4..];
-
-        let lz4_start = std::time::Instant::now();
-        let data_to_deserialize = match std::panic::catch_unwind(|| {
-            lz4::block::decompress(compressed_data, Some(uncompressed_size))
-        }) {
-            Ok(Ok(d)) if !d.is_empty() => d,
-            Ok(Ok(_)) => {
-                out.set("error", "LZ4 decompression returned empty data");
-                out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
-                return out;
-            }
-            Ok(Err(e)) => {
-                out.set("error", format!("LZ4 decompression failed: {:?}", e));
-                out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
-                return out;
-            }
-            Err(_) => {
-                out.set("error", "LZ4 decompression panicked");
-                out.set("total_ms", total_start.elapsed().as_secs_f64() * 1000.0);
-                return out;
-            }
-        };
-        out.set("lz4_ms", lz4_start.elapsed().as_secs_f64() * 1000.0);
 
         // Parse + apply inside one unwind boundary to avoid cloning decoded neuron data.
         let parse_and_apply_start = std::time::Instant::now();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
             use feagi_serialization::FeagiByteContainer;
 
-            let mut byte_container = FeagiByteContainer::new_empty();
-            let mut data_vec = data_to_deserialize;
+            // Canonical pipeline (transport-independent):
+            // - FeagiByteContainer v2 (first byte == 2) containing Type 11 structures
+            // - Or raw Type 11 struct bytes (first byte == 11) if upstream unwrapped it
+            let first_byte = rust_buffer[0];
+            let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if first_byte == 2 {
+                let mut byte_container = FeagiByteContainer::new_empty();
+                let mut data_vec = rust_buffer;
 
-            if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
-                std::mem::swap(bytes, &mut data_vec);
-                Ok(())
-            }) {
-                return Err(format!("{:?}", e));
-            }
+                if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+                    std::mem::swap(bytes, &mut data_vec);
+                    Ok(())
+                }) {
+                    return Err(format!("{:?}", e));
+                }
 
-            let num_structures = match byte_container.try_get_number_contained_structures() {
-                Ok(n) => n,
-                Err(e) => return Err(format!("{:?}", e)),
+                let num_structures = match byte_container.try_get_number_contained_structures() {
+                    Ok(n) => n,
+                    Err(e) => return Err(format!("{:?}", e)),
+                };
+                if num_structures == 0 {
+                    return Err("Empty container".to_string());
+                }
+
+                let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
+                    Ok(s) => s,
+                    Err(e) => return Err(format!("{:?}", e)),
+                };
+
+                let neuron_data_ref = match boxed_struct
+                    .as_any()
+                    .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
+                {
+                    Some(nd) => nd,
+                    None => return Err("Wrong structure type".to_string()),
+                };
+                neuron_data_ref.clone()
+            } else if first_byte == 11 {
+                let mut nd = CorticalMappedXYZPNeuronVoxels::new();
+                if let Err(e) = nd.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
+                    return Err(format!("Type 11 deserialize error: {:?}", e));
+                }
+                nd
+            } else {
+                return Err(format!("Unsupported payload first byte: {}", first_byte));
             };
-            if num_structures == 0 {
-                return Err("Empty container".to_string());
-            }
-
-            let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
-                Ok(s) => s,
-                Err(e) => return Err(format!("{:?}", e)),
-            };
-
-            let neuron_data = match boxed_struct
-                .as_any()
-                .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
-            {
-                Some(nd) => nd,
-                None => return Err("Wrong structure type".to_string()),
-            };
+            let neuron_data_ref: &CorticalMappedXYZPNeuronVoxels = &neuron_data_owned;
 
             let container_parse_ms = parse_and_apply_start.elapsed().as_secs_f64() * 1000.0;
 
@@ -583,7 +556,7 @@ impl FeagiDataDeserializer {
             let mut neurons_applied: i32 = 0;
             let mut area_counts = Dictionary::new();
 
-            for (cortical_id, neuron_array) in neuron_data.mappings.iter() {
+            for (cortical_id, neuron_array) in neuron_data_ref.mappings.iter() {
                 let num_neurons = neuron_array.len();
                 if num_neurons == 0 {
                     continue;
@@ -1015,6 +988,214 @@ impl FeagiDataDeserializer {
         result.set("fdp_version", FDP_VERSION);
         result.set("error", "");
         
+        result
+    }
+
+    /// Compute a new IO cortical ID using FDP's canonical encoding rules.
+    ///
+    /// This preserves unit identifiers and updates the encoding configuration
+    /// based on the selected signage/behavior/type options.
+    ///
+    /// Returns: Dictionary {success: bool, cortical_id: String, error: String}
+    #[func]
+    pub fn compute_io_cortical_id(
+        &self,
+        cortical_id: GString,
+        coding_signage: GString,
+        coding_behavior: GString,
+        coding_type: GString,
+    ) -> Dictionary {
+        let mut result = Dictionary::new();
+        let id_str = cortical_id.to_string();
+
+        let cortical_id_obj = match CorticalID::try_from_base_64(&id_str) {
+            Ok(id) => id,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("Invalid cortical ID: {}", e));
+                result.set("cortical_id", "");
+                return result;
+            }
+        };
+
+        let bytes = cortical_id_obj.as_bytes();
+        let is_input = bytes[0] == b'i';
+        let is_output = bytes[0] == b'o';
+        if !is_input && !is_output {
+            result.set("success", false);
+            result.set("error", "Not an IPU/OPU cortical ID");
+            result.set("cortical_id", "");
+            return result;
+        }
+
+        let current_flag = match cortical_id_obj.extract_io_data_flag() {
+            Ok(flag) => flag,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("Unable to decode IO configuration: {}", e));
+                result.set("cortical_id", "");
+                return result;
+            }
+        };
+
+        let signage_raw = coding_signage.to_string().to_lowercase();
+        let behavior_raw = coding_behavior.to_string().to_lowercase();
+        let coding_type_raw = coding_type.to_string().to_lowercase();
+
+        let parse_frame = |raw: &str| -> Option<FrameChangeHandling> {
+            match raw.trim() {
+                "absolute" => Some(FrameChangeHandling::Absolute),
+                "incremental" => Some(FrameChangeHandling::Incremental),
+                _ => None,
+            }
+        };
+        let parse_positioning = |raw: &str| -> Option<PercentageNeuronPositioning> {
+            match raw.trim() {
+                "linear" => Some(PercentageNeuronPositioning::Linear),
+                "fractional" => Some(PercentageNeuronPositioning::Fractional),
+                _ => None,
+            }
+        };
+        let parse_signage = |raw: &str| -> Option<bool> {
+            if raw.contains("unsigned") {
+                Some(false)
+            } else if raw.contains("signed") {
+                Some(true)
+            } else {
+                None
+            }
+        };
+
+        let frame_override = parse_frame(&behavior_raw);
+        let positioning_override = parse_positioning(&coding_type_raw);
+        let signage_override = parse_signage(&signage_raw);
+
+        let new_flag = match current_flag {
+            IOCorticalAreaConfigurationFlag::Percentage(frame, positioning) => {
+                let signed = signage_override.unwrap_or(false);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::Percentage2D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(false);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage2D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage2D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::Percentage3D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(false);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage3D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage3D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::Percentage4D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(false);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage4D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage4D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::SignedPercentage(frame, positioning) => {
+                let signed = signage_override.unwrap_or(true);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::SignedPercentage2D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(true);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage2D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage2D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::SignedPercentage3D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(true);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage3D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage3D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::SignedPercentage4D(frame, positioning) => {
+                let signed = signage_override.unwrap_or(true);
+                let next_frame = frame_override.unwrap_or(frame);
+                let next_pos = positioning_override.unwrap_or(positioning);
+                if signed {
+                    IOCorticalAreaConfigurationFlag::SignedPercentage4D(next_frame, next_pos)
+                } else {
+                    IOCorticalAreaConfigurationFlag::Percentage4D(next_frame, next_pos)
+                }
+            }
+            IOCorticalAreaConfigurationFlag::CartesianPlane(frame) => {
+                if signage_raw != "cartesian plane" && signage_raw != "not applicable" {
+                    result.set("success", false);
+                    result.set("error", "coding_signage not supported for Cartesian Plane");
+                    result.set("cortical_id", "");
+                    return result;
+                }
+                let next_frame = frame_override.unwrap_or(frame);
+                IOCorticalAreaConfigurationFlag::CartesianPlane(next_frame)
+            }
+            IOCorticalAreaConfigurationFlag::Misc(frame) => {
+                if signage_raw != "misc" && signage_raw != "not applicable" {
+                    result.set("success", false);
+                    result.set("error", "coding_signage not supported for Misc");
+                    result.set("cortical_id", "");
+                    return result;
+                }
+                let next_frame = frame_override.unwrap_or(frame);
+                IOCorticalAreaConfigurationFlag::Misc(next_frame)
+            }
+            IOCorticalAreaConfigurationFlag::Boolean => {
+                if signage_raw != "boolean" && signage_raw != "not applicable" {
+                    result.set("success", false);
+                    result.set("error", "coding_signage not supported for Boolean");
+                    result.set("cortical_id", "");
+                    return result;
+                }
+                IOCorticalAreaConfigurationFlag::Boolean
+            }
+        };
+
+        let unit_identifier = [bytes[1], bytes[2], bytes[3]];
+        let subunit_idx = bytes[6];
+        let unit_idx = bytes[7];
+
+        let new_id = new_flag.as_io_cortical_id(
+            is_input,
+            unit_identifier,
+            CorticalUnitIndex::from(unit_idx),
+            CorticalSubUnitIndex::from(subunit_idx),
+        );
+
+        result.set("success", true);
+        result.set("cortical_id", new_id.as_base_64());
+        result.set("error", "");
         result
     }
 }

@@ -3,6 +3,11 @@ class_name UIManager
 ## Manages UI aspects of BV as a whole
 
 const PREFAB_CB: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn")
+const MOUSE_CONTEXT_FONT_SIZE: int = 32
+const MOUSE_CONTEXT_OUTLINE_SIZE: int = 2
+const MOUSE_CONTEXT_MARGIN_PX: int = 10
+const MOUSE_CONTEXT_MAX_WIDTH_PX: int = 1200
+const MOUSE_CONTEXT_HEIGHT_PX: int = 44
 
 # TODO dev menu - build_settings_object
 
@@ -48,6 +53,8 @@ var _window_manager
 var _root_UI_view: UIView
 var _notification_system: NotificationSystem
 var _version_label: Label
+var _mouse_context_label: Label
+var _active_hover_bm: UI_BrainMonitor_3DScene = null
 
 # CRITICAL: Track whether 3D scene has been successfully instantiated
 # This prevents hiding the loading screen before the 3D scene is actually ready
@@ -64,7 +71,8 @@ func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
 	get_viewport().size_changed.connect(_update_screen_size)
 	_find_possible_scales()
-	_load_new_theme(load("res://BrainVisualizer/UI/Themes/1-DARK.tres")) #TODO temporary!
+	# Default UI scale at startup: +2 levels from 1.0x (e.g., 1.5x with current theme set).
+	_load_new_theme(load("res://BrainVisualizer/UI/Themes/1.5-DARK.tres")) #TODO temporary!
 
 func _process(_delta: float):
 	if _fps_label:
@@ -100,11 +108,12 @@ func _ready():
 	_fps_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_fps_label.add_theme_font_size_override("font_size", 16)
 	add_child(_fps_label)
+	_setup_mouse_context_label()
 	
-	#TODO updated is commented out due to these signals being called when we merely retrieve the data but dont update anything, causing it to be spammed. We may wish to address this
+	# Connect cortical area cache signals
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_added.connect(_proxy_notification_cortical_area_added)
 	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(_proxy_notification_cortical_area_removed)
-	#FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(_proxy_notification_cortical_area_updated)
+	FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mass_updated.connect(_proxy_notification_cortical_area_updated)
 	#FeagiCore.feagi_local_cache.cortical_areas.cortical_area_mappings_changed.connect(_proxy_notification_mappings_updated)
 	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_proxy_notification_morphology_added)
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
@@ -120,6 +129,58 @@ func _ready():
 	
 
 #endregion
+
+## Initializes the global mouse hover label shown in the screen corner.
+func _setup_mouse_context_label() -> void:
+	_mouse_context_label = Label.new()
+	_mouse_context_label.name = "MouseContextHUD"
+	_mouse_context_label.anchors_preset = Control.PRESET_BOTTOM_LEFT
+	_mouse_context_label.anchor_left = 0.0
+	_mouse_context_label.anchor_top = 1.0
+	_mouse_context_label.anchor_right = 0.0
+	_mouse_context_label.anchor_bottom = 1.0
+	_mouse_context_label.offset_left = float(MOUSE_CONTEXT_MARGIN_PX)
+	_mouse_context_label.offset_top = -float(MOUSE_CONTEXT_HEIGHT_PX)
+	_mouse_context_label.offset_right = float(MOUSE_CONTEXT_MAX_WIDTH_PX)
+	_mouse_context_label.offset_bottom = -float(MOUSE_CONTEXT_MARGIN_PX)
+	_mouse_context_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_mouse_context_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_mouse_context_label.add_theme_color_override("font_color", Color.WHITE)
+	_mouse_context_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_mouse_context_label.add_theme_constant_override("outline_size", MOUSE_CONTEXT_OUTLINE_SIZE)
+	_mouse_context_label.add_theme_font_size_override("font_size", MOUSE_CONTEXT_FONT_SIZE)
+	_mouse_context_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mouse_context_label.text = ""
+	_mouse_context_label.z_index = 80
+	add_child(_mouse_context_label)
+
+## Marks which brain monitor currently owns hover updates.
+func set_active_hover_bm(bm: UI_BrainMonitor_3DScene) -> void:
+	_active_hover_bm = bm
+
+## Clears hover ownership and the label when a BM loses hover.
+func clear_active_hover_bm(bm: UI_BrainMonitor_3DScene) -> void:
+	if _active_hover_bm != bm:
+		return
+	_active_hover_bm = null
+	if _mouse_context_label:
+		_mouse_context_label.text = ""
+
+## Updates the global hover label from the active brain monitor only.
+func update_mouse_context(text: String, source_bm: UI_BrainMonitor_3DScene) -> void:
+	if _mouse_context_label == null:
+		return
+	if _active_hover_bm != null and source_bm != _active_hover_bm:
+		return
+	_mouse_context_label.text = text
+
+## Clears the global hover label if the active monitor requests it.
+func clear_mouse_context(source_bm: UI_BrainMonitor_3DScene) -> void:
+	if _mouse_context_label == null:
+		return
+	if _active_hover_bm != null and source_bm != _active_hover_bm:
+		return
+	_mouse_context_label.text = ""
 
 
 ## Interactions with FEAGICORE
@@ -503,6 +564,8 @@ func set_advanced_mode(is_advanced_mode: bool) -> void:
 func show_developer_menu():
 	_window_manager.spawn_developer_options()
 
+## Show the guide overlay with markdown content.
+
 
 
 func toggle_loading_screen(is_on: bool) -> void:
@@ -538,7 +601,7 @@ func update_shutdown_status(message: String) -> void:
 
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
 	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
-		_window_manager.spawn_quick_cortical_menu(objects)
+		_window_manager.spawn_quick_cortical_menu(objects, context)
 	if SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES in override_usecases:
 		var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(objects)
 		if len(cortical_areas) != 0:
@@ -573,6 +636,54 @@ var _screen_size: Vector2
 var _loaded_theme: Theme
 var _loaded_theme_scale: Vector2 = Vector2(1.0, 1.0)
 var _possible_UI_scales: Array[float] = []
+
+# Split handle textures (generated at runtime to avoid SVG import sizing quirks)
+var _split_handle_v: Texture2D = null ## @cursor:critical-path - UI affordance must be deterministic across platforms
+var _split_handle_h: Texture2D = null ## @cursor:critical-path - UI affordance must be deterministic across platforms
+
+
+## Ensures splitter handle textures exist. We generate these at runtime to guarantee pixel size
+## (SVG import settings can clamp the rendered size and make the handle appear tiny).
+func _ensure_split_handle_textures() -> void:
+	# Always regenerate so edits to sizes/colors apply deterministically after restart/theme reload.
+	# (These textures were previously cached and could make changes appear to have no effect.)
+	#
+	# "Option A + B":
+	# - Make the handle visually thicker (bigger bump)
+	# - Keep it elegant with longer "|| / ==" marks
+	# Make marks 3x longer:
+	# - Vertical: increase texture height (length), keep width (thickness)
+	# - Horizontal: increase texture width (length), keep height (thickness)
+	_split_handle_v = _make_split_handle_texture(Vector2i(20, 216), true)  # thickness 20px, 3x length
+	_split_handle_h = _make_split_handle_texture(Vector2i(216, 20), false) # thickness 20px, 3x length
+
+
+## Generates an "||" (or "==") split handle icon of a known pixel size.
+static func _make_split_handle_texture(size_px: Vector2i, is_vertical: bool) -> Texture2D:
+	var img: Image = Image.create(size_px.x, size_px.y, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	# Brighter neutral gray so it reads on dark backgrounds.
+	# Slightly dimmed (per UX feedback) while remaining discoverable.
+	var bar_color: Color = Color(0.88, 0.9, 0.93, 0.92)
+	if is_vertical:
+		# Two vertical bars centered in a fixed-width texture.
+		var bar_w: int = maxi(2, int(size_px.x * 0.16))
+		var gap: int = maxi(2, int(size_px.x * 0.12))
+		var bar_h: int = maxi(14, int(size_px.y * 0.72)) # longer mark (Option B)
+		var y0: int = (size_px.y - bar_h) / 2
+		var x0: int = (size_px.x - (bar_w * 2 + gap)) / 2
+		img.fill_rect(Rect2i(x0, y0, bar_w, bar_h), bar_color)
+		img.fill_rect(Rect2i(x0 + bar_w + gap, y0, bar_w, bar_h), bar_color)
+	else:
+		# Two horizontal bars centered in a fixed-height texture.
+		var bar_h2: int = maxi(2, int(size_px.y * 0.16))
+		var gap2: int = maxi(2, int(size_px.y * 0.12))
+		var bar_w2: int = maxi(14, int(size_px.x * 0.72)) # longer mark (Option B)
+		var x02: int = (size_px.x - bar_w2) / 2
+		var y02: int = (size_px.y - (bar_h2 * 2 + gap2)) / 2
+		img.fill_rect(Rect2i(x02, y02, bar_w2, bar_h2), bar_color)
+		img.fill_rect(Rect2i(x02, y02 + bar_h2 + gap2, bar_w2, bar_h2), bar_color)
+	return ImageTexture.create_from_image(img)
 
 
 ## Given the element node, uses the theme_variant property to retrieve the minimum size of the current theme. If there is no theme variant, fall back onto the given default option
@@ -630,11 +741,33 @@ func _update_screen_size():
 ## Used to reposition notifications so they dont intersect with top bar
 func _top_bar_resized() -> void:
 	_notification_system.position.y = _top_bar.size.y + _top_bar.position.y
+	if has_node("/root/BrainVisualizer/UIManager/CB_Holder"):
+		$CB_Holder.offset_top = _top_bar.position.y + _top_bar.size.y + 8
 
 func _load_new_theme(theme: Theme) -> void:
 	var scalar: Vector2 = Vector2(1,1)
 	
 	_loaded_theme = theme
+	# Ensure split handles are a consistent, visible size across all platforms/themes.
+	_ensure_split_handle_textures()
+	_loaded_theme.set_icon("h_grabber", "SplitContainer", _split_handle_v)
+	_loaded_theme.set_icon("v_grabber", "SplitContainer", _split_handle_h)
+	_loaded_theme.set_icon("h_touch_dragger", "SplitContainer", _split_handle_v)
+	_loaded_theme.set_icon("v_touch_dragger", "SplitContainer", _split_handle_h)
+	_loaded_theme.set_icon("grabber", "HSplitContainer", _split_handle_v)
+	_loaded_theme.set_icon("grabber", "VSplitContainer", _split_handle_h)
+	_loaded_theme.set_icon("touch_dragger", "HSplitContainer", _split_handle_v)
+	_loaded_theme.set_icon("touch_dragger", "VSplitContainer", _split_handle_h)
+	# Use a thicker standard split bar (full-height/width band) so the affordance is obvious.
+	# This is more reliable than touch_dragger sizing, which can still read like a small nub.
+	_loaded_theme.set_constant("separation", "SplitContainer", 20)
+	_loaded_theme.set_constant("separation", "HSplitContainer", 20)
+	_loaded_theme.set_constant("separation", "VSplitContainer", 20)
+	_loaded_theme.set_constant("autohide", "SplitContainer", 0)
+	# Make the drag handle background brighter (still neutral gray) so it is discoverable.
+	_loaded_theme.set_color("touch_dragger_color", "SplitContainer", Color(0.92, 0.94, 0.97, 0.72))
+	_loaded_theme.set_color("touch_dragger_hover_color", "SplitContainer", Color(0.96, 0.97, 0.99, 0.84))
+	_loaded_theme.set_color("touch_dragger_pressed_color", "SplitContainer", Color(1.0, 1.0, 1.0, 0.94))
 	if _loaded_theme.has_constant("size_x", "generic_scale"):
 		scalar.x = float(_loaded_theme.get_constant("size_x", "generic_scale")) / 4.0
 	else:
@@ -645,7 +778,26 @@ func _load_new_theme(theme: Theme) -> void:
 		push_error("UI: Unable to find size_y under the generic_scale type of the newely loaded theme! There will be scaling issues!")
 	
 	_loaded_theme_scale = scalar
-	
+
+	# IMPORTANT: Ensure the theme is actually applied to the active UI Control tree.
+	# Many BV widgets opt-in to theme_changed and set their own theme, but core containers
+	# like SplitContainer will continue using the project default theme unless we set it here.
+	#
+	# This is the key reason prior "make it bigger" changes appeared to have no effect.
+	if has_node("/root/BrainVisualizer/UIManager/CB_Holder"):
+		$CB_Holder.theme = _loaded_theme
+		# Ensure nested UIView inherits the theme even if reparented later.
+		if $CB_Holder.has_node("UIView"):
+			$CB_Holder/UIView.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/TopBar"):
+		$TopBar.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/NotificationSystem"):
+		$NotificationSystem.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/TempLoadingScreen"):
+		$TempLoadingScreen.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/ScaleControl"):
+		$ScaleControl.theme = _loaded_theme
+
 	$VersionLabel.theme = theme
 	theme_changed.emit(theme)
 
@@ -671,9 +823,32 @@ func _proxy_notification_cortical_area_added(cortical_area: AbstractCorticalArea
 	
 	
 ## Signal proxy for notifications, adds check to ensure genome is loaded (to avoid call spam when loading genome)
+## Also refreshes visualization when properties are updated
 func _proxy_notification_cortical_area_updated(cortical_area: AbstractCorticalArea) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 		return
+	
+	print("UI: Cortical area %s properties updated - refreshing visualization" % cortical_area.cortical_ID)
+	print("  🔍 Current dimensions: %s" % cortical_area.dimensions_3D)
+	print("  🔍 Current coordinates: %s" % cortical_area.coordinates_3D)
+	print("  🔍 Current visibility (cortical_visibility): %s" % cortical_area.cortical_visibility)
+	print("  🔍 Cortical type: %s" % cortical_area.cortical_type)
+	print("  🔍 Voxel granularity: %s" % cortical_area.visualization_voxel_granularity)
+	
+	# CRITICAL FIX (similar to clone coordinate fix): Force-trigger dimension update signal
+	# to refresh renderer even if dimensions haven't changed. This ensures visualization
+	# stays in sync after property updates (e.g., firing threshold changes).
+	# The renderer is connected to dimensions_3D_updated signal and will refresh all visuals.
+	print("  🔧 Emitting dimensions_3D_updated signal with dims: %s" % cortical_area.dimensions_3D)
+	var current_dims = cortical_area.dimensions_3D
+	cortical_area.dimensions_3D_updated.emit(current_dims)
+	
+	# Also refresh granularity-specific visuals
+	print("  🔧 Calling BV_refresh_directpoints_renderer_visuals()")
+	cortical_area.BV_refresh_directpoints_renderer_visuals()
+	print("  ✅ Visualization refresh complete for %s" % cortical_area.cortical_ID)
+	
+	# Show notification
 	_notification_system.add_notification("Confirmed update of cortical area %s!" % cortical_area.friendly_name)
 	
 	

@@ -1,6 +1,9 @@
 extends RefCounted
 class_name FEAGIRequests
 
+## Global flag to prevent region frame refresh during active clone operations
+static var _clone_operation_in_progress: bool = false
+
 #region Genome and FEAGI general
 
 # WARNING: You probably don't want to call this directly!
@@ -492,6 +495,42 @@ func get_regions_summary() -> FeagiRequestOutput:
 
 #endregion
 
+#region Cortical area geometry (lightweight)
+
+## Fetches the cortical area geometry without reloading the entire genome
+func get_cortical_area_geometry() -> FeagiRequestOutput:
+	# Network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
+	var cortical_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
+	var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_request)
+	await cortical_worker.worker_done
+	var cortical_data: FeagiRequestOutput = cortical_worker.retrieve_output_and_close()
+	_return_if_HTTP_failed_and_automatically_handle(cortical_data)
+	return cortical_data
+
+#endregion
+
+#region Morphology summary (lightweight)
+
+## Fetches morphology summary without reloading the entire genome
+func get_morphologies_summary() -> FeagiRequestOutput:
+	# Network component checks
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
+	var morphologies_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_morphology_morphologies)
+	var morphologies_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(morphologies_request)
+	await morphologies_worker.worker_done
+	var morphologies_data: FeagiRequestOutput = morphologies_worker.retrieve_output_and_close()
+	_return_if_HTTP_failed_and_automatically_handle(morphologies_data)
+	return morphologies_data
+
+#endregion
+
 #region Mapping summary (lightweight)
 
 ## Fetches the cortical mapping summary without reloading the entire genome
@@ -950,6 +989,9 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 		return FEAGI_response_data
 	
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	var response_cortical_id: StringName = checking_cortical_ID
+	if response.has("cortical_id") and response["cortical_id"] != null:
+		response_cortical_id = response["cortical_id"]
 	
 	# Log visualization_voxel_granularity if present
 	if "visualization_voxel_granularity" in response:
@@ -969,13 +1011,29 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 				properties_dict[key] = response[key]
 				if key == "visualization_voxel_granularity":
 					print("🔵 FEAGI REQUEST: Passing visualization_voxel_granularity to cache for %s: %s (type: %s)" % [checking_cortical_ID, response[key], typeof(response[key])])
-	properties_dict["cortical_id"] = checking_cortical_ID  # Add the ID to the properties dict
+	if "coding_options" in properties_dict:
+		var coding_options = properties_dict["coding_options"]
+		if coding_options is Dictionary:
+			print("BV [NEURAL-CODING][API]: %s coding_options keys=%s signage=%s behavior=%s type=%s" % [
+				checking_cortical_ID,
+				coding_options.keys(),
+				coding_options.get("signage_options", "MISSING"),
+				coding_options.get("behavior_options", "MISSING"),
+				coding_options.get("coding_type_options", "MISSING")
+			])
+		else:
+			print("BV [NEURAL-CODING][API]: %s coding_options unexpected type=%s" % [checking_cortical_ID, typeof(coding_options)])
+	else:
+		print("BV [NEURAL-CODING][API]: %s coding_options missing" % checking_cortical_ID)
+	properties_dict["cortical_id"] = response_cortical_id  # Add the authoritative ID to the properties dict
+	if response_cortical_id != checking_cortical_ID and checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(checking_cortical_ID, response_cortical_id)
 	
 	# Check if cortical area exists in cache - if not, create it; if yes, update it
-	if checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+	if response_cortical_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
 		# Prevent incorrect reassignment to root if backend omits true parent region
 		# If server reports parent_region_id as root but cache shows a non-root parent, trust cache
-		var existing_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[checking_cortical_ID]
+		var existing_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[response_cortical_id]
 		if properties_dict.has("parent_region_id"):
 			var reported_parent: StringName = properties_dict["parent_region_id"]
 			var current_parent: StringName = existing_area.current_parent_region.region_ID if existing_area != null and existing_area.current_parent_region != null else BrainRegion.ROOT_REGION_ID
@@ -1005,7 +1063,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			return FeagiRequestOutput.requirement_fail("INVALID_PARENT_REGION")
 		
 		var parent_region: BrainRegion = parent_region_data as BrainRegion
-		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(properties_dict, parent_region, checking_cortical_ID)
+		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(properties_dict, parent_region, response_cortical_id)
 	return FEAGI_response_data
 
 ### Requests information on multiple cortical areas
@@ -1067,6 +1125,20 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:
 			area_data["cortical_id"] = StringName(cortical_id)
+		if "coding_options" in area_data:
+			var coding_options = area_data["coding_options"]
+			if coding_options is Dictionary:
+				print("BV [NEURAL-CODING][API][MULTI]: %s coding_options keys=%s signage=%s behavior=%s type=%s" % [
+					cortical_id,
+					coding_options.keys(),
+					coding_options.get("signage_options", "MISSING"),
+					coding_options.get("behavior_options", "MISSING"),
+					coding_options.get("coding_type_options", "MISSING")
+				])
+			else:
+				print("BV [NEURAL-CODING][API][MULTI]: %s coding_options unexpected type=%s" % [cortical_id, typeof(coding_options)])
+		else:
+			print("BV [NEURAL-CODING][API][MULTI]: %s coding_options missing" % cortical_id)
 		print("🔵 FEAGI REQUEST: [MULTI] Updating cache for %s with visualization_voxel_granularity: %s" % [cortical_id, area_data.get("visualization_voxel_granularity", "NOT PRESENT")])
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(area_data)
 	
@@ -1325,10 +1397,14 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 	# New unified clone endpoint
 	var dict_to_send: Dictionary = {
 		"source_area_id": cloning_area.cortical_ID,
+		"new_name": String(new_name),
 		"clone_cortical_mapping": clone_cortical_mapping,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(new_position_3D),
-		"coordinates_2d": FEAGIUtils.vector2i_to_array(new_position_2D)
+		"coordinates_2d": FEAGIUtils.vector2i_to_array(new_position_2D),
+		"parent_region_id": parent_region.region_ID
 	}
+	print("FEAGI REQUEST: Clone cortical payload keys: %s" % [dict_to_send.keys()])
+	print("FEAGI REQUEST: Clone cortical payload JSON: %s" % [JSON.stringify(dict_to_send)])
 	# Double-check network components
 	var network_check = _check_network_components_ready()
 	if network_check != null:
@@ -1345,9 +1421,78 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	var new_id: String = response.get("new_area_id", "")
 	print("FEAGI REQUEST: Successfully cloned cortical area %s to new area %s" % [cloning_area.cortical_ID, new_id])
+	
+	# CRITICAL: Block all region frame refresh during clone operation to prevent visualization from being freed
+	_clone_operation_in_progress = true
+	
 	# Refresh area details and region membership incrementally
 	if new_id != "":
+		# Match "Create cortical area" behavior: add a placeholder into local cache immediately,
+		# then fetch authoritative details from FEAGI. This ensures the region BM tab renders
+		# instantly instead of waiting for downstream refreshes.
+		if !(StringName(new_id) in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas):
+			if parent_region != null:
+				match cloning_area.cortical_type:
+					AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+						FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_memory_cortical_area(
+							StringName(new_id),
+							StringName(new_name),
+							new_position_3D,
+							cloning_area.dimensions_3D,
+							true,
+							new_position_2D,
+							parent_region,
+							{},
+							cloning_area.cortical_visibility
+						)
+					_:
+						FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_custom_cortical_area(
+							StringName(new_id),
+							StringName(new_name),
+							new_position_3D,
+							cloning_area.dimensions_3D,
+							true,
+							new_position_2D,
+							parent_region,
+							{},
+							cloning_area.cortical_visibility
+						)
+		
 		await get_cortical_area(new_id)
+		
+		# CRITICAL FIX: FEAGI backend bug - clone endpoint returns SOURCE area's coordinates
+		# instead of the NEW area's coordinates. Force-correct them after fetching.
+		var area_after_fetch: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(new_id)
+		if area_after_fetch != null and area_after_fetch.coordinates_3D != new_position_3D:
+			area_after_fetch.FEAGI_change_coordinates_3D(new_position_3D)
+		
+		# Immediate UI placement: do not rely on regions_summary timing.
+		# We already know the expected parent region at clone-time (source area's parent),
+		# and FEAGI is authoritative about the same membership.
+		var final_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(new_id)
+		
+		if final_area_obj != null and parent_region != null:
+			var current_parent_id = final_area_obj.current_parent_region.region_ID if final_area_obj.current_parent_region != null else &""
+			if current_parent_id != parent_region.region_ID:
+				print("FEAGI REQUEST: Force-correcting cloned area %s parent %s -> %s for immediate UI placement" % [new_id, current_parent_id, parent_region.region_ID])
+				final_area_obj.FEAGI_change_parent_brain_region(parent_region)
+		
+		# If the region's Brain Monitor tab exists, ensure the visualization is added immediately.
+		if BV.UI and final_area_obj != null and parent_region != null:
+			var target_region_id: StringName = parent_region.region_ID
+			var any_bm_found: bool = false
+			var all_bms: Array[UI_BrainMonitor_3DScene] = BV.UI._find_all_brain_monitors_in_scene_tree()
+			for bm: UI_BrainMonitor_3DScene in all_bms:
+				if bm == null or bm.representing_region == null:
+					continue
+				if bm.representing_region.region_ID != target_region_id:
+					continue
+				any_bm_found = true
+				print("FEAGI REQUEST: Manually injecting cloned area %s into BM for region %s" % [new_id, target_region_id])
+				bm._add_cortical_area(final_area_obj)
+			if !any_bm_found:
+				print("⚠️ FEAGI REQUEST: No Brain Monitor tab found for region %s to auto-add cloned area %s" % [target_region_id, new_id])
+		
 		var regions_summary: FeagiRequestOutput = await get_regions_summary()
 		if regions_summary != null and regions_summary.success:
 			var regions_dict: Dictionary = regions_summary.decode_response_as_dict()
@@ -1388,6 +1533,21 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 				for scene in brain_monitor_scenes:
 					if scene is UI_BrainMonitor_3DScene:
 						(scene as UI_BrainMonitor_3DScene).force_refresh_all_cortical_connections()
+		
+		# CRITICAL: Wait one frame for all queued signals to process while flag is still true
+		await Engine.get_main_loop().process_frame
+		
+		# Wait ANOTHER frame to ensure ALL mapping signals are fully processed
+		await Engine.get_main_loop().process_frame
+		
+		# Now that all data is loaded and signals processed, simply clear the flag
+		# DO NOT force refresh - the visualization is already correctly positioned and functional
+		_clone_operation_in_progress = false
+		print("FEAGI REQUEST: Clone complete, refresh guard lifted")
+	else:
+		# Ensure flag is cleared even if clone failed
+		_clone_operation_in_progress = false
+	
 	return FEAGI_response_data
 
 ## Initiate region clone as pending amalgamation (no finalize). Returns amalgamation_id and circuit_size.
@@ -1482,9 +1642,16 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 		return FEAGI_response_data
 	
 	# Re-fetch the cortical area from FEAGI to ensure cache is synchronized with backend
-	print("FEAGI REQUEST: PUT succeeded for %s, re-fetching from FEAGI to sync cache" % editing_ID)
-	await get_cortical_area(editing_ID)
-	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ editing_ID])
+	var response_dict: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	var updated_id: StringName = response_dict.get("cortical_id", editing_ID)
+	var previous_id: StringName = response_dict.get("previous_cortical_id", editing_ID)
+	if updated_id != previous_id:
+		print("BV [NEURAL-CODING]: FEAGI remapped cortical ID %s -> %s" % [previous_id, updated_id])
+	if updated_id != previous_id:
+		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(previous_id, updated_id)
+	print("FEAGI REQUEST: PUT succeeded for %s, re-fetching from FEAGI to sync cache" % updated_id)
+	await get_cortical_area(updated_id)
+	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ updated_id])
 	return FEAGI_response_data
 
 func update_cortical_areas(editing_areas: Array[AbstractCorticalArea], properties: Dictionary) -> FeagiRequestOutput:

@@ -12,6 +12,21 @@ signal cortical_area_selected_neurons_changed_delta(area: AbstractCorticalArea, 
 signal requesting_to_fire_selected_neurons(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) # NOTE: Array is of type Array[Vector3i]
 signal requesting_to_clear_all_selected_neurons()
 
+enum MANIPULATION_MODE { MOVE, RESIZE }
+
+var _manipulation_active: bool = false
+var _manipulation_mode: MANIPULATION_MODE = MANIPULATION_MODE.MOVE
+var _manipulation_area: AbstractCorticalArea = null
+var _manipulation_preview: UI_BrainMonitor_InteractivePreview = null
+var _manipulation_gizmo: UI_BrainMonitor_RuntimeTransformGizmo = null
+var _manipulation_dragging: bool = false
+var _manipulation_axis: int = -1  # UI_BrainMonitor_RuntimeTransformGizmo.AXIS
+var _manipulation_start_pos: Vector3i = Vector3i.ZERO
+var _manipulation_start_dims: Vector3i = Vector3i.ZERO
+var _manipulation_start_param: float = 0.0
+var _manipulation_current_pos: Vector3i = Vector3i.ZERO
+var _manipulation_current_dims: Vector3i = Vector3i.ZERO
+
 var representing_region: BrainRegion:
 	get: return _representing_region
 
@@ -74,6 +89,8 @@ var _intro_start_rot: Quaternion
 var _intro_target_rot: Quaternion
 var _active_preview_indicators: Array[Node3D] = []
 var _last_scene_center: Vector3 = Vector3.ZERO
+var _is_mouse_hovering_viewport: bool = false
+var _enter_key_latched: bool = false
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
@@ -81,11 +98,16 @@ static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
 
 func _ready() -> void:
 	_node_3D_root = $SubViewport/Center
-	_UI_layer_for_BM = $SubViewport/BM_UI
+	_UI_layer_for_BM = $SubViewport/UI_Canvas/BM_UI
+	# Keep SubViewport size in sync with container for consistent UI scaling.
+	resized.connect(_update_subviewport_size)
+	_update_subviewport_size()
 	
 	# TODO check mode (PC)
 	_pancake_cam = $SubViewport/Center/PancakeCam
 	if _pancake_cam:
+		if not _pancake_cam.current:
+			_pancake_cam.current = true
 		_pancake_cam.BM_input_events.connect(_process_user_input)
 		# Log camera and scene bounds when user moves camera (debounced)
 		if not _pancake_cam.camera_user_moved.is_connected(_on_user_camera_moved):
@@ -101,6 +123,9 @@ func _ready() -> void:
 		
 		# Ensure SubViewport has a World3D with proper environment
 		var subviewport = $SubViewport as SubViewport
+		# Tabbed brain monitors need local input coordinates for correct hover.
+		if BV.UI.temp_root_bm != null and BV.UI.temp_root_bm != self:
+			subviewport.handle_input_locally = true
 		if subviewport.world_3d == null:
 			# Tab brain monitors need SEPARATE World3D to avoid seeing main content
 			if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
@@ -117,10 +142,67 @@ func _ready() -> void:
 		_world_3D = _pancake_cam.get_world_3d()
 
 
+## Ensure SubViewport matches this container size to avoid UI scale drift.
+func _update_subviewport_size() -> void:
+	var subviewport := $SubViewport as SubViewport
+	if subviewport == null:
+		return
+	var target_size := Vector2i(maxi(1, int(size.x)), maxi(1, int(size.y)))
+	if subviewport.size != target_size:
+		subviewport.size = target_size
+
+
 
 ## Public accessor to the Pancake camera to avoid external access to private members
 func get_pancake_camera() -> UI_BrainMonitor_PancakeCamera:
 	return _pancake_cam
+
+
+## Focus camera on a cortical area with framing when possible.
+func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
+	if area == null:
+		return
+	var viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(area.cortical_ID, null)
+	if viz != null and is_instance_valid(viz):
+		var aabb := _compute_world_aabb(viz)
+		if aabb.size != Vector3.ZERO:
+			_frame_camera_to_aabb(aabb)
+			return
+	var center_pos := Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+	_pancake_cam.teleport_to_look_at_without_changing_angle(center_pos)
+
+
+## Focus camera on a brain region with framing when possible.
+func focus_on_brain_region(region: BrainRegion) -> void:
+	if region == null:
+		return
+	var region_frame = _brain_region_visualizations_by_ID.get(region.region_ID, null)
+	if region_frame != null and is_instance_valid(region_frame):
+		var aabb := _compute_world_aabb(region_frame)
+		if aabb.size != Vector3.ZERO:
+			_frame_camera_to_aabb_with_padding(aabb, 1.1, 0.0)
+			return
+	_pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+
+
+## Show a temporary focus indicator above a cortical area visualization.
+func flash_indicator_for_cortical_area(area: AbstractCorticalArea) -> void:
+	if area == null:
+		return
+	# Use the existing visualization to place the arrow at the true world center.
+	var viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(area.cortical_ID, null)
+	if viz != null and is_instance_valid(viz):
+		_spawn_indicator_for_node_center(viz)
+
+
+## Show a temporary focus indicator above a brain region frame.
+func flash_indicator_for_brain_region(region: BrainRegion) -> void:
+	if region == null:
+		return
+	# Use the existing visualization to place the arrow at the true world center.
+	var region_frame = _brain_region_visualizations_by_ID.get(region.region_ID, null)
+	if region_frame != null and is_instance_valid(region_frame):
+		_spawn_indicator_for_node_center(region_frame)
 
 func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	_should_show_combo_buttons = show_combo_buttons
@@ -131,35 +213,39 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	
 	# Add the context-aware brain objects combo to the overlay top-left
 	if _UI_layer_for_BM and _should_show_combo_buttons:
-		# Ensure a top row exists (so we can keep Bottom_Row at bottom)
-		var top_row: HBoxContainer = null
-		if _UI_layer_for_BM.has_node("Top_Row"):
-			top_row = _UI_layer_for_BM.get_node("Top_Row") as HBoxContainer
+		# Ensure Bottom_Row stays last so it sits at the bottom
+		if _UI_layer_for_BM.has_node("Bottom_Row"):
+			var bottom_row := _UI_layer_for_BM.get_node("Bottom_Row")
+			_UI_layer_for_BM.move_child(bottom_row, _UI_layer_for_BM.get_child_count() - 1)
+		# Use a dedicated overlay layer so the combo can be offset like Circuit Builder (8,8)
+		var top_row_layer: Control = null
+		if $SubViewport.has_node("Top_Row_Layer"):
+			top_row_layer = $SubViewport.get_node("Top_Row_Layer") as Control
 		else:
-			top_row = HBoxContainer.new()
-			top_row.name = "Top_Row"
-			top_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			top_row.mouse_filter = Control.MOUSE_FILTER_PASS
-			_UI_layer_for_BM.add_child(top_row)
-			# Add a spacer to push Bottom_Row to bottom if not present
-			if not _UI_layer_for_BM.has_node("Spacer_V"):
-				var spacer := Control.new()
-				spacer.name = "Spacer_V"
-				spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-				spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				_UI_layer_for_BM.add_child(spacer)
-			# Ensure Bottom_Row stays last so it's at the bottom
-			if _UI_layer_for_BM.has_node("Bottom_Row"):
-				var bottom_row := _UI_layer_for_BM.get_node("Bottom_Row")
-				_UI_layer_for_BM.move_child(bottom_row, _UI_layer_for_BM.get_child_count() - 1)
-		# Instantiate combo into top row if not already present
-		if not top_row.has_node("BrainObjectsCombo"):
+			top_row_layer = Control.new()
+			top_row_layer.name = "Top_Row_Layer"
+			top_row_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+			top_row_layer.mouse_filter = Control.MOUSE_FILTER_PASS
+			$SubViewport.add_child(top_row_layer)
+		# If an old Top_Row exists, migrate the combo out of it
+		if _UI_layer_for_BM.has_node("Top_Row"):
+			var old_top_row := _UI_layer_for_BM.get_node("Top_Row")
+			if old_top_row.has_node("BrainObjectsCombo"):
+				_combo = old_top_row.get_node("BrainObjectsCombo") as BrainObjectsCombo
+				old_top_row.remove_child(_combo)
+				top_row_layer.add_child(_combo)
+		# Instantiate combo into layer if not already present
+		if _combo == null and top_row_layer.has_node("BrainObjectsCombo"):
+			_combo = top_row_layer.get_node("BrainObjectsCombo") as BrainObjectsCombo
+		if _combo == null:
 			var combo_scene: PackedScene = load("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
 			_combo = combo_scene.instantiate()
 			_combo.name = "BrainObjectsCombo"
-			top_row.add_child(_combo)
-			_combo.mouse_filter = Control.MOUSE_FILTER_STOP
-			_combo.set_3d_context(self, _representing_region)
+			top_row_layer.add_child(_combo)
+		_combo.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_combo.position = Vector2(8, 8)
+		_combo.mouse_filter = Control.MOUSE_FILTER_STOP
+		_combo.set_3d_context(self, _representing_region)
 	
 
 	
@@ -206,6 +292,9 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 		if enable_startup_camera_intro:
 			_startup_intro_center = _last_scene_center
 			_play_startup_camera_intro()
+	
+	# Ensure cortical area labels are snapped to the camera-facing edge after initial camera framing.
+	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 ## Plays a brief camera intro that drops from above and gently zooms into the scene
 ## The camera ends exactly at its current transform, which is assumed to be the intended initial view
@@ -440,6 +529,9 @@ func _compute_world_aabb(node: Node) -> AABB:
 func _process(delta: float) -> void:
 	if _startup_intro_animating and _pancake_cam != null:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
+	if _manipulation_active and (_manipulation_gizmo == null or _manipulation_preview == null):
+		_manipulation_active = false
+	_emit_tab_hover_event()
 	
 	
 	# Update combo context after setup has region
@@ -448,20 +540,85 @@ func _process(delta: float) -> void:
 	
 	# Update label visibility to prevent overlaps (throttled for performance)
 	_update_label_overlap_visibility()
+	if _manipulation_active:
+		_update_manipulation_position_label()
+		var enter_down := Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER)
+		if enter_down and not _enter_key_latched:
+			_finish_manipulation_drag_and_confirm(true)
+		_enter_key_latched = enter_down
+	else:
+		_enter_key_latched = false
+
+## Raycast only against the close handle collider.
+func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody3D:
+	var close_query := PhysicsRayQueryParameters3D.new()
+	close_query.from = ray_query.from
+	close_query.to = ray_query.to
+	close_query.collision_mask = UI_BrainMonitor_RuntimeTransformGizmo.CLOSE_LAYER
+	close_query.collide_with_areas = false
+	close_query.collide_with_bodies = true
+	var hit: Dictionary = _world_3D.direct_space_state.intersect_ray(close_query)
+	if hit.is_empty():
+		return null
+	return hit[&"collider"] as StaticBody3D
+
+func _emit_tab_hover_event() -> void:
+	if _pancake_cam == null or BV == null or BV.UI == null:
+		return
+	if BV.UI.temp_root_bm == null or BV.UI.temp_root_bm == self:
+		return
+	var subviewport := $SubViewport as SubViewport
+	if subviewport == null:
+		return
+	var mouse_pos := subviewport.get_mouse_position()
+	var local_rect := Rect2(Vector2.ZERO, subviewport.size)
+	if not local_rect.has_point(mouse_pos):
+		return
+	
+	# Ensure overlay exists before processing hover
+	_ensure_ui_overlay()
+	if _UI_layer_for_BM == null:
+		print("⚠️ [TAB HOVER] No overlay found for tab %s" % name)
+	
+	var ray_start: Vector3 = _pancake_cam.project_ray_origin(mouse_pos)
+	var ray_end: Vector3 = ray_start + (_pancake_cam.project_ray_normal(mouse_pos) * UI_BrainMonitor_PancakeCamera.RAYCAST_LENGTH)
+	
+	var hover_event := UI_BrainMonitor_InputEvent_Hover.new([], ray_start, ray_end)
+	_process_user_input([hover_event])
+
+func _ensure_ui_overlay() -> void:
+	if _UI_layer_for_BM == null:
+		if has_node("SubViewport/UI_Canvas/BM_UI"):
+			_UI_layer_for_BM = get_node("SubViewport/UI_Canvas/BM_UI")
 
 func _on_container_mouse_entered() -> void:
 	if _pancake_cam:
 		_pancake_cam.set_mouse_hover_state(true)
-		# Track the last entry position in this SubViewport in pixels
-		var sv: SubViewport = $SubViewport
-		_qc_last_mouse_entry_pos = sv.get_mouse_position()
+	_is_mouse_hovering_viewport = true
+	if BV != null and BV.UI != null:
+		BV.UI.set_active_hover_bm(self)
+	# Track the last entry position in this SubViewport in pixels
+	var sv: SubViewport = $SubViewport
+	_qc_last_mouse_entry_pos = sv.get_mouse_position()
 
 func _on_container_mouse_exited() -> void:
 	if _pancake_cam:
 		_pancake_cam.set_mouse_hover_state(false)
-		# Reset bridge and entry tracking when leaving this viewport
-		_clear_bridge_segment()
-		_qc_last_mouse_entry_pos = Vector2.ZERO
+	_is_mouse_hovering_viewport = false
+	if BV != null and BV.UI != null:
+		BV.UI.clear_active_hover_bm(self)
+	# Reset bridge and entry tracking when leaving this viewport
+	_clear_bridge_segment()
+	_qc_last_mouse_entry_pos = Vector2.ZERO
+
+## Allow Enter to confirm and close manipulation without clicking the X.
+func _unhandled_input(event: InputEvent) -> void:
+	if not _manipulation_active:
+		return
+	if event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and not key.echo and (key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER):
+			_finish_manipulation_drag_and_confirm()
 
 func _create_world3d_with_environment() -> World3D:
 	var new_world = World3D.new()
@@ -533,21 +690,8 @@ func _auto_frame_camera_to_objects() -> void:
 	var half_w: float = max(0.01, aabb.size.x * 0.5)
 	var half_h: float = max(0.01, aabb.size.y * 0.5)
 	var half_d: float = max(0.01, aabb.size.z * 0.5)
-	# Required distances to fit width and height
-	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
-	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
-	# Apply learned multipliers from your samples
-	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
-	# No extra depth margin needed for straight-on framing
-	# distance unchanged
-	# Padding and clamps (very tight framing with a tiny margin)
-	# Enforce minimum and relative caps
-	var min_dist: float = auto_frame_min_dist
-	var max_dist: float = 3000.0
-	# Also cap distance relative to scene size to avoid overly far framing
-	var diag: float = aabb.size.length()
-	var rel_cap: float = diag * 1.5
-	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
+	# Compute distance with balanced padding and depth accommodation.
+	var distance: float = _compute_frame_distance_for_aabb(aabb, vfov_rad, hfov_rad)
 	# Set camera position and orientation (level, centered in Y)
 	var cam_pos := center + (dir_hint * distance)
 	cam_pos.y = center.y
@@ -618,7 +762,7 @@ func _compute_cortical_data_aabb() -> AABB:
 	var have := false
 	var merged := AABB()
 	for viz in _cortical_visualizations_by_ID.values():
-		if viz == null:
+		if viz == null or not is_instance_valid(viz):
 			continue
 		var ca = viz.get("cortical_area")
 		if ca == null:
@@ -666,22 +810,61 @@ func _frame_camera_to_aabb(aabb: AABB) -> void:
 	# Half extents
 	var half_w: float = max(0.01, aabb.size.x * 0.5)
 	var half_h: float = max(0.01, aabb.size.y * 0.5)
-	# Required distances to fit width and height
-	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
-	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
-	# Apply learned multipliers from auto_frame
-	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
-	# Padding and clamps
-	var min_dist: float = auto_frame_min_dist
-	var max_dist: float = 3000.0
-	var diag: float = aabb.size.length()
-	var rel_cap: float = diag * 1.5
-	distance = clamp(distance, min_dist, min(max_dist, rel_cap))
+	# Compute distance with balanced padding and depth accommodation.
+	var distance: float = _compute_frame_distance_for_aabb(aabb, vfov_rad, hfov_rad)
 	# Set camera position and orientation (level, centered in Y)
 	var cam_pos := center + (dir_hint * distance)
 	cam_pos.y = center.y
 	_pancake_cam.global_position = cam_pos
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
+
+
+## Frame the camera to an AABB with explicit padding controls.
+func _frame_camera_to_aabb_with_padding(aabb: AABB, padding_factor: float, depth_padding_factor: float) -> void:
+	if _pancake_cam == null:
+		return
+	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
+		return
+	var center := aabb.position + (aabb.size / 2.0)
+	var up := Vector3.UP
+	var dir_hint := Vector3(0, 0, 1)
+	var fov_used: float = _pancake_cam.fov
+	if fov_used < 5.0:
+		fov_used = 70.0
+	var vfov_rad: float = deg_to_rad(fov_used)
+	var vp_size := _pancake_cam.get_viewport().get_visible_rect().size
+	var aspect: float = vp_size.x / max(1.0, vp_size.y)
+	var hfov_rad: float = 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
+	var half_w: float = max(0.01, aabb.size.x * 0.5)
+	var half_h: float = max(0.01, aabb.size.y * 0.5)
+	var half_d: float = max(0.01, aabb.size.z * 0.5)
+	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
+	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
+	var distance: float = max(dist_by_h, dist_by_w) * padding_factor
+	distance += half_d * depth_padding_factor
+	var min_dist: float = max(half_d * 1.05, auto_frame_min_dist * 0.5)
+	var max_dist: float = 3000.0
+	distance = clamp(distance, min_dist, max_dist)
+	var cam_pos := center + (dir_hint * distance)
+	cam_pos.y = center.y
+	_pancake_cam.global_position = cam_pos
+	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
+
+
+## Compute framing distance with balanced padding and depth.
+func _compute_frame_distance_for_aabb(aabb: AABB, vfov_rad: float, hfov_rad: float) -> float:
+	var half_w: float = max(0.01, aabb.size.x * 0.5)
+	var half_h: float = max(0.01, aabb.size.y * 0.5)
+	var half_d: float = max(0.01, aabb.size.z * 0.5)
+	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
+	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
+	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
+	# Depth padding so near faces don't clip.
+	distance += half_d * 0.75
+	# Allow smaller distances for tiny objects; prevent extremely close shots.
+	var min_dist: float = max(half_d * 1.1, auto_frame_min_dist * 0.5)
+	var max_dist: float = 3000.0
+	return clamp(distance, min_dist, max_dist)
 	_pancake_cam.current = true
 	_pancake_cam.near = 0.05
 
@@ -820,7 +1003,8 @@ func _update_label_overlap_visibility() -> void:
 	
 	# Collect labels from main scene cortical visualizations
 	for viz in _cortical_visualizations_by_ID.values():
-		_collect_labels_from_cortical_viz(viz, label_data, viewport)
+		if viz != null and is_instance_valid(viz):
+			_collect_labels_from_cortical_viz(viz, label_data, viewport)
 	
 	# Also collect labels from cortical areas within brain region frames (plates)
 	for region_viz in _brain_region_visualizations_by_ID.values():
@@ -972,10 +1156,34 @@ func _on_user_camera_moved() -> void:
 	var vp := _pancake_cam.get_viewport().get_visible_rect().size
 	var aspect: float = vp.x / max(1.0, vp.y)
 	var dist := cam_pos.distance_to(center)
+	_update_all_cortical_area_label_positions_to_camera_edge()
 
 ## Handle user pressing R to reset camera using auto-frame logic
 func _on_user_camera_reset_requested() -> void:
 	await _auto_frame_camera_to_objects()
+	_update_all_cortical_area_label_positions_to_camera_edge()
+
+## Repositions cortical area labels so they remain below each area but appear at the camera-facing edge of the cortical depth.
+func _update_all_cortical_area_label_positions_to_camera_edge() -> void:
+	# Main scene cortical visualizations
+	for viz in _cortical_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
+		viz.bv_update_friendly_name_label_positions()
+	
+	# Cortical areas within brain region frames (plates)
+	for region_viz in _brain_region_visualizations_by_ID.values():
+		if region_viz == null or not is_instance_valid(region_viz):
+			continue
+		if region_viz.get("_cortical_area_visualizations") == null:
+			continue
+		var cortical_visualizations = region_viz._cortical_area_visualizations
+		if cortical_visualizations == null:
+			continue
+		for cortical_viz in cortical_visualizations.values():
+			if cortical_viz == null or not is_instance_valid(cortical_viz):
+				continue
+			cortical_viz.bv_update_friendly_name_label_positions()
 
 
 func _update_tab_title_after_setup() -> void:
@@ -987,6 +1195,7 @@ func _update_tab_title_after_setup() -> void:
 
 
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
+	_ensure_ui_overlay()
 	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
 	var currently_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 	var currently_mousing_over_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
@@ -994,7 +1203,17 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	for bm_input_event in bm_input_events: # multiple events can happen at once
 		
 		if bm_input_event is UI_BrainMonitor_InputEvent_Hover:
+			# If user is currently dragging a gizmo axis, consume hover moves to update preview.
+			if _manipulation_active and _manipulation_dragging and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN in bm_input_event.all_buttons_being_held:
+				_process_manipulation_drag(bm_input_event)
+				continue
+			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
+			if _manipulation_active and _manipulation_gizmo != null and _manipulation_gizmo.has_method("set_close_hovered"):
+				var hover_close := false
+				if close_body != null:
+					hover_close = true
+				_manipulation_gizmo.set_close_hovered(hover_close)
 			var source_bm = BV.UI.qc_guide_source_bm
 			# Compute end point and hover state if either we own the guide or we need to draw a bridge
 			var need_visual := _qc_guide_active or (source_bm != null)
@@ -1129,7 +1348,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var typed_arr: Array[Vector3i] = [neuron_coordinate_mousing_over]
 					currently_mousing_over_neurons[hit_parent_parent] = typed_arr
 				
-				_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)# temp!
+				if _UI_layer_for_BM != null:
+					_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)
 			
 			# Check if we hit a brain region frame (by checking script global name)
 			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
@@ -1216,6 +1436,11 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			
 			
 			
+			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
+			if close_body != null:
+				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
+					_finish_manipulation_drag_and_confirm(true)
+				continue
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
 				# Clicking over nothing
@@ -1229,6 +1454,20 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
+
+			# Runtime manipulation gizmo takes priority over normal selection/hover.
+			if _manipulation_active and is_instance_valid(hit_body):
+				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) and hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
+					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
+						_finish_manipulation_drag_and_confirm(true)
+					continue
+				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
+					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+						if bm_input_event.button_pressed:
+							_start_manipulation_drag(hit_body, bm_input_event)
+						else:
+							_finish_manipulation_drag_and_confirm()
+					continue
 			
 			# Check if we hit a cortical area renderer
 			if hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
@@ -1319,11 +1558,13 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)
 	for previously_moused_over_volume in _previously_moused_over_volumes:
 		if previously_moused_over_volume not in currently_moused_over_volumes:
-			previously_moused_over_volume.set_hover_over_volume_state(false)
+			if previously_moused_over_volume != null and is_instance_valid(previously_moused_over_volume):
+				previously_moused_over_volume.set_hover_over_volume_state(false)
 	for currently_moused_over_volume in currently_moused_over_volumes:
 		if currently_moused_over_volume not in _previously_moused_over_volumes:
-			currently_moused_over_volume.set_hover_over_volume_state(true)
-	_previously_moused_over_volumes = currently_moused_over_volumes
+			if currently_moused_over_volume != null and is_instance_valid(currently_moused_over_volume):
+				currently_moused_over_volume.set_hover_over_volume_state(true)
+	_previously_moused_over_volumes = currently_moused_over_volumes.filter(func(volume): return volume != null and is_instance_valid(volume))
 	
 	# highlight neurons that are moused over (and unhighlight what wasnt)
 	currently_mousing_over_neurons.merge(_previously_moused_over_cortical_area_neurons, false)
@@ -1343,7 +1584,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 
 func clear_all_selected_cortical_area_neurons() -> void:
 	for area: UI_BrainMonitor_CorticalArea in _cortical_visualizations_by_ID.values():
-		area.clear_all_neuron_selection_states()
+		if area != null and is_instance_valid(area):
+			area.clear_all_neuron_selection_states()
 
 func set_further_neuron_selection_restriction_to_cortical_area(restrict_to: AbstractCorticalArea) -> void:
 	if restrict_to.cortical_ID in _cortical_visualizations_by_ID:
@@ -1353,7 +1595,7 @@ func remove_neuron_cortical_are_selection_restrictions() -> void:
 	_restrict_neuron_selection_to = null
 
 ## Allows any external element to create a 3D preview in this BM that it can edit and free as needed
-func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool, cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN, existing_cortical_area: AbstractCorticalArea = null, auto_frame_on_create: bool = true) -> UI_BrainMonitor_InteractivePreview:
+func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool, cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN, existing_cortical_area: AbstractCorticalArea = null, auto_frame_on_create: bool = true, auto_frame_on_interaction: bool = true) -> UI_BrainMonitor_InteractivePreview:
 	var preview: UI_BrainMonitor_InteractivePreview = UI_BrainMonitor_InteractivePreview.new()
 	_node_3D_root.add_child(preview)  # CRITICAL FIX: Add to 3D scene root, not brain monitor container
 	preview.setup(initial_FEAGI_position, initial_dimensions, show_voxels, cortical_area_type, existing_cortical_area)
@@ -1364,23 +1606,24 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 	# Keep camera framing valid while preview is added or moved/resized by user
 	# Use weak reference to self to avoid capturing freed objects
 	var weak_self = weakref(self)
-	preview.user_moved_preview.connect(func(_pos: Vector3i):
-		# Check if self still exists before scheduling callback
-		if weak_self.get_ref():
-			# Debounce: schedule after one frame
-			get_tree().create_timer(0.0).timeout.connect(func():
-				if weak_self.get_ref():
-					_auto_frame_camera_to_objects()
-			)
-	)
-	preview.user_resized_preview.connect(func(_dim: Vector3i):
-		# Check if self still exists before scheduling callback
-		if weak_self.get_ref():
-			get_tree().create_timer(0.0).timeout.connect(func():
-				if weak_self.get_ref():
-					_auto_frame_camera_to_objects()
-			)
-	)
+	if auto_frame_on_interaction:
+		preview.user_moved_preview.connect(func(_pos: Vector3i):
+			# Check if self still exists before scheduling callback
+			if weak_self.get_ref():
+				# Debounce: schedule after one frame
+				get_tree().create_timer(0.0).timeout.connect(func():
+					if weak_self.get_ref():
+						_auto_frame_camera_to_objects()
+				)
+		)
+		preview.user_resized_preview.connect(func(_dim: Vector3i):
+			# Check if self still exists before scheduling callback
+			if weak_self.get_ref():
+				get_tree().create_timer(0.0).timeout.connect(func():
+					if weak_self.get_ref():
+						_auto_frame_camera_to_objects()
+				)
+		)
 	# Immediately frame to include this new preview (deferred by one frame) - only if requested
 	if auto_frame_on_create:
 		get_tree().create_timer(0.0).timeout.connect(func():
@@ -1388,6 +1631,127 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 				_auto_frame_camera_to_objects()
 		)
 	return preview
+
+## Starts a runtime manipulation session (move or resize) for a cortical area.
+## Visuals: uses existing InteractivePreview + warning coloring.
+## Persist: on mouse release, prompts confirmation and then calls FEAGI API update.
+func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULATION_MODE) -> void:
+	if area == null:
+		return
+	# One session at a time
+	if _manipulation_active:
+		_end_manipulation_session(true)
+
+	_manipulation_active = true
+	_manipulation_mode = mode
+	_manipulation_area = area
+	_manipulation_start_pos = area.coordinates_3D
+	_manipulation_start_dims = area.dimensions_3D
+	_manipulation_current_pos = _manipulation_start_pos
+	_manipulation_current_dims = _manipulation_start_dims
+	_manipulation_dragging = false
+	_manipulation_axis = -1
+	_manipulation_start_param = 0.0
+
+	_manipulation_preview = create_preview(
+		area.coordinates_3D,
+		area.dimensions_3D,
+		false,
+		area.cortical_type,
+		area,
+		false,  # do not auto-frame on create during manipulation
+		false  # do not auto-frame during user drag
+	)
+	_update_manipulation_position_label()
+
+	_manipulation_gizmo = UI_BrainMonitor_RuntimeTransformGizmo.new()
+	_manipulation_gizmo.setup(
+		UI_BrainMonitor_RuntimeTransformGizmo.MODE.MOVE if mode == MANIPULATION_MODE.MOVE else UI_BrainMonitor_RuntimeTransformGizmo.MODE.RESIZE
+	)
+	_node_3D_root.add_child(_manipulation_gizmo)
+
+	_update_manipulation_gizmo_transform()
+	_update_manipulation_capacity_warning()
+	if _pancake_cam != null and not _pancake_cam.camera_user_moved.is_connected(_update_manipulation_gizmo_transform):
+		_pancake_cam.camera_user_moved.connect(_update_manipulation_gizmo_transform)
+
+	# Keep gizmo pinned as preview moves/resizes.
+	_manipulation_preview.user_moved_preview.connect(func(p: Vector3i):
+		_manipulation_current_pos = p
+		_update_manipulation_gizmo_transform()
+	)
+	_manipulation_preview.user_resized_preview.connect(func(d: Vector3i):
+		_manipulation_current_dims = d
+		_update_manipulation_capacity_warning()
+		_update_manipulation_gizmo_transform()
+	)
+
+func _end_manipulation_session(clear_nodes: bool) -> void:
+	_manipulation_dragging = false
+	_manipulation_axis = -1
+	_manipulation_active = false
+	_manipulation_mode = MANIPULATION_MODE.MOVE
+	_manipulation_area = null
+	# Safety: ensure camera pan is restored if session ends while dragging.
+	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
+		_pancake_cam.call("set_tank_pan_enabled", true)
+	if clear_nodes:
+		if is_instance_valid(_manipulation_preview):
+			_manipulation_preview.queue_free()
+		if is_instance_valid(_manipulation_gizmo):
+			_manipulation_gizmo.queue_free()
+	if _UI_layer_for_BM and _UI_layer_for_BM.has_method("clear_manipulation_position"):
+		_UI_layer_for_BM.clear_manipulation_position()
+	_manipulation_preview = null
+	_manipulation_gizmo = null
+
+func _get_preview_static_body(preview: UI_BrainMonitor_InteractivePreview) -> StaticBody3D:
+	if preview == null:
+		return null
+	var body := preview.find_child("CorticalArea_DDA_Body", true, false)
+	return body as StaticBody3D
+
+func _update_manipulation_gizmo_transform() -> void:
+	if not _manipulation_active or _manipulation_gizmo == null or _manipulation_preview == null:
+		return
+	var body := _get_preview_static_body(_manipulation_preview)
+	if body == null:
+		return
+	var gizmo_scale: float = _get_gizmo_scale_for_camera(body.global_position)
+	_manipulation_gizmo.scale = Vector3.ONE * gizmo_scale
+	# Place gizmo on the +X (right) side of the volume, outside its bounds.
+	# This makes it easier to access for very large cortical areas.
+	var axis_len: float = _manipulation_gizmo.get_axis_length() if _manipulation_gizmo.has_method("get_axis_length") else 0.0
+	axis_len *= gizmo_scale
+	var offset_x: float = (body.scale.x * 0.5) + (axis_len * 0.5)
+	_manipulation_gizmo.global_position = body.global_position + Vector3(offset_x, 0.0, 0.0)
+	if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
+		var camera_pos: Vector3 = _pancake_cam.global_position
+		var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
+		var close_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
+		_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
+
+func _get_gizmo_scale_for_camera(target_pos: Vector3) -> float:
+	if _pancake_cam == null:
+		return 1.0
+	var dist: float = _pancake_cam.global_position.distance_to(target_pos)
+	var scale := dist / 25.0
+	return clamp(scale, 0.6, 4.0)
+
+func _update_manipulation_capacity_warning() -> void:
+	if not _manipulation_active or _manipulation_preview == null:
+		return
+	if _manipulation_mode != MANIPULATION_MODE.RESIZE:
+		_manipulation_preview.set_warning_state(false)
+		return
+	var body := _get_preview_static_body(_manipulation_preview)
+	if body == null:
+		return
+	var new_dims := Vector3i(int(round(body.scale.x)), int(round(body.scale.y)), int(round(body.scale.z)))
+	new_dims.x = max(1, new_dims.x)
+	new_dims.y = max(1, new_dims.y)
+	new_dims.z = max(1, new_dims.z)
+	_manipulation_preview.set_warning_state(_would_overflow_capacity(new_dims))
 
 ## Allows external elements to create a brain region preview showing dual plates
 func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> UI_BrainMonitor_BrainRegionPreview:
@@ -1430,6 +1794,219 @@ func _preview_closing(preview: UI_BrainMonitor_InteractivePreview):
 ## Called when a brain region preview is about to be freed
 func _brain_region_preview_closing():
 	pass  # Preview cleanup is handled automatically when the node is freed
+
+
+func _start_manipulation_drag(hit_body: StaticBody3D, bm_input_event: UI_BrainMonitor_InputEvent_Click) -> void:
+	if not _manipulation_active or _manipulation_preview == null or _manipulation_gizmo == null:
+		return
+	# Prevent camera pan (left-drag) while user is dragging gizmo.
+	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
+		_pancake_cam.call("set_tank_pan_enabled", false)
+	_manipulation_axis = int(hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS))
+	_manipulation_dragging = true
+	# IMPORTANT: baseline must come from the current preview state, not the underlying cortical area,
+	# because the user may be doing multiple drags before confirming/saving to FEAGI.
+	_manipulation_start_pos = _manipulation_current_pos
+	_manipulation_start_dims = _manipulation_current_dims
+	_manipulation_start_param = _axis_param_from_ray(
+		_manipulation_gizmo.global_position,
+		_axis_dir_world(_manipulation_axis),
+		bm_input_event.get_ray_query()
+	)
+
+func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover) -> void:
+	if not _manipulation_active or not _manipulation_dragging or _manipulation_preview == null or _manipulation_gizmo == null:
+		return
+	var axis_dir := _axis_dir_world(_manipulation_axis)
+	var param := _axis_param_from_ray(_manipulation_gizmo.global_position, axis_dir, bm_hover_event.get_ray_query())
+	var step_delta := int(round(param - _manipulation_start_param))
+	if step_delta == 0:
+		return
+
+	# Apply incrementally to avoid snapping back/forth due to rounding jitter in ray projection.
+	# After applying, advance the baseline so subsequent hover events are relative to the latest applied state.
+	if _manipulation_mode == MANIPULATION_MODE.MOVE:
+		var new_pos := _manipulation_current_pos
+		match _manipulation_axis:
+			UI_BrainMonitor_RuntimeTransformGizmo.AXIS.X:
+				new_pos.x += step_delta
+			UI_BrainMonitor_RuntimeTransformGizmo.AXIS.Y:
+				new_pos.y += step_delta
+			UI_BrainMonitor_RuntimeTransformGizmo.AXIS.Z:
+				new_pos.z += step_delta
+		_manipulation_current_pos = new_pos
+		_manipulation_preview.set_new_position(new_pos)
+		_update_manipulation_position_label()
+	else:
+		var new_dims := _manipulation_current_dims
+		match _manipulation_axis:
+			UI_BrainMonitor_RuntimeTransformGizmo.AXIS.X:
+				new_dims.x = max(1, new_dims.x + step_delta)
+			UI_BrainMonitor_RuntimeTransformGizmo.AXIS.Y:
+				new_dims.y = max(1, new_dims.y + step_delta)
+			UI_BrainMonitor_RuntimeTransformGizmo.AXIS.Z:
+				new_dims.z = max(1, new_dims.z + step_delta)
+		_manipulation_current_dims = new_dims
+		_manipulation_preview.set_new_dimensions(new_dims)
+		_update_manipulation_position_label()
+
+	_manipulation_start_param += float(step_delta)
+	_manipulation_start_pos = _manipulation_current_pos
+	_manipulation_start_dims = _manipulation_current_dims
+
+func _update_manipulation_position_label() -> void:
+	_ensure_ui_overlay()
+	if _UI_layer_for_BM == null:
+		return
+	if _manipulation_mode == MANIPULATION_MODE.MOVE and _UI_layer_for_BM.has_method("show_manipulation_position"):
+		_UI_layer_for_BM.show_manipulation_position(_manipulation_area, _manipulation_current_pos)
+	elif _manipulation_mode == MANIPULATION_MODE.RESIZE and _UI_layer_for_BM.has_method("show_manipulation_dimensions"):
+		_UI_layer_for_BM.show_manipulation_dimensions(_manipulation_area, _manipulation_current_dims)
+
+func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
+	if not _manipulation_active:
+		return
+	_manipulation_dragging = false
+	# Re-enable camera pan now that gizmo drag ended.
+	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
+		_pancake_cam.call("set_tank_pan_enabled", true)
+	if _manipulation_area == null or _manipulation_preview == null or FeagiCore == null or FeagiCore.requests == null:
+		return
+	var candidate_pos := _manipulation_current_pos
+	var candidate_dims := _manipulation_current_dims
+
+	if _manipulation_mode == MANIPULATION_MODE.MOVE:
+		if candidate_pos == _manipulation_start_pos and not force_commit:
+			_end_manipulation_session(true)
+			return
+		_apply_move(candidate_pos)
+		return
+
+	# RESIZE
+	if candidate_dims == _manipulation_start_dims and not force_commit:
+		_end_manipulation_session(true)
+		return
+	if _would_overflow_capacity(candidate_dims):
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Resize blocked",
+			"Cannot apply: resize would exceed NPU capacity.\n\nReduce dimensions or free up neurons elsewhere."
+		))
+		return
+	if force_commit:
+		_apply_resize(candidate_dims)
+		return
+	_prompt_confirm_and_apply_resize(candidate_dims)
+
+func _apply_move(new_pos: Vector3i) -> void:
+	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
+	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
+	if result.has_errored:
+		var details = result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Move failed",
+			"FEAGI rejected the update.\n\n%s\n%s" % [details[0], details[1]]
+		))
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		var save_details = save_result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Save failed",
+			"Saved position but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+		))
+		return
+	# Update local cache so BV visuals move immediately.
+	if _manipulation_area != null:
+		_manipulation_area.FEAGI_change_coordinates_3D(new_pos)
+		_manipulation_area.FEAGI_change_dimensions_3D(_manipulation_current_dims)
+	_end_manipulation_session(true)
+
+func _prompt_confirm_and_apply_resize(new_dims: Vector3i) -> void:
+	var msg := "Save new size for '%s'?\n\nFrom: %s\nTo:   %s" % [str(_manipulation_area.friendly_name), str(_manipulation_start_dims), str(new_dims)]
+	var accept := func() -> void:
+		var payload := {"cortical_dimensions": FEAGIUtils.vector3i_to_array(new_dims)}
+		var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
+		if result.has_errored:
+			var details = result.decode_response_as_generic_error_code()
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Resize failed",
+				"FEAGI rejected the update.\n\n%s\n%s" % [details[0], details[1]]
+			))
+			return
+		var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+		if save_result.has_errored:
+			var save_details = save_result.decode_response_as_generic_error_code()
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Save failed",
+				"Saved size but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+			))
+			return
+		# Update local cache so BV visuals resize immediately.
+		if _manipulation_area != null:
+			_manipulation_area.FEAGI_change_dimensions_3D(new_dims)
+		_end_manipulation_session(true)
+	BV.WM.spawn_popup(ConfigurablePopupDefinition.create_cancel_and_action_popup("Confirm Resize", msg, accept, "Save", "Cancel"))
+
+func _apply_resize(new_dims: Vector3i) -> void:
+	var payload := {"cortical_dimensions": FEAGIUtils.vector3i_to_array(new_dims)}
+	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
+	if result.has_errored:
+		var details = result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Resize failed",
+			"FEAGI rejected the update.\n\n%s\n%s" % [details[0], details[1]]
+		))
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		var save_details = save_result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Save failed",
+			"Saved size but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+		))
+		return
+	# Update local cache so BV visuals resize immediately.
+	if _manipulation_area != null:
+		_manipulation_area.FEAGI_change_dimensions_3D(new_dims)
+	_end_manipulation_session(true)
+
+func _would_overflow_capacity(candidate_dims: Vector3i) -> bool:
+	if _manipulation_area == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return false
+	var old_count: int = _manipulation_area.neuron_count
+	var new_count: int = AbstractCorticalArea.get_neuron_count(candidate_dims, float(_manipulation_area.cortical_neuron_per_vox_count))
+	var projected_total: int = FeagiCore.feagi_local_cache.neuron_count_current - old_count + new_count
+	return projected_total > FeagiCore.feagi_local_cache.neuron_count_max
+
+func _axis_dir_world(axis: int) -> Vector3:
+	match axis:
+		UI_BrainMonitor_RuntimeTransformGizmo.AXIS.X:
+			return Vector3.RIGHT
+		UI_BrainMonitor_RuntimeTransformGizmo.AXIS.Y:
+			return Vector3.UP
+		UI_BrainMonitor_RuntimeTransformGizmo.AXIS.Z:
+			# FEAGI +Z maps to Godot -Z (FORWARD) in this project (renderer flips Z).
+			return Vector3.FORWARD
+		_:
+			return Vector3.RIGHT
+
+## Returns the scalar parameter (in world units) along the axis line through origin that is closest to the mouse ray.
+func _axis_param_from_ray(axis_origin: Vector3, axis_dir: Vector3, ray_query: PhysicsRayQueryParameters3D) -> float:
+	var p1 := axis_origin
+	var d1 := axis_dir.normalized()
+	var p2 := ray_query.from
+	var d2 := (ray_query.to - ray_query.from).normalized()
+	var r := p1 - p2
+	var a := d1.dot(d1)
+	var e := d2.dot(d2)
+	var f := d2.dot(r)
+	var c := d1.dot(r)
+	var b := d1.dot(d2)
+	var denom := a * e - b * b
+	if abs(denom) < 0.0001:
+		return d1.dot(p2 - p1)
+	var s := (b * f - c * e) / denom
+	return s
 
 
 #endregion
@@ -1629,14 +2206,9 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	
 	# Show call stack to find who's calling this - SUPPRESSED DUE TO OUTPUT OVERFLOW
 	# print("🚨 CALL STACK for _add_cortical_area:")
-	# var stack = get_stack()
-	# stack.reverse()
-	# for i in range(min(3, stack.size())):
-	# 	var frame = stack[i]
-	# 	print("  %d. %s:%s in %s()" % [i, frame.source, frame.line, frame.function])
+	# Return existing visualization if already registered (e.g., during clone's manual injection)
 	if area.cortical_ID in _cortical_visualizations_by_ID:
-		push_warning("Unable to add to BM already existing cortical area of ID %s!" % area.cortical_ID)
-		return null
+		return _cortical_visualizations_by_ID[area.cortical_ID]
 	
 	# Check if this area should be created
 	var is_directly_in_root = _representing_region.is_cortical_area_in_region_directly(area)
@@ -1645,11 +2217,9 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	
 	# Only create if the area is directly in this region OR it's needed as I/O for a child region
 	if not is_directly_in_root and not is_io_of_child_region:
+		print("  ❌ BM REJECTED %s: not in region %s (directly=%s, io=%s)" % [area.cortical_ID, _representing_region.region_ID, is_directly_in_root, is_io_of_child_region])
 		return null
-	# print("  🎯 CRITICAL: Adding %s to 3D scene of brain monitor for region %s" % [area.cortical_ID, _representing_region.friendly_name])  # Suppressed - too verbose
-	# print("  🎯 INSTANCE: Adding to brain monitor instance %d" % get_instance_id())  # Suppressed - too verbose
-	# print("  🎯 INSTANCE: Adding to 3D root %s (instance %d)" % [_node_3D_root, _node_3D_root.get_instance_id()])  # Suppressed - too verbose
-	
+
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
 	_node_3D_root.add_child(rendering_area)
 	# print("  🎯 ADDED: Cortical area %s added as child to 3D root instance %d" % [area.cortical_ID, _node_3D_root.get_instance_id()])  # Suppressed - too verbose
@@ -1682,7 +2252,6 @@ func has_cortical_area_visualization(cortical_id: String) -> bool:
 	return cortical_id in _cortical_visualizations_by_ID
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
-	print("🗑️ _remove_cortical_area CALLED for cortical_ID: %s" % area.cortical_ID)
 	if area.cortical_ID not in _cortical_visualizations_by_ID:
 		push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)
 		return
@@ -1690,10 +2259,8 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	_previously_moused_over_volumes.erase(rendering_area)
 	_previously_moused_over_cortical_area_neurons.erase(rendering_area)
 	if is_instance_valid(rendering_area):
-		print("🗑️ _remove_cortical_area: Queueing free for rendering_area of %s" % area.cortical_ID)
 		rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
-	print("🗑️ _remove_cortical_area: Completed removal of %s from 3D scene" % area.cortical_ID)
 
 func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_BrainRegion3D
 	# print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)  # Suppressed - causes output overflow
@@ -1788,14 +2355,52 @@ func _is_area_input_output_of_child_region(area: AbstractCorticalArea) -> bool:
 
 ## Cache reload event handler - refreshes all cortical area connections AND creates new brain regions
 func _on_cache_reloaded_refresh_all_connections() -> void:
+	print("BV CACHE: cache_reloaded received; refreshing 3D scene")
 	# CRITICAL: Check for new brain regions that need visualization after cloning
 	_create_missing_brain_region_visualizations()
+	# Rebuild cortical area visuals to guarantee sync with refreshed cache
+	for cortical_viz in _cortical_visualizations_by_ID.values():
+		if cortical_viz != null and is_instance_valid(cortical_viz):
+			cortical_viz.queue_free()
+	_cortical_visualizations_by_ID.clear()
+	_add_missing_cortical_area_visualizations()
 	
 	# Force refresh connections for all currently hovered cortical areas
 	for cortical_viz in _cortical_visualizations_by_ID.values():
-		if cortical_viz._is_volume_moused_over:
-			cortical_viz._hide_neural_connections()
-			cortical_viz._show_neural_connections()
+		if cortical_viz != null and is_instance_valid(cortical_viz):
+			if cortical_viz._is_volume_moused_over:
+				cortical_viz._hide_neural_connections()
+				cortical_viz._show_neural_connections()
+
+## Creates visualizations for any new cortical areas in this region after cache refresh
+func _add_missing_cortical_area_visualizations() -> void:
+	if not _representing_region:
+		return
+	
+	# Refresh representing region reference to the latest cache object
+	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.brain_regions:
+		var fresh_region = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(_representing_region.region_ID)
+		if fresh_region and fresh_region != _representing_region:
+			_representing_region = fresh_region
+	
+	# Add areas directly in this region
+	var added_any = false
+	for area in _representing_region.contained_cortical_areas:
+		if area.cortical_ID not in _cortical_visualizations_by_ID:
+			added_any = true
+		_add_cortical_area(area)
+	
+	# Add I/O areas from child regions that should appear in this region
+	for child_region in _representing_region.contained_regions:
+		for area in child_region.contained_cortical_areas:
+			if _is_area_input_output_of_specific_child_region(area, child_region):
+				if area.cortical_ID not in _cortical_visualizations_by_ID:
+					added_any = true
+				_add_cortical_area(area)
+	
+	if added_any:
+		call_deferred("_auto_frame_camera_to_objects")
+		call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 ## Creates visualizations for any new brain regions that don't have them yet (e.g., after cloning)
 func _create_missing_brain_region_visualizations() -> void:
@@ -1846,13 +2451,14 @@ func force_create_missing_regions() -> void:
 	
 	var refreshed_count = 0
 	for cortical_viz in _cortical_visualizations_by_ID.values():
-		# Hide any existing connections
-		cortical_viz._hide_neural_connections()
-		
-		# If this area is currently hovered, show refreshed connections
-		if cortical_viz._is_volume_moused_over:
-			cortical_viz._show_neural_connections()
-			refreshed_count += 1
+		if cortical_viz != null and is_instance_valid(cortical_viz):
+			# Hide any existing connections
+			cortical_viz._hide_neural_connections()
+			
+			# If this area is currently hovered, show refreshed connections
+			if cortical_viz._is_volume_moused_over:
+				cortical_viz._show_neural_connections()
+				refreshed_count += 1
 	
 	print("BrainMonitor 3D Scene: ✅ Manual refresh completed for ", refreshed_count, " areas")
 

@@ -26,7 +26,6 @@ var _is_hovered_over: bool
 var _is_selected: bool
 
 func setup(area: AbstractCorticalArea) -> void:
-	print("🧠 DDA RENDERER SETUP for cortical area: %s" % area.cortical_ID)
 	_static_body = PREFAB.instantiate()
 	_DDA_mat = load(WEBGL_DDA_MAT_PATH).duplicate()
 	_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
@@ -67,15 +66,20 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	super(new_FEAGI_coordinate_position)
 	
 	_static_body.position = _position_godot_space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
+	bv_update_friendly_name_label_position()
 
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
 	super(new_dimensions)
-	
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space # Update position stuff too since these are based in Godot space
-	_friendly_name_label.position = _position_godot_space + Vector3(0.0, -(_static_body.scale.y / 2.0 + 2.0), 0.0)
+	
+	# CRITICAL FIX: Ensure _static_body remains visible after dimension updates
+	# This prevents the area from disappearing when properties are updated
+	if not _static_body.visible:
+		_static_body.visible = true
+
+	bv_update_friendly_name_label_position()
 
 	_DDA_mat.set_shader_parameter("voxel_count_x", new_dimensions.x)
 	_DDA_mat.set_shader_parameter("voxel_count_y", new_dimensions.y)
@@ -85,9 +89,19 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	calculated_depth = maxi(calculated_depth, 1)
 	_DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
 	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
-	
+
+	# CRITICAL FIX: Recreate SVO trees with new dimensions
 	_highlight_SVO = SVOTree.create_SVOTree(new_dimensions)
 	_selection_SVO = SVOTree.create_SVOTree(new_dimensions)
+	
+	# CRITICAL FIX: Update shader texture parameters after recreating SVOs
+	# Without this, the shader uses stale/invalid texture references causing rendering to fail
+	if _highlight_image_texture != null:
+		_DDA_mat.set_shader_parameter("highlight_SVO", _highlight_image_texture)
+	if _selection_image_texture != null:
+		_DDA_mat.set_shader_parameter("selection_SVO", _selection_image_texture)
+	if _activation_image_texture != null:
+		_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# Validate data size - need at least 4 bytes for dimensions (2x uint16)
@@ -139,6 +153,26 @@ func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) ->
 		clampi(world_godot_position_floored.z, 0, _dimensions.z - 1)
 		) # lots of floating point shenanigans here!
 	return world_godot_position_floored
+
+## Keeps the friendly-name label below the cortical area, but snaps its Z to the camera-facing edge
+## (avoids the label sitting at the center of the cortical depth).
+func bv_update_friendly_name_label_position() -> void:
+	if _static_body == null or _friendly_name_label == null:
+		return
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var cam := viewport.get_camera_3d()
+	if cam == null:
+		return
+	
+	var y_offset: float = -(_static_body.scale.y / 2.0 + 2.0)
+	# Renderer base class extends Node (not Node3D), so compute camera relation in the StaticBody3D's space.
+	var cam_in_body_local: Vector3 = _static_body.to_local(cam.global_position)
+	var z_sign: float = -1.0 if cam_in_body_local.z < 0.0 else 1.0
+	var z_edge: float = _static_body.position.z + z_sign * (_static_body.scale.z / 2.0)
+	
+	_friendly_name_label.position = Vector3(_static_body.position.x, _static_body.position.y + y_offset, z_edge)
 	
 func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
 	_is_hovered_over = is_highlighted

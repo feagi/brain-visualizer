@@ -1,6 +1,8 @@
 [gd_resource type="Theme" load_steps=30 format=3 uid="uid://e4w3qtf2gyyi"]
 
 [ext_resource type="FontFile" uid="uid://bh64osym6xaul" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_dte07"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/SplitHandleBarsVertical.svg" id="2_split_handle_v"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/SplitHandleBarsHorizontal.svg" id="3_split_handle_h"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -62,7 +64,15 @@ bg_color = Color(0.105882, 0.133333, 0.184314, 1)
 anti_aliasing = false
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2l4ko"]
-bg_color = Color(0.117647, 0.14902, 0.203922, 1)
+bg_color = Color(0.101961, 0.12549, 0.176471, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.270588, 0.337255, 0.431373, 0.9)
+shadow_size = 8
+shadow_offset = Vector2(0, 2)
+shadow_color = Color(0, 0, 0, 0.35)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i680b"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -88,9 +98,34 @@ bg_color = Color(0.365696, 0.62655, 0.838457, 1)
 bg_color = Color(0.243137, 0.278431, 0.345098, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i4413"]
-bg_color = Color(0.0730495, 0.419393, 0.636878, 1)
+bg_color = Color(0.22, 0.22, 0.26, 0.5)
+border_width_left = 1
+border_width_top = 2
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.5, 0.6, 0.5)
+shadow_size = 6
+shadow_offset = Vector2(0, 2)
+shadow_color = Color(0, 0, 0, 0.4)
+anti_aliasing = true
 
 [resource]
+SplitContainer/colors/touch_dragger_color = Color(0.82, 0.84, 0.88, 0.38)
+SplitContainer/colors/touch_dragger_hover_color = Color(0.9, 0.92, 0.96, 0.52)
+SplitContainer/colors/touch_dragger_pressed_color = Color(0.97, 0.98, 0.99, 0.68)
+SplitContainer/constants/autohide = 0
+SplitContainer/constants/separation = 20
+HSplitContainer/constants/separation = 20
+VSplitContainer/constants/separation = 20
+SplitContainer/constants/minimum_grab_thickness = 14
+SplitContainer/icons/h_grabber = ExtResource("2_split_handle_v")
+SplitContainer/icons/v_grabber = ExtResource("3_split_handle_h")
+SplitContainer/icons/h_touch_dragger = ExtResource("2_split_handle_v")
+SplitContainer/icons/v_touch_dragger = ExtResource("3_split_handle_h")
+HSplitContainer/icons/grabber = ExtResource("2_split_handle_v")
+VSplitContainer/icons/grabber = ExtResource("3_split_handle_h")
+HSplitContainer/icons/touch_dragger = ExtResource("2_split_handle_v")
+VSplitContainer/icons/touch_dragger = ExtResource("3_split_handle_h")
 BasePanelContainerButton/base_type = &"PanelContainer"
 BasePanelContainerButton/styles/panel = SubResource("StyleBoxFlat_8j6la")
 BasePanelContainerButton/styles/panel_disabled = SubResource("StyleBoxFlat_fesjy")
@@ -236,6 +271,9 @@ TextureRect/constants/size_y = 80
 TextureRect_Icon/base_type = &"TextureRect"
 TextureRect_Icon/constants/size_x = 40
 TextureRect_Icon/constants/size_y = 40
+TextureRect_ConnectivityRule/base_type = &"TextureRect"
+TextureRect_ConnectivityRule/constants/size_x = 160
+TextureRect_ConnectivityRule/constants/size_y = 160
 TextureRect_wide/base_type = &"TextureRect"
 TextureRect_wide/constants/size_x = 80
 TextureRect_wide/constants/size_y = 40
