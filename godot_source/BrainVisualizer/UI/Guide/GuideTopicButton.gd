@@ -18,16 +18,13 @@ func setup(title: String, topic_path: String) -> void:
 	if header_size <= 0:
 		header_size = 24
 	add_theme_font_size_override("font_size", int(header_size * 1.6))
-	print("GuideTopicButton: Setup with title='%s' path='%s' font_size=%d" % [title, topic_path, int(header_size * 1.6)])
 
 ## Emit the topic selection when the button is pressed.
 func _ready() -> void:
 	pressed.connect(_on_pressed)
-	print("GuideTopicButton: Ready for '%s'" % text)
 
 ## Notify listeners about the selected topic.
 func _on_pressed() -> void:
-	print("GuideTopicButton: Pressed '%s' -> %s" % [text, _topic_path])
 	if _topic_path == "":
 		push_error("GuideTopicButton: Missing topic path.")
 		return

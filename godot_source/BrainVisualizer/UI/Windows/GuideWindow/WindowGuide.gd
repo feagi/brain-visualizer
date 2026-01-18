@@ -172,7 +172,6 @@ func _refresh_topics() -> void:
 	for child in _topic_container.get_children():
 		child.queue_free()
 	var markdown_files := _collect_markdown_files(guides_directory)
-	print("WindowGuide: Loading %d guide topics..." % markdown_files.size())
 	for markdown_path in markdown_files:
 		var title := _extract_title(markdown_path)
 		var button := GuideTopicButton.new()
@@ -186,7 +185,6 @@ func _refresh_topics() -> void:
 		})
 		# Pre-cache content for faster searching
 		_content_cache[markdown_path] = _read_file_content(markdown_path).to_lower()
-	print("WindowGuide: Cached %d guide files for search" % _content_cache.size())
 	if _topics.is_empty():
 		_markdown_view.show_message("No guide topics found.")
 		return
@@ -246,18 +244,15 @@ func _on_search_changed(query: String) -> void:
 
 ## Open the selected guide markdown.
 func _on_topic_selected(markdown_path: String) -> void:
-	print("WindowGuide: Topic selected: %s" % markdown_path)
 	_open_markdown(markdown_path)
 
 ## Resolve markdown links to other guide files.
 func _on_markdown_link_clicked(target_path: String) -> void:
-	print("WindowGuide: Markdown link clicked: %s" % target_path)
 	if _is_markdown_path(target_path):
 		_open_markdown(target_path)
 
 ## Load and display a markdown file.
 func _open_markdown(markdown_path: String) -> void:
-	print("WindowGuide: Opening markdown: %s" % markdown_path)
 	if markdown_path == "":
 		push_error("WindowGuide: Empty markdown path")
 		return
@@ -265,7 +260,6 @@ func _open_markdown(markdown_path: String) -> void:
 		push_error("WindowGuide: Markdown path not found: %s" % markdown_path)
 		_markdown_view.show_message("Guide file not found: %s" % markdown_path)
 		return
-	print("WindowGuide: File exists, loading...")
 	_markdown_view.load_markdown(markdown_path)
 
 ## Load guide order from the _guide_order.txt file
@@ -289,7 +283,6 @@ func _load_guide_order(base_dir: String) -> Array[String]:
 			continue
 		ordered_filenames.append(line)
 	
-	print("WindowGuide: Loaded guide order with %d entries" % ordered_filenames.size())
 	return ordered_filenames
 
 ## Collect all markdown files within the guides directory.
@@ -375,11 +368,9 @@ func _on_increase_font_size() -> void:
 	_font_size_scale += 0.1
 	_font_size_scale = min(_font_size_scale, 2.0)  # Max 2x scale
 	_markdown_view.set_font_scale(_font_size_scale)
-	print("WindowGuide: Font size increased to %.1fx" % _font_size_scale)
 
 ## Decrease the font size scale for markdown content.
 func _on_decrease_font_size() -> void:
 	_font_size_scale -= 0.1
 	_font_size_scale = max(_font_size_scale, 0.5)  # Min 0.5x scale
 	_markdown_view.set_font_scale(_font_size_scale)
-	print("WindowGuide: Font size decreased to %.1fx" % _font_size_scale)

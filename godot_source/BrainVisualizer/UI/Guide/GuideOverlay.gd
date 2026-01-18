@@ -85,7 +85,6 @@ func _update_sidebar_width() -> void:
 	# Set sidebar to exactly 25% of total width (minus margins)
 	var sidebar_width := int(total_width * 0.25)
 	_sidebar.custom_minimum_size.x = sidebar_width
-	print("GuideOverlay: Setting fixed sidebar width to %d pixels (25%% of %d)" % [sidebar_width, int(total_width)])
 
 ## Scale header text to match UI size.
 func _apply_header_scaling() -> void:
@@ -109,18 +108,15 @@ func _on_search_changed(query: String) -> void:
 
 ## Open the selected guide markdown.
 func _on_topic_selected(markdown_path: String) -> void:
-	print("GuideOverlay: Topic selected: %s" % markdown_path)
 	_open_markdown(markdown_path)
 
 ## Resolve markdown links to other guide files.
 func _on_markdown_link_clicked(target_path: String) -> void:
-	print("GuideOverlay: Markdown link clicked: %s" % target_path)
 	if _is_markdown_path(target_path):
 		_open_markdown(target_path)
 
 ## Load and display a markdown file.
 func _open_markdown(markdown_path: String) -> void:
-	print("GuideOverlay: Opening markdown: %s" % markdown_path)
 	if markdown_path == "":
 		push_error("GuideOverlay: Empty markdown path")
 		return
@@ -128,7 +124,6 @@ func _open_markdown(markdown_path: String) -> void:
 		push_error("GuideOverlay: Markdown path not found: %s" % markdown_path)
 		_markdown_view.show_message("Guide file not found: %s" % markdown_path)
 		return
-	print("GuideOverlay: File exists, loading...")
 	_markdown_view.load_markdown(markdown_path)
 
 ## Load guide order from the _guide_order.txt file
@@ -151,10 +146,6 @@ func _load_guide_order(base_dir: String) -> Array[String]:
 		if line == "" or line.begins_with("#"):
 			continue
 		ordered_filenames.append(line)
-	
-	print("GuideOverlay: Loaded guide order with %d entries" % ordered_filenames.size())
-	for i in range(ordered_filenames.size()):
-		print("  %d. %s" % [i + 1, ordered_filenames[i]])
 	
 	return ordered_filenames
 
@@ -182,11 +173,6 @@ func _collect_markdown_files(base_dir: String) -> Array[String]:
 		name = dir.get_next()
 	dir.list_dir_end()
 	
-	# Debug: Print files before sorting
-	print("GuideOverlay: Files before sorting:")
-	for file in results:
-		print("  - %s" % file.get_file())
-	
 	# Sort by custom order, then alphabetically for any not in the list
 	results.sort_custom(func(a: String, b: String) -> bool:
 		var a_name := a.get_file()
@@ -194,31 +180,18 @@ func _collect_markdown_files(base_dir: String) -> Array[String]:
 		var a_index := ordered_filenames.find(a_name)
 		var b_index := ordered_filenames.find(b_name)
 		
-		print("  Comparing: %s (index %d) vs %s (index %d)" % [a_name, a_index, b_name, b_index])
-		
 		# If both are in the ordered list, sort by their position
 		if a_index >= 0 and b_index >= 0:
-			var result := a_index < b_index
-			print("    Both in list: returning %s" % result)
-			return result
+			return a_index < b_index
 		# If only a is in the ordered list, it comes first
 		if a_index >= 0:
-			print("    Only a in list: returning true")
 			return true
 		# If only b is in the ordered list, it comes first
 		if b_index >= 0:
-			print("    Only b in list: returning false")
 			return false
 		# If neither are in the ordered list, sort alphabetically
-		var result := a_name < b_name
-		print("    Neither in list: alphabetical = %s" % result)
-		return result
+		return a_name < b_name
 	)
-	
-	# Debug: Print files after sorting
-	print("GuideOverlay: Files after sorting:")
-	for i in range(results.size()):
-		print("  %d. %s" % [i + 1, results[i].get_file()])
 	
 	return results
 

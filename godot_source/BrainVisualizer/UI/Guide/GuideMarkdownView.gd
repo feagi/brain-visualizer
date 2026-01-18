@@ -20,16 +20,13 @@ func _ready() -> void:
 	add_theme_color_override("default_color", Color(0.92, 0.94, 0.98))
 	# Add better line spacing for readability
 	add_theme_constant_override("line_separation", int(_base_font_size * 0.3))
-	print("GuideMarkdownView: Initialized with base font size %d" % _base_font_size)
 
 ## Load and render a markdown file.
 func load_markdown(markdown_path: String) -> void:
-	print("GuideMarkdownView: Loading markdown from: %s" % markdown_path)
 	_current_markdown_path = markdown_path
 	# Apply cached base font size with user scale multiplier
 	var scaled_font_size := int(_base_font_size * _font_scale)
 	add_theme_font_size_override("normal_font_size", scaled_font_size)
-	print("GuideMarkdownView: Using font size: %d (base: %d, scale: %.1fx)" % [scaled_font_size, _base_font_size, _font_scale])
 	
 	var file := FileAccess.open(markdown_path, FileAccess.READ)
 	if file == null:
@@ -40,11 +37,8 @@ func load_markdown(markdown_path: String) -> void:
 	
 	var markdown_text := file.get_as_text()
 	file.close()
-	print("GuideMarkdownView: Read %d characters from file" % markdown_text.length())
 	
 	var bbcode := _convert_markdown_to_bbcode(markdown_text, markdown_path)
-	print("GuideMarkdownView: Converted to %d characters of BBCode" % bbcode.length())
-	print("GuideMarkdownView: First 200 chars: %s" % bbcode.substr(0, 200))
 	
 	text = bbcode
 	# Wait for text rendering to complete
@@ -54,7 +48,6 @@ func load_markdown(markdown_path: String) -> void:
 	var content_height := get_content_height()
 	custom_minimum_size = Vector2(0, content_height)
 	size.y = content_height
-	print("GuideMarkdownView: Set content height to %d" % content_height)
 
 ## Set the user-adjustable font scale multiplier and reload current content.
 func set_font_scale(scale: float) -> void:
@@ -136,7 +129,6 @@ func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -
 			output_lines.append(line)
 	
 	var result := "\n".join(output_lines)
-	print("GuideMarkdownView: Conversion complete, %d output lines" % output_lines.size())
 	return result
 
 ## Count heading markers for a markdown heading line.
