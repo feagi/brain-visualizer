@@ -10,8 +10,8 @@ var _font_scale: float = 1.0  # User-adjustable scale multiplier
 ## Configure the label defaults for guide rendering.
 func _ready() -> void:
 	bbcode_enabled = true
-	scroll_active = true
-	fit_content = true
+	scroll_active = false  # Parent ScrollContainer handles scrolling
+	fit_content = false  # Let the container handle sizing
 	autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	selection_enabled = true
 	meta_clicked.connect(_on_meta_clicked)
@@ -47,9 +47,14 @@ func load_markdown(markdown_path: String) -> void:
 	print("GuideMarkdownView: First 200 chars: %s" % bbcode.substr(0, 200))
 	
 	text = bbcode
+	# Wait for text rendering to complete
 	await get_tree().process_frame
-	custom_minimum_size = Vector2(0.0, float(get_content_height()))
-	print("GuideMarkdownView: Set content height to %d" % get_content_height())
+	await get_tree().process_frame
+	# Set minimum height based on actual content
+	var content_height := get_content_height()
+	custom_minimum_size = Vector2(0, content_height)
+	size.y = content_height
+	print("GuideMarkdownView: Set content height to %d" % content_height)
 
 ## Set the user-adjustable font scale multiplier and reload current content.
 func set_font_scale(scale: float) -> void:
@@ -65,7 +70,10 @@ func show_message(message: String) -> void:
 	var scaled_font_size := int(_base_font_size * _font_scale)
 	add_theme_font_size_override("normal_font_size", scaled_font_size)
 	text = "[i]%s[/i]" % message
-	custom_minimum_size = Vector2(0.0, float(get_content_height()))
+	await get_tree().process_frame
+	var content_height := get_content_height()
+	custom_minimum_size = Vector2(0, content_height)
+	size.y = content_height
 
 ## Handle link clicks inside the rendered markdown.
 func _on_meta_clicked(meta: Variant) -> void:
