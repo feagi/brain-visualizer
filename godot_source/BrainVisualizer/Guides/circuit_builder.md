@@ -12,11 +12,35 @@ Circuit Builder displays cortical areas as colored boxes and their connections a
 
 Cortical areas appear as rectangular boxes with:
 - **Title**: The name of the cortical area
-- **Color**: Indicates the type (Input, Output, Memory, Custom, Core)
+- **Color**: Indicates the type (see Color Coding below)
 - **Ports**: Connection points for linking to other areas
   - Top port: Recursive connections (to itself)
   - Left port: Incoming connections (inputs)
   - Right port: Outgoing connections (outputs)
+
+#### Color Coding
+
+In Circuit Builder, cortical areas use color coding to quickly identify their type:
+
+- **Dark Gray**: Input (IPU) - receives data from outside
+
+![Input Icon](../UI/GenericResources/ButtonIcons/input.png)
+
+- **Orange**: Output (OPU) - sends data to outside
+
+![Output Icon](../UI/GenericResources/ButtonIcons/output.png)
+
+- **Blue**: Custom - internal processing
+
+![Interconnected Icon](../UI/GenericResources/ButtonIcons/interconnected.png)
+
+- **Dark Red**: Memory - stores and recalls patterns
+
+![Memory Icon](../UI/GenericResources/ButtonIcons/memory-game.png)
+
+- **Dark Blue**: Core - special system areas
+
+These colors help you quickly understand the flow of information through your neural architecture at a glance.
 
 ### Brain Circuit Nodes
 
@@ -237,7 +261,7 @@ Select multiple areas to perform bulk operations:
 3. **Group Logically**: Use regions to organize related functionality
 4. **Watch the Connections**: Too many connections can indicate complexity
 5. **Test Incrementally**: Build and test small circuits before expanding
-6. **Use Colors**: The color coding helps you quickly identify area types
+6. **Use Colors**: The [color coding](#color-coding) helps you quickly identify area types
 7. **Keep it Clean**: Regularly reorganize and clean up your circuit layout
 8. **Document**: Use region names and descriptions to document your architecture
 

@@ -268,8 +268,35 @@ func _open_markdown(markdown_path: String) -> void:
 	print("WindowGuide: File exists, loading...")
 	_markdown_view.load_markdown(markdown_path)
 
+## Load guide order from the _guide_order.txt file
+func _load_guide_order(base_dir: String) -> Array[String]:
+	var order_file_path := base_dir.path_join("_guide_order.txt")
+	var ordered_filenames: Array[String] = []
+	
+	if not FileAccess.file_exists(order_file_path):
+		push_warning("WindowGuide: Order file not found at %s. Using alphabetical order." % order_file_path)
+		return ordered_filenames
+	
+	var file := FileAccess.open(order_file_path, FileAccess.READ)
+	if file == null:
+		push_error("WindowGuide: Unable to read order file at %s." % order_file_path)
+		return ordered_filenames
+	
+	while not file.eof_reached():
+		var line := file.get_line().strip_edges()
+		# Skip empty lines and comments
+		if line == "" or line.begins_with("#"):
+			continue
+		ordered_filenames.append(line)
+	
+	print("WindowGuide: Loaded guide order with %d entries" % ordered_filenames.size())
+	return ordered_filenames
+
 ## Collect all markdown files within the guides directory.
 func _collect_markdown_files(base_dir: String) -> Array[String]:
+	# Load the desired order from _guide_order.txt
+	var ordered_filenames := _load_guide_order(base_dir)
+	
 	var results: Array[String] = []
 	var dir := DirAccess.open(base_dir)
 	if dir == null:
@@ -288,7 +315,27 @@ func _collect_markdown_files(base_dir: String) -> Array[String]:
 			results.append(path)
 		name = dir.get_next()
 	dir.list_dir_end()
-	results.sort()
+	
+	# Sort by custom order, then alphabetically for any not in the list
+	results.sort_custom(func(a: String, b: String) -> bool:
+		var a_name := a.get_file()
+		var b_name := b.get_file()
+		var a_index := ordered_filenames.find(a_name)
+		var b_index := ordered_filenames.find(b_name)
+		
+		# If both are in the ordered list, sort by their position
+		if a_index >= 0 and b_index >= 0:
+			return a_index < b_index
+		# If only a is in the ordered list, it comes first
+		if a_index >= 0:
+			return true
+		# If only b is in the ordered list, it comes first
+		if b_index >= 0:
+			return false
+		# If neither are in the ordered list, sort alphabetically
+		return a_name < b_name
+	)
+	
 	return results
 
 ## Extract the first heading title from a markdown file.

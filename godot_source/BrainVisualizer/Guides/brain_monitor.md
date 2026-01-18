@@ -73,13 +73,6 @@ See [Camera Controls](camera_controls.md) for advanced navigation.
 
 Each cortical area appears as a 3D box with:
 
-**Color Coding by Type:**
-- **Dark Gray**: Input (IPU) - receives external data
-- **Orange**: Output (OPU) - sends data externally
-- **Blue**: Custom - internal processing
-- **Dark Red**: Memory - pattern storage
-- **Dark Blue**: Core - system areas
-
 **Size and Position:**
 - Dimensions reflect the cortical area's voxel dimensions
 - Position reflects 3D coordinates in the genome

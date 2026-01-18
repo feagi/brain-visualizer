@@ -2,6 +2,8 @@
 
 This guide will help you take your first steps with Brain Visualizer and understand the basic interface.
 
+**New to FEAGI terminology?** Check the [Glossary](glossary.md) for definitions of terms like cortical areas, neurons, voxels, and more.
+
 ## Connecting to FEAGI
 
 Brain Visualizer requires a running FEAGI instance to connect to. When you launch Brain Visualizer:
@@ -68,28 +70,6 @@ When Brain Visualizer loads, you'll see:
 - **Focus**: Click on a cortical area to focus on it
 
 See [Navigation Basics](navigation.md) for more details.
-
-## Color Coding
-
-Cortical areas use color coding to indicate their type:
-
-- **Dark Gray**: Input (IPU) - receives data from outside
-
-![Input Icon](../UI/GenericResources/ButtonIcons/input.png)
-
-- **Orange**: Output (OPU) - sends data to outside
-
-![Output Icon](../UI/GenericResources/ButtonIcons/output.png)
-
-- **Blue**: Custom - internal processing
-
-![Interconnected Icon](../UI/GenericResources/ButtonIcons/interconnected.png)
-
-- **Dark Red**: Memory - stores and recalls patterns
-
-![Memory Icon](../UI/GenericResources/ButtonIcons/memory-game.png)
-
-- **Dark Blue**: Core - special system areas
 
 ## Top Bar Quick Reference
 

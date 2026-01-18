@@ -47,6 +47,9 @@ Brain Visualizer is an interactive tool that allows you to visualize, create, an
 ### Advanced Features
 - [Quick Menu](quick_menu.md) - Context-sensitive right-click operations
 
+### Reference
+- [Glossary](glossary.md) - Complete reference of FEAGI and Brain Visualizer terminology
+
 ## Getting Help
 
 - Use the **Search bar** at the top of the guide to quickly find topics

@@ -131,8 +131,38 @@ func _open_markdown(markdown_path: String) -> void:
 	print("GuideOverlay: File exists, loading...")
 	_markdown_view.load_markdown(markdown_path)
 
+## Load guide order from the _guide_order.txt file
+func _load_guide_order(base_dir: String) -> Array[String]:
+	var order_file_path := base_dir.path_join("_guide_order.txt")
+	var ordered_filenames: Array[String] = []
+	
+	if not FileAccess.file_exists(order_file_path):
+		push_warning("GuideOverlay: Order file not found at %s. Using alphabetical order." % order_file_path)
+		return ordered_filenames
+	
+	var file := FileAccess.open(order_file_path, FileAccess.READ)
+	if file == null:
+		push_error("GuideOverlay: Unable to read order file at %s." % order_file_path)
+		return ordered_filenames
+	
+	while not file.eof_reached():
+		var line := file.get_line().strip_edges()
+		# Skip empty lines and comments
+		if line == "" or line.begins_with("#"):
+			continue
+		ordered_filenames.append(line)
+	
+	print("GuideOverlay: Loaded guide order with %d entries" % ordered_filenames.size())
+	for i in range(ordered_filenames.size()):
+		print("  %d. %s" % [i + 1, ordered_filenames[i]])
+	
+	return ordered_filenames
+
 ## Collect all markdown files within the guides directory.
 func _collect_markdown_files(base_dir: String) -> Array[String]:
+	# Load the desired order from _guide_order.txt
+	var ordered_filenames := _load_guide_order(base_dir)
+	
 	var results: Array[String] = []
 	var dir := DirAccess.open(base_dir)
 	if dir == null:
@@ -151,7 +181,45 @@ func _collect_markdown_files(base_dir: String) -> Array[String]:
 			results.append(path)
 		name = dir.get_next()
 	dir.list_dir_end()
-	results.sort()
+	
+	# Debug: Print files before sorting
+	print("GuideOverlay: Files before sorting:")
+	for file in results:
+		print("  - %s" % file.get_file())
+	
+	# Sort by custom order, then alphabetically for any not in the list
+	results.sort_custom(func(a: String, b: String) -> bool:
+		var a_name := a.get_file()
+		var b_name := b.get_file()
+		var a_index := ordered_filenames.find(a_name)
+		var b_index := ordered_filenames.find(b_name)
+		
+		print("  Comparing: %s (index %d) vs %s (index %d)" % [a_name, a_index, b_name, b_index])
+		
+		# If both are in the ordered list, sort by their position
+		if a_index >= 0 and b_index >= 0:
+			var result := a_index < b_index
+			print("    Both in list: returning %s" % result)
+			return result
+		# If only a is in the ordered list, it comes first
+		if a_index >= 0:
+			print("    Only a in list: returning true")
+			return true
+		# If only b is in the ordered list, it comes first
+		if b_index >= 0:
+			print("    Only b in list: returning false")
+			return false
+		# If neither are in the ordered list, sort alphabetically
+		var result := a_name < b_name
+		print("    Neither in list: alphabetical = %s" % result)
+		return result
+	)
+	
+	# Debug: Print files after sorting
+	print("GuideOverlay: Files after sorting:")
+	for i in range(results.size()):
+		print("  %d. %s" % [i + 1, results[i].get_file()])
+	
 	return results
 
 ## Extract the first heading title from a markdown file.
