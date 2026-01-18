@@ -457,7 +457,6 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 	# Visualization voxel granularity - default is 1x1x1 if not present or null
 	if "visualization_voxel_granularity" in data.keys():
 		var value = data["visualization_voxel_granularity"]
-		print("🔵 CACHE: Processing visualization_voxel_granularity for %s: value=%s, type=%s" % [cortical_ID, value, typeof(value)])
 		if value != null:
 			# Handle array format [x, y, z] from API (tuple serializes as array in JSON)
 			# Value can be int or float, so convert to float first then int
@@ -468,10 +467,8 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 				# Treat 0,0,0 as default (1,1,1) - API might return 0,0,0 for default
 				if x == 0 and y == 0 and z == 0:
 					_visualization_voxel_granularity = Vector3i(1, 1, 1)
-					print("🔵 CACHE: Converted 0,0,0 to default 1,1,1 for %s" % cortical_ID)
 				else:
 					_visualization_voxel_granularity = Vector3i(x, y, z)
-					print("🔵 CACHE: Set visualization_voxel_granularity to %s for %s" % [_visualization_voxel_granularity, cortical_ID])
 			# Handle dictionary format {"x": x, "y": y, "z": z} (backup)
 			elif value is Dictionary and value.has("x") and value.has("y") and value.has("z"):
 				var x = int(float(value["x"])) if value["x"] != null else 1
@@ -623,7 +620,6 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	# Visualization voxel granularity - default is 1x1x1 if not present or null
 	if "visualization_voxel_granularity" in data.keys():
 		var value = data["visualization_voxel_granularity"]
-		print("🔵 CACHE: Processing visualization_voxel_granularity for %s: value=%s, type=%s" % [cortical_ID, value, typeof(value)])
 		if value != null:
 			# Handle array format [x, y, z] from API (tuple serializes as array in JSON)
 			# Value can be int or float, so convert to float first then int
@@ -634,10 +630,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 				# Treat 0,0,0 as default (1,1,1) - API might return 0,0,0 for default
 				if x == 0 and y == 0 and z == 0:
 					_visualization_voxel_granularity = Vector3i(1, 1, 1)
-					print("🔵 CACHE: Converted 0,0,0 to default 1,1,1 for %s" % cortical_ID)
 				else:
 					_visualization_voxel_granularity = Vector3i(x, y, z)
-					print("🔵 CACHE: Set visualization_voxel_granularity to %s for %s" % [_visualization_voxel_granularity, cortical_ID])
 			# Handle dictionary format {"x": x, "y": y, "z": z} (backup)
 			elif value is Dictionary and value.has("x") and value.has("y") and value.has("z"):
 				var x = int(float(value["x"])) if value["x"] != null else 1

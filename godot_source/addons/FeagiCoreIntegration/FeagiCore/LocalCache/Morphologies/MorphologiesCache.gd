@@ -92,8 +92,6 @@ func hard_wipe_cached_morphologies():
 
 ## To update morphology listing given a dict with details about all morphologies
 func update_morphology_cache_from_summary(all_morphology_details: Dictionary) -> void:
-	print("FEAGI CACHE: Replacing morphology details cache...")
-	
 	for current_morphology: StringName in _available_morphologies.keys():
 		if !(all_morphology_details.keys().has(current_morphology)):
 			# This morphology doesnt exist anymore, delete it

@@ -15,7 +15,6 @@ static func load_mapping_restrictions() -> bool:
 	# For now, create built-in restrictions for memory cortical areas
 	_create_builtin_restrictions()
 	_cache_loaded = true
-	print("MappingRestrictionsAPI: Loaded built-in mapping restrictions")
 	return true
 
 ## Clear the mapping restrictions cache

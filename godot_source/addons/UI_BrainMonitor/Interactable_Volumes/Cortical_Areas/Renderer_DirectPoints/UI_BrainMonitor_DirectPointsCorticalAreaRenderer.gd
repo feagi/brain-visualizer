@@ -92,7 +92,6 @@ var _memory_inactive_rim_intensity: float
 var _memory_inactive_jello_strength: float
 
 func setup(area: AbstractCorticalArea) -> void:
-	print("🧠 DIRECTPOINTS RENDERER SETUP for cortical area: %s" % area.cortical_ID)
 	# Store cortical area properties for later use
 	_cortical_area_type = area.cortical_type
 	_cortical_area_id = area.cortical_ID
@@ -117,9 +116,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	_rust_processor = ClassDB.instantiate("FeagiDataDeserializer")
 	_warning_threshold = _visualization_settings.performance_warning_threshold
-	
-	print("   🦀 [%s] Rust processor initialized - unlimited neurons, warning threshold: %d" % [_cortical_area_id, _warning_threshold])
-	
+
 	# Create static body for collision detection
 	_static_body = StaticBody3D.new()
 	_static_body.name = "DirectPointsBody"
@@ -331,7 +328,6 @@ func setup(area: AbstractCorticalArea) -> void:
 	# This is the authoritative source (updated from FEAGI API), not the health check cache
 	if FeagiCore:
 		FeagiCore.delay_between_bursts_updated.connect(_on_delay_between_bursts_changed)
-		print("   ⏱️  Connected to delay_between_bursts_updated signal for dynamic updates")
 	
 	# Setup visibility timer for neuron firing timeout
 	_visibility_timer = Timer.new()
@@ -368,17 +364,12 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
-	print("🔧 DirectPoints: update_dimensions called for %s with new_dimensions: %s" % [_cortical_area_id, new_dimensions])
-	print("🔧 DirectPoints: Before super() - _position_FEAGI_space: %s, _position_godot_space: %s" % [_position_FEAGI_space, _position_godot_space])
-	
 	# Memory areas are conceptually 1x1x1 (all activity maps to (0,0,0)).
 	# Force non-zero dimensions so desktop WS Type11 fast-path does not treat this as uninitialized.
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		new_dimensions = Vector3i.ONE
 	super(new_dimensions)
-	
-	print("🔧 DirectPoints: After super() - _dimensions: %s, _position_godot_space: %s" % [_dimensions, _position_godot_space])
-	
+
 	# Refresh visualization_voxel_granularity from cache and update mesh if needed.
 	# (BV allows editing this at runtime; don't rely on dimension changes to refresh mesh.)
 	_refresh_visualization_voxel_granularity_from_cache()
@@ -390,11 +381,8 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	# CRITICAL FIX: Ensure _static_body remains visible after dimension updates
 	# This prevents the area from disappearing when properties are updated
 	if not _static_body.visible:
-		print("⚠️ DirectPoints: _static_body was invisible - restoring visibility!")
 		_static_body.visible = true
-	
-	print("🔧 DirectPoints: Set _static_body.scale=%s, _static_body.position=%s, visible=%s" % [_static_body.scale, _static_body.position, _static_body.visible])
-	
+
 	# Update collision shape size (but preserve custom sizes for special areas)
 	var collision_shape = _static_body.get_child(0) as CollisionShape3D
 	if collision_shape and collision_shape.shape is BoxShape3D:

@@ -32,7 +32,6 @@ pub struct FeagiDataDeserializer {
 #[godot_api]
 impl IRefCounted for FeagiDataDeserializer {
     fn init(base: Base<RefCounted>) -> Self {
-        godot_print!("🦀 FEAGI Rust Data Deserializer initialized (canonical v2 container, no LZ4 required)");
         Self { base }
     }
 }
