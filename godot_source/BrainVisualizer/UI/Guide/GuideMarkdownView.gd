@@ -104,22 +104,27 @@ func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -
 			output_lines.append("")
 			continue
 		
-		# Process inline formatting (order matters: bold before italics to avoid conflicts)
-		line = _replace_images(line, markdown_path)
-		line = _replace_links(line, markdown_path)
-		line = _replace_inline_code(line)
-		line = _replace_bold(line)
-		line = _replace_italics(line)
-		
 		# Handle bullets with proper indentation
 		if trimmed.begins_with("- "):
 			if not in_list:
 				in_list = true
+			# Extract bullet content and process inline formatting
 			var bullet_text := trimmed.substr(2).strip_edges()
+			bullet_text = _replace_images(bullet_text, markdown_path)
+			bullet_text = _replace_links(bullet_text, markdown_path)
+			bullet_text = _replace_inline_code(bullet_text)
+			bullet_text = _replace_bold(bullet_text)
+			bullet_text = _replace_italics(bullet_text)
 			output_lines.append("  • " + bullet_text)
 		else:
 			if in_list:
 				in_list = false
+			# Process inline formatting for regular paragraphs
+			line = _replace_images(line, markdown_path)
+			line = _replace_links(line, markdown_path)
+			line = _replace_inline_code(line)
+			line = _replace_bold(line)
+			line = _replace_italics(line)
 			output_lines.append(line)
 	
 	var result := "\n".join(output_lines)
@@ -159,95 +164,103 @@ func _format_heading(title: String, level: int) -> String:
 
 ## Convert markdown bold markers to BBCode.
 func _replace_bold(line: String) -> String:
-	# Use simple string replacement for more reliable results
-	var result := line
-	var search_pos := 0
+	var result := ""
+	var i := 0
 	
-	while true:
-		var start := result.find("**", search_pos)
-		if start == -1:
-			break
+	while i < line.length():
+		# Check for ** marker
+		if i < line.length() - 1 and line[i] == "*" and line[i + 1] == "*":
+			# Found opening **, now find closing **
+			var end := i + 2
+			var found_end := false
+			
+			while end < line.length() - 1:
+				if line[end] == "*" and line[end + 1] == "*":
+					found_end = true
+					break
+				end += 1
+			
+			if found_end:
+				# Extract content between ** markers
+				var content := line.substr(i + 2, end - i - 2)
+				result += "[b]%s[/b]" % content
+				i = end + 2  # Skip past closing **
+				continue
 		
-		var end := result.find("**", start + 2)
-		if end == -1:
-			break
-		
-		# Extract the content between the markers
-		var content := result.substr(start + 2, end - start - 2)
-		# Replace the entire markdown bold with BBCode
-		var markdown_str := "**%s**" % content
-		var bbcode_str := "[b]%s[/b]" % content
-		result = result.replace(markdown_str, bbcode_str)
-		
-		# Move search position forward to avoid infinite loop
-		search_pos = start + bbcode_str.length()
+		# No markdown found, just add the character
+		result += line[i]
+		i += 1
 	
 	return result
 
 ## Convert markdown italics markers to BBCode.
 func _replace_italics(line: String) -> String:
-	# Use simple string replacement for single asterisks (not part of **)
-	var result := line
-	var search_pos := 0
+	var result := ""
+	var i := 0
 	
-	while true:
-		var start := result.find("*", search_pos)
-		if start == -1:
-			break
+	while i < line.length():
+		# Check for single * marker (not part of **)
+		if line[i] == "*":
+			# Make sure it's not part of ** or [b] tag
+			var is_double_before := i > 0 and line[i - 1] == "*"
+			var is_double_after := i < line.length() - 1 and line[i + 1] == "*"
+			var is_bbcode := i > 0 and line[i - 1] == "["  # Skip if already converted to BBCode
+			
+			if not is_double_before and not is_double_after and not is_bbcode:
+				# Found opening *, now find closing *
+				var end := i + 1
+				var found_end := false
+				
+				while end < line.length():
+					if line[end] == "*":
+						# Make sure closing * is also not part of **
+						var end_is_double := end < line.length() - 1 and line[end + 1] == "*"
+						if not end_is_double:
+							found_end = true
+							break
+					end += 1
+				
+				if found_end:
+					# Extract content between * markers
+					var content := line.substr(i + 1, end - i - 1)
+					result += "[i]%s[/i]" % content
+					i = end + 1  # Skip past closing *
+					continue
 		
-		# Skip if this is part of a ** (should already be processed)
-		if start > 0 and result[start - 1] == "*":
-			search_pos = start + 1
-			continue
-		if start < result.length() - 1 and result[start + 1] == "*":
-			search_pos = start + 2
-			continue
-		
-		var end := result.find("*", start + 1)
-		if end == -1:
-			break
-		
-		# Skip if the end is part of **
-		if end < result.length() - 1 and result[end + 1] == "*":
-			search_pos = start + 1
-			continue
-		
-		# Extract the content between the markers
-		var content := result.substr(start + 1, end - start - 1)
-		# Replace the entire markdown italic with BBCode
-		var markdown_str := "*%s*" % content
-		var bbcode_str := "[i]%s[/i]" % content
-		result = result.replace(markdown_str, bbcode_str)
-		
-		# Move search position forward
-		search_pos = start + bbcode_str.length()
+		# No markdown found, just add the character
+		result += line[i]
+		i += 1
 	
 	return result
 
 ## Convert markdown inline code markers to BBCode with background.
 func _replace_inline_code(line: String) -> String:
-	# Use simple string replacement for backticks
-	var result := line
-	var search_pos := 0
+	var result := ""
+	var i := 0
 	
-	while true:
-		var start := result.find("`", search_pos)
-		if start == -1:
-			break
+	while i < line.length():
+		# Check for ` marker
+		if line[i] == "`":
+			# Found opening `, now find closing `
+			var end := i + 1
+			var found_end := false
+			
+			while end < line.length():
+				if line[end] == "`":
+					found_end = true
+					break
+				end += 1
+			
+			if found_end:
+				# Extract content between ` markers
+				var content := line.substr(i + 1, end - i - 1)
+				result += "[code]%s[/code]" % content
+				i = end + 1  # Skip past closing `
+				continue
 		
-		var end := result.find("`", start + 1)
-		if end == -1:
-			break
-		
-		# Extract the content between the markers
-		var content := result.substr(start + 1, end - start - 1)
-		# Replace the entire markdown code with BBCode
-		var markdown_str := "`%s`" % content
-		var bbcode_str := "[code]%s[/code]" % content
-		result = result.replace(markdown_str, bbcode_str)
-		
-		# Move search position forward
-		search_pos = start + bbcode_str.length()
+		# No markdown found, just add the character
+		result += line[i]
+		i += 1
 	
 	return result
 
