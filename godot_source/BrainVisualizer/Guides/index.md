@@ -16,9 +16,9 @@ Brain Visualizer is an interactive tool that allows you to visualize, create, an
 ## Core Concepts
 
 - **Cortical Areas**: The building blocks of your genome. These are volumes of neurons that process information
-- **Brain Regions**: Organizational containers that group related cortical areas and sub-regions
-- **Morphologies**: Define the shape and properties of neural connections
-- **Mappings**: Connections between cortical areas that use specific morphologies
+- **Brain Circuits**: Organizational containers that group related cortical areas and sub-circuits
+- **Connectivity Rules**: Define the shape and properties of neural connections
+- **Mappings**: Connections between cortical areas that use specific connectivity rules
 - **IPU/OPU**: Input and Output Processing Units - how your genome interacts with the world
 
 ## Feature Overview
@@ -33,24 +33,19 @@ Brain Visualizer is an interactive tool that allows you to visualize, create, an
 
 ### Working with Cortical Areas
 - [Cortical Areas](cortical_areas.md) - Creating and managing cortical areas
-- [Cortical Area Types](cortical_area_types.md) - Understanding IPU, OPU, Memory, and Custom areas
-- [Cortical Area Properties](cortical_properties.md) - Editing dimensions, positions, and advanced settings
+- [Cortical Area Details](cortical_area_details.md) - Complete guide to the Details window and all parameters
 
 ### Building Neural Circuits
 - [Circuit Builder](circuit_builder.md) - The 2D graph editor for neural circuits
-- [Brain Regions](brain_regions.md) - Organizing cortical areas into hierarchies
+- [Brain Circuits](brain_circuits.md) - Organizing cortical areas into hierarchies
 - [Mapping Connections](mapping_connections.md) - Connecting cortical areas together
-- [Morphologies](morphologies.md) - Defining connection shapes and properties
+- [Connectivity Rules](connectivity_rules.md) - Defining connection shapes and properties
 
 ### Visualization & Monitoring
 - [Brain Monitor](brain_monitor.md) - The 3D visualization system
-- [Neural Activity](neural_activity.md) - Viewing and understanding neuron firing
-- [View Previews](view_previews.md) - Video feed preview system
 
 ### Advanced Features
 - [Quick Menu](quick_menu.md) - Context-sensitive right-click operations
-- [Selection System](selection_system.md) - Working with multiple objects
-- [Keyboard Shortcuts](keyboard_shortcuts.md) - Speed up your workflow
 
 ## Getting Help
 

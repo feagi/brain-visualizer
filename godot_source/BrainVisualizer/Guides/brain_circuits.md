@@ -1,15 +1,15 @@
-# Brain Regions
+# Brain Circuits
 
-Brain regions are organizational containers that help you structure and manage complex genomes. They group related cortical areas and sub-regions into logical hierarchies, making large neural architectures easier to understand and navigate.
+Brain circuits are organizational containers that help you structure and manage complex genomes. They group related cortical areas and sub-circuits into logical hierarchies, making large neural architectures easier to understand and navigate.
 
-## What is a Brain Region?
+## What is a Brain Circuit?
 
-A brain region is a named container that can hold:
+A brain circuit is a named container that can hold:
 - **Cortical Areas**: The actual neural processing units
-- **Sub-Regions**: Other brain regions, creating hierarchical organization
+- **Sub-Circuits**: Other brain circuits, creating hierarchical organization
 - **Metadata**: Name, description, and organizational properties
 
-Think of brain regions as folders in a file system - they help organize and categorize without affecting the actual neural processing.
+Think of brain circuits as folders in a file system - they help organize and categorize without affecting the actual neural processing.
 
 ## Purpose and Benefits
 
@@ -19,13 +19,13 @@ Think of brain regions as folders in a file system - they help organize and cate
 - Build hierarchical structures that reflect your architecture
 
 ### Navigation
-- Jump directly to specific regions
-- View regions in isolation
+- Jump directly to specific circuits
+- View circuits in isolation
 - Focus on subsystems independently
 
 ### Scalability
 - Manage genomes with hundreds or thousands of cortical areas
-- Hide complexity in sub-regions
+- Hide complexity in sub-circuits
 - Work on one part without seeing everything
 
 ### Collaboration
@@ -35,25 +35,25 @@ Think of brain regions as folders in a file system - they help organize and cate
 
 ## The Main Circuit
 
-Every genome has a root region called **Main Circuit**:
+Every genome has a root circuit called **Main Circuit**:
 - Created automatically by FEAGI
 - Contains all top-level cortical areas and regions
 - Cannot be deleted
 - The starting point for navigation
 
-## Creating Brain Regions
+## Creating Brain Circuits
 
 ### Method 1: From Selection
 
-Create a region and automatically add selected areas:
+Create a circuit and automatically add selected areas:
 
 1. In Circuit Builder, select cortical areas you want to group
 2. Right-click on selection or empty space
-3. Select **Create Region**
+3. Select **Create Circuit**
 4. Enter region name and properties:
    - **Name**: Descriptive name (e.g., "Visual Processing")
    - **Description**: Optional notes
-   - **Parent Region**: Where to create it (default: current region)
+   - **Parent Circuit**: Where to create it (default: current region)
 5. Click **Create**
 
 Selected areas move into the new region automatically.
@@ -63,7 +63,7 @@ Selected areas move into the new region automatically.
 Create an empty region and add areas later:
 
 1. Right-click empty space in Circuit Builder
-2. Select **Create Region**
+2. Select **Create Circuit**
 3. Don't select any cortical areas beforehand
 4. Configure name and properties
 5. Click **Create**
@@ -77,7 +77,7 @@ Quick access from anywhere:
 1. Click **Circuits** in top toolbar
 2. Click **+** button
 3. Configure region properties
-4. Choose parent region
+4. Choose parent circuit
 5. Click **Create**
 
 ## Navigating Regions
@@ -85,7 +85,7 @@ Quick access from anywhere:
 ### Opening Regions
 
 **Method 1: Double-Click**
-- In Circuit Builder, double-click a region node
+- In Circuit Builder, double-click a circuit node
 - The view switches to show that region's contents
 
 **Method 2: Dropdown Menu**
@@ -99,9 +99,9 @@ Quick access from anywhere:
 
 ### Navigating Up/Back
 
-To return to parent region:
+To return to parent circuit:
 - Use the navigation breadcrumbs (if visible)
-- Click **Circuits** dropdown and select parent region
+- Click **Circuits** dropdown and select parent circuit
 - Close the current region tab
 
 ### Viewing Hierarchy
@@ -130,8 +130,8 @@ The **Circuits** dropdown shows:
 
 Regions can contain:
 - **Cortical Areas**: Any number of IPU, OPU, Memory, Custom areas
-- **Sub-Regions**: Nested regions for deeper hierarchy
-- **Mixed**: Both cortical areas and sub-regions together
+- **Sub-Circuits**: Nested regions for deeper hierarchy
+- **Mixed**: Both cortical areas and sub-circuits together
 
 ### Hierarchy Depth
 
@@ -174,23 +174,23 @@ Main Circuit
 
 1. Right-click cortical area
 2. Select **Add to Region**
-3. Choose new parent region
+3. Choose new parent circuit
 4. Click **Move**
 
 The area moves, maintaining all connections.
 
 ### Removing Areas from Region
 
-To move an area to the parent region:
+To move an area to the parent circuit:
 1. Right-click area
 2. Select **Add to Region**
-3. Choose the parent region
+3. Choose the parent circuit
 4. Confirm
 
 ### Nesting Regions
 
 Regions can contain other regions:
-1. Right-click a region node
+1. Right-click a circuit node
 2. Select **Add to Region**
 3. Choose a destination region
 4. The region moves with all its contents
@@ -204,18 +204,18 @@ Right-click region → **Details** to edit:
 **General:**
 - **Name**: The display name
 - **Description**: Optional notes
-- **Parent Region**: Where it's located in hierarchy
+- **Parent Circuit**: Where it's located in hierarchy
 - **Region ID**: Unique identifier (read-only)
 
 **Statistics:**
 - **Total Cortical Areas**: Count of areas in region (recursive)
-- **Direct Children**: Immediate child areas and sub-regions
+- **Direct Children**: Immediate child areas and sub-circuits
 - **Neuron Count**: Total neurons in region
 - **Synapse Count**: Total synapses
 
 **Contents:**
 - List of contained cortical areas
-- List of contained sub-regions
+- List of contained sub-circuits
 - Quick navigation links
 
 ### Renaming Regions
@@ -237,9 +237,11 @@ Good names describe the function or purpose.
 
 **2D Position (in Circuit Builder):**
 - Drag the region node to new position
-- Position is relative to parent region view
+- Position is relative to parent circuit view
 
 ## Cloning Regions
+
+![Clone Icon](../UI/GenericResources/ButtonIcons/copy_cortical_area_C.png)
 
 Duplicate an entire region with all contents:
 
@@ -247,7 +249,7 @@ Duplicate an entire region with all contents:
 2. Select **Clone**
 3. Configure:
    - **New Name**: Must be unique
-   - **Clone Contents**: Include all cortical areas and sub-regions
+   - **Clone Contents**: Include all cortical areas and sub-circuits
    - **Clone Connections**: Include internal connections
    - **Clone External Connections**: Include connections to outside areas
 4. Click **Clone**
@@ -256,12 +258,14 @@ Duplicate an entire region with all contents:
 
 ## Deleting Regions
 
-Remove a region and optionally its contents:
+![Delete Icon](../UI/GenericResources/ButtonIcons/Delete_C.png)
+
+Remove a circuit and optionally its contents:
 
 1. Right-click region
 2. Select **Delete**
 3. Choose deletion mode:
-   - **Delete Region Only**: Move contents to parent region
+   - **Delete Region Only**: Move contents to parent circuit
    - **Delete Region and Contents**: Remove everything
 4. Confirm deletion
 
@@ -473,7 +477,7 @@ For genomes with 100+ cortical areas:
 ### Organization Maintenance
 
 - Reorganize as genome grows
-- Create sub-regions when regions get large
+- Create sub-circuits when regions get large
 - Rename regions to reflect current purpose
 - Delete empty or obsolete regions
 
@@ -497,7 +501,7 @@ For genomes with 100+ cortical areas:
 
 **"Lost in hierarchy"**
 - Use Circuits dropdown to see structure
-- Click on parent regions to go up
+- Click on parent circuits to go up
 - Open Main Circuit to start over
 
 **"Performance is slow"**

@@ -16,7 +16,8 @@ A cortical area is a structured group of neurons organized in a 3D grid (measure
 Brain Visualizer supports several types of cortical areas, each with specific purposes:
 
 ### Input Processing Unit (IPU)
-![IPU Icon](../UI/GenericResources/ButtonIcons/relocate_C.jpg)
+
+![IPU Icon](../UI/GenericResources/ButtonIcons/input.png)
 
 **Purpose**: Receive data from external sources (sensors, cameras, etc.)
 
@@ -34,6 +35,9 @@ Brain Visualizer supports several types of cortical areas, each with specific pu
 - Controller input (keyboard, gamepad)
 
 ### Output Processing Unit (OPU)
+
+![OPU Icon](../UI/GenericResources/ButtonIcons/output.png)
+
 **Purpose**: Send data to external actuators (motors, displays, etc.)
 
 **Characteristics:**
@@ -49,6 +53,9 @@ Brain Visualizer supports several types of cortical areas, each with specific pu
 - Control signals (on/off, analog values)
 
 ### Memory
+
+![Memory Icon](../UI/GenericResources/ButtonIcons/memory-game.png)
+
 **Purpose**: Store and recall patterns for learning and reference
 
 **Characteristics:**
@@ -64,6 +71,9 @@ Brain Visualizer supports several types of cortical areas, each with specific pu
 - Context maintenance
 
 ### Custom (Interconnect)
+
+![Custom Icon](../UI/GenericResources/ButtonIcons/interconnected.png)
+
 **Purpose**: Internal processing and transformation
 
 **Characteristics:**
@@ -229,54 +239,39 @@ How many neurons exist in each voxel:
 - **Higher values**: Multiple neurons per voxel (advanced)
 - Affects total neuron count and processing
 
-### Morphology
+### Connectivity Rule
 
-Default morphology for connections:
+Default connectivity rule for connections:
 
 - **Pattern**: Defines connection structure
 - **Parameters**: Shape and density
 - Can be overridden per connection
 
-See [Morphologies](morphologies.md) for details.
+See [Connectivity Rules](connectivity rules.md) for details.
 
 ## Viewing and Editing Properties
 
-### Basic Properties Window
+### Cortical Area Details Window
 
-Right-click area → **Details** to view/edit:
+Right-click area → **Details** opens the comprehensive **Cortical Area Details** window.
 
-**General Tab:**
-- Name (friendly name for identification)
-- Cortical ID (unique identifier, read-only)
-- Type (IPU, OPU, Memory, Custom, Core)
-- Dimensions (X, Y, Z)
-- Position (X, Y, Z)
-- Parent region
+This window provides complete control over:
+- Basic properties (name, dimensions, position)
+- Neuron firing parameters (threshold, leak, refractory period)
+- Memory parameters (lifespan, consolidation)
+- Post-synaptic potential settings (connection strength)
+- Neuron coding (for IPU/OPU areas)
+- Monitoring and visualization settings
+- Connection management (afferents, efferents, recursive)
+- Delete and reset operations
 
-**Statistics Tab:**
-- Neuron count (current / total)
-- Active neuron count
-- Synapse count
-- Memory usage
+For complete documentation of all features and parameters, see:
+- [Cortical Area Details Window](cortical_area_details.md) - Complete guide to all properties
 
-**Connections Tab:**
-- Incoming connections (afferent)
-- Outgoing connections (efferent)
-- Recursive connections
-- Quick navigation to connected areas
-
-### Advanced Properties
-
-For advanced users:
-
-- Neuron parameters
-- Learning rates
-- Activation functions
-- Plasticity settings
-- Neurotransmitter properties
-- Hebbian learning configuration
-
-Access via **Advanced** button in Properties window.
+**Quick Access:**
+- Right-click cortical area → **Details**
+- Double-click cortical area node
+- Quick Menu → **Details**
 
 ## Organizing Cortical Areas
 
@@ -297,14 +292,14 @@ Use clear, descriptive names:
 
 ### Grouping with Regions
 
-Organize related areas into brain regions:
+Organize related areas into brain circuits:
 
 1. Select cortical areas to group
 2. Right-click → **Create Region**
 3. Name the region descriptively
 4. Areas move into the new region
 
-See [Brain Regions](brain_regions.md) for more details.
+See [Brain Circuits](brain_circuits.md) for more details.
 
 ### Spatial Organization
 
@@ -325,7 +320,7 @@ Cortical areas become functional when connected:
 
 1. **In Circuit Builder**: Drag from output port to input port
 2. **Quick Connect**: Right-click → Quick Connect → choose destination
-3. **Mapping Editor**: Specify morphology and parameters
+3. **Mapping Editor**: Specify connectivity rule and parameters
 
 See [Mapping Connections](mapping_connections.md) for complete guide.
 
@@ -341,7 +336,7 @@ See [Mapping Connections](mapping_connections.md) for complete guide.
 1. **Start Simple**: Connect inputs to outputs with one processing layer
 2. **Test Incrementally**: Add connections and test behavior
 3. **Avoid Over-Connection**: Not everything needs to connect to everything
-4. **Use Appropriate Morphologies**: Match connection patterns to function
+4. **Use Appropriate Connectivity Rules**: Match connection patterns to function
 5. **Document**: Name connections and regions to clarify intent
 
 ## Common Operations
@@ -446,7 +441,7 @@ If area isn't showing expected activity:
 
 1. **Check Connections**: Verify inputs are connected
 2. **Check Input Activity**: Ensure upstream areas are active
-3. **Check Mappings**: Verify morphologies are correct
+3. **Check Mappings**: Verify connectivity rules are correct
 4. **Check Data Flow**: Trace from inputs through processing
 5. **Check Configuration**: Verify area settings are correct
 
@@ -506,8 +501,8 @@ Before creating areas:
 
 - [Cortical Area Types](cortical_area_types.md) - Detailed type information
 - [Mapping Connections](mapping_connections.md) - Connecting areas
-- [Morphologies](morphologies.md) - Connection structures
-- [Brain Regions](brain_regions.md) - Organizing areas
+- [Connectivity Rules](connectivity rules.md) - Connection structures
+- [Brain Circuits](brain_circuits.md) - Organizing areas
 - [Circuit Builder](circuit_builder.md) - 2D editing interface
 - [Brain Monitor](brain_monitor.md) - 3D visualization
 - [Quick Menu](quick_menu.md) - Context operations

@@ -256,7 +256,7 @@ Adjust based on audience and purpose.
 ### Large Genomes
 
 For complex genomes:
-- Focus on specific regions
+- Focus on specific circuits
 - Use region-specific 3D tabs
 - Shorter sequences
 - Higher frame counts for smoothness

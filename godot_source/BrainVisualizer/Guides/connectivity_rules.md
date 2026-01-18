@@ -1,18 +1,18 @@
-# Morphologies
+# Connectivity Rules
 
-Morphologies define the shape and structure of neural connections between cortical areas. They determine how neurons in one area connect to neurons in another, creating the pathways for information flow.
+Connectivity Rules define the shape and structure of neural connections between cortical areas. They determine how neurons in one area connect to neurons in another, creating the pathways for information flow.
 
-## What is a Morphology?
+## What is a Connectivity Rule?
 
-A morphology is a template that specifies:
+A connectivity rule is a template that specifies:
 - **Connection Pattern**: Which neurons connect to which
 - **Spatial Arrangement**: How connections are organized in 3D space
 - **Density**: How many connections are created
 - **Plasticity**: How connections change over time
 
-Think of morphologies as the "wiring diagrams" that define how cortical areas communicate.
+Think of connectivity rules as the "wiring diagrams" that define how cortical areas communicate.
 
-## Why Morphologies Matter
+## Why Connectivity Rules Matter
 
 Different connection patterns serve different purposes:
 - **One-to-One**: Direct correspondence (e.g., pixel to neuron)
@@ -21,15 +21,15 @@ Different connection patterns serve different purposes:
 - **Lateral**: Neighborhood connections (spatial relationships)
 - **All-to-All**: Fully connected (complete mixing)
 
-Choosing the right morphology is crucial for your genome's function.
+Choosing the right connectivity rule is crucial for your genome's function.
 
-## Types of Morphologies
+## Types of Connectivity Rules
 
-### Composite Morphology
-**Purpose**: Combines multiple simpler morphologies
+### Composite Rule
+**Purpose**: Combines multiple simpler connectivity rules
 
 **Characteristics:**
-- Contains multiple sub-morphologies
+- Contains multiple sub-connectivity rules
 - Can create complex connection patterns
 - Most flexible type
 
@@ -38,7 +38,7 @@ Choosing the right morphology is crucial for your genome's function.
 - Multiple connection types in one mapping
 - Hierarchical connection structures
 
-### Function Morphology
+### Function Connectivity Rule
 **Purpose**: Connections defined by mathematical functions
 
 **Characteristics:**
@@ -51,7 +51,7 @@ Choosing the right morphology is crucial for your genome's function.
 - Distance-based connectivity
 - Custom mathematical patterns
 
-### Vectors Morphology
+### Vectors Connectivity Rule
 **Purpose**: Explicitly defined connection vectors
 
 **Characteristics:**
@@ -64,7 +64,7 @@ Choosing the right morphology is crucial for your genome's function.
 - Unusual connection patterns
 - Precise custom connectivity
 
-### Patterns Morphology
+### Patterns Connectivity Rule
 **Purpose**: Pre-defined common patterns
 
 **Characteristics:**
@@ -78,71 +78,71 @@ Choosing the right morphology is crucial for your genome's function.
 - Grid patterns
 - Lateral patterns
 
-## Viewing Morphologies
+## Viewing Connectivity Rules
 
-### Morphology Manager
+### Connectivity Rule Manager
 
 Access via top toolbar:
 
-1. Click **Morphologies** button (gear icon)
-2. View list of all morphologies
+1. Click **Connectivity Rules** button (gear icon)
+2. View list of all connectivity rules
 3. See details:
    - Name
    - Type
    - Usage count (how many mappings use it)
    - Parameters
 
-### Morphology Details
+### Connectivity Rule Details
 
-Click a morphology to view:
+Click a connectivity rule to view:
 - **Type**: Composite, Function, Vectors, Patterns
 - **Parameters**: Specific configuration
-- **Usage**: Which mappings use this morphology
+- **Usage**: Which mappings use this connectivity rule
 - **Preview**: Visual representation (if available)
 
-## Creating Morphologies
+## Creating Connectivity Rules
 
-### Method 1: Via Morphology Manager
+### Method 1: Via Connectivity Rule Manager
 
-1. Click **Morphologies** in top toolbar
+1. Click **Connectivity Rules** in top toolbar
 2. Click **+ Create New** button
-3. Choose morphology type
+3. Choose connectivity rule type
 4. Configure parameters
-5. Name the morphology
+5. Name the connectivity rule
 6. Click **Create**
 
 ### Method 2: During Mapping Creation
 
 When connecting cortical areas:
 1. Open Mapping Editor
-2. Click **Create New Morphology**
+2. Click **Create New Connectivity Rule**
 3. Configure and create inline
 4. Apply to the mapping
 
 ### Method 3: Clone Existing
 
 Duplicate and modify:
-1. Open Morphology Manager
-2. Right-click morphology
+1. Open Connectivity Rule Manager
+2. Right-click connectivity rule
 3. Select **Clone**
 4. Modify parameters
 5. Save with new name
 
-## Configuring Morphologies
+## Configuring Connectivity Rules
 
-### Composite Morphology
+### Composite Connectivity Rule
 
-**Sub-Morphologies:**
-- Add multiple component morphologies
+**Sub-Connectivity Rules:**
+- Add multiple component connectivity rules
 - Each contributes to overall pattern
 - Order and composition matters
 
 **Combining Modes:**
 - Additive: Combine all connections
-- Override: Later morphologies override earlier
+- Override: Later connectivity rules override earlier
 - Blend: Weighted combination
 
-### Function Morphology
+### Function Connectivity Rule
 
 **Formula Definition:**
 - Mathematical expression for connectivity
@@ -154,7 +154,7 @@ Duplicate and modify:
 - Ranges and scales
 - Threshold values
 
-### Patterns Morphology
+### Patterns Connectivity Rule
 
 **Pattern Selection:**
 - Choose from library of patterns
@@ -164,6 +164,9 @@ Duplicate and modify:
 **Common Patterns:**
 
 **All-to-All:**
+
+![All-to-All Pattern](../UI/GenericResources/Connectivity RuleIcons/all_to_all.png)
+
 - Every source connects to every target
 - Dense connectivity
 - High synapse count
@@ -174,16 +177,22 @@ Duplicate and modify:
 - Requires matching dimensions
 
 **Block-to-Block:**
+
+![Block-to-Block Pattern](../UI/GenericResources/Connectivity RuleIcons/block_to_block.png)
+
 - Regions connect to regions
 - Reduced connection count
 - Structured connectivity
 
 **Lateral Connections:**
+
+![Lateral Pattern](../UI/GenericResources/Connectivity RuleIcons/lateral_+x.png)
+
 - Connections within neighborhood
 - Spatial proximity matters
 - Local integration
 
-### Vectors Morphology
+### Vectors Connectivity Rule
 
 **Connection Specification:**
 - Define source → target pairs
@@ -195,14 +204,14 @@ Duplicate and modify:
 - Target coordinates (X, Y, Z)
 - Connection weight (optional)
 
-## Editing Morphologies
+## Editing Connectivity Rules
 
-### Modifying Existing Morphology
+### Modifying Existing Connectivity Rule
 
-**Caution**: Changes affect all mappings using this morphology.
+**Caution**: Changes affect all mappings using this connectivity rule.
 
-1. Open Morphology Manager
-2. Click morphology to edit
+1. Open Connectivity Rule Manager
+2. Click connectivity rule to edit
 3. Click **Edit** button
 4. Modify parameters
 5. Click **Save**
@@ -211,11 +220,11 @@ Duplicate and modify:
 ### Safe Editing (Clone First)
 
 To avoid affecting existing mappings:
-1. Clone the morphology
+1. Clone the connectivity rule
 2. Edit the clone
 3. Manually update specific mappings to use the clone
 
-## Morphology Parameters
+## Connectivity Rule Parameters
 
 ### Common Parameters
 
@@ -236,31 +245,31 @@ To avoid affecting existing mappings:
 
 ### Type-Specific Parameters
 
-Each morphology type has unique parameters. Consult the parameter descriptions in the creation/editing interface for details.
+Each connectivity rule type has unique parameters. Consult the parameter descriptions in the creation/editing interface for details.
 
-## Using Morphologies in Mappings
+## Using Connectivity Rules in Mappings
 
 When creating a connection between cortical areas:
 
 1. Source area → Target area
-2. Select morphology from list OR create new
-3. Morphology defines connection structure
-4. Multiple mappings can share one morphology
+2. Select connectivity rule from list OR create new
+3. Connectivity Rule defines connection structure
+4. Multiple mappings can share one connectivity rule
 
 See [Mapping Connections](mapping_connections.md) for complete details.
 
-## Morphology Best Practices
+## Connectivity Rule Best Practices
 
 ### Naming
 
 Use descriptive names:
 - **Good**: "Gaussian_5x5_Receptive_Field"
 - **Good**: "Lateral_Inhibition_3_Neighbor"
-- **Avoid**: "Morphology_001", "Test"
+- **Avoid**: "Connectivity Rule_001", "Test"
 
 ### Reusability
 
-Create general-purpose morphologies:
+Create general-purpose connectivity rules:
 - Design for reuse across multiple mappings
 - Parameterize instead of hardcoding
 - Document the purpose in the name
@@ -275,13 +284,13 @@ Begin with standard patterns:
 
 ### Test Incrementally
 
-When creating custom morphologies:
+When creating custom connectivity rules:
 1. Start with small cortical areas
 2. Verify connection pattern is correct
 3. Check synapse count is reasonable
 4. Scale up once confirmed
 
-## Visualizing Morphologies
+## Visualizing Connectivity Rules
 
 ### In Mapping Editor
 
@@ -305,7 +314,7 @@ Check the mapping to verify:
 - Connection density is reasonable
 - Pattern matches intent
 
-## Common Morphology Patterns
+## Common Connectivity Rule Patterns
 
 ### Feedforward Processing
 
@@ -343,35 +352,35 @@ Check the mapping to verify:
 - Neuromodulation
 - State information
 
-## Managing Many Morphologies
+## Managing Many Connectivity Rules
 
 ### Organization
 
 For large genomes:
 - **Naming Conventions**: Prefix by type or purpose
 - **Documentation**: Describe in detail
-- **Cleanup**: Delete unused morphologies
+- **Cleanup**: Delete unused connectivity rules
 
 ### Finding Usage
 
-To find where a morphology is used:
-1. Open Morphology Manager
-2. Click morphology
+To find where a connectivity rule is used:
+1. Open Connectivity Rule Manager
+2. Click connectivity rule
 3. View "Usage" section
 4. Lists all mappings
 
 ### Updating
 
-To update morphology across all uses:
-1. Edit the morphology directly
+To update connectivity rule across all uses:
+1. Edit the connectivity rule directly
 2. Changes propagate to all mappings
 3. Or clone and manually update specific mappings
 
-## Morphology and Performance
+## Connectivity Rule and Performance
 
 ### Synapse Count
 
-Morphologies determine synapse count:
+Connectivity Rules determine synapse count:
 - All-to-All: Highest count (M × N)
 - Sparse Patterns: Lower count
 - One-to-One: Minimal count (min(M, N))
@@ -387,7 +396,7 @@ Balance connectivity with performance:
 
 ### Memory Usage
 
-More complex morphologies:
+More complex connectivity rules:
 - Use more memory
 - Take longer to compute
 - May slow visualization
@@ -396,21 +405,21 @@ Optimize for efficiency.
 
 ## Advanced Topics
 
-### Dynamic Morphologies
+### Dynamic Connectivity Rules
 
-Some morphologies adapt over time:
+Some connectivity rules adapt over time:
 - Plasticity rules modify connections
 - Learning strengthens/weakens synapses
 - Structural changes possible
 
-### Conditional Morphologies
+### Conditional Connectivity Rules
 
 Connections based on neuron properties:
 - Activity-dependent wiring
 - Type-specific connections
 - State-dependent patterns
 
-### Multi-Scale Morphologies
+### Multi-Scale Connectivity Rules
 
 Combine patterns at different scales:
 - Local + Global connections
@@ -421,37 +430,37 @@ Combine patterns at different scales:
 
 **"Too many synapses"**
 - Reduce connection density
-- Use sparser morphology patterns
+- Use sparser connectivity rule patterns
 - Limit max connections per neuron
 - Check cortical area dimensions
 
 **"Connections don't appear"**
-- Verify morphology is applied to mapping
+- Verify connectivity rule is applied to mapping
 - Check connection parameters aren't zero
 - Ensure source and target dimensions are compatible
 - View in Mapping Editor for details
 
 **"Wrong connection pattern"**
-- Review morphology parameters
+- Review connectivity rule parameters
 - Check offset and scale settings
 - Verify pattern type is correct
 - Test with smaller areas first
 
 **"Performance is slow"**
 - Reduce synapse count
-- Simplify morphologies
+- Simplify connectivity rules
 - Use optimized patterns
 - Consider dimension reduction
 
-**"Can't delete morphology"**
+**"Can't delete connectivity rule"**
 - Check if it's in use by mappings
 - Remove from all mappings first
 - Or force delete (breaks mappings)
 
 ## Related Topics
 
-- [Mapping Connections](mapping_connections.md) - Applying morphologies
-- [Cortical Areas](cortical_areas.md) - What morphologies connect
+- [Mapping Connections](mapping_connections.md) - Applying connectivity rules
+- [Cortical Areas](cortical_areas.md) - What connectivity rules connect
 - [Circuit Builder](circuit_builder.md) - Visual connection creation
 - [Brain Monitor](brain_monitor.md) - Visualizing connections
 

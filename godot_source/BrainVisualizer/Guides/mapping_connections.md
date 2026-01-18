@@ -1,11 +1,11 @@
 # Mapping Connections
 
-Mappings are the neural connections between cortical areas. They define how information flows through your genome, using morphologies to specify the exact wiring patterns.
+Mappings are the neural connections between cortical areas. They define how information flows through your genome, using connectivity rules to specify the exact wiring patterns.
 
 ## What is a Mapping?
 
 A mapping is a connection from one cortical area (source) to another (destination) that:
-- Uses a **morphology** to define connection structure
+- Uses a **connectivity rule** to define connection structure
 - Creates **synapses** between neurons
 - Allows **information flow** during processing
 - Can **learn and adapt** based on activity
@@ -21,12 +21,12 @@ Each mapping consists of:
 - **Destination (Efferent)**: The cortical area receiving signals
 - Direction matters (A→B is different from B→A)
 
-### Morphology
+### Connectivity Rule
 - Defines which neurons connect to which
 - Determines connection density and pattern
 - Can be shared across multiple mappings
 
-See [Morphologies](morphologies.md) for details.
+See [Connectivity Rules](connectivity rules.md) for details.
 
 ### Parameters
 - **Postsynaptic Current**: Strength of influence
@@ -38,16 +38,20 @@ See [Morphologies](morphologies.md) for details.
 
 ### Method 1: Drag in Circuit Builder
 
+![Create Mapping Icon](../UI/GenericResources/ButtonIcons/create_mapping_C.png)
+
 The most intuitive method:
 
 1. Open Circuit Builder
 2. Click and hold on **output port** (right side) of source area
 3. Drag to **input port** (left side) of destination area
 4. Release to open Mapping Editor
-5. Configure morphology and parameters
+5. Configure connectivity rule and parameters
 6. Click **Create** or **Apply**
 
 ### Method 2: Quick Connect
+
+![Quick Connect Icon](../UI/GenericResources/ButtonIcons/Quick_connect_C.png)
 
 From context menu:
 
@@ -64,7 +68,7 @@ Connect one area to many:
 1. Right-click source area
 2. Select **Quick Connect**
 3. Check multiple destinations
-4. Set common morphology
+4. Set common connectivity rule
 5. Create all mappings at once
 
 ### Method 4: Bidirectional
@@ -74,7 +78,7 @@ Create two-way connection:
 1. Create mapping A → B
 2. Create mapping B → A
 3. Or use bidirectional option if available
-4. Each direction can use different morphology
+4. Each direction can use different connectivity rule
 
 ## Mapping Editor
 
@@ -87,10 +91,10 @@ The Mapping Editor is your detailed interface for configuring connections.
 - Destination area name and type
 - Direction indicator (→)
 
-**Morphology Selection:**
-- Dropdown of existing morphologies
-- Preview of selected morphology
-- Button to create new morphology
+**Connectivity Rule Selection:**
+- Dropdown of existing connectivity rules
+- Preview of selected connectivity rule
+- Button to create new connectivity rule
 
 **Parameters:**
 - Postsynaptic current
@@ -108,18 +112,18 @@ The Mapping Editor is your detailed interface for configuring connections.
 - Cancel button
 - Advanced options
 
-### Selecting Morphology
+### Selecting Connectivity Rule
 
 **Use Existing:**
-1. Click morphology dropdown
-2. Browse available morphologies
+1. Click connectivity rule dropdown
+2. Browse available connectivity rules
 3. Select appropriate pattern
 4. Preview updates
 
 **Create New:**
-1. Click **+ New Morphology**
-2. Configure morphology type and parameters
-3. Name the morphology
+1. Click **+ New Connectivity Rule**
+2. Configure connectivity rule type and parameters
+3. Name the connectivity rule
 4. It becomes available in the list
 
 ### Configuring Parameters
@@ -203,20 +207,20 @@ Right-click cortical area:
 
 Changes take effect immediately.
 
-### Changing Morphology
+### Changing Connectivity Rule
 
 1. Open mapping in Mapping Editor
-2. Select different morphology from dropdown
+2. Select different connectivity rule from dropdown
 3. Connection pattern updates
 4. Synapse count may change
 5. Click **Apply**
 
-**Caution**: Major morphology changes may dramatically alter behavior.
+**Caution**: Major connectivity rule changes may dramatically alter behavior.
 
 ### Copying Mappings
 
 To replicate a mapping configuration:
-1. Note the morphology and parameters
+1. Note the connectivity rule and parameters
 2. Create new mapping
 3. Apply same settings
 4. Or use batch creation for efficiency
@@ -262,7 +266,7 @@ IPU (Vision) → Custom (Edge Detection) → Custom (Object Recognition) → OPU
 ```
 
 **Best Practices:**
-- Use appropriate morphologies for each stage
+- Use appropriate connectivity rules for each stage
 - All-to-All for mixing and integration
 - One-to-One for spatial preservation
 
@@ -307,7 +311,7 @@ Memory (Short Term) → Memory (Short Term)
 You can create multiple mappings between the same two areas:
 
 **Why Multiple Mappings?**
-- Different morphologies for different purposes
+- Different connectivity rules for different purposes
 - Excitatory and inhibitory connections
 - Different learning rates
 - Parallel pathways
@@ -330,7 +334,7 @@ Direction is critical:
 **B → A:**
 - Separate mapping (does NOT exist automatically)
 - Must be created explicitly
-- Can have different morphology and parameters
+- Can have different connectivity rule and parameters
 
 **Bidirectional:**
 - Create both A → B and B → A
@@ -345,7 +349,7 @@ If expected activity doesn't appear:
 
 1. **Verify Connection Exists**: Check Circuit Builder for line
 2. **Check Source Activity**: Ensure source area is active
-3. **Check Morphology**: Verify appropriate pattern
+3. **Check Connectivity Rule**: Verify appropriate pattern
 4. **Check PSC**: Ensure postsynaptic current is not too weak
 5. **Check Path**: Trace from inputs through all connections
 
@@ -354,7 +358,7 @@ If expected activity doesn't appear:
 If area behaves unexpectedly:
 
 1. **Review Connections**: Check all afferent mappings
-2. **Check Morphologies**: Verify connection patterns
+2. **Check Connectivity Rules**: Verify connection patterns
 3. **Check Parameters**: Look for unusual PSC or learning rates
 4. **Check for Loops**: Recursive or feedback loops can cause issues
 5. **Isolate**: Temporarily remove connections to identify culprit
@@ -363,10 +367,10 @@ If area behaves unexpectedly:
 
 If too many connections slow the system:
 
-1. **Reduce Density**: Use sparser morphologies
+1. **Reduce Density**: Use sparser connectivity rules
 2. **Limit Connections**: Set max connections per neuron
 3. **Remove Unused**: Delete unnecessary mappings
-4. **Optimize Morphologies**: Use efficient patterns
+4. **Optimize Connectivity Rules**: Use efficient patterns
 
 ## Advanced Mapping Techniques
 
@@ -422,7 +426,7 @@ Mappings consume synapses:
 3. Add complexity incrementally
 4. Verify each addition
 
-### Use Appropriate Morphologies
+### Use Appropriate Connectivity Rules
 - **One-to-One**: Spatial tasks
 - **All-to-All**: Integration and mixing
 - **Lateral**: Context and smoothing
@@ -460,7 +464,7 @@ Mappings consume synapses:
 ### Building a Vision Pipeline
 
 1. Vision IPU (camera input)
-2. Edge Detection Custom (lateral morphology)
+2. Edge Detection Custom (lateral connectivity rule)
 3. Feature Extraction Custom (All-to-All)
 4. Object Recognition Custom (All-to-All)
 5. Motor Control OPU (One-to-One or All-to-All)
@@ -482,7 +486,7 @@ Mappings consume synapses:
 - Try Quick Connect instead
 
 **"Synapse count exceeds limit"**
-- Use sparser morphology
+- Use sparser connectivity rule
 - Reduce cortical area dimensions
 - Limit connections per neuron
 - Increase genome synapse limit (if possible)
@@ -499,14 +503,14 @@ Mappings consume synapses:
 - Verify in cortical area Details → Connections
 
 **"Too many connections are confusing"**
-- Use Split View to focus on sub-regions
+- Use Split View to focus on sub-circuits
 - Hover to highlight specific connections
 - Hide global connections toggle
 - Work on one region at a time
 
 ## Related Topics
 
-- [Morphologies](morphologies.md) - Connection structure templates
+- [Connectivity Rules](connectivity rules.md) - Connection structure templates
 - [Cortical Areas](cortical_areas.md) - What gets connected
 - [Circuit Builder](circuit_builder.md) - Visual connection creation
 - [Brain Monitor](brain_monitor.md) - Visualizing active connections

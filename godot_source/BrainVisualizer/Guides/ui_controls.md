@@ -95,7 +95,7 @@ The main toolbar provides quick access to essential features:
 - Quick navigation to any input area
 
 **Circuits Button:**
-- Dropdown showing all brain regions
+- Dropdown showing all brain circuits
 - **+** button to create new region
 - Hierarchical region navigation
 
@@ -104,14 +104,20 @@ The main toolbar provides quick access to essential features:
 - **+** button to create new output
 - Quick navigation to any output area
 
-**Morphologies Button:**
-- Opens Morphology Manager
-- View and edit all morphologies
-- Create new morphologies
+**Connectivity Rules Button:**
+
+![Connectivity Rules Icon](../UI/GenericResources/ButtonIcons/Gear_C.png)
+
+- Opens Connectivity Rules Manager
+- View and edit all connectivity rules
+- Create new connectivity rules
 
 ### Right Section (Tools and Settings)
 
 **Options Button:**
+
+![Options Icon](../UI/GenericResources/ButtonIcons/setting.png)
+
 - Opens Options/Settings window
 - Configure application preferences
 - Access advanced settings
@@ -128,20 +134,20 @@ The main toolbar provides quick access to essential features:
 - Search and browse topics
 - Quick reference
 
-**View Previews Button:**
-- Opens View Previews window
-- Access video feed preview (if available)
-- Shared memory video display
-
 **Activity Rendering Toggle:**
 - Show/hide global neural connections
 - Toggle all connection lines
 - Performance optimization
 
 **UI Scale Controls:**
+
+![Plus Icon](../UI/GenericResources/ButtonIcons/Plus_C.png) ![Zoom In](../UI/GenericResources/ButtonIcons/zoom_in_C.png)
+
 - **+** button: Increase UI size
 - **-** button: Decrease UI size
 - Immediate visual feedback
+
+![Zoom Out](../UI/GenericResources/ButtonIcons/zoom_out_C.png)
 
 ## Windows and Panels
 
@@ -357,7 +363,7 @@ See [Split View](split_view.md) for details.
 - Reduce anti-aliasing
 
 **Focus on Region:**
-- Open specific regions in 3D tabs
+- Open specific circuits in 3D tabs
 - Don't visualize entire large genome
 - Work on subsystems
 

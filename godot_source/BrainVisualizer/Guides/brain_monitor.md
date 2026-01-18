@@ -14,7 +14,7 @@ The main area displays:
 - **Cortical Volume Meshes**: 3D boxes representing cortical areas
 - **Neural Activity**: Colored highlights showing neuron firing
 - **Connection Lines**: Visual indicators of mappings between areas
-- **Region Boundaries**: Spatial organization of brain regions
+- **Region Boundaries**: Spatial organization of brain circuits
 - **Grid Floor**: Optional reference grid for spatial orientation
 
 ### Camera Controls
@@ -98,11 +98,11 @@ When hovering over or selecting a cortical area:
 - **Connection strength**: Line thickness or opacity
 - **Connection type**: Color or style variations
 
-### Brain Regions
+### Brain Circuits
 
 Regions organize cortical areas spatially:
 - Dotted or wireframe boundaries (optional)
-- Hierarchical nesting of sub-regions
+- Hierarchical nesting of sub-circuits
 - Helps understand organizational structure
 
 ## Interacting with Objects
@@ -196,9 +196,9 @@ Quickly return to important views:
 2. Press **F** key OR use dropdown in top toolbar
 3. Camera smoothly frames the object
 
-**Focus on Brain Region:**
+**Focus on Brain Circuit:**
 1. Use **Circuits** dropdown in top toolbar
-2. Select a region
+2. Select a circuit
 3. Camera focuses on that region's contents
 
 ## Advanced Features
@@ -208,12 +208,18 @@ Quickly return to important views:
 Manipulate objects directly in 3D space:
 
 **Move Gizmo:**
+
+![Relocate Icon](../UI/GenericResources/ButtonIcons/relocate_C.jpg)
+
 1. Right-click cortical area → **Move 3D**
 2. Colored arrows appear (X=Red, Y=Green, Z=Blue)
 3. Click and drag arrows to move along that axis
 4. Click central sphere to move freely
 
 **Resize Gizmo:**
+
+![Scale Icon](../UI/GenericResources/ButtonIcons/scale_C.jpg)
+
 1. Right-click cortical area → **Resize 3D**
 2. Colored handles appear on box corners and edges
 3. Drag to resize along specific dimensions
@@ -239,7 +245,7 @@ When navigating from top toolbar dropdowns:
 Best practice: Use Brain Monitor alongside Circuit Builder
 
 **Setting Up Split View:**
-1. Right-click brain region
+1. Right-click brain circuit
 2. Select **Open 3D Tab**
 3. Circuit Builder and Brain Monitor appear side-by-side
 
@@ -257,7 +263,7 @@ See [Split View](split_view.md) for more details.
 
 For large genomes:
 - **Hide connections** when not needed (toggle off global connections)
-- **Focus on sub-regions** instead of viewing entire genome
+- **Focus on sub-circuits** instead of viewing entire genome
 - **Reduce activity rendering** if performance suffers
 - **Close unused tabs** to free resources
 
@@ -302,7 +308,7 @@ Access via **Options** menu in top toolbar.
 
 1. Start with overview (zoom out to see all)
 2. Identify major regions and their spatial layout
-3. Focus on specific regions of interest
+3. Focus on specific circuits of interest
 4. Examine connections between areas
 5. Navigate through regional hierarchy
 

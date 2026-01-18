@@ -5,7 +5,7 @@ The Quick Menu is a context-sensitive menu that appears when you right-click obj
 ## What is the Quick Menu?
 
 The Quick Menu is a dynamic toolbar that shows different options based on:
-- **What you clicked**: Cortical area, brain region, or empty space
+- **What you clicked**: Cortical area, brain circuit, or empty space
 - **Where you clicked**: Circuit Builder vs Brain Monitor
 - **How many selected**: Single object vs multiple objects
 - **Object type**: Different options for different cortical area types
@@ -15,7 +15,7 @@ This context-awareness means you always see relevant operations without navigati
 ## Opening the Quick Menu
 
 **Standard Method:**
-- **Right-click** on any cortical area or brain region
+- **Right-click** on any cortical area or brain circuit
 - Menu appears centered near your cursor
 - Click an operation to perform it
 
@@ -29,9 +29,21 @@ This context-awareness means you always see relevant operations without navigati
 When right-clicking a single cortical area:
 
 ### Details Button
-![Details Icon](../UI/GenericResources/ButtonIcons/details_C.jpg)
+![Details Icon](../UI/GenericResources/ButtonIcons/cortical_properties_C.png)
 
 **Function**: View and edit cortical area properties
+
+Opens the **Cortical Area Details** window with complete access to all parameters:
+- Basic properties (name, dimensions, position)
+- Neuron firing parameters
+- Memory parameters
+- Post-synaptic potential settings
+- Neuron coding (IPU/OPU only)
+- Monitoring and visualization
+- Connection management
+- Delete and reset operations
+
+See the [Cortical Area Details](cortical_area_details.md) guide for complete documentation.
 
 **Opens**: Advanced Cortical Properties window showing:
 - General properties (name, dimensions, position)
@@ -48,7 +60,7 @@ When right-clicking a single cortical area:
 See [Cortical Areas](cortical_areas.md) for more details.
 
 ### Quick Connect Button
-![Connect Icon](../UI/GenericResources/ButtonIcons/connect_C.jpg)
+![Connect Icon](../UI/GenericResources/ButtonIcons/Quick_connect_C.png)
 
 **Function**: Create connection to another cortical area
 
@@ -56,7 +68,7 @@ See [Cortical Areas](cortical_areas.md) for more details.
 1. Click Quick Connect
 2. Window opens with list of destination areas
 3. Select target area(s)
-4. Choose morphology
+4. Choose connectivity rule
 5. Configure parameters
 6. Create mapping
 
@@ -70,22 +82,31 @@ See [Mapping Connections](mapping_connections.md) for details.
 ### Neuron-Level Quick Connect Buttons
 
 **Connect Cortical Area → Neurons:**
+
+![CA to Neuron](../UI/GenericResources/ButtonIcons/map_cortical_block_C.png)
+
 - Connect this area's outputs to specific neurons in another area
 - Fine-grained control
 - Advanced use case
 
 **Connect Neurons → Cortical Area:**
+
+![Neuron to CA](../UI/GenericResources/ButtonIcons/map_block_cortical_C.png)
+
 - Connect specific neurons to this area's inputs
 - Precise wiring
 - Advanced use case
 
 **Connect Neurons → Neurons:**
+
+![Neuron to Neuron](../UI/GenericResources/ButtonIcons/map_block_block_C.png)
+
 - Direct neuron-to-neuron connections
 - Maximum precision
 - Expert-level feature
 
 ### Clone Button
-![Clone Icon](../UI/GenericResources/ButtonIcons/clone_C.jpg)
+![Clone Icon](../UI/GenericResources/ButtonIcons/copy_cortical_area_C.png)
 
 **Function**: Duplicate this cortical area
 
@@ -99,7 +120,7 @@ See [Mapping Connections](mapping_connections.md) for details.
 **Result:**
 - New cortical area created with same configuration
 - No connections copied (starts unconnected)
-- Same type, parameters, and morphology defaults
+- Same type, parameters, and connectivity rule defaults
 
 **Use When:**
 - Creating similar areas
@@ -107,9 +128,9 @@ See [Mapping Connections](mapping_connections.md) for details.
 - Rapidly prototyping
 
 ### Add to Region Button
-![Region Icon](../UI/GenericResources/ButtonIcons/add_to_region_C.jpg)
+![Region Icon](../UI/GenericResources/ButtonIcons/add-to-region_C.png)
 
-**Function**: Move cortical area to different brain region
+**Function**: Move cortical area to different brain circuit
 
 **Workflow:**
 1. Click Add to Region
@@ -118,7 +139,7 @@ See [Mapping Connections](mapping_connections.md) for details.
 4. Click Move
 
 **Result:**
-- Area moves to new parent region
+- Area moves to new parent circuit
 - All connections maintained
 - Position may adjust
 
@@ -127,7 +148,7 @@ See [Mapping Connections](mapping_connections.md) for details.
 - Grouping related areas
 - Cleaning up organization
 
-See [Brain Regions](brain_regions.md) for more details.
+See [Brain Circuits](brain_circuits.md) for more details.
 
 ### Relocate 2D Button
 ![Relocate Icon](../UI/GenericResources/ButtonIcons/relocate_C.jpg)
@@ -216,7 +237,7 @@ See [Brain Regions](brain_regions.md) for more details.
 - Debugging unexpected behavior
 
 ### Delete Button
-![Delete Icon](../UI/GenericResources/ButtonIcons/delete_C.jpg)
+![Delete Icon](../UI/GenericResources/ButtonIcons/Delete_C.png)
 
 **Function**: Remove this cortical area permanently
 
@@ -237,9 +258,9 @@ See [Brain Regions](brain_regions.md) for more details.
 
 **Caution:** This is permanent. Consider disconnecting first to test impact.
 
-## Quick Menu for Brain Regions
+## Quick Menu for Brain Circuits
 
-When right-clicking a brain region node:
+When right-clicking a brain circuit node:
 
 ### Details Button
 
@@ -249,7 +270,7 @@ When right-clicking a brain region node:
 - Name and description
 - Parent region
 - Contained cortical areas
-- Contained sub-regions
+- Contained sub-circuits
 - Statistics (total neurons, synapses)
 
 **Use When:**
@@ -259,7 +280,7 @@ When right-clicking a brain region node:
 - Navigating hierarchy
 
 ### Open 3D Tab Button
-![3D Tab Icon](../UI/GenericResources/ButtonIcons/3d_view_C.jpg)
+![3D Tab Icon](../UI/GenericResources/ButtonIcons/Brain_Visualizer_C.png)
 
 **Function**: Open this region in dedicated 3D view with split view
 
@@ -279,11 +300,11 @@ See [Split View](split_view.md) for more details.
 
 ### Clone Button
 
-**Function**: Duplicate entire brain region
+**Function**: Duplicate entire brain circuit
 
 **Options:**
 - Clone structure only (empty region with same hierarchy)
-- Clone with contents (all cortical areas and sub-regions)
+- Clone with contents (all cortical areas and sub-circuits)
 - Clone with connections (internal and/or external)
 
 **Use When:**
@@ -309,7 +330,7 @@ See [Split View](split_view.md) for more details.
 
 ### Delete Button
 
-**Function**: Remove brain region
+**Function**: Remove brain circuit
 
 **Options:**
 - Delete region only (moves contents to parent)
@@ -317,7 +338,7 @@ See [Split View](split_view.md) for more details.
 
 **Confirmation:**
 - Shows what will be affected
-- Lists contained areas and sub-regions
+- Lists contained areas and sub-circuits
 - Cannot be undone
 
 **Use When:**
@@ -351,7 +372,7 @@ Right-clicking empty space in Circuit Builder:
 
 **Available Options:**
 - **Create Cortical Area**: Open creation wizard
-- **Create Region**: Create new brain region
+- **Create Region**: Create new brain circuit
 - **Fit All**: Zoom to show all objects
 - **Layout Options**: Auto-arrange (if available)
 
@@ -470,7 +491,7 @@ The menu remembers where selection originated:
 ## Related Topics
 
 - [Cortical Areas](cortical_areas.md) - Object operations
-- [Brain Regions](brain_regions.md) - Region operations
+- [Brain Circuits](brain_circuits.md) - Region operations
 - [Mapping Connections](mapping_connections.md) - Quick Connect feature
 - [Circuit Builder](circuit_builder.md) - 2D context
 - [Brain Monitor](brain_monitor.md) - 3D context

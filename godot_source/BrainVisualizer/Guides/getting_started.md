@@ -27,7 +27,7 @@ Brain Visualizer's interface consists of several key areas:
 - Connection status and genome statistics
 - Burst rate control (neural processing speed)
 - Quick access buttons for Inputs, Circuits, Outputs
-- Morphology manager
+- Connectivity Rule manager
 - Options and settings
 - Camera animations
 - UI scale controls
@@ -74,9 +74,21 @@ See [Navigation Basics](navigation.md) for more details.
 Cortical areas use color coding to indicate their type:
 
 - **Dark Gray**: Input (IPU) - receives data from outside
+
+![Input Icon](../UI/GenericResources/ButtonIcons/input.png)
+
 - **Orange**: Output (OPU) - sends data to outside
+
+![Output Icon](../UI/GenericResources/ButtonIcons/output.png)
+
 - **Blue**: Custom - internal processing
+
+![Interconnected Icon](../UI/GenericResources/ButtonIcons/interconnected.png)
+
 - **Dark Red**: Memory - stores and recalls patterns
+
+![Memory Icon](../UI/GenericResources/ButtonIcons/memory-game.png)
+
 - **Dark Blue**: Core - special system areas
 
 ## Top Bar Quick Reference
@@ -87,16 +99,27 @@ Cortical areas use color coding to indicate their type:
 - **Burst Rate**: Neural processing frequency in Hz
 
 ### Middle Section (Quick Access)
+
 - **Inputs**: Create and manage input cortical areas (IPU)
-- **Circuits**: Navigate and create brain regions
+
+![Inputs Button](../UI/GenericResources/ButtonIcons/input.png)
+
+- **Circuits**: Navigate and create brain circuits
+
+![Circuits Button](../UI/GenericResources/ButtonIcons/Circuit_Builder_C.png)
+
 - **Outputs**: Create and manage output cortical areas (OPU)
-- **Morphologies**: Manage connection templates
+
+![Outputs Button](../UI/GenericResources/ButtonIcons/output.png)
+
+- **Connectivity Rules**: Manage connection templates
+
+![Connectivity Rules Button](../UI/GenericResources/ButtonIcons/Gear_C.png)
 
 ### Right Section (Tools)
 - **Options**: Application settings and preferences
 - **Camera Animations**: Save and play camera paths
 - **Guide**: Open this help system
-- **View Previews**: Access video feed preview
 - **Activity Toggle**: Show/hide global neural connections
 - **UI Scale**: Increase or decrease interface size
 
@@ -123,7 +146,7 @@ Right-click any cortical area or region to open the **Quick Menu**, which provid
 - **Quick Connect**: Connect to another area
 - **Clone**: Duplicate the object
 - **Move/Relocate**: Reposition in 2D or 3D
-- **Add to Region**: Move into a different brain region
+- **Add to Region**: Move into a different brain circuit
 - **Reset**: Clear neural state
 - **Delete**: Remove the object
 
@@ -144,7 +167,7 @@ See [Neural Activity](neural_activity.md) for more information.
 
 For the best workflow, use **Split View** to see both Circuit Builder and Brain Monitor simultaneously:
 
-1. Right-click a brain region in Circuit Builder
+1. Right-click a brain circuit in Circuit Builder
 2. Select **Open 3D Tab** from the Quick Menu
 3. The interface will split, showing both views side-by-side
 

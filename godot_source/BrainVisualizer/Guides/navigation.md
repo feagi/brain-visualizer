@@ -23,7 +23,7 @@ Use the **top toolbar dropdowns** to jump directly to any object:
 
 **Circuits Dropdown:**
 1. Click **Circuits** in top toolbar
-2. Select a brain region from the list
+2. Select a brain circuit from the list
 3. Opens Circuit Builder tab for that region
 
 **Outputs Dropdown:**

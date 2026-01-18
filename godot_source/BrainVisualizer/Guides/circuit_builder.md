@@ -18,9 +18,9 @@ Cortical areas appear as rectangular boxes with:
   - Left port: Incoming connections (inputs)
   - Right port: Outgoing connections (outputs)
 
-### Brain Region Nodes
+### Brain Circuit Nodes
 
-Sub-regions appear as larger boxes that can contain cortical areas and other sub-regions. Double-click a region to navigate inside it and view its contents.
+Sub-regions appear as larger boxes that can contain cortical areas and other sub-circuits. Double-click a circuit to navigate inside it and view its contents.
 
 ### Connection Lines
 
@@ -109,11 +109,11 @@ OR
 ### Viewing Region Contents
 
 **Method 1: Double-click**
-- Double-click a brain region node to open it
+- Double-click a brain circuit node to open it
 
 **Method 2: Dropdown Menu**
 - Click **Circuits** in the top toolbar
-- Select a region from the list
+- Select a circuit from the list
 - A new tab opens showing that region's contents
 
 ### Creating Regions
@@ -133,13 +133,13 @@ Selected areas will automatically be added to the new region.
 3. Choose the destination region
 4. Confirm
 
-See [Brain Regions](brain_regions.md) for more details.
+See [Brain Circuits](brain_circuits.md) for more details.
 
 ## Circuit Builder Tabs
 
 You can open multiple Circuit Builder tabs to view different regions simultaneously:
 
-1. Right-click a region node
+1. Right-click a circuit node
 2. Select **Open in New Tab** (if available)
 
 OR
@@ -217,7 +217,7 @@ Select multiple areas to perform bulk operations:
 - Move them together
 - Delete multiple areas at once
 - View combined properties
-- Add all to a region at once
+- Add all to a circuit at once
 
 ## Keyboard Shortcuts
 
@@ -297,11 +297,11 @@ Use [Split View](split_view.md) to work with both views at once.
 **"Lost my place after double-clicking"**
 - Use the Circuits dropdown to navigate back
 - Use browser-style back button (if available)
-- Click parent region to go up one level
+- Click parent circuit to go up one level
 
 ## Related Topics
 
-- [Brain Regions](brain_regions.md) - Organizing circuits into hierarchies
+- [Brain Circuits](brain_circuits.md) - Organizing circuits into hierarchies
 - [Cortical Areas](cortical_areas.md) - Creating and managing areas
 - [Mapping Connections](mapping_connections.md) - Connecting areas together
 - [Brain Monitor](brain_monitor.md) - 3D visualization companion

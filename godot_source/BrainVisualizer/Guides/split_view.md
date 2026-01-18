@@ -54,7 +54,7 @@ Split View divides your workspace into two panels, each independently showing:
 
 The easiest way to enter split view:
 
-1. In Circuit Builder, right-click a **brain region** node
+1. In Circuit Builder, right-click a **brain circuit** node
 2. Select **Open 3D Tab** from Quick Menu
 3. Split View automatically activates:
    - Circuit Builder for that region (primary panel)
@@ -82,6 +82,8 @@ Some versions have dedicated view buttons:
 
 ### Horizontal Split (Side-by-Side)
 
+![Horizontal Split Icon](../UI/GenericResources/ButtonIcons/horiozontal_split_C.png)
+
 Circuit Builder | Brain Monitor
 - Left panel: Circuit Builder
 - Right panel: Brain Monitor
@@ -89,6 +91,8 @@ Circuit Builder | Brain Monitor
 - Most common layout
 
 ### Vertical Split (Top-Bottom)
+
+![Vertical Split Icon](../UI/GenericResources/ButtonIcons/vertical_split_C.png)
 
 ```
 Circuit Builder (Top)
@@ -269,7 +273,7 @@ Split View uses more resources:
 
 For genomes with many areas:
 - **Use region-specific 3D tabs** instead of whole genome
-- **Focus on relevant sub-regions**
+- **Focus on relevant sub-circuits**
 - **Close split view** when not actively using both
 - **Adjust rendering settings** for performance
 
@@ -356,10 +360,10 @@ Save and load split view configurations:
 5. **Navigate**: Use split view at each level
 6. **Understand**: Build complete mental model
 
-### Validating Morphology Changes
+### Validating Connectivity Rule Changes
 
 1. **Open mapping in Circuit Builder**
-2. **Make morphology changes**
+2. **Make connectivity rule changes**
 3. **Observe in Brain Monitor** how connections update
 4. **Iterate without switching tabs**
 5. **Confirm expected behavior**
@@ -367,7 +371,7 @@ Save and load split view configurations:
 ## Troubleshooting
 
 **"Split view won't activate"**
-- Ensure you're right-clicking a region (not cortical area)
+- Ensure you're right-clicking a circuit (not cortical area)
 - Try manual split view toggle
 - Check that genome is loaded
 - Restart application if needed
@@ -409,7 +413,7 @@ Save and load split view configurations:
 - [Circuit Builder](circuit_builder.md) - Left panel functionality
 - [Brain Monitor](brain_monitor.md) - Right panel functionality
 - [Navigation Basics](navigation.md) - Moving in both views
-- [Brain Regions](brain_regions.md) - Opening regions in split view
+- [Brain Circuits](brain_circuits.md) - Opening regions in split view
 - [UI Controls](ui_controls.md) - Layout and interface controls
 
 [Back to Overview](index.md)
