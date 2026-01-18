@@ -13,6 +13,7 @@ func _ready() -> void:
 	scroll_active = true
 	fit_content = true
 	autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	selection_enabled = true
 	meta_clicked.connect(_on_meta_clicked)
 	# Cache the base font size once at initialization to prevent compounding
 	_base_font_size = _resolve_initial_font_size()
@@ -103,12 +104,12 @@ func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -
 			output_lines.append("")
 			continue
 		
-		# Process inline formatting
+		# Process inline formatting (order matters: bold before italics to avoid conflicts)
 		line = _replace_images(line, markdown_path)
 		line = _replace_links(line, markdown_path)
+		line = _replace_inline_code(line)
 		line = _replace_bold(line)
 		line = _replace_italics(line)
-		line = _replace_inline_code(line)
 		
 		# Handle bullets with proper indentation
 		if trimmed.begins_with("- "):
@@ -158,16 +159,97 @@ func _format_heading(title: String, level: int) -> String:
 
 ## Convert markdown bold markers to BBCode.
 func _replace_bold(line: String) -> String:
-	return _replace_regex(line, "\\*\\*([^\\*]+)\\*\\*", "[b]$1[/b]")
+	# Use simple string replacement for more reliable results
+	var result := line
+	var search_pos := 0
+	
+	while true:
+		var start := result.find("**", search_pos)
+		if start == -1:
+			break
+		
+		var end := result.find("**", start + 2)
+		if end == -1:
+			break
+		
+		# Extract the content between the markers
+		var content := result.substr(start + 2, end - start - 2)
+		# Replace the entire markdown bold with BBCode
+		var markdown_str := "**%s**" % content
+		var bbcode_str := "[b]%s[/b]" % content
+		result = result.replace(markdown_str, bbcode_str)
+		
+		# Move search position forward to avoid infinite loop
+		search_pos = start + bbcode_str.length()
+	
+	return result
 
 ## Convert markdown italics markers to BBCode.
 func _replace_italics(line: String) -> String:
-	return _replace_regex(line, "(?<!\\*)\\*([^\\*]+)\\*(?!\\*)", "[i]$1[/i]")
+	# Use simple string replacement for single asterisks (not part of **)
+	var result := line
+	var search_pos := 0
+	
+	while true:
+		var start := result.find("*", search_pos)
+		if start == -1:
+			break
+		
+		# Skip if this is part of a ** (should already be processed)
+		if start > 0 and result[start - 1] == "*":
+			search_pos = start + 1
+			continue
+		if start < result.length() - 1 and result[start + 1] == "*":
+			search_pos = start + 2
+			continue
+		
+		var end := result.find("*", start + 1)
+		if end == -1:
+			break
+		
+		# Skip if the end is part of **
+		if end < result.length() - 1 and result[end + 1] == "*":
+			search_pos = start + 1
+			continue
+		
+		# Extract the content between the markers
+		var content := result.substr(start + 1, end - start - 1)
+		# Replace the entire markdown italic with BBCode
+		var markdown_str := "*%s*" % content
+		var bbcode_str := "[i]%s[/i]" % content
+		result = result.replace(markdown_str, bbcode_str)
+		
+		# Move search position forward
+		search_pos = start + bbcode_str.length()
+	
+	return result
 
 ## Convert markdown inline code markers to BBCode with background.
 func _replace_inline_code(line: String) -> String:
-	# Make inline code stand out with monospace and slight color difference
-	return _replace_regex(line, "`([^`]+)`", "[code][bgcolor=#2a2e35]$1[/bgcolor][/code]")
+	# Use simple string replacement for backticks
+	var result := line
+	var search_pos := 0
+	
+	while true:
+		var start := result.find("`", search_pos)
+		if start == -1:
+			break
+		
+		var end := result.find("`", start + 1)
+		if end == -1:
+			break
+		
+		# Extract the content between the markers
+		var content := result.substr(start + 1, end - start - 1)
+		# Replace the entire markdown code with BBCode
+		var markdown_str := "`%s`" % content
+		var bbcode_str := "[code]%s[/code]" % content
+		result = result.replace(markdown_str, bbcode_str)
+		
+		# Move search position forward
+		search_pos = start + bbcode_str.length()
+	
+	return result
 
 ## Resolve the initial theme font size once at startup.
 ## This is only called in _ready() to cache the base font size.
@@ -175,9 +257,9 @@ func _resolve_initial_font_size() -> int:
 	# Get the base theme size from the theme (not from any override)
 	var size := get_theme_font_size("normal_font_size", "RichTextLabel")
 	if size > 0:
-		return int(size * 1.35)
+		return int(size * 2.0)
 	# Fallback to default if no theme size found
-	return 24
+	return 32
 
 ## Convert markdown image syntax to BBCode image tags.
 func _replace_images(line: String, markdown_path: String) -> String:
