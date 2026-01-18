@@ -39,6 +39,18 @@ jobs:
           ref: staging
           fetch-depth: 0
 
+      - name: Clone feagi-core for local path deps
+        shell: bash
+        run: |
+          CORE_DIR="${GITHUB_WORKSPACE}/../feagi-core"
+          if [ ! -d "${CORE_DIR}" ]; then
+            git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git "${CORE_DIR}"
+          else
+            git -C "${CORE_DIR}" fetch --depth 1 origin fdp-merge-mnt
+            git -C "${CORE_DIR}" checkout fdp-merge-mnt
+            git -C "${CORE_DIR}" reset --hard origin/fdp-merge-mnt
+          fi
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
