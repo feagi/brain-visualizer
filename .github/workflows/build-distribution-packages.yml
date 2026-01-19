@@ -180,12 +180,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Clone feagi-core (dependency)
-        shell: bash
-        run: |
-          cd ..
-          git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
-
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -206,7 +200,6 @@ jobs:
             ~/.cargo/git
             rust_extensions/feagi_embedded/target
             feagi/target
-            feagi-core/target
           key: ${{ runner.os }}-feagi-embedded-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-feagi-embedded-
@@ -646,12 +639,6 @@ jobs:
           restore-keys: |
             godot-4.5-macos-
 
-      - name: Clone feagi-core (dependency)
-        shell: bash
-        run: |
-          cd ..
-          git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
-
       - name: Cache Rust dependencies
         uses: actions/cache@v4
         with:
@@ -996,12 +983,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Clone feagi-core (dependency)
-        shell: bash
-        run: |
-          cd ..
-          git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git
-
       - name: Cache Rust dependencies
         uses: actions/cache@v4
         with:
@@ -1012,8 +993,7 @@ jobs:
             rust_extensions/feagi_type_system/target
             rust_extensions/feagi_shared_video/target
             rust_extensions/feagi_wasm_processing/target
-            ../feagi-core/target
-          key: ${{ runner.os }}-rust-extensions-${{ hashFiles('rust_extensions/**/Cargo.toml', 'rust_extensions/**/Cargo.lock', '../feagi-core/**/Cargo.toml', '../feagi-core/**/Cargo.lock') }}
+          key: ${{ runner.os }}-rust-extensions-${{ hashFiles('rust_extensions/**/Cargo.toml', 'rust_extensions/**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-rust-extensions-
 

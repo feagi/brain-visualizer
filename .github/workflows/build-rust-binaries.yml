@@ -39,18 +39,6 @@ jobs:
           ref: staging
           fetch-depth: 0
 
-      - name: Clone feagi-core for local path deps
-        shell: bash
-        run: |
-          CORE_DIR="${GITHUB_WORKSPACE}/../feagi-core"
-          if [ ! -d "${CORE_DIR}" ]; then
-            git clone --depth 1 --branch fdp-merge-mnt https://github.com/feagi/feagi-core.git "${CORE_DIR}"
-          else
-            git -C "${CORE_DIR}" fetch --depth 1 origin fdp-merge-mnt
-            git -C "${CORE_DIR}" checkout fdp-merge-mnt
-            git -C "${CORE_DIR}" reset --hard origin/fdp-merge-mnt
-          fi
-
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -109,6 +97,10 @@ jobs:
         run: |
           echo "✅ Using cached binaries (no changes detected)"
           echo "⚡ Saved ~10 minutes of build time"
+          mkdir -p godot_source/addons/feagi_rust_deserializer/target/release
+          mkdir -p godot_source/addons/feagi_shared_video/target/release
+          cp -v rust_extensions/feagi_data_deserializer/target/release/*feagi_data_deserializer.* godot_source/addons/feagi_rust_deserializer/target/release/
+          cp -v rust_extensions/feagi_shared_video/target/release/*feagi_shared_video.* godot_source/addons/feagi_shared_video/target/release/
 
       - name: Verify binaries were created
         shell: bash

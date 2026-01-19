@@ -12,8 +12,8 @@ crate-type = ["cdylib"]
 # Godot 4 bindings
 godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["serde"] }
 
-# FEAGI core dependencies (local paths to feagi-core)
-feagi-structures = { path = "../../../feagi-core/crates/feagi-structures" }
+# FEAGI core dependencies (crates.io)
+feagi-structures = { version = "0.0.1-beta.2" }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
