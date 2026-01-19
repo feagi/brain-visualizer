@@ -7,7 +7,7 @@ This repository automatically builds and publishes Brain Visualizer binaries for
 **Build Requirements:**
 - **Godot Engine 4.5** (automatically installed by workflow)
 - **Export Templates 4.5.stable** (automatically installed by workflow)
-- **feagi-core crates** (automatically cloned from `fdp-merge-mnt` branch during build)
+- **feagi-core crates** (pulled from crates.io during build)
 
 ---
 
@@ -220,7 +220,7 @@ File: `.github/workflows/release.yml`
 - No special secrets needed (uses default GITHUB_TOKEN)
 - `export_presets.cfg` must be committed with presets: "macOS", "Linux/X11", "Windows Desktop"
 - Godot project must be compatible with **Godot 4.5**
-- `feagi/feagi-core` must be accessible (public repo, currently uses `fdp-merge-mnt` branch)
+- `feagi-core` crates must be available on crates.io
 
 ---
 
@@ -274,7 +274,7 @@ This repository automatically builds and publishes Brain Visualizer binaries for
 **Build Requirements:**
 - **Godot Engine 4.5** (automatically installed by workflow)
 - **Export Templates 4.5.stable** (automatically installed by workflow)
-- **feagi-core crates** (automatically cloned from `fdp-merge-mnt` branch during build)
+- **feagi-core crates** (pulled from crates.io during build)
 
 ---
 
@@ -487,7 +487,7 @@ File: `.github/workflows/release.yml`
 - No special secrets needed (uses default GITHUB_TOKEN)
 - `export_presets.cfg` must be committed with presets: "macOS", "Linux/X11", "Windows Desktop"
 - Godot project must be compatible with **Godot 4.5**
-- `feagi/feagi-core` must be accessible (public repo, currently uses `fdp-merge-mnt` branch)
+- `feagi-core` crates must be available on crates.io
 
 ---
 

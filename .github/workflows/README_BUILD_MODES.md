@@ -127,7 +127,6 @@ Actions → Build Distribution Packages → Run workflow
 ```yaml
 ~/.cargo/registry        # Crate registry
 ~/.cargo/git            # Git dependencies
-feagi-core/target       # FEAGI compiled artifacts
 feagi/target            # FEAGI binary artifacts
 rust_extensions/*/target # Extension artifacts
 ```

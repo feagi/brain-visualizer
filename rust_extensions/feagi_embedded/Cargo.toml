@@ -12,8 +12,8 @@ godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
 
 # FEAGI library (local path)
 feagi = { path = "../../../feagi-rs", default-features = false, features = ["embedded"] }
-feagi-config = { path = "../../../feagi-core/crates/feagi-config" }
-feagi-npu-burst-engine = { path = "../../../feagi-core/crates/feagi-npu/burst-engine" }
+feagi-config = { version = "0.0.1-beta.2" }
+feagi-npu-burst-engine = { version = "0.0.1-beta.2" }
 
 # Error handling
 anyhow = "1.0"
