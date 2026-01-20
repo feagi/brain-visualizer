@@ -25,9 +25,9 @@ classifiers = [
 dependencies = [
     "feagi>=2.0.0",
     "toml>=0.10.2",
-    "feagi-bv-linux>=2.0.0; sys_platform == 'linux'",
-    "feagi-bv-macos>=2.0.0; sys_platform == 'darwin'",
-    "feagi-bv-windows>=2.0.0; sys_platform == 'win32'",
+    'feagi-bv-linux>=2.0.0; sys_platform == "linux"',
+    'feagi-bv-macos>=2.0.0; sys_platform == "darwin"',
+    'feagi-bv-windows>=2.0.0; sys_platform == "win32"',
 ]
 
 [tool.setuptools]
