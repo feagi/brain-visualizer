@@ -130,8 +130,8 @@ def _resolve_bv_binary() -> Tuple[Path, Path]:
             import feagi_bv_macos
             package_dir = Path(feagi_bv_macos.__file__).resolve().parent
             bin_dir = package_dir / "bin" / "macos"
-            app_dir = bin_dir / "BrainVisualizer.app"
-            binary = app_dir / "Contents" / "MacOS" / "BrainVisualizer"
+            app_dir = bin_dir / "BrainVisualizer-Remote.app"
+            binary = app_dir / "Contents" / "MacOS" / "Brain Visualizer"
             working_dir = binary.parent
         else:
             raise BrainVisualizerLaunchError(f"Unsupported platform: {system}")

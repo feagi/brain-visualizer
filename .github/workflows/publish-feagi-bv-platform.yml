@@ -11,6 +11,10 @@ on:
       bv_version:
         description: 'Brain Visualizer release tag (e.g., v1.2.3)'
         required: true
+      bv_binary_version:
+        description: 'BV release to download binaries from (defaults to bv_version if empty)'
+        required: false
+        default: ''
       target_repo:
         description: 'Target repository'
         type: choice
@@ -28,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       bv_version: ${{ steps.validate.outputs.bv_version }}
+      bv_binary_version: ${{ steps.validate.outputs.bv_binary_version }}
       target_repo: ${{ steps.validate.outputs.target_repo }}
     steps:
       - name: Determine version and target
@@ -38,11 +43,19 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             BV_TAG="${{ inputs.bv_version }}"
             TARGET_REPO="${{ inputs.target_repo }}"
+            # Allow overriding binary source version
+            if [ -n "${{ inputs.bv_binary_version }}" ]; then
+              BV_BINARY_TAG="${{ inputs.bv_binary_version }}"
+            else
+              BV_BINARY_TAG="${BV_TAG}"
+            fi
           elif [ "${{ github.event_name }}" == "release" ]; then
             BV_TAG="${{ github.event.release.tag_name }}"
+            BV_BINARY_TAG="${BV_TAG}"
             TARGET_REPO="pypi"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             BV_TAG="${{ github.ref_name }}"
+            BV_BINARY_TAG="${BV_TAG}"
             if [[ "$BV_TAG" =~ -beta\. ]] || [[ "$BV_TAG" =~ -alpha\. ]]; then
               TARGET_REPO="testpypi"
             else
@@ -55,7 +68,9 @@ jobs:
           
           # Extract version number (remove 'v' prefix if present)
           BV_VERSION="${BV_TAG#v}"
+          BV_BINARY_VERSION="${BV_BINARY_TAG#v}"
           echo "version=${BV_VERSION}" >> $GITHUB_OUTPUT
+          echo "binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
           
           # Extract major version
           BV_MAJOR=$(echo "$BV_VERSION" | cut -d. -f1)
@@ -64,6 +79,7 @@ jobs:
           GATE_MAJOR="${{ env.BV_MAJOR_VERSION }}"
           
           echo "🔍 Brain Visualizer release: ${BV_TAG} (version: ${BV_VERSION})"
+          echo "📦 Binary source: ${BV_BINARY_TAG} (version: ${BV_BINARY_VERSION})"
           echo "🔒 Major version gate: ${GATE_MAJOR}"
           echo "📦 Target repository: ${TARGET_REPO}"
           
@@ -77,6 +93,7 @@ jobs:
           echo "✅ Version check passed: BV ${BV_VERSION} matches gate ${GATE_MAJOR}.x.x"
           
           echo "bv_version=${BV_VERSION}" >> $GITHUB_OUTPUT
+          echo "bv_binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
           echo "target_repo=${TARGET_REPO}" >> $GITHUB_OUTPUT
 
   build-platform-packages:
@@ -120,12 +137,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
-          BV_TAG="v${BV_VERSION}"
+          BV_BINARY_VERSION="${{ needs.validate-version.outputs.bv_binary_version }}"
+          BV_BINARY_TAG="v${BV_BINARY_VERSION}"
+          PKG_VERSION="${{ needs.validate-version.outputs.bv_version }}"
           
-          echo "📦 Downloading BrainVisualizer ${BV_TAG} artifact: ${{ matrix.download_artifact }}"
+          echo "📦 Downloading BrainVisualizer ${BV_BINARY_TAG} artifact: ${{ matrix.download_artifact }}"
+          echo "📦 Will package as version: ${PKG_VERSION}"
           
-          gh release download "$BV_TAG" --pattern "${{ matrix.download_artifact }}.*" --dir downloads/
+          gh release download "$BV_BINARY_TAG" --pattern "${{ matrix.download_artifact }}.*" --dir downloads/
           
           echo "Downloaded files:"
           ls -lh downloads/
