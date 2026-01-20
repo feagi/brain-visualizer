@@ -384,7 +384,7 @@ jobs:
         if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.FEAGI_BV_PYPI_TOKEN }}
+          password: ${{ secrets.PYPI_PASSWORD_TOKEN }}
           packages-dir: dist/
           verbose: true
 
