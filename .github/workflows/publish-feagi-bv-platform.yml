@@ -279,18 +279,17 @@ jobs:
           
           PKG_DIR="feagi-bv-platform/feagi-bv-meta"
           
-          sed -i.bak "s/^version = .*/version = \"${BV_VERSION}\"/" "$PKG_DIR/pyproject.toml"
-          
-          # Update platform package version requirements
-          sed -i.bak "s/feagi-bv-linux>=.*/feagi-bv-linux>=${BV_VERSION}; sys_platform == 'linux',/" "$PKG_DIR/pyproject.toml"
-          sed -i.bak "s/feagi-bv-macos>=.*/feagi-bv-macos>=${BV_VERSION}; sys_platform == 'darwin',/" "$PKG_DIR/pyproject.toml"
-          sed -i.bak "s/feagi-bv-windows>=.*/feagi-bv-windows>=${BV_VERSION}; sys_platform == 'win32',/" "$PKG_DIR/pyproject.toml"
+          # Update line 7 which has: version = "1.0.0"
+          sed -i.bak '7s/version = ".*"/version = "'"${BV_VERSION}"'"/' "$PKG_DIR/pyproject.toml"
           
           rm -f "$PKG_DIR/pyproject.toml.bak"
           
+          echo ""
           echo "Updated pyproject.toml:"
-          grep "version = " "$PKG_DIR/pyproject.toml"
-          grep "feagi-bv-" "$PKG_DIR/pyproject.toml"
+          sed -n '6,8p' "$PKG_DIR/pyproject.toml"
+          
+          echo ""
+          echo "Note: Platform-specific dependencies added via setup.py at install time"
 
       - name: Build meta-package wheel
         run: |
