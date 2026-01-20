@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,13 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-dependencies = [
-    "feagi>=2.0.0",
-    "toml>=0.10.2",
-    'feagi-bv-linux>=2.0.0 ; sys_platform == "linux"',
-    'feagi-bv-macos>=2.0.0 ; sys_platform == "darwin"',
-    'feagi-bv-windows>=2.0.0 ; sys_platform == "win32"',
-]
+dynamic = ["dependencies"]
 
 [tool.setuptools]
 packages = { find = {} }
