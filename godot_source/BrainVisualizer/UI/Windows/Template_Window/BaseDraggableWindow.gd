@@ -28,10 +28,28 @@ func _ready() -> void:
 	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme)
 	BV.UI.theme_changed.connect(_theme_updated)
 	_theme_updated(BV.UI.loaded_theme)
+	# Allow global ESC handling
+	set_process_unhandled_key_input(true)
+	set_process_input(true)
 	
 
 func _gui_input(event: InputEvent) -> void:
 	_bring_to_top_if_click(event)
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	# Global ESC-to-close for all windows (works even when a child has focus)
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := event as InputEventKey
+		if key.keycode == KEY_ESCAPE:
+			close_window()
+
+func _input(event: InputEvent) -> void:
+	# Fallback: capture ESC even if a Control consumes GUI input
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := event as InputEventKey
+		if key.keycode == KEY_ESCAPE:
+			accept_event()
+			close_window()
 
 func bring_window_to_top():
 	bring_window_to_top_request.emit(_window_name)

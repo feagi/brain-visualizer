@@ -1,0 +1,91 @@
+repos:
+  # Rust formatting and linting
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+      - id: fmt
+        name: rust fmt
+        description: "Format Rust code"
+        files: ^rust_extensions/.*\.rs$
+      - id: clippy
+        name: rust clippy  
+        description: "Lint Rust code"
+        files: ^rust_extensions/.*\.rs$
+        args: ['--all-targets', '--all-features', '--', '-D', 'warnings']
+
+  # Brain Visualizer specific quality checks
+  - repo: local
+    hooks:
+      - id: check-rust-extensions-build
+        name: Rust Extensions Build Check
+        entry: bash -c 'cd rust_extensions && ./build.sh --check'
+        language: system
+        files: ^rust_extensions/.*\.(rs|toml)$
+        description: "Ensure Rust extensions can be built"
+        pass_filenames: false
+
+      - id: check-godot-project-structure
+        name: Godot Project Structure
+        entry: python -c "
+import sys
+from pathlib import Path
+
+godot_project = Path('godot_source/project.godot')
+if not godot_project.exists():
+    print('❌ project.godot not found')
+    sys.exit(1)
+
+# Check critical addon structure
+addons_dir = Path('godot_source/addons')
+required_addons = ['FeagiCoreIntegration', 'UI_BrainMonitor']
+for addon in required_addons:
+    addon_path = addons_dir / addon
+    if not addon_path.exists():
+        print(f'⚠️  Warning: {addon} addon directory missing')
+        
+print('✅ Godot project structure validated')
+"
+        language: system
+        files: ^godot_source/(project\.godot|addons/.*)$
+        description: "Validate Godot project and addon structure"
+        pass_filenames: false
+
+      - id: check-wasm-artifacts
+        name: WASM Artifacts Check
+        entry: bash -c 'if [ -d rust_extensions/feagi_wasm_processing/pkg ]; then echo "✅ WASM artifacts present"; else echo "⚠️  No WASM artifacts found - may need rebuild"; fi'
+        language: system
+        files: ^rust_extensions/feagi_wasm_processing/.*$
+        description: "Check WASM build artifacts exist"
+        pass_filenames: false
+
+  # Standard file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        description: "Remove trailing whitespace"
+        exclude: ^godot_source/.*\.(tscn|tres)$  # Godot scene files
+      - id: end-of-file-fixer
+        description: "Ensure files end with newline"
+        exclude: ^godot_source/.*\.(tscn|tres|import)$
+      - id: check-yaml
+        description: "Check YAML syntax"
+      - id: check-toml
+        description: "Check TOML syntax"
+      - id: check-json
+        description: "Check JSON syntax"
+      - id: check-merge-conflict
+        description: "Check for merge conflict markers"
+
+# Global configuration
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: [fmt, clippy]  # Skip Rust hooks in CI to avoid toolchain issues
+  submodules: false

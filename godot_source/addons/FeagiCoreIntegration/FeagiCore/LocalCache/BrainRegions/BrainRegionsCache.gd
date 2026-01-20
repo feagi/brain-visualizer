@@ -9,6 +9,7 @@ var available_brain_regions: Dictionary:
 	get: return _available_brain_regions
 
 var _available_brain_regions: Dictionary = {}
+var _cached_root_region_id: StringName = ""  # Cached for O(1) root lookup
 
 ## Calls from FEAGI to update the cache
 #region FEAGI Interactions
@@ -20,6 +21,9 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 	for region_ID: StringName in region_summary_data.keys():
 		_available_brain_regions[region_ID] = BrainRegion.from_FEAGI_JSON_ignore_children(region_summary_data[region_ID], region_ID)
 	
+	# Cache root region ID for O(1) lookup (check API data directly)
+	_cache_root_region_id_from_api_data(region_summary_data)
+	
 	var cortical_area_mapping: Dictionary = {}
 	# Second pass is to link all child region to a given parent region, and to calculate mappings for cortical IDs to their correct parent region
 	for parent_region_ID: StringName in region_summary_data.keys():
@@ -29,6 +33,16 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 		child_region_IDs.assign(region_summary_data[parent_region_ID]["regions"])
 		var child_regions: Array[BrainRegion] = arr_of_region_IDs_to_arr_of_Regions(child_region_IDs)
 		for child_region in child_regions:
+			# Skip if child is actually the root (safety check using API data)
+			# Check if child has no parent in the API data (indicates it's the root)
+			var child_data = region_summary_data.get(child_region.region_ID)
+			if child_data:
+				var child_parent_id = child_data.get("parent_region_id")
+				# Root has parent_region_id == null
+				if child_parent_id == null or String(child_parent_id) == "null" or String(child_parent_id) == "":
+					continue
+			
+			# Establish parent relationship
 			child_region.FEAGI_init_parent_relation(parent_region)
 		
 		# Create cortical ID mapping (but don't add cortical areas yet)
@@ -36,7 +50,7 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 		cortical_IDs.assign(region_summary_data[parent_region_ID]["areas"])
 		for cortical_ID in cortical_IDs:
 			if cortical_ID in cortical_area_mapping.keys():
-				push_error("CORE CACHE: Cortical Area %s previously reported in region %s is now reported in region %s! Something is wrong with the genome! Keeping the original region!" % [cortical_ID, cortical_area_mapping[cortical_ID], parent_region_ID])
+				push_warning("CORE CACHE: Cortical Area %s previously reported in region %s is now reported in region %s. Keeping the original region." % [cortical_ID, cortical_area_mapping[cortical_ID], parent_region_ID])
 				continue
 			cortical_area_mapping[cortical_ID] = parent_region_ID
 	
@@ -46,7 +60,7 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 
 func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> void:
 	var region_dict: Dictionary
-	var arr_IO: Array[Dictionary]
+	var arr_IO: Array  # Can be Array[String] or Array[Dictionary]
 	var region: BrainRegion
 	for region_ID in region_summary_data:
 		region_dict = region_summary_data[region_ID]
@@ -68,10 +82,10 @@ func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> voi
 			region.FEAGI_establish_partial_mappings_from_JSONs(arr_IO, false)
 			
 
-### Clears all regions from the cache
-#func FEAGI_clear_all_regions() -> void:
-#	for region_ID: StringName in _available_brain_regions.keys():
-#		FEAGI_remove_region_and_internals(region_ID)
+## Clears all regions from the cache - used during full genome reload
+func FEAGI_clear_all_regions() -> void:
+	_available_brain_regions.clear()
+	_cached_root_region_id = ""  # Clear root cache
 
 func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_name: StringName, coord_2D: Vector2i, coord_3D: Vector3i, contained_objects: Array[GenomeObject] = []) -> void:
 	if region_ID in _available_brain_regions.keys():
@@ -82,6 +96,10 @@ func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_
 	_available_brain_regions[region_ID] = region
 	for object in contained_objects:
 		object.FEAGI_change_parent_brain_region(region)
+	# NOTE: region_added signal will be emitted after all cache data is loaded (called from FEAGIRequests)
+
+## Emits the region_added signal for a specific region (called after all cache data is loaded)
+func emit_region_added_signal(region: BrainRegion) -> void:
 	region_added.emit(region)
 
 func FEAGI_edit_region(editing_region: BrainRegion, title: StringName, _description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
@@ -127,21 +145,67 @@ func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
 ## Get information about the cache state
 #region Queries
 
+func _get_configured_root_id() -> StringName:
+	var rid = ProjectSettings.get_setting("feagi/root_region_id")
+	if rid == null or String(rid) == "":
+		return BrainRegion.ROOT_REGION_ID
+	return StringName(String(rid))
+
+## Cache the root region ID for O(1) access
+## Called after loading all regions
+## Cache root region ID from API data (checks parent_region_id field)
+func _cache_root_region_id_from_api_data(region_summary_data: Dictionary) -> void:
+	# Find region where parent_region_id is null in API data
+	for region_ID in region_summary_data.keys():
+		var region_data = region_summary_data[region_ID]
+		var parent_id = region_data.get("parent_region_id")
+		if parent_id == null:
+			_cached_root_region_id = region_ID
+			return
+	
+	push_warning("CORE CACHE: No root region found in API data!")
+
 ## Returns True if the root region is in the cache
+## Root region is identified by having no parent (UUID-based RegionID architecture)
 func is_root_available() -> bool:
-	return BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()
+	# O(1) cached lookup
+	if _cached_root_region_id != "" and _cached_root_region_id in _available_brain_regions:
+		return true
+	
+	# Fallback: Search for region with no parent
+	for region in _available_brain_regions.values():
+		if region.is_root_region():
+			_cached_root_region_id = region.region_ID  # Cache for next time
+			return true
+	
+	return false
 
 
 ## Attempts to return the root [BrainRegion]. If it fails, logs an error and returns null
+## Root region is identified by having no parent (UUID-based RegionID architecture)
 func get_root_region() -> BrainRegion:
-	if !(BrainRegion.ROOT_REGION_ID in _available_brain_regions.keys()):
-		push_error("CORE CACHE: Unable to find root region! Something is wrong!")
-		return null
-	return _available_brain_regions[BrainRegion.ROOT_REGION_ID]
+	# O(1) cached lookup
+	if _cached_root_region_id != "" and _cached_root_region_id in _available_brain_regions:
+		return _available_brain_regions[_cached_root_region_id]
+	
+	# Fallback: Search for region with no parent
+	for region in _available_brain_regions.values():
+		if region.is_root_region():
+			_cached_root_region_id = region.region_ID  # Cache for next time
+			return region
+	
+	push_error("CORE CACHE: Unable to find root region! No region has null parent!")
+	push_error("CORE CACHE: Available regions: %s" % str(_available_brain_regions.keys()))
+	return null
 
 ## Gets the path of regions that holds the common demoninator path between 2 regions
 ## Example: if region e is in region path [a,b,e] and region d is in path [a,b,c,d], this will return [a,b]
 func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> Array[BrainRegion]:
+	# Null checks
+	if A == null or B == null:
+		push_error("CORE CACHE: Cannot calculate common path - A or B is null!")
+		return []
+	
 	var path_A: Array[BrainRegion] = A.get_path()
 	var path_B: Array[BrainRegion] = B.get_path()
 	
@@ -168,6 +232,11 @@ func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> 
 ## Defines the directional path with 2 arrays (upward then downward) of the regions to transverse to get from the source to the destination
 ## Example given region layout {R{a,b{c,d{e}},f{g{h}}}, going from d -> g will return [[d,b,R],[R,f,g]]
 func get_directional_path_between_regions(source: BrainRegion, destination: BrainRegion) -> Array[Array]:
+	# Null checks
+	if source == null or destination == null:
+		push_error("CORE CACHE: Cannot calculate path - source or destination is null!")
+		return [[], []]
+	
 	var common_path: Array[BrainRegion] = get_common_path_containing_both_regions(source, destination)
 	if len(common_path) == 0:
 		push_error("CORE CACHE: Unable to calculate directional path between %s toward %s!" % [source.region_ID, destination.region_ID])
@@ -211,6 +280,11 @@ func get_total_path_between_objects(starting_point: GenomeObject, stoppping_poin
 		end_region = (stoppping_point as AbstractCorticalArea).current_parent_region
 	else:
 		end_region = stoppping_point
+	
+	# Null check: Return empty path if parent regions not set yet
+	if start_region == null or end_region == null:
+		push_warning("CORE CACHE: Cannot calculate path - parent regions not set yet for cortical areas")
+		return []
 	
 	# Generate total path
 	var region_path: Array[Array] = FeagiCore.feagi_local_cache.brain_regions.get_directional_path_between_regions(start_region, end_region)

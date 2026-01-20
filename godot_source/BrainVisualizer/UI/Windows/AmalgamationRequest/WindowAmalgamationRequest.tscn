@@ -41,7 +41,7 @@ text = "Title"
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 max_length = 16
-editable = false
+editable = true
 script = ExtResource("4_1iehj")
 
 [node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]

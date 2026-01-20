@@ -78,6 +78,19 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 3)
 layout_mode = 2
 
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Auto wire mappings"
+
+[node name="AutoWiring" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+layout_mode = 2
+text = "Enabled"
+button_pressed = true
+
 [node name="Clone_button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 theme_type_variation = &"Button_big"

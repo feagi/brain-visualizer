@@ -16,14 +16,51 @@ static func arr_to_float_arr(arr: Array) -> Array[float]:
 	return out
 
 static func untyped_array_to_quaternion(input: Array) -> Quaternion:
-	return Quaternion(input[0], input[1], input[2], input[3])
+	# Ensure array has at least 4 elements
+	if input.size() < 4:
+		push_warning("FEAGIUtils: Array too short for Quaternion conversion (size: %d), using identity" % input.size())
+		return Quaternion.IDENTITY
+	
+	# Safely convert each element, defaulting to identity quaternion values if null/invalid
+	var x = 0.0
+	var y = 0.0
+	var z = 0.0  
+	var w = 1.0
+	
+	if input[0] != null:
+		x = float(input[0])
+	if input[1] != null:
+		y = float(input[1])
+	if input[2] != null:
+		z = float(input[2])
+	if input[3] != null:
+		w = float(input[3])
+		
+	return Quaternion(x, y, z, w)
 
 ## Converts a 3 long int array to a Vector3i
 static func int_array_to_vector3i(input: Array[int]) -> Vector3i:
 	return Vector3i(int(input[0]), int(input[1]), int(input[2]))
 
 static func untyped_array_to_vector3(input: Array) -> Vector3:
-	return Vector3(input[0], input[1], input[2])
+	# Ensure array has at least 3 elements
+	if input.size() < 3:
+		push_warning("FEAGIUtils: Array too short for Vector3 conversion (size: %d), using defaults" % input.size())
+		return Vector3.ZERO
+	
+	# Safely convert each element, defaulting to 0 if null/invalid
+	var x = 0.0
+	var y = 0.0  
+	var z = 0.0
+	
+	if input[0] != null:
+		x = float(input[0])
+	if input[1] != null:
+		y = float(input[1])
+	if input[2] != null:
+		z = float(input[2])
+		
+	return Vector3(x, y, z)
 	
 ## Converts a 2 long int array to a Vector2i
 static func int_array_to_vector2i(input: Array[int]) -> Vector2i:
@@ -31,11 +68,42 @@ static func int_array_to_vector2i(input: Array[int]) -> Vector2i:
 
 ## Converts a 3 long untyped array to a Vector3i
 static func array_to_vector3i(input: Array[Variant]) -> Vector3i:
-	return Vector3i(int(input[0]), int(input[1]), int(input[2]))
+	# Ensure array has at least 3 elements
+	if input.size() < 3:
+		push_warning("FEAGIUtils: Array too short for Vector3i conversion (size: %d), using zero" % input.size())
+		return Vector3i.ZERO
+	
+	# Safely convert each element, defaulting to 0 if null/invalid
+	var x = 0
+	var y = 0
+	var z = 0
+	
+	if input[0] != null:
+		x = int(input[0])
+	if input[1] != null:
+		y = int(input[1])
+	if input[2] != null:
+		z = int(input[2])
+		
+	return Vector3i(x, y, z)
 
 ## Converts a 2 long untyped array to a Vector2i
 static func array_to_vector2i(input: Array) -> Vector2i:
-	return Vector2i(int(input[0]), int(input[1]))
+	# Ensure array has at least 2 elements
+	if input.size() < 2:
+		push_warning("FEAGIUtils: Array too short for Vector2i conversion (size: %d), using zero" % input.size())
+		return Vector2i.ZERO
+	
+	# Safely convert each element, defaulting to 0 if null/invalid
+	var x = 0
+	var y = 0
+	
+	if input[0] != null:
+		x = int(input[0])
+	if input[1] != null:
+		y = int(input[1])
+		
+	return Vector2i(x, y)
 
 ## Converts an array of 3 long int arrays to an array of Vector3i
 static func array_of_arrays_to_vector3i_array(input: Array) -> Array[Vector3i]:
@@ -181,4 +249,3 @@ static func string_name_array_to_CSV(arr: Array[StringName]) -> StringName:
 		output = output + arr[i] + ", "
 	output = output + arr[length - 1]
 	return output
-

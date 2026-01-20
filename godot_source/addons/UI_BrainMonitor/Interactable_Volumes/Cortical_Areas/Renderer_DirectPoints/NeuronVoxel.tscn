@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://bi36jnxl5qfyi"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_1"]
+size = Vector3(0.8, 0.8, 0.8)
+
+[node name="NeuronVoxel" type="MeshInstance3D"]
+mesh = SubResource("BoxMesh_1") 

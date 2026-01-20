@@ -6,6 +6,7 @@
 !setup.cfg
 *.orig
 *.log
+*.log.*
 *.pot
 __pycache__/*
 .cache/*
@@ -55,6 +56,10 @@ MANIFEST
 # Containerized DB data
 data/
 
+# Log directories and files with date extensions
+logs/
+**/logs/
+
 # dependencies
 node_modules/
 /.pnp
@@ -72,5 +77,52 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.import
+!godot_source/BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf.import
 godot_source/.vscode/settings.json
 godot_source/.vscode/
+
+# Rust build artifacts in rust_extensions/ directory
+rust_extensions/**/target/
+rust_extensions/**/Cargo.lock
+rust_extensions/**/*.pdb
+
+# Rust GDExtension generated files in wrong locations
+godot_source/libfeagi_data_deserializer.dylib
+godot_source/libfeagi_data_deserializer.dll
+godot_source/libfeagi_data_deserializer.so
+godot_source/feagi_data_deserializer.gdextension.uid
+
+# We commit RELEASE binaries only for all platforms (Linux, macOS, Windows)
+# These binaries are built by GitHub Actions and committed to the repo
+# Users can clone and run without building Rust extensions
+# Debug builds (100+ MB) are excluded due to GitHub file size limits
+
+# Ignore ALL debug builds
+godot_source/addons/feagi_rust_deserializer/target/debug/
+godot_source/addons/feagi_shared_video/target/debug/
+
+# Ignore intermediate build artifacts in release directories
+godot_source/addons/feagi_rust_deserializer/target/release/build/
+godot_source/addons/feagi_rust_deserializer/target/release/deps/
+godot_source/addons/feagi_rust_deserializer/target/release/examples/
+godot_source/addons/feagi_rust_deserializer/target/release/incremental/
+godot_source/addons/feagi_rust_deserializer/target/release/*.d
+
+godot_source/addons/feagi_shared_video/target/release/build/
+godot_source/addons/feagi_shared_video/target/release/deps/
+godot_source/addons/feagi_shared_video/target/release/examples/
+godot_source/addons/feagi_shared_video/target/release/incremental/
+godot_source/addons/feagi_shared_video/target/release/*.d
+
+# Allow the final RELEASE binaries (these will be committed)
+!godot_source/addons/feagi_rust_deserializer/target/release/*.dylib
+!godot_source/addons/feagi_rust_deserializer/target/release/*.dll
+!godot_source/addons/feagi_rust_deserializer/target/release/*.so
+
+!godot_source/addons/feagi_shared_video/target/release/*.dylib
+!godot_source/addons/feagi_shared_video/target/release/*.dll
+!godot_source/addons/feagi_shared_video/target/release/*.so
+
+# Temporary Rust files
+rust_extensions/**/*--temp.*
+**/*.rs.bk

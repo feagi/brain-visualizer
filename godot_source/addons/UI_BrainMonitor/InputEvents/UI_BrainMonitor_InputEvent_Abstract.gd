@@ -15,6 +15,9 @@ var ray_start_point: Vector3
 var ray_end_point: Vector3
 var controller_ID: int = 0 # if there are multiple controllers, this can be used to differentiate between them
 var all_buttons_being_held: Array[CLICK_BUTTON] = [] # All buttons being held at time of input
+var ctrl_pressed: bool = false # Is Ctrl/Command key pressed
+var shift_pressed: bool = false # Is Shift key pressed
+var alt_pressed: bool = false # Is Alt/Option key pressed
 
 func _init() -> void:
 	assert(false, "'UI_BrainMonitor_InputEvent_Abstract' cannot be instantiated directly!")
@@ -23,4 +26,7 @@ func get_ray_query() -> PhysicsRayQueryParameters3D:
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.new()
 	query.from = ray_start_point
 	query.to = ray_end_point
+	query.collision_mask = 0x7FFFFFFF
+	query.collide_with_areas = true
+	query.collide_with_bodies = true
 	return query

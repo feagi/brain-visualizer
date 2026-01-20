@@ -1,0 +1,351 @@
+name: Brain Visualizer CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 4 * * *'  # Run nightly at 4 AM UTC (offset from other pipelines)
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust-format-and-lint:
+    name: Rust Format and Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/*/target
+          key: ${{ runner.os }}-rust-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+
+      - name: Check Rust formatting (feagi_data_deserializer)
+        run: |
+          cd rust_extensions/feagi_data_deserializer
+          cargo fmt --all -- --check
+
+      - name: Check Rust formatting (feagi_shared_video)
+        run: |
+          cd rust_extensions/feagi_shared_video
+          cargo fmt --all -- --check
+
+      - name: Check Rust formatting (feagi_wasm_processing)
+        run: |
+          cd rust_extensions/feagi_wasm_processing
+          cargo fmt --all -- --check
+
+      - name: Clippy linting (feagi_data_deserializer)
+        run: |
+          cd rust_extensions/feagi_data_deserializer
+          cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Clippy linting (feagi_shared_video)
+        run: |
+          cd rust_extensions/feagi_shared_video
+          cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Clippy linting (feagi_wasm_processing)
+        run: |
+          cd rust_extensions/feagi_wasm_processing
+          cargo clippy --all-targets --all-features -- -D warnings
+
+  rust-build-and-test:
+    name: Rust Build and Test
+    runs-on: ${{ matrix.os }}
+    needs: [rust-format-and-lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/*/target
+          key: ${{ runner.os }}-rust-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+
+      - name: Build Rust extensions (feagi_data_deserializer)
+        run: |
+          cd rust_extensions/feagi_data_deserializer
+          cargo build --release
+
+      - name: Test Rust extensions (feagi_data_deserializer)
+        run: |
+          cd rust_extensions/feagi_data_deserializer
+          cargo test --release
+
+      - name: Build Rust extensions (feagi_shared_video)
+        run: |
+          cd rust_extensions/feagi_shared_video
+          cargo build --release
+
+      - name: Test Rust extensions (feagi_shared_video)
+        run: |
+          cd rust_extensions/feagi_shared_video
+          cargo test --release
+
+      - name: Build Rust extensions (feagi_wasm_processing)
+        run: |
+          cd rust_extensions/feagi_wasm_processing
+          cargo build --release
+
+      - name: Test Rust extensions (feagi_wasm_processing)
+        run: |
+          cd rust_extensions/feagi_wasm_processing
+          cargo test --release
+
+  wasm-build:
+    name: WASM Build and Validation
+    runs-on: ubuntu-latest
+    needs: [rust-format-and-lint]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain with WASM target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: |
+          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/feagi_wasm_processing/target
+          key: ${{ runner.os }}-wasm-${{ hashFiles('rust_extensions/feagi_wasm_processing/Cargo.lock') }}
+
+      - name: Build WASM package
+        run: |
+          cd rust_extensions/feagi_wasm_processing
+          wasm-pack build --target web --out-dir pkg
+
+      - name: Validate WASM output
+        run: |
+          cd rust_extensions/feagi_wasm_processing
+          ls -la pkg/
+          file pkg/*.wasm
+          echo "WASM package built successfully"
+
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: wasm-build-artifacts
+          path: rust_extensions/feagi_wasm_processing/pkg/
+
+  godot-validation:
+    name: Godot Project Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Godot
+        uses: lihop/setup-godot@v2
+        with:
+          version: '4.2.2'
+          export-templates: true
+
+      - name: Verify Godot project structure
+        run: |
+          cd godot_source
+          echo "Checking project.godot exists..."
+          if [ ! -f "project.godot" ]; then
+            echo "❌ project.godot not found"
+            exit 1
+          fi
+          echo "✅ project.godot found"
+
+      - name: Check GDScript syntax (basic validation)
+        run: |
+          cd godot_source
+          echo "Running basic GDScript validation..."
+          # Use headless Godot to validate project
+          godot --headless --check-only --quit
+
+      - name: Validate addon structures
+        run: |
+          cd godot_source/addons
+          echo "Checking addon plugin.cfg files..."
+          for addon in */; do
+            if [ -d "$addon" ] && [ ! -f "${addon}plugin.cfg" ]; then
+              echo "⚠️  Warning: $addon missing plugin.cfg"
+            fi
+          done
+          echo "✅ Addon validation completed"
+
+      - name: Check export presets
+        run: |
+          cd godot_source
+          if [ ! -f "export_presets.cfg" ]; then
+            echo "⚠️  Warning: No export_presets.cfg found"
+          else
+            echo "✅ Export presets configuration found"
+          fi
+
+  integration-build:
+    name: Integration Build Test
+    runs-on: ubuntu-latest
+    needs: [rust-build-and-test, wasm-build, godot-validation]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Setup Godot
+        uses: lihop/setup-godot@v2
+        with:
+          version: '4.2.2'
+          export-templates: true
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/*/target
+          key: ${{ runner.os }}-rust-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+
+      - name: Build all Rust extensions
+        run: |
+          cd rust_extensions
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Verify Rust extensions in Godot project
+        run: |
+          cd godot_source
+          echo "Checking for built extensions..."
+          ls -la addons/feagi_rust_deserializer/
+          ls -la addons/feagi_shared_video/
+          echo "✅ Extensions verification completed"
+
+      - name: Test Godot project import (headless)
+        run: |
+          cd godot_source
+          godot --headless --import --quit
+          echo "✅ Godot project import successful"
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    needs: [integration-build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: brain-visualizer:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker run --rm brain-visualizer:test --version || echo "Basic Docker test completed"
+
+  security-scan:
+    name: Security and Dependency Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Run Rust security audit
+        run: |
+          cd rust_extensions/feagi_data_deserializer && cargo audit
+          cd ../feagi_shared_video && cargo audit
+          cd ../feagi_wasm_processing && cargo audit
+
+      - name: Check for common vulnerabilities
+        run: |
+          echo "Running basic security checks..."
+          grep -r "unsafe" rust_extensions/ || echo "No unsafe blocks found"
+          echo "✅ Security scan completed"
+
+  performance-validation:
+    name: Performance Validation
+    runs-on: ubuntu-latest
+    needs: [rust-build-and-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Install cargo-bench
+        run: |
+          cd rust_extensions/feagi_data_deserializer
+          if grep -q "\[\[bench\]\]" Cargo.toml; then
+            cargo bench
+          else
+            echo "No benchmarks configured for this component"
+          fi
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: |
+            rust_extensions/*/target/criterion/
+            rust_extensions/*/target/release/deps/*/benchmark_*

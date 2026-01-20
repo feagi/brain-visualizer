@@ -1,6 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://cmfh6gb04wy3i"]
 
 [ext_resource type="Script" uid="uid://jxb6d6r1jtvo" path="res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.gd" id="1_75y4c"]
+[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn" id="2_combo"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_74usq"]
 bg_color = Color(0.14902, 0.14902, 0.14902, 1)
@@ -21,3 +22,8 @@ script = ExtResource("1_75y4c")
 
 [node name="Timer" type="Timer" parent="."]
 one_shot = true
+
+[node name="BrainObjectsCombo" parent="." instance=ExtResource("2_combo")]
+offset_left = 8.0
+offset_top = 8.0
+z_index = 10

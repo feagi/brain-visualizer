@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilSpikes.gdshader" id="1"]
+
+[resource]
+shader = ExtResource("1")
+shader_parameter/spike_intensity = 2.0
+shader_parameter/spike_speed = 5.0
+shader_parameter/spike_thickness = 0.03
+shader_parameter/electrical_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/flicker_speed = 8.0

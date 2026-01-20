@@ -14,7 +14,7 @@ enum TARGET_TYPE {
 
 var name: StringName:
 	get: return _name
-var mapping_propertys: Array[MappingProperty]:
+var mapping_propertys: Array[SingleMappingDefinition]:
 	get: return _mapping_propertys
 var direction: DIRECTION:
 	get: return _direction
@@ -24,13 +24,13 @@ var target_type: TARGET_TYPE:
 	get: return _target_type
 
 var _name: StringName
-var _mapping_propertys: Array[MappingProperty] = []
+var _mapping_propertys: Array[SingleMappingDefinition] = []
 var _direction: DIRECTION
 var _target_ID: StringName
 var _target_type: TARGET_TYPE
 
-func _init(name_: StringName, suggested_mappings: Array[MappingProperty], 
-	target_ID_str: StringName, target_object_type: TARGET_TYPE,  mapping_direction: DIRECTION):
+func _init(name_: StringName, suggested_mappings: Array[SingleMappingDefinition], 
+	target_ID_str: StringName, target_object_type: TARGET_TYPE, mapping_direction: DIRECTION):
 	
 	_name = name_
 	_mapping_propertys = suggested_mappings
@@ -47,7 +47,7 @@ func _init(name_: StringName, suggested_mappings: Array[MappingProperty],
 			pass # During init, we dont have all the regions yet, so its possible that the ID doesn't exist (yet)
 
 static func from_FEAGI_JSON(dict: Dictionary, target_cortical_area_ID: StringName, target_type: TARGET_TYPE, direction: DIRECTION) -> RegionMappingSuggestion:
-	var mappings: Array[MappingProperty] = MappingProperty.from_array_of_dict(dict["mappings"])
+	var mappings: Array[SingleMappingDefinition] = SingleMappingDefinition.from_FEAGI_JSON_array(dict["mappings"])
 	return RegionMappingSuggestion.new(
 		dict["name"],
 		mappings,

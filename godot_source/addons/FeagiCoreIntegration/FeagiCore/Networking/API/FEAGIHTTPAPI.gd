@@ -14,7 +14,7 @@ const HEALTH_CHECK_WORKER_NAME: StringName = "POLLING_HEALTHCHECK_WORKER"
 signal FEAGI_http_health_changed(previous_health: HTTP_HEALTH, current_health: HTTP_HEALTH)
 signal HTTP_worker_retrying(retry_count: int, max_retry_count, worker: APIRequestWorker, request_definition: APIRequestWorkerDefinition)
 
-var address_list: FEAGIHTTPAddressList = null
+var address_list = null  # Will hold instance of FEAGIHTTPAddressList; avoid typed global to prevent parse order issues
 var http_health: HTTP_HEALTH:
 	get: 
 		return _http_health
@@ -27,7 +27,9 @@ var _retrying_workers: Array[APIRequestWorker] = []
 ## Used to setup (or reset) the HTTP API for a specific FEAGI instance
 func setup(feagi_root_web_address: StringName, headers: PackedStringArray) -> void:
 	_headers_to_use = headers
-	address_list = FEAGIHTTPAddressList.new(feagi_root_web_address)
+	# Avoid type-resolution at parse-time: construct by class_name via load
+	var addr_class = load("res://addons/FeagiCoreIntegration/FeagiCore/Networking/API/FEAGIHTTPAddressList.gd")
+	address_list = addr_class.new(feagi_root_web_address)
 	_kill_all_web_workers() # in case of a reset, make sure any stranglers are gone
 
 ## Disconnect all HTTP systems from FEAGI
@@ -52,7 +54,7 @@ func make_HTTP_call(request_definition: APIRequestWorkerDefinition) -> APIReques
 func confirm_connectivity() -> void:
 	# NOTE: This FEAGI request does not modify anything in FEAGI state on its own, we have full control here
 	# NOTE: The signals for retrying are purposfully not connected, since we dont want to trigger those paths yet
-	var response_data: FeagiRequestOutput = await FeagiCore.requests.single_health_check_call()
+	var response_data: FeagiRequestOutput = await FeagiCore.requests.fast_initial_health_check()
 
 	if response_data.has_timed_out:
 		_request_state_change(HTTP_HEALTH.NO_CONNECTION)
@@ -61,6 +63,8 @@ func confirm_connectivity() -> void:
 		_request_state_change(HTTP_HEALTH.ERROR)
 		return
 
+	# Update cache with health data for immediate genome state evaluation
+	FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(response_data.decode_response_as_dict())
 	_request_state_change(HTTP_HEALTH.CONNECTABLE)
 
 ## Requests killing the health check polling worker specifically

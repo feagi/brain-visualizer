@@ -14,27 +14,104 @@ signal neuron_excitability_updated(val: int, this_cortical_area: CoreCorticalAre
 
 ## Apply Properties from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
-
+	# Fire Threshold - check both formats
 	if "neuron_fire_threshold" in data.keys(): 
-		neuron_fire_threshold = data["neuron_fire_threshold"]
+		var value = data["neuron_fire_threshold"]
+		if value != null:
+			neuron_fire_threshold = float(value)
+	elif "firing_threshold" in data.keys():
+		var value = data["firing_threshold"]
+		if value != null:
+			neuron_fire_threshold = float(value)
+	
+	# Fire Threshold Increment - check both formats (separate x/y/z and array)
 	if "neuron_fire_threshold_increment" in data.keys(): 
-		neuron_fire_threshold_increment = FEAGIUtils.untyped_array_to_vector3(data["neuron_fire_threshold_increment"])
+		var value = data["neuron_fire_threshold_increment"]
+		if value != null:
+			neuron_fire_threshold_increment = FEAGIUtils.untyped_array_to_vector3(value)
+	elif "firing_threshold_increment_x" in data.keys() and "firing_threshold_increment_y" in data.keys() and "firing_threshold_increment_z" in data.keys():
+		var x = float(data["firing_threshold_increment_x"])
+		var y = float(data["firing_threshold_increment_y"])
+		var z = float(data["firing_threshold_increment_z"])
+		neuron_fire_threshold_increment = Vector3(x, y, z)
+	
+	# Firing Threshold Limit - check both formats
 	if "neuron_firing_threshold_limit" in data.keys(): 
-		neuron_firing_threshold_limit = data["neuron_firing_threshold_limit"]
+		var value = data["neuron_firing_threshold_limit"]
+		if value != null:
+			neuron_firing_threshold_limit = int(value)
+	elif "firing_threshold_limit" in data.keys():
+		var value = data["firing_threshold_limit"]
+		if value != null:
+			neuron_firing_threshold_limit = int(value)
+	
+	# Refractory Period - check both formats
 	if "neuron_refractory_period" in data.keys(): 
-		neuron_refractory_period = data["neuron_refractory_period"]
+		var value = data["neuron_refractory_period"]
+		if value != null:
+			neuron_refractory_period = int(value)
+	elif "refractory_period" in data.keys():
+		var value = data["refractory_period"]
+		if value != null:
+			neuron_refractory_period = int(value)
+	
+	# Leak Coefficient - check both formats
 	if "neuron_leak_coefficient" in data.keys(): 
-		neuron_leak_coefficient = data["neuron_leak_coefficient"]
+		var value = data["neuron_leak_coefficient"]
+		if value != null:
+			neuron_leak_coefficient = int(value)
+	elif "leak_coefficient" in data.keys():
+		var value = data["leak_coefficient"]
+		if value != null:
+			neuron_leak_coefficient = int(value)
+	
+	# Leak Variability - check both formats
 	if "neuron_leak_variability" in data.keys(): 
-		neuron_leak_variability = data["neuron_leak_variability"]
+		var value = data["neuron_leak_variability"]
+		if value != null:
+			neuron_leak_variability = int(value)
+	elif "leak_variability" in data.keys():
+		var value = data["leak_variability"]
+		if value != null:
+			neuron_leak_variability = int(value)
+	
+	# Consecutive Fire Count - check both formats
 	if "neuron_consecutive_fire_count" in data.keys(): 
-		neuron_consecutive_fire_count = data["neuron_consecutive_fire_count"]
+		var value = data["neuron_consecutive_fire_count"]
+		if value != null:
+			neuron_consecutive_fire_count = int(value)
+	elif "consecutive_fire_cnt_max" in data.keys():
+		var value = data["consecutive_fire_cnt_max"]
+		if value != null:
+			neuron_consecutive_fire_count = int(value)
+	
+	# Snooze Period - check both formats
 	if "neuron_snooze_period" in data.keys(): 
-		neuron_snooze_period = data["neuron_snooze_period"]
+		var value = data["neuron_snooze_period"]
+		if value != null:
+			neuron_snooze_period = int(value)
+	elif "snooze_length" in data.keys():
+		var value = data["snooze_length"]
+		if value != null:
+			neuron_snooze_period = int(value)
+	
+	# MP Charge Accumulation - check both formats
 	if "neuron_mp_charge_accumulation" in data.keys(): 
-		neuron_mp_charge_accumulation = data["neuron_mp_charge_accumulation"]
+		var value = data["neuron_mp_charge_accumulation"]
+		if value != null:
+			neuron_mp_charge_accumulation = bool(value)
+	elif "mp_charge_accumulation" in data.keys():
+		var value = data["mp_charge_accumulation"]
+		if value != null:
+			neuron_mp_charge_accumulation = bool(value)
+	
+	# Excitability - check both formats
 	if "neuron_excitability" in data.keys():
-		neuron_excitability = data["neuron_excitability"]
+		var value = data["neuron_excitability"]
+		if value != null:
+			# Convert from 0-1 range to 0-100 percentage for UI display
+			var excitability_float = float(value)
+			neuron_excitability = int(round(excitability_float * 100.0))
 	return
 
 var neuron_mp_charge_accumulation: bool:

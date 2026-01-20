@@ -6,7 +6,7 @@ var _defaults: MappingRestrictionDefault
 
 var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
-var _PSP: FloatInput
+var _PSP: IntInput
 var _inhibitory: ToggleButton
 var _plasticity: ToggleButton
 var _plasticity_constant: FloatInput
@@ -28,16 +28,29 @@ func _ready() -> void:
 func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults: MappingRestrictionDefault) -> void:
 	_restrictions = restrictions
 	_defaults = defaults
-	if restrictions.has_restricted_morphologies():
-		_morphologies.overwrite_morphologies(restrictions.get_morphologies_restricted_to())
-	if restrictions.has_disallowed_morphologies():
-		for disallowed in restrictions.get_morphologies_disallowed():
-			_morphologies.remove_morphology(disallowed)
-	_morphologies.set_selected_morphology(_defaults.try_get_default_morphology())
-	_scalar.editable = restrictions.allow_changing_scalar
-	_PSP.editable = restrictions.allow_changing_PSP
-	_inhibitory.disabled = !restrictions.allow_changing_inhibitory
-	_plasticity.disabled = !restrictions.allow_changing_plasticity
+	
+	# Add null checking for all restrictions method calls
+	if restrictions != null:
+		if restrictions.has_restricted_morphologies():
+			_morphologies.overwrite_morphologies(restrictions.get_morphologies_restricted_to())
+		if restrictions.has_disallowed_morphologies():
+			for disallowed in restrictions.get_morphologies_disallowed():
+				_morphologies.remove_morphology(disallowed)
+		_scalar.editable = restrictions.allow_changing_scalar
+		_PSP.editable = restrictions.allow_changing_PSP
+		_inhibitory.disabled = !restrictions.allow_changing_inhibitory
+		_plasticity.disabled = !restrictions.allow_changing_plasticity
+	else:
+		# Default behavior when no restrictions
+		_scalar.editable = true
+		_PSP.editable = true
+		_inhibitory.disabled = false
+		_plasticity.disabled = false
+	
+	# Set default morphology if available
+	if defaults != null:
+		_morphologies.set_selected_morphology(defaults.try_get_default_morphology())
+	
 	_plasticity_constant.editable = false # these 3 are false since originally plasticity is off
 	_LTP_multiplier.editable = false
 	_LTD_multiplier.editable = false
@@ -45,7 +58,7 @@ func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults:
 func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_morphologies.set_selected_morphology(mapping.morphology_used)
 	_scalar.current_vector = mapping.scalar
-	_PSP.current_float = abs(mapping.post_synaptic_current_multiplier)
+	_PSP.current_int = abs(mapping.post_synaptic_current_multiplier)
 	_inhibitory.set_toggle_no_signal(mapping.post_synaptic_current_multiplier < 0)
 	_plasticity.set_toggle_no_signal(mapping.is_plastic)
 	_plasticity_constant.current_float = mapping.plasticity_constant
@@ -62,7 +75,7 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 func export_mapping() -> SingleMappingDefinition:
 	var morphology_used: BaseMorphology = _morphologies.get_selected_morphology()
 	var scalar: Vector3i = _scalar.current_vector
-	var PSP: float = _PSP.current_float
+	var PSP: int = _PSP.current_int
 	if _inhibitory.button_pressed:
 		PSP = -PSP
 	var is_plastic: bool = _plasticity.button_pressed
@@ -78,6 +91,11 @@ func export_mapping() -> SingleMappingDefinition:
 		LTP_multiplier,
 		LTD_multiplier
 	)
+
+func _on_user_PSP(_value: Variant) -> void:
+	# IntInput updates its internal value on validation; no extra handling needed.
+	# This exists to satisfy the connected signal in the scene.
+	pass
 
 func _on_user_toggle_plasticity(toggle_state: bool) -> void:
 	_plasticity_constant.editable = toggle_state

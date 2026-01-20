@@ -49,16 +49,55 @@ func _init(cortical_area_ref: AbstractCorticalArea) -> void:
 
 ## Apply Properties from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
-	if "neuron_post_synaptic_potential" in data.keys(): 
-		neuron_post_synaptic_potential = data["neuron_post_synaptic_potential"]
-	if "neuron_post_synaptic_potential_max" in data.keys(): 
-		neuron_post_synaptic_potential_max = data["neuron_post_synaptic_potential_max"]
-	if "neuron_degeneracy_coefficient" in data.keys(): 
-		neuron_degeneracy_coefficient = data["neuron_degeneracy_coefficient"]
+	# Post Synaptic Potential - check both API format and transformed format
+	if "neuron_post_synaptic_potential" in data.keys():
+		var value = data["neuron_post_synaptic_potential"]
+		if value != null:
+			neuron_post_synaptic_potential = value
+	elif "postsynaptic_current" in data.keys():
+		var value = data["postsynaptic_current"]
+		if value != null:
+			neuron_post_synaptic_potential = value
+	
+	# PSP Max - check both formats
+	if "neuron_post_synaptic_potential_max" in data.keys():
+		var value = data["neuron_post_synaptic_potential_max"]
+		if value != null:
+			neuron_post_synaptic_potential_max = value
+	elif "postsynaptic_current_max" in data.keys():
+		var value = data["postsynaptic_current_max"]
+		if value != null:
+			neuron_post_synaptic_potential_max = value
+	
+	# Degeneracy Coefficient - check both formats
+	if "neuron_degeneracy_coefficient" in data.keys():
+		var value = data["neuron_degeneracy_coefficient"]
+		if value != null:
+			neuron_degeneracy_coefficient = value
+	elif "degeneration" in data.keys():
+		var value = data["degeneration"]
+		if value != null:
+			neuron_degeneracy_coefficient = value
+	
+	# PSP Uniform Distribution - check both formats
 	if "neuron_psp_uniform_distribution" in data.keys(): 
-		neuron_psp_uniform_distribution = data["neuron_psp_uniform_distribution"]
+		var value = data["neuron_psp_uniform_distribution"]
+		if value != null:
+			neuron_psp_uniform_distribution = value
+	elif "psp_uniform_distribution" in data.keys():
+		var value = data["psp_uniform_distribution"]
+		if value != null:
+			neuron_psp_uniform_distribution = value
+	
+	# MP Driven PSP - check both formats
 	if "neuron_mp_driven_psp" in data.keys():
-		neuron_mp_driven_psp = data["neuron_mp_driven_psp"]
+		var value = data["neuron_mp_driven_psp"]
+		if value != null:
+			neuron_mp_driven_psp = value
+	elif "mp_driven_psp" in data.keys():
+		var value = data["mp_driven_psp"]
+		if value != null:
+			neuron_mp_driven_psp = value
 	return
 
 func _set_neuron_psp_uniform_distribution(new_val: bool) -> void:
@@ -90,5 +129,3 @@ func _set_neuron_degeneracy_coefficient(new_val: float) -> void:
 		return
 	_neuron_degeneracy_coefficient = new_val
 	neuron_degeneracy_coefficient_updated.emit(new_val, _cortical_area)
-
-

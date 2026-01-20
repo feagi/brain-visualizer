@@ -1,19 +1,20 @@
-[gd_scene load_steps=15 format=3 uid="uid://ckfda4upmty53"]
+[gd_scene load_steps=16 format=3 uid="uid://ckfda4upmty53"]
 
 [ext_resource type="Script" uid="uid://cfnq802dlqokv" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorRowGeneric.gd" id="1_j8fwg"]
 [ext_resource type="Script" uid="uid://c3kgtsjp4sogl" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="2_ndwr8"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.tscn" id="3_7llad"]
 [ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="4_y0rve"]
-[ext_resource type="Texture2D" uid="uid://cchkky0p7lx5u" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="5_taa4s"]
+[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="15_7qf8u"]
+[ext_resource type="Texture2D" uid="uid://cyjkmin6bodpp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="5_taa4s"]
 [ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="6_3sy0c"]
-[ext_resource type="Texture2D" uid="uid://dtlt3xsdo5bwi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="7_5oycp"]
-[ext_resource type="Texture2D" uid="uid://b85tpdt5nc7bw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="8_bbn6j"]
-[ext_resource type="Texture2D" uid="uid://bkmehptmh3rhh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="9_21qfw"]
-[ext_resource type="Texture2D" uid="uid://bpewdkwkgeov7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="10_jwhcp"]
-[ext_resource type="Texture2D" uid="uid://w077yug12k7x" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="11_owcrx"]
-[ext_resource type="Texture2D" uid="uid://di8630a11ncb5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="12_s71nl"]
-[ext_resource type="Texture2D" uid="uid://oi3pour3qyue" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="13_s4moh"]
-[ext_resource type="Texture2D" uid="uid://bquoy7fdmhk7l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="14_yxhwi"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="7_5oycp"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="8_bbn6j"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="9_21qfw"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="10_jwhcp"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="11_owcrx"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="12_s71nl"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="13_s4moh"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="14_yxhwi"]
 
 [node name="MappingEditorRowGeneric" type="HBoxContainer"]
 offset_right = 1300.0
@@ -56,9 +57,10 @@ layout_mode = 2
 tooltip_text = "Post-Synaptic Potential
 "
 alignment = 1
-script = ExtResource("4_y0rve")
-initial_float = 1.0
-min_value = 0.0
+script = ExtResource("15_7qf8u")
+initial_int = 1
+min_value = 0
+max_value = 255
 
 [node name="Inhibitory" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(100, 0)
@@ -114,6 +116,6 @@ ignore_texture_size = true
 stretch_mode = 0
 
 [connection signal="pressed" from="edit" to="." method="_on_edit_pressed"]
-[connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
+[connection signal="int_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
 [connection signal="pressed" from="remove" to="." method="_on_mapping_delete_press"]

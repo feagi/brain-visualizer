@@ -27,7 +27,9 @@ script = ExtResource("2_tf547")
 
 [node name="Arrows" parent="SubViewport/Center" instance=ExtResource("3_81xhk")]
 
-[node name="BM_UI" type="BoxContainer" parent="SubViewport"]
+[node name="UI_Canvas" type="CanvasLayer" parent="SubViewport"]
+
+[node name="BM_UI" type="BoxContainer" parent="SubViewport/UI_Canvas"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -37,13 +39,13 @@ alignment = 2
 vertical = true
 script = ExtResource("3_l3fsc")
 
-[node name="Bottom_Row" type="BoxContainer" parent="SubViewport/BM_UI"]
+[node name="Bottom_Row" type="BoxContainer" parent="SubViewport/UI_Canvas/BM_UI"]
 layout_mode = 2
 
-[node name="Control" type="Control" parent="SubViewport/BM_UI/Bottom_Row"]
+[node name="Control" type="Control" parent="SubViewport/UI_Canvas/BM_UI/Bottom_Row"]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 
-[node name="MouseContext" type="Label" parent="SubViewport/BM_UI/Bottom_Row"]
+[node name="MouseContext" type="Label" parent="SubViewport/UI_Canvas/BM_UI/Bottom_Row"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32

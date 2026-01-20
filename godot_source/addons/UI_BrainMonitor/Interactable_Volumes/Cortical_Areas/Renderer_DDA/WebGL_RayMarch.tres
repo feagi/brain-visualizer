@@ -8,6 +8,6 @@ shader = ExtResource("1_js4cr")
 shader_parameter/voxel_count_x = 3
 shader_parameter/voxel_count_y = 3
 shader_parameter/voxel_count_z = 3
-shader_parameter/voxel_opacity = 0.063
+shader_parameter/voxel_opacity = 0.15
 shader_parameter/voxel_color = Color(0.172451, 0.315246, 0.861982, 1)
 shader_parameter/shared_SVO_depth = 0

@@ -1,12 +1,12 @@
 [gd_scene load_steps=10 format=3 uid="uid://cflmy4e5hfxah"]
 
 [ext_resource type="Script" uid="uid://h7g0chyq5drw" path="res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
-[ext_resource type="Texture2D" uid="uid://dtlt3xsdo5bwi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="2_3u6kv"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="2_3u6kv"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="3_ad4rt"]
-[ext_resource type="Texture2D" uid="uid://b85tpdt5nc7bw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="3_atlgv"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="3_atlgv"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://BrainVisualizer/UI/GenericElements/Scroll/Morphology_List/MorphologyScroll.tscn" id="3_ftgka"]
-[ext_resource type="Texture2D" uid="uid://bkmehptmh3rhh" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="4_d1vcp"]
-[ext_resource type="Texture2D" uid="uid://bpewdkwkgeov7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="5_udoep"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="4_d1vcp"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="5_udoep"]
 [ext_resource type="PackedScene" uid="uid://c8gpa1figwpvw" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.tscn" id="8_i85u6"]
 [ext_resource type="PackedScene" uid="uid://geytg8x6c7no" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/GenericDetails/MorphologyGenericDetails.tscn" id="9_fi7li"]
 
@@ -43,6 +43,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
 text = " 1. Please Select A Source Area..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
@@ -74,6 +75,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
 text = " 2. Please Select A Destination Area..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
@@ -105,6 +107,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
 text = " 3. Please Select A Connectivity Rule..."
 
 [node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
@@ -124,6 +127,25 @@ stretch_mode = 0
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
+
+[node name="CoreConnectivityRulesLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+size_flags_horizontal = 3
+text = "Core connectivity rules"
+
+[node name="CoreMorphologiesBar" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+custom_minimum_size = Vector2(0, 280)
+layout_mode = 2
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="Icons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/CoreMorphologiesBar"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
 
 [node name="MorphologyInfoContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false

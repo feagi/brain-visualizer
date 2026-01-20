@@ -24,7 +24,23 @@ func _init(cortical_types_dict_from_FEAGI: Dictionary, type_cortical_area_str: S
 	for template_id in cortical_types_dict_from_FEAGI[type_cortical_area_str]["supported_devices"]:
 		var sub_dict = cortical_types_dict_from_FEAGI[type_cortical_area_str]["supported_devices"][template_id]
 		buffer_dimensions.assign(sub_dict["resolution"])
-		_templates[template_id] = CorticalTemplate.new(template_id, sub_dict["enabled"], sub_dict["cortical_name"], sub_dict["structure"], buffer_dimensions, _cortical_type)
+		
+		# Create FeagiCorticalType based on the cortical type string
+		var feagi_type: FeagiCorticalType = null
+		match _cortical_type:
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+				feagi_type = FeagiCorticalTypeFactory.create_ipu_cartesian_plane(FeagiCorticalTypeFactory.FRAME_ABSOLUTE)
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+				# FIXED: Use SignedPercentage for motors (supports -1.0 to 1.0 range)
+				feagi_type = FeagiCorticalTypeFactory.create_opu_signed_percentage(FeagiCorticalTypeFactory.FRAME_ABSOLUTE, FeagiCorticalTypeFactory.POSITIONING_LINEAR)
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
+				feagi_type = FeagiCorticalTypeFactory.create_core()
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+				feagi_type = FeagiCorticalTypeFactory.create_memory()
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+				feagi_type = FeagiCorticalTypeFactory.create_custom()
+		
+		_templates[template_id] = CorticalTemplate.new(template_id, sub_dict["enabled"], sub_dict["cortical_name"], sub_dict["structure"], buffer_dimensions, _cortical_type, feagi_type)
 
 static func cortical_templates_factory(cortical_types_dict_from_FEAGI: Dictionary) -> Dictionary:
 	var output: Dictionary = {}

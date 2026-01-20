@@ -8,15 +8,41 @@ signal temporal_depth_updated(val: int, this_costical_area: MemoryCorticalArea)
 
 ## Apply Properties from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
-
+	# Initial Lifespan - check both formats
 	if "neuron_init_lifespan" in data.keys(): 
-		initial_neuron_lifespan = data["neuron_init_lifespan"]
+		var value = data["neuron_init_lifespan"]
+		if value != null:
+			initial_neuron_lifespan = value
+	elif "init_lifespan" in data.keys():
+		var value = data["init_lifespan"]
+		if value != null:
+			initial_neuron_lifespan = value
+	
+	# Lifespan Growth Rate - check both formats
 	if "neuron_lifespan_growth_rate" in data.keys(): 
-		lifespan_growth_rate = data["neuron_lifespan_growth_rate"]
+		var value = data["neuron_lifespan_growth_rate"]
+		if value != null:
+			lifespan_growth_rate = value
+	elif "lifespan_growth_rate" in data.keys():
+		var value = data["lifespan_growth_rate"]
+		if value != null:
+			lifespan_growth_rate = value
+	
+	# Longterm Memory Threshold - check both formats
 	if "neuron_longterm_mem_threshold" in data.keys(): 
-		longterm_memory_threshold = data["neuron_longterm_mem_threshold"]
+		var value = data["neuron_longterm_mem_threshold"]
+		if value != null:
+			longterm_memory_threshold = value
+	elif "longterm_mem_threshold" in data.keys():
+		var value = data["longterm_mem_threshold"]
+		if value != null:
+			longterm_memory_threshold = value
+	
+	# Temporal Depth - already doesn't have neuron_ prefix
 	if "temporal_depth" in data.keys():
-		temporal_depth = data["temporal_depth"]
+		var value = data["temporal_depth"]
+		if value != null:
+			temporal_depth = value
 	return
 
 var initial_neuron_lifespan: int:
@@ -46,7 +72,7 @@ var temporal_depth: int:
 var _initial_neuron_lifespan: int = 0
 var _lifespan_growth_rate: int = 0
 var _longterm_memory_threshold: int = 0
-var _temporal_depth: int = 0
+var _temporal_depth: int = 1
 var _cortical_area: AbstractCorticalArea
 
 func _init(cortical_area_ref: AbstractCorticalArea) -> void:
@@ -71,6 +97,9 @@ func _set_longterm_memory_threshold(new_val: int) -> void:
 	longterm_memory_threshold_updated.emit(new_val, _cortical_area)
 
 func _set_temporal_depth(new_val: int) -> void:
+	# temporal_depth=0 is invalid (pattern detector requires at least one timestep)
+	if new_val < 1:
+		new_val = 1
 	if new_val == _temporal_depth:
 		return
 	_temporal_depth = new_val

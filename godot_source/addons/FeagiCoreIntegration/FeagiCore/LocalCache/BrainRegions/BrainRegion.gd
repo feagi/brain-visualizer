@@ -2,7 +2,8 @@ extends GenomeObject
 class_name BrainRegion
 ## Defines an area enclosing various [AbstractCorticalArea]s
 
-const ROOT_REGION_ID: StringName = "root" ## This is the ID that is unique to the root region
+## @deprecated Use is_root_region() to check if a region is root. Root regions have no parent.
+const ROOT_REGION_ID: StringName = "root" ## DEPRECATED: Legacy constant for old FEAGI versions with hardcoded "root" ID
 
 signal name_updated(new_name: StringName)
 signal cortical_area_added_to_region(area: AbstractCorticalArea)
@@ -47,20 +48,20 @@ static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) ->
 		ID,
 		dict["title"],
 		FEAGIUtils.array_to_vector2i(dict["coordinate_2d"]),
-		#FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
-		Vector3i(10,10,10), #TODO
+		FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),  # ✅ Fixed: Load actual FEAGI coordinates
+		# Vector3i(10,10,10), #TODO  ← Removed hardcoded fallback
 	)
 	
 
 ## Gets the parent region of the object (if it is capable of having one)
 static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
 	if A is AbstractCorticalArea:
-		return (A as AbstractCorticalArea).current_region
+		return (A as AbstractCorticalArea).current_parent_region
 	if A is BrainRegion:
 		if (A as BrainRegion).is_root_region():
 			push_error("CORE CACHE: Unable to get parent region of the root region!")
 			return null
-		return (A as BrainRegion).parent_region
+		return (A as BrainRegion).current_parent_region
 	push_error("CORE CACHE: Unable to get parent region of an object of unknown type!")
 	return null
 
@@ -83,9 +84,14 @@ func _init(region_ID: StringName, region_name: StringName, coord_2D: Vector2i, c
 
 ## Only called by FEAGI during Genome loading, inits the parent region of this region
 func FEAGI_init_parent_relation(parent_region: BrainRegion) -> void:
-	if is_root_region():
-		push_error("CORE CACHE: Root region cannot be a subregion!")
-		return
+	# Check against cached root ID instead of current_parent_region
+	# (current_parent_region is null for all regions during loading)
+	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.brain_regions:
+		var cached_root_id = FeagiCore.feagi_local_cache.brain_regions._cached_root_region_id
+		if cached_root_id != "" and _genome_ID == cached_root_id:
+			push_error("CORE CACHE: Root region cannot be a subregion!")
+			return
+	
 	_init_self_to_brain_region(parent_region)
 
 ## When an [GenomeObject] gets a parent region set / changed, it calls this function of the new parent instance to register itself
@@ -154,7 +160,7 @@ func FEAGI_delete_this_region() -> void:
 	current_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	# This function should be called by [BrainRegionsCache], which will then free this object
 
-func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array[Dictionary], is_input: bool) -> void:
+func FEAGI_establish_partial_mappings_from_JSONs(JSON_arr: Array, is_input: bool) -> void:
 	if len(JSON_arr) == 0:
 		return # No point if the arr is empty
 	var new_mappings: Array[PartialMappingSet] = PartialMappingSet.from_FEAGI_JSON_array(JSON_arr, is_input, self)
@@ -236,8 +242,20 @@ func FEAGI_output_open_remove_link(link: ConnectionChainLink) -> void:
 #region Queries
 
 ## Returns if this region is the root region or not
+## Returns true if this is the root region
+## Uses explicit cached root ID instead of inferring from null parent
 func is_root_region() -> bool:
-	return _genome_ID == ROOT_REGION_ID
+	# Primary check: Compare against cached root ID (explicit and reliable)
+	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.brain_regions:
+		var cached_root_id = FeagiCore.feagi_local_cache.brain_regions._cached_root_region_id
+		if cached_root_id != "" and _genome_ID == cached_root_id:
+			return true
+	
+	# Legacy fallback: Support old hardcoded "root" ID for backward compatibility
+	if _genome_ID == ROOT_REGION_ID:
+		return true
+	
+	return false
 
 ## Returns if a cortical area is a cortical area within this region (not nested in another region)
 func is_cortical_area_in_region_directly(cortical_area: AbstractCorticalArea) -> bool:
@@ -272,12 +290,13 @@ func is_subregion_recursive(region: BrainRegion) -> bool:
 
 ## Returns the path of this region, starting with the root region and ending with this region
 func get_path() -> Array[BrainRegion]:
-	var searching_region: BrainRegion = self
 	var path: Array[BrainRegion] = []
-	while !searching_region.is_root_region():
-		path.append(searching_region)
-		searching_region = searching_region.current_parent_region
-	path.append(searching_region)
+	var current: BrainRegion = self
+	while current != null:
+		path.append(current)
+		if current.is_root_region():
+			break
+		current = current.current_parent_region
 	path.reverse()
 	return path
 

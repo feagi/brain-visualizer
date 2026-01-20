@@ -3,27 +3,41 @@
 [ext_resource type="Script" uid="uid://yg0uidt8aocq" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" uid="uid://dqxgqll112i2k" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_o4dth"]
 [ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_v82xb"]
-[ext_resource type="Texture2D" uid="uid://cmd2qum2418ya" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/top_bar_cortical_area.png" id="3_x3r8j"]
-[ext_resource type="Texture2D" uid="uid://b4jkpvgo7fes3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
-[ext_resource type="Texture2D" uid="uid://dm7j5k1l27tvy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_etpv8"]
-[ext_resource type="Texture2D" uid="uid://btuaycki4ux0h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="6_fkuh3"]
+[ext_resource type="Texture2D" uid="uid://4nqvb666obtc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="3_x3r8j"]
+[ext_resource type="Texture2D" uid="uid://car1lnufwslyi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
+[ext_resource type="Texture2D" uid="uid://cdje4hcnt8pai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_etpv8"]
+[ext_resource type="Texture2D" uid="uid://clqnxjuyb23y1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="6_fkuh3"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="7_g1qxj"]
-[ext_resource type="Texture2D" uid="uid://df4tfd8cxsr4c" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
-[ext_resource type="Texture2D" uid="uid://wuvsw5nevytt" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
-[ext_resource type="Texture2D" uid="uid://utixcswkpwmx" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
+[ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
+[ext_resource type="Texture2D" uid="uid://bk40nytvlo77n" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
+[ext_resource type="Texture2D" uid="uid://dxocxtd21klr" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_output"]
+[ext_resource type="Texture2D" uid="uid://bju6nvb78mvmc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
 [ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.tscn" id="10_3567y"]
-[ext_resource type="Texture2D" uid="uid://vaefjkam3ann" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
-[ext_resource type="Texture2D" uid="uid://cvgml7hymvfvd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="11_0uis6"]
-[ext_resource type="Texture2D" uid="uid://b6wq3idcyi7in" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_D.png" id="12_2iype"]
-[ext_resource type="Texture2D" uid="uid://b6043es6a00uw" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_S.png" id="13_3kcdr"]
-[ext_resource type="Texture2D" uid="uid://c40xvrrv876xu" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_C.png" id="14_ww002"]
-[ext_resource type="Texture2D" uid="uid://ddxosu7tm8nvn" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_H.png" id="15_585hi"]
-[ext_resource type="Texture2D" uid="uid://or2chfieqcnd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
-[ext_resource type="Texture2D" uid="uid://mbdjdpep1hpy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setting.png" id="19_fxjdk"]
+[ext_resource type="Texture2D" uid="uid://dh415j4p2qk2b" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
+[ext_resource type="Texture2D" uid="uid://iwxqjaw2as5t" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="11_0uis6"]
+[ext_resource type="Texture2D" uid="uid://c3limm84uggd7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_D.png" id="12_2iype"]
+[ext_resource type="Texture2D" uid="uid://cg426mv2xsngk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_S.png" id="13_3kcdr"]
+[ext_resource type="Texture2D" uid="uid://p50gm8kyuyqf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_C.png" id="14_ww002"]
+[ext_resource type="Texture2D" uid="uid://btc3gkgoeomma" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_H.png" id="15_585hi"]
+[ext_resource type="Texture2D" uid="uid://brc1qexp6eajy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
+[ext_resource type="Texture2D" uid="uid://lgpw7fwv70iy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setting.png" id="19_fxjdk"]
 [ext_resource type="Script" uid="uid://dfllqleqyhqy4" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="20_6yf7l"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_S.jpg" id="27_cam_anim_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="28_cam_anim_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="29_cam_anim_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="30_cam_anim_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_S.jpg" id="31_guide_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_H.jpg" id="32_guide_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_C.jpg" id="33_guide_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_D.jpg" id="34_guide_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="22_eye_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="23_eye_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="24_eye_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_D.png" id="25_eye_d"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
-[ext_resource type="Texture2D" uid="uid://dedyobqpiapjq" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iv00_C.png" id="21_n6kq0"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iimg.png" id="21_n6kq0"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="26_brain_regions_icon"]
 
 [node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
 offset_left = 10.0
@@ -31,6 +45,7 @@ offset_top = 10.0
 offset_right = 1605.0
 offset_bottom = 86.0
 theme_type_variation = &"HBoxContainer_far"
+theme_override_constants/separation = 8
 script = ExtResource("1_f5hja")
 theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
 
@@ -48,14 +63,55 @@ theme_type_variation = &"HBoxContainer_farther"
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
 
-[node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="BrainRegionsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 layout_mode = 2
 script = ExtResource("2_o4dth")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList"]
 layout_mode = 2
+metadata/hover_scale_target = true
 
-[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("26_brain_regions_icon")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Circuits"
+
+[node name="TextureButton_BrainRegions" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Add Circuit..."
+texture_normal = ExtResource("4_e2mvc")
+texture_pressed = ExtResource("5_etpv8")
+texture_hover = ExtResource("6_fkuh3")
+texture_disabled = ExtResource("7_puuh8")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/ignore_parent_press = true
+
+[node name="Spacer_AfterAddCircuits" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="InputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_o4dth")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList"]
+layout_mode = 2
+metadata/hover_scale_target = true
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -63,23 +119,69 @@ size_flags_vertical = 4
 texture = ExtResource("3_x3r8j")
 expand_mode = 1
 
-[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList/HBoxContainer"]
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
-text = "Cortical Areas"
+text = "Inputs"
 
-[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="TextureButton_Inputs" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-tooltip_text = "Add Brain Area..."
+tooltip_text = "Add Input..."
 texture_normal = ExtResource("4_e2mvc")
 texture_pressed = ExtResource("5_etpv8")
 texture_hover = ExtResource("6_fkuh3")
 texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
+metadata/ignore_parent_press = true
+
+[node name="Spacer_AfterAddInputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="OutputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+layout_mode = 2
+script = ExtResource("2_o4dth")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList"]
+layout_mode = 2
+metadata/hover_scale_target = true
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("8_output")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Outputs"
+
+[node name="TextureButton_Outputs" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Add Output..."
+texture_normal = ExtResource("4_e2mvc")
+texture_pressed = ExtResource("5_etpv8")
+texture_hover = ExtResource("6_fkuh3")
+texture_disabled = ExtResource("7_puuh8")
+ignore_texture_size = true
+stretch_mode = 0
+metadata/ignore_parent_press = true
+
+[node name="Spacer_AfterAddOutputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+size_flags_horizontal = 4
 
 [node name="HBoxContainer3" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
@@ -116,6 +218,11 @@ texture_hover = ExtResource("6_fkuh3")
 texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
+
+[node name="Spacer_AfterAddBrainAreas" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+size_flags_horizontal = 4
 
 [node name="ChangeSize" type="PanelContainer" parent="."]
 visible = false
@@ -168,6 +275,71 @@ theme_type_variation = &"MarginContainer_far"
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "Split view options (Circuit Builder / Brain Monitor / Split View)"
+
+[node name="ActivityRenderingPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ActivityRenderingPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="ActivityRenderingToggle" type="TextureButton" parent="ActivityRenderingPanel/MarginContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Toggle Global Neural Connections - Show/Hide neural connection curves for all cortical areas"
+theme_type_variation = &"TextureButton_TopBar"
+toggle_mode = true
+texture_normal = ExtResource("22_eye_s")
+texture_pressed = ExtResource("23_eye_c")
+texture_hover = ExtResource("24_eye_h")
+texture_disabled = ExtResource("25_eye_d")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="CameraAnimationsPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CameraAnimationsPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="CameraAnimations" type="TextureRect" parent="CameraAnimationsPanel/MarginContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Camera Animations"
+texture = ExtResource("27_cam_anim_s")
+expand_mode = 3
+script = ExtResource("20_6yf7l")
+texture_normal = ExtResource("27_cam_anim_s")
+texture_pressed = ExtResource("29_cam_anim_c")
+texture_hover = ExtResource("28_cam_anim_h")
+texture_disabled = ExtResource("30_cam_anim_d")
+
+[node name="GuidePanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="GuidePanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="GuideButton" type="TextureRect" parent="GuidePanel/MarginContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "User Guide"
+texture = ExtResource("31_guide_s")
+expand_mode = 3
+script = ExtResource("20_6yf7l")
+texture_normal = ExtResource("31_guide_s")
+texture_pressed = ExtResource("33_guide_c")
+texture_hover = ExtResource("32_guide_h")
+texture_disabled = ExtResource("34_guide_d")
 
 [node name="DetailsPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -194,18 +366,6 @@ texture_normal = ExtResource("19_fxjdk")
 texture_pressed = ExtResource("19_fxjdk")
 texture_hover = ExtResource("19_fxjdk")
 texture_disabled = ExtResource("19_fxjdk")
-
-[node name="Previews" type="TextureRect" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="1"]
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "View Previews"
-texture = ExtResource("21_n6kq0")
-expand_mode = 3
-script = ExtResource("20_6yf7l")
-texture_normal = ExtResource("21_n6kq0")
-texture_pressed = ExtResource("21_n6kq0")
-texture_hover = ExtResource("21_n6kq0")
-texture_disabled = ExtResource("21_n6kq0")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
@@ -264,14 +424,20 @@ script = ExtResource("7_g1qxj")
 [node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
 layout_mode = 2
 
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList" to="." method="_open_cortical_areas"]
-[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton" to="." method="_open_create_cortical"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList" to="." method="_open_brain_regions"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_BrainRegions" to="." method="_open_create_brain_region"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList" to="." method="_open_inputs"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Inputs" to="." method="_open_create_input"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList" to="." method="_open_outputs"]
+[connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Outputs" to="." method="_open_create_output"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList" to="." method="_open_neuron_morphologies"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/TextureButton" to="." method="_open_create_morpology"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 [connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
+[connection signal="toggled" from="ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle" to="." method="_placeholder_toggle_changed"]
 [connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Options" to="." method="_open_options"]
-[connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Previews" to="." method="_preview_button_pressed"]
+[connection signal="pressed" from="CameraAnimationsPanel/MarginContainer/CameraAnimations" to="." method="_open_camera_animations"]
+[connection signal="pressed" from="GuidePanel/MarginContainer/GuideButton" to="." method="_open_guide"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

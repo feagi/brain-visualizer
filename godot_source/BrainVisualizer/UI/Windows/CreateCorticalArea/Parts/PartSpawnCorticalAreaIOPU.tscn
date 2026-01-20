@@ -1,8 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://craawda1yun5y"]
+[gd_scene load_steps=3 format=3 uid="uid://craawda1yun5y"]
 
 [ext_resource type="Script" uid="uid://b4pdwtu5ymmil" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
-[ext_resource type="Script" uid="uid://dqsvtxw1or7ux" path="res://BrainVisualizer/UI/GenericElements/DropDown/TemplateDropDown.gd" id="2_hm4ef"]
-[ext_resource type="Texture2D" uid="uid://io0bj7fr2e5b" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/i__inf.png" id="4_1tced"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iinf.png" id="4_1tced"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]
 
 [node name="Definition_IOPU" type="VBoxContainer"]
@@ -21,18 +20,20 @@ layout_mode = 2
 [node name="Label" type="Label" parent="HBoxContainer2/TopLabels"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Device Type:"
+text = "Device Name:"
 vertical_alignment = 1
 
 [node name="TopSection" type="VBoxContainer" parent="HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TemplateDropDown" type="OptionButton" parent="HBoxContainer2/TopSection"]
+[node name="Spacer" type="Control" parent="HBoxContainer2/TopSection"]
 layout_mode = 2
-size_flags_vertical = 3
-fit_to_longest_item = false
-script = ExtResource("2_hm4ef")
+
+[node name="DeviceName" type="Label" parent="HBoxContainer2/TopSection"]
+layout_mode = 2
+vertical_alignment = 1
+autowrap_mode = 1
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -45,6 +46,12 @@ theme_type_variation = &"VBoxContainer_farther"
 [node name="Label" type="Label" parent="HBoxContainer/Labels"]
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Unit ID:"
+vertical_alignment = 1
+
+[node name="Label3" type="Label" parent="HBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Device Count:"
 vertical_alignment = 1
 
@@ -54,9 +61,34 @@ size_flags_horizontal = 3
 text = "Location:"
 vertical_alignment = 1
 
+[node name="Label4" type="Label" parent="HBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Data Type:"
+vertical_alignment = 1
+
+[node name="Label5" type="Label" parent="HBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Frame Handling:"
+vertical_alignment = 1
+
+[node name="Label6" type="Label" parent="HBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Positioning:"
+vertical_alignment = 1
+
 [node name="Fields" type="VBoxContainer" parent="HBoxContainer"]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_farther"
+
+[node name="UnitID" type="SpinBox" parent="HBoxContainer/Fields"]
+layout_mode = 2
+min_value = 0.0
+max_value = 255.0
+value = 0.0
+alignment = 1
 
 [node name="ChannelCount" type="SpinBox" parent="HBoxContainer/Fields"]
 layout_mode = 2
@@ -68,10 +100,27 @@ alignment = 1
 layout_mode = 2
 initial_vector = Vector3i(40, 0, 0)
 
+[node name="DataTypeVariant" type="OptionButton" parent="HBoxContainer/Fields"]
+layout_mode = 2
+
+[node name="FrameHandling" type="OptionButton" parent="HBoxContainer/Fields"]
+layout_mode = 2
+
+[node name="Positioning" type="OptionButton" parent="HBoxContainer/Fields"]
+layout_mode = 2
+
 [node name="TextureRect" type="TextureRect" parent="HBoxContainer"]
 layout_mode = 2
 texture = ExtResource("4_1tced")
 expand_mode = 2
 
-[connection signal="template_picked" from="HBoxContainer2/TopSection/TemplateDropDown" to="." method="_drop_down_changed"]
+[node name="UnitIDStatus" type="Label" parent="."]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[connection signal="value_changed" from="HBoxContainer/Fields/UnitID" to="." method="_on_unit_id_changed"]
 [connection signal="value_changed" from="HBoxContainer/Fields/ChannelCount" to="." method="_proxy_device_count_changes"]
+[connection signal="item_selected" from="HBoxContainer/Fields/DataTypeVariant" to="." method="_on_data_type_variant_changed"]
+[connection signal="item_selected" from="HBoxContainer/Fields/FrameHandling" to="." method="_on_frame_handling_changed"]
+[connection signal="item_selected" from="HBoxContainer/Fields/Positioning" to="." method="_on_positioning_changed"]

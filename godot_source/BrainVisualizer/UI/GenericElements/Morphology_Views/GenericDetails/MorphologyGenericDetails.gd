@@ -22,8 +22,8 @@ var _shown_morphology: BaseMorphology = NullMorphology.new()
 func _ready() -> void:
 	_morphology_mappings_view = $UsageAndImage/VBoxContainer/Usage
 	_morphology_details_view = $Description
-	_texture_container = $UsageAndImage/VBoxContainer2
-	_morphology_texture_view = $UsageAndImage/VBoxContainer2/Current_Morphology_image
+	_texture_container = get_node_or_null("UsageAndImage/VBoxContainer2")
+	_morphology_texture_view = get_node_or_null("UsageAndImage/VBoxContainer2/Current_Morphology_image")
 	_available_morphology_images = DirAccess.get_files_at(MORPHOLOGY_ICON_PATH)
 	_morphology_details_view.editable = editable
 
@@ -46,6 +46,8 @@ func clear_UI() -> void:
 
 ## Updates the image of the description (if no image, just hides the rect)
 func _update_image_with_morphology(morphology_name: StringName) -> void:
+	if _texture_container == null or _morphology_texture_view == null:
+		return
 	var morphology_image_name: StringName = morphology_name + &".png"
 	var index: int = _available_morphology_images.find(morphology_image_name)
 

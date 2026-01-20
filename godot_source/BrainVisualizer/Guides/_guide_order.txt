@@ -1,0 +1,23 @@
+# Guide Topic Order
+# This file controls the order of topics in the Brain Visualizer user guide sidebar.
+# Each line should contain the filename of a markdown file (without path).
+# Lines starting with # are comments and will be ignored.
+# Empty lines are ignored.
+# Files not listed here will appear at the end in alphabetical order.
+
+index.md
+getting_started.md
+navigation.md
+camera_controls.md
+camera_animations.md
+split_view.md
+ui_controls.md
+quick_menu.md
+cortical_areas.md
+cortical_area_details.md
+brain_circuits.md
+circuit_builder.md
+mapping_connections.md
+connectivity_rules.md
+brain_monitor.md
+glossary.md

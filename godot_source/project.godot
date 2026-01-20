@@ -10,14 +10,21 @@ config_version=5
 
 [application]
 
-config/name="Brain-Visualizer"
+config/name="Brain Visualizer"
 config/description="User UI for FEAGI"
 run/main_scene="res://BrainVisualizer/BrainVisualizer.tscn"
-config/features=PackedStringArray("4.4", "Forward Plus")
+config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
+wasm_dir="wasm/"
+feagi/root_region_id="root"
 
 [autoload]
 
+WindowStateManager="*res://Autoload/WindowStateManager.gd"
+StatusReporter="*res://Autoload/StatusReporter.gd"
+FeagiModeDetector="*res://Autoload/FeagiModeDetector.gd"
+FeagiProcessManager="*res://Autoload/FeagiProcessManager.gd"
+ShutdownManager="*res://Autoload/ShutdownManager.gd"
 FeagiCore="*res://addons/FeagiCoreIntegration/FeagiCore/FeagiCore.gd"
 BV="*res://BrainVisualizer/BV.gd"
 
@@ -27,8 +34,10 @@ gdscript/warnings/unsafe_cast=1
 
 [display]
 
-window/size/viewport_width=1280
-window/size/viewport_height=720
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/mode=2
+window/stretch/aspect="expand"
 
 [editor]
 
@@ -36,7 +45,7 @@ export/convert_text_resources_to_binary=false
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/FeagiCoreIntegration/plugin.cfg")
+enabled=PackedStringArray("res://addons/FeagiCoreIntegration/plugin.cfg", "res://addons/feagi_export_filter/plugin.cfg")
 
 [file_customization]
 
@@ -114,6 +123,9 @@ pointing/emulate_mouse_from_touch=false
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_s3tc_bptc=true
+textures/vram_compression/import_etc2_astc=true
 limits/global_shader_variables/buffer_size=16384
 limits/spatial_indexer/threaded_cull_minimum_instances=65536
 

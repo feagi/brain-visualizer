@@ -85,7 +85,7 @@ func remove_cortical_area(removing: AbstractCorticalArea) -> void:
 func list_cortical_area_types(types_to_show: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE]) -> void:
 	var areas_to_show: Array[AbstractCorticalArea] = []
 	for array_type in types_to_show:
-		areas_to_show.append_array(FeagiCore.feagi_local_cache.cortical_areas.search_for_cortical_areas_by_type(array_type))
+		areas_to_show.append_array(FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(array_type))
 	overwrite_cortical_areas(areas_to_show)
 
 func _user_selected_option(index: int) -> void:

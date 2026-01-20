@@ -63,6 +63,24 @@ func _init(morphology_name: StringName, is_using_placeholder_data: bool, feagi_d
 	is_placeholder_data = is_using_placeholder_data
 	internal_class = feagi_defined_internal_class
 
+## Helper function to safely convert dimensions data that might be Array or Dictionary
+static func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector3i:
+	if data is Array:
+		return FEAGIUtils.array_to_vector3i(data)
+	elif data is Dictionary:
+		var dict_data: Dictionary = data as Dictionary
+		# Handle common dictionary formats for 3D coordinates
+		if dict_data.has("x") and dict_data.has("y") and dict_data.has("z"):
+			return Vector3i(int(dict_data["x"]), int(dict_data["y"]), int(dict_data["z"]))
+		elif dict_data.has("width") and dict_data.has("height") and dict_data.has("depth"):
+			return Vector3i(int(dict_data["width"]), int(dict_data["height"]), int(dict_data["depth"]))
+		else:
+			push_error("BASE MORPHOLOGY: Unsupported dictionary format for %s: %s" % [field_name, str(dict_data)])
+			return Vector3i(1, 1, 1)  # Default fallback
+	else:
+		push_error("BASE MORPHOLOGY: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
+		return Vector3i(1, 1, 1)  # Default fallback
+
 ## Spawns correct morphology type given dict from FEAGI and other details
 static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE, feagi_defined_internal_class: MORPHOLOGY_INTERNAL_CLASS, morphology_details: Dictionary) -> BaseMorphology:
 	match morphology_type:
@@ -78,7 +96,7 @@ static func create(morphology_name: StringName, morphology_type: MORPHOLOGY_TYPE
 		BaseMorphology.MORPHOLOGY_TYPE.PATTERNS:
 			return PatternMorphology.new(morphology_name, false, feagi_defined_internal_class, PatternVector3Pairs.raw_pattern_nested_array_to_array_of_PatternVector3s(morphology_details["patterns"]))
 		BaseMorphology.MORPHOLOGY_TYPE.COMPOSITE:
-			return CompositeMorphology.new(morphology_name, false, feagi_defined_internal_class, FEAGIUtils.array_to_vector3i(morphology_details["src_seed"]), FEAGIUtils.array_of_arrays_to_vector2i_array(morphology_details["src_pattern"]), morphology_details["mapper_morphology"])
+			return CompositeMorphology.new(morphology_name, false, feagi_defined_internal_class, _safe_convert_to_vector3i(morphology_details["src_seed"], "src_seed"), FEAGIUtils.array_of_arrays_to_vector2i_array(morphology_details["src_pattern"]), morphology_details["mapper_morphology"])
 		_:
 			# Something else? Error out
 			@warning_ignore("assert_always_false")

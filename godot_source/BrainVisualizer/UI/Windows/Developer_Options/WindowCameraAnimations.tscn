@@ -1,0 +1,112 @@
+[gd_scene load_steps=5 format=3 uid="uid://camerawin_tmp_uid"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+[ext_resource type="PackedScene" uid="uid://c2jdrm0arstht" path="res://BrainVisualizer/UI/Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.tscn" id="3_cam_part"]
+[ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="4_float_input"]
+
+[node name="WindowCameraAnimations" type="VBoxContainer"]
+offset_right = 520.0
+offset_bottom = 520.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_script")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+layout_mode = 2
+title = "Camera Animations"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+theme_type_variation = &"VBoxContainer_far"
+
+[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+autowrap_mode = 3
+text = "Create and play camera presets to generate 3D walkthroughs of neural circuits for demonstrations. Add camera positions or paths, then play the sequence."
+
+[node name="Separator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="TransitionTime" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/TransitionTime"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Transition Time"
+
+[node name="transition_time" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/TransitionTime"]
+layout_mode = 2
+tooltip_text = "transition time"
+script = ExtResource("4_float_input")
+initial_float = 3.0
+min_value = 0.1
+suffix = " seconds"
+
+[node name="MovementInterp" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/MovementInterp"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Movement Interp "
+
+[node name="move_interp" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/MovementInterp"]
+layout_mode = 2
+item_count = 5
+selected = 1
+fit_to_longest_item = false
+popup/item_0/text = "Nearest"
+popup/item_0/id = 0
+popup/item_1/text = "Linear "
+popup/item_1/id = 1
+popup/item_2/text = "Cubic"
+popup/item_2/id = 2
+popup/item_3/text = "Angle Linear"
+popup/item_3/id = 3
+popup/item_4/text = "Angle Cubic"
+popup/item_4/id = 4
+
+[node name="RotationInterp" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/RotationInterp"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Rotation Interp "
+
+[node name="rot_interp" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/RotationInterp"]
+layout_mode = 2
+item_count = 5
+selected = 1
+fit_to_longest_item = false
+popup/item_0/text = "Nearest"
+popup/item_0/id = 0
+popup/item_1/text = "Linear "
+popup/item_1/id = 1
+popup/item_2/text = "Cubic"
+popup/item_2/id = 2
+popup/item_3/text = "Angle Linear"
+popup/item_3/id = 3
+popup/item_4/text = "Angle Cubic"
+popup/item_4/id = 4
+
+[node name="AddCurrentPosition" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+text = "Add Current Position"
+
+[node name="CameraAnimations" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_cam_part")]
+layout_mode = 2
+
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/AddCurrentPosition" to="WindowPanel/WindowMargin/WindowInternals/CameraAnimations" method="add_frame"]
+

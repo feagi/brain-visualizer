@@ -5,7 +5,9 @@ const WINDOW_NAME: StringName = "view_cortical"
 const ITEM_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/Windows/View_Cortical_Areas/WindowViewCorticalAreaItem.tscn")
 
 var _scroll_section: ScrollSectionGenericWithFilter
-
+var _context_region: BrainRegion = null
+var _on_focus_callable: Callable = Callable()
+var _type_filter: int = -1 ## -1 means no filter; otherwise AbstractCorticalArea.CORTICAL_AREA_TYPE
 
 func _ready() -> void:
 	super()
@@ -16,10 +18,41 @@ func _ready() -> void:
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
 	for cortical_area: AbstractCorticalArea in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
+		if _type_filter != -1 and cortical_area.cortical_type != _type_filter:
+			continue
 		_cortical_area_added(cortical_area)
 
+func setup_filtered(type_filter: int) -> void:
+	_type_filter = type_filter
+	setup()
+
+func setup_with_context(context_region: BrainRegion, on_focus: Callable) -> void:
+	_setup_base_window(WINDOW_NAME)
+	_context_region = context_region
+	_on_focus_callable = on_focus
+	for area: AbstractCorticalArea in context_region.contained_cortical_areas:
+		if _type_filter != -1 and area.cortical_type != _type_filter:
+			continue
+		# Direct-only; also this list may include IPU/OPU/Core even in root; for non-root regions the cache ensures types
+		_cortical_area_added(area)
+
+func setup_with_context_filtered(context_region: BrainRegion, on_focus: Callable, type_filter: int) -> void:
+	_type_filter = type_filter
+	setup_with_context(context_region, on_focus)
+
 func _press_add_cortical_area() -> void:
-	BV.WM.spawn_create_cortical()
+	if _type_filter != -1:
+		# We have a type filter, so directly create that type
+		if _context_region != null:
+			BV.WM.spawn_create_cortical_with_type_for_region(_context_region, _type_filter)
+		else:
+			BV.WM.spawn_create_cortical_with_type(_type_filter)
+	else:
+		# No filter, show the type selection dialog
+		if _context_region != null:
+			BV.WM.spawn_create_cortical_for_region(_context_region)
+		else:
+			BV.WM.spawn_create_cortical()
 	close_window()
  
 func _cortical_area_added(cortical_area: AbstractCorticalArea) -> void:
@@ -47,7 +80,10 @@ func _button_update_visabilities() -> void:
 	close_window()
 
 func _press_cortical(cortical_area: AbstractCorticalArea) -> void:
-	BV.UI.temp_root_bm._pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(cortical_area.coordinates_3D) + (cortical_area.dimensions_3D / 2.0))
+	if _on_focus_callable.is_valid():
+		_on_focus_callable.call(cortical_area)
+		return
+	BV.UI.temp_root_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(cortical_area.coordinates_3D) + (cortical_area.dimensions_3D / 2.0))
 	#BV.UI.selection_system.clear_all_highlighted()
 	#BV.UI.selection_system.add_to_highlighted(cortical_area)
 	pass

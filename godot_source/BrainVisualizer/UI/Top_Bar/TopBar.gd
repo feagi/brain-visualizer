@@ -1,7 +1,7 @@
 extends HBoxContainer
 class_name TopBar
 
-@export var starting_size_index: int = 2
+@export var starting_size_index: int = 4
 @export var theme_scalar_nodes_to_not_include_or_search: Array[Node] = []
 
 signal request_UI_mode(mode: TempSplit.STATES)
@@ -15,6 +15,9 @@ var _synapse_count: TextInput
 
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
+var _activity_rendering_toggle: TextureButton
+const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
+var _list_popup: FilterableListPopup
 
 
 func _ready():
@@ -26,6 +29,13 @@ func _ready():
 	
 	_increase_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Bigger
 	_decrease_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Smaller
+	
+	_activity_rendering_toggle = $ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle
+	print("🔍 DEBUG: Activity rendering toggle found: ", _activity_rendering_toggle != null)
+	if _activity_rendering_toggle:
+		print("🔍 DEBUG: Toggle visible: ", _activity_rendering_toggle.visible)
+		print("🔍 DEBUG: Toggle size: ", _activity_rendering_toggle.size)
+		print("🔍 DEBUG: Toggle position: ", _activity_rendering_toggle.position)
 	
 	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
@@ -56,10 +66,12 @@ func toggle_buttons_interactability(pressable: bool) -> void:
 		return
 	print("TOPBAR: Setting pressability to %s" % pressable)
 	_refresh_rate_field.editable = pressable
-	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainAreasList.disabled = !pressable
-	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton.disabled = !pressable
-	$Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList.disabled = !pressable
-	$Buttons/MarginContainer/HBoxContainer/HBoxContainer3/TextureButton.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_BrainRegions.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Inputs.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList.disabled = !pressable
+	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Outputs.disabled = !pressable
 	
 	
 
@@ -75,29 +87,74 @@ func _set_scale(index_movement: int) -> void:
 
 
 func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
-	_refresh_rate_field.editable = new_delay_between_bursts_seconds != 0.0
+	print("🔥 TOPBAR: FEAGI updated delay to %s seconds" % new_delay_between_bursts_seconds)
+	
+	# Don't disable the field based on FEAGI data - let the genome state control editability
+	# _refresh_rate_field.editable = new_delay_between_bursts_seconds != 0.0
+	
 	if new_delay_between_bursts_seconds == 0.0:
+		print("🔥 TOPBAR: FEAGI sent 0.0 delay - setting display to 0.0 Hz")
 		_refresh_rate_field.current_float = 0.0
 		return
-	_refresh_rate_field.current_float =  1.0 / new_delay_between_bursts_seconds
+	
+	var frequency_hz = 1.0 / new_delay_between_bursts_seconds
+	print("🔥 TOPBAR: Converting %s seconds delay to %s Hz display" % [new_delay_between_bursts_seconds, frequency_hz])
+	_refresh_rate_field.current_float = frequency_hz
 
-func _user_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
-	if new_delay_between_bursts_seconds <= 0.0:
+func _user_on_burst_delay_change(new_refresh_rate_hz: float) -> void:
+	print("🔥 TOPBAR: User changed refresh rate to %s Hz" % new_refresh_rate_hz)
+	
+	if new_refresh_rate_hz <= 0.0:
+		print("🔥 TOPBAR: Invalid refresh rate (<= 0), resetting to current value")
 		_refresh_rate_field.current_float = 1.0 / FeagiCore.delay_between_bursts
 		return
-	FeagiCore.requests.update_burst_delay(1.0 / new_delay_between_bursts_seconds)
+	
+	# Convert frequency (Hz) to delay (seconds) and send to FEAGI
+	var delay_seconds = 1.0 / new_refresh_rate_hz
+	print("🔥 TOPBAR: Converting %s Hz to %s seconds delay, calling API..." % [new_refresh_rate_hz, delay_seconds])
+	
+	# Check if FeagiCore.requests is available
+	if not FeagiCore or not FeagiCore.requests:
+		print("🔥 TOPBAR: ERROR - FeagiCore.requests not available!")
+		return
+		
+	FeagiCore.requests.update_burst_delay(delay_seconds)
 
 
 func _view_selected(new_state: TempSplit.STATES) -> void:
 	request_UI_mode.emit(new_state)
 
-func _open_cortical_areas() -> void:
-	BV.WM.spawn_cortical_view()
-	#VisConfig.UI_manager.window_manager.spawn_cortical_view()
+func _open_inputs() -> void:
+	var items := _build_topbar_cortical_items(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+	_open_dropdown_for_items($Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList, items, "Filter inputs...", func(area: AbstractCorticalArea):
+		_focus_cortical_from_topbar(area)
+	)
 
-func _open_create_cortical() -> void:
-	BV.WM.spawn_create_cortical()
-	#VisConfig.UI_manager.window_manager.spawn_create_cortical()
+func _open_create_input() -> void:
+	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+
+func _open_brain_regions() -> void:
+	var items := _build_topbar_region_items()
+	_open_dropdown_for_items($Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList, items, "Filter circuits...", func(region: BrainRegion):
+		_focus_region_from_topbar(region)
+	)
+
+func _open_create_brain_region() -> void:
+	# Open create circuit window using main circuit as parent and no preselected objects
+	var parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	var empty_selection: Array[GenomeObject] = []
+	BV.WM.spawn_create_region(parent_region, empty_selection)
+
+#VisConfig.UI_manager.window_manager.spawn_create_cortical()
+
+func _open_outputs() -> void:
+	var items := _build_topbar_cortical_items(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+	_open_dropdown_for_items($Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList, items, "Filter outputs...", func(area: AbstractCorticalArea):
+		_focus_cortical_from_topbar(area)
+	)
+
+func _open_create_output() -> void:
+	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
 
 func _open_neuron_morphologies() -> void:
 	BV.WM.spawn_manager_morphology()
@@ -107,6 +164,12 @@ func _open_create_morpology() -> void:
 
 func _open_options() -> void:
 	BV.WM.spawn_options()
+
+func _open_camera_animations() -> void:
+	BV.WM.spawn_camera_animations()
+
+func _open_guide() -> void:
+	BV.WM.spawn_guide()
 
 #func _FEAGI_retireved_latency(latency_ms: int) -> void:
 #	_latency_field.current_int = latency_ms
@@ -120,8 +183,197 @@ func _bigger_scale() -> void:
 func _preview_button_pressed() -> void:
 	BV.WM.spawn_view_previews()
 
+func _placeholder_toggle_changed(button_pressed: bool) -> void:
+	print("🔗 Global Neural Connections toggle changed to: ", button_pressed)
+	_toggle_cortical_activity_rendering(button_pressed)
+
+func _toggle_cortical_activity_rendering(enabled: bool) -> void:
+	print("🔗 Setting global neural connections visibility to: ", enabled)
+	_toggle_global_neural_connections(enabled)
+
+func _toggle_global_neural_connections(enabled: bool) -> void:
+	print("🔗 Toggling global neural connections: ", enabled)
+	
+	# Find the brain monitor scene
+	var brain_monitor = _find_brain_monitor_scene()
+	if not brain_monitor:
+		print("🔗 ❌ Could not find brain monitor scene")
+		return
+	
+	# Get all cortical area objects in the 3D scene
+	var cortical_area_objects = _find_all_cortical_area_objects(brain_monitor)
+	if cortical_area_objects.is_empty():
+		print("🔗 ❌ No cortical area objects found in brain monitor")
+		return
+	
+	print("🔗 Found ", cortical_area_objects.size(), " cortical area objects")
+	
+	# Toggle connections for all cortical areas
+	for cortical_area_obj in cortical_area_objects:
+		if enabled:
+			# Show connections (simulate hover) with global mode
+			cortical_area_obj.set_hover_over_volume_state(true, true)  # true for hover, true for global mode
+		else:
+			# Hide connections (simulate unhover)
+			cortical_area_obj.set_hover_over_volume_state(false, false)  # false for hover, false for global mode
+	
+	if enabled:
+		print("🔗 ✅ Global neural connections ENABLED for ", cortical_area_objects.size(), " areas")
+	else:
+		print("🔗 ❌ Global neural connections DISABLED for ", cortical_area_objects.size(), " areas")
+
+func _find_brain_monitor_scene() -> Node:
+	# Try to find the brain monitor scene in the scene tree
+	# Look for UI_BrainMonitor_3DScene or similar
+	var root = get_tree().root
+	return _recursive_find_node_by_class(root, "UI_BrainMonitor_3DScene")
+
+func _recursive_find_node_by_class(node: Node, target_class_name: String) -> Node:
+	# Check if current node matches
+	if node.get_script() and node.get_script().get_global_name() == target_class_name:
+		return node
+	
+	# Check children recursively
+	for child in node.get_children():
+		var result = _recursive_find_node_by_class(child, target_class_name)
+		if result:
+			return result
+	
+	return null
+
+func _find_all_cortical_area_objects(brain_monitor: Node) -> Array:
+	# Find all UI_BrainMonitor_CorticalArea objects in the brain monitor
+	var cortical_areas = []
+	_recursive_find_cortical_areas(brain_monitor, cortical_areas)
+	return cortical_areas
+
+func _recursive_find_cortical_areas(node: Node, cortical_areas: Array) -> void:
+	# Check if current node is a cortical area
+	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
+		cortical_areas.append(node)
+		# Debug: Check if this is a memory area
+		if node._representing_cortial_area and node._representing_cortial_area.cortical_type == 1:  # MEMORY type
+			print("🔗 Found MEMORY cortical area in global toggle: ", node._representing_cortial_area.cortical_ID)
+	
+	# Check children recursively
+	for child in node.get_children():
+		_recursive_find_cortical_areas(child, cortical_areas)
+
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
+
+
+## Create and attach the reusable list popup if needed.
+func _ensure_list_popup() -> void:
+	if _list_popup != null:
+		return
+	_list_popup = PREFAB_FILTERABLE_LIST_POPUP.instantiate()
+	add_child(_list_popup)
+
+
+## Open the dropdown with the provided items.
+func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable) -> void:
+	_ensure_list_popup()
+	_list_popup.open_with_items(anchor_button, items, selection_handler, placeholder_text)
+
+
+## Build dropdown items for all regions in the cache.
+func _build_topbar_region_items() -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	var regions: Array[BrainRegion] = []
+	regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.values())
+	for region in regions:
+		items.append({"label": region.friendly_name, "payload": region})
+	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return String(a.get("label", "")).to_lower() < String(b.get("label", "")).to_lower()
+	)
+	return items
+
+
+## Build dropdown items for cortical areas of the given type.
+func _build_topbar_cortical_items(area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	var areas: Array[AbstractCorticalArea] = FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(area_type)
+	areas.sort_custom(func(a: AbstractCorticalArea, b: AbstractCorticalArea) -> bool:
+		return String(a.friendly_name).to_lower() < String(b.friendly_name).to_lower()
+	)
+	for area in areas:
+		items.append({"label": area.friendly_name, "payload": area})
+	return items
+
+
+## Focus the selected region in the active view.
+func _focus_region_from_topbar(region: BrainRegion) -> void:
+	var bm := BV.UI.get_active_brain_monitor()
+	if bm != null:
+		if bm.has_method("focus_on_brain_region"):
+			bm.focus_on_brain_region(region)
+			bm.flash_indicator_for_brain_region(region)
+			return
+		if bm.get_pancake_camera():
+			bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+		return
+	var cb := _get_active_cb()
+	if cb != null:
+		cb.focus_on_region(region)
+
+
+## Focus the selected cortical area in the active view.
+func _focus_cortical_from_topbar(area: AbstractCorticalArea) -> void:
+	var bm := BV.UI.get_active_brain_monitor()
+	if bm != null:
+		if bm.has_method("focus_on_cortical_area"):
+			bm.focus_on_cortical_area(area)
+			bm.flash_indicator_for_cortical_area(area)
+			return
+		if bm.get_pancake_camera():
+			var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+			bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
+		return
+	var cb := _get_active_cb()
+	if cb != null:
+		cb.focus_on_cortical_area(area)
+
+
+## Find the active Circuit Builder tab if one is focused.
+func _get_active_cb() -> CircuitBuilder:
+	return _search_for_active_cb_in_view(BV.UI.root_UI_view)
+
+
+## Recursively search for the active Circuit Builder tab in a UIView.
+func _search_for_active_cb_in_view(ui_view: UIView) -> CircuitBuilder:
+	if ui_view == null:
+		return null
+	if ui_view.mode == UIView.MODE.TAB:
+		var tab_container = ui_view._get_primary_child() as UITabContainer
+		if tab_container != null and tab_container.get_tab_count() > 0:
+			var active_control = tab_container.get_tab_control(tab_container.current_tab)
+			if active_control is CircuitBuilder:
+				return active_control as CircuitBuilder
+	elif ui_view.mode == UIView.MODE.SPLIT:
+		var primary_child = ui_view._get_primary_child()
+		if primary_child is UIView:
+			var result = _search_for_active_cb_in_view(primary_child as UIView)
+			if result != null:
+				return result
+		elif primary_child is UITabContainer:
+			var tab_container = primary_child as UITabContainer
+			if tab_container.get_tab_count() > 0:
+				var active_control = tab_container.get_tab_control(tab_container.current_tab)
+				if active_control is CircuitBuilder:
+					return active_control as CircuitBuilder
+		var secondary_child = ui_view._get_secondary_child()
+		if secondary_child is UIView:
+			var result2 = _search_for_active_cb_in_view(secondary_child as UIView)
+			if result2 != null:
+				return result2
+		elif secondary_child is UITabContainer:
+			var tab_container2 = secondary_child as UITabContainer
+			if tab_container2.get_tab_count() > 0:
+				var active_control2 = tab_container2.get_tab_control(tab_container2.current_tab)
+				if active_control2 is CircuitBuilder:
+					return active_control2 as CircuitBuilder
+	return null
 
 	
 func _update_neuron_count_current(val: int) -> void:

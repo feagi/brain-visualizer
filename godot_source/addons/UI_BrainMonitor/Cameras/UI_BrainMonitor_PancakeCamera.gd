@@ -39,18 +39,33 @@ enum MODE {
 }
 
 signal BM_input_events(input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) # Array can only be a length of 1 since there is only a single mouse cursor!
+signal camera_user_moved()
+signal camera_reset_requested()
 
 var movement_mode: MODE = MODE.TANK
 var allow_user_control: bool = true # set to false externally if user interacting with other UI element
 var FPS_sensitivity : float = 3
+
+# When false, camera panning via click+drag is disabled (but BM input events still emit).
+var allow_tank_pan: bool = true
+
+func set_tank_pan_enabled(is_enabled: bool) -> void:
+	allow_tank_pan = is_enabled
 
 var _parent_viewport: Viewport
 var _initial_position: Vector3
 var _initial_euler_rotation: Vector3
 var _fps_velocity: float = FPS_DEFAULT_SPEED
 
+# Indicates whether the mouse cursor is currently hovering this camera's SubViewport
+var _is_mouse_hovering_viewport: bool = false
+
 var _mouse_position_when_any_click_started: Vector2 = Vector2(-1, -1)
 var _click_down_count: int = 0
+
+var _last_transform: Transform3D
+var _awaiting_emit: bool = false
+const USER_MOVE_DEBOUNCE: float = 0.3
 
 
 
@@ -60,6 +75,12 @@ func _ready() -> void:
 	_parent_viewport = get_viewport()
 	_initial_position = position
 	_initial_euler_rotation = rotation_degrees
+	_last_transform = global_transform
+
+
+## Sets the hover state for this camera's SubViewport so we can scope keyboard actions like reset
+func set_mouse_hover_state(is_hovered: bool) -> void:
+	_is_mouse_hovering_viewport = is_hovered
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -101,7 +122,7 @@ func _unhandled_input(event: InputEvent) -> void:
 						rotation.y += event.relative.x * -TANK_CAMERA_ROTATION_SPEED
 						return
 					
-					if Input.is_mouse_button_pressed(key_tank_pan_button):
+					if allow_tank_pan and Input.is_mouse_button_pressed(key_tank_pan_button):
 						var move: Vector3 = Vector3(event.relative.x * -TANK_CAMERA_PAN_SPEED, event.relative.y * TANK_CAMERA_PAN_SPEED, 0)
 						translate(move)
 				elif event is InputEventMouseButton:
@@ -125,6 +146,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				var bm_mouse_position: Vector2 = mouse_button_event.position
 				var bm_double_clicked: bool = mouse_button_event.double_click
 				
+				# Capture modifier keys from the event for web/desktop compatibility
+				var bm_ctrl: bool = mouse_button_event.ctrl_pressed
+				var bm_shift: bool = mouse_button_event.shift_pressed
+				var bm_alt: bool = mouse_button_event.alt_pressed
+				
 				# Dragging calculation
 				var bm_was_dragging: bool = false # we only say we are dragging for the last held mouse button released
 				if bm_pressed:
@@ -140,7 +166,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
 				var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
 				
-				var bm_click_event: UI_BrainMonitor_InputEvent_Click = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, bm_pressed, bm_double_clicked, bm_button, bm_was_dragging)
+				var bm_click_event: UI_BrainMonitor_InputEvent_Click = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, bm_pressed, bm_double_clicked, bm_button, bm_was_dragging, bm_ctrl, bm_shift, bm_alt)
 				var bm_click_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_click_event]
 				BM_input_events.emit(bm_click_events)
 			return
@@ -150,9 +176,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			var mouse_motion_event: InputEventMouseMotion = event as InputEventMouseMotion
 			var bm_mouse_position: Vector2 = mouse_motion_event.position
 			
+			# Capture modifier keys from the event for web/desktop compatibility
+			var bm_ctrl: bool = mouse_motion_event.ctrl_pressed
+			var bm_shift: bool = mouse_motion_event.shift_pressed
+			var bm_alt: bool = mouse_motion_event.alt_pressed
+			
 			var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
 			var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
-			var bm_hover_event: UI_BrainMonitor_InputEvent_Hover = UI_BrainMonitor_InputEvent_Hover.new(held_bm_buttons, start_pos, end_pos)
+			var bm_hover_event: UI_BrainMonitor_InputEvent_Hover = UI_BrainMonitor_InputEvent_Hover.new(held_bm_buttons, start_pos, end_pos, bm_ctrl, bm_shift, bm_alt)
 			var bm_hover_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_hover_event]
 			BM_input_events.emit(bm_hover_events)
 			return
@@ -174,7 +205,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				var dir: Vector3 = Vector3(0,0,0)
 
 				if Input.is_key_pressed(KEY_R):
-					reset_camera()
+					# Only reset if the mouse is currently over this SubViewport
+					if _is_mouse_hovering_viewport:
+						camera_reset_requested.emit()
 					return
 				if Input.is_action_pressed("forward"):
 					dir += Vector3(0,0,-1)
@@ -222,13 +255,31 @@ func _unhandled_input(event: InputEvent) -> void:
 			MODE.FPS:
 				pass
 			MODE.TANK:
-				translate(Vector3(event.delta.x,0, event.delta.y)) # why doesnt this inherit from mouse?
+				if allow_tank_pan:
+					translate(Vector3(event.delta.x,0, event.delta.y)) # why doesnt this inherit from mouse?
 
 
 func _process(delta):
 	if not current:
 		return
 		get_world_3d()
+
+	# Debounced callback when user moves camera (any mode except ANIMATION)
+	if allow_user_control and movement_mode != MODE.ANIMATION:
+		var moved: bool = false
+		if (global_transform.origin - _last_transform.origin).length() > 0.01:
+			moved = true
+		elif global_transform.basis != _last_transform.basis:
+			moved = true
+		if moved:
+			_last_transform = global_transform
+			if !_awaiting_emit:
+				_awaiting_emit = true
+				var t := get_tree().create_timer(USER_MOVE_DEBOUNCE)
+				t.timeout.connect(func():
+					_awaiting_emit = false
+					camera_user_moved.emit()
+				)
 	
 	match(movement_mode):
 		MODE.ANIMATION:
@@ -254,6 +305,7 @@ func teleport_to_look_at_without_changing_angle(position_to_point_at: Vector3) -
 func reset_camera() -> void:
 	position = _initial_position
 	rotation = _initial_euler_rotation
+	current = true
 
 func _mouse_button_to_BM_CLICK_BUTTON(mouse_button: MouseButton) -> UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON:
 	match(mouse_button):
