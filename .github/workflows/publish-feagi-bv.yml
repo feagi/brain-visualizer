@@ -20,7 +20,7 @@ on:
           - pypi
 
 env:
-  BV_MAJOR_VERSION: "1"  # Change this when moving to BV 2.x
+  BV_MAJOR_VERSION: "2"  # Currently supporting BV 2.x versions
 
 jobs:
   validate-version:
