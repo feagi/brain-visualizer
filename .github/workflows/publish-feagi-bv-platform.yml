@@ -1,4 +1,4 @@
-name: Publish feagi-bv Package
+name: Publish feagi-bv Platform Packages
 
 on:
   release:
@@ -40,11 +40,9 @@ jobs:
             TARGET_REPO="${{ inputs.target_repo }}"
           elif [ "${{ github.event_name }}" == "release" ]; then
             BV_TAG="${{ github.event.release.tag_name }}"
-            # Production releases go to PyPI
             TARGET_REPO="pypi"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             BV_TAG="${{ github.ref_name }}"
-            # Determine target based on tag
             if [[ "$BV_TAG" =~ -beta\. ]] || [[ "$BV_TAG" =~ -alpha\. ]]; then
               TARGET_REPO="testpypi"
             else
@@ -81,8 +79,8 @@ jobs:
           echo "bv_version=${BV_VERSION}" >> $GITHUB_OUTPUT
           echo "target_repo=${TARGET_REPO}" >> $GITHUB_OUTPUT
 
-  build-feagi-bv:
-    name: Build feagi-bv wheel (${{ matrix.platform }})
+  build-platform-packages:
+    name: Build feagi-bv-${{ matrix.platform }} wheel
     needs: validate-version
     runs-on: ${{ matrix.os }}
     strategy:
@@ -90,20 +88,20 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            platform: Linux
+            platform: linux
             download_artifact: BrainVisualizer-Remote-Linux
             binary_name: BrainVisualizer-Remote.x86_64
-            feagi_bv_bin: linux/BrainVisualizer
+            bin_dest: bin/linux/BrainVisualizer
           - os: macos-latest
-            platform: macOS
+            platform: macos
             download_artifact: BrainVisualizer-Remote-macOS
             binary_name: BrainVisualizer-Remote.app
-            feagi_bv_bin: macos/BrainVisualizer.app
+            bin_dest: bin/macos/BrainVisualizer.app
           - os: windows-latest
-            platform: Windows
+            platform: windows
             download_artifact: BrainVisualizer-Remote-Windows
             binary_name: BrainVisualizer-Remote.exe
-            feagi_bv_bin: windows/BrainVisualizer.exe
+            bin_dest: bin/windows/
 
     steps:
       - name: Checkout repository
@@ -118,7 +116,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install build wheel setuptools twine
+          pip install build wheel setuptools
 
       - name: Download BV release artifact
         env:
@@ -130,7 +128,6 @@ jobs:
           
           echo "📦 Downloading BrainVisualizer ${BV_TAG} artifact: ${{ matrix.download_artifact }}"
           
-          # Download release asset
           gh release download "$BV_TAG" --pattern "${{ matrix.download_artifact }}.*" --dir downloads/
           
           echo "Downloaded files:"
@@ -164,98 +161,157 @@ jobs:
           Write-Host "Extracted contents:"
           Get-ChildItem -Recurse
 
-      - name: Prepare feagi-bv package structure
+      - name: Update package version
         shell: bash
         run: |
           BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
           
-          echo "📝 Updating feagi-bv version to ${BV_VERSION}"
+          echo "📝 Updating feagi-bv-${{ matrix.platform }} version to ${BV_VERSION}"
           
-          # Update version in pyproject.toml
+          PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
+          
           if [ "${{ runner.os }}" == "Windows" ]; then
-            sed -i "s/^version = .*/version = \"${BV_VERSION}\"/" feagi-bv/pyproject.toml
+            sed -i "s/^version = .*/version = \"${BV_VERSION}\"/" "$PKG_DIR/pyproject.toml"
           else
-            sed -i.bak "s/^version = .*/version = \"${BV_VERSION}\"/" feagi-bv/pyproject.toml
-            rm -f feagi-bv/pyproject.toml.bak
+            sed -i.bak "s/^version = .*/version = \"${BV_VERSION}\"/" "$PKG_DIR/pyproject.toml"
+            rm -f "$PKG_DIR/pyproject.toml.bak"
           fi
           
           echo "Updated pyproject.toml:"
-          grep "^version = " feagi-bv/pyproject.toml
+          grep "^version = " "$PKG_DIR/pyproject.toml"
 
-      - name: Copy BV binary to package (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Copy BV binary to package
         shell: bash
         run: |
-          mkdir -p feagi-bv/feagi_bv/bin/${{ matrix.platform == 'Linux' && 'linux' || 'macos' }}
+          PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
+          BIN_DIR="$PKG_DIR/feagi_bv_${{ matrix.platform }}/${{ matrix.bin_dest }}"
+          
+          mkdir -p "$(dirname "$BIN_DIR")"
           
           if [ "${{ runner.os }}" == "macOS" ]; then
             # Copy entire .app bundle for macOS
-            cp -r downloads/${{ matrix.binary_name }} feagi-bv/feagi_bv/bin/macos/
+            cp -r downloads/${{ matrix.binary_name }} "$BIN_DIR"
             
-            # Strip debug symbols to reduce size (safe for release builds)
+            # Strip debug symbols to reduce size
             echo "🗜️ Stripping debug symbols from macOS binary..."
-            find feagi-bv/feagi_bv/bin/macos -type f -name "BrainVisualizer*" -o -name "*.dylib" | while read f; do
+            find "$BIN_DIR" -type f \( -name "BrainVisualizer*" -o -name "*.dylib" \) | while read f; do
               if file "$f" | grep -q "Mach-O"; then
                 strip "$f" 2>/dev/null || true
               fi
             done
+          elif [ "${{ runner.os }}" == "Windows" ]; then
+            # Copy .exe and .pck files for Windows
+            cp downloads/${{ matrix.binary_name }} "$BIN_DIR/"
+            
+            # Copy .pck file if exists
+            if [ -f "downloads/BrainVisualizer-Remote.pck" ]; then
+              cp downloads/BrainVisualizer-Remote.pck "$BIN_DIR/"
+            fi
+            
+            # Copy DLL files
+            find downloads -name "*.dll" -exec cp {} "$BIN_DIR/" \;
           else
             # Copy Linux binary
-            cp downloads/${{ matrix.binary_name }} feagi-bv/feagi_bv/bin/linux/BrainVisualizer
-            chmod +x feagi-bv/feagi_bv/bin/linux/BrainVisualizer
+            cp downloads/${{ matrix.binary_name }} "$BIN_DIR"
+            chmod +x "$BIN_DIR"
             
-            # Strip debug symbols to reduce size
+            # Strip debug symbols
             echo "🗜️ Stripping debug symbols from Linux binary..."
-            strip feagi-bv/feagi_bv/bin/linux/BrainVisualizer 2>/dev/null || true
+            strip "$BIN_DIR" 2>/dev/null || true
           fi
           
           echo "✅ Copied BV binary to package"
-          ls -lRh feagi-bv/feagi_bv/bin/
-
-      - name: Copy BV binary to package (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path feagi-bv/feagi_bv/bin/windows
-          
-          # Copy .exe and .pck files
-          Copy-Item downloads/${{ matrix.binary_name }} feagi-bv/feagi_bv/bin/windows/ -Force
-          
-          # Copy .pck file if exists (embed_pck=false in export_presets.cfg)
-          $pckFile = "downloads/BrainVisualizer-Remote.pck"
-          if (Test-Path $pckFile) {
-            Copy-Item $pckFile feagi-bv/feagi_bv/bin/windows/ -Force
-            Write-Host "✅ Copied .pck file"
-          }
-          
-          # Copy any DLL files (GDExtension dependencies)
-          Get-ChildItem downloads/*.dll -ErrorAction SilentlyContinue | ForEach-Object {
-            Copy-Item $_.FullName feagi-bv/feagi_bv/bin/windows/ -Force
-            Write-Host "✅ Copied DLL: $($_.Name)"
-          }
-          
-          Write-Host "✅ Copied BV binary to package"
-          Get-ChildItem -Path feagi-bv/feagi_bv/bin/ -Recurse
+          ls -lRh "$PKG_DIR/feagi_bv_${{ matrix.platform }}/bin/"
 
       - name: Build wheel
         shell: bash
         run: |
-          cd feagi-bv
+          PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
+          cd "$PKG_DIR"
           python -m build --wheel
           
           echo "Built wheel:"
           ls -lh dist/
 
+      - name: Check wheel size
+        shell: bash
+        run: |
+          PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
+          for wheel in "$PKG_DIR"/dist/*.whl; do
+            size=$(stat -f%z "$wheel" 2>/dev/null || stat -c%s "$wheel" 2>/dev/null)
+            size_mb=$((size / 1024 / 1024))
+            echo "📦 $(basename $wheel): ${size_mb} MB"
+            if [ $size_mb -gt 100 ]; then
+              echo "⚠️  WARNING: Wheel exceeds 100 MB limit!"
+            else
+              echo "✅ Wheel size OK (under 100 MB limit)"
+            fi
+          done
+
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: feagi-bv-wheel-${{ matrix.platform }}
-          path: feagi-bv/dist/*.whl
+          name: feagi-bv-${{ matrix.platform }}-wheel
+          path: feagi-bv-platform/feagi-bv-${{ matrix.platform }}/dist/*.whl
           retention-days: 7
 
-  publish-feagi-bv:
-    name: Publish feagi-bv to ${{ needs.validate-version.outputs.target_repo }}
-    needs: [validate-version, build-feagi-bv]
+  build-meta-package:
+    name: Build feagi-bv meta-package
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+
+      - name: Update meta-package version
+        run: |
+          BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          
+          echo "📝 Updating feagi-bv meta-package version to ${BV_VERSION}"
+          
+          PKG_DIR="feagi-bv-platform/feagi-bv-meta"
+          
+          sed -i.bak "s/^version = .*/version = \"${BV_VERSION}\"/" "$PKG_DIR/pyproject.toml"
+          
+          # Update platform package version requirements
+          sed -i.bak "s/feagi-bv-linux>=.*/feagi-bv-linux>=${BV_VERSION}; sys_platform == 'linux',/" "$PKG_DIR/pyproject.toml"
+          sed -i.bak "s/feagi-bv-macos>=.*/feagi-bv-macos>=${BV_VERSION}; sys_platform == 'darwin',/" "$PKG_DIR/pyproject.toml"
+          sed -i.bak "s/feagi-bv-windows>=.*/feagi-bv-windows>=${BV_VERSION}; sys_platform == 'win32',/" "$PKG_DIR/pyproject.toml"
+          
+          rm -f "$PKG_DIR/pyproject.toml.bak"
+          
+          echo "Updated pyproject.toml:"
+          grep "version = " "$PKG_DIR/pyproject.toml"
+          grep "feagi-bv-" "$PKG_DIR/pyproject.toml"
+
+      - name: Build meta-package wheel
+        run: |
+          cd feagi-bv-platform/feagi-bv-meta
+          python -m build --wheel
+          
+          echo "Built wheel:"
+          ls -lh dist/
+
+      - name: Upload meta-package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feagi-bv-meta-wheel
+          path: feagi-bv-platform/feagi-bv-meta/dist/*.whl
+          retention-days: 7
+
+  publish-packages:
+    name: Publish to ${{ needs.validate-version.outputs.target_repo }}
+    needs: [validate-version, build-platform-packages, build-meta-package]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -265,7 +321,7 @@ jobs:
       - name: Download all wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: feagi-bv-wheel-*
+          pattern: feagi-bv-*-wheel
           path: dist
           merge-multiple: true
 
@@ -274,16 +330,11 @@ jobs:
           echo "📦 Wheels to publish:"
           ls -lh dist/
           echo ""
-          echo "Checking file sizes (TestPyPI limit: 100 MB per file):"
-          for wheel in dist/*.whl; do
-            size=$(stat -f%z "$wheel" 2>/dev/null || stat -c%s "$wheel" 2>/dev/null)
-            size_mb=$((size / 1024 / 1024))
-            if [ $size_mb -gt 100 ]; then
-              echo "⚠️  $(basename $wheel): ${size_mb} MB (EXCEEDS LIMIT)"
-            else
-              echo "✅ $(basename $wheel): ${size_mb} MB"
-            fi
-          done
+          echo "Total packages: $(ls dist/*.whl | wc -l)"
+          echo "  - feagi-bv (meta-package)"
+          echo "  - feagi-bv-linux"
+          echo "  - feagi-bv-macos"
+          echo "  - feagi-bv-windows"
 
       - name: Publish to TestPyPI
         if: needs.validate-version.outputs.target_repo == 'testpypi'
@@ -294,7 +345,6 @@ jobs:
           packages-dir: dist/
           skip-existing: true
           verbose: true
-          print-hash: true
 
       - name: Publish to PyPI
         if: needs.validate-version.outputs.target_repo == 'pypi'
@@ -308,11 +358,13 @@ jobs:
           BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
           TARGET_REPO="${{ needs.validate-version.outputs.target_repo }}"
           
-          echo "✅ Successfully published feagi-bv==${BV_VERSION} to ${TARGET_REPO}"
+          echo "✅ Successfully published feagi-bv==${BV_VERSION} packages to ${TARGET_REPO}"
           echo ""
-          echo "📦 Package: feagi-bv"
-          echo "🏷️  Version: ${BV_VERSION}"
-          echo "🎯 Repository: ${TARGET_REPO}"
+          echo "📦 Published packages:"
+          echo "  - feagi-bv==${BV_VERSION} (meta-package)"
+          echo "  - feagi-bv-linux==${BV_VERSION}"
+          echo "  - feagi-bv-macos==${BV_VERSION}"
+          echo "  - feagi-bv-windows==${BV_VERSION}"
           echo ""
           if [ "$TARGET_REPO" == "testpypi" ]; then
             echo "Test installation:"
