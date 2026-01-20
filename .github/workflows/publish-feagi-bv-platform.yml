@@ -15,13 +15,11 @@ on:
         description: 'BV release to download binaries from (defaults to bv_version if empty)'
         required: false
         default: ''
-      target_repo:
-        description: 'Target repository'
-        type: choice
-        required: true
-        options:
-          - testpypi
-          - pypi
+      dry_run:
+        description: 'Dry run (build only, do not publish)'
+        required: false
+        type: boolean
+        default: false
 
 env:
   BV_MAJOR_VERSION: "2"  # Currently supporting BV 2.x versions
@@ -33,7 +31,6 @@ jobs:
     outputs:
       bv_version: ${{ steps.validate.outputs.bv_version }}
       bv_binary_version: ${{ steps.validate.outputs.bv_binary_version }}
-      target_repo: ${{ steps.validate.outputs.target_repo }}
     steps:
       - name: Determine version and target
         id: validate
@@ -42,7 +39,6 @@ jobs:
           # Determine BV version
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             BV_TAG="${{ inputs.bv_version }}"
-            TARGET_REPO="${{ inputs.target_repo }}"
             # Allow overriding binary source version
             if [ -n "${{ inputs.bv_binary_version }}" ]; then
               BV_BINARY_TAG="${{ inputs.bv_binary_version }}"
@@ -52,23 +48,52 @@ jobs:
           elif [ "${{ github.event_name }}" == "release" ]; then
             BV_TAG="${{ github.event.release.tag_name }}"
             BV_BINARY_TAG="${BV_TAG}"
-            TARGET_REPO="pypi"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             BV_TAG="${{ github.ref_name }}"
             BV_BINARY_TAG="${BV_TAG}"
-            if [[ "$BV_TAG" =~ -beta\. ]] || [[ "$BV_TAG" =~ -alpha\. ]]; then
-              TARGET_REPO="testpypi"
-            else
-              TARGET_REPO="pypi"
-            fi
           else
             echo "❌ Cannot determine version - unexpected trigger"
             exit 1
           fi
           
+          # Always publish to production PyPI
+          # Pre-releases are handled automatically by pip based on version format
+          TARGET_REPO="pypi"
+          
           # Extract version number (remove 'v' prefix if present)
           BV_VERSION="${BV_TAG#v}"
           BV_BINARY_VERSION="${BV_BINARY_TAG#v}"
+          
+          # Validate PEP 440 compliance
+          echo "🔍 Validating version format: $BV_VERSION"
+          
+          # PEP 440 regex pattern
+          # Matches: X.Y.Z, X.Y.ZaN, X.Y.ZbN, X.Y.ZrcN, X.Y.Z.postN, X.Y.Z.devN
+          # Does NOT match: X.Y.Z-beta, X.Y.Z_beta, vX.Y.Z, etc.
+          if [[ ! "$BV_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+|b[0-9]+|rc[0-9]+)?(\.post[0-9]+)?(\.dev[0-9]+)?$ ]]; then
+            echo "❌ ERROR: Version '$BV_VERSION' does not comply with PEP 440"
+            echo ""
+            echo "Valid PEP 440 formats:"
+            echo "  - 2.1.0         (stable release)"
+            echo "  - 2.1.0a1       (alpha 1)"
+            echo "  - 2.1.0b1       (beta 1)"
+            echo "  - 2.1.0rc1      (release candidate 1)"
+            echo "  - 2.1.0.post1   (post release)"
+            echo "  - 2.1.0.dev1    (development)"
+            echo ""
+            echo "Invalid formats:"
+            echo "  - 2.1.0-beta1   (wrong separator)"
+            echo "  - 2.1.0_beta1   (wrong separator)"
+            echo "  - v2.1.0        (v prefix not allowed in version)"
+            echo "  - 2.1.0beta1    (missing separator)"
+            echo ""
+            echo "Note: Git tags can use 'v' prefix (e.g., v2.1.0b1)"
+            echo "      but the version extracted must be PEP 440 compliant"
+            exit 1
+          fi
+          
+          echo "✅ Version format is PEP 440 compliant"
+          
           echo "version=${BV_VERSION}" >> $GITHUB_OUTPUT
           echo "binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
           
@@ -78,10 +103,11 @@ jobs:
           # Get the gating major version
           GATE_MAJOR="${{ env.BV_MAJOR_VERSION }}"
           
+          echo ""
           echo "🔍 Brain Visualizer release: ${BV_TAG} (version: ${BV_VERSION})"
           echo "📦 Binary source: ${BV_BINARY_TAG} (version: ${BV_BINARY_VERSION})"
           echo "🔒 Major version gate: ${GATE_MAJOR}"
-          echo "📦 Target repository: ${TARGET_REPO}"
+          echo "📦 Target repository: PyPI (production)"
           
           # Validate major version matches gate
           if [ "$BV_MAJOR" != "$GATE_MAJOR" ]; then
@@ -94,7 +120,6 @@ jobs:
           
           echo "bv_version=${BV_VERSION}" >> $GITHUB_OUTPUT
           echo "bv_binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
-          echo "target_repo=${TARGET_REPO}" >> $GITHUB_OUTPUT
 
   build-platform-packages:
     name: Build feagi-bv-${{ matrix.platform }} wheel
@@ -326,9 +351,12 @@ jobs:
           retention-days: 7
 
   publish-packages:
-    name: Publish to ${{ needs.validate-version.outputs.target_repo }}
+    name: Publish to PyPI
     needs: [validate-version, build-platform-packages, build-meta-package]
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/feagi-bv/
     permissions:
       contents: write
       id-token: write
@@ -352,40 +380,49 @@ jobs:
           echo "  - feagi-bv-macos"
           echo "  - feagi-bv-windows"
 
-      - name: Publish to TestPyPI
-        if: needs.validate-version.outputs.target_repo == 'testpypi'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          password: ${{ secrets.FEAGI_BV_TEST_PYPI_TOKEN }}
-          packages-dir: dist/
-          skip-existing: true
-          verbose: true
-
       - name: Publish to PyPI
-        if: needs.validate-version.outputs.target_repo == 'pypi'
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.FEAGI_BV_PYPI_TOKEN }}
           packages-dir: dist/
+          verbose: true
 
       - name: Summary
         run: |
           BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
-          TARGET_REPO="${{ needs.validate-version.outputs.target_repo }}"
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
           
-          echo "✅ Successfully published feagi-bv==${BV_VERSION} packages to ${TARGET_REPO}"
-          echo ""
-          echo "📦 Published packages:"
-          echo "  - feagi-bv==${BV_VERSION} (meta-package)"
-          echo "  - feagi-bv-linux==${BV_VERSION}"
-          echo "  - feagi-bv-macos==${BV_VERSION}"
-          echo "  - feagi-bv-windows==${BV_VERSION}"
-          echo ""
-          if [ "$TARGET_REPO" == "testpypi" ]; then
-            echo "Test installation:"
-            echo "  pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ feagi-bv==${BV_VERSION}"
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "🔍 Dry run completed for feagi-bv==${BV_VERSION}"
+            echo ""
+            echo "📦 Built packages (NOT published):"
+            echo "  - feagi-bv==${BV_VERSION} (meta-package)"
+            echo "  - feagi-bv-linux==${BV_VERSION}"
+            echo "  - feagi-bv-macos==${BV_VERSION}"
+            echo "  - feagi-bv-windows==${BV_VERSION}"
           else
-            echo "Installation:"
-            echo "  pip install feagi-bv==${BV_VERSION}"
+            echo "✅ Successfully published feagi-bv==${BV_VERSION} packages to PyPI"
+            echo ""
+            echo "📦 Published packages:"
+            echo "  - feagi-bv==${BV_VERSION} (meta-package)"
+            echo "  - feagi-bv-linux==${BV_VERSION}"
+            echo "  - feagi-bv-macos==${BV_VERSION}"
+            echo "  - feagi-bv-windows==${BV_VERSION}"
+            echo ""
+            
+            # Check if this is a pre-release
+            if [[ "$BV_VERSION" =~ (a|b|rc)[0-9]+ ]]; then
+              echo "Pre-release installation (explicit version required):"
+              echo "  pip install feagi-bv==${BV_VERSION}"
+              echo ""
+              echo "Or install latest pre-release:"
+              echo "  pip install --pre feagi-bv"
+            else
+              echo "Installation (stable release):"
+              echo "  pip install feagi-bv"
+              echo ""
+              echo "Or specific version:"
+              echo "  pip install feagi-bv==${BV_VERSION}"
+            fi
           fi
