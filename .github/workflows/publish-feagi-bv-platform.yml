@@ -91,17 +91,14 @@ jobs:
             platform: linux
             download_artifact: BrainVisualizer-Remote-Linux
             binary_name: BrainVisualizer-Remote.x86_64
-            bin_dest: bin/linux/BrainVisualizer
           - os: macos-latest
             platform: macos
             download_artifact: BrainVisualizer-Remote-macOS
             binary_name: BrainVisualizer-Remote.app
-            bin_dest: bin/macos/BrainVisualizer.app
           - os: windows-latest
             platform: windows
             download_artifact: BrainVisualizer-Remote-Windows
             binary_name: BrainVisualizer-Remote.exe
-            bin_dest: bin/windows/
 
     steps:
       - name: Checkout repository
@@ -184,44 +181,45 @@ jobs:
         shell: bash
         run: |
           PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
-          BIN_DIR="$PKG_DIR/feagi_bv_${{ matrix.platform }}/${{ matrix.bin_dest }}"
-          
-          mkdir -p "$(dirname "$BIN_DIR")"
+          BIN_BASE="$PKG_DIR/feagi_bv_${{ matrix.platform }}"
           
           if [ "${{ runner.os }}" == "macOS" ]; then
             # Copy entire .app bundle for macOS
-            cp -r downloads/${{ matrix.binary_name }} "$BIN_DIR"
+            mkdir -p "$BIN_BASE/bin/macos"
+            cp -r downloads/${{ matrix.binary_name }} "$BIN_BASE/bin/macos/"
             
             # Strip debug symbols to reduce size
             echo "🗜️ Stripping debug symbols from macOS binary..."
-            find "$BIN_DIR" -type f \( -name "BrainVisualizer*" -o -name "*.dylib" \) | while read f; do
+            find "$BIN_BASE/bin/macos" -type f \( -name "BrainVisualizer*" -o -name "*.dylib" \) | while read f; do
               if file "$f" | grep -q "Mach-O"; then
                 strip "$f" 2>/dev/null || true
               fi
             done
           elif [ "${{ runner.os }}" == "Windows" ]; then
             # Copy .exe and .pck files for Windows
-            cp downloads/${{ matrix.binary_name }} "$BIN_DIR/"
+            mkdir -p "$BIN_BASE/bin/windows"
+            cp downloads/${{ matrix.binary_name }} "$BIN_BASE/bin/windows/"
             
             # Copy .pck file if exists
             if [ -f "downloads/BrainVisualizer-Remote.pck" ]; then
-              cp downloads/BrainVisualizer-Remote.pck "$BIN_DIR/"
+              cp downloads/BrainVisualizer-Remote.pck "$BIN_BASE/bin/windows/"
             fi
             
             # Copy DLL files
-            find downloads -name "*.dll" -exec cp {} "$BIN_DIR/" \;
+            find downloads -name "*.dll" -exec cp {} "$BIN_BASE/bin/windows/" \;
           else
             # Copy Linux binary
-            cp downloads/${{ matrix.binary_name }} "$BIN_DIR"
-            chmod +x "$BIN_DIR"
+            mkdir -p "$BIN_BASE/bin/linux"
+            cp downloads/${{ matrix.binary_name }} "$BIN_BASE/bin/linux/BrainVisualizer"
+            chmod +x "$BIN_BASE/bin/linux/BrainVisualizer"
             
             # Strip debug symbols
             echo "🗜️ Stripping debug symbols from Linux binary..."
-            strip "$BIN_DIR" 2>/dev/null || true
+            strip "$BIN_BASE/bin/linux/BrainVisualizer" 2>/dev/null || true
           fi
           
           echo "✅ Copied BV binary to package"
-          ls -lRh "$PKG_DIR/feagi_bv_${{ matrix.platform }}/bin/"
+          ls -lRh "$BIN_BASE/bin/"
 
       - name: Build wheel
         shell: bash
