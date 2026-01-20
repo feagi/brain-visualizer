@@ -31,7 +31,7 @@ else:
 # Setup configuration (metadata comes from pyproject.toml)
 setup(
     install_requires=[
-        'feagi>=2.0.0',
+        'feagi-core>=2.1.0',
         'toml>=0.10.2',
     ] + platform_deps,
 )
