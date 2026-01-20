@@ -41,18 +41,18 @@ git push origin v1.2.3-alpha.1
 When you push a tag, GitHub Actions automatically:
 
 ### 1. macOS (.app bundle)
-- ✅ Godot-exported BrainVisualizer.app
-- ✅ Universal binary (Intel + Apple Silicon)
+- Godot-exported BrainVisualizer.app
+- Universal binary (Intel + Apple Silicon)
 - **Output:** `BrainVisualizer-macos-v1.2.3.tar.gz`
 
 ### 2. Linux (executable)
-- ✅ Godot-exported x86_64 binary
-- ✅ Includes .pck data file
+- Godot-exported x86_64 binary
+- Includes .pck data file
 - **Output:** `BrainVisualizer-linux-v1.2.3.tar.gz`
 
 ### 3. Windows (executable)
-- ✅ Godot-exported .exe
-- ✅ Includes .pck data file
+- Godot-exported .exe
+- Includes .pck data file
 - **Output:** `BrainVisualizer-windows-v1.2.3.zip`
 
 ---
@@ -250,10 +250,10 @@ File: `.github/workflows/release.yml`
 ## Godot Project Requirements
 
 For CI to work, your Godot project must:
-- ✅ Have valid export presets configured
-- ✅ Work in headless mode (no GUI dependencies)
-- ✅ Not require manual intervention during export
-- ✅ Have all resources properly referenced (not absolute paths)
+- Have valid export presets configured
+- Work in headless mode (no GUI dependencies)
+- Not require manual intervention during export
+- Have all resources properly referenced (not absolute paths)
 
 ---
 
@@ -308,18 +308,18 @@ git push origin v1.2.3-alpha.1
 When you push a tag, GitHub Actions automatically:
 
 ### 1. macOS (.app bundle)
-- ✅ Godot-exported BrainVisualizer.app
-- ✅ Universal binary (Intel + Apple Silicon)
+- Godot-exported BrainVisualizer.app
+- Universal binary (Intel + Apple Silicon)
 - **Output:** `BrainVisualizer-macos-v1.2.3.tar.gz`
 
 ### 2. Linux (executable)
-- ✅ Godot-exported x86_64 binary
-- ✅ Includes .pck data file
+- Godot-exported x86_64 binary
+- Includes .pck data file
 - **Output:** `BrainVisualizer-linux-v1.2.3.tar.gz`
 
 ### 3. Windows (executable)
-- ✅ Godot-exported .exe
-- ✅ Includes .pck data file
+- Godot-exported .exe
+- Includes .pck data file
 - **Output:** `BrainVisualizer-windows-v1.2.3.zip`
 
 ---
@@ -517,10 +517,10 @@ File: `.github/workflows/release.yml`
 ## Godot Project Requirements
 
 For CI to work, your Godot project must:
-- ✅ Have valid export presets configured
-- ✅ Work in headless mode (no GUI dependencies)
-- ✅ Not require manual intervention during export
-- ✅ Have all resources properly referenced (not absolute paths)
+- Have valid export presets configured
+- Work in headless mode (no GUI dependencies)
+- Not require manual intervention during export
+- Have all resources properly referenced (not absolute paths)
 
 ---
 

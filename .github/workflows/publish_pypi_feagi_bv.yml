@@ -52,7 +52,7 @@ jobs:
             BV_TAG="${{ github.ref_name }}"
             BV_BINARY_TAG="${BV_TAG}"
           else
-            echo "❌ Cannot determine version - unexpected trigger"
+            echo "ERROR: Cannot determine version - unexpected trigger"
             exit 1
           fi
           
@@ -65,13 +65,13 @@ jobs:
           BV_BINARY_VERSION="${BV_BINARY_TAG#v}"
           
           # Validate PEP 440 compliance
-          echo "🔍 Validating version format: $BV_VERSION"
+          echo "Validating version format: $BV_VERSION"
           
           # PEP 440 regex pattern
           # Matches: X.Y.Z, X.Y.ZaN, X.Y.ZbN, X.Y.ZrcN, X.Y.Z.postN, X.Y.Z.devN
           # Does NOT match: X.Y.Z-beta, X.Y.Z_beta, vX.Y.Z, etc.
           if [[ ! "$BV_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+|b[0-9]+|rc[0-9]+)?(\.post[0-9]+)?(\.dev[0-9]+)?$ ]]; then
-            echo "❌ ERROR: Version '$BV_VERSION' does not comply with PEP 440"
+            echo "ERROR: ERROR: Version '$BV_VERSION' does not comply with PEP 440"
             echo ""
             echo "Valid PEP 440 formats:"
             echo "  - 2.1.0         (stable release)"
@@ -92,7 +92,7 @@ jobs:
             exit 1
           fi
           
-          echo "✅ Version format is PEP 440 compliant"
+          echo "Version format is PEP 440 compliant"
           
           echo "version=${BV_VERSION}" >> $GITHUB_OUTPUT
           echo "binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
@@ -104,19 +104,19 @@ jobs:
           GATE_MAJOR="${{ env.BV_MAJOR_VERSION }}"
           
           echo ""
-          echo "🔍 Brain Visualizer release: ${BV_TAG} (version: ${BV_VERSION})"
-          echo "📦 Binary source: ${BV_BINARY_TAG} (version: ${BV_BINARY_VERSION})"
-          echo "🔒 Major version gate: ${GATE_MAJOR}"
-          echo "📦 Target repository: PyPI (production)"
+          echo "Brain Visualizer release: ${BV_TAG} (version: ${BV_VERSION})"
+          echo "Binary source: ${BV_BINARY_TAG} (version: ${BV_BINARY_VERSION})"
+          echo "Major version gate: ${GATE_MAJOR}"
+          echo "Target repository: PyPI (production)"
           
           # Validate major version matches gate
           if [ "$BV_MAJOR" != "$GATE_MAJOR" ]; then
-            echo "❌ ERROR: BrainVisualizer major version ${BV_MAJOR} does not match gate ${GATE_MAJOR}"
+            echo "ERROR: ERROR: BrainVisualizer major version ${BV_MAJOR} does not match gate ${GATE_MAJOR}"
             echo "To process BV ${BV_VERSION}, update BV_MAJOR_VERSION in the workflow to '${BV_MAJOR}'"
             exit 1
           fi
           
-          echo "✅ Version check passed: BV ${BV_VERSION} matches gate ${GATE_MAJOR}.x.x"
+          echo "Version check passed: BV ${BV_VERSION} matches gate ${GATE_MAJOR}.x.x"
           
           echo "bv_version=${BV_VERSION}" >> $GITHUB_OUTPUT
           echo "bv_binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
@@ -166,8 +166,8 @@ jobs:
           BV_BINARY_TAG="v${BV_BINARY_VERSION}"
           PKG_VERSION="${{ needs.validate-version.outputs.bv_version }}"
           
-          echo "📦 Downloading BrainVisualizer ${BV_BINARY_TAG} artifact: ${{ matrix.download_artifact }}"
-          echo "📦 Will package as version: ${PKG_VERSION}"
+          echo "Downloading BrainVisualizer ${BV_BINARY_TAG} artifact: ${{ matrix.download_artifact }}"
+          echo "Will package as version: ${PKG_VERSION}"
           
           gh release download "$BV_BINARY_TAG" --pattern "${{ matrix.download_artifact }}.*" --dir downloads/
           
@@ -207,7 +207,7 @@ jobs:
         run: |
           BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
           
-          echo "📝 Updating feagi-bv-${{ matrix.platform }} version to ${BV_VERSION}"
+          echo "Updating feagi-bv-${{ matrix.platform }} version to ${BV_VERSION}"
           
           PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
           
@@ -233,7 +233,7 @@ jobs:
             cp -r downloads/${{ matrix.binary_name }} "$BIN_BASE/bin/macos/"
             
             # Strip debug symbols to reduce size
-            echo "🗜️ Stripping debug symbols from macOS binary..."
+            echo "Stripping debug symbols from macOS binary..."
             find "$BIN_BASE/bin/macos" -type f \( -name "BrainVisualizer*" -o -name "*.dylib" \) | while read f; do
               if file "$f" | grep -q "Mach-O"; then
                 strip "$f" 2>/dev/null || true
@@ -258,11 +258,11 @@ jobs:
             chmod +x "$BIN_BASE/bin/linux/BrainVisualizer"
             
             # Strip debug symbols
-            echo "🗜️ Stripping debug symbols from Linux binary..."
+            echo "Stripping debug symbols from Linux binary..."
             strip "$BIN_BASE/bin/linux/BrainVisualizer" 2>/dev/null || true
           fi
           
-          echo "✅ Copied BV binary to package"
+          echo "Copied BV binary to package"
           ls -lRh "$BIN_BASE/bin/"
 
       - name: Build wheel
@@ -282,11 +282,11 @@ jobs:
           for wheel in "$PKG_DIR"/dist/*.whl; do
             size=$(stat -f%z "$wheel" 2>/dev/null || stat -c%s "$wheel" 2>/dev/null)
             size_mb=$((size / 1024 / 1024))
-            echo "📦 $(basename $wheel): ${size_mb} MB"
+            echo "$(basename $wheel): ${size_mb} MB"
             if [ $size_mb -gt 100 ]; then
-              echo "⚠️  WARNING: Wheel exceeds 100 MB limit!"
+              echo "WARNING: Wheel exceeds 100 MB limit!"
             else
-              echo "✅ Wheel size OK (under 100 MB limit)"
+              echo "Wheel size OK (under 100 MB limit)"
             fi
           done
 
@@ -319,7 +319,7 @@ jobs:
         run: |
           BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
           
-          echo "📝 Updating feagi-bv meta-package version to ${BV_VERSION}"
+          echo "Updating feagi-bv meta-package version to ${BV_VERSION}"
           
           PKG_DIR="feagi-bv-platform/feagi-bv-meta"
           
@@ -371,7 +371,7 @@ jobs:
 
       - name: Display wheels
         run: |
-          echo "📦 Wheels to publish:"
+          echo "Wheels to publish:"
           ls -lh dist/
           echo ""
           echo "Total packages: $(ls dist/*.whl | wc -l)"
@@ -394,17 +394,17 @@ jobs:
           DRY_RUN="${{ github.event.inputs.dry_run }}"
           
           if [ "$DRY_RUN" = "true" ]; then
-            echo "🔍 Dry run completed for feagi-bv==${BV_VERSION}"
+            echo "Dry run completed for feagi-bv==${BV_VERSION}"
             echo ""
-            echo "📦 Built packages (NOT published):"
+            echo "Built packages (NOT published):"
             echo "  - feagi-bv==${BV_VERSION} (meta-package)"
             echo "  - feagi-bv-linux==${BV_VERSION}"
             echo "  - feagi-bv-macos==${BV_VERSION}"
             echo "  - feagi-bv-windows==${BV_VERSION}"
           else
-            echo "✅ Successfully published feagi-bv==${BV_VERSION} packages to PyPI"
+            echo "Successfully published feagi-bv==${BV_VERSION} packages to PyPI"
             echo ""
-            echo "📦 Published packages:"
+            echo "Published packages:"
             echo "  - feagi-bv==${BV_VERSION} (meta-package)"
             echo "  - feagi-bv-linux==${BV_VERSION}"
             echo "  - feagi-bv-macos==${BV_VERSION}"
