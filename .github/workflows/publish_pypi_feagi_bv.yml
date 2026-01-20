@@ -1,4 +1,4 @@
-name: Publish feagi-bv Platform Packages
+name: Publish to PyPI - Brain Visualizer
 
 on:
   release:
