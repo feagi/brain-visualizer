@@ -782,42 +782,73 @@ jobs:
             APP_BUNDLE=$(find . -name "*.app" -type d | head -1)
             if [ -z "$APP_BUNDLE" ]; then
               echo "❌ ERROR: No .app bundle found!"
+              echo "Contents of downloads directory:"
+              ls -la
               exit 1
             fi
             
-            # Extract architecture-specific executable from the app bundle
-            EXECUTABLE="$APP_BUNDLE/Contents/MacOS/BrainVisualizer-Remote"
-            if [ -f "$EXECUTABLE" ]; then
-              # Create architecture-specific directory
-              mkdir -p "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/MacOS"
-              
-              # Extract architecture-specific slice using lipo
-              lipo "$EXECUTABLE" -extract "${{ matrix.arch }}" -output "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/MacOS/BrainVisualizer-Remote" || {
-                echo "⚠️  lipo extract failed, trying ditto..."
-                # Fallback: use ditto to copy and thin
-                ditto --arch "${{ matrix.arch }}" "$APP_BUNDLE" "BrainVisualizer-Remote-${{ matrix.arch }}.app"
-              }
-              
-              # Copy other necessary files (Info.plist, resources, etc.)
-              if [ -f "$APP_BUNDLE/Contents/Info.plist" ]; then
-                mkdir -p "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents"
-                cp "$APP_BUNDLE/Contents/Info.plist" "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/"
-              fi
-              
-              # Copy Resources if they exist
-              if [ -d "$APP_BUNDLE/Contents/Resources" ]; then
-                cp -r "$APP_BUNDLE/Contents/Resources" "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/"
-              fi
-              
-              # Remove the original universal bundle
-              rm -rf "$APP_BUNDLE"
-              
-              echo "✅ Extracted ${{ matrix.arch }} architecture"
-              ls -lh "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/MacOS/"
-            else
-              echo "❌ ERROR: Executable not found in app bundle: $EXECUTABLE"
+            echo "Found app bundle: $APP_BUNDLE"
+            echo "App bundle contents:"
+            ls -la "$APP_BUNDLE/Contents/" || true
+            echo "MacOS directory contents:"
+            ls -la "$APP_BUNDLE/Contents/MacOS/" || true
+            
+            # Find the actual executable (could be named differently)
+            MACOS_DIR="$APP_BUNDLE/Contents/MacOS"
+            EXECUTABLE=$(find "$MACOS_DIR" -type f -perm +111 | head -1)
+            
+            if [ -z "$EXECUTABLE" ]; then
+              echo "❌ ERROR: No executable found in $MACOS_DIR"
+              echo "Looking for any files in MacOS directory:"
+              find "$MACOS_DIR" -type f || true
               exit 1
             fi
+            
+            EXECUTABLE_NAME=$(basename "$EXECUTABLE")
+            echo "Found executable: $EXECUTABLE"
+            echo "Executable name: $EXECUTABLE_NAME"
+            
+            # Get app bundle name (without .app extension)
+            APP_NAME=$(basename "$APP_BUNDLE" .app)
+            ARCH_APP_NAME="${APP_NAME}-${{ matrix.arch }}.app"
+            
+            echo "Creating architecture-specific app bundle: $ARCH_APP_NAME"
+            
+            # Create architecture-specific directory structure
+            mkdir -p "$ARCH_APP_NAME/Contents/MacOS"
+            
+            # Extract architecture-specific slice using lipo
+            if lipo "$EXECUTABLE" -extract "${{ matrix.arch }}" -output "$ARCH_APP_NAME/Contents/MacOS/$EXECUTABLE_NAME" 2>&1; then
+              echo "✅ Extracted ${{ matrix.arch }} slice using lipo"
+              chmod +x "$ARCH_APP_NAME/Contents/MacOS/$EXECUTABLE_NAME"
+            else
+              echo "⚠️  lipo extract failed, trying ditto..."
+              # Fallback: use ditto to copy and thin the entire app bundle
+              if ditto --arch "${{ matrix.arch }}" "$APP_BUNDLE" "$ARCH_APP_NAME" 2>&1; then
+                echo "✅ Extracted ${{ matrix.arch }} using ditto"
+              else
+                echo "❌ ERROR: Both lipo and ditto failed to extract architecture"
+                exit 1
+              fi
+            fi
+            
+            # Copy other necessary files if not already copied by ditto
+            if [ ! -f "$ARCH_APP_NAME/Contents/Info.plist" ] && [ -f "$APP_BUNDLE/Contents/Info.plist" ]; then
+              mkdir -p "$ARCH_APP_NAME/Contents"
+              cp "$APP_BUNDLE/Contents/Info.plist" "$ARCH_APP_NAME/Contents/"
+            fi
+            
+            # Copy Resources if they exist and weren't copied by ditto
+            if [ ! -d "$ARCH_APP_NAME/Contents/Resources" ] && [ -d "$APP_BUNDLE/Contents/Resources" ]; then
+              cp -r "$APP_BUNDLE/Contents/Resources" "$ARCH_APP_NAME/Contents/"
+            fi
+            
+            # Remove the original universal bundle
+            rm -rf "$APP_BUNDLE"
+            
+            echo "✅ Extracted ${{ matrix.arch }} architecture"
+            echo "Architecture-specific app bundle contents:"
+            ls -lh "$ARCH_APP_NAME/Contents/MacOS/" || true
           fi
 
       - name: Extract BV binary (Windows)
