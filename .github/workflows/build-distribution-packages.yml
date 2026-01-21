@@ -6,16 +6,8 @@ on:
     tags: [ 'v*' ]
   workflow_dispatch:
     inputs:
-      release_type:
-        description: 'Release Type'
-        type: choice
-        required: true
-        options:
-          - production
-          - beta
-          - alpha
       version:
-        description: 'Version number (format: x.x.x, e.g., 1.2.3)'
+        description: 'Version number (PEP440 format: x.x.x, x.x.xb1, x.x.xa1, x.x.xrc1)'
         type: string
         required: true
       build_embedded:
@@ -55,22 +47,13 @@ jobs:
         id: validate
         shell: bash
         run: |
-          # Determine version and release type
+          # Determine version
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             VERSION="${{ inputs.version }}"
-            RELEASE_TYPE="${{ inputs.release_type }}"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # Extract version from tag (e.g., v1.2.3 or v1.2.3-beta.1)
+            # Extract version from tag (e.g., v1.2.3, v1.2.3b1, v1.2.3a1, v1.2.3rc1)
             TAG_NAME="${{ github.ref_name }}"
             VERSION="${TAG_NAME#v}"
-            
-            if [[ "$VERSION" =~ -beta\. ]]; then
-              RELEASE_TYPE="beta"
-            elif [[ "$VERSION" =~ -alpha\. ]]; then
-              RELEASE_TYPE="alpha"
-            else
-              RELEASE_TYPE="production"
-            fi
           else
             # Branch push - no release, skip validation
             echo "Branch push detected, skipping release validation"
@@ -81,15 +64,28 @@ jobs:
             exit 0
           fi
           
-          # Validate version format (x.x.x)
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)\.[0-9]+)?$ ]]; then
+          # Auto-detect release type from version string (PEP440)
+          if [[ "$VERSION" =~ b[0-9]+ ]]; then
+            RELEASE_TYPE="beta"
+          elif [[ "$VERSION" =~ a[0-9]+ ]]; then
+            RELEASE_TYPE="alpha"
+          elif [[ "$VERSION" =~ rc[0-9]+ ]]; then
+            RELEASE_TYPE="rc"
+          else
+            RELEASE_TYPE="production"
+          fi
+          
+          # Validate version format (PEP440: x.x.x or x.x.xb1 or x.x.xa1 or x.x.xrc1)
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(a|b|rc)?[0-9]*$ ]]; then
             echo "❌ Invalid version format: $VERSION"
-            echo "Expected format: x.x.x (e.g., 1.2.3) or x.x.x-alpha.1 or x.x.x-beta.1"
+            echo "Expected PEP440 format: x.x.x (e.g., 1.2.3) or x.x.xb1 or x.x.xa1 or x.x.xrc1"
             exit 1
           fi
           
-          # Determine tag name based on release type
-          BASE_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
+          # Determine tag name based on release type (PEP440 format)
+          # Extract base version (e.g., "1.2.3" from "1.2.3b1")
+          BASE_VERSION=$(echo "$VERSION" | sed -E 's/(a|b|rc)[0-9]+$//')
+          
           if [ "$RELEASE_TYPE" == "production" ]; then
             TAG_NAME="v${BASE_VERSION}"
             IS_PRERELEASE="false"
@@ -102,36 +98,53 @@ jobs:
               exit 1
             fi
           elif [ "$RELEASE_TYPE" == "beta" ]; then
-            # Extract beta number or default to 1
-            if [[ "$VERSION" =~ -beta\.([0-9]+) ]]; then
+            # Extract beta number or default to 1 (PEP440: 1.2.3b1)
+            if [[ "$VERSION" =~ b([0-9]+) ]]; then
               BETA_NUM="${BASH_REMATCH[1]}"
             else
               BETA_NUM="1"
             fi
             
             # Auto-increment if tag exists
-            TAG_NAME="v${BASE_VERSION}-beta.${BETA_NUM}"
+            TAG_NAME="v${BASE_VERSION}b${BETA_NUM}"
             while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
               echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
               BETA_NUM=$((BETA_NUM + 1))
-              TAG_NAME="v${BASE_VERSION}-beta.${BETA_NUM}"
+              TAG_NAME="v${BASE_VERSION}b${BETA_NUM}"
             done
             
             IS_PRERELEASE="true"
           elif [ "$RELEASE_TYPE" == "alpha" ]; then
-            # Extract alpha number or default to 1
-            if [[ "$VERSION" =~ -alpha\.([0-9]+) ]]; then
+            # Extract alpha number or default to 1 (PEP440: 1.2.3a1)
+            if [[ "$VERSION" =~ a([0-9]+) ]]; then
               ALPHA_NUM="${BASH_REMATCH[1]}"
             else
               ALPHA_NUM="1"
             fi
             
             # Auto-increment if tag exists
-            TAG_NAME="v${BASE_VERSION}-alpha.${ALPHA_NUM}"
+            TAG_NAME="v${BASE_VERSION}a${ALPHA_NUM}"
             while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
               echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
               ALPHA_NUM=$((ALPHA_NUM + 1))
-              TAG_NAME="v${BASE_VERSION}-alpha.${ALPHA_NUM}"
+              TAG_NAME="v${BASE_VERSION}a${ALPHA_NUM}"
+            done
+            
+            IS_PRERELEASE="true"
+          elif [ "$RELEASE_TYPE" == "rc" ]; then
+            # Extract rc number or default to 1 (PEP440: 1.2.3rc1)
+            if [[ "$VERSION" =~ rc([0-9]+) ]]; then
+              RC_NUM="${BASH_REMATCH[1]}"
+            else
+              RC_NUM="1"
+            fi
+            
+            # Auto-increment if tag exists
+            TAG_NAME="v${BASE_VERSION}rc${RC_NUM}"
+            while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
+              echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
+              RC_NUM=$((RC_NUM + 1))
+              TAG_NAME="v${BASE_VERSION}rc${RC_NUM}"
             done
             
             IS_PRERELEASE="true"
