@@ -103,6 +103,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ needs.validate-version.outputs.tag_name }}
           submodules: recursive
 
       - name: Update BVVersion timestamp
@@ -385,6 +386,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-version.outputs.tag_name }}
 
       - name: Cache Rust dependencies
         uses: actions/cache@v4
@@ -725,6 +728,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-version.outputs.tag_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -1052,6 +1057,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-version.outputs.tag_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
