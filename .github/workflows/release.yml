@@ -1026,7 +1026,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheel-${{ matrix.platform }}
-          path: wheel-staging/wheel-${{ matrix.platform }}/*.whl
+          path: wheel-staging/wheel-${{ matrix.platform }}/
           if-no-files-found: error
           retention-days: 1
 
@@ -1136,8 +1136,11 @@ jobs:
           echo "Wheels to publish:"
           find wheels -name "*.whl" -exec ls -lh {} \;
           echo ""
+          echo "Directory structure:"
+          find wheels -type d | sort
+          echo ""
           echo "Checking wheel sizes against PyPI's 100 MB limit:"
-          find wheels -name "*.whl" -exec sh -c 'SIZE=$(du -b "$1" | cut -f1); SIZE_MB=$((SIZE / 1024 / 1024)); echo "  $1: ${SIZE_MB} MB"; if [ "$SIZE_MB" -gt 100 ]; then echo "    ⚠️  EXCEEDS 100 MB LIMIT!"; fi' _ {} \;
+          find wheels -name "*.whl" -exec sh -c 'SIZE=$(stat -c%s "$1" 2>/dev/null || du -b "$1" | cut -f1); SIZE_MB=$((SIZE / 1024 / 1024)); echo "  $1: ${SIZE_MB} MB"; if [ "$SIZE_MB" -gt 100 ]; then echo "    ⚠️  EXCEEDS 100 MB LIMIT!"; fi' _ {} \;
 
       - name: Verify PyPI configuration
         run: |
