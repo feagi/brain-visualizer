@@ -173,33 +173,43 @@ jobs:
           cd rust_extensions
           python build.py --release
 
-      - name: Copy Rust extensions to Godot addons
+      - name: Verify Rust extensions are in place
         shell: bash
         run: |
-          case "${{ runner.os }}" in
-            Linux)
-              TARGET_SUBDIR="x86_64-unknown-linux-gnu/release"
-              ;;
-            macOS)
-              TARGET_SUBDIR="release"
-              ;;
-            Windows)
-              TARGET_SUBDIR="x86_64-pc-windows-msvc/release"
-              ;;
-          esac
+          echo "Checking for Rust extensions after build.py..."
           
-          DESERIALIZER_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
-          mkdir -p "$DESERIALIZER_DIR"
+          # build.py copies to these locations
+          DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/release"
+          DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/release"
+          SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
           
-          DESERIALIZER_LIB=$(find rust_extensions/feagi_data_deserializer -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
-          TYPE_SYSTEM_LIB=$(find rust_extensions/feagi_type_system -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" | grep -E "release|Release" | head -1)
-          SHARED_VIDEO_LIB=$(find rust_extensions/feagi_shared_video -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" | grep -E "release|Release" | head -1)
+          # Check what files exist
+          echo "Files in feagi_rust_deserializer:"
+          ls -la "$DESERIALIZER_SOURCE" 2>/dev/null || echo "Directory not found"
           
-          cp "$DESERIALIZER_LIB" "$DESERIALIZER_DIR/"
-          cp "$TYPE_SYSTEM_LIB" "godot_source/addons/FeagiCoreIntegration/"
+          echo "Files in FeagiCoreIntegration (legacy):"
+          ls -la "$DESERIALIZER_LEGACY" 2>/dev/null || echo "Directory not found"
           
-          mkdir -p "godot_source/addons/feagi_shared_video/target/release"
-          cp "$SHARED_VIDEO_LIB" "godot_source/addons/feagi_shared_video/target/release/"
+          echo "Files in feagi_shared_video:"
+          ls -la "$SHARED_VIDEO_SOURCE" 2>/dev/null || echo "Directory not found"
+          
+          # Verify required files exist (build.py should have copied them)
+          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" 2>/dev/null | head -1)
+          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" 2>/dev/null | head -1)
+          
+          if [ -z "$DESERIALIZER_LIB" ]; then
+            echo "❌ ERROR: feagi_data_deserializer library not found!"
+            echo "Expected in: $DESERIALIZER_SOURCE or $DESERIALIZER_LEGACY"
+            exit 1
+          fi
+          
+          if [ -z "$SHARED_VIDEO_LIB" ]; then
+            echo "❌ ERROR: feagi_shared_video library not found!"
+            echo "Expected in: $SHARED_VIDEO_SOURCE"
+            exit 1
+          fi
+          
+          echo "✅ All Rust extensions verified in place"
 
       - name: Export Godot project
         shell: bash
