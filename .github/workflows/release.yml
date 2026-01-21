@@ -864,6 +864,27 @@ jobs:
           echo "Wheels to publish:"
           find wheels -name "*.whl" -exec ls -lh {} \;
 
+      - name: Verify PyPI trusted publisher configuration
+        run: |
+          echo "⚠️  IMPORTANT: If this step fails, you need to configure PyPI trusted publisher"
+          echo ""
+          echo "To configure PyPI trusted publisher:"
+          echo "1. Go to https://pypi.org/manage/account/publishing/"
+          echo "2. Click 'Add a new pending publisher'"
+          echo "3. Configure with these exact values:"
+          echo "   - PyPI project name: feagi-bv"
+          echo "   - Owner: feagi"
+          echo "   - Repository name: brain-visualizer"
+          echo "   - Workflow filename: .github/workflows/release.yml"
+          echo "   - Environment name: pypi"
+          echo ""
+          echo "Expected claims:"
+          echo "  - sub: repo:feagi/brain-visualizer:environment:pypi"
+          echo "  - repository: feagi/brain-visualizer"
+          echo "  - workflow_ref: feagi/brain-visualizer/.github/workflows/release.yml@refs/tags/v*"
+          echo ""
+          echo "See: https://docs.pypi.org/trusted-publishers/using-github-actions/"
+
       - name: Publish platform packages to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
