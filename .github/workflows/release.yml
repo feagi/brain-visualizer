@@ -372,11 +372,84 @@ jobs:
           cd rust_extensions
           python build.py --release --no-clean
 
+      - name: Find and stage binaries
+        shell: bash
+        run: |
+          echo "Finding Rust extension binaries..."
+          
+          # Create staging directory
+          mkdir -p binaries-staging
+          
+          # Find binaries in standard cargo output locations
+          # Pattern 1: rust_extensions/*/target/release/*.so|.dylib|.dll
+          find rust_extensions/feagi_data_deserializer/target/release -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) 2>/dev/null | while read -r bin; do
+            if [ -f "$bin" ]; then
+              filename=$(basename "$bin")
+              cp -v "$bin" "binaries-staging/$filename" 2>/dev/null || true
+            fi
+          done
+          
+          find rust_extensions/feagi_shared_video/target/release -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) 2>/dev/null | while read -r bin; do
+            if [ -f "$bin" ]; then
+              filename=$(basename "$bin")
+              cp -v "$bin" "binaries-staging/$filename" 2>/dev/null || true
+            fi
+          done
+          
+          find rust_extensions/feagi_type_system/target/release -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) 2>/dev/null | while read -r bin; do
+            if [ -f "$bin" ]; then
+              filename=$(basename "$bin")
+              cp -v "$bin" "binaries-staging/$filename" 2>/dev/null || true
+            fi
+          done
+          
+          # Pattern 2: Architecture-specific targets (Linux/Windows)
+          find rust_extensions -type f \( -name "*.so" -o -name "*.dll" \) -path "*/target/*/release/*" 2>/dev/null | grep -E "(feagi_data_deserializer|feagi_shared_video|feagi_type_system)" | while read -r bin; do
+            if [ -f "$bin" ]; then
+              filename=$(basename "$bin")
+              cp -v "$bin" "binaries-staging/$filename" 2>/dev/null || true
+            fi
+          done
+          
+          # Pattern 3: Universal binaries on macOS
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            find rust_extensions -name "universal_release.*" -type f 2>/dev/null | while read -r bin; do
+              if [ -f "$bin" ]; then
+                # Determine which extension this is from the directory
+                dir=$(dirname "$bin")
+                if echo "$dir" | grep -q "feagi_data_deserializer"; then
+                  cp -v "$bin" "binaries-staging/libfeagi_data_deserializer.dylib" 2>/dev/null || true
+                elif echo "$dir" | grep -q "feagi_shared_video"; then
+                  cp -v "$bin" "binaries-staging/libfeagi_shared_video.dylib" 2>/dev/null || true
+                elif echo "$dir" | grep -q "feagi_type_system"; then
+                  cp -v "$bin" "binaries-staging/libfeagi_type_system.dylib" 2>/dev/null || true
+                fi
+              fi
+            done
+          fi
+          
+          echo ""
+          echo "Binaries found in staging:"
+          ls -lh binaries-staging/ || echo "No binaries found"
+          
+          if [ -z "$(ls -A binaries-staging/ 2>/dev/null)" ]; then
+            echo ""
+            echo "❌ ERROR: No binaries found to upload!"
+            echo ""
+            echo "Searching for target directories:"
+            find rust_extensions -type d -name "target" 2>/dev/null | head -10
+            echo ""
+            echo "Searching for any binaries:"
+            find rust_extensions -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) 2>/dev/null | head -20
+            exit 1
+          fi
+
       - name: Upload binaries artifact
         uses: actions/upload-artifact@v4
         with:
           name: rust-binaries-${{ matrix.platform }}
-          path: rust_extensions/*/target/release/*feagi*.*
+          path: binaries-staging/*
+          if-no-files-found: error
           retention-days: 1
 
   package-rust-binaries:
