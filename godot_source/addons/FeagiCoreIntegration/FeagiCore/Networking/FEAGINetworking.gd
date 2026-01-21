@@ -310,13 +310,11 @@ func _call_register_agent_for_shm() -> bool:
 					var ports: Dictionary = transport_dict.get("ports", {})
 					var ws_viz_port: int = int(ports.get("visualization", 9050))
 					
-					# Convert bind address (0.0.0.0) to connect address (127.0.0.1)
-					# 0.0.0.0 means "bind to all interfaces" on server, but clients must use 127.0.0.1
-					if ws_host == "0.0.0.0":
-						ws_host = "127.0.0.1"
+					# Use host directly from config (config is source of truth)
+					# Config should use 127.0.0.1 for localhost-only connections
 					
 					print("𒓉 [TRANSPORT] ✅ Found WebSocket transport:")
-					print("    Host: ", ws_host, " (converted from bind address if needed)")
+					print("    Host: ", ws_host)
 					print("    Visualization port: ", ws_viz_port)
 					
 					var ws_address: String = "ws://%s:%d" % [ws_host, ws_viz_port]
