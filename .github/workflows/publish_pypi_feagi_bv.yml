@@ -3,9 +3,6 @@ name: Publish to PyPI - Brain Visualizer
 on:
   release:
     types: [published]
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       bv_version:
