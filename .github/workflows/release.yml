@@ -199,6 +199,19 @@ jobs:
         run: |
           cd rust_extensions
           python3 build.py --release --no-clean
+          
+          # Verify universal binaries on macOS (should contain both arm64 and x86_64)
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            echo "Verifying macOS universal binaries..."
+            for lib in $(find godot_source/addons -name "*.dylib" -type f 2>/dev/null); do
+              ARCHS=$(file "$lib" 2>/dev/null | grep -oE 'arm64|x86_64' | tr '\n' ' ' || echo "unknown")
+              if echo "$ARCHS" | grep -q "arm64" && echo "$ARCHS" | grep -q "x86_64"; then
+                echo "✅ $lib is universal (arm64 + x86_64)"
+              else
+                echo "⚠️  $lib architectures: $ARCHS (expected: arm64 x86_64)"
+              fi
+            done
+          fi
 
       - name: Build Rust extensions (Windows)
         if: runner.os == 'Windows'
@@ -340,6 +353,18 @@ jobs:
         run: |
           cd rust_extensions
           python3 build.py --release --no-clean
+          
+          # Verify universal binaries on macOS
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            echo "Verifying universal binaries..."
+            for lib in $(find godot_source/addons -name "*.dylib" -type f); do
+              if file "$lib" | grep -q "universal"; then
+                echo "✅ $lib is universal (arm64 + x86_64)"
+              else
+                echo "⚠️  $lib is NOT universal - only $(file "$lib" | grep -oE 'arm64|x86_64' | head -1)"
+              fi
+            done
+          fi
 
       - name: Build Rust extensions (Windows)
         if: runner.os == 'Windows'
