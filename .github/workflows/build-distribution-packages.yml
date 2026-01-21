@@ -97,12 +97,14 @@ jobs:
             TAG_NAME="v${BASE_VERSION}"
             IS_PRERELEASE="false"
             
-            # Production tags must not exist
-            if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-              echo "❌ Production tag $TAG_NAME already exists!"
-              echo "Existing tag points to: $(git rev-parse $TAG_NAME)"
-              echo "Production releases cannot be auto-incremented. Use a different version."
-              exit 1
+            # Only validate tag doesn't exist for workflow_dispatch (not for release events where tag already exists)
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+              if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+                echo "❌ Production tag $TAG_NAME already exists!"
+                echo "Existing tag points to: $(git rev-parse $TAG_NAME)"
+                echo "Production releases cannot be auto-incremented. Use a different version."
+                exit 1
+              fi
             fi
           elif [ "$RELEASE_TYPE" == "beta" ]; then
             # Extract beta number or default to 1 (PEP440: 1.2.3b1)
@@ -112,13 +114,16 @@ jobs:
               BETA_NUM="1"
             fi
             
-            # Auto-increment if tag exists
             TAG_NAME="v${BASE_VERSION}b${BETA_NUM}"
-            while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
-              echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
-              BETA_NUM=$((BETA_NUM + 1))
-              TAG_NAME="v${BASE_VERSION}b${BETA_NUM}"
-            done
+            
+            # Only auto-increment for workflow_dispatch (not for release events where tag already exists)
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+              while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
+                echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
+                BETA_NUM=$((BETA_NUM + 1))
+                TAG_NAME="v${BASE_VERSION}b${BETA_NUM}"
+              done
+            fi
             
             IS_PRERELEASE="true"
           elif [ "$RELEASE_TYPE" == "alpha" ]; then
@@ -129,13 +134,16 @@ jobs:
               ALPHA_NUM="1"
             fi
             
-            # Auto-increment if tag exists
             TAG_NAME="v${BASE_VERSION}a${ALPHA_NUM}"
-            while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
-              echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
-              ALPHA_NUM=$((ALPHA_NUM + 1))
-              TAG_NAME="v${BASE_VERSION}a${ALPHA_NUM}"
-            done
+            
+            # Only auto-increment for workflow_dispatch (not for release events where tag already exists)
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+              while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
+                echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
+                ALPHA_NUM=$((ALPHA_NUM + 1))
+                TAG_NAME="v${BASE_VERSION}a${ALPHA_NUM}"
+              done
+            fi
             
             IS_PRERELEASE="true"
           elif [ "$RELEASE_TYPE" == "rc" ]; then
@@ -146,13 +154,16 @@ jobs:
               RC_NUM="1"
             fi
             
-            # Auto-increment if tag exists
             TAG_NAME="v${BASE_VERSION}rc${RC_NUM}"
-            while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
-              echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
-              RC_NUM=$((RC_NUM + 1))
-              TAG_NAME="v${BASE_VERSION}rc${RC_NUM}"
-            done
+            
+            # Only auto-increment for workflow_dispatch (not for release events where tag already exists)
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+              while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
+                echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
+                RC_NUM=$((RC_NUM + 1))
+                TAG_NAME="v${BASE_VERSION}rc${RC_NUM}"
+              done
+            fi
             
             IS_PRERELEASE="true"
           fi
