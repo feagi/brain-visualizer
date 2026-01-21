@@ -299,11 +299,26 @@ jobs:
           
           echo "✅ All Rust extensions verified in place"
 
+      - name: Import Godot resources
+        shell: bash
+        run: |
+          cd godot_source
+          echo "Importing Godot resources (fonts, SVGs, etc.)..."
+          ${GODOT} --headless --import --quit || {
+            echo "⚠️  Import step had warnings/errors, but continuing..."
+            # Import may have warnings, check if critical files were imported
+            if [ -d ".godot/imported" ]; then
+              echo "✅ Import directory created"
+              ls -la .godot/imported/ | head -10 || true
+            fi
+          }
+
       - name: Export Godot project
         shell: bash
         run: |
           cd godot_source
           mkdir -p ../exports
+          echo "Exporting to: ../exports/${{ matrix.output_name }}"
           ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
 
       - name: Create distribution package (macOS)
