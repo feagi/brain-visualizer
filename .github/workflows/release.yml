@@ -1118,7 +1118,7 @@ jobs:
               version=VERSION,
               packages=find_packages(),
               install_requires=[
-                  'feagi-core>=2.1.0',
+                  'feagi-core>=2.1.1',
                   'toml>=0.10.2',
               ] + platform_deps,
           )
@@ -1167,14 +1167,29 @@ jobs:
         run: |
           echo "📦 Package names in wheels (for trusted publisher configuration):"
           echo ""
+          EXPECTED_VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          echo "Expected version: $EXPECTED_VERSION"
+          echo ""
+          
+          WHEEL_COUNT=0
           for wheel in $(find wheels -name "*.whl"); do
+            WHEEL_COUNT=$((WHEEL_COUNT + 1))
             echo "  Wheel file: $(basename "$wheel")"
             # Try to extract from METADATA file inside wheel (most accurate)
             if command -v unzip >/dev/null 2>&1; then
-              # Extract METADATA to get actual package name
-              METADATA=$(unzip -p "$wheel" "*.dist-info/METADATA" 2>/dev/null | grep "^Name:" | cut -d: -f2 | xargs || echo "")
-              if [ -n "$METADATA" ]; then
-                echo "  → PyPI project name (from METADATA): $METADATA"
+              # Extract METADATA to get actual package name and version
+              METADATA_NAME=$(unzip -p "$wheel" "*.dist-info/METADATA" 2>/dev/null | grep "^Name:" | cut -d: -f2 | xargs || echo "")
+              METADATA_VERSION=$(unzip -p "$wheel" "*.dist-info/METADATA" 2>/dev/null | grep "^Version:" | cut -d: -f2 | xargs || echo "")
+              if [ -n "$METADATA_NAME" ]; then
+                echo "  → PyPI project name (from METADATA): $METADATA_NAME"
+                if [ -n "$METADATA_VERSION" ]; then
+                  echo "  → Version (from METADATA): $METADATA_VERSION"
+                  if [ "$METADATA_VERSION" != "$EXPECTED_VERSION" ]; then
+                    echo "    ⚠️  WARNING: Version mismatch! Expected $EXPECTED_VERSION"
+                  else
+                    echo "    ✅ Version matches expected"
+                  fi
+                fi
               else
                 # Fallback: extract from filename
                 PKG_NAME=$(basename "$wheel" | sed -E 's/-[0-9]+\..*\.whl$//' | sed 's/_/-/g')
@@ -1187,6 +1202,13 @@ jobs:
             fi
             echo ""
           done
+          
+          if [ "$WHEEL_COUNT" -eq 0 ]; then
+            echo "❌ ERROR: No wheel files found!"
+            exit 1
+          fi
+          
+          echo "✅ Found $WHEEL_COUNT wheel file(s) ready for publishing"
 
       - name: Verify PyPI configuration
         run: |
