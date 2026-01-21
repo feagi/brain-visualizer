@@ -266,6 +266,52 @@ def main():
     elif platform.system() == "Darwin" and local_arch_only:
         print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
     
+    # Build feagi_type_system (deploy directly to FeagiCoreIntegration addon)
+    print_section("Building feagi_type_system")
+    project3_path = root_dir / "feagi_type_system"
+    if not project3_path.exists():
+        print(f"[ERROR] Project directory not found: {project3_path}")
+        sys.exit(1)
+    
+    lib_ext = get_library_extension()
+    lib_prefix = get_library_prefix()
+    lib3_name = f"{lib_prefix}feagi_type_system.{lib_ext}"
+    
+    # Clean previous builds
+    print("[CLEAN] Cleaning previous builds...")
+    run_command(["cargo", "clean"], cwd=project3_path)
+    
+    # Build release
+    print("[BUILD] Building feagi_type_system (release mode)...")
+    run_command(["cargo", "build", "--release"], cwd=project3_path)
+    
+    # Check if build was successful
+    release_lib = project3_path / "target" / "release" / lib3_name
+    if not release_lib.exists():
+        print(f"[ERROR] Build failed - release library not found: {release_lib}")
+        sys.exit(1)
+    
+    # Copy directly to FeagiCoreIntegration addon (not in target subdirectory)
+    addon3_path = godot_source / "addons" / "FeagiCoreIntegration"
+    addon3_path.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(release_lib, addon3_path / lib3_name)
+    print(f"[SUCCESS] feagi_type_system deployed to: {addon3_path / lib3_name}")
+    
+    # Build universal binary on macOS if needed
+    if platform.system() == "Darwin" and not local_arch_only:
+        # Build for both architectures
+        run_command(["cargo", "build", "--release", "--target", "aarch64-apple-darwin"], cwd=project3_path)
+        run_command(["cargo", "build", "--release", "--target", "x86_64-apple-darwin"], cwd=project3_path)
+        
+        # Create universal binary
+        arm64_lib = project3_path / "target" / "aarch64-apple-darwin" / "release" / lib3_name
+        x86_64_lib = project3_path / "target" / "x86_64-apple-darwin" / "release" / lib3_name
+        
+        if arm64_lib.exists() and x86_64_lib.exists():
+            universal_lib = addon3_path / lib3_name
+            run_command(["lipo", "-create", str(arm64_lib), str(x86_64_lib), "-output", str(universal_lib)])
+            print(f"[SUCCESS] Universal binary created: {universal_lib}")
+    
     # Clean up old library files in wrong locations
     print_section("Cleaning Up Legacy Files")
     cleanup_paths = [
