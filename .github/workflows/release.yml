@@ -138,14 +138,45 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: actions/cache@v4
+        id: rust-cache
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             rust_extensions/*/target
-          key: ${{ runner.os }}-rust-bv-${{ hashFiles('rust_extensions/**/Cargo.toml', 'rust_extensions/**/Cargo.lock') }}
+          key: ${{ runner.os }}-rust-bv-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-rust-bv-
+            ${{ runner.os }}-rust-
+
+      - name: Log Rust cache status
+        shell: bash
+        run: |
+          if [ "${{ steps.rust-cache.outputs.cache-hit }}" == "true" ]; then
+            echo "✅ Rust cache HIT - using cached dependencies and target/"
+            echo ""
+            echo "Cache contents:"
+            echo "Cargo registry size:"
+            du -sh ~/.cargo/registry 2>/dev/null || echo "  Registry: N/A"
+            echo ""
+            echo "Target directories (should contain previous builds):"
+            for dir in rust_extensions/*/target; do
+              if [ -d "$dir" ]; then
+                size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+                echo "  $dir: $size"
+                # Check if release binaries exist
+                find "$dir" -name "*.dll" -o -name "*.so" -o -name "*.dylib" 2>/dev/null | head -3 | while read -r bin; do
+                  echo "    - $(basename "$bin")"
+                done
+              fi
+            done
+          else
+            echo "⚠️  Rust cache MISS - will rebuild from scratch"
+            echo "This will take longer (~10-15 min for first build)"
+            echo ""
+            echo "Checking if target directories exist:"
+            ls -la rust_extensions/*/target 2>/dev/null || echo "  No target directories found (expected for cache miss)"
+          fi
 
       - name: Install Godot (macOS)
         if: runner.os == 'macOS'
@@ -328,14 +359,45 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: actions/cache@v4
+        id: rust-cache
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             rust_extensions/*/target
-          key: ${{ runner.os }}-rust-release-${{ hashFiles('rust_extensions/**/Cargo.toml', 'rust_extensions/**/Cargo.lock') }}
+          key: ${{ runner.os }}-rust-bv-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-rust-release-
+            ${{ runner.os }}-rust-bv-
+            ${{ runner.os }}-rust-
+
+      - name: Log Rust cache status
+        shell: bash
+        run: |
+          if [ "${{ steps.rust-cache.outputs.cache-hit }}" == "true" ]; then
+            echo "✅ Rust cache HIT - using cached dependencies and target/"
+            echo ""
+            echo "Cache contents:"
+            echo "Cargo registry size:"
+            du -sh ~/.cargo/registry 2>/dev/null || echo "  Registry: N/A"
+            echo ""
+            echo "Target directories (should contain previous builds):"
+            for dir in rust_extensions/*/target; do
+              if [ -d "$dir" ]; then
+                size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+                echo "  $dir: $size"
+                # Check if release binaries exist
+                find "$dir" -name "*.dll" -o -name "*.so" -o -name "*.dylib" 2>/dev/null | head -3 | while read -r bin; do
+                  echo "    - $(basename "$bin")"
+                done
+              fi
+            done
+          else
+            echo "⚠️  Rust cache MISS - will rebuild from scratch"
+            echo "This will take longer (~10-15 min for first build)"
+            echo ""
+            echo "Checking if target directories exist:"
+            ls -la rust_extensions/*/target 2>/dev/null || echo "  No target directories found (expected for cache miss)"
+          fi
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
