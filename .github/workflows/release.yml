@@ -105,6 +105,37 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Update BVVersion timestamp
+        shell: bash
+        run: |
+          # Update timestamp in BVVersion.gd before building
+          TIMESTAMP=$(date +%s)
+          
+          # Update the correct BVVersion file (BrainVisualizer/BVVersion.gd)
+          if [ -f "godot_source/BrainVisualizer/BVVersion.gd" ]; then
+            # macOS sed needs backup extension, Linux doesn't care
+            if [[ "${{ runner.os }}" == "macOS" ]]; then
+              sed -i.bak "s/get: return [0-9]*/get: return $TIMESTAMP/" godot_source/BrainVisualizer/BVVersion.gd
+              rm -f godot_source/BrainVisualizer/BVVersion.gd.bak
+            else
+              sed -i "s/get: return [0-9]*/get: return $TIMESTAMP/" godot_source/BrainVisualizer/BVVersion.gd
+            fi
+            echo "✅ Updated BVVersion.brain_visualizer_timestamp to: $TIMESTAMP"
+            echo "File contents:"
+            cat godot_source/BrainVisualizer/BVVersion.gd
+          else
+            echo "❌ ERROR: BVVersion.gd not found!"
+            exit 1
+          fi
+          
+          # Verify the update worked
+          if grep -q "get: return $TIMESTAMP" godot_source/BrainVisualizer/BVVersion.gd; then
+            echo "✅ Timestamp update verified"
+          else
+            echo "❌ ERROR: Timestamp update failed!"
+            exit 1
+          fi
+
       - name: Cache Rust dependencies
         uses: actions/cache@v4
         with:

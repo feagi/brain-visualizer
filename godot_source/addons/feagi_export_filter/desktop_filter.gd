@@ -14,6 +14,12 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 	if path == "res://addons/feagi_rust_deserializer/feagi_data_deserializer.gdextension":
 		skip()
 		print("[FEAGI Export Filter] Skipped: ", path)
+	
+	# Skip legacy Feagi-Godot-Interface BVVersion to avoid class name conflict
+	# The correct BVVersion is in BrainVisualizer/BVVersion.gd
+	if path == "res://Feagi-Godot-Interface/Core/NonCache-Objects/BVVersion.gd":
+		skip()
+		print("[FEAGI Export Filter] Skipped legacy BVVersion: ", path)
 
 func _export_end() -> void:
 	print("[FEAGI Export Filter] Desktop export completed")
