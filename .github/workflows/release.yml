@@ -380,50 +380,56 @@ jobs:
           # Create staging directory
           mkdir -p binaries-staging
           
-          # Find binaries in standard cargo output locations
-          # Pattern 1: rust_extensions/*/target/release/*.so|.dylib|.dll
-          find rust_extensions/feagi_data_deserializer/target/release -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) 2>/dev/null | while read -r bin; do
-            if [ -f "$bin" ]; then
-              filename=$(basename "$bin")
-              cp -v "$bin" "binaries-staging/$filename" 2>/dev/null || true
-            fi
-          done
+          # Determine library prefix and extension based on platform
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            LIB_PREFIX=""
+            LIB_EXT="dll"
+            LIB_PATTERN="feagi_*.dll"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            LIB_PREFIX="lib"
+            LIB_EXT="dylib"
+            LIB_PATTERN="libfeagi_*.dylib"
+          else
+            LIB_PREFIX="lib"
+            LIB_EXT="so"
+            LIB_PATTERN="libfeagi_*.so"
+          fi
           
-          find rust_extensions/feagi_shared_video/target/release -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) 2>/dev/null | while read -r bin; do
-            if [ -f "$bin" ]; then
-              filename=$(basename "$bin")
-              cp -v "$bin" "binaries-staging/$filename" 2>/dev/null || true
-            fi
-          done
-          
-          find rust_extensions/feagi_type_system/target/release -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) 2>/dev/null | while read -r bin; do
-            if [ -f "$bin" ]; then
-              filename=$(basename "$bin")
-              cp -v "$bin" "binaries-staging/$filename" 2>/dev/null || true
+          # Find and copy only the main extension libraries (exclude deps/)
+          # Pattern 1: Standard location: rust_extensions/*/target/release/
+          for ext in feagi_data_deserializer feagi_shared_video feagi_type_system; do
+            # Look for the library file directly in target/release/ (not in deps/)
+            lib_file="rust_extensions/$ext/target/release/${LIB_PREFIX}${ext}.${LIB_EXT}"
+            if [ -f "$lib_file" ]; then
+              cp -v "$lib_file" "binaries-staging/${LIB_PREFIX}${ext}.${LIB_EXT}"
             fi
           done
           
           # Pattern 2: Architecture-specific targets (Linux/Windows)
-          find rust_extensions -type f \( -name "*.so" -o -name "*.dll" \) -path "*/target/*/release/*" 2>/dev/null | grep -E "(feagi_data_deserializer|feagi_shared_video|feagi_type_system)" | while read -r bin; do
-            if [ -f "$bin" ]; then
-              filename=$(basename "$bin")
-              cp -v "$bin" "binaries-staging/$filename" 2>/dev/null || true
-            fi
-          done
+          # Linux: rust_extensions/*/target/x86_64-unknown-linux-gnu/release/
+          # Windows: rust_extensions/*/target/x86_64-pc-windows-msvc/release/
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            for ext in feagi_data_deserializer feagi_shared_video feagi_type_system; do
+              lib_file="rust_extensions/$ext/target/x86_64-unknown-linux-gnu/release/${LIB_PREFIX}${ext}.${LIB_EXT}"
+              if [ -f "$lib_file" ]; then
+                cp -v "$lib_file" "binaries-staging/${LIB_PREFIX}${ext}.${LIB_EXT}"
+              fi
+            done
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            for ext in feagi_data_deserializer feagi_shared_video feagi_type_system; do
+              lib_file="rust_extensions/$ext/target/x86_64-pc-windows-msvc/release/${ext}.${LIB_EXT}"
+              if [ -f "$lib_file" ]; then
+                cp -v "$lib_file" "binaries-staging/${ext}.${LIB_EXT}"
+              fi
+            done
+          fi
           
           # Pattern 3: Universal binaries on macOS
           if [[ "${{ runner.os }}" == "macOS" ]]; then
-            find rust_extensions -name "universal_release.*" -type f 2>/dev/null | while read -r bin; do
-              if [ -f "$bin" ]; then
-                # Determine which extension this is from the directory
-                dir=$(dirname "$bin")
-                if echo "$dir" | grep -q "feagi_data_deserializer"; then
-                  cp -v "$bin" "binaries-staging/libfeagi_data_deserializer.dylib" 2>/dev/null || true
-                elif echo "$dir" | grep -q "feagi_shared_video"; then
-                  cp -v "$bin" "binaries-staging/libfeagi_shared_video.dylib" 2>/dev/null || true
-                elif echo "$dir" | grep -q "feagi_type_system"; then
-                  cp -v "$bin" "binaries-staging/libfeagi_type_system.dylib" 2>/dev/null || true
-                fi
+            for ext in feagi_data_deserializer feagi_shared_video feagi_type_system; do
+              universal_file="rust_extensions/$ext/target/universal_release.dylib"
+              if [ -f "$universal_file" ]; then
+                cp -v "$universal_file" "binaries-staging/lib${ext}.dylib"
               fi
             done
           fi
@@ -436,12 +442,26 @@ jobs:
             echo ""
             echo "❌ ERROR: No binaries found to upload!"
             echo ""
+            echo "Expected files:"
+            echo "  - binaries-staging/${LIB_PREFIX}feagi_data_deserializer.${LIB_EXT}"
+            echo "  - binaries-staging/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}"
+            echo "  - binaries-staging/${LIB_PREFIX}feagi_type_system.${LIB_EXT}"
+            echo ""
             echo "Searching for target directories:"
             find rust_extensions -type d -name "target" 2>/dev/null | head -10
             echo ""
-            echo "Searching for any binaries:"
-            find rust_extensions -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) 2>/dev/null | head -20
+            echo "Searching for extension libraries:"
+            find rust_extensions -type f -name "${LIB_PATTERN}" ! -path "*/deps/*" 2>/dev/null | head -20
             exit 1
+          fi
+          
+          # Verify we have exactly 3 libraries
+          LIB_COUNT=$(ls -1 binaries-staging/*.${LIB_EXT} 2>/dev/null | wc -l || echo "0")
+          if [ "$LIB_COUNT" -ne 3 ]; then
+            echo ""
+            echo "⚠️  WARNING: Expected 3 libraries, found $LIB_COUNT"
+            echo "Files in staging:"
+            ls -lh binaries-staging/
           fi
 
       - name: Upload binaries artifact
