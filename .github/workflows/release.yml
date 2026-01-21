@@ -22,6 +22,7 @@ jobs:
     outputs:
       bv_version: ${{ steps.validate.outputs.bv_version }}
       tag_name: ${{ steps.validate.outputs.tag_name }}
+      tag_commit: ${{ steps.validate.outputs.tag_commit }}
       is_prerelease: ${{ steps.validate.outputs.is_prerelease }}
     steps:
       - name: Checkout
@@ -100,9 +101,19 @@ jobs:
             echo "   The build will use the code at the tag, not current HEAD"
           fi
           
+          # Get commit message for reference
+          COMMIT_MSG=$(git log -1 --pretty=format:"%s" "$TAG_COMMIT" 2>/dev/null || echo "N/A")
+          
           echo "bv_version=${VERSION}" >> $GITHUB_OUTPUT
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "tag_commit=${TAG_COMMIT}" >> $GITHUB_OUTPUT
           echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+          
+          echo ""
+          echo "📋 Build will use:"
+          echo "   Tag: $TAG_NAME"
+          echo "   Commit: $TAG_COMMIT"
+          echo "   Commit message: $COMMIT_MSG"
 
   build-bv-remote:
     name: Build BrainVisualizer Remote (${{ matrix.platform }})
@@ -1350,7 +1361,20 @@ jobs:
 
       - name: Summary
         run: |
-          echo "✅ Successfully published feagi-bv ${{ needs.validate-version.outputs.bv_version }} to PyPI"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ RELEASE COMPLETE"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "Install with:"
-          echo "  pip install feagi-bv==${{ needs.validate-version.outputs.bv_version }}"
+          echo "📦 Package: feagi-bv"
+          echo "   Version: ${{ needs.validate-version.outputs.bv_version }}"
+          echo ""
+          echo "🏷️  Git Tag: ${{ needs.validate-version.outputs.tag_name }}"
+          echo "   Commit: ${{ needs.validate-version.outputs.tag_commit }}"
+          echo ""
+          echo "📥 Install:"
+          echo "   pip install feagi-bv==${{ needs.validate-version.outputs.bv_version }}"
+          if [ "${{ needs.validate-version.outputs.is_prerelease }}" == "true" ]; then
+            echo "   (Note: Use --pre flag for prerelease versions)"
+          fi
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
