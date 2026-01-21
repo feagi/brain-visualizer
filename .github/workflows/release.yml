@@ -1,0 +1,512 @@
+name: Build and Publish Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (PEP440 format: x.x.x, x.x.xb1, x.x.xa1, x.x.xrc1)'
+        type: string
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+  GODOT_VERSION: 4.5.0
+  BV_MAJOR_VERSION: "2"
+
+jobs:
+  validate-version:
+    name: Validate Version
+    runs-on: ubuntu-latest
+    outputs:
+      bv_version: ${{ steps.validate.outputs.bv_version }}
+      tag_name: ${{ steps.validate.outputs.tag_name }}
+      is_prerelease: ${{ steps.validate.outputs.is_prerelease }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version
+        id: validate
+        shell: bash
+        run: |
+          # Determine version
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            TAG_NAME="v${VERSION}"
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            TAG_NAME="${{ github.event.release.tag_name }}"
+            VERSION="${TAG_NAME#v}"
+            echo "Triggered by release: $TAG_NAME"
+          else
+            echo "ERROR: Unexpected trigger"
+            exit 1
+          fi
+          
+          # Validate PEP440 format
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+|b[0-9]+|rc[0-9]+)?$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected PEP440 format: x.x.x, x.x.xb1, x.x.xa1, or x.x.xrc1"
+            exit 1
+          fi
+          
+          # Validate major version
+          BV_MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          if [ "$BV_MAJOR" != "${{ env.BV_MAJOR_VERSION }}" ]; then
+            echo "❌ Major version ${BV_MAJOR} does not match gate ${{ env.BV_MAJOR_VERSION }}"
+            exit 1
+          fi
+          
+          # Determine if prerelease
+          if [[ "$VERSION" =~ (a|b|rc)[0-9]+ ]]; then
+            IS_PRERELEASE="true"
+          else
+            IS_PRERELEASE="false"
+          fi
+          
+          echo "✅ Version: $VERSION"
+          echo "✅ Tag: $TAG_NAME"
+          echo "✅ Prerelease: $IS_PRERELEASE"
+          
+          echo "bv_version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+
+  build-bv-remote:
+    name: Build BrainVisualizer Remote (${{ matrix.platform }})
+    needs: validate-version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+            export_name: "Linux/X11"
+            output_name: BrainVisualizer-Remote.x86_64
+            package_name: BrainVisualizer-Remote-Linux.tar.gz
+          - os: macos-latest
+            platform: macOS
+            export_name: "macOS"
+            output_name: BrainVisualizer-Remote.app
+            package_name: BrainVisualizer-Remote-macOS.zip
+          - os: windows-latest
+            platform: Windows
+            export_name: "Windows Desktop"
+            output_name: BrainVisualizer-Remote.exe
+            package_name: BrainVisualizer-Remote-Windows.zip
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Godot and Rust
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/*/target
+          key: ${{ runner.os }}-release-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Godot (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
+          unzip -q Godot_v4.5-stable_macos.universal.zip
+          sudo mv Godot.app /Applications/
+          
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/Library/Application Support/Godot/export_templates/4.5.stable/"
+          
+          echo "GODOT=/Applications/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
+
+      - name: Install Godot (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5-stable_linux.x86_64.zip
+          chmod +x Godot_v4.5-stable_linux.x86_64
+          sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          
+          echo "GODOT=godot" >> $GITHUB_ENV
+
+      - name: Install Godot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
+          Expand-Archive -Path godot.zip -DestinationPath godot-install -Force
+          Move-Item godot-install/Godot*.exe godot.exe -Force
+          
+          $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
+          New-Item -ItemType Directory -Force -Path $templatesPath
+          Expand-Archive -Path templates.tpz -DestinationPath temp-templates -Force
+          Copy-Item temp-templates/templates/* $templatesPath -Force -Recurse
+          
+          echo "GODOT=$PWD\godot.exe" >> $env:GITHUB_ENV
+
+      - name: Build Rust extensions (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cd rust_extensions
+          python3 build.py --release
+
+      - name: Build Rust extensions (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd rust_extensions
+          python build.py --release
+
+      - name: Copy Rust extensions to Godot addons
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            Linux)
+              TARGET_SUBDIR="x86_64-unknown-linux-gnu/release"
+              ;;
+            macOS)
+              TARGET_SUBDIR="release"
+              ;;
+            Windows)
+              TARGET_SUBDIR="x86_64-pc-windows-msvc/release"
+              ;;
+          esac
+          
+          DESERIALIZER_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
+          mkdir -p "$DESERIALIZER_DIR"
+          
+          DESERIALIZER_LIB=$(find rust_extensions/feagi_data_deserializer -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
+          TYPE_SYSTEM_LIB=$(find rust_extensions/feagi_type_system -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" | grep -E "release|Release" | head -1)
+          SHARED_VIDEO_LIB=$(find rust_extensions/feagi_shared_video -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" | grep -E "release|Release" | head -1)
+          
+          cp "$DESERIALIZER_LIB" "$DESERIALIZER_DIR/"
+          cp "$TYPE_SYSTEM_LIB" "godot_source/addons/FeagiCoreIntegration/"
+          
+          mkdir -p "godot_source/addons/feagi_shared_video/target/release"
+          cp "$SHARED_VIDEO_LIB" "godot_source/addons/feagi_shared_video/target/release/"
+
+      - name: Export Godot project
+        shell: bash
+        run: |
+          cd godot_source
+          mkdir -p ../exports
+          ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+
+      - name: Create distribution package (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd exports
+          zip -r ${{ matrix.package_name }} BrainVisualizer-Remote.app
+
+      - name: Create distribution package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd exports
+          $files = @()
+          if (Test-Path "BrainVisualizer-Remote.exe") { $files += "BrainVisualizer-Remote.exe" }
+          if (Test-Path "BrainVisualizer-Remote.pck") { $files += "BrainVisualizer-Remote.pck" }
+          $files += Get-ChildItem -Filter "*.dll" | Select-Object -ExpandProperty Name
+          Compress-Archive -Path $files -DestinationPath ${{ matrix.package_name }} -Force
+
+      - name: Create distribution package (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cd exports
+          tar -czf ${{ matrix.package_name }} BrainVisualizer-Remote.x86_64
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bv-${{ matrix.platform }}
+          path: exports/${{ matrix.package_name }}
+          retention-days: 1
+
+  package-rust-binaries:
+    name: Package Rust Binaries
+    needs: validate-version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify binaries exist in repo
+        run: |
+          echo "Checking for committed Rust binaries..."
+          BINARY_COUNT=$(find godot_source/addons -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) | wc -l)
+          echo "Total binaries found: $BINARY_COUNT"
+          
+          if [ "$BINARY_COUNT" -lt 6 ]; then
+            echo "❌ Expected at least 6 binaries (2 extensions × 3 platforms)"
+            exit 1
+          fi
+
+      - name: Package binaries
+        run: |
+          mkdir -p release-packages
+          
+          cd godot_source/addons
+          tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz \
+            feagi_rust_deserializer/target/release/*.so \
+            feagi_shared_video/target/release/*.so 2>/dev/null || true
+          
+          tar -czf ../../release-packages/rust-binaries-macos-universal.tar.gz \
+            feagi_rust_deserializer/target/release/*.dylib \
+            feagi_shared_video/target/release/*.dylib 2>/dev/null || true
+          
+          zip -r ../../release-packages/rust-binaries-windows-x86_64.zip \
+            feagi_rust_deserializer/target/release/*.dll \
+            feagi_shared_video/target/release/*.dll 2>/dev/null || true
+          cd ../..
+          
+          ls -lh release-packages/
+
+      - name: Upload rust binaries artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-binaries
+          path: release-packages/*
+          retention-days: 1
+
+  upload-to-release:
+    name: Upload Assets to Release
+    needs: [validate-version, build-bv-remote, package-rust-binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          ls -lRh artifacts/
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ needs.validate-version.outputs.tag_name }}"
+          echo "Uploading assets to release: $TAG_NAME"
+          
+          # Upload all files
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec gh release upload "$TAG_NAME" {} --clobber \;
+          
+          echo "✅ Assets uploaded to release"
+
+  build-pypi-packages:
+    name: Build PyPI Package (${{ matrix.platform }})
+    needs: [validate-version, upload-to-release]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            download_artifact: BrainVisualizer-Remote-Linux
+          - os: macos-latest
+            platform: macos
+            download_artifact: BrainVisualizer-Remote-macOS
+          - os: windows-latest
+            platform: windows
+            download_artifact: BrainVisualizer-Remote-Windows
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+
+      - name: Download BV release artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG_NAME="${{ needs.validate-version.outputs.tag_name }}"
+          gh release download "$TAG_NAME" --pattern "${{ matrix.download_artifact }}.*" --dir downloads/
+          ls -lh downloads/
+
+      - name: Extract BV binary (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cd downloads
+          if ls *.tar.gz 1> /dev/null 2>&1; then
+            tar -xzf *.tar.gz
+          elif ls *.zip 1> /dev/null 2>&1; then
+            unzip -q *.zip
+          fi
+
+      - name: Extract BV binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd downloads
+          Expand-Archive -Path *.zip -DestinationPath . -Force
+
+      - name: Package platform binary
+        shell: bash
+        run: |
+          VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          
+          cd feagi-bv-platform/feagi-bv-${{ matrix.platform }}
+          
+          # Update version in pyproject.toml
+          sed -i.bak "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+          
+          # Copy binary
+          mkdir -p feagi_bv_${{ matrix.platform }}/bin
+          cp -r ../../downloads/* feagi_bv_${{ matrix.platform }}/bin/
+          
+          # Build wheel
+          python -m build
+          
+          ls -lh dist/
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.platform }}
+          path: feagi-bv-platform/feagi-bv-${{ matrix.platform }}/dist/*.whl
+          retention-days: 1
+
+  build-meta-package:
+    name: Build Meta Package
+    needs: validate-version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+
+      - name: Update meta-package version
+        run: |
+          VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          
+          cd feagi-bv-platform/feagi-bv-meta
+          sed -i.bak "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+          
+          # Update dependencies in setup.py
+          cat > setup.py << EOF
+          from setuptools import setup, find_packages
+          import sys
+          
+          dependencies = [
+              f"feagi-bv-linux==${VERSION}; sys_platform == 'linux'",
+              f"feagi-bv-macos==${VERSION}; sys_platform == 'darwin'",
+              f"feagi-bv-windows==${VERSION}; sys_platform == 'win32'",
+          ]
+          
+          setup(
+              name="feagi-bv",
+              version="${VERSION}",
+              packages=find_packages(),
+              install_requires=dependencies,
+          )
+          EOF
+          
+          python -m build
+          ls -lh dist/
+
+      - name: Upload meta wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-meta
+          path: feagi-bv-platform/feagi-bv-meta/dist/*.whl
+          retention-days: 1
+
+  publish-to-pypi:
+    name: Publish to PyPI
+    needs: [validate-version, build-pypi-packages, build-meta-package]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/feagi-bv/
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: wheels
+          pattern: wheel-*
+
+      - name: Display wheels
+        run: |
+          echo "Wheels to publish:"
+          find wheels -name "*.whl" -exec ls -lh {} \;
+
+      - name: Publish platform packages to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-linux/
+          skip-existing: true
+
+      - name: Publish platform packages to PyPI (macOS)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-macos/
+          skip-existing: true
+
+      - name: Publish platform packages to PyPI (Windows)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-windows/
+          skip-existing: true
+
+      - name: Publish meta package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-meta/
+          skip-existing: true
+
+      - name: Summary
+        run: |
+          echo "✅ Successfully published feagi-bv ${{ needs.validate-version.outputs.bv_version }} to PyPI"
+          echo ""
+          echo "Install with:"
+          echo "  pip install feagi-bv==${{ needs.validate-version.outputs.bv_version }}"
