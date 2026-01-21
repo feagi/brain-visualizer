@@ -863,36 +863,95 @@ jobs:
         run: |
           VERSION="${{ needs.validate-version.outputs.bv_version }}"
           
-          cd feagi-bv-platform/feagi-bv-${{ matrix.platform }}
+          # Determine package directory name based on platform
+          if [[ "${{ matrix.platform }}" == "macos-arm64" ]]; then
+            PLATFORM_DIR="feagi-bv-macos-arm64"
+            PACKAGE_DIR="feagi_bv_macos_arm64"
+            PYPI_PROJECT="feagi-bv-macos-arm64"
+          elif [[ "${{ matrix.platform }}" == "macos-x86_64" ]]; then
+            PLATFORM_DIR="feagi-bv-macos-x86_64"
+            PACKAGE_DIR="feagi_bv_macos_x86_64"
+            PYPI_PROJECT="feagi-bv-macos-x86_64"
+          else
+            PLATFORM_DIR="feagi-bv-${{ matrix.platform }}"
+            PACKAGE_DIR="feagi_bv_${{ matrix.platform }}"
+            PYPI_PROJECT="feagi-bv-${{ matrix.platform }}"
+          fi
+          
+          cd "feagi-bv-platform/$PLATFORM_DIR"
+          
+          # Verify we're in the right directory
+          if [ ! -f "pyproject.toml" ]; then
+            echo "❌ ERROR: pyproject.toml not found in $PLATFORM_DIR"
+            echo "Current directory: $(pwd)"
+            echo "Contents:"
+            ls -la
+            exit 1
+          fi
           
           # Update version in pyproject.toml
           sed -i.bak "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
           
-          # Copy binary
-          # Handle macOS architecture-specific package names
-          if [[ "${{ matrix.platform }}" == "macos-arm64" ]]; then
-            PACKAGE_DIR="feagi_bv_macos_arm64"
-          elif [[ "${{ matrix.platform }}" == "macos-x86_64" ]]; then
-            PACKAGE_DIR="feagi_bv_macos_x86_64"
-          else
-            PACKAGE_DIR="feagi_bv_${{ matrix.platform }}"
+          # Verify downloads directory exists
+          if [ ! -d "../../downloads" ]; then
+            echo "❌ ERROR: downloads directory not found!"
+            echo "Expected at: $(pwd)/../../downloads"
+            echo "Current directory: $(pwd)"
+            exit 1
           fi
           
-          mkdir -p $PACKAGE_DIR/bin
-          cp -r ../../downloads/* $PACKAGE_DIR/bin/
+          # Copy binary
+          mkdir -p "$PACKAGE_DIR/bin"
+          
+          # Check if there are files to copy
+          if [ -z "$(ls -A ../../downloads/ 2>/dev/null)" ]; then
+            echo "❌ ERROR: downloads directory is empty!"
+            echo "Contents of downloads:"
+            ls -la ../../downloads/ || true
+            exit 1
+          fi
+          
+          echo "Copying files from downloads to $PACKAGE_DIR/bin/"
+          cp -r ../../downloads/* "$PACKAGE_DIR/bin/" || {
+            echo "❌ ERROR: Failed to copy files from downloads"
+            exit 1
+          }
+          
+          # Verify files were copied
+          if [ -z "$(ls -A $PACKAGE_DIR/bin/ 2>/dev/null)" ]; then
+            echo "❌ ERROR: No files copied to $PACKAGE_DIR/bin/"
+            exit 1
+          fi
+          
+          echo "✅ Files copied successfully"
+          echo "Package contents:"
+          ls -lh "$PACKAGE_DIR/bin/" | head -10
           
           # Check package size before building
           echo "Checking package contents size..."
-          du -sh $PACKAGE_DIR/bin/ || echo "No bin directory yet"
+          du -sh "$PACKAGE_DIR/bin/" || echo "No bin directory yet"
           
           # Build wheel
           python -m build
+          
+          if [ ! -d "dist" ] || [ -z "$(ls -A dist/*.whl 2>/dev/null)" ]; then
+            echo "❌ ERROR: Wheel was not built!"
+            echo "dist/ contents:"
+            ls -la dist/ || true
+            exit 1
+          fi
           
           echo "Built wheel size:"
           ls -lh dist/
           
           # Check if wheel exceeds PyPI's 100MB limit
-          WHEEL_SIZE=$(du -b dist/*.whl | cut -f1)
+          WHEEL_FILE=$(ls dist/*.whl | head -1)
+          if [ -z "$WHEEL_FILE" ]; then
+            echo "❌ ERROR: No wheel file found in dist/"
+            exit 1
+          fi
+          
+          WHEEL_SIZE=$(du -b "$WHEEL_FILE" | cut -f1)
           SIZE_MB=$((WHEEL_SIZE / 1024 / 1024))
           echo "Wheel size: ${SIZE_MB} MB"
           
@@ -902,7 +961,7 @@ jobs:
             echo ""
             echo "Options:"
             echo "1. Request file size limit increase from PyPI:"
-            echo "   https://pypi.org/project/feagi-bv-macos/request-limit-increase/"
+            echo "   https://pypi.org/project/$PYPI_PROJECT/request-limit-increase/"
             echo "   Or email: pypi-support@python.org"
             echo ""
             echo "2. Reduce package size by:"
@@ -913,11 +972,47 @@ jobs:
             echo "The package will fail to upload to PyPI."
           fi
 
+      - name: Stage wheel for upload
+        shell: bash
+        run: |
+          # Determine the correct platform directory (same logic as packaging step)
+          if [[ "${{ matrix.platform }}" == "macos-arm64" ]]; then
+            PLATFORM_DIR="feagi-bv-macos-arm64"
+          elif [[ "${{ matrix.platform }}" == "macos-x86_64" ]]; then
+            PLATFORM_DIR="feagi-bv-macos-x86_64"
+          else
+            PLATFORM_DIR="feagi-bv-${{ matrix.platform }}"
+          fi
+          
+          WHEEL_PATH="feagi-bv-platform/$PLATFORM_DIR/dist"
+          
+          if [ ! -d "$WHEEL_PATH" ]; then
+            echo "❌ ERROR: dist directory not found: $WHEEL_PATH"
+            exit 1
+          fi
+          
+          WHEEL_FILE=$(ls "$WHEEL_PATH"/*.whl 2>/dev/null | head -1)
+          if [ -z "$WHEEL_FILE" ]; then
+            echo "❌ ERROR: No wheel file found in $WHEEL_PATH"
+            echo "Contents:"
+            ls -la "$WHEEL_PATH" || true
+            exit 1
+          fi
+          
+          echo "✅ Wheel file found: $WHEEL_FILE"
+          ls -lh "$WHEEL_FILE"
+          
+          # Copy to staging directory with consistent name for upload-artifact
+          mkdir -p ../../wheel-staging
+          cp "$WHEEL_FILE" "../../wheel-staging/wheel-${{ matrix.platform }}.whl"
+          echo "✅ Wheel staged for upload"
+
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
           name: wheel-${{ matrix.platform }}
-          path: feagi-bv-platform/feagi-bv-${{ matrix.platform }}/dist/*.whl
+          path: wheel-staging/wheel-${{ matrix.platform }}.whl
+          if-no-files-found: error
           retention-days: 1
 
   build-meta-package:
