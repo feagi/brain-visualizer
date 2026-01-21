@@ -94,6 +94,7 @@ jobs:
       
       - name: Skip build (using cache)
         if: steps.check-rebuild.outputs.need_build == 'false'
+        shell: bash
         run: |
           echo "✅ Using cached binaries (no changes detected)"
           echo "⚡ Saved ~10 minutes of build time"
