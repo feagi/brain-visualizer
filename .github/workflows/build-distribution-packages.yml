@@ -624,7 +624,7 @@ jobs:
   export-desktop-remote:
     name: Export Mode 2 - Desktop Remote (${{ matrix.platform }})
     needs: validate-release
-    if: always() && (needs.validate-release.result == 'success' || needs.validate-release.result == 'skipped') && github.event.inputs.build_remote != 'false'
+    if: always() && (needs.validate-release.result == 'success' || needs.validate-release.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.build_remote != 'false')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
