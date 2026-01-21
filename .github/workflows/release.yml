@@ -1142,12 +1142,42 @@ jobs:
           echo "Checking wheel sizes against PyPI's 100 MB limit:"
           find wheels -name "*.whl" -exec sh -c 'SIZE=$(stat -c%s "$1" 2>/dev/null || du -b "$1" | cut -f1); SIZE_MB=$((SIZE / 1024 / 1024)); echo "  $1: ${SIZE_MB} MB"; if [ "$SIZE_MB" -gt 100 ]; then echo "    ⚠️  EXCEEDS 100 MB LIMIT!"; fi' _ {} \;
 
+      - name: Extract package names from wheels
+        run: |
+          echo "📦 Package names in wheels (for trusted publisher configuration):"
+          echo ""
+          for wheel in $(find wheels -name "*.whl"); do
+            echo "  Wheel file: $(basename "$wheel")"
+            # Try to extract from METADATA file inside wheel (most accurate)
+            if command -v unzip >/dev/null 2>&1; then
+              # Extract METADATA to get actual package name
+              METADATA=$(unzip -p "$wheel" "*.dist-info/METADATA" 2>/dev/null | grep "^Name:" | cut -d: -f2 | xargs || echo "")
+              if [ -n "$METADATA" ]; then
+                echo "  → PyPI project name (from METADATA): $METADATA"
+              else
+                # Fallback: extract from filename
+                PKG_NAME=$(basename "$wheel" | sed -E 's/-[0-9]+\..*\.whl$//' | sed 's/_/-/g')
+                echo "  → PyPI project name (from filename): $PKG_NAME"
+              fi
+            else
+              # Fallback: extract from filename
+              PKG_NAME=$(basename "$wheel" | sed -E 's/-[0-9]+\..*\.whl$//' | sed 's/_/-/g')
+              echo "  → PyPI project name (from filename): $PKG_NAME"
+            fi
+            echo ""
+          done
+
       - name: Verify PyPI configuration
         run: |
           echo "⚠️  IMPORTANT: PyPI configuration requirements"
           echo ""
           echo "1. TRUSTED PUBLISHERS: You need 6 trusted publishers configured"
-          echo "   This workflow publishes 6 packages, each needs its own trusted publisher:"
+          echo "   This workflow publishes 6 packages, each needs its own trusted publisher."
+          echo ""
+          echo "   CRITICAL: The PyPI project name in the trusted publisher MUST match"
+          echo "   the package name in pyproject.toml exactly (with hyphens, not underscores)."
+          echo ""
+          echo "   Required trusted publishers:"
           echo "   - feagi-bv (meta package)"
           echo "   - feagi-bv-linux"
           echo "   - feagi-bv-macos-arm64"
@@ -1155,19 +1185,29 @@ jobs:
           echo "   - feagi-bv-windows"
           echo ""
           echo "   To configure: https://pypi.org/manage/account/publishing/"
-          echo "   For each project, use:"
+          echo "   For each project, use EXACTLY these settings:"
           echo "     - Owner: feagi"
           echo "     - Repository: brain-visualizer"
-          echo "     - Workflow: .github/workflows/release.yml"
-          echo "     - Environment: pypi"
-          echo "     - PyPI project name: (different for each: feagi-bv, feagi-bv-linux, etc.)"
+          echo "     - Workflow file: .github/workflows/release.yml"
+          echo "     - Environment name: pypi"
+          echo "     - PyPI project name: (use the EXACT name from the list above)"
+          echo ""
+          echo "   NOTE: If projects don't exist on PyPI yet, trusted publishers CAN create them,"
+          echo "   but the project name in the publisher config must match the package name exactly."
           echo ""
           echo "2. FILE SIZE LIMIT: Architecture-specific packages should be under 100 MB"
           echo "   If any package exceeds 100 MB, request limit increase:"
           echo "   - Go to: https://pypi.org/project/<package-name>/request-limit-increase/"
           echo "   - Or email: pypi-support@python.org"
           echo ""
+          echo "3. TROUBLESHOOTING:"
+          echo "   If you see 'Non-user identities cannot create new projects':"
+          echo "   - Verify the PyPI project name in trusted publisher matches pyproject.toml"
+          echo "   - Check that hyphens match (feagi-bv-macos-arm64, not feagi_bv_macos_arm64)"
+          echo "   - Ensure the project exists on PyPI OR the trusted publisher is configured correctly"
+          echo ""
           echo "See: https://docs.pypi.org/trusted-publishers/using-github-actions/"
+          echo "     https://docs.pypi.org/trusted-publishers/troubleshooting/"
 
       - name: Publish platform packages to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
