@@ -105,14 +105,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Cache Godot and Rust
+      - name: Cache Rust dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             rust_extensions/*/target
-          key: ${{ runner.os }}-release-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-rust-bv-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-bv-
 
       - name: Install Godot (macOS)
         if: runner.os == 'macOS'
@@ -279,6 +281,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/*/target
+          key: ${{ runner.os }}-rust-release-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-release-
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

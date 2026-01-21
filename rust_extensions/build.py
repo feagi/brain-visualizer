@@ -104,25 +104,62 @@ def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=
     addon_path = Path(godot_addon_dir)
     addon_path.mkdir(parents=True, exist_ok=True)
     
-    # Create target directory structure
-    (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
-    if not release_only:
-        (addon_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
+    # Determine target triple and copy paths based on platform
+    system = platform.system()
+    machine = platform.machine()
     
-    # Copy libraries
-    shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
-    if not release_only and debug_lib:
-        shutil.copy2(debug_lib, addon_path / "target" / "debug" / lib_name)
-    
-    # Remove any old library files in the wrong location
-    old_lib = addon_path / lib_name
-    if old_lib.exists():
-        old_lib.unlink()
+    if system == "Linux":
+        # Linux: copy to target/x86_64-unknown-linux-gnu/release/
+        target_triple = "x86_64-unknown-linux-gnu"
+        release_dest = addon_path / "target" / target_triple / "release"
+        release_dest.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(release_lib, release_dest / lib_name)
+        
+        if not release_only and debug_lib:
+            debug_dest = addon_path / "target" / target_triple / "debug"
+            debug_dest.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(debug_lib, debug_dest / lib_name)
+    elif system == "Darwin":
+        # macOS: copy directly to addon directory (for .gdextension compatibility)
+        # Also copy to target/release/ for legacy compatibility
+        shutil.copy2(release_lib, addon_path / lib_name)
+        (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
+        
+        if not release_only and debug_lib:
+            shutil.copy2(debug_lib, addon_path / lib_name.replace(".dylib", "_debug.dylib"))
+            (addon_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
+            shutil.copy2(debug_lib, addon_path / "target" / "debug" / lib_name)
+    elif system == "Windows":
+        # Windows: copy to target/x86_64-pc-windows-msvc/release/
+        target_triple = "x86_64-pc-windows-msvc"
+        release_dest = addon_path / "target" / target_triple / "release"
+        release_dest.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(release_lib, release_dest / lib_name)
+        
+        if not release_only and debug_lib:
+            debug_dest = addon_path / "target" / target_triple / "debug"
+            debug_dest.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(debug_lib, debug_dest / lib_name)
+    else:
+        # Fallback: copy to target/release/
+        (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
+        if not release_only and debug_lib:
+            (addon_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
+            shutil.copy2(debug_lib, addon_path / "target" / "debug" / lib_name)
     
     print("[SUCCESS] Files copied successfully!")
     
     # Display file sizes
-    release_size = (addon_path / "target" / "release" / lib_name).stat().st_size
+    if system == "Darwin":
+        release_size = (addon_path / lib_name).stat().st_size
+    elif system == "Linux":
+        release_size = (addon_path / "target" / "x86_64-unknown-linux-gnu" / "release" / lib_name).stat().st_size
+    elif system == "Windows":
+        release_size = (addon_path / "target" / "x86_64-pc-windows-msvc" / "release" / lib_name).stat().st_size
+    else:
+        release_size = (addon_path / "target" / "release" / lib_name).stat().st_size
     print(f"[INFO] Release library size: {release_size / (1024*1024):.2f} MB")
     
     return project_path, addon_path, lib_name
@@ -230,25 +267,58 @@ def main():
     # Also copy to FeagiCoreIntegration addon (legacy location - for compatibility)
     print("[COPY] Also deploying to FeagiCoreIntegration addon (legacy location)...")
     addon2_path = godot_source / "addons" / "FeagiCoreIntegration"
-    (addon2_path / "target" / "release").mkdir(parents=True, exist_ok=True)
-    if not release_only:
-        (addon2_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
+    system = platform.system()
     
-    shutil.copy2(project1_path / "target" / "release" / lib1_name, addon2_path / "target" / "release" / lib1_name)
-    if not release_only:
-        debug_lib = project1_path / "target" / "debug" / lib1_name
-        if debug_lib.exists():
-            shutil.copy2(debug_lib, addon2_path / "target" / "debug" / lib1_name)
+    if system == "Linux":
+        # Linux: copy to target/x86_64-unknown-linux-gnu/release/
+        target_triple = "x86_64-unknown-linux-gnu"
+        release_dest = addon2_path / "target" / target_triple / "release"
+        release_dest.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
+        if not release_only:
+            debug_dest = addon2_path / "target" / target_triple / "debug"
+            debug_dest.mkdir(parents=True, exist_ok=True)
+            debug_lib = project1_path / "target" / "debug" / lib1_name
+            if debug_lib.exists():
+                shutil.copy2(debug_lib, debug_dest / lib1_name)
+    elif system == "Darwin":
+        # macOS: copy directly to addon directory (as expected by .gdextension)
+        shutil.copy2(project1_path / "target" / "release" / lib1_name, addon2_path / lib1_name)
+        if not release_only:
+            debug_lib = project1_path / "target" / "debug" / lib1_name
+            if debug_lib.exists():
+                shutil.copy2(debug_lib, addon2_path / lib1_name.replace(".dylib", "_debug.dylib"))
+    elif system == "Windows":
+        # Windows: copy to target/x86_64-pc-windows-msvc/release/
+        target_triple = "x86_64-pc-windows-msvc"
+        release_dest = addon2_path / "target" / target_triple / "release"
+        release_dest.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
+        if not release_only:
+            debug_dest = addon2_path / "target" / target_triple / "debug"
+            debug_dest.mkdir(parents=True, exist_ok=True)
+            debug_lib = project1_path / "target" / "debug" / lib1_name
+            if debug_lib.exists():
+                shutil.copy2(debug_lib, debug_dest / lib1_name)
+    else:
+        # Fallback: copy to target/release/
+        (addon2_path / "target" / "release").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(project1_path / "target" / "release" / lib1_name, addon2_path / "target" / "release" / lib1_name)
+        if not release_only:
+            (addon2_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
+            debug_lib = project1_path / "target" / "debug" / lib1_name
+            if debug_lib.exists():
+                shutil.copy2(debug_lib, addon2_path / "target" / "debug" / lib1_name)
     print("[SUCCESS] Deployed to both addon locations!")
     
     # Build universal binaries on macOS (unless --local-arch is specified)
     if platform.system() == "Darwin" and not local_arch_only:
         build_universal_macos(project1_path, addon1_path, lib1_name, release_only=release_only)
-        # Also copy universal binaries to FeagiCoreIntegration
+        # Also copy universal binaries to FeagiCoreIntegration (directly to addon directory for .gdextension)
         if (addon1_path / "target" / "release" / lib1_name).exists():
-            shutil.copy2(addon1_path / "target" / "release" / lib1_name, addon2_path / "target" / "release" / lib1_name)
+            shutil.copy2(addon1_path / "target" / "release" / lib1_name, addon2_path / lib1_name)
         if not release_only and (addon1_path / "target" / "debug" / lib1_name).exists():
-            shutil.copy2(addon1_path / "target" / "debug" / lib1_name, addon2_path / "target" / "debug" / lib1_name)
+            shutil.copy2(addon1_path / "target" / "debug" / lib1_name, addon2_path / lib1_name.replace(".dylib", "_debug.dylib"))
     elif platform.system() == "Darwin" and local_arch_only:
         print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
     
