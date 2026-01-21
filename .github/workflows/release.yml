@@ -775,10 +775,37 @@ jobs:
           mkdir -p feagi_bv_${{ matrix.platform }}/bin
           cp -r ../../downloads/* feagi_bv_${{ matrix.platform }}/bin/
           
+          # Check package size before building
+          echo "Checking package contents size..."
+          du -sh feagi_bv_${{ matrix.platform }}/bin/ || echo "No bin directory yet"
+          
           # Build wheel
           python -m build
           
+          echo "Built wheel size:"
           ls -lh dist/
+          
+          # Check if wheel exceeds PyPI's 100MB limit
+          WHEEL_SIZE=$(du -b dist/*.whl | cut -f1)
+          SIZE_MB=$((WHEEL_SIZE / 1024 / 1024))
+          echo "Wheel size: ${SIZE_MB} MB"
+          
+          if [ "$SIZE_MB" -gt 100 ]; then
+            echo ""
+            echo "⚠️  WARNING: Wheel size (${SIZE_MB} MB) exceeds PyPI's 100 MB limit!"
+            echo ""
+            echo "Options:"
+            echo "1. Request file size limit increase from PyPI:"
+            echo "   https://pypi.org/project/feagi-bv-macos/request-limit-increase/"
+            echo "   Or email: pypi-support@python.org"
+            echo ""
+            echo "2. Reduce package size by:"
+            echo "   - Compressing binaries more"
+            echo "   - Removing unnecessary files"
+            echo "   - Splitting into multiple packages"
+            echo ""
+            echo "The package will fail to upload to PyPI."
+          fi
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
@@ -863,36 +890,34 @@ jobs:
         run: |
           echo "Wheels to publish:"
           find wheels -name "*.whl" -exec ls -lh {} \;
+          echo ""
+          echo "Checking wheel sizes against PyPI's 100 MB limit:"
+          find wheels -name "*.whl" -exec sh -c 'SIZE=$(du -b "$1" | cut -f1); SIZE_MB=$((SIZE / 1024 / 1024)); echo "  $1: ${SIZE_MB} MB"; if [ "$SIZE_MB" -gt 100 ]; then echo "    ⚠️  EXCEEDS 100 MB LIMIT!"; fi' _ {} \;
 
-      - name: Verify PyPI trusted publisher configuration
+      - name: Verify PyPI configuration
         run: |
-          echo "⚠️  IMPORTANT: You need to configure trusted publishers for ALL 4 PyPI projects"
+          echo "⚠️  IMPORTANT: PyPI configuration requirements"
           echo ""
-          echo "This workflow publishes 4 packages, each needs its own trusted publisher:"
-          echo "  1. feagi-bv (meta package)"
-          echo "  2. feagi-bv-linux"
-          echo "  3. feagi-bv-macos"
-          echo "  4. feagi-bv-windows"
+          echo "1. TRUSTED PUBLISHERS: You need 4 trusted publishers configured"
+          echo "   This workflow publishes 4 packages, each needs its own trusted publisher:"
+          echo "   - feagi-bv (meta package)"
+          echo "   - feagi-bv-linux"
+          echo "   - feagi-bv-macos"
+          echo "   - feagi-bv-windows"
           echo ""
-          echo "To configure each trusted publisher:"
-          echo "1. Go to https://pypi.org/manage/account/publishing/"
-          echo "2. For EACH project, click 'Add a new pending publisher'"
-          echo "3. Configure with these exact values (same for all 4 projects):"
-          echo "   - Owner: feagi"
-          echo "   - Repository name: brain-visualizer"
-          echo "   - Workflow filename: .github/workflows/release.yml"
-          echo "   - Environment name: pypi"
+          echo "   To configure: https://pypi.org/manage/account/publishing/"
+          echo "   For each project, use:"
+          echo "     - Owner: feagi"
+          echo "     - Repository: brain-visualizer"
+          echo "     - Workflow: .github/workflows/release.yml"
+          echo "     - Environment: pypi"
+          echo "     - PyPI project name: (different for each: feagi-bv, feagi-bv-linux, etc.)"
           echo ""
-          echo "   BUT change the 'PyPI project name' for each:"
-          echo "   - First publisher: PyPI project name = feagi-bv"
-          echo "   - Second publisher: PyPI project name = feagi-bv-linux"
-          echo "   - Third publisher: PyPI project name = feagi-bv-macos"
-          echo "   - Fourth publisher: PyPI project name = feagi-bv-windows"
-          echo ""
-          echo "Expected claims (same for all):"
-          echo "  - sub: repo:feagi/brain-visualizer:environment:pypi"
-          echo "  - repository: feagi/brain-visualizer"
-          echo "  - workflow_ref: feagi/brain-visualizer/.github/workflows/release.yml@refs/tags/v*"
+          echo "2. FILE SIZE LIMIT: macOS package may exceed 100 MB limit"
+          echo "   If feagi-bv-macos exceeds 100 MB, request limit increase:"
+          echo "   - Go to: https://pypi.org/project/feagi-bv-macos/request-limit-increase/"
+          echo "   - Or email: pypi-support@python.org"
+          echo "   - Explain: Universal binaries (arm64+x86_64) for scientific software"
           echo ""
           echo "See: https://docs.pypi.org/trusted-publishers/using-github-actions/"
 
