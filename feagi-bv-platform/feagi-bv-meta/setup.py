@@ -22,7 +22,16 @@ platform_deps = []
 if sys.platform.startswith('linux'):
     platform_deps = [f'feagi-bv-linux>={get_version()}']
 elif sys.platform == 'darwin':
-    platform_deps = [f'feagi-bv-macos>={get_version()}']
+    # Detect macOS architecture
+    import platform
+    machine = platform.machine().lower()
+    if machine in ('arm64', 'aarch64'):
+        platform_deps = [f'feagi-bv-macos-arm64>={get_version()}']
+    elif machine in ('x86_64', 'amd64'):
+        platform_deps = [f'feagi-bv-macos-x86_64>={get_version()}']
+    else:
+        # Fallback to arm64 (Apple Silicon is now default)
+        platform_deps = [f'feagi-bv-macos-arm64>={get_version()}']
 elif sys.platform == 'win32':
     platform_deps = [f'feagi-bv-windows>={get_version()}']
 else:

@@ -682,8 +682,13 @@ jobs:
             platform: linux
             download_artifact: BrainVisualizer-Remote-Linux
           - os: macos-latest
-            platform: macos
+            platform: macos-arm64
             download_artifact: BrainVisualizer-Remote-macOS
+            arch: arm64
+          - os: macos-latest
+            platform: macos-x86_64
+            download_artifact: BrainVisualizer-Remote-macOS
+            arch: x86_64
           - os: windows-latest
             platform: windows
             download_artifact: BrainVisualizer-Remote-Windows
@@ -753,6 +758,52 @@ jobs:
           elif ls *.zip 1> /dev/null 2>&1; then
             unzip -q *.zip
           fi
+          
+          # For macOS, extract architecture-specific binary from universal app bundle
+          if [[ "${{ matrix.platform }}" == "macos-arm64" ]] || [[ "${{ matrix.platform }}" == "macos-x86_64" ]]; then
+            echo "Extracting ${{ matrix.arch }} architecture from universal app bundle..."
+            
+            # Find the app bundle
+            APP_BUNDLE=$(find . -name "*.app" -type d | head -1)
+            if [ -z "$APP_BUNDLE" ]; then
+              echo "❌ ERROR: No .app bundle found!"
+              exit 1
+            fi
+            
+            # Extract architecture-specific executable from the app bundle
+            EXECUTABLE="$APP_BUNDLE/Contents/MacOS/BrainVisualizer-Remote"
+            if [ -f "$EXECUTABLE" ]; then
+              # Create architecture-specific directory
+              mkdir -p "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/MacOS"
+              
+              # Extract architecture-specific slice using lipo
+              lipo "$EXECUTABLE" -extract "${{ matrix.arch }}" -output "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/MacOS/BrainVisualizer-Remote" || {
+                echo "⚠️  lipo extract failed, trying ditto..."
+                # Fallback: use ditto to copy and thin
+                ditto --arch "${{ matrix.arch }}" "$APP_BUNDLE" "BrainVisualizer-Remote-${{ matrix.arch }}.app"
+              }
+              
+              # Copy other necessary files (Info.plist, resources, etc.)
+              if [ -f "$APP_BUNDLE/Contents/Info.plist" ]; then
+                mkdir -p "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents"
+                cp "$APP_BUNDLE/Contents/Info.plist" "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/"
+              fi
+              
+              # Copy Resources if they exist
+              if [ -d "$APP_BUNDLE/Contents/Resources" ]; then
+                cp -r "$APP_BUNDLE/Contents/Resources" "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/"
+              fi
+              
+              # Remove the original universal bundle
+              rm -rf "$APP_BUNDLE"
+              
+              echo "✅ Extracted ${{ matrix.arch }} architecture"
+              ls -lh "BrainVisualizer-Remote-${{ matrix.arch }}.app/Contents/MacOS/"
+            else
+              echo "❌ ERROR: Executable not found in app bundle: $EXECUTABLE"
+              exit 1
+            fi
+          fi
 
       - name: Extract BV binary (Windows)
         if: runner.os == 'Windows'
@@ -772,12 +823,21 @@ jobs:
           sed -i.bak "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
           
           # Copy binary
-          mkdir -p feagi_bv_${{ matrix.platform }}/bin
-          cp -r ../../downloads/* feagi_bv_${{ matrix.platform }}/bin/
+          # Handle macOS architecture-specific package names
+          if [[ "${{ matrix.platform }}" == "macos-arm64" ]]; then
+            PACKAGE_DIR="feagi_bv_macos_arm64"
+          elif [[ "${{ matrix.platform }}" == "macos-x86_64" ]]; then
+            PACKAGE_DIR="feagi_bv_macos_x86_64"
+          else
+            PACKAGE_DIR="feagi_bv_${{ matrix.platform }}"
+          fi
+          
+          mkdir -p $PACKAGE_DIR/bin
+          cp -r ../../downloads/* $PACKAGE_DIR/bin/
           
           # Check package size before building
           echo "Checking package contents size..."
-          du -sh feagi_bv_${{ matrix.platform }}/bin/ || echo "No bin directory yet"
+          du -sh $PACKAGE_DIR/bin/ || echo "No bin directory yet"
           
           # Build wheel
           python -m build
@@ -841,23 +901,52 @@ jobs:
           sed -i.bak "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
           
           # Update dependencies in setup.py
-          cat > setup.py << EOF
+          cat > setup.py << 'EOFPY'
           from setuptools import setup, find_packages
           import sys
+          import platform
           
-          dependencies = [
-              f"feagi-bv-linux==${VERSION}; sys_platform == 'linux'",
-              f"feagi-bv-macos==${VERSION}; sys_platform == 'darwin'",
-              f"feagi-bv-windows==${VERSION}; sys_platform == 'win32'",
-          ]
+          def get_version():
+              """Extract version from pyproject.toml."""
+              try:
+                  with open('pyproject.toml', 'r') as f:
+                      for line in f:
+                          if line.startswith('version ='):
+                              return line.split('=')[1].strip().strip('"').strip("'")
+              except FileNotFoundError:
+                  pass
+              return "1.0.0"
+          
+          VERSION = get_version()
+          
+          # Determine platform-specific dependency
+          platform_deps = []
+          if sys.platform.startswith('linux'):
+              platform_deps = [f'feagi-bv-linux>={VERSION}']
+          elif sys.platform == 'darwin':
+              # Detect macOS architecture
+              machine = platform.machine().lower()
+              if machine in ('arm64', 'aarch64'):
+                  platform_deps = [f'feagi-bv-macos-arm64>={VERSION}']
+              elif machine in ('x86_64', 'amd64'):
+                  platform_deps = [f'feagi-bv-macos-x86_64>={VERSION}']
+              else:
+                  # Fallback to arm64 (Apple Silicon is now default)
+                  platform_deps = [f'feagi-bv-macos-arm64>={VERSION}']
+          elif sys.platform == 'win32':
+              platform_deps = [f'feagi-bv-windows>={VERSION}']
           
           setup(
               name="feagi-bv",
-              version="${VERSION}",
+              version=VERSION,
               packages=find_packages(),
-              install_requires=dependencies,
+              install_requires=[
+                  'feagi-core>=2.1.0',
+                  'toml>=0.10.2',
+              ] + platform_deps,
           )
-          EOF
+          EOFPY
+          
           
           python -m build
           ls -lh dist/
@@ -898,11 +987,12 @@ jobs:
         run: |
           echo "⚠️  IMPORTANT: PyPI configuration requirements"
           echo ""
-          echo "1. TRUSTED PUBLISHERS: You need 4 trusted publishers configured"
-          echo "   This workflow publishes 4 packages, each needs its own trusted publisher:"
+          echo "1. TRUSTED PUBLISHERS: You need 6 trusted publishers configured"
+          echo "   This workflow publishes 6 packages, each needs its own trusted publisher:"
           echo "   - feagi-bv (meta package)"
           echo "   - feagi-bv-linux"
-          echo "   - feagi-bv-macos"
+          echo "   - feagi-bv-macos-arm64"
+          echo "   - feagi-bv-macos-x86_64"
           echo "   - feagi-bv-windows"
           echo ""
           echo "   To configure: https://pypi.org/manage/account/publishing/"
@@ -913,11 +1003,10 @@ jobs:
           echo "     - Environment: pypi"
           echo "     - PyPI project name: (different for each: feagi-bv, feagi-bv-linux, etc.)"
           echo ""
-          echo "2. FILE SIZE LIMIT: macOS package may exceed 100 MB limit"
-          echo "   If feagi-bv-macos exceeds 100 MB, request limit increase:"
-          echo "   - Go to: https://pypi.org/project/feagi-bv-macos/request-limit-increase/"
+          echo "2. FILE SIZE LIMIT: Architecture-specific packages should be under 100 MB"
+          echo "   If any package exceeds 100 MB, request limit increase:"
+          echo "   - Go to: https://pypi.org/project/<package-name>/request-limit-increase/"
           echo "   - Or email: pypi-support@python.org"
-          echo "   - Explain: Universal binaries (arm64+x86_64) for scientific software"
           echo ""
           echo "See: https://docs.pypi.org/trusted-publishers/using-github-actions/"
 
@@ -927,10 +1016,16 @@ jobs:
           packages-dir: wheels/wheel-linux/
           skip-existing: true
 
-      - name: Publish platform packages to PyPI (macOS)
+      - name: Publish platform packages to PyPI (macOS arm64)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: wheels/wheel-macos/
+          packages-dir: wheels/wheel-macos-arm64/
+          skip-existing: true
+
+      - name: Publish platform packages to PyPI (macOS x86_64)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-macos-x86_64/
           skip-existing: true
 
       - name: Publish platform packages to PyPI (Windows)
