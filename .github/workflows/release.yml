@@ -146,8 +146,6 @@ jobs:
           ref: ${{ needs.validate-version.outputs.tag_name }}
           fetch-depth: 0
           fetch-tags: true
-          fetch-depth: 0
-          fetch-tags: true
           submodules: recursive
 
       - name: Verify checkout
