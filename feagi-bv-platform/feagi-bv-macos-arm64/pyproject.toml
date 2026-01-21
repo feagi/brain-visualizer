@@ -30,6 +30,6 @@ packages = { find = {} }
 include-package-data = true
 
 [tool.setuptools.package-data]
-feagi_bv_macos = [
+feagi_bv_macos_arm64 = [
     "bin/**/*",
 ]

@@ -951,11 +951,21 @@ jobs:
             exit 1
           fi
           
-          WHEEL_SIZE=$(du -b "$WHEEL_FILE" | cut -f1)
-          SIZE_MB=$((WHEEL_SIZE / 1024 / 1024))
-          echo "Wheel size: ${SIZE_MB} MB"
+          # Get file size (macOS-compatible: use stat instead of du -b)
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            WHEEL_SIZE=$(stat -f%z "$WHEEL_FILE" 2>/dev/null || echo "0")
+          else
+            WHEEL_SIZE=$(stat -c%s "$WHEEL_FILE" 2>/dev/null || du -b "$WHEEL_FILE" | cut -f1)
+          fi
           
-          if [ "$SIZE_MB" -gt 100 ]; then
+          if [ "$WHEEL_SIZE" -eq 0 ]; then
+            echo "⚠️  WARNING: Could not determine wheel size"
+          else
+            SIZE_MB=$((WHEEL_SIZE / 1024 / 1024))
+            echo "Wheel size: ${SIZE_MB} MB (${WHEEL_SIZE} bytes)"
+          fi
+          
+          if [ "$WHEEL_SIZE" -gt 0 ] && [ "$SIZE_MB" -gt 100 ]; then
             echo ""
             echo "⚠️  WARNING: Wheel size (${SIZE_MB} MB) exceeds PyPI's 100 MB limit!"
             echo ""
