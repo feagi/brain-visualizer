@@ -240,42 +240,88 @@ jobs:
           path: exports/${{ matrix.package_name }}
           retention-days: 1
 
-  package-rust-binaries:
-    name: Package Rust Binaries
+  build-rust-binaries:
+    name: Build Rust Binaries (${{ matrix.platform }})
     needs: validate-version
-    runs-on: ubuntu-latest
-    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+          - os: macos-latest
+            platform: macOS
+          - os: windows-latest
+            platform: Windows
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Verify binaries exist in repo
-        run: |
-          echo "Checking for committed Rust binaries..."
-          BINARY_COUNT=$(find godot_source/addons -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) | wc -l)
-          echo "Total binaries found: $BINARY_COUNT"
-          
-          if [ "$BINARY_COUNT" -lt 6 ]; then
-            echo "❌ Expected at least 6 binaries (2 extensions × 3 platforms)"
-            exit 1
-          fi
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
 
-      - name: Package binaries
+      - name: Add macOS universal targets
+        if: runner.os == 'macOS'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Build Rust extensions (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cd rust_extensions
+          python3 build.py --release
+
+      - name: Build Rust extensions (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd rust_extensions
+          python build.py --release
+
+      - name: Upload binaries artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-binaries-${{ matrix.platform }}
+          path: rust_extensions/*/target/release/*feagi*.*
+          retention-days: 1
+
+  package-rust-binaries:
+    name: Package Rust Binaries
+    needs: build-rust-binaries
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all rust binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: binaries
+
+      - name: Display downloaded binaries
+        run: |
+          echo "Downloaded binaries:"
+          ls -lRh binaries/
+
+      - name: Package binaries for release
         run: |
           mkdir -p release-packages
           
-          cd godot_source/addons
-          tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz \
-            feagi_rust_deserializer/target/release/*.so \
-            feagi_shared_video/target/release/*.so 2>/dev/null || true
+          # Package Linux binaries
+          cd binaries/rust-binaries-Linux
+          tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz *.so 2>/dev/null || true
+          cd ../..
           
-          tar -czf ../../release-packages/rust-binaries-macos-universal.tar.gz \
-            feagi_rust_deserializer/target/release/*.dylib \
-            feagi_shared_video/target/release/*.dylib 2>/dev/null || true
+          # Package macOS binaries  
+          cd binaries/rust-binaries-macOS
+          tar -czf ../../release-packages/rust-binaries-macos-universal.tar.gz *.dylib 2>/dev/null || true
+          cd ../..
           
-          zip -r ../../release-packages/rust-binaries-windows-x86_64.zip \
-            feagi_rust_deserializer/target/release/*.dll \
-            feagi_shared_video/target/release/*.dll 2>/dev/null || true
+          # Package Windows binaries
+          cd binaries/rust-binaries-Windows
+          zip -r ../../release-packages/rust-binaries-windows-x86_64.zip *.dll 2>/dev/null || true
           cd ../..
           
           ls -lh release-packages/
