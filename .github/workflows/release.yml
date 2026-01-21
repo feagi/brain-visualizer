@@ -71,6 +71,35 @@ jobs:
           echo "✅ Tag: $TAG_NAME"
           echo "✅ Prerelease: $IS_PRERELEASE"
           
+          # CRITICAL: Verify the tag exists - fail if it doesn't (no fallbacks!)
+          echo ""
+          echo "Verifying tag exists: $TAG_NAME"
+          if ! git rev-parse --verify "$TAG_NAME" >/dev/null 2>&1; then
+            echo "❌ ERROR: Tag $TAG_NAME does not exist!"
+            echo ""
+            echo "Available tags:"
+            git tag -l "v*" | tail -10 || echo "No tags found"
+            echo ""
+            echo "Current HEAD: $(git rev-parse HEAD)"
+            echo "Current branch: $(git branch --show-current 2>/dev/null || echo 'detached')"
+            echo ""
+            echo "The tag must exist before building. Create it with:"
+            echo "  git tag $TAG_NAME <commit-sha>"
+            echo "  git push origin $TAG_NAME"
+            exit 1
+          fi
+          
+          TAG_COMMIT=$(git rev-parse "$TAG_NAME")
+          HEAD_COMMIT=$(git rev-parse HEAD)
+          echo "✅ Tag $TAG_NAME exists at commit: $TAG_COMMIT"
+          
+          # Warn if tag doesn't point to current HEAD (but don't fail - tag might be intentional)
+          if [ "$TAG_COMMIT" != "$HEAD_COMMIT" ]; then
+            echo "⚠️  WARNING: Tag $TAG_NAME points to commit $TAG_COMMIT"
+            echo "   Current HEAD is at: $HEAD_COMMIT"
+            echo "   The build will use the code at the tag, not current HEAD"
+          fi
+          
           echo "bv_version=${VERSION}" >> $GITHUB_OUTPUT
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
@@ -105,6 +134,33 @@ jobs:
         with:
           ref: ${{ needs.validate-version.outputs.tag_name }}
           submodules: recursive
+
+      - name: Verify checkout
+        shell: bash
+        run: |
+          EXPECTED_TAG="${{ needs.validate-version.outputs.tag_name }}"
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          EXPECTED_COMMIT=$(git rev-parse "$EXPECTED_TAG" 2>/dev/null || echo "")
+          
+          if [ -z "$EXPECTED_COMMIT" ]; then
+            echo "❌ ERROR: Tag $EXPECTED_TAG does not exist after checkout!"
+            echo "Current commit: $CURRENT_COMMIT"
+            exit 1
+          fi
+          
+          if [ "$CURRENT_COMMIT" != "$EXPECTED_COMMIT" ]; then
+            echo "❌ ERROR: Checkout failed - wrong commit!"
+            echo "Expected commit (from tag $EXPECTED_TAG): $EXPECTED_COMMIT"
+            echo "Current commit: $CURRENT_COMMIT"
+            echo ""
+            echo "Current branch/tag:"
+            git describe --tags --exact-match HEAD 2>/dev/null || git branch --show-current || echo "detached"
+            exit 1
+          fi
+          
+          echo "✅ Verified: Checked out tag $EXPECTED_TAG at commit $CURRENT_COMMIT"
+          echo "Commit message:"
+          git log -1 --pretty=format:"%s" HEAD
 
       - name: Update BVVersion timestamp
         shell: bash
