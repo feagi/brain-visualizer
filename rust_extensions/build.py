@@ -53,7 +53,7 @@ def print_section(message):
     print(f"{'='*60}\n")
 
 
-def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=False):
+def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=False, no_clean=False):
     """Build a Rust library in release mode (and optionally debug mode).
     
     Args:
@@ -61,6 +61,7 @@ def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=
         project_dir: Path to the Rust project directory
         godot_addon_dir: Path to the Godot addon directory
         release_only: If True, only build release (for CI/CD). If False, build both debug and release.
+        no_clean: If True, skip cargo clean (useful for CI caching). If False, clean before building.
     """
     print_section(f"Building {project_name}")
     
@@ -73,9 +74,12 @@ def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=
         print(f"[ERROR] Project directory not found: {project_path}")
         sys.exit(1)
     
-    # Clean previous builds
-    print("[CLEAN] Cleaning previous builds...")
-    run_command(["cargo", "clean"], cwd=project_path)
+    # Clean previous builds (unless --no-clean is specified)
+    if not no_clean:
+        print("[CLEAN] Cleaning previous builds...")
+        run_command(["cargo", "clean"], cwd=project_path)
+    else:
+        print("[INFO] Skipping cargo clean (using cache)")
     
     # Build release (always)
     print("[BUILD] Building Rust library (release mode - optimized)...")
@@ -242,6 +246,7 @@ def main():
     # Parse command line arguments
     release_only = "--release" in sys.argv or "--release-only" in sys.argv
     local_arch_only = "--local-arch" in sys.argv or "--native" in sys.argv
+    no_clean = "--no-clean" in sys.argv
     
     print_section("FEAGI Rust Extensions Build")
     print(f"Platform: {platform.system()} ({platform.machine()})")
@@ -261,7 +266,8 @@ def main():
         "feagi_data_deserializer",
         root_dir / "feagi_data_deserializer",
         godot_source / "addons" / "feagi_rust_deserializer",
-        release_only=release_only
+        release_only=release_only,
+        no_clean=no_clean
     )
     
     # Also copy to FeagiCoreIntegration addon (legacy location - for compatibility)
@@ -327,7 +333,8 @@ def main():
         "feagi_shared_video",
         root_dir / "feagi_shared_video",
         godot_source / "addons" / "feagi_shared_video",
-        release_only=release_only
+        release_only=release_only,
+        no_clean=no_clean
     )
     
     # Build universal binaries on macOS (unless --local-arch is specified)
@@ -347,9 +354,12 @@ def main():
     lib_prefix = get_library_prefix()
     lib3_name = f"{lib_prefix}feagi_type_system.{lib_ext}"
     
-    # Clean previous builds
-    print("[CLEAN] Cleaning previous builds...")
-    run_command(["cargo", "clean"], cwd=project3_path)
+    # Clean previous builds (unless --no-clean is specified)
+    if not no_clean:
+        print("[CLEAN] Cleaning previous builds...")
+        run_command(["cargo", "clean"], cwd=project3_path)
+    else:
+        print("[INFO] Skipping cargo clean (using cache)")
     
     # Build release
     print("[BUILD] Building feagi_type_system (release mode)...")

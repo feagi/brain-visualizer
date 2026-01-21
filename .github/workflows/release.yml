@@ -112,7 +112,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             rust_extensions/*/target
-          key: ${{ runner.os }}-rust-bv-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+          key: ${{ runner.os }}-rust-bv-${{ hashFiles('rust_extensions/**/Cargo.toml', 'rust_extensions/**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-rust-bv-
 
@@ -167,13 +167,13 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd rust_extensions
-          python3 build.py --release
+          python3 build.py --release --no-clean
 
       - name: Build Rust extensions (Windows)
         if: runner.os == 'Windows'
         run: |
           cd rust_extensions
-          python build.py --release
+          python build.py --release --no-clean
 
       - name: Verify Rust extensions are in place
         shell: bash
@@ -289,7 +289,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             rust_extensions/*/target
-          key: ${{ runner.os }}-rust-release-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+          key: ${{ runner.os }}-rust-release-${{ hashFiles('rust_extensions/**/Cargo.toml', 'rust_extensions/**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-rust-release-
 
@@ -308,13 +308,13 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd rust_extensions
-          python3 build.py --release
+          python3 build.py --release --no-clean
 
       - name: Build Rust extensions (Windows)
         if: runner.os == 'Windows'
         run: |
           cd rust_extensions
-          python build.py --release
+          python build.py --release --no-clean
 
       - name: Upload binaries artifact
         uses: actions/upload-artifact@v4
