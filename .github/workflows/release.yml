@@ -392,10 +392,32 @@ jobs:
           TAG_NAME="${{ needs.validate-version.outputs.tag_name }}"
           echo "Uploading assets to release: $TAG_NAME"
           
+          # Find all files to upload
+          FILES=$(find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \))
+          
+          if [ -z "$FILES" ]; then
+            echo "❌ ERROR: No files found to upload!"
+            echo "Artifacts directory contents:"
+            ls -lRh artifacts/ || true
+            exit 1
+          fi
+          
+          echo "Files to upload:"
+          echo "$FILES"
+          
           # Upload all files
-          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec gh release upload "$TAG_NAME" {} --clobber \;
+          echo "$FILES" | while read -r file; do
+            if [ -n "$file" ]; then
+              echo "Uploading: $file"
+              gh release upload "$TAG_NAME" "$file" --clobber || exit 1
+            fi
+          done
           
           echo "✅ Assets uploaded to release"
+          
+          # Verify upload succeeded
+          echo "Verifying uploaded assets..."
+          gh release view "$TAG_NAME" --json assets --jq '.assets[].name' || exit 1
 
   build-pypi-packages:
     name: Build PyPI Package (${{ matrix.platform }})
@@ -436,7 +458,38 @@ jobs:
         shell: bash
         run: |
           TAG_NAME="${{ needs.validate-version.outputs.tag_name }}"
-          gh release download "$TAG_NAME" --pattern "${{ matrix.download_artifact }}.*" --dir downloads/
+          
+          # Wait for assets to be available (retry up to 5 times)
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES: Checking for assets..."
+            
+            # List available assets
+            gh release view "$TAG_NAME" --json assets --jq '.assets[].name' || true
+            
+            # Try to download
+            if gh release download "$TAG_NAME" --pattern "${{ matrix.download_artifact }}.*" --dir downloads/ 2>/dev/null; then
+              echo "✅ Assets downloaded successfully"
+              break
+            fi
+            
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "⏳ Assets not ready yet, waiting 10 seconds..."
+              sleep 10
+            fi
+          done
+          
+          # Verify files were downloaded
+          if [ ! -d "downloads" ] || [ -z "$(ls -A downloads/ 2>/dev/null)" ]; then
+            echo "❌ ERROR: No assets downloaded!"
+            echo "Available assets on release:"
+            gh release view "$TAG_NAME" --json assets --jq '.assets[].name' || true
+            exit 1
+          fi
+          
           ls -lh downloads/
 
       - name: Extract BV binary (Linux/macOS)
