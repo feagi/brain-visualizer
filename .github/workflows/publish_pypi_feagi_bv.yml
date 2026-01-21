@@ -121,9 +121,93 @@ jobs:
           echo "bv_version=${BV_VERSION}" >> $GITHUB_OUTPUT
           echo "bv_binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
 
+  package-rust-binaries:
+    name: Package and Attach Rust Binaries to Release
+    needs: validate-version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify binaries exist in repo
+        run: |
+          echo "Checking for committed Rust binaries..."
+          echo ""
+          echo "Linux binaries:"
+          find godot_source/addons -name "*.so" -type f -exec ls -lh {} \;
+          echo ""
+          echo "macOS binaries:"
+          find godot_source/addons -name "*.dylib" -type f -exec ls -lh {} \;
+          echo ""
+          echo "Windows binaries:"
+          find godot_source/addons -name "*.dll" -type f -exec ls -lh {} \;
+          echo ""
+          
+          # Count binaries
+          BINARY_COUNT=$(find godot_source/addons -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) | wc -l)
+          echo "Total binaries found: $BINARY_COUNT"
+          
+          if [ "$BINARY_COUNT" -lt 6 ]; then
+            echo "ERROR: Expected at least 6 binaries (2 extensions × 3 platforms)"
+            echo "Make sure binaries are committed to staging before creating release"
+            exit 1
+          fi
+
+      - name: Package binaries for release
+        run: |
+          mkdir -p release-packages
+          
+          # Package Linux binaries
+          echo "Packaging Linux binaries..."
+          cd godot_source/addons
+          tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz \
+            feagi_rust_deserializer/target/release/*.so \
+            feagi_shared_video/target/release/*.so 2>/dev/null || true
+          cd ../..
+          
+          # Package macOS binaries
+          echo "Packaging macOS binaries..."
+          cd godot_source/addons
+          tar -czf ../../release-packages/rust-binaries-macos-universal.tar.gz \
+            feagi_rust_deserializer/target/release/*.dylib \
+            feagi_shared_video/target/release/*.dylib 2>/dev/null || true
+          cd ../..
+          
+          # Package Windows binaries
+          echo "Packaging Windows binaries..."
+          cd godot_source/addons
+          zip -r ../../release-packages/rust-binaries-windows-x86_64.zip \
+            feagi_rust_deserializer/target/release/*.dll \
+            feagi_shared_video/target/release/*.dll 2>/dev/null || true
+          cd ../..
+          
+          echo ""
+          echo "Release packages created:"
+          ls -lh release-packages/
+
+      - name: Upload binaries to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name || github.ref_name }}"
+          echo "Uploading Rust binaries to release: $TAG_NAME"
+          
+          # Upload all packages
+          for package in release-packages/*; do
+            if [ -f "$package" ]; then
+              echo "Uploading: $(basename $package)"
+              gh release upload "$TAG_NAME" "$package" --clobber
+            fi
+          done
+          
+          echo "✅ Rust binaries uploaded to release $TAG_NAME"
+
   build-platform-packages:
     name: Build feagi-bv-${{ matrix.platform }} wheel
-    needs: validate-version
+    needs: [validate-version, package-rust-binaries]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

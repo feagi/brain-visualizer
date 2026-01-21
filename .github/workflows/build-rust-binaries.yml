@@ -8,8 +8,6 @@ on:
       - 'rust_extensions/*/Cargo.toml'
       - 'rust_extensions/build.py'
       - '.github/workflows/build-rust-binaries.yml'
-    tags:
-      - 'v*'  # Trigger on version tags (v2.1.0, v2.1.0b1, etc.) - ignores paths filter
 
 env:
   CARGO_TERM_COLOR: always
@@ -35,9 +33,10 @@ jobs:
             artifact_name: windows-binaries
 
     steps:
-      - name: Checkout code
+      - name: Checkout staging branch
         uses: actions/checkout@v4
         with:
+          ref: staging
           fetch-depth: 0
 
       - name: Install Rust toolchain
@@ -124,7 +123,6 @@ jobs:
   commit-binaries:
     name: Commit All Platform Binaries
     needs: build-binaries
-    if: github.ref == 'refs/heads/staging'  # Only run for staging pushes, not tags
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -335,92 +333,4 @@ jobs:
         run: |
           echo "✅ Binaries are already up to date"
           echo "📦 No PR necessary"
-
-  upload-release-binaries:
-    name: Upload Binaries to Release
-    needs: build-binaries
-    if: startsWith(github.ref, 'refs/tags/v')  # Only run for version tags
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download all platform binaries
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Display downloaded artifacts
-        run: |
-          echo "📦 Downloaded artifacts for release:"
-          ls -lR artifacts/
-
-      - name: Package binaries for release
-        run: |
-          mkdir -p release-packages
-          
-          # Package Linux binaries
-          if [ -d "artifacts/linux-binaries" ]; then
-            echo "📦 Packaging Linux binaries..."
-            cd artifacts/linux-binaries
-            tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz \
-              feagi_rust_deserializer/target/release/*.so \
-              feagi_shared_video/target/release/*.so 2>/dev/null || true
-            cd ../..
-            echo "✅ Created rust-binaries-linux-x86_64.tar.gz"
-          fi
-          
-          # Package macOS binaries
-          if [ -d "artifacts/macos-binaries" ]; then
-            echo "📦 Packaging macOS binaries..."
-            cd artifacts/macos-binaries
-            tar -czf ../../release-packages/rust-binaries-macos-universal.tar.gz \
-              feagi_rust_deserializer/target/release/*.dylib \
-              feagi_shared_video/target/release/*.dylib 2>/dev/null || true
-            cd ../..
-            echo "✅ Created rust-binaries-macos-universal.tar.gz"
-          fi
-          
-          # Package Windows binaries
-          if [ -d "artifacts/windows-binaries" ]; then
-            echo "📦 Packaging Windows binaries..."
-            cd artifacts/windows-binaries
-            zip -r ../../release-packages/rust-binaries-windows-x86_64.zip \
-              feagi_rust_deserializer/target/release/*.dll \
-              feagi_shared_video/target/release/*.dll 2>/dev/null || true
-            cd ../..
-            echo "✅ Created rust-binaries-windows-x86_64.zip"
-          fi
-          
-          echo ""
-          echo "📋 Release packages created:"
-          ls -lh release-packages/
-
-      - name: Upload binaries to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG_NAME="${{ github.ref_name }}"
-          echo "📤 Uploading binaries to release: $TAG_NAME"
-          
-          # Upload all packages to the release
-          for package in release-packages/*; do
-            if [ -f "$package" ]; then
-              echo "Uploading: $(basename $package)"
-              gh release upload "$TAG_NAME" "$package" --clobber
-            fi
-          done
-          
-          echo "✅ Binaries uploaded to release $TAG_NAME"
-
-      - name: Summary
-        run: |
-          echo "✅ Successfully uploaded Rust binaries to release ${{ github.ref_name }}"
-          echo ""
-          echo "📦 Uploaded packages:"
-          echo "  - rust-binaries-linux-x86_64.tar.gz"
-          echo "  - rust-binaries-macos-universal.tar.gz"
-          echo "  - rust-binaries-windows-x86_64.zip"
-          echo ""
-          echo "🔗 View release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
 
