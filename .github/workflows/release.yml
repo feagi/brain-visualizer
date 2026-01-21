@@ -998,6 +998,8 @@ jobs:
           
           if [ ! -d "$WHEEL_PATH" ]; then
             echo "❌ ERROR: dist directory not found: $WHEEL_PATH"
+            echo "Current directory: $(pwd)"
+            echo "Looking for: $WHEEL_PATH"
             exit 1
           fi
           
@@ -1012,10 +1014,11 @@ jobs:
           echo "✅ Wheel file found: $WHEEL_FILE"
           ls -lh "$WHEEL_FILE"
           
-          # Copy to staging directory with consistent name for upload-artifact
-          mkdir -p ../../wheel-staging
-          cp "$WHEEL_FILE" "../../wheel-staging/wheel-${{ matrix.platform }}.whl"
-          echo "✅ Wheel staged for upload"
+          # Copy to staging directory in workspace root (this step runs from workspace root)
+          mkdir -p wheel-staging
+          cp "$WHEEL_FILE" "wheel-staging/wheel-${{ matrix.platform }}.whl"
+          echo "✅ Wheel staged for upload at: wheel-staging/wheel-${{ matrix.platform }}.whl"
+          ls -lh "wheel-staging/"
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
