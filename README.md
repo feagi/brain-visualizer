@@ -54,13 +54,13 @@ Learn how to use Brain Visualizer: [Video Tutorial](https://youtu.be/hH1KYexMQsA
 
 ## Alternative Deployment Options
 
-### ☁️ NeuroRobotics Studio (Cloud)
+### NeuroRobotics Studio (Cloud)
 
 The fastest way to get started - no installation needed!
 
 [Launch NeuroRobotics Studio](https://neurorobotics.studio)
 
-### 🖥️ FEAGI Desktop (All-in-One)
+### FEAGI Desktop (All-in-One)
 
 Download the complete FEAGI suite with Brain Visualizer integrated:
 
