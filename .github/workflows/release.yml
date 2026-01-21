@@ -1014,17 +1014,19 @@ jobs:
           echo "✅ Wheel file found: $WHEEL_FILE"
           ls -lh "$WHEEL_FILE"
           
-          # Copy to staging directory in workspace root (this step runs from workspace root)
-          mkdir -p wheel-staging
-          cp "$WHEEL_FILE" "wheel-staging/wheel-${{ matrix.platform }}.whl"
-          echo "✅ Wheel staged for upload at: wheel-staging/wheel-${{ matrix.platform }}.whl"
-          ls -lh "wheel-staging/"
+          # Copy to staging directory preserving original PEP 440 filename
+          # PyPI requires proper wheel naming: {package}-{version}-{python_tag}-{abi_tag}-{platform_tag}.whl
+          STAGING_DIR="wheel-staging/wheel-${{ matrix.platform }}"
+          mkdir -p "$STAGING_DIR"
+          cp "$WHEEL_FILE" "$STAGING_DIR/"
+          echo "✅ Wheel staged for upload at: $STAGING_DIR/$(basename "$WHEEL_FILE")"
+          ls -lh "$STAGING_DIR/"
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
           name: wheel-${{ matrix.platform }}
-          path: wheel-staging/wheel-${{ matrix.platform }}.whl
+          path: wheel-staging/wheel-${{ matrix.platform }}/*.whl
           if-no-files-found: error
           retention-days: 1
 
