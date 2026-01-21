@@ -333,31 +333,68 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: binaries
+          pattern: rust-binaries-*
 
       - name: Display downloaded binaries
         run: |
           echo "Downloaded binaries:"
-          ls -lRh binaries/
+          ls -lRh binaries/ || echo "No binaries directory found"
+          
+          # Check if we got all 3 platforms
+          PLATFORMS=$(ls -d binaries/rust-binaries-* 2>/dev/null | wc -l || echo "0")
+          echo "Found $PLATFORMS platform(s)"
+          
+          if [ "$PLATFORMS" -lt 3 ]; then
+            echo "⚠️  WARNING: Expected 3 platforms (Linux, macOS, Windows), found $PLATFORMS"
+            echo "Available artifacts:"
+            ls -la binaries/ || true
+          fi
 
       - name: Package binaries for release
         run: |
           mkdir -p release-packages
           
+          ERRORS=0
+          
           # Package Linux binaries
-          cd binaries/rust-binaries-Linux
-          tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz *.so 2>/dev/null || true
-          cd ../..
+          if [ -d "binaries/rust-binaries-Linux" ] && [ -n "$(ls -A binaries/rust-binaries-Linux/*.so 2>/dev/null)" ]; then
+            cd binaries/rust-binaries-Linux
+            tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz *.so
+            cd ../..
+            echo "✅ Packaged Linux binaries"
+          else
+            echo "❌ ERROR: Linux binaries not found!"
+            ERRORS=$((ERRORS + 1))
+          fi
           
           # Package macOS binaries  
-          cd binaries/rust-binaries-macOS
-          tar -czf ../../release-packages/rust-binaries-macos-universal.tar.gz *.dylib 2>/dev/null || true
-          cd ../..
+          if [ -d "binaries/rust-binaries-macOS" ] && [ -n "$(ls -A binaries/rust-binaries-macOS/*.dylib 2>/dev/null)" ]; then
+            cd binaries/rust-binaries-macOS
+            tar -czf ../../release-packages/rust-binaries-macos-universal.tar.gz *.dylib
+            cd ../..
+            echo "✅ Packaged macOS binaries"
+          else
+            echo "❌ ERROR: macOS binaries not found!"
+            ERRORS=$((ERRORS + 1))
+          fi
           
           # Package Windows binaries
-          cd binaries/rust-binaries-Windows
-          zip -r ../../release-packages/rust-binaries-windows-x86_64.zip *.dll 2>/dev/null || true
-          cd ../..
+          if [ -d "binaries/rust-binaries-Windows" ] && [ -n "$(ls -A binaries/rust-binaries-Windows/*.dll 2>/dev/null)" ]; then
+            cd binaries/rust-binaries-Windows
+            zip -r ../../release-packages/rust-binaries-windows-x86_64.zip *.dll
+            cd ../..
+            echo "✅ Packaged Windows binaries"
+          else
+            echo "❌ ERROR: Windows binaries not found!"
+            ERRORS=$((ERRORS + 1))
+          fi
           
+          if [ $ERRORS -gt 0 ]; then
+            echo "❌ Failed to package $ERRORS platform(s)"
+            exit 1
+          fi
+          
+          echo "✅ All binaries packaged successfully"
           ls -lh release-packages/
 
       - name: Upload rust binaries artifact
