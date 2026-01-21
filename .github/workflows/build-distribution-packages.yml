@@ -1,6 +1,8 @@
-name: Build Distribution Packages (3 Modes)
+name: Build Distribution Packages (Remote Mode)
 
 on:
+  release:
+    types: [published]  # Auto-trigger when release is published
   push:
     branches: [ main, release/** ]
     tags: [ 'v*' ]
@@ -50,6 +52,11 @@ jobs:
           # Determine version
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             VERSION="${{ inputs.version }}"
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            # Extract version from release tag (e.g., v1.2.3, v1.2.3b1, v1.2.3a1, v1.2.3rc1)
+            TAG_NAME="${{ github.event.release.tag_name }}"
+            VERSION="${TAG_NAME#v}"
+            echo "Triggered by release: $TAG_NAME"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             # Extract version from tag (e.g., v1.2.3, v1.2.3b1, v1.2.3a1, v1.2.3rc1)
             TAG_NAME="${{ github.ref_name }}"
@@ -162,13 +169,14 @@ jobs:
           echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
 
   #
-  # ============ MODE 1: DESKTOP EMBEDDED ============
+  # ============ MODE 1: DESKTOP EMBEDDED (DISABLED) ============
+  # Embedded mode is under development
   #
   
   build-feagi-embedded:
     name: Build FEAGI Embedded for ${{ matrix.platform }}
     needs: validate-release
-    if: always() && (needs.validate-release.result == 'success' || needs.validate-release.result == 'skipped') && github.event.inputs.build_embedded != 'false'
+    if: false  # DISABLED - Only remote mode is currently working
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -256,7 +264,7 @@ jobs:
   export-desktop-embedded:
     name: Export Mode 1 - Desktop Embedded (${{ matrix.platform }})
     needs: [validate-release, build-feagi-embedded]
-    if: always() && (needs.validate-release.result == 'success' || needs.validate-release.result == 'skipped') && github.event.inputs.build_embedded != 'false'
+    if: false  # DISABLED - Only remote mode is currently working
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -982,12 +990,13 @@ jobs:
           retention-days: 30
 
   #
-  # ============ MODE 3: WEB ============
+  # ============ MODE 3: WEB (DISABLED) ============
+  # Web mode is under development
   #
   
   export-web:
     name: Export Mode 3 - Web (HTML5)
-    if: github.event.inputs.build_web != 'false'
+    if: false  # DISABLED - Web mode under development
     runs-on: ubuntu-latest
 
     steps:
@@ -1079,9 +1088,9 @@ jobs:
   #
   
   create-release:
-    name: Create GitHub Release
-    needs: [validate-release, export-desktop-embedded, export-desktop-remote, export-web]
-    if: always() && (needs.validate-release.result == 'success' || needs.validate-release.result == 'skipped') && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
+    name: Create or Update GitHub Release
+    needs: [validate-release, export-desktop-remote]  # Only remote mode enabled
+    if: always() && (needs.validate-release.result == 'success' || needs.validate-release.result == 'skipped') && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.event_name == 'release')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -1117,59 +1126,44 @@ jobs:
           echo "Downloaded artifacts:"
           ls -lRh artifacts/
 
-      - name: Create release
+      - name: Create or update release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.validate-release.outputs.tag_name || github.ref_name }}
-          name: Brain Visualizer ${{ needs.validate-release.outputs.version || github.ref_name }}
+          tag_name: ${{ needs.validate-release.outputs.tag_name || github.event.release.tag_name || github.ref_name }}
+          name: Brain Visualizer ${{ needs.validate-release.outputs.version || github.event.release.tag_name || github.ref_name }}
           files: |
-            artifacts/BrainVisualizer-Embedded-*/*
             artifacts/BrainVisualizer-Remote-*/*
-            artifacts/BrainVisualizer-Web/*
           body: |
             # Brain Visualizer ${{ needs.validate-release.outputs.version || github.ref_name }}
             
-            ## Three Distribution Modes
-            
-            ### Mode 1: Desktop Embedded (~200MB)
-            **Includes FEAGI in-process - No external dependencies!**
-            - ✅ One-click install and run
-            - ✅ Microsecond-latency performance
-            - ✅ Works offline
-            - ✅ No Docker, no Python, no setup
-            
-            Downloads:
-            - macOS (Universal): `BrainVisualizer-Embedded-macOS.zip`
-            - Windows (x86_64): `BrainVisualizer-Embedded-Windows.zip`
-            - Linux (x86_64): `BrainVisualizer-Embedded-Linux.tar.gz`
-            
-            ### Mode 2: Desktop Remote (~50MB)
+            ## Desktop Remote Mode (~50MB)
             **Lightweight client for remote FEAGI**
             - ✅ Small download
             - ✅ Connect to shared FEAGI server
             - ✅ Multiple clients can connect to one FEAGI
+            - ✅ High-performance real-time visualization
             
-            Downloads:
-            - macOS (Universal): `BrainVisualizer-Remote-macOS.zip`
-            - Windows (x86_64): `BrainVisualizer-Remote-Windows.zip`
-            - Linux (x86_64): `BrainVisualizer-Remote-Linux.tar.gz`
+            ### Downloads:
+            - **macOS (Universal)**: `BrainVisualizer-Remote-macOS.zip`
+            - **Windows (x86_64)**: `BrainVisualizer-Remote-Windows.zip`
+            - **Linux (x86_64)**: `BrainVisualizer-Remote-Linux.tar.gz`
             
-            **Requirements:** Separate FEAGI server (Docker or binary)
+            ### Rust Binaries (for developers):
+            - `rust-binaries-linux-x86_64.tar.gz`
+            - `rust-binaries-macos-universal.tar.gz`
+            - `rust-binaries-windows-x86_64.zip`
             
-            ### Mode 3: Web (~20MB)
-            **Browser-based application**
-            - ✅ No installation required
-            - ✅ Works on any modern browser
-            - ✅ Cloud FEAGI integration
-            
-            Download:
-            - Web Bundle: `BrainVisualizer-Web.tar.gz`
-            
-            **Requirements:** Hosted FEAGI server
+            ### Requirements:
+            - Separate FEAGI server (Docker or binary)
+            - See installation guide at https://github.com/feagi/feagi
             
             ## What's New
             
             See [CHANGELOG.md](CHANGELOG.md) for details.
+            
+            ---
+            
+            **Note:** Embedded and Web modes are under development and not included in this release.
           draft: false
           prerelease: ${{ needs.validate-release.outputs.is_prerelease == 'true' }}
 

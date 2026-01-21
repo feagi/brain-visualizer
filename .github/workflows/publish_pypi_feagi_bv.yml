@@ -121,6 +121,58 @@ jobs:
           echo "bv_version=${BV_VERSION}" >> $GITHUB_OUTPUT
           echo "bv_binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
 
+  wait-for-distribution-packages:
+    name: Wait for Distribution Packages
+    needs: validate-version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Wait for BrainVisualizer distribution packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name || github.ref_name }}"
+          echo "Waiting for distribution packages to be attached to release $TAG_NAME"
+          echo "These are created by build-distribution-packages.yml workflow"
+          echo ""
+          
+          MAX_WAIT=1800  # 30 minutes
+          SLEEP_INTERVAL=30
+          ELAPSED=0
+          
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            echo "Checking for release assets... (${ELAPSED}s elapsed)"
+            
+            # Get release assets
+            ASSETS=$(gh release view "$TAG_NAME" --json assets --jq '.assets[].name')
+            
+            echo "Current assets:"
+            echo "$ASSETS"
+            echo ""
+            
+            # Check if all required distribution packages exist
+            HAS_LINUX=$(echo "$ASSETS" | grep -c "BrainVisualizer-Remote-Linux" || true)
+            HAS_MACOS=$(echo "$ASSETS" | grep -c "BrainVisualizer-Remote-macOS" || true)
+            HAS_WINDOWS=$(echo "$ASSETS" | grep -c "BrainVisualizer-Remote-Windows" || true)
+            
+            if [ "$HAS_LINUX" -gt 0 ] && [ "$HAS_MACOS" -gt 0 ] && [ "$HAS_WINDOWS" -gt 0 ]; then
+              echo "✅ All distribution packages found!"
+              echo "  - BrainVisualizer-Remote-Linux"
+              echo "  - BrainVisualizer-Remote-macOS"
+              echo "  - BrainVisualizer-Remote-Windows"
+              exit 0
+            fi
+            
+            echo "⏳ Waiting for distribution packages to be uploaded..."
+            echo "   Missing: $([ "$HAS_LINUX" -eq 0 ] && echo "Linux ")$([ "$HAS_MACOS" -eq 0 ] && echo "macOS ")$([ "$HAS_WINDOWS" -eq 0 ] && echo "Windows")"
+            sleep $SLEEP_INTERVAL
+            ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
+          done
+          
+          echo "❌ Timeout waiting for distribution packages"
+          echo "Make sure build-distribution-packages.yml workflow completed successfully"
+          exit 1
+
   package-rust-binaries:
     name: Package and Attach Rust Binaries to Release
     needs: validate-version
@@ -207,7 +259,7 @@ jobs:
 
   build-platform-packages:
     name: Build feagi-bv-${{ matrix.platform }} wheel
-    needs: [validate-version, package-rust-binaries]
+    needs: [validate-version, wait-for-distribution-packages]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
