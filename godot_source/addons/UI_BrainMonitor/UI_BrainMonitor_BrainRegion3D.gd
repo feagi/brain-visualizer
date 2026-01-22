@@ -19,6 +19,17 @@ const PLATE_HEIGHT: float = 1.0              # Constant height of all plates
 const PLATE_GAP: float = 1.0                 # Gap between input and output plates
 const AREA_ABOVE_PLATE_GAP: float = 3.0      # Gap between plate top and area bottom
 const PLACEHOLDER_PLATE_SIZE: Vector3 = Vector3(5.0, 1.0, 5.0)  # Size for empty plate placeholders
+const PLATE_COLOR_INPUT: Color = Color(0.1, 0.6, 0.4, 0.35)
+const PLATE_COLOR_OUTPUT: Color = Color(0.1, 0.35, 0.65, 0.35)
+const PLATE_COLOR_CONFLICT: Color = Color(0.85, 0.35, 0.1, 0.35)
+const PLATE_COLOR_BASE: Color = Color(0.2, 0.2, 0.24, 0.6)
+const PLATE_LABEL_COLOR: Color = Color(1.0, 1.0, 1.0, 0.9)
+const PLATE_LABEL_FONT_SIZE: int = 18
+const PLATE_LABEL_PIXEL_SIZE: float = 0.002
+const PLATE_LABEL_Y_OFFSET: float = 0.6
+const PLATE_LABEL_Z_OFFSET: float = 0.6
+const PLATE_BORDER_THICKNESS: float = 0.12
+const PLATE_BORDER_HEIGHT: float = 0.14
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -516,7 +527,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	var conflict_plate_size = _calculate_plate_size_for_areas(conflict_areas, "CONFLICT")
 	
 	# Create new plates with updated sizes (20% opacity to match user setting)
-	var input_color = Color(0.0, 0.6, 0.0, 0.2)  # Brighter green for input
+	var input_color = PLATE_COLOR_INPUT
 	var input_plate
 	if input_areas.size() > 0:
 		input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
@@ -529,11 +540,11 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	if conflict:
 		_attach_hover_warning(input_plate, "Area used as both INPUT and OUTPUT in this region")
 	
-	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green for output with 20% opacity
+	var output_color = PLATE_COLOR_OUTPUT
 	if conflict:
-		# Set plates to reddish when conflict detected
-		input_color = Color(0.6, 0.0, 0.0, 0.25)
-		output_color = Color(0.6, 0.0, 0.0, 0.25)
+		# Set plates to conflict color when conflict detected
+		input_color = PLATE_COLOR_CONFLICT
+		output_color = PLATE_COLOR_CONFLICT
 	var output_plate
 	if output_areas.size() > 0:
 		output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
@@ -549,7 +560,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	# Create conflict plate to the RIGHT of the output plate (only if conflicts exist)
 	var conflict_plate = null
 	if conflict_areas.size() > 0:
-		var conflict_color = Color(0.8, 0.0, 0.0, 0.2)
+		var conflict_color = PLATE_COLOR_CONFLICT
 		# Reuse existing conflict plate if present to avoid duplicates
 		var existing_conflict: MeshInstance3D = _frame_container.get_node_or_null("ConflictPlate")
 		if existing_conflict:
@@ -573,10 +584,18 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	# Align plate local Z to match front-edge at region origin
 	if input_plate:
 		input_plate.position.z = -input_plate_size.z / 2.0
+		var input_tag_size = input_plate_size if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE
+		_add_plate_tag(input_plate, input_tag_size, "INPUT")
+		_add_plate_border(input_plate, input_tag_size, input_color)
 	if output_plate:
 		output_plate.position.z = -output_plate_size.z / 2.0
+		var output_tag_size = output_plate_size if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE
+		_add_plate_tag(output_plate, output_tag_size, "OUTPUT")
+		_add_plate_border(output_plate, output_tag_size, output_color)
 	if conflict_plate:
 		conflict_plate.position.z = -conflict_plate_size.z / 2.0
+		_add_plate_tag(conflict_plate, conflict_plate_size, "CONFLICT")
+		_add_plate_border(conflict_plate, conflict_plate_size, PLATE_COLOR_CONFLICT)
 	
 	# Create or update MOTHER PLATE (binder) under all plates
 	var actual_input_width = input_plate_size.x if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x
@@ -586,7 +605,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 		var actual_conflict_width = conflict_plate_size.x
 		mother_total_width += PLATE_GAP + actual_conflict_width
 	var mother_size = Vector3(mother_total_width, PLATE_HEIGHT, 1.0)
-	var mustard = Color(0.415, 0.343, 0.076, 0.725)
+	var mustard = PLATE_COLOR_BASE
 	var mother_plate: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate")
 	if mother_plate == null:
 		mother_plate = _create_mother_plate(mother_size, "MotherPlate", mustard)
@@ -601,6 +620,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	mother_plate.position.x = mother_total_width / 2.0
 	mother_plate.position.y = PLATE_HEIGHT / 2.0 - 2.0
 	mother_plate.position.z = -0.5
+	_add_plate_border(mother_plate, mother_size, PLATE_COLOR_BASE)
 	# print("🧪 PLATE [%s] MotherPlate size=%s scale=%s" % [_representing_region.region_ID, mother_size, mother_plate.global_transform.basis.get_scale()])
 	# print("🧪 PLATE [%s] RegionAssembly scale=%s" % [_representing_region.region_ID, _frame_container.global_transform.basis.get_scale()])
 	
@@ -779,7 +799,7 @@ func _create_3d_plate() -> void:
 	add_child(_frame_container)
 	
 	# INPUT PLATE: Front-left corner at brain region coordinates (0,0,0 relative)
-	var input_color = Color(0.0, 0.6, 0.0, 0.2)  # Light green with opacity
+	var input_color = PLATE_COLOR_INPUT
 	var input_plate
 	if input_areas.size() > 0:
 		input_plate = _create_single_plate(input_plate_size, "InputPlate", input_color)
@@ -792,7 +812,7 @@ func _create_3d_plate() -> void:
 	_frame_container.add_child(input_plate)
 
 	# OUTPUT PLATE: Positioned at input_width + gap from brain region front-left corner
-	var output_color = Color(0.0, 0.4, 0.0, 0.2)  # Darker green with opacity
+	var output_color = PLATE_COLOR_OUTPUT
 	var output_plate
 	if output_areas.size() > 0:
 		output_plate = _create_single_plate(output_plate_size, "OutputPlate", output_color)
@@ -808,7 +828,7 @@ func _create_3d_plate() -> void:
 	# CONFLICT PLATE: Only create if there are conflicted areas  
 	var conflict_plate = null
 	if conflict_areas.size() > 0:
-		var conflict_color = Color(0.8, 0.0, 0.0, 0.2)  # Red with opacity
+		var conflict_color = PLATE_COLOR_CONFLICT
 		conflict_plate = _create_single_plate(conflict_plate_size, "ConflictPlate", conflict_color)
 		# FRONT-LEFT CORNER positioning - Must match coordinate generation logic
 		var conflict_plate_x = input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP  # Same as coordinate generation
@@ -820,13 +840,18 @@ func _create_3d_plate() -> void:
 	# After adding plates, set their local Z so front edges align at region origin
 	if input_plate:
 		input_plate.position.z = -input_plate_size.z / 2.0
-		# print("🧪 PLATE [%s] InputPlate size=%s scale=%s" % [_representing_region.region_ID, input_plate_size, input_plate.global_transform.basis.get_scale()])
+		var input_tag_size = input_plate_size if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE
+		_add_plate_tag(input_plate, input_tag_size, "INPUT")
+		_add_plate_border(input_plate, input_tag_size, input_color)
 	if output_plate:
 		output_plate.position.z = -output_plate_size.z / 2.0
-		# print("🧪 PLATE [%s] OutputPlate size=%s scale=%s" % [_representing_region.region_ID, output_plate_size, output_plate.global_transform.basis.get_scale()])
+		var output_tag_size = output_plate_size if output_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE
+		_add_plate_tag(output_plate, output_tag_size, "OUTPUT")
+		_add_plate_border(output_plate, output_tag_size, output_color)
 	if conflict_plate:
 		conflict_plate.position.z = -conflict_plate_size.z / 2.0
-		# print("🧪 PLATE [%s] ConflictPlate size=%s scale=%s" % [_representing_region.region_ID, conflict_plate_size, conflict_plate.global_transform.basis.get_scale()])
+		_add_plate_tag(conflict_plate, conflict_plate_size, "CONFLICT")
+		_add_plate_border(conflict_plate, conflict_plate_size, PLATE_COLOR_CONFLICT)
 
 	# Create or update MOTHER PLATE (binder) under all plates
 	var actual_input_width_ = input_plate_size.x if input_areas.size() > 0 else PLACEHOLDER_PLATE_SIZE.x
@@ -836,7 +861,7 @@ func _create_3d_plate() -> void:
 		var actual_conflict_width_ = conflict_plate_size.x
 		mother_total_width_ += PLATE_GAP + actual_conflict_width_
 	var mother_size_ = Vector3(mother_total_width_, PLATE_HEIGHT, 1.0)
-	var mustard_ = Color(0.827, 0.706, 0.196, 1.0)
+	var mustard_ = PLATE_COLOR_BASE
 	var mother_plate_ : MeshInstance3D = _frame_container.get_node_or_null("MotherPlate")
 	if mother_plate_ == null:
 		mother_plate_ = _create_mother_plate(mother_size_, "MotherPlate", mustard_)
@@ -850,6 +875,8 @@ func _create_3d_plate() -> void:
 	mother_plate_.position.x = mother_total_width_ / 2.0
 	mother_plate_.position.y = PLATE_HEIGHT / 2.0 - 2.0
 	mother_plate_.position.z = -0.5
+	_add_plate_border(mother_plate_, mother_size_, PLATE_COLOR_BASE)
+	_add_plate_border(mother_plate_, mother_size_, PLATE_COLOR_BASE)
 	# print("🧪 PLATE DEBUG: MotherPlate local_pos=%s size=%s" % [mother_plate_.position, mother_size_])
 
 	# Create region name label (white, large) and place it below the bezel
@@ -916,10 +943,19 @@ func _create_single_plate(plate_size: Vector3, plate_name: String, plate_color: 
 	box_mesh.size = Vector3(plate_size.x, 1.0, plate_size.z)  # 1 unit thickness in Y
 	plate_mesh_instance.mesh = box_mesh
 	
-	# Create semi-transparent material
+	# Create semi-transparent material with subtle emission for readability
 	var plate_material = StandardMaterial3D.new()
-	plate_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	plate_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 	plate_material.albedo_color = plate_color  # Use the actual alpha value from plate_color parameter
+	plate_material.metallic = 0.05
+	plate_material.roughness = 0.35
+	plate_material.specular = 0.6
+	plate_material.clearcoat_enabled = true
+	plate_material.clearcoat = 0.35
+	plate_material.clearcoat_roughness = 0.2
+	plate_material.emission_enabled = true
+	plate_material.emission = Color(plate_color.r * 0.35, plate_color.g * 0.35, plate_color.b * 0.35, plate_color.a)
+	plate_material.emission_energy = 0.35
 	plate_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA  # Enable alpha transparency
 	plate_material.flags_unshaded = true
 	plate_material.flags_transparent = true
@@ -933,6 +969,71 @@ func _create_single_plate(plate_size: Vector3, plate_name: String, plate_color: 
 	
 	return plate_mesh_instance
 
+func _add_plate_border(plate_node: MeshInstance3D, plate_size: Vector3, plate_color: Color) -> void:
+	var existing = plate_node.get_node_or_null("PlateBorder") as Node3D
+	if existing != null:
+		existing.queue_free()
+	var border_root = Node3D.new()
+	border_root.name = "PlateBorder"
+	plate_node.add_child(border_root)
+	var border_material = StandardMaterial3D.new()
+	border_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+	border_material.albedo_color = Color(0.9, 0.9, 0.95, 0.95)
+	border_material.metallic = 0.1
+	border_material.roughness = 0.25
+	border_material.specular = 0.7
+	border_material.emission_enabled = true
+	border_material.emission = Color(0.6, 0.6, 0.7, 0.9)
+	border_material.emission_energy = 0.55
+	border_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	border_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	border_material.flags_do_not_receive_shadows = true
+	border_material.flags_disable_ambient_light = true
+
+	var half_x = plate_size.x / 2.0
+	var half_z = plate_size.z / 2.0
+	var y = PLATE_HEIGHT / 2.0 + PLATE_BORDER_HEIGHT / 2.0
+
+	var front = MeshInstance3D.new()
+	front.name = "BorderFront"
+	var front_mesh = BoxMesh.new()
+	front_mesh.size = Vector3(plate_size.x, PLATE_BORDER_HEIGHT, PLATE_BORDER_THICKNESS)
+	front.mesh = front_mesh
+	front.position = Vector3(0.0, y, -half_z + PLATE_BORDER_THICKNESS / 2.0)
+	front.material_override = border_material
+	front.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	border_root.add_child(front)
+
+	var back = MeshInstance3D.new()
+	back.name = "BorderBack"
+	var back_mesh = BoxMesh.new()
+	back_mesh.size = Vector3(plate_size.x, PLATE_BORDER_HEIGHT, PLATE_BORDER_THICKNESS)
+	back.mesh = back_mesh
+	back.position = Vector3(0.0, y, half_z - PLATE_BORDER_THICKNESS / 2.0)
+	back.material_override = border_material
+	back.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	border_root.add_child(back)
+
+	var left = MeshInstance3D.new()
+	left.name = "BorderLeft"
+	var left_mesh = BoxMesh.new()
+	left_mesh.size = Vector3(PLATE_BORDER_THICKNESS, PLATE_BORDER_HEIGHT, plate_size.z)
+	left.mesh = left_mesh
+	left.position = Vector3(-half_x + PLATE_BORDER_THICKNESS / 2.0, y, 0.0)
+	left.material_override = border_material
+	left.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	border_root.add_child(left)
+
+	var right = MeshInstance3D.new()
+	right.name = "BorderRight"
+	var right_mesh = BoxMesh.new()
+	right_mesh.size = Vector3(PLATE_BORDER_THICKNESS, PLATE_BORDER_HEIGHT, plate_size.z)
+	right.mesh = right_mesh
+	right.position = Vector3(half_x - PLATE_BORDER_THICKNESS / 2.0, y, 0.0)
+	right.material_override = border_material
+	right.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	border_root.add_child(right)
+
 func _attach_hover_warning(plate_node: MeshInstance3D, warning_text: String) -> void:
 	# Attach a simple Label3D as a child and toggle visibility on hover
 	var warn = Label3D.new()
@@ -943,6 +1044,25 @@ func _attach_hover_warning(plate_node: MeshInstance3D, warning_text: String) -> 
 	warn.modulate = Color(1, 0.6, 0.6, 0.9)
 	warn.position = Vector3(0, 2.0, 0)
 	plate_node.add_child(warn)
+
+func _add_plate_tag(plate_node: MeshInstance3D, plate_size: Vector3, label_text: String) -> void:
+	var existing = plate_node.get_node_or_null("PlateTag") as Label3D
+	if existing != null:
+		existing.text = label_text
+		return
+	var label = Label3D.new()
+	label.name = "PlateTag"
+	label.text = label_text
+	label.font_size = PLATE_LABEL_FONT_SIZE
+	label.pixel_size = PLATE_LABEL_PIXEL_SIZE
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = false
+	label.modulate = PLATE_LABEL_COLOR
+	label.render_priority = 11
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.position = Vector3(0.0, PLATE_LABEL_Y_OFFSET, -plate_size.z / 2.0 + PLATE_LABEL_Z_OFFSET)
+	plate_node.add_child(label)
 
 ## Creates a visible placeholder using 12 thick edge rods for empty input/output plates
 func _create_wireframe_placeholder_plate(plate_size: Vector3, plate_name: String, plate_color: Color) -> MeshInstance3D:
@@ -1022,6 +1142,9 @@ func _create_mother_plate(size: Vector3, plate_name: String, plate_color: Color)
 	var material = StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = plate_color
+	material.emission_enabled = true
+	material.emission = Color(plate_color.r * 0.2, plate_color.g * 0.2, plate_color.b * 0.2, plate_color.a)
+	material.emission_energy = 0.2
 	material.flags_unshaded = true
 	material.flags_transparent = false
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
