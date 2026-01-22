@@ -358,7 +358,10 @@ func _update_io_direction_indicator_transform(mode: StringName) -> void:
 		return
 
 	# Compute visual bounds in WORLD space (so sizing is not affected by parent scaling).
-	var bounds_world := _compute_world_visual_aabb(parent_body)
+	var bounds_world := _compute_world_visual_aabb(parent_body, _io_direction_indicator)
+	if bounds_world.size.length() < 0.001:
+		_clear_io_direction_indicator()
+		return
 	var top_y_world: float = bounds_world.position.y + bounds_world.size.y
 	# Sizing decision must ignore Z (explicit requirement). Use only X/Y dimensions.
 	var base_width_x: float = maxf(0.01, bounds_world.size.x)
@@ -413,7 +416,7 @@ func _update_io_direction_indicator_transform(mode: StringName) -> void:
 
 	# Prevent inherited non-uniform scaling (especially Z) from thickening the arrow.
 	var parent_scale: Vector3 = parent_body.global_transform.basis.get_scale()
-	if parent_scale.x == 0.0 or parent_scale.y == 0.0 or parent_scale.z == 0.0:
+	if absf(parent_scale.x) < 0.001 or absf(parent_scale.y) < 0.001 or absf(parent_scale.z) < 0.001:
 		_clear_io_direction_indicator()
 		return
 	_io_direction_indicator_base_scale = Vector3(
@@ -597,7 +600,7 @@ func _clear_io_direction_indicator() -> void:
 	set_process(false)
 
 ## Computes a merged WORLD-space AABB for all MeshInstance3D descendants under `root`.
-func _compute_world_visual_aabb(root: Node3D) -> AABB:
+func _compute_world_visual_aabb(root: Node3D, exclude_root: Node = null) -> AABB:
 	var merged := AABB()
 	var has_any := false
 	if root == null or not is_instance_valid(root):
@@ -606,6 +609,9 @@ func _compute_world_visual_aabb(root: Node3D) -> AABB:
 	var stack: Array[Node] = [root]
 	while not stack.is_empty():
 		var n := stack.pop_back()
+		if exclude_root != null:
+			if n == exclude_root or exclude_root.is_ancestor_of(n):
+				continue
 		for child in n.get_children():
 			stack.append(child)
 		if n is MeshInstance3D:
@@ -621,7 +627,7 @@ func _compute_world_visual_aabb(root: Node3D) -> AABB:
 				merged = merged.merge(world_aabb)
 
 	if not has_any:
-		return AABB(Vector3.ZERO, Vector3.ONE)
+		return AABB(Vector3.ZERO, Vector3.ZERO)
 	return merged
 
 func _get_best_static_body_for_indicator() -> StaticBody3D:

@@ -319,6 +319,8 @@ func _create_icon_widget_for_morphology(morphology_id: StringName, morphology: B
 		candidates.append(tmp)
 	for c in candidates:
 		var candidate_path: StringName = base_path + c + &".png"
+		if not ResourceLoader.exists(candidate_path):
+			continue
 		var t: Texture2D = load(candidate_path)
 		if t != null:
 			print("    > using icon for:", morphology_id, " matched by '", c, "'")
@@ -326,12 +328,16 @@ func _create_icon_widget_for_morphology(morphology_id: StringName, morphology: B
 			break
 	if texture == null:
 		var default_icon_path: StringName = base_path + &"placeholder.png"
-		var fallback: Texture2D = load(default_icon_path)
-		if fallback != null:
-			print("    > using default icon for:", morphology_id)
-			texture = fallback
+		if ResourceLoader.exists(default_icon_path):
+			var fallback: Texture2D = load(default_icon_path)
+			if fallback != null:
+				print("    > using default icon for:", morphology_id)
+				texture = fallback
 		else:
 			push_warning("QC: CORE ICON BAR → default icon missing at '" + String(default_icon_path) + "'")
+			return null
+		if texture == null:
+			push_warning("QC: CORE ICON BAR → failed to load default icon at '" + String(default_icon_path) + "'")
 			return null
 	var button := TextureButton.new()
 	button.texture_normal = texture

@@ -284,6 +284,8 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 		var cache = FeagiCore.feagi_local_cache
 		if not cache.cache_reloaded.is_connected(_on_cache_reloaded_refresh_all_connections):
 			cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
+		if not cache.mappings_reloaded.is_connected(_on_mappings_reloaded_refresh_connections):
+			cache.mappings_reloaded.connect(_on_mappings_reloaded_refresh_connections)
 
 	# Position camera to frame all 3D objects in this scene
 	if _pancake_cam and region.contained_cortical_areas.size() > 0:
@@ -1567,7 +1569,14 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	_previously_moused_over_volumes = currently_moused_over_volumes.filter(func(volume): return volume != null and is_instance_valid(volume))
 	
 	# highlight neurons that are moused over (and unhighlight what wasnt)
-	currently_mousing_over_neurons.merge(_previously_moused_over_cortical_area_neurons, false)
+	var previous_valid: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {}
+	for previous_area in _previously_moused_over_cortical_area_neurons.keys():
+		if previous_area != null and is_instance_valid(previous_area):
+			var prev_list = _previously_moused_over_cortical_area_neurons[previous_area]
+			if prev_list is Array:
+				previous_valid[previous_area] = prev_list
+	_previously_moused_over_cortical_area_neurons = previous_valid
+	currently_mousing_over_neurons.merge(previous_valid, false)
 	for cortical_area in currently_mousing_over_neurons.keys():
 		var typed_arr: Array[UI_BrainMonitor_CorticalArea] = []
 		if len(currently_mousing_over_neurons[cortical_area]) == 0:
@@ -2229,7 +2238,9 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	# print("  📍 Area coordinates: %s" % area.coordinates_3D)  # Suppressed - too frequent
 	# print("  🎯 Total areas in this brain monitor: %d" % _cortical_visualizations_by_ID.size())  # Suppressed - too frequent
 	
-	area.about_to_be_deleted.connect(_remove_cortical_area.bind(area))
+	var remove_callable := Callable(self, "_remove_cortical_area").bind(area)
+	if not area.about_to_be_deleted.is_connected(remove_callable):
+		area.about_to_be_deleted.connect(remove_callable)
 	area.coordinates_3D_updated.connect(rendering_area.set_new_position)
 	
 	# If this area is I/O of a child region, it will be moved later by the brain region component
@@ -2361,6 +2372,11 @@ func _on_cache_reloaded_refresh_all_connections() -> void:
 	# Rebuild cortical area visuals to guarantee sync with refreshed cache
 	for cortical_viz in _cortical_visualizations_by_ID.values():
 		if cortical_viz != null and is_instance_valid(cortical_viz):
+			var area: AbstractCorticalArea = cortical_viz.cortical_area
+			if area != null:
+				var remove_callable := Callable(self, "_remove_cortical_area").bind(area)
+				if area.about_to_be_deleted.is_connected(remove_callable):
+					area.about_to_be_deleted.disconnect(remove_callable)
 			cortical_viz.queue_free()
 	_cortical_visualizations_by_ID.clear()
 	_add_missing_cortical_area_visualizations()
@@ -2443,6 +2459,19 @@ func _create_missing_brain_region_visualizations() -> void:
 ## Manual force refresh of all cortical area connections (for debugging/troubleshooting)
 func force_refresh_all_cortical_connections() -> void:
 	print("BrainMonitor 3D Scene: 🔧 MANUAL REFRESH - Force refreshing all cortical area connections")
+	_on_mappings_reloaded_refresh_connections()
+
+func _on_mappings_reloaded_refresh_connections() -> void:
+	var refreshed_count = 0
+	for cortical_viz in _cortical_visualizations_by_ID.values():
+		if cortical_viz != null and is_instance_valid(cortical_viz):
+			# Refresh connection curves only when hovered to avoid heavy rebuilds.
+			if cortical_viz._is_volume_moused_over:
+				cortical_viz._hide_neural_connections()
+				cortical_viz._show_neural_connections()
+				refreshed_count += 1
+			cortical_viz._refresh_io_direction_indicator()
+	print("BrainMonitor 3D Scene: ✅ Mapping refresh updated %d hovered areas" % refreshed_count)
 
 ## Manual trigger for creating missing brain region visualizations (for debugging)
 func force_create_missing_regions() -> void:

@@ -76,6 +76,46 @@ func FEAGI_load_all_mappings(mapping_summary: Dictionary)-> void:
 			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
 			FEAGI_set_mapping_JSON(source_area, destination_area, mapping_dictionaries)
 
+## Applies mapping summary as a diff to avoid full cache teardown.
+func FEAGI_apply_mapping_summary_diff(mapping_summary: Dictionary) -> void:
+	var existing_pairs: Array[Array] = []
+	for source_id in _established_mappings.keys():
+		for destination_id in _established_mappings[source_id].keys():
+			existing_pairs.append([source_id, destination_id])
+
+	var seen_pairs: Dictionary = {}
+	for source_cortical_ID: StringName in mapping_summary.keys():
+		if !(source_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()):
+			push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % source_cortical_ID)
+			continue
+		var mapping_targets: Dictionary = mapping_summary[source_cortical_ID]
+		for destination_cortical_ID: StringName in mapping_targets.keys():
+			if !(destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()):
+				push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % destination_cortical_ID)
+				continue
+			var source_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
+			var destination_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
+			var mapping_dictionaries: Array[Dictionary] = []
+			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
+			FEAGI_set_mapping_JSON(source_area, destination_area, mapping_dictionaries)
+			seen_pairs["%s->%s" % [source_cortical_ID, destination_cortical_ID]] = true
+
+	for pair in existing_pairs:
+		var source_id: StringName = pair[0]
+		var destination_id: StringName = pair[1]
+		if seen_pairs.has("%s->%s" % [source_id, destination_id]):
+			continue
+		var source_area := FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(source_id, null)
+		var destination_area := FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(destination_id, null)
+		if source_area != null and destination_area != null:
+			FEAGI_delete_mappings(source_area, destination_area)
+		else:
+			push_warning("FEAGI CACHE: Removing mapping with missing area(s): %s -> %s" % [source_id, destination_id])
+			if _established_mappings.has(source_id):
+				_established_mappings[source_id].erase(destination_id)
+				if len(_established_mappings[source_id]) == 0:
+					_established_mappings.erase(source_id)
+
 func FEAGI_delete_all_mappings() -> void:
 	for source_ID: StringName in established_mappings.keys():
 		for destination_ID: StringName in established_mappings[source_ID]:

@@ -1095,7 +1095,8 @@ func _get_visible_global_rect(base_rect: Rect2) -> Rect2:
 func _global_to_local(point: Vector2) -> Vector2:
 	return get_global_transform_with_canvas().affine_inverse() * point
 
-func _attempt_initial_fit() -> void:
+## Attempts initial layout fit, ignoring optional signal args.
+func _attempt_initial_fit(_node: Node = null) -> void:
 	if _initial_fit_done or _initial_fit_in_progress or !is_visible_in_tree():
 		return
 	_initial_fit_in_progress = true

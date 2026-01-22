@@ -2259,6 +2259,8 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	if !destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 		push_error("FEAGI Requests: Unable to get mappings toward uncached cortical area %s that is not found in cache!!" % destination_cortical_ID)
 		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
+	if source_cortical_ID == destination_cortical_ID:
+		return await _get_self_mappings_from_summary(source_cortical_ID)
 
 	# Define Request
 	var dict_to_send: Dictionary = {
@@ -2295,12 +2297,30 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 		# Temporarily disable ALL competing refresh signals during update
 		_disable_region_refresh_signals()
 		_disable_local_cache_refresh_signals()
-		_process_brain_region_io_updates(regions_map)
+		_process_brain_region_io_updates(regions_map, true)
 		# Re-enable signals after update is complete
 		call_deferred("_enable_region_refresh_signals")
 		call_deferred("_enable_local_cache_refresh_signals")
 	
 	return FEAGI_response_data
+
+## Loads mappings for a cortical area mapped to itself from mapping summary.
+func _get_self_mappings_from_summary(cortical_id: StringName) -> FeagiRequestOutput:
+	var mapping_summary: FeagiRequestOutput = await get_mapping_summary()
+	if mapping_summary == null or not mapping_summary.success:
+		push_error("FEAGI Requests: Unable to retrieve mapping summary for self mapping of %s" % cortical_id)
+		return mapping_summary
+	var mapping_dict: Dictionary = mapping_summary.decode_response_as_dict()
+	if not mapping_dict.has(cortical_id):
+		print("FEAGI REQUEST: Mapping summary did not include %s; leaving cache unchanged" % cortical_id)
+		return mapping_summary
+	var targets: Dictionary = mapping_dict[cortical_id]
+	var mapping_dictionaries: Array[Dictionary] = []
+	if targets.has(cortical_id):
+		mapping_dictionaries.assign(targets[cortical_id])
+	var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_id]
+	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(area, area, mapping_dictionaries)
+	return mapping_summary
 
 
 ## Set (overwrite) the mappings between 2 areas
@@ -2348,7 +2368,7 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 		# Temporarily disable ALL competing refresh signals during update
 		_disable_region_refresh_signals()
 		_disable_local_cache_refresh_signals()
-		_process_brain_region_io_updates(regions_map_put)
+		_process_brain_region_io_updates(regions_map_put, true)
 		# Update local cache AFTER processing brain region updates to prevent conflicts
 		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
 		# Re-enable signals after update is complete
@@ -2368,7 +2388,7 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	return FEAGI_response_data
 
 ## Processes brain region I/O updates from FEAGI API response and reconfigures plates
-func _process_brain_region_io_updates(brain_regions_data) -> void:
+func _process_brain_region_io_updates(brain_regions_data, allow_clear: bool = true) -> void:
 	print("🔄 BRAIN REGION I/O UPDATE: Processing %d region(s) from FEAGI response" % brain_regions_data.size())
 	
 	for region_id in brain_regions_data.keys():
@@ -2399,7 +2419,10 @@ func _process_brain_region_io_updates(brain_regions_data) -> void:
 				inputs.append(StringName(id))
 			print("    📥 Updating %d input areas: %s" % [inputs.size(), inputs])
 			# Update the brain region's partial mappings to reflect new I/O status
-			_update_brain_region_io_mappings(brain_region, inputs, true)  # true = input
+			if not allow_clear and inputs.is_empty() and _region_has_partial_mappings_of_type(brain_region, true):
+				print("    Skipping empty input update to preserve existing mappings")
+			else:
+				_update_brain_region_io_mappings(brain_region, inputs, true)  # true = input
 			
 		if region_data.has("outputs"):
 			var outputs_raw = region_data["outputs"]
@@ -2408,7 +2431,10 @@ func _process_brain_region_io_updates(brain_regions_data) -> void:
 				outputs.append(StringName(id2))
 			print("    📤 Updating %d output areas: %s" % [outputs.size(), outputs])
 			# Update the brain region's partial mappings to reflect new I/O status
-			_update_brain_region_io_mappings(brain_region, outputs, false)  # false = output
+			if not allow_clear and outputs.is_empty() and _region_has_partial_mappings_of_type(brain_region, false):
+				print("    Skipping empty output update to preserve existing mappings")
+			else:
+				_update_brain_region_io_mappings(brain_region, outputs, false)  # false = output
 		
 		# Log state after update
 		print("    📊 AFTER UPDATE:")
@@ -2552,7 +2578,14 @@ func _refresh_regions_containing_areas(areas: Array[AbstractCorticalArea]) -> vo
 		return
 
 	print("  🔄 Applying refreshed I/O membership for %d region(s)" % subset.size())
-	_process_brain_region_io_updates(subset)
+	_process_brain_region_io_updates(subset, false)
+
+func _region_has_partial_mappings_of_type(brain_region: BrainRegion, is_input: bool) -> bool:
+	"""Return true when the region already has input/output partial mappings."""
+	for mapping in brain_region.partial_mappings:
+		if mapping.is_region_input == is_input:
+			return true
+	return false
 	
 	# Note: _process_brain_region_io_updates() will trigger per-region visualization refresh.
 

@@ -11,6 +11,15 @@ var _button: Button
 var _source_port # either [CBNodePort] or [CBLineEndpoint]
 var _destination_port # either [CBNodePort] or [CBLineEndpoint]
 var _link: ConnectionChainLink
+var _is_disposing: bool = false
+var _pending_dispose: bool = false
+var _has_entered_tree: bool = false
+
+func _enter_tree() -> void:
+	_has_entered_tree = true
+	if _pending_dispose:
+		_pending_dispose = false
+		call_deferred("_finalize_dispose")
 
 #TODO temporarily remove types here for dual system management
 ## Sets up the default line behavior, by having it connect to the ports of the 2 given terminals
@@ -38,8 +47,13 @@ func setup(source_port, destination_port, link: ConnectionChainLink) -> void:
 
 
 func _update_line_endpoint_positions() -> void:
-	if !_source_port or !_destination_port:
-		push_error("FEAGI CB: Port Null Reference Detected")
+	if _is_disposing or is_queued_for_deletion():
+		return
+	if _source_port == null or _destination_port == null:
+		_request_dispose()
+		return
+	if not is_instance_valid(_source_port) or not is_instance_valid(_destination_port):
+		_request_dispose()
 		return
 	var CB_source_pos: Vector2 = _source_port.get_center_port_CB_position()
 	var CB_destination_pos: Vector2 = _destination_port.get_center_port_CB_position()
@@ -49,9 +63,29 @@ func _update_line_endpoint_positions() -> void:
 	set_line_endpoints(CB_source_pos, CB_destination_pos)
 
 func _on_link_about_to_be_deleted() -> void:
-	_source_port.request_deletion()
-	_destination_port.request_deletion()
-	queue_free()
+	_request_dispose()
+
+func _request_dispose() -> void:
+	if _is_disposing or is_queued_for_deletion():
+		return
+	if not _has_entered_tree:
+		_pending_dispose = true
+		return
+	_finalize_dispose()
+
+func _finalize_dispose() -> void:
+	if _is_disposing or is_queued_for_deletion():
+		return
+	_is_disposing = true
+	if _source_port != null and is_instance_valid(_source_port):
+		if _source_port.node_moved.is_connected(_update_line_endpoint_positions):
+			_source_port.node_moved.disconnect(_update_line_endpoint_positions)
+		_source_port.request_deletion()
+	if _destination_port != null and is_instance_valid(_destination_port):
+		if _destination_port.node_moved.is_connected(_update_line_endpoint_positions):
+			_destination_port.node_moved.disconnect(_update_line_endpoint_positions)
+		_destination_port.request_deletion()
+	call_deferred("queue_free")
 
 func _proxy_mapping_change_connection() -> void:
 	_on_full_mapping_change(_link.parent_chain.mapping_set)

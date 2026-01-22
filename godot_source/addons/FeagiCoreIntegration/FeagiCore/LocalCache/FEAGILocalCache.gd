@@ -25,6 +25,7 @@ func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector
 #region main
 signal cache_about_to_reload()
 signal cache_reloaded()
+signal mappings_reloaded()
 signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called any time a new amalgamation is pending
 signal amalgamation_no_longer_pending(amalgamation_id: StringName) # may occur following confirmation OR deletion
 
@@ -938,10 +939,9 @@ func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
 	if mappings_output.has_errored or not mappings_output.success:
 		return mappings_output
 	
-	mapping_data.FEAGI_delete_all_mappings()
-	mapping_data.FEAGI_load_all_mappings(mappings_output.decode_response_as_dict())
-	print("HASH REFRESH: cache_reloaded emitted for cortical_mappings_hash")
-	cache_reloaded.emit()
+	mapping_data.FEAGI_apply_mapping_summary_diff(mappings_output.decode_response_as_dict())
+	print("HASH REFRESH: mappings_reloaded emitted for cortical_mappings_hash")
+	mappings_reloaded.emit()
 	return mappings_output
 
 ## Update cortical areas cache using summary data without wiping the entire genome
