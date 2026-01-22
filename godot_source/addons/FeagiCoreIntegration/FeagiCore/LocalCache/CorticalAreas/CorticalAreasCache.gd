@@ -231,7 +231,7 @@ func FEAGI_update_cortical_area_from_dict(all_cortical_area_properties: Dictiona
 		return
 	
 	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
-	print("FEAGI CACHE: Updating cortical area %s" % changing_ID)
+	# print("FEAGI CACHE: Updating cortical area %s" % changing_ID)
 	
 	_available_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
 	cortical_area_mass_updated.emit(_available_cortical_areas[changing_ID])

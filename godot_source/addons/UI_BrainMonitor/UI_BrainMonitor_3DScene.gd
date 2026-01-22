@@ -91,6 +91,12 @@ var _active_preview_indicators: Array[Node3D] = []
 var _last_scene_center: Vector3 = Vector3.ZERO
 var _is_mouse_hovering_viewport: bool = false
 var _enter_key_latched: bool = false
+var _debug_hover_identity_enabled: bool = false
+var _last_hovered_debug_path: NodePath = NodePath("")
+var _debug_large_mesh_scan_enabled: bool = false
+var _debug_large_mesh_scan_seconds: float = 0.0
+var _debug_large_mesh_scan_interval: float = 2.0
+var _debug_large_mesh_scan_threshold: Vector3 = Vector3(200.0, 50.0, 0.0)
 
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
@@ -286,6 +292,10 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 			cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
 		if not cache.mappings_reloaded.is_connected(_on_mappings_reloaded_refresh_connections):
 			cache.mappings_reloaded.connect(_on_mappings_reloaded_refresh_connections)
+		if not cache.cortical_areas_reloaded.is_connected(_on_cortical_areas_reloaded):
+			cache.cortical_areas_reloaded.connect(_on_cortical_areas_reloaded)
+		if not cache.brain_regions_reloaded.is_connected(_on_brain_regions_reloaded):
+			cache.brain_regions_reloaded.connect(_on_brain_regions_reloaded)
 
 	# Position camera to frame all 3D objects in this scene
 	if _pancake_cam and region.contained_cortical_areas.size() > 0:
@@ -534,6 +544,11 @@ func _process(delta: float) -> void:
 	if _manipulation_active and (_manipulation_gizmo == null or _manipulation_preview == null):
 		_manipulation_active = false
 	_emit_tab_hover_event()
+	if _debug_large_mesh_scan_enabled:
+		_debug_large_mesh_scan_seconds += delta
+		if _debug_large_mesh_scan_seconds >= _debug_large_mesh_scan_interval:
+			_debug_large_mesh_scan_seconds = 0.0
+			_debug_log_large_meshes()
 	
 	
 	# Update combo context after setup has region
@@ -587,6 +602,51 @@ func _emit_tab_hover_event() -> void:
 	
 	var hover_event := UI_BrainMonitor_InputEvent_Hover.new([], ray_start, ray_end)
 	_process_user_input([hover_event])
+
+## Debug scan for large meshes without collision (visual-only).
+func _debug_log_large_meshes() -> void:
+	if _representing_region == null:
+		return
+	var root := self as Node
+	_debug_log_large_meshes_recursive(root)
+
+func _debug_log_large_meshes_recursive(node: Node) -> void:
+	if node is MeshInstance3D:
+		var mesh_instance := node as MeshInstance3D
+		var box_mesh := mesh_instance.mesh as BoxMesh
+		if box_mesh != null:
+			if mesh_instance.name.begins_with("Edge_"):
+				pass
+			elif mesh_instance.get_parent() != null and String(mesh_instance.get_parent().name).ends_with("_Wireframe"):
+				pass
+			else:
+				var size = box_mesh.size
+				var scale = mesh_instance.global_transform.basis.get_scale()
+				var effective_size = Vector3(abs(scale.x) * size.x, abs(scale.y) * size.y, abs(scale.z) * size.z)
+				if effective_size.x >= _debug_large_mesh_scan_threshold.x or effective_size.y >= _debug_large_mesh_scan_threshold.y:
+					print("🧪 LARGE VISUAL MESH: node=%s path=%s size=%s scale=%s effective=%s" % [
+						mesh_instance.name,
+						mesh_instance.get_path(),
+						size,
+						scale,
+						effective_size
+					])
+	if node is CSGShape3D:
+		var csg := node as CSGShape3D
+		var csg_scale = csg.global_transform.basis.get_scale()
+		var csg_aabb = csg.get_aabb()
+		var csg_effective = Vector3(abs(csg_scale.x) * csg_aabb.size.x, abs(csg_scale.y) * csg_aabb.size.y, abs(csg_scale.z) * csg_aabb.size.z)
+		if csg_effective.x >= _debug_large_mesh_scan_threshold.x or csg_effective.y >= _debug_large_mesh_scan_threshold.y or csg_effective.z >= _debug_large_mesh_scan_threshold.z:
+			print("🧪 LARGE CSG: node=%s path=%s aabb=%s scale=%s effective=%s" % [
+				csg.name,
+				csg.get_path(),
+				csg_aabb,
+				csg_scale,
+				csg_effective
+			])
+	for child in node.get_children():
+		if child is Node:
+			_debug_log_large_meshes_recursive(child as Node)
 
 func _ensure_ui_overlay() -> void:
 	if _UI_layer_for_BM == null:
@@ -1211,6 +1271,16 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
+			if _debug_hover_identity_enabled:
+				var hovered_collider := hit.get(&"collider") if not hit.is_empty() else null
+				if hovered_collider is Node:
+					var hovered_node := hovered_collider as Node
+					if hovered_node.get_path() != _last_hovered_debug_path:
+						_last_hovered_debug_path = hovered_node.get_path()
+						print("🧪 HOVER DEBUG: node=%s path=%s class=%s" % [hovered_node.name, hovered_node.get_path(), hovered_node.get_class()])
+				elif hit.is_empty() and _last_hovered_debug_path != NodePath(""):
+					_last_hovered_debug_path = NodePath("")
+					print("🧪 HOVER DEBUG: node=<none>")
 			if _manipulation_active and _manipulation_gizmo != null and _manipulation_gizmo.has_method("set_close_hovered"):
 				var hover_close := false
 				if close_body != null:
@@ -1558,15 +1628,19 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			
 	
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)
-	for previously_moused_over_volume in _previously_moused_over_volumes:
-		if previously_moused_over_volume not in currently_moused_over_volumes:
-			if previously_moused_over_volume != null and is_instance_valid(previously_moused_over_volume):
-				previously_moused_over_volume.set_hover_over_volume_state(false)
-	for currently_moused_over_volume in currently_moused_over_volumes:
-		if currently_moused_over_volume not in _previously_moused_over_volumes:
-			if currently_moused_over_volume != null and is_instance_valid(currently_moused_over_volume):
-				currently_moused_over_volume.set_hover_over_volume_state(true)
-	_previously_moused_over_volumes = currently_moused_over_volumes.filter(func(volume): return volume != null and is_instance_valid(volume))
+	var prev_valid_volumes: Array[UI_BrainMonitor_CorticalArea] = _previously_moused_over_volumes.filter(
+		func(volume): return volume != null and is_instance_valid(volume)
+	)
+	var curr_valid_volumes: Array[UI_BrainMonitor_CorticalArea] = currently_moused_over_volumes.filter(
+		func(volume): return volume != null and is_instance_valid(volume)
+	)
+	for previously_moused_over_volume in prev_valid_volumes:
+		if previously_moused_over_volume not in curr_valid_volumes:
+			previously_moused_over_volume.set_hover_over_volume_state(false)
+	for currently_moused_over_volume in curr_valid_volumes:
+		if currently_moused_over_volume not in prev_valid_volumes:
+			currently_moused_over_volume.set_hover_over_volume_state(true)
+	_previously_moused_over_volumes = curr_valid_volumes
 	
 	# highlight neurons that are moused over (and unhighlight what wasnt)
 	var previous_valid: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {}
@@ -2328,24 +2402,6 @@ func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, 
 		if partial_mapping.internal_target_cortical_area == area:
 			return true
 	
-	# Method 3: Check IPU/OPU types
-	if area in child_region.contained_cortical_areas:
-		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			return true
-		elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			return true
-	
-	# Method 4: TEMPORARY aggressive naming heuristics (for debugging - will restore conservative logic after)
-	if child_region.input_open_chain_links.size() == 0 and child_region.output_open_chain_links.size() == 0:
-		if area in child_region.contained_cortical_areas and child_region.contained_cortical_areas.size() == 2:
-			var area_id = area.cortical_ID.to_lower()
-			# Check for input patterns  
-			if "lef" in area_id or "left" in area_id or "input" in area_id or "in" in area_id:
-				return true
-			# Check for output patterns (c__rig should be output per FEAGI data)
-			if "rig" in area_id or "right" in area_id or "output" in area_id or "out" in area_id:
-				return true
-	
 	# print("        ❌ Area %s is NOT I/O of child region '%s'" % [area.cortical_ID, child_region.friendly_name])  # Suppressed - too spammy
 	return false
 
@@ -2388,6 +2444,17 @@ func _on_cache_reloaded_refresh_all_connections() -> void:
 				cortical_viz._hide_neural_connections()
 				cortical_viz._show_neural_connections()
 
+func _on_cortical_areas_reloaded() -> void:
+	# Lightweight refresh: add any missing visuals and update labels.
+	_add_missing_cortical_area_visualizations()
+	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+
+func _on_brain_regions_reloaded() -> void:
+	# Lightweight refresh: ensure region frames exist and re-evaluate I/O area visibility.
+	_create_missing_brain_region_visualizations()
+	_add_missing_cortical_area_visualizations()
+	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+
 ## Creates visualizations for any new cortical areas in this region after cache refresh
 func _add_missing_cortical_area_visualizations() -> void:
 	if not _representing_region:
@@ -2399,6 +2466,20 @@ func _add_missing_cortical_area_visualizations() -> void:
 		if fresh_region and fresh_region != _representing_region:
 			_representing_region = fresh_region
 	
+	# Remove visualizations that no longer belong in this region.
+	for area_id in _cortical_visualizations_by_ID.keys():
+		var viz = _cortical_visualizations_by_ID.get(area_id, null)
+		if viz == null or not is_instance_valid(viz):
+			_cortical_visualizations_by_ID.erase(area_id)
+			continue
+		var area = viz.cortical_area
+		if area == null:
+			continue
+		var is_direct = _representing_region.is_cortical_area_in_region_directly(area)
+		var is_io_child = _is_area_input_output_of_child_region(area)
+		if not is_direct and not is_io_child:
+			_remove_cortical_area(area)
+
 	# Add areas directly in this region
 	var added_any = false
 	for area in _representing_region.contained_cortical_areas:

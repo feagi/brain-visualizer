@@ -189,7 +189,7 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
 	move_child(line, 0)
-	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
+	line.call_deferred("setup", source_terminal.active_port, destination_terminal.active_port, link)
 
 func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	if _representing_region != null and _representing_region.is_root_region():
@@ -219,7 +219,7 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
 	move_child(line, 0)
-	line.setup(source_endpoint, destination_terminal.active_port, link)
+	line.call_deferred("setup", source_endpoint, destination_terminal.active_port, link)
 
 func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	if _representing_region != null and _representing_region.is_root_region():
@@ -248,7 +248,7 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
 	move_child(line, 0)
-	line.setup(source_terminal.active_port, destination_endpoint, link)
+	line.call_deferred("setup", source_terminal.active_port, destination_endpoint, link)
 
 # This is called from the Brain Region nodes directly
 func _CACHE_link_region_input_open_added(link: ConnectionChainLink) -> void:

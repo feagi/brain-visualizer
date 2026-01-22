@@ -203,6 +203,8 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Create outline mesh for cortical area hover/selection
 	_outline_mesh_instance = MeshInstance3D.new()
 	_outline_mesh_instance.name = "CorticalAreaOutline"
+	# Outline inherits scale from _static_body; avoid double-scaling here.
+	_outline_mesh_instance.scale = Vector3.ONE
 	
 	# Use different meshes based on cortical area type/ID
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
@@ -361,7 +363,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
+		# print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Memory areas are conceptually 1x1x1 (all activity maps to (0,0,0)).
@@ -391,12 +393,12 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 			(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 3.0, 1.0)  # Maintain PNG icon collision
 			# Keep collider centered with the icon (icon at y=2.0)
 			collision_shape.position = Vector3(0.0, 2.0, 0.0)
-			print("   📏 Maintained PNG icon collision size: ", (collision_shape.shape as BoxShape3D).size, " at offset ", collision_shape.position)
+			# print("   📏 Maintained PNG icon collision size: ", (collision_shape.shape as BoxShape3D).size, " at offset ", collision_shape.position)
 		else:
 			(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
 	
-	# Update outline mesh size
-	_outline_mesh_instance.scale = _dimensions
+	# Update outline mesh size (inherits scale from _static_body)
+	_outline_mesh_instance.scale = Vector3.ONE
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
@@ -404,7 +406,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
+		# print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 	
 	# Update outline material scaling (only for non-memory areas that use shader materials)
 	if _outline_mat != null:

@@ -26,6 +26,9 @@ func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector
 signal cache_about_to_reload()
 signal cache_reloaded()
 signal mappings_reloaded()
+signal cortical_areas_reloaded()
+signal brain_regions_reloaded()
+signal morphologies_reloaded()
 signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called any time a new amalgamation is pending
 signal amalgamation_no_longer_pending(amalgamation_id: StringName) # may occur following confirmation OR deletion
 
@@ -893,9 +896,9 @@ func _refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
 		return regions_output
 	
 	var regions_summary: Dictionary = regions_output.decode_response_as_dict()
-	brain_regions.FEAGI_clear_all_regions()
-	var area_mapping: Dictionary = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary)
-	brain_regions.FEAGI_load_all_partial_mapping_sets(regions_summary)
+	var prior_region_ids: Array = brain_regions.available_brain_regions.keys()
+	var area_mapping: Dictionary = brain_regions.FEAGI_apply_region_summary_diff(regions_summary)
+	_refresh_partial_mappings_from_summary(regions_summary)
 	_connect_to_existing_brain_region_signals()
 	
 	var cortical_output: FeagiRequestOutput = await FeagiCore.requests.get_cortical_area_geometry()
@@ -903,8 +906,10 @@ func _refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
 		return cortical_output
 	
 	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), area_mapping)
-	print("HASH REFRESH: cache_reloaded emitted for brain_regions_hash")
-	cache_reloaded.emit()
+	print("HASH REFRESH: brain_regions_reloaded emitted for brain_regions_hash")
+	brain_regions_reloaded.emit()
+	cortical_areas_reloaded.emit()
+	_emit_new_region_added_signals(prior_region_ids)
 	return cortical_output
 
 ## Refresh cortical areas and properties from FEAGI
@@ -914,8 +919,8 @@ func _refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
 		return cortical_output
 	
 	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), {})
-	print("HASH REFRESH: cache_reloaded emitted for cortical_areas_hash")
-	cache_reloaded.emit()
+	print("HASH REFRESH: cortical_areas_reloaded emitted for cortical_areas_hash")
+	cortical_areas_reloaded.emit()
 	return cortical_output
 
 ## Refresh brain geometry (positions/dimensions) from FEAGI
@@ -929,8 +934,8 @@ func _refresh_morphologies_from_feagi() -> FeagiRequestOutput:
 		return morphologies_output
 	
 	morphologies.update_morphology_cache_from_summary(morphologies_output.decode_response_as_dict())
-	print("HASH REFRESH: cache_reloaded emitted for morphologies_hash")
-	cache_reloaded.emit()
+	print("HASH REFRESH: morphologies_reloaded emitted for morphologies_hash")
+	morphologies_reloaded.emit()
 	return morphologies_output
 
 ## Refresh cortical mappings from FEAGI
@@ -1099,6 +1104,38 @@ func _clear_region_partial_mappings(region: BrainRegion) -> void:
 	for mapping in mappings_to_remove:
 		# Trigger the removal signal and cleanup
 		mapping.mappings_about_to_be_deleted.emit(mapping)
+
+## Rebuild partial mappings from region summary data (clears existing mappings first).
+func _refresh_partial_mappings_from_summary(region_summary_data: Dictionary) -> void:
+	var region_count: int = 0
+	var input_count: int = 0
+	var output_count: int = 0
+	for region_id in region_summary_data.keys():
+		if not brain_regions.available_brain_regions.has(region_id):
+			continue
+		region_count += 1
+		var region: BrainRegion = brain_regions.available_brain_regions[region_id]
+		_clear_region_partial_mappings(region)
+		var region_dict: Dictionary = region_summary_data[region_id]
+		if region_dict.has("inputs"):
+			var inputs: Array = []
+			inputs.assign(region_dict["inputs"])
+			input_count += inputs.size()
+			region.FEAGI_establish_partial_mappings_from_JSONs(inputs, true)
+		if region_dict.has("outputs"):
+			var outputs: Array = []
+			outputs.assign(region_dict["outputs"])
+			output_count += outputs.size()
+			region.FEAGI_establish_partial_mappings_from_JSONs(outputs, false)
+	print("FEAGI CACHE: Partial mappings refreshed (regions=%d, inputs=%d, outputs=%d)" % [region_count, input_count, output_count])
+
+## Emit region_added for any regions that were introduced during refresh.
+func _emit_new_region_added_signals(previous_region_ids: Array) -> void:
+	for region_id in brain_regions.available_brain_regions.keys():
+		if region_id in previous_region_ids:
+			continue
+		var region: BrainRegion = brain_regions.available_brain_regions[region_id]
+		brain_regions.emit_region_added_signal(region)
 
 ## Connects to signals from all existing brain regions (called during genome load)
 func _connect_to_existing_brain_region_signals() -> void:

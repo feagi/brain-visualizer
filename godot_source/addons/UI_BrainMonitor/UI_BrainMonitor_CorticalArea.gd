@@ -179,6 +179,18 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 			defined_cortical_area.dimensions_3D_updated.connect(_refresh_io_direction_indicator)
 	call_deferred("_refresh_io_direction_indicator")
 
+	# Cache-level update signals (lightweight refreshes).
+	if FeagiCore.feagi_local_cache:
+		var cache = FeagiCore.feagi_local_cache
+		if not cache.cache_reloaded.is_connected(_on_cache_reloaded):
+			cache.cache_reloaded.connect(_on_cache_reloaded)
+		if not cache.mappings_reloaded.is_connected(_on_cache_reloaded):
+			cache.mappings_reloaded.connect(_on_cache_reloaded)
+		if not cache.cortical_areas_reloaded.is_connected(_on_cache_reloaded):
+			cache.cortical_areas_reloaded.connect(_on_cache_reloaded)
+		if not cache.brain_regions_reloaded.is_connected(_on_cache_reloaded):
+			cache.brain_regions_reloaded.connect(_on_cache_reloaded)
+
 func _exit_tree() -> void:
 	# Unregister desktop WS fast-path references only on actual teardown.
 	#
@@ -656,7 +668,7 @@ func _get_containing_region_context() -> BrainRegion:
 	var current := get_parent()
 	while current != null:
 		if current is UI_BrainMonitor_BrainRegion3D:
-			var viz := current as UI_BrainMonitor_BrainRegion3D
+			var viz: UI_BrainMonitor_BrainRegion3D = current
 			return viz.representing_region
 		if current is UI_BrainMonitor_3DScene:
 			var bm := current as UI_BrainMonitor_3DScene
@@ -1810,8 +1822,16 @@ func _cleanup_cache_connections() -> void:
 	print("🧹 CLEANUP: Disconnecting cache signals for cortical area: ", _representing_cortial_area.cortical_ID if _representing_cortial_area else "unknown")
 	
 	# Disconnect cache reload signal
-	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.cache_reloaded.is_connected(_on_cache_reloaded):
-		FeagiCore.feagi_local_cache.cache_reloaded.disconnect(_on_cache_reloaded)
+	if FeagiCore.feagi_local_cache:
+		var cache = FeagiCore.feagi_local_cache
+		if cache.cache_reloaded.is_connected(_on_cache_reloaded):
+			cache.cache_reloaded.disconnect(_on_cache_reloaded)
+		if cache.mappings_reloaded.is_connected(_on_cache_reloaded):
+			cache.mappings_reloaded.disconnect(_on_cache_reloaded)
+		if cache.cortical_areas_reloaded.is_connected(_on_cache_reloaded):
+			cache.cortical_areas_reloaded.disconnect(_on_cache_reloaded)
+		if cache.brain_regions_reloaded.is_connected(_on_cache_reloaded):
+			cache.brain_regions_reloaded.disconnect(_on_cache_reloaded)
 	
 	# Disconnect mapping change signals if cortical area still exists
 	if _representing_cortial_area:

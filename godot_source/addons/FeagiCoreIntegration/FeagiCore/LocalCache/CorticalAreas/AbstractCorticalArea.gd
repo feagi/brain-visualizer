@@ -484,12 +484,22 @@ func FEAGI_apply_full_dictionary(data: Dictionary) -> void:
 		_visualization_voxel_granularity = Vector3i(1, 1, 1)
 	
 	if "parent_region_id" in data.keys():
-		if !(data["parent_region_id"] in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions):
-			push_error("Unable to find new region ID %s for cortical area %s" % [data["parent_region_id"], cortical_ID])
+		var parent_id = data["parent_region_id"]
+		if parent_id == null:
+			var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+			if current_parent_region != null and root_region != null and current_parent_region == root_region:
+				# Root region is allowed to have null parent.
+				pass
+			else:
+				push_error("Invalid null parent_region_id for non-root cortical area %s" % cortical_ID)
+				return
+		elif !(parent_id in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions):
+			push_error("Unable to find new region ID %s for cortical area %s" % [parent_id, cortical_ID])
 			return
-		var new_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[data["parent_region_id"]]
-		if new_region != current_parent_region:
-			FEAGI_change_parent_brain_region(new_region)
+		else:
+			var new_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[parent_id]
+			if new_region != current_parent_region:
+				FEAGI_change_parent_brain_region(new_region)
 
 			
 

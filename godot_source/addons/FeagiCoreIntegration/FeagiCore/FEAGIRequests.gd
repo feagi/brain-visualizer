@@ -2273,6 +2273,12 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if FEAGI_response_data.has_errored and FEAGI_response_data.response_code == 404:
+		print("FEAGI REQUEST: No mappings found for %s toward %s (404)" % [source_cortical_ID, destination_cortical_ID])
+		var source_area_404: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
+		var destination_area_404: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
+		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area_404, destination_area_404, [])
+		return FEAGI_response_data
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to retrieve mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 		return FEAGI_response_data
