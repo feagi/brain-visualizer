@@ -993,11 +993,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	if response.has("cortical_id") and response["cortical_id"] != null:
 		response_cortical_id = response["cortical_id"]
 	
-	# Log visualization_voxel_granularity if present
-	if "visualization_voxel_granularity" in response:
-		print("🔵 FEAGI REQUEST: Found visualization_voxel_granularity in top-level for %s: %s (type: %s)" % [checking_cortical_ID, response["visualization_voxel_granularity"], typeof(response["visualization_voxel_granularity"])])
-	if "properties" in response and response["properties"] is Dictionary and "visualization_voxel_granularity" in response["properties"]:
-		print("🔵 FEAGI REQUEST: Found visualization_voxel_granularity in properties for %s: %s" % [checking_cortical_ID, response["properties"]["visualization_voxel_granularity"]])
+	# Log visualization_voxel_granularity if present (suppressed)
 	
 	# Handle nested properties structure - FEAGI returns {"properties": {...}}
 	# Also handle top-level fields (like visualization_voxel_granularity) that are outside properties
@@ -1010,21 +1006,15 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			if key != "properties" and not key in properties_dict:
 				properties_dict[key] = response[key]
 				if key == "visualization_voxel_granularity":
-					print("🔵 FEAGI REQUEST: Passing visualization_voxel_granularity to cache for %s: %s (type: %s)" % [checking_cortical_ID, response[key], typeof(response[key])])
+					pass
 	if "coding_options" in properties_dict:
 		var coding_options = properties_dict["coding_options"]
 		if coding_options is Dictionary:
-			print("BV [NEURAL-CODING][API]: %s coding_options keys=%s signage=%s behavior=%s type=%s" % [
-				checking_cortical_ID,
-				coding_options.keys(),
-				coding_options.get("signage_options", "MISSING"),
-				coding_options.get("behavior_options", "MISSING"),
-				coding_options.get("coding_type_options", "MISSING")
-			])
+			pass
 		else:
-			print("BV [NEURAL-CODING][API]: %s coding_options unexpected type=%s" % [checking_cortical_ID, typeof(coding_options)])
+			pass
 	else:
-		print("BV [NEURAL-CODING][API]: %s coding_options missing" % checking_cortical_ID)
+		pass
 	properties_dict["cortical_id"] = response_cortical_id  # Add the authoritative ID to the properties dict
 	if response_cortical_id != checking_cortical_ID and checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
 		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(checking_cortical_ID, response_cortical_id)
@@ -1098,15 +1088,11 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 	
 	# Response is a dictionary with cortical_id as keys: {"cortical_id": {...properties...}}
 	var responses_dict: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(responses_dict.keys()))
+	# print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(responses_dict.keys()))
 	
 	for cortical_id in responses_dict.keys():
 		var area_data_raw: Dictionary = responses_dict[cortical_id]
-		# Log visualization_voxel_granularity if present
-		if "visualization_voxel_granularity" in area_data_raw:
-			print("🔵 FEAGI REQUEST: [MULTI] Found visualization_voxel_granularity in top-level for %s: %s" % [cortical_id, area_data_raw["visualization_voxel_granularity"]])
-		if "properties" in area_data_raw and area_data_raw["properties"] is Dictionary and "visualization_voxel_granularity" in area_data_raw["properties"]:
-			print("🔵 FEAGI REQUEST: [MULTI] Found visualization_voxel_granularity in properties for %s: %s" % [cortical_id, area_data_raw["properties"]["visualization_voxel_granularity"]])
+		# Log visualization_voxel_granularity if present (suppressed)
 		
 		# Handle both response formats:
 		# - { "cortical_id": { ...properties... } }
@@ -1120,7 +1106,7 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 				if key != "properties":
 					area_data[key] = area_data_raw[key]  # Top-level always wins
 					if key == "visualization_voxel_granularity":
-						print("🔵 FEAGI REQUEST: [MULTI] Passing visualization_voxel_granularity to cache for %s: %s" % [cortical_id, area_data_raw[key]])
+						pass
 		# Ensure cortical_id is in the dict (some responses omit it).
 		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:
@@ -1128,18 +1114,12 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 		if "coding_options" in area_data:
 			var coding_options = area_data["coding_options"]
 			if coding_options is Dictionary:
-				print("BV [NEURAL-CODING][API][MULTI]: %s coding_options keys=%s signage=%s behavior=%s type=%s" % [
-					cortical_id,
-					coding_options.keys(),
-					coding_options.get("signage_options", "MISSING"),
-					coding_options.get("behavior_options", "MISSING"),
-					coding_options.get("coding_type_options", "MISSING")
-				])
+				pass
 			else:
-				print("BV [NEURAL-CODING][API][MULTI]: %s coding_options unexpected type=%s" % [cortical_id, typeof(coding_options)])
+				pass
 		else:
-			print("BV [NEURAL-CODING][API][MULTI]: %s coding_options missing" % cortical_id)
-		print("🔵 FEAGI REQUEST: [MULTI] Updating cache for %s with visualization_voxel_granularity: %s" % [cortical_id, area_data.get("visualization_voxel_granularity", "NOT PRESENT")])
+			pass
+		# print("🔵 FEAGI REQUEST: [MULTI] Updating cache for %s with visualization_voxel_granularity: %s" % [cortical_id, area_data.get("visualization_voxel_granularity", "NOT PRESENT")])
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(area_data)
 	
 	return FEAGI_response_data
@@ -1616,22 +1596,18 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	if network_check != null:
 		return network_check
 	
-	# Log what we're sending
-	print("🔵 FEAGI REQUEST: update_cortical_area called for area: %s" % editing_ID)
-	print("🔵 FEAGI REQUEST: Properties being sent: %s" % properties)
-	if "visualization_voxel_granularity" in properties:
-		print("🔵 FEAGI REQUEST: visualization_voxel_granularity value: %s (type: %s)" % [properties["visualization_voxel_granularity"], typeof(properties["visualization_voxel_granularity"])])
+	# Log what we're sending (suppressed)
 	
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, properties)
-	print("🔵 FEAGI REQUEST: Making PUT request to %s for cortical area %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID])
-	print("🔵 FEAGI REQUEST: Full request body: %s" % properties)
+	# print("🔵 FEAGI REQUEST: Making PUT request to %s for cortical area %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID])
+	# print("🔵 FEAGI REQUEST: Full request body: %s" % properties)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	
-	print("🔵 FEAGI REQUEST: Response received - has_errored: %s, has_timed_out: %s" % [FEAGI_response_data.has_errored, FEAGI_response_data.has_timed_out])
+	# print("🔵 FEAGI REQUEST: Response received - has_errored: %s, has_timed_out: %s" % [FEAGI_response_data.has_errored, FEAGI_response_data.has_timed_out])
 	if FEAGI_response_data.has_errored:
 		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
 		var raw_response = FEAGI_response_data.decode_response_as_string()
