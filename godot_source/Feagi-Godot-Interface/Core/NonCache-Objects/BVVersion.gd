@@ -6,3 +6,5 @@ var manual_version: float:
 	get: return 0.1
 var automatic_version: int: # set by github actions
 	get: return 1711658044
+static var brain_visualizer_timestamp: int: # legacy alias for class access
+	get: return 1711658044
