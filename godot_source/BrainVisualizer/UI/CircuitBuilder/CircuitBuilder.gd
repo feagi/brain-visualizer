@@ -124,7 +124,9 @@ func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
 		return
 	BV.UI.selection_system.clear_all_highlighted()
-	_cortical_nodes[area.cortical_ID].queue_free()
+	var node: CBNodeCorticalArea = _cortical_nodes[area.cortical_ID]
+	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
+		node.queue_free()
 	_cortical_nodes.erase(area.cortical_ID)
 	
 func _CACHE_add_subregion(subregion: BrainRegion) -> void:
@@ -151,7 +153,9 @@ func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 		return
 	BV.UI.selection_system.clear_all_highlighted()
 	#NOTE: We assume that all connections to / from this region have already been called to beremoved by the cache FIRST
-	subregion_nodes[subregion.region_ID].queue_free()
+	var node: CBNodeRegion = subregion_nodes[subregion.region_ID]
+	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
+		node.queue_free()
 	subregion_nodes.erase(subregion.region_ID)
 
 ## The name of the region this instance of CB has changed. Updating the Node name causes the tab name to update too

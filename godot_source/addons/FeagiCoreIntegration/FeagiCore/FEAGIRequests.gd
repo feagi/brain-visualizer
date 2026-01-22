@@ -2256,7 +2256,6 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area_404, destination_area_404, [])
 		return FEAGI_response_data
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to retrieve mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 		return FEAGI_response_data
 	# Unlikely not, but checking to make sure cortical areas still exist
 	if source_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys() or destination_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
