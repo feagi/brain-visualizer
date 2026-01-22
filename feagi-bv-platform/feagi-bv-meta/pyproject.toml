@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "feagi-bv"
-version = "2.1.4"
+version = "2.1.5"
 description = "Brain Visualizer runtime package for FEAGI (meta-package)"
 readme = "README.md"
 requires-python = ">=3.10"
