@@ -14,6 +14,7 @@ var _link: ConnectionChainLink
 var _is_disposing: bool = false
 var _pending_dispose: bool = false
 var _has_entered_tree: bool = false
+var _dispose_finalized: bool = false
 
 func _enter_tree() -> void:
 	_has_entered_tree = true
@@ -68,14 +69,18 @@ func _on_link_about_to_be_deleted() -> void:
 func _request_dispose() -> void:
 	if _is_disposing or is_queued_for_deletion():
 		return
-	if not _has_entered_tree:
+	if not _has_entered_tree or not is_inside_tree():
 		_pending_dispose = true
 		return
 	_finalize_dispose()
 
 func _finalize_dispose() -> void:
-	if _is_disposing or is_queued_for_deletion():
+	if _dispose_finalized or _is_disposing or is_queued_for_deletion():
 		return
+	if not _has_entered_tree or not is_inside_tree():
+		_pending_dispose = true
+		return
+	_dispose_finalized = true
 	_is_disposing = true
 	if _source_port != null and is_instance_valid(_source_port):
 		if _source_port.node_moved.is_connected(_update_line_endpoint_positions):

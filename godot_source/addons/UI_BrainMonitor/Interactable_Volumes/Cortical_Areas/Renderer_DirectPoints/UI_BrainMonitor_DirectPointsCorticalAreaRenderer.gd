@@ -267,8 +267,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	_static_body.add_child(_outline_mesh_instance)
 	
-	# Create individual plate if needed
-	_create_individual_plate_if_needed(area)
+	# Individual per-area plates are disabled; use region plates only.
 	
 	# Create friendly name label with high-quality MSDF rendering
 	_friendly_name_label = Label3D.new()
@@ -1565,8 +1564,13 @@ func _memory_activity_step(
 
 ## Creates an individual plate under this cortical area if needed
 func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
+	# Individual per-area plates are disabled by design.
+	return
 	# 1) Skip if already on a brain region plate (avoid double plating)
 	if _is_on_brain_region_plate():
+		var existing_plate := _static_body.get_node_or_null("IndividualPlate")
+		if existing_plate != null:
+			existing_plate.queue_free()
 		return
 
 	# 2) Determine IO status from active brain regions in the scene
@@ -1593,7 +1597,7 @@ func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
 
 	match plate_type:
 		"input":
-			material.albedo_color = Color(0.0, 0.6, 0.0, 0.2)
+			material.albedo_color = Color(1.0, 0.5, 0.0, 0.2)
 		"output":
 			material.albedo_color = Color(0.0, 0.4, 0.0, 0.2)
 		"conflict":
