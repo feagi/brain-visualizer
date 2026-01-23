@@ -169,9 +169,9 @@ func spawn_create_region(parent_region: BrainRegion, selected_objects: Array[Gen
 	create_region.setup(parent_region, selected_objects)
 
 ## Open the circuit selection window (first tile opens Create Brain Region).
-func spawn_select_region_template() -> void:
+func spawn_select_region_template(parent_region: BrainRegion = null) -> void:
 	var selector: WindowSelectRegionTemplate = _default_spawn_window(_PREFAB_SELECT_REGION_TEMPLATE, WindowSelectRegionTemplate.WINDOW_NAME) as WindowSelectRegionTemplate
-	selector.setup()
+	selector.setup(parent_region)
 
 func spawn_edit_region(editing_region: BrainRegion) -> void:
 	var edit_region: WindowEditRegion = _default_spawn_window(_PREFAB_EDIT_REGION, WindowEditRegion.WINDOW_NAME) as WindowEditRegion

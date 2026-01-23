@@ -153,8 +153,7 @@ func _open_brain_regions() -> void:
 func _add_brain_region() -> void:
 	if context_region == null:
 		return
-	var selected_objects: Array[GenomeObject] = []
-	BV.WM.spawn_create_region(context_region, selected_objects)
+	BV.WM.spawn_select_region_template(context_region)
 
 ## Open interconnect areas dropdown for the current region.
 func _open_interconnect_areas() -> void:
