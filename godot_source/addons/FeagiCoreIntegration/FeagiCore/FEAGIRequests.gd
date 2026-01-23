@@ -100,6 +100,70 @@ func save_genome(file_path: String = "") -> FeagiRequestOutput:
 	print("FEAGI REQUEST: ✅ Genome saved successfully")
 	return save_output
 
+## Upload a genome file to create a pending amalgamation.
+func request_amalgamation_by_upload(genome_path: String) -> FeagiRequestOutput:
+	print("FEAGI REQUEST: Uploading genome for amalgamation...")
+	
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
+	if genome_path == "":
+		push_error("FEAGI REQUEST: Genome path is empty")
+		return FeagiRequestOutput.requirement_fail("GENOME_PATH_EMPTY")
+	if not FileAccess.file_exists(genome_path):
+		push_error("FEAGI REQUEST: Genome file not found at %s" % genome_path)
+		return FeagiRequestOutput.requirement_fail("GENOME_FILE_NOT_FOUND")
+	
+	var file := FileAccess.open(genome_path, FileAccess.READ)
+	if file == null:
+		push_error("FEAGI REQUEST: Unable to open genome file at %s" % genome_path)
+		return FeagiRequestOutput.requirement_fail("GENOME_FILE_OPEN_FAILED")
+	var file_bytes: PackedByteArray = file.get_buffer(file.get_length())
+	file.close()
+	
+	var boundary: String = "----FeagiBoundary" + str(Time.get_unix_time_from_system()) + str(randi())
+	var filename: String = genome_path.get_file()
+	
+	var header_text := "--%s\r\n" % boundary
+	header_text += "Content-Disposition: form-data; name=\"file\"; filename=\"%s\"\r\n" % filename
+	header_text += "Content-Type: application/json\r\n\r\n"
+	var footer_text := "\r\n--%s--\r\n" % boundary
+	
+	var body := PackedByteArray()
+	body.append_array(header_text.to_utf8_buffer())
+	body.append_array(file_bytes)
+	body.append_array(footer_text.to_utf8_buffer())
+	
+	var request := HTTPRequest.new()
+	FeagiCore.network.http_API.add_child(request)
+	
+	var headers := FeagiCore.network.http_API.get_headers()
+	var filtered_headers := PackedStringArray()
+	for header in headers:
+		if not String(header).to_lower().begins_with("content-type:"):
+			filtered_headers.append(header)
+	filtered_headers.append("Content-Type: multipart/form-data; boundary=%s" % boundary)
+	
+	var endpoint: StringName = FeagiCore.network.http_API.address_list.POST_genome_amalgamationByUpload
+	var err := request.request_raw(endpoint, filtered_headers, HTTPClient.METHOD_POST, body)
+	if err != OK:
+		request.queue_free()
+		push_error("FEAGI REQUEST: HTTPRequest failed to start (code %d)" % err)
+		return FeagiRequestOutput.requirement_fail("GENOME_UPLOAD_REQUEST_FAILED")
+	
+	var response = await request.request_completed
+	request.queue_free()
+	var response_code: int = response[1]
+	var response_body: PackedByteArray = response[3]
+	
+	if response_code == 0:
+		return FeagiRequestOutput.response_no_response(false)
+	if response_code != 200:
+		return FeagiRequestOutput.response_error_response(response_body, false, response_code)
+	
+	return FeagiRequestOutput.response_success(response_body, false, response_code)
+
 func reload_genome() -> FeagiRequestOutput:
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] reload_genome() called - starting genome data retrieval...")
 	

@@ -49,6 +49,10 @@ func make_HTTP_call(request_definition: APIRequestWorkerDefinition) -> APIReques
 	worker.retrying_connection.connect(_worker_retrying)
 	return worker
 
+## Expose the configured headers for custom requests (e.g., multipart uploads).
+func get_headers() -> PackedStringArray:
+	return _headers_to_use.duplicate()
+
 
 ## Runs a (single) health check call over HTTP, updates the cache with the results (notably genome availability), and informs core about connectability
 func confirm_connectivity() -> void:
