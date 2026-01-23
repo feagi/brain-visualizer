@@ -951,6 +951,8 @@ func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
 
 ## Update cortical areas cache using summary data without wiping the entire genome
 func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_region_ID_mapping: Dictionary) -> void:
+	var previous_suppress_state = cortical_areas.suppress_update_notifications
+	cortical_areas.suppress_update_notifications = true
 	var existing_ids: Array = cortical_areas.available_cortical_areas.keys()
 	for existing_id in existing_ids:
 		if not area_summary_data.has(existing_id):
@@ -966,6 +968,7 @@ func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_regi
 				push_error("CORE CACHE: Unable to resolve parent region for new cortical area %s" % cortical_area_ID)
 				continue
 			cortical_areas.FEAGI_add_cortical_area_from_dict(area_JSON_summary, parent_region, cortical_area_ID)
+	cortical_areas.suppress_update_notifications = previous_suppress_state
 
 ## Resolve parent region for a cortical area using API data or fallback mapping
 func _resolve_parent_region_for_area(area_JSON_summary: Dictionary, cortical_area_ID: StringName, area_ID_to_region_ID_mapping: Dictionary) -> BrainRegion:

@@ -1,7 +1,7 @@
 # Circuits Library
 
 This folder contains reusable circuit packages that appear in the Brain Visualizer
-"Add Circuit" selector.
+"Add Neural Circuit" selector.
 
 ## Structure
 

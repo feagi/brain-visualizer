@@ -827,6 +827,8 @@ func _proxy_notification_cortical_area_added(cortical_area: AbstractCorticalArea
 func _proxy_notification_cortical_area_updated(cortical_area: AbstractCorticalArea) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 		return
+	if FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications:
+		return
 	
 	# print("UI: Cortical area %s properties updated - refreshing visualization" % cortical_area.cortical_ID)
 	# print("  🔍 Current dimensions: %s" % cortical_area.dimensions_3D)

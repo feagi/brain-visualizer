@@ -11,6 +11,9 @@ signal cortical_area_mass_updated(cortical_area: AbstractCorticalArea)
 var available_cortical_areas: Dictionary:
 	get: return _available_cortical_areas
 
+## When true, UI notifications for mass updates should be suppressed.
+var suppress_update_notifications: bool = false
+
 var _available_cortical_areas: Dictionary = {}
 
 #region Add, Remove, and Edit Single Cortical Areas
