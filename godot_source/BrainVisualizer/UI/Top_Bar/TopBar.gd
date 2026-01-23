@@ -140,10 +140,8 @@ func _open_brain_regions() -> void:
 	)
 
 func _open_create_brain_region() -> void:
-	# Open create circuit window using main circuit as parent and no preselected objects
-	var parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	var empty_selection: Array[GenomeObject] = []
-	BV.WM.spawn_create_region(parent_region, empty_selection)
+	# Open circuit selection window (first tile opens Create Brain Region).
+	BV.WM.spawn_select_region_template()
 
 #VisConfig.UI_manager.window_manager.spawn_create_cortical()
 

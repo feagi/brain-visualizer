@@ -7,6 +7,7 @@ const _PREFAB_MAPPING_EDITOR: PackedScene = preload("res://BrainVisualizer/UI/Wi
 const _PREFAB_MORPHOLOGY_MANAGER: PackedScene = preload("res://BrainVisualizer/UI/Windows/MorphologyManager/WindowMorphologyManager.tscn")
 const _PREFAB_CREATE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateCorticalArea/WindowCreateCorticalArea.tscn")
 const _PREFAB_SELECT_CORTICAL_TEMPLATE: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectCorticalTemplate/WindowSelectCorticalTemplate.tscn")
+const _PREFAB_SELECT_REGION_TEMPLATE: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectRegionTemplate/WindowSelectRegionTemplate.tscn")
 const _PREFAB_QUICK_CONNECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.tscn")
 const _PREFAB_QUICK_CONNECT_NEURON: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnectNeuron/WindowQuickConnectNeuron.tscn")
 const _PREFAB_CORTICAL_VIEW: PackedScene = preload("res://BrainVisualizer/UI/Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
@@ -166,6 +167,11 @@ func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> WindowConfigu
 func spawn_create_region(parent_region: BrainRegion, selected_objects: Array[GenomeObject]) -> void:
 	var create_region: WindowCreateRegion = _default_spawn_window(_PREFAB_CREATE_REGION, WindowCreateRegion.WINDOW_NAME) as WindowCreateRegion
 	create_region.setup(parent_region, selected_objects)
+
+## Open the circuit selection window (first tile opens Create Brain Region).
+func spawn_select_region_template() -> void:
+	var selector: WindowSelectRegionTemplate = _default_spawn_window(_PREFAB_SELECT_REGION_TEMPLATE, WindowSelectRegionTemplate.WINDOW_NAME) as WindowSelectRegionTemplate
+	selector.setup()
 
 func spawn_edit_region(editing_region: BrainRegion) -> void:
 	var edit_region: WindowEditRegion = _default_spawn_window(_PREFAB_EDIT_REGION, WindowEditRegion.WINDOW_NAME) as WindowEditRegion
