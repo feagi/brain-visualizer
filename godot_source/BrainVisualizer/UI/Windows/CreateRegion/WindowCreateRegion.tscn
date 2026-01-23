@@ -13,7 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="10_d4k8w"]
 
 [node name="WindowCreateRegion" type="VBoxContainer"]
-offset_right = 520.0
+offset_right = 572.0
 offset_bottom = 330.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
@@ -43,7 +43,7 @@ size_flags_horizontal = 3
 text = "Circuit Name"
 
 [node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 script = ExtResource("3_yyqls")
 
@@ -84,6 +84,7 @@ text = "Define Internals"
 
 [node name="Add" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer"]
 layout_mode = 2
+custom_minimum_size = Vector2(24, 24)
 texture = ExtResource("5_l1778")
 expand_mode = 3
 script = ExtResource("6_jyl4e")
