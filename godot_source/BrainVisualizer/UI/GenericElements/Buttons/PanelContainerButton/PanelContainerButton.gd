@@ -34,7 +34,8 @@ func _gui_input(event: InputEvent) -> void:
 		if !_hovered:
 			return
 		_set_appropriate_stylebox(_disabled, _hovered, mouse_event.pressed)
-		pressed.emit()
+		if mouse_event.pressed:
+			pressed.emit()
 
 func is_hovered() -> bool:
 	return _hovered
