@@ -11,6 +11,7 @@ var _vector: Vector3iSpinboxField
 var _add_button: ButtonTextureRectScaling
 var _scroll_section: ScrollSectionGeneric
 var _preview: UI_BrainMonitor_BrainRegionPreview
+var _parent_region: BrainRegion = null
 
 func _ready():
 	super()
@@ -23,6 +24,7 @@ func _ready():
 
 func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = []) -> void:
 	_setup_base_window(WINDOW_NAME)
+	_parent_region = parent_region
 	_name_box.call_deferred("grab_focus")
 	_region_drop_down.set_selected_region(parent_region)
 	for selected in selected_items:
@@ -92,6 +94,13 @@ func _create_region_button_pressed() -> void:
 	if _preview:
 		_preview.cleanup()
 		_preview = null
+
+func _back_pressed() -> void:
+	close_window()
+	BV.WM.spawn_select_region_template(_parent_region)
+
+func _user_requesting_exit() -> void:
+	close_window()
 
 func _on_preview_coords_changed(new_coords: Vector3i) -> void:
 	if _preview:
