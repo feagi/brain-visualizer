@@ -13,3 +13,4 @@ developer_menu_hotkey = 96
 seconds_info_notification = 5.0
 seconds_warning_notification = 10.0
 seconds_error_notification = 10.0
+agent_descriptor_b64 = "AQAAAG5ldXJhdmlsbGUAAAAAAAAAAAAAYnJhaW4tdmlzdWFsaXplcgAAAAABAAAA"

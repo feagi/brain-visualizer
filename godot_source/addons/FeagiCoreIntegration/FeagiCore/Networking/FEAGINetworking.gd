@@ -208,10 +208,16 @@ func _call_register_agent_for_shm() -> bool:
 	# Ensure SHM polling has a negotiated rate even if registration response omits `rates`
 	set_meta("_negotiated_viz_hz", requested_hz)
 	
+	if FeagiCore.feagi_settings == null or FeagiCore.feagi_settings.agent_descriptor_b64.strip_edges() == "":
+		push_error("𒓉 [REG] Missing agent_descriptor_b64 in FEAGI settings; cannot register BV agent")
+		return false
+
+	var agent_descriptor_b64: String = FeagiCore.feagi_settings.agent_descriptor_b64
+
 	# Build registration payload (matches FEAGI 2.0 infrastructure agent schema)
 	var payload := {
 		"agent_type": "visualization",
-		"agent_id": "brain-visualizer",
+		"agent_id": agent_descriptor_b64,
 		"agent_data_port": 0,
 		"agent_version": ProjectSettings.get_setting("application/config/version", "dev"),
 		"controller_version": ProjectSettings.get_setting("application/config/version", "dev"),
@@ -478,9 +484,15 @@ func _send_heartbeat() -> void:
 		push_warning("💗 [HEARTBEAT] Skipping heartbeat - address list not initialized")
 		return
 	
+	if FeagiCore.feagi_settings == null or FeagiCore.feagi_settings.agent_descriptor_b64.strip_edges() == "":
+		push_warning("💗 [HEARTBEAT] Missing agent_descriptor_b64; skipping heartbeat")
+		return
+
+	var agent_descriptor_b64: String = FeagiCore.feagi_settings.agent_descriptor_b64
+
 	# Build heartbeat payload
 	var payload := {
-		"agent_id": "brain-visualizer"
+		"agent_id": agent_descriptor_b64
 	}
 	
 	# Send heartbeat (fire and forget - don't await)
