@@ -73,8 +73,11 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	_init_summary()
 	_init_monitoring()
 	if _are_all_io_areas():
-		_section_firing_parameters.visible = false
 		_init_neuron_coding()
+		if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
+			_init_firing_parameters()
+		else:
+			_section_firing_parameters.visible = false
 	else:
 		if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
 			_init_firing_parameters()
@@ -156,6 +159,8 @@ func _refresh_all_relevant() -> void:
 	
 	if _are_all_io_areas():
 		_refresh_from_cache_neuron_coding()
+		if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
+			_refresh_from_cache_firing_parameters()
 	elif AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_neuron_firing_parameters"):
 		_refresh_from_cache_firing_parameters()
 	if AbstractCorticalArea.boolean_property_of_all_cortical_areas_are_true(_cortical_area_refs, "has_memory_parameters"):

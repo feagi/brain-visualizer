@@ -342,6 +342,109 @@ size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
 
+[node name="Neuron_Coding" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_x2gmv")
+script = ExtResource("3_roduu")
+start_open = false
+
+[node name="VerticalCollapsible" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding"]
+layout_mode = 2
+theme_type_variation = &"VBoxContainer_adjacent"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
+layout_mode = 2
+
+[node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Neural coding options for this unit type (signage, behavior, and type). Only supported options are shown."
+text = "Neural Coding"
+
+[node name="Collapsible_Toggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+texture_normal = ExtResource("4_2ff0f")
+texture_pressed = ExtResource("5_0w5gk")
+texture_hover = ExtResource("6_cyt0s")
+texture_disabled = ExtResource("7_8r6dk")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible"]
+layout_mode = 2
+
+[node name="PutThingsHere" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer"]
+layout_mode = 2
+
+[node name="CorticalPropertiesNeuronCoding" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere"]
+layout_mode = 2
+
+[node name="Coding_Signage" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
+layout_mode = 2
+tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Signage"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
+text = "Coding Signage"
+
+[node name="Coding_Signage" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Signage"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
+script = ExtResource("25_4f9l1")
+
+[node name="Coding_Behavior" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
+layout_mode = 2
+tooltip_text = "Frame change handling mode (Absolute or Incremental)."
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Behavior"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Frame change handling mode (Absolute or Incremental)."
+text = "Coding Behavior"
+
+[node name="Coding_Behavior" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Behavior"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+tooltip_text = "Frame change handling mode (Absolute or Incremental)."
+script = ExtResource("25_4f9l1")
+
+[node name="Coding_Type" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
+layout_mode = 2
+tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Type"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
+text = "Coding Type"
+
+[node name="Coding_Type" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Type"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
+script = ExtResource("25_4f9l1")
+
+[node name="GAP" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="CorticalPropertyNeuronCoding" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Apply Update"
+
 [node name="Neuron_Firing" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 size_flags_vertical = 0
@@ -538,109 +641,6 @@ custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
 [node name="CorticalPropertyNeuronFiringParameters" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
-layout_mode = 2
-size_flags_horizontal = 3
-disabled = true
-text = "Apply Update"
-
-[node name="Neuron_Coding" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-layout_mode = 2
-size_flags_vertical = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_x2gmv")
-script = ExtResource("3_roduu")
-start_open = false
-
-[node name="VerticalCollapsible" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding"]
-layout_mode = 2
-theme_type_variation = &"VBoxContainer_adjacent"
-
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible"]
-layout_mode = 2
-size_flags_vertical = 0
-
-[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
-layout_mode = 2
-
-[node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "Neural coding options for this unit type (signage, behavior, and type). Only supported options are shown."
-text = "Neural Coding"
-
-[node name="Collapsible_Toggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 2
-size_flags_horizontal = 8
-size_flags_vertical = 4
-texture_normal = ExtResource("4_2ff0f")
-texture_pressed = ExtResource("5_0w5gk")
-texture_hover = ExtResource("6_cyt0s")
-texture_disabled = ExtResource("7_8r6dk")
-ignore_texture_size = true
-stretch_mode = 0
-
-[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible"]
-layout_mode = 2
-
-[node name="PutThingsHere" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer"]
-layout_mode = 2
-
-[node name="CorticalPropertiesNeuronCoding" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere"]
-layout_mode = 2
-
-[node name="Coding_Signage" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
-layout_mode = 2
-tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
-
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Signage"]
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
-text = "Coding Signage"
-
-[node name="Coding_Signage" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Signage"]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
-script = ExtResource("25_4f9l1")
-
-[node name="Coding_Behavior" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
-layout_mode = 2
-tooltip_text = "Frame change handling mode (Absolute or Incremental)."
-
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Behavior"]
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "Frame change handling mode (Absolute or Incremental)."
-text = "Coding Behavior"
-
-[node name="Coding_Behavior" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Behavior"]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-tooltip_text = "Frame change handling mode (Absolute or Incremental)."
-script = ExtResource("25_4f9l1")
-
-[node name="Coding_Type" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
-layout_mode = 2
-tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
-
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Type"]
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
-text = "Coding Type"
-
-[node name="Coding_Type" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Type"]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
-script = ExtResource("25_4f9l1")
-
-[node name="GAP" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
-custom_minimum_size = Vector2(0, 5)
-layout_mode = 2
-
-[node name="CorticalPropertyNeuronCoding" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
