@@ -189,7 +189,7 @@ mouse_filter = 1
 text = "Name"
 
 [node name="Cortical_Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Cortical_Name"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 script = ExtResource("8_2af2m")
 
@@ -204,7 +204,7 @@ mouse_filter = 1
 text = "Parent Region"
 
 [node name="Region" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Region"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 
 
@@ -234,12 +234,15 @@ tooltip_text = "Unit index = unit instance index (which device/unit instance of 
 mouse_filter = 1
 text = "Unit Index"
 
-[node name="Unit_ID" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Unit_ID"]
+[node name="Unit_ID" type="SpinBox" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Unit_ID"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-editable = false
 tooltip_text = "Unit index = unit instance index (which device/unit instance of a given type)."
-script = ExtResource("8_2af2m")
+min_value = 0.0
+step = 1.0
+allow_greater = true
+rounded = true
+script = ExtResource("9_w13r1")
 
 [node name="Row_Voxel_Neuron_Density" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
 layout_mode = 2

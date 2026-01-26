@@ -26,9 +26,11 @@ size_flags_vertical = 4
 theme_type_variation = &"TextureRect_Icon"
 expand_mode = 1
 
-[node name="error_label" type="Label" parent="MarginContainer/HBoxContainer"]
+[node name="error_label" type="RichTextLabel" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+focus_mode = 2
+selection_enabled = true
 text = "Text"
 
 [node name="TextureButton" type="TextureButton" parent="MarginContainer/HBoxContainer"]

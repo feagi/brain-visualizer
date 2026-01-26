@@ -32,7 +32,7 @@ layout_mode = 2
 
 [node name="Message" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
-horizontal_alignment = 1
+horizontal_alignment = 0
 
 [node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(32, 32)

@@ -24,6 +24,7 @@ var _preview: UI_BrainMonitor_InteractivePreview
 var _aux_previews: Array[UI_BrainMonitor_InteractivePreview] = []
 var _aux_preview_to_bm: Dictionary = {}
 var _host_preview_bm: UI_BrainMonitor_3DScene = null
+var _skip_unit_id_confirmation: bool = false
 
 # isvi segmented vision variables
 var _is_isvi_segment: bool = false
@@ -104,7 +105,10 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	# Request the newest state from feagi, and dont continue until then
 	# Only if FeagiCore is ready and network components are initialized
 	if FeagiCore and FeagiCore.requests and FeagiCore.can_interact_with_feagi() and FeagiCore.network and FeagiCore.network.http_API and FeagiCore.network.http_API.address_list:
+		var previous_suppress_state = FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications
+		FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications = true
 		await FeagiCore.requests.get_cortical_areas(_cortical_area_refs)
+		FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications = previous_suppress_state
 	else:
 		print("UI: Advanced Cortical Properties - Skipping FEAGI update request as network is not ready")
 	
@@ -129,7 +133,10 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 			
 			# Fetch details for all vision segments
 			if FeagiCore and FeagiCore.requests and FeagiCore.can_interact_with_feagi():
+				var previous_suppress_state = FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications
+				FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications = true
 				await FeagiCore.requests.get_cortical_areas(all_vision_segments)
+				FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications = previous_suppress_state
 				
 				# Now re-detect with all the fresh data
 				_detect_and_setup_isvi_segment()
@@ -421,13 +428,16 @@ func _send_update(send_button: Button) -> void:
 		return
 	
 	if send_button.name in _growing_cortical_update:
+		var update_data: Dictionary = _growing_cortical_update[send_button.name]
+		if _should_confirm_unit_id_update(update_data):
+			_show_unit_id_update_confirmation(update_data, send_button)
+			return
 		send_button.disabled = true
 		if len(_cortical_area_refs) > 1:
 			var area_names = []
 			for area in _cortical_area_refs:
 				area_names.append(area.cortical_ID)
 			var area_names_str = ", ".join(area_names)  # Join array elements with commas
-			var update_data = _growing_cortical_update[send_button.name]
 			print("UI: Attempting to update %d cortical areas %s with data: %s" % [len(_cortical_area_refs), area_names_str, update_data])
 			
 			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_areas(_cortical_area_refs, update_data)
@@ -483,18 +493,31 @@ func _send_update(send_button: Button) -> void:
 			else:
 				# Normal single area update
 				var cortical_id = _cortical_area_refs[0].cortical_ID
-				var update_data = _growing_cortical_update[send_button.name]
-				if send_button == _button_coding_send:
-					update_data = _finalize_neuron_coding_update(update_data, _cortical_area_refs[0])
-					if update_data.is_empty():
+				var remaining_update_data = update_data.duplicate(true)
+				var group_update_data: Dictionary = {}
+				if update_data.has("group_id"):
+					group_update_data["group_id"] = update_data["group_id"]
+					remaining_update_data.erase("group_id")
+				if not group_update_data.is_empty():
+					var group_success = await _send_unit_group_update(send_button, group_update_data)
+					if not group_success:
 						send_button.disabled = false
 						return
-					var new_id = update_data.get("new_cortical_id", "")
+				if send_button == _button_coding_send:
+					remaining_update_data = _finalize_neuron_coding_update(remaining_update_data, _cortical_area_refs[0])
+					if remaining_update_data.is_empty():
+						send_button.disabled = false
+						return
+					var new_id = remaining_update_data.get("new_cortical_id", "")
 					if new_id != "":
 						print("BV [NEURAL-CODING]: Requesting ID update %s -> %s" % [cortical_id, new_id])
-				print("UI: Attempting to update cortical area '%s' with data: %s" % [cortical_id, update_data])
+				if remaining_update_data.is_empty():
+					_refresh_all_relevant()
+					_growing_cortical_update.clear()
+					return
+				print("UI: Attempting to update cortical area '%s' with data: %s" % [cortical_id, remaining_update_data])
 				
-				var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(cortical_id, update_data)
+				var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(cortical_id, remaining_update_data)
 				if result.has_errored:
 					# Get detailed error information
 					var error_details = result.decode_response_as_generic_error_code()
@@ -503,7 +526,7 @@ func _send_update(send_button: Button) -> void:
 					# Log detailed error information
 					push_error("UI: Failed to update cortical area '%s'. %s" % [cortical_id, error_message])
 					print("UI: Update failed for cortical area '%s'" % cortical_id)
-					print("UI: - Update data sent: %s" % update_data)
+					print("UI: - Update data sent: %s" % remaining_update_data)
 					print("UI: - Error details: %s" % error_message)
 					print("UI: - Has timed out: %s" % result.has_timed_out)
 					print("UI: - Failed requirement: %s" % result.failed_requirement)
@@ -523,6 +546,141 @@ func _send_update(send_button: Button) -> void:
 		
 		# Clear the update dictionary
 		_growing_cortical_update.clear()
+
+func _should_confirm_unit_id_update(update_data: Dictionary) -> bool:
+	if _skip_unit_id_confirmation:
+		return false
+	if len(_cortical_area_refs) != 1:
+		return false
+	if not _are_all_io_areas():
+		return false
+	if not update_data.has("group_id"):
+		return false
+	return true
+
+func _show_unit_id_update_confirmation(update_data: Dictionary, send_button: Button) -> void:
+	var area = _cortical_area_refs[0]
+	var member_names = _get_unit_group_member_names(area)
+	var members_text = ""
+	if member_names.is_empty():
+		members_text = "- (no members found)"
+	else:
+		members_text = "- " + "\n- ".join(member_names)
+	var unit_name = String(area.friendly_name)
+	if unit_name.strip_edges() == "":
+		unit_name = String(area.cortical_ID)
+	var current_value = str(area.group_id)
+	var new_value = str(int(update_data.get("group_id", area.group_id)))
+	var message = "You are about to change the Unit Index of %s from %s to %s.\nBe aware that changing the Unit ID of a subunit will require the change of all subunits.\n\nHere is the list of all impacted subunits:\n%s" % [unit_name, current_value, new_value, members_text]
+	var confirm_action: Callable = _confirm_unit_id_update.bind(send_button)
+	var popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Confirm Unit Index Update",
+		message,
+		confirm_action,
+		"Apply"
+	)
+	BV.WM.spawn_popup(popup)
+
+func _confirm_unit_id_update(send_button: Button) -> void:
+	_skip_unit_id_confirmation = true
+	_send_update(send_button)
+	_skip_unit_id_confirmation = false
+
+func _send_unit_group_update(send_button: Button, update_data: Dictionary) -> bool:
+	var area = _cortical_area_refs[0]
+	var members = _get_unit_group_members(area)
+	if members.is_empty():
+		var message = "No unit group members were found for this unit. Unable to apply the Unit Index update."
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", message))
+		return false
+	print("UI: Attempting to update unit group (%d areas) with data: %s" % [members.size(), update_data])
+	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_areas(members, update_data)
+	if result.has_errored:
+		var error_details = result.decode_response_as_generic_error_code()
+		var error_message = "Error Code: %s, Description: %s" % [error_details[0], error_details[1]]
+		push_error("UI: Failed to update unit group. %s" % error_message)
+		print("UI: Unit group update failed")
+		print("UI: - Update data sent: %s" % update_data)
+		print("UI: - Error details: %s" % error_message)
+		print("UI: - Has timed out: %s" % result.has_timed_out)
+		print("UI: - Failed requirement: %s" % result.failed_requirement)
+		print("UI: - Failed requirement key: %s" % result.failed_requirement_key)
+		var detailed_popup_message = "FEAGI was unable to update the unit group.\n\n%s\n\nCheck console for full details." % error_message
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
+		return false
+	print("✅ UI: Successfully updated unit group")
+	if update_data.has("group_id"):
+		await _refresh_unit_group_after_unit_index_update(area, update_data["group_id"])
+	_refresh_all_relevant()
+	return true
+
+func _refresh_unit_group_after_unit_index_update(area: AbstractCorticalArea, new_group_id_value: Variant) -> void:
+	if FeagiCore == null or FeagiCore.requests == null or FeagiCore.feagi_local_cache == null:
+		return
+	var new_group_id = int(new_group_id_value)
+	var members = _get_unit_group_members(area)
+	if members.is_empty():
+		return
+	var updated_areas: Array[AbstractCorticalArea] = []
+	var selected_subunit_id = area.unit_id
+	for member in members:
+		var new_id = _compute_unit_index_cortical_id(member.cortical_ID, new_group_id)
+		if new_id == "":
+			continue
+		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(member.cortical_ID, new_id)
+		var updated = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(new_id, null)
+		if updated != null:
+			updated_areas.append(updated)
+	if not updated_areas.is_empty():
+		var previous_suppress_state = FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications
+		FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications = true
+		await FeagiCore.requests.get_cortical_areas(updated_areas)
+		FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications = previous_suppress_state
+		var selected_area = null
+		for updated in updated_areas:
+			if updated.unit_id == selected_subunit_id:
+				selected_area = updated
+				break
+		if selected_area != null:
+			_cortical_area_refs = [selected_area]
+
+func _compute_unit_index_cortical_id(cortical_id: StringName, new_group_id: int) -> StringName:
+	if not ClassDB.class_exists("FeagiDataDeserializer"):
+		push_error("AdvancedCorticalProperties: FeagiDataDeserializer not available for unit ID computation")
+		return ""
+	var resolver: Object = ClassDB.instantiate("FeagiDataDeserializer")
+	if resolver == null or not resolver.has_method("compute_io_cortical_id_with_unit_index"):
+		push_error("AdvancedCorticalProperties: compute_io_cortical_id_with_unit_index not available")
+		return ""
+	var result: Dictionary = resolver.call("compute_io_cortical_id_with_unit_index", cortical_id, new_group_id)
+	if not result.get("success", false):
+		push_error("AdvancedCorticalProperties: Failed to compute unit index cortical ID: %s" % result.get("error", "unknown"))
+		return ""
+	return StringName(result.get("cortical_id", ""))
+
+func _get_unit_group_member_names(area: AbstractCorticalArea) -> Array[String]:
+	var members = _get_unit_group_members(area)
+	var names: Array[String] = []
+	for cortical_area in members:
+		var display_name = String(cortical_area.friendly_name)
+		if display_name.strip_edges() == "":
+			display_name = String(cortical_area.cortical_ID)
+		names.append("%s (subunit %d)" % [display_name, cortical_area.unit_id])
+	names.sort()
+	return names
+
+func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCorticalArea]:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return []
+	var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
+	var members: Array[AbstractCorticalArea] = []
+	for cortical_area in all_areas:
+		if cortical_area.cortical_type != area.cortical_type:
+			continue
+		if cortical_area.group_id != area.group_id:
+			continue
+		members.append(cortical_area)
+	return members
 		
 
 func _enable_button(send_button: Button) -> void:
@@ -842,7 +1000,7 @@ func _finalize_neuron_coding_update(update_data: Dictionary, area: AbstractCorti
 @export var _region_button: Button
 @export var _line_cortical_ID: TextInput
 @export var _line_unit_code: TextInput
-@export var _line_unit_id: TextInput
+@export var _line_unit_id: IntSpinBox
 @export var _line_subunit_id: TextInput
 @export var _line_cortical_type: TextInput
 @export var _device_count_section: HBoxContainer
@@ -891,7 +1049,8 @@ func _init_summary() -> void:
 		_region_button.text = "Multiple Selected"
 		_line_cortical_ID.text = "Multiple Selected"
 		if _line_unit_id != null:
-			_line_unit_id.text = "Multiple Selected"
+			_line_unit_id.editable = false
+			_line_unit_id.value = 0
 		if _line_subunit_id != null:
 			_line_subunit_id.text = "Multiple Selected"
 		_vector_position.editable = false # TODO show multiple values
@@ -909,6 +1068,9 @@ func _init_summary() -> void:
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
 		if _vector_visualization_voxel_granularity != null:
 			_connect_control_to_update_button(_vector_visualization_voxel_granularity, "visualization_voxel_granularity", _button_summary_send)
+		if is_all_io and _line_unit_id != null:
+			_line_unit_id.editable = true
+			_connect_control_to_update_button(_line_unit_id, "group_id", _button_summary_send)
 		_vector_position.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		_vector_dimensions_spin.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		
@@ -1002,7 +1164,7 @@ func _refresh_from_cache_summary() -> void:
 		if _line_unit_code != null:
 			_line_unit_code.text = "Multiple Selected"
 		if is_all_io and _line_unit_id != null:
-			_line_unit_id.text = "Multiple Selected"
+			_line_unit_id.value = 0
 		if is_all_io and _line_subunit_id != null:
 			_line_subunit_id.text = "Multiple Selected"
 		#TODO connect size vector
@@ -1018,7 +1180,7 @@ func _refresh_from_cache_summary() -> void:
 				_line_unit_code.text = "-"
 		if _line_unit_id != null:
 			if is_all_io:
-				_line_unit_id.text = str(_cortical_area_refs[0].group_id)
+				_line_unit_id.value = _cortical_area_refs[0].group_id
 		if _line_subunit_id != null:
 			if is_all_io:
 				_line_subunit_id.text = str(_cortical_area_refs[0].unit_id)

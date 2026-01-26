@@ -12,11 +12,12 @@ enum NOTIFICATION_TYPE {
 	ERROR
 }
 
-var _label: Label
+var _label: RichTextLabel
 var _timer: Timer
 var _icon
 var _theme_sclar: ScaleThemeApplier
 
+## Initialize notification UI references and theme scaling.
 func _ready():
 	_label = $MarginContainer/HBoxContainer/error_label
 	_timer = $Timer
@@ -52,11 +53,14 @@ func set_notification(message: StringName, notification_type: NOTIFICATION_TYPE)
 				push_error("Unable to locate theme variation 'NotificationSystemNotification_ERROR'! Notification colors may be wrong!")
 
 
+## Close the notification when timer or close button fires.
 func _on_timeout_or_button_close() -> void:
 	queue_free()
 
+## Pause auto-dismiss when the pointer hovers the panel.
 func _pause_timer_on_mouse_over() -> void:
 	_timer.paused = true
 	
+## Resume auto-dismiss when the pointer leaves the panel.
 func _unpause_timer_on_mouse_off() -> void:
 	_timer.paused = false

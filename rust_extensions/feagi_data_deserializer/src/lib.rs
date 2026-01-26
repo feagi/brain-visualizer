@@ -1198,6 +1198,70 @@ impl FeagiDataDeserializer {
         result.set("error", "");
         result
     }
+
+    /// Compute a new IO cortical ID by changing the unit index only.
+    ///
+    /// Returns: Dictionary {success: bool, cortical_id: String, error: String}
+    #[func]
+    pub fn compute_io_cortical_id_with_unit_index(
+        &self,
+        cortical_id: GString,
+        unit_index: i64,
+    ) -> Dictionary {
+        let mut result = Dictionary::new();
+        let id_str = cortical_id.to_string();
+
+        let cortical_id_obj = match CorticalID::try_from_base_64(&id_str) {
+            Ok(id) => id,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("Invalid cortical ID: {}", e));
+                result.set("cortical_id", "");
+                return result;
+            }
+        };
+
+        if unit_index < 0 || unit_index > u8::MAX as i64 {
+            result.set("success", false);
+            result.set("error", "unit_index out of range");
+            result.set("cortical_id", "");
+            return result;
+        }
+
+        let bytes = cortical_id_obj.as_bytes();
+        let is_input = bytes[0] == b'i';
+        let is_output = bytes[0] == b'o';
+        if !is_input && !is_output {
+            result.set("success", false);
+            result.set("error", "Not an IPU/OPU cortical ID");
+            result.set("cortical_id", "");
+            return result;
+        }
+
+        let current_flag = match cortical_id_obj.extract_io_data_flag() {
+            Ok(flag) => flag,
+            Err(e) => {
+                result.set("success", false);
+                result.set("error", format!("Unable to decode IO configuration: {}", e));
+                result.set("cortical_id", "");
+                return result;
+            }
+        };
+
+        let unit_identifier = [bytes[1], bytes[2], bytes[3]];
+        let subunit_idx = bytes[6];
+        let new_id = current_flag.as_io_cortical_id(
+            is_input,
+            unit_identifier,
+            CorticalUnitIndex::from(unit_index as u8),
+            CorticalSubUnitIndex::from(subunit_idx),
+        );
+
+        result.set("success", true);
+        result.set("cortical_id", new_id.as_base_64());
+        result.set("error", "");
+        result
+    }
 }
 
 // Private helper methods

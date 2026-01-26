@@ -38,7 +38,7 @@ static func create_single_button_close_popup(window_title: StringName, window_me
 static func create_cancel_and_action_popup(window_title: StringName, window_message: StringName, accept_action: Callable, accept_text: StringName = "OK",  cancel_text: StringName = "Cancel", window_minumum_size: Vector2i = Vector2i(0,0)) -> ConfigurablePopupDefinition:
 	var button_ok: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_action_button(accept_action, accept_text)
 	var button_close: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_close_button(cancel_text)
-	var button_arr: Array[ConfigurablePopupButtonDefinition] = [button_ok, button_close]
+	var button_arr: Array[ConfigurablePopupButtonDefinition] = [button_close, button_ok]
 	return ConfigurablePopupDefinition.new(window_title, window_message, button_arr, window_minumum_size)
 
 func _generate_random_letters(num_letters: int) -> StringName:
