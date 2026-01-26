@@ -165,6 +165,8 @@ func _CACHE_this_region_name_update(new_name: StringName) -> void:
 func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	if link.parent_region != representing_region:
 		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
+		return
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
 
@@ -200,6 +202,8 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 		return
 	if link.parent_region != representing_region:
 		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
+		return
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
 	
 	if destination_node == null:
@@ -229,6 +233,8 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	if _representing_region != null and _representing_region.is_root_region():
 		return
 	if link.parent_region != representing_region:
+		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
 		return
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
 	
@@ -264,6 +270,10 @@ func _CACHE_link_region_input_open_added(link: ConnectionChainLink) -> void:
 	
 	if target_region == null:
 		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set():
+		var partial_mapping := link.parent_chain.partial_mapping_set
+		if partial_mapping != null and partial_mapping.number_mappings == 0:
+			return
 	if !(target_region.region_ID in _subregion_nodes):
 		return
 	
@@ -284,6 +294,10 @@ func _CACHE_link_region_output_open_added(link: ConnectionChainLink) -> void:
 	
 	if target_region == null:
 		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set():
+		var partial_mapping := link.parent_chain.partial_mapping_set
+		if partial_mapping != null and partial_mapping.number_mappings == 0:
+			return
 	if !(target_region.region_ID in _subregion_nodes):
 		return
 	
