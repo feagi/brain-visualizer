@@ -103,7 +103,7 @@ func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
 
 #OVERRIDDEN
 func _user_can_edit_dimensions_directly() -> bool:
-	return false
+	return true
 
 func _has_neuron_firing_parameters() -> bool:
 	return true

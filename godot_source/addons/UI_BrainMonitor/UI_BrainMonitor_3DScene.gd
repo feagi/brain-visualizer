@@ -2140,9 +2140,12 @@ func _apply_group_move(members: Array[AbstractCorticalArea], new_pos: Vector3i) 
 	_end_manipulation_session(true)
 
 func _prompt_confirm_and_apply_resize(new_dims: Vector3i) -> void:
+	var resize_plan = _build_resize_plan(_manipulation_area, new_dims)
+	if resize_plan.is_empty():
+		return
 	var msg := "Save new size for '%s'?\n\nFrom: %s\nTo:   %s" % [str(_manipulation_area.friendly_name), str(_manipulation_start_dims), str(new_dims)]
 	var accept := func() -> void:
-		var payload := {"cortical_dimensions": FEAGIUtils.vector3i_to_array(new_dims)}
+		var payload: Dictionary = resize_plan["payload"]
 		var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
 		if result.has_errored:
 			var details = result.decode_response_as_generic_error_code()
@@ -2161,12 +2164,18 @@ func _prompt_confirm_and_apply_resize(new_dims: Vector3i) -> void:
 			return
 		# Update local cache so BV visuals resize immediately.
 		if _manipulation_area != null:
-			_manipulation_area.FEAGI_change_dimensions_3D(new_dims)
+			_apply_resize_to_cache(_manipulation_area, resize_plan)
 		_end_manipulation_session(true)
 	BV.WM.spawn_popup(ConfigurablePopupDefinition.create_cancel_and_action_popup("Confirm Resize", msg, accept, "Save", "Cancel"))
 
 func _apply_resize(new_dims: Vector3i) -> void:
-	var payload := {"cortical_dimensions": FEAGIUtils.vector3i_to_array(new_dims)}
+	if _manipulation_area != null and _is_isvi_peripheral(_manipulation_area):
+		await _apply_isvi_peripheral_resize(_manipulation_area, new_dims)
+		return
+	var resize_plan = _build_resize_plan(_manipulation_area, new_dims)
+	if resize_plan.is_empty():
+		return
+	var payload: Dictionary = resize_plan["payload"]
 	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
 	if result.has_errored:
 		var details = result.decode_response_as_generic_error_code()
@@ -2185,8 +2194,132 @@ func _apply_resize(new_dims: Vector3i) -> void:
 		return
 	# Update local cache so BV visuals resize immediately.
 	if _manipulation_area != null:
-		_manipulation_area.FEAGI_change_dimensions_3D(new_dims)
+		_apply_resize_to_cache(_manipulation_area, resize_plan)
+		_clear_neuron_selections_for_area(_manipulation_area)
+		_refresh_io_positioning_after_resize(_manipulation_area)
 	_end_manipulation_session(true)
+
+func _is_isvi_peripheral(area: AbstractCorticalArea) -> bool:
+	if area == null:
+		return false
+	area.ensure_unit_subunit_ids_from_cortical_id()
+	if area.cortical_subtype.strip_edges() != "isvi":
+		return false
+	return area.subunit_id in [0, 1, 2, 3, 5, 6, 7, 8]
+
+func _apply_isvi_peripheral_resize(area: AbstractCorticalArea, new_dims: Vector3i) -> void:
+	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
+	if members.is_empty():
+		return
+	var resize_plan = _build_resize_plan(area, new_dims)
+	if resize_plan.is_empty():
+		return
+	var failed: Array[StringName] = []
+	for member in members:
+		member.ensure_unit_subunit_ids_from_cortical_id()
+		if member.subunit_id == 4:
+			continue
+		var payload: Dictionary = resize_plan["payload"]
+		var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(member.cortical_ID, payload)
+		if result.has_errored:
+			failed.append(member.cortical_ID)
+			continue
+		_apply_resize_to_cache(member, resize_plan)
+		_clear_neuron_selections_for_area(member)
+	if not failed.is_empty():
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Resize failed",
+			"Failed to resize %d/%d peripheral subunits.\n\n%s" % [
+				failed.size(),
+				members.size() - 1,
+				", ".join(failed)
+			]
+		))
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		var save_details = save_result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Save failed",
+			"Saved sizes but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+		))
+		return
+	_refresh_io_positioning_after_resize(area)
+	_end_manipulation_session(true)
+
+func _build_resize_plan(area: AbstractCorticalArea, new_dims: Vector3i) -> Dictionary:
+	if area == null:
+		return {}
+	if area is IPUCorticalArea or area is OPUCorticalArea:
+		var device_count: int = _resolve_device_count_for_resize(area, new_dims)
+		if device_count <= 0:
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Resize unavailable",
+				"Device count is not available for I/O cortical area '%s'." % str(area.friendly_name)
+			))
+			return {}
+		if new_dims.x % device_count != 0:
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Resize blocked",
+				"Width must be a multiple of device count (%d)." % device_count
+			))
+			return {}
+		var per_device_dims = Vector3i(int(new_dims.x / device_count), new_dims.y, new_dims.z)
+		return {
+			"payload": {"cortical_dimensions_per_device": FEAGIUtils.vector3i_to_array(per_device_dims)},
+			"per_device_dims": per_device_dims,
+			"total_dims": new_dims
+		}
+	return {
+		"payload": {"cortical_dimensions": FEAGIUtils.vector3i_to_array(new_dims)},
+		"total_dims": new_dims
+	}
+
+func _apply_resize_to_cache(area: AbstractCorticalArea, resize_plan: Dictionary) -> void:
+	if area == null or resize_plan.is_empty():
+		return
+	if resize_plan.has("total_dims"):
+		area.FEAGI_change_dimensions_3D(resize_plan["total_dims"])
+	if resize_plan.has("per_device_dims"):
+		if area is IPUCorticalArea:
+			(area as IPUCorticalArea).FEAGI_set_cortical_dimensions_per_device(resize_plan["per_device_dims"])
+		elif area is OPUCorticalArea:
+			(area as OPUCorticalArea).FEAGI_set_cortical_dimensions_per_device(resize_plan["per_device_dims"])
+
+func _clear_neuron_selections_for_area(area: AbstractCorticalArea) -> void:
+	if area == null or BV == null or BV.UI == null:
+		return
+	var brain_monitors: Array[UI_BrainMonitor_3DScene] = BV.UI.get_all_visible_brain_monitors()
+	for bm in brain_monitors:
+		if bm == null:
+			continue
+		var viz = bm.get_cortical_area_visualization(String(area.cortical_ID))
+		if viz != null:
+			viz.clear_all_neuron_selection_states()
+
+func _refresh_io_positioning_after_resize(area: AbstractCorticalArea) -> void:
+	if area == null:
+		return
+	if area is IPUCorticalArea or area is OPUCorticalArea:
+		UI_BrainMonitor_BrainRegion3D.refresh_all_brain_regions_positioning()
+
+func _resolve_device_count_for_resize(area: AbstractCorticalArea, new_dims: Vector3i) -> int:
+	var device_count: int = 0
+	var per_device_dims: Vector3i = Vector3i.ZERO
+	if area is IPUCorticalArea:
+		device_count = (area as IPUCorticalArea).device_count
+		per_device_dims = (area as IPUCorticalArea).cortical_dimensions_per_device
+	elif area is OPUCorticalArea:
+		device_count = (area as OPUCorticalArea).device_count
+		per_device_dims = (area as OPUCorticalArea).cortical_dimensions_per_device
+	if device_count > 0:
+		return device_count
+	if per_device_dims.x > 0 and new_dims.x > 0 and new_dims.x % per_device_dims.x == 0:
+		return int(new_dims.x / per_device_dims.x)
+	var current_dims: Vector3i = area.dimensions_3D
+	if per_device_dims.x > 0 and current_dims.x > 0 and current_dims.x % per_device_dims.x == 0:
+		return int(current_dims.x / per_device_dims.x)
+	return -1
 
 func _would_overflow_capacity(candidate_dims: Vector3i) -> bool:
 	if _manipulation_area == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:

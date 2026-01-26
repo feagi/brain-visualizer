@@ -1,7 +1,7 @@
 extends BaseDraggableWindow
 class_name WindowConfigurablePopup
 
-var _message_box: Label
+var _message_box: RichTextLabel
 var _button_container: HBoxContainer
 
 func _ready() -> void:
