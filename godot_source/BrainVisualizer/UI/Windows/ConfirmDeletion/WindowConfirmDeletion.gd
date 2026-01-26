@@ -9,9 +9,15 @@ var _is_deleting_internals: bool
 var _mode: GenomeObject.ARRAY_MAKEUP
 var _scroll: ScrollSectionGeneric
 
+## Configure confirmation dialog text and targets.
 func setup(selection: Array[GenomeObject], region_deleting_internals: bool = false) -> void:
 	_label = _window_internals.get_node("DeleteText")
 	_scroll = _window_internals.get_node("ScrollSectionGeneric")
+	var cancel_button: Button = _window_internals.get_node("HBoxContainer/No")
+	var confirm_button: Button = _window_internals.get_node("HBoxContainer/Yes")
+	# Keep button labels consistent with confirmation intent.
+	cancel_button.text = "Cancel"
+	confirm_button.text = "Confirm"
 	_deletion_targets = selection
 	_is_deleting_internals = region_deleting_internals
 	_mode = GenomeObject.get_makeup_of_array(selection)
@@ -22,7 +28,10 @@ func setup(selection: Array[GenomeObject], region_deleting_internals: bool = fal
 			_scroll.visible = false
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			var internals: Array[GenomeObject] = (selection[0] as BrainRegion).get_all_included_genome_objects()
-			_scroll_show_objects(internals)
+			if internals.is_empty():
+				_scroll.visible = false
+			else:
+				_scroll_show_objects(internals)
 			if region_deleting_internals:
 				_label.text = "Are you sure you wish to delete brain region %s with these %d internals?" % [selection[0].friendly_name, len(internals)]
 			else:

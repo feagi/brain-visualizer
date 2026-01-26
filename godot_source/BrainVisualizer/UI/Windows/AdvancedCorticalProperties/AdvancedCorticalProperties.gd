@@ -12,6 +12,11 @@ class_name AdvancedCorticalProperties
 @export var controls_to_hide_in_simple_mode: Array[Control] = [] #NOTE custom logic for sections, do not include those here
 
 const WINDOW_NAME: StringName = "adv_cortical_properties"
+const IO_PRESET_INPUT: StringName = "Input"
+const IO_PRESET_OUTPUT: StringName = "Output"
+const IO_PRESET_INTERCONNECT: StringName = "Interconnect"
+const IO_PRESET_CONFLICT: StringName = "Conflict"
+const IO_PRESET_MULTI: StringName = "Multiple Selected"
 var _cortical_area_refs: Array[AbstractCorticalArea]
 var _growing_cortical_update: Dictionary = {}
 var _memory_section_enabled: bool # NOTE: exists so we need to renable it or not given advanced mode changes
@@ -844,6 +849,7 @@ func _finalize_neuron_coding_update(update_data: Dictionary, area: AbstractCorti
 @export var _device_count: IntSpinBox
 @export var _line_voxel_neuron_density: IntInput
 @export var _line_synaptic_attractivity: IntInput
+@export var _dropdown_io_preset: OptionButton
 @export var _dimensions_label: Label
 @export var _vector_dimensions_spin: Vector3iSpinboxField
 @export var _vector_dimensions_nonspin: Vector3iField
@@ -863,6 +869,7 @@ func _init_summary() -> void:
 	
 	# Create IPU/OPU-specific decoded ID info section (if applicable)
 	_init_ipu_opu_decoded_info()
+	_init_io_preset_dropdown()
 	
 	# Detect and setup isvi segment management
 	_detect_and_setup_isvi_segment()
@@ -986,6 +993,7 @@ func _refresh_from_cache_summary() -> void:
 	
 	# Update IPU/OPU decoded ID info if applicable
 	_refresh_ipu_opu_decoded_info()
+	_refresh_io_preset()
 	
 	if len(_cortical_area_refs) != 1:
 		_line_cortical_name.text = "Multiple Selected"
@@ -1029,6 +1037,178 @@ func _refresh_from_cache_summary() -> void:
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
 		# NOTE: 3D preview is intentionally NOT created on window open.
 		# It will appear when the user starts editing position/dimensions.
+
+
+func _init_io_preset_dropdown() -> void:
+	if _dropdown_io_preset == null:
+		print("IO PRESET DEBUG: dropdown node missing in init")
+		return
+	_reset_io_preset_items()
+	_dropdown_io_preset.disabled = true
+	# Force a valid selection so the dropdown renders text.
+	_select_io_preset(IO_PRESET_INTERCONNECT)
+	print("IO PRESET DEBUG: init items=%d selected=%d text='%s'" % [
+		_dropdown_io_preset.item_count,
+		_dropdown_io_preset.selected,
+		_dropdown_io_preset.text
+	])
+
+
+func _reset_io_preset_items() -> void:
+	if _dropdown_io_preset == null:
+		return
+	var preset_items: Array[StringName] = [
+		IO_PRESET_INPUT,
+		IO_PRESET_OUTPUT,
+		IO_PRESET_INTERCONNECT,
+		IO_PRESET_CONFLICT,
+	]
+	if _dropdown_io_preset is DropDown:
+		var dropdown: DropDown = _dropdown_io_preset
+		dropdown.options = preset_items
+		var conflict_index = dropdown.options.find(IO_PRESET_CONFLICT)
+		if conflict_index != -1:
+			dropdown.set_item_disabled(conflict_index, true)
+	else:
+		_dropdown_io_preset.clear()
+		for preset in preset_items:
+			_dropdown_io_preset.add_item(preset)
+		_dropdown_io_preset.set_item_disabled(_dropdown_io_preset.item_count - 1, true)
+
+
+func _select_io_preset(label: StringName) -> void:
+	if _dropdown_io_preset == null:
+		return
+	if _dropdown_io_preset is DropDown:
+		var dropdown: DropDown = _dropdown_io_preset
+		var index = dropdown.options.find(label)
+		if index == -1:
+			dropdown.options = [label]
+			index = 0
+		dropdown.select(index)
+		dropdown.text = String(dropdown.get_item_text(index))
+		return
+	for i in range(_dropdown_io_preset.item_count):
+		if _dropdown_io_preset.get_item_text(i) == label:
+			_dropdown_io_preset.select(i)
+			_dropdown_io_preset.text = String(label)
+			return
+
+
+func _refresh_io_preset() -> void:
+	if _dropdown_io_preset == null:
+		print("IO PRESET DEBUG: dropdown node missing on refresh")
+		return
+	if len(_cortical_area_refs) != 1:
+		if _dropdown_io_preset is DropDown:
+			var dropdown: DropDown = _dropdown_io_preset
+			dropdown.options = [IO_PRESET_MULTI]
+			dropdown.set_item_disabled(0, true)
+			dropdown.select(0)
+			dropdown.text = String(dropdown.get_item_text(0))
+		else:
+			_dropdown_io_preset.clear()
+			_dropdown_io_preset.add_item(IO_PRESET_MULTI)
+			_dropdown_io_preset.set_item_disabled(0, true)
+			_dropdown_io_preset.select(0)
+			_dropdown_io_preset.text = String(IO_PRESET_MULTI)
+		_dropdown_io_preset.disabled = true
+		print("IO PRESET DEBUG: multi-select items=%d selected=%d text='%s'" % [
+			_dropdown_io_preset.item_count,
+			_dropdown_io_preset.selected,
+			_dropdown_io_preset.text
+		])
+		return
+
+	_reset_io_preset_items()
+	var area = _cortical_area_refs[0]
+	var preset_data = _derive_io_preset_for_area(area)
+	_select_io_preset(preset_data["preset"])
+	_dropdown_io_preset.disabled = preset_data["locked"]
+	if _dropdown_io_preset is DropDown:
+		var dropdown: DropDown = _dropdown_io_preset
+		print("IO PRESET DEBUG: items=%d selected=%d text='%s' options=%s" % [
+			dropdown.item_count,
+			dropdown.selected,
+			dropdown.text,
+			str(dropdown.options)
+		])
+	else:
+		print("IO PRESET DEBUG: items=%d selected=%d text='%s'" % [
+			_dropdown_io_preset.item_count,
+			_dropdown_io_preset.selected,
+			_dropdown_io_preset.text
+		])
+
+
+func _derive_io_preset_for_area(area: AbstractCorticalArea) -> Dictionary:
+	var result := {
+		"preset": IO_PRESET_INTERCONNECT,
+		"locked": true,
+	}
+
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+		result["preset"] = IO_PRESET_INPUT
+		return result
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+		result["preset"] = IO_PRESET_OUTPUT
+		return result
+
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
+		var core_preset = _core_preset_from_id(area.cortical_ID)
+		if core_preset != "":
+			result["preset"] = core_preset
+		return result
+
+	var parent_region = area.current_parent_region
+	if parent_region == null:
+		return result
+
+	var is_input = _is_region_input_area(parent_region, area)
+	var is_output = _is_region_output_area(parent_region, area)
+	if is_input and is_output:
+		result["preset"] = IO_PRESET_CONFLICT
+	elif is_input:
+		result["preset"] = IO_PRESET_INPUT
+	elif is_output:
+		result["preset"] = IO_PRESET_OUTPUT
+	else:
+		result["preset"] = IO_PRESET_INTERCONNECT
+	return result
+
+
+func _core_preset_from_id(cortical_id: StringName) -> StringName:
+	var id_str := String(cortical_id)
+	var decoded := ""
+	var raw = Marshalls.base64_to_raw(id_str)
+	if raw.size() > 0:
+		decoded = raw.get_string_from_utf8()
+	var core_id = decoded if decoded != "" else id_str
+	if core_id == "___power":
+		return IO_PRESET_INPUT
+	if core_id == "___death" or core_id == "___fatig":
+		return IO_PRESET_OUTPUT
+	return ""
+
+
+func _is_region_input_area(region: BrainRegion, area: AbstractCorticalArea) -> bool:
+	for link in region.input_open_chain_links:
+		if link.destination == area and area in region.contained_cortical_areas:
+			return true
+	for mapping in region.partial_mappings:
+		if mapping.is_region_input and mapping.internal_target_cortical_area == area:
+			return true
+	return false
+
+
+func _is_region_output_area(region: BrainRegion, area: AbstractCorticalArea) -> bool:
+	for link in region.output_open_chain_links:
+		if link.source == area and area in region.contained_cortical_areas:
+			return true
+	for mapping in region.partial_mappings:
+		if not mapping.is_region_input and mapping.internal_target_cortical_area == area:
+			return true
+	return false
 			
 
 func _user_press_edit_region() -> void:

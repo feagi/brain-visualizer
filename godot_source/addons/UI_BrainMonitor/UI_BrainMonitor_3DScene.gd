@@ -2296,11 +2296,12 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	# Check if this area should be created
 	var is_directly_in_root = _representing_region.is_cortical_area_in_region_directly(area)
 	var is_io_of_child_region = _is_area_input_output_of_child_region(area)
+	var is_io_of_this_region = _is_area_input_output_of_region(area)
 	
 	
-	# Only create if the area is directly in this region OR it's needed as I/O for a child region
-	if not is_directly_in_root and not is_io_of_child_region:
-		print("  ❌ BM REJECTED %s: not in region %s (directly=%s, io=%s)" % [area.cortical_ID, _representing_region.region_ID, is_directly_in_root, is_io_of_child_region])
+	# Only create if the area is directly in this region OR it's needed as I/O for this region/child region
+	if not is_directly_in_root and not is_io_of_child_region and not is_io_of_this_region:
+		print("  ❌ BM REJECTED %s: not in region %s (directly=%s, io_child=%s, io_self=%s)" % [area.cortical_ID, _representing_region.region_ID, is_directly_in_root, is_io_of_child_region, is_io_of_this_region])
 		return null
 
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
@@ -2405,6 +2406,26 @@ func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, 
 	# print("        ❌ Area %s is NOT I/O of child region '%s'" % [area.cortical_ID, child_region.friendly_name])  # Suppressed - too spammy
 	return false
 
+## Checks if a cortical area is used as input/output by this region.
+## Uses the same chain/partial mapping logic as brain-region plates.
+func _is_area_input_output_of_region(area: AbstractCorticalArea) -> bool:
+	if area == null or _representing_region == null:
+		return false
+
+	for link: ConnectionChainLink in _representing_region.input_open_chain_links:
+		if link.destination == area:
+			return true
+
+	for link: ConnectionChainLink in _representing_region.output_open_chain_links:
+		if link.source == area:
+			return true
+
+	for partial_mapping in _representing_region.partial_mappings:
+		if partial_mapping.internal_target_cortical_area == area:
+			return true
+
+	return false
+
 ## Checks if a cortical area is used as input/output by any child brain regions (using same logic as specific method)
 func _is_area_input_output_of_child_region(area: AbstractCorticalArea) -> bool:
 	# Check all child brain regions to see if this area is their I/O
@@ -2477,7 +2498,8 @@ func _add_missing_cortical_area_visualizations() -> void:
 			continue
 		var is_direct = _representing_region.is_cortical_area_in_region_directly(area)
 		var is_io_child = _is_area_input_output_of_child_region(area)
-		if not is_direct and not is_io_child:
+		var is_io_self = _is_area_input_output_of_region(area)
+		if not is_direct and not is_io_child and not is_io_self:
 			_remove_cortical_area(area)
 
 	# Add areas directly in this region
@@ -2486,6 +2508,29 @@ func _add_missing_cortical_area_visualizations() -> void:
 		if area.cortical_ID not in _cortical_visualizations_by_ID:
 			added_any = true
 		_add_cortical_area(area)
+
+	# Add I/O areas for this region (in case they are not directly contained)
+	for link: ConnectionChainLink in _representing_region.input_open_chain_links:
+		if link.destination is AbstractCorticalArea:
+			var dest_area := link.destination as AbstractCorticalArea
+			if dest_area.cortical_ID not in _cortical_visualizations_by_ID:
+				added_any = true
+			_add_cortical_area(dest_area)
+
+	for link: ConnectionChainLink in _representing_region.output_open_chain_links:
+		if link.source is AbstractCorticalArea:
+			var src_area := link.source as AbstractCorticalArea
+			if src_area.cortical_ID not in _cortical_visualizations_by_ID:
+				added_any = true
+			_add_cortical_area(src_area)
+
+	for partial_mapping in _representing_region.partial_mappings:
+		var area = partial_mapping.internal_target_cortical_area
+		if area is AbstractCorticalArea:
+			var target_area := area as AbstractCorticalArea
+			if target_area.cortical_ID not in _cortical_visualizations_by_ID:
+				added_any = true
+			_add_cortical_area(target_area)
 	
 	# Add I/O areas from child regions that should appear in this region
 	for child_region in _representing_region.contained_regions:
@@ -2516,6 +2561,10 @@ func _create_missing_brain_region_visualizations() -> void:
 		var region = all_regions[region_id]
 		# Skip if visualization already exists
 		if region_id in _brain_region_visualizations_by_ID:
+			continue
+		
+		# Do not create a plate for the region this scene represents.
+		if _representing_region != null and region == _representing_region:
 			continue
 		
 		# CRITICAL: Skip root region - it should NEVER have a plate visualization
