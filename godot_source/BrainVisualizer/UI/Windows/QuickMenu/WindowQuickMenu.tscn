@@ -106,7 +106,7 @@ stretch_mode = 5
 [node name="QuickConnect" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-tooltip_text = "Connect Cortical Area Towards..."
+tooltip_text = "Quick Connect: Mapping two areas together."
 focus_mode = 0
 theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("7_aaec5")
@@ -119,7 +119,7 @@ stretch_mode = 5
 [node name="QuickConnect_CA_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-tooltip_text = "Connect Cortical Area Towards Neurons...."
+tooltip_text = "Map entire cortical area to a specific neuron block."
 focus_mode = 0
 theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("11_yhdx7")
@@ -132,7 +132,7 @@ stretch_mode = 5
 [node name="QuickConnect_N_CA" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-tooltip_text = "Connect Cortical Area Neurons Towards..."
+tooltip_text = "Map specific neuron block to an entire cortical area."
 focus_mode = 0
 theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("15_4liqj")
@@ -145,7 +145,7 @@ stretch_mode = 5
 [node name="QuickConnect_N_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-tooltip_text = "Connect A Cortical Area Neuron Towards Neurons..."
+tooltip_text = "Map a specific neuron block to another."
 focus_mode = 0
 theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("19_hi26y")

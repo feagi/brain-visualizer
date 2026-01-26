@@ -1981,6 +1981,10 @@ func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 	_prompt_confirm_and_apply_resize(candidate_dims)
 
 func _apply_move(new_pos: Vector3i) -> void:
+	var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(_manipulation_area)
+	if unit_members.size() > 1:
+		await _apply_group_move(unit_members, new_pos)
+		return
 	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
 	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
 	if result.has_errored:
@@ -2002,6 +2006,57 @@ func _apply_move(new_pos: Vector3i) -> void:
 	if _manipulation_area != null:
 		_manipulation_area.FEAGI_change_coordinates_3D(new_pos)
 		_manipulation_area.FEAGI_change_dimensions_3D(_manipulation_current_dims)
+	_end_manipulation_session(true)
+
+## Collect all cortical areas that are part of the same unit (subtype + group).
+func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCorticalArea]:
+	if area == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return []
+	if area.cortical_subtype.strip_edges() == "":
+		return []
+	if area.group_id < 0 or area.unit_id < 0:
+		return []
+	var members: Array[AbstractCorticalArea] = []
+	var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
+	for cortical_area in all_areas:
+		if cortical_area.cortical_subtype != area.cortical_subtype:
+			continue
+		if cortical_area.group_id != area.group_id:
+			continue
+		if cortical_area.unit_id < 0:
+			continue
+		members.append(cortical_area)
+	return members
+
+## Apply a move to all subunits in the same unit.
+func _apply_group_move(members: Array[AbstractCorticalArea], new_pos: Vector3i) -> void:
+	if members.is_empty():
+		return
+	var base_pos = _manipulation_area.coordinates_3D
+	var delta = new_pos - base_pos
+	var failed: Array[StringName] = []
+	for area in members:
+		var target_pos = area.coordinates_3D + delta
+		var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(target_pos)}
+		var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(area.cortical_ID, payload)
+		if result.has_errored:
+			failed.append(area.cortical_ID)
+			continue
+		area.FEAGI_change_coordinates_3D(target_pos)
+	if not failed.is_empty():
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Move failed",
+			"Failed to move %d/%d subunits.\n\n%s" % [failed.size(), members.size(), ", ".join(failed)]
+		))
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		var save_details = save_result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Save failed",
+			"Saved positions but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+		))
+		return
 	_end_manipulation_session(true)
 
 func _prompt_confirm_and_apply_resize(new_dims: Vector3i) -> void:

@@ -395,6 +395,16 @@ func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringN
 func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
 	if !send_button.name in _growing_cortical_update:
 		_growing_cortical_update[send_button.name] = {}
+	if key_name == "group_id" and _cortical_area_refs != null and _cortical_area_refs.size() == 1:
+		var current_group_id: int = _cortical_area_refs[0].group_id
+		var new_group_id: int = int(value)
+		if new_group_id == current_group_id:
+			if _growing_cortical_update[send_button.name].has(key_name):
+				_growing_cortical_update[send_button.name].erase(key_name)
+			if _growing_cortical_update[send_button.name].is_empty():
+				_growing_cortical_update.erase(send_button.name)
+				send_button.disabled = true
+			return
 	var original_value = value
 	if value is Vector3i:
 		value = FEAGIUtils.vector3i_to_array(value)

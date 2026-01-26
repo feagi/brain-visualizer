@@ -66,7 +66,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				_btn_relocate_2d.tooltip_text = "Relocate this cortical area (2D)" if is_circuit_builder_context else _btn_relocate_2d.tooltip_text
 			open_3d_tab_button.visible = false  # Hide 3D tab button for cortical areas
 			details_button.tooltip_text = "View Cortical Area Details"
-			quick_connect_button.tooltip_text = "Connect Cortical Area Towards..."
+			quick_connect_button.tooltip_text = "Quick Connet: Map two areas together."
 			move_to_region_button.tooltip_text = "Add to a region..."
 			clone_button.tooltip_text = "Clone Cortical Area..."
 			reset_button.tooltip_text = "Reset this Cortical Area..."
