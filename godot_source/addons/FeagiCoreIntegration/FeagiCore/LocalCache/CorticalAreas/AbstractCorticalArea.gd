@@ -690,6 +690,12 @@ func FEAGI_set_direct_points_bulk_data(x_array: PackedInt32Array, y_array: Packe
 	# Note: We could store these in dedicated variables if needed for caching
 	recieved_new_direct_neural_points_bulk.emit(x_array, y_array, z_array, p_array)
 
+func FEAGI_change_dimensions_3D(new_dim_3D: Vector3i) -> void:
+	"""Update cortical dimensions and keep fast-path cache in sync."""
+	super.FEAGI_change_dimensions_3D(new_dim_3D)
+	# Keep WS Type11 fast-path dimensions current for neuron positioning.
+	_bv_directpoints_dimensions = Vector3(new_dim_3D.x, new_dim_3D.y, new_dim_3D.z)
+
 ## Brain Visualizer: register DirectPoints renderer resources for the desktop WS fast-path.
 ## This enables FEAGIWebSocketAPI to apply neuron visualization directly to GPU instancing (MultiMesh)
 ## without routing through per-area signals and bulk arrays.
