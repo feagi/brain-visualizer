@@ -30,8 +30,8 @@ var _skip_unit_id_confirmation: bool = false
 var _is_isvi_segment: bool = false
 var _isvi_unit_id: int = -1  # Cortical unit index (which unit of this type)
 var _isvi_all_segments: Array[AbstractCorticalArea] = []
-var _isvi_segment_previews: Dictionary = {}  # Maps unit_id to preview object
-var _isvi_original_z_values: Dictionary = {}  # Maps unit_id to original z coordinate (captured at detection)
+var _isvi_segment_previews: Dictionary = {}  # Maps subunit_id to preview object
+var _isvi_original_z_values: Dictionary = {}  # Maps subunit_id to original z coordinate (captured at detection)
 var _isvi_would_overflow: bool = false  # True if current resize would exceed NPU capacity
 
 
@@ -395,10 +395,10 @@ func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringN
 func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringName) -> void:
 	if !send_button.name in _growing_cortical_update:
 		_growing_cortical_update[send_button.name] = {}
-	if key_name == "group_id" and _cortical_area_refs != null and _cortical_area_refs.size() == 1:
-		var current_group_id: int = _cortical_area_refs[0].group_id
-		var new_group_id: int = int(value)
-		if new_group_id == current_group_id:
+	if key_name == "unit_id" and _cortical_area_refs != null and _cortical_area_refs.size() == 1:
+		var current_unit_id: int = _cortical_area_refs[0].unit_id
+		var new_unit_id: int = int(value)
+		if new_unit_id == current_unit_id:
 			if _growing_cortical_update[send_button.name].has(key_name):
 				_growing_cortical_update[send_button.name].erase(key_name)
 			if _growing_cortical_update[send_button.name].is_empty():
@@ -505,9 +505,9 @@ func _send_update(send_button: Button) -> void:
 				var cortical_id = _cortical_area_refs[0].cortical_ID
 				var remaining_update_data = update_data.duplicate(true)
 				var group_update_data: Dictionary = {}
-				if update_data.has("group_id"):
-					group_update_data["group_id"] = update_data["group_id"]
-					remaining_update_data.erase("group_id")
+				if update_data.has("unit_id"):
+					group_update_data["unit_id"] = update_data["unit_id"]
+					remaining_update_data.erase("unit_id")
 				if not group_update_data.is_empty():
 					var group_success = await _send_unit_group_update(send_button, group_update_data)
 					if not group_success:
@@ -564,7 +564,7 @@ func _should_confirm_unit_id_update(update_data: Dictionary) -> bool:
 		return false
 	if not _are_all_io_areas():
 		return false
-	if not update_data.has("group_id"):
+	if not update_data.has("unit_id"):
 		return false
 	return true
 
@@ -579,8 +579,8 @@ func _show_unit_id_update_confirmation(update_data: Dictionary, send_button: But
 	var unit_name = String(area.friendly_name)
 	if unit_name.strip_edges() == "":
 		unit_name = String(area.cortical_ID)
-	var current_value = str(area.group_id)
-	var new_value = str(int(update_data.get("group_id", area.group_id)))
+	var current_value = str(area.unit_id)
+	var new_value = str(int(update_data.get("unit_id", area.unit_id)))
 	var message = "You are about to change the Unit Index of %s from %s to %s.\nBe aware that changing the Unit ID of a subunit will require the change of all subunits.\n\nHere is the list of all impacted subunits:\n%s" % [unit_name, current_value, new_value, members_text]
 	var confirm_action: Callable = _confirm_unit_id_update.bind(send_button)
 	var popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
@@ -619,22 +619,22 @@ func _send_unit_group_update(send_button: Button, update_data: Dictionary) -> bo
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
 		return false
 	print("✅ UI: Successfully updated unit group")
-	if update_data.has("group_id"):
-		await _refresh_unit_group_after_unit_index_update(area, update_data["group_id"])
+	if update_data.has("unit_id"):
+		await _refresh_unit_group_after_unit_id_update(area, update_data["unit_id"])
 	_refresh_all_relevant()
 	return true
 
-func _refresh_unit_group_after_unit_index_update(area: AbstractCorticalArea, new_group_id_value: Variant) -> void:
+func _refresh_unit_group_after_unit_id_update(area: AbstractCorticalArea, new_unit_id_value: Variant) -> void:
 	if FeagiCore == null or FeagiCore.requests == null or FeagiCore.feagi_local_cache == null:
 		return
-	var new_group_id = int(new_group_id_value)
+	var new_unit_id = int(new_unit_id_value)
 	var members = _get_unit_group_members(area)
 	if members.is_empty():
 		return
 	var updated_areas: Array[AbstractCorticalArea] = []
-	var selected_subunit_id = area.unit_id
+	var selected_subunit_id = area.subunit_id
 	for member in members:
-		var new_id = _compute_unit_index_cortical_id(member.cortical_ID, new_group_id)
+		var new_id = _compute_unit_index_cortical_id(member.cortical_ID, new_unit_id)
 		if new_id == "":
 			continue
 		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(member.cortical_ID, new_id)
@@ -648,13 +648,13 @@ func _refresh_unit_group_after_unit_index_update(area: AbstractCorticalArea, new
 		FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications = previous_suppress_state
 		var selected_area = null
 		for updated in updated_areas:
-			if updated.unit_id == selected_subunit_id:
+			if updated.subunit_id == selected_subunit_id:
 				selected_area = updated
 				break
 		if selected_area != null:
 			_cortical_area_refs = [selected_area]
 
-func _compute_unit_index_cortical_id(cortical_id: StringName, new_group_id: int) -> StringName:
+func _compute_unit_index_cortical_id(cortical_id: StringName, new_unit_id: int) -> StringName:
 	if not ClassDB.class_exists("FeagiDataDeserializer"):
 		push_error("AdvancedCorticalProperties: FeagiDataDeserializer not available for unit ID computation")
 		return ""
@@ -662,7 +662,7 @@ func _compute_unit_index_cortical_id(cortical_id: StringName, new_group_id: int)
 	if resolver == null or not resolver.has_method("compute_io_cortical_id_with_unit_index"):
 		push_error("AdvancedCorticalProperties: compute_io_cortical_id_with_unit_index not available")
 		return ""
-	var result: Dictionary = resolver.call("compute_io_cortical_id_with_unit_index", cortical_id, new_group_id)
+	var result: Dictionary = resolver.call("compute_io_cortical_id_with_unit_index", cortical_id, new_unit_id)
 	if not result.get("success", false):
 		push_error("AdvancedCorticalProperties: Failed to compute unit index cortical ID: %s" % result.get("error", "unknown"))
 		return ""
@@ -675,7 +675,7 @@ func _get_unit_group_member_names(area: AbstractCorticalArea) -> Array[String]:
 		var display_name = String(cortical_area.friendly_name)
 		if display_name.strip_edges() == "":
 			display_name = String(cortical_area.cortical_ID)
-		names.append("%s (subunit %d)" % [display_name, cortical_area.unit_id])
+		names.append("%s (subunit %d)" % [display_name, cortical_area.subunit_id])
 	names.sort()
 	return names
 
@@ -687,7 +687,7 @@ func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCortic
 	for cortical_area in all_areas:
 		if cortical_area.cortical_type != area.cortical_type:
 			continue
-		if cortical_area.group_id != area.group_id:
+		if cortical_area.unit_id != area.unit_id:
 			continue
 		members.append(cortical_area)
 	return members
@@ -1078,9 +1078,9 @@ func _init_summary() -> void:
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
 		if _vector_visualization_voxel_granularity != null:
 			_connect_control_to_update_button(_vector_visualization_voxel_granularity, "visualization_voxel_granularity", _button_summary_send)
-		if is_all_io and _line_unit_id != null:
-			_line_unit_id.editable = true
-			_connect_control_to_update_button(_line_unit_id, "group_id", _button_summary_send)
+	if is_all_io and _line_unit_id != null:
+		_line_unit_id.editable = true
+		_connect_control_to_update_button(_line_unit_id, "unit_id", _button_summary_send)
 		_vector_position.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		_vector_dimensions_spin.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		
@@ -1190,10 +1190,10 @@ func _refresh_from_cache_summary() -> void:
 				_line_unit_code.text = "-"
 		if _line_unit_id != null:
 			if is_all_io:
-				_line_unit_id.value = _cortical_area_refs[0].group_id
+				_line_unit_id.value = _cortical_area_refs[0].unit_id
 		if _line_subunit_id != null:
 			if is_all_io:
-				_line_subunit_id.text = str(_cortical_area_refs[0].unit_id)
+				_line_subunit_id.text = str(_cortical_area_refs[0].subunit_id)
 		_vector_position.current_vector = _cortical_area_refs[0].coordinates_3D
 		_vector_dimensions_spin.current_vector = _cortical_area_refs[0].dimensions_3D
 		# Set visualization_voxel_granularity directly like position and dimensions
@@ -1715,7 +1715,6 @@ func _detect_and_setup_isvi_segment() -> void:
 		return
 	
 	_is_isvi_segment = true
-	_isvi_unit_id = area.group_id  # group_id property stores unit index
 	_isvi_unit_id = area.unit_id
 	
 	# Find all 9 segments in this group
@@ -1726,15 +1725,15 @@ func _detect_and_setup_isvi_segment() -> void:
 	for cortical_area in all_cortical_areas:
 		if cortical_area.cortical_subtype == "isvi":
 			isvi_count += 1
-			if cortical_area.group_id == _isvi_unit_id:  # group_id property stores unit index
+			if cortical_area.unit_id == _isvi_unit_id:
 				_isvi_all_segments.append(cortical_area)
 				# Capture original z value for this segment
-				_isvi_original_z_values[cortical_area.unit_id] = cortical_area.coordinates_3D.z
+				_isvi_original_z_values[cortical_area.subunit_id] = cortical_area.coordinates_3D.z
 	
-	print("UI: isvi segment detected - Subunit ", _isvi_unit_id, " in Unit ", area.group_id, " (", len(_isvi_all_segments), " total segments)")
+	print("UI: isvi segment detected - Subunit ", area.subunit_id, " in Unit ", area.unit_id, " (", len(_isvi_all_segments), " total segments)")
 
 ## Calculate layout positions (x, y only) for all segments in an isvi group
-## Returns Dictionary of unit_id -> Vector2i (x, y position)
+## Returns Dictionary of subunit_id -> Vector2i (x, y position)
 ## Note: Z coordinates are NOT calculated - caller must preserve original z values
 func _calculate_isvi_layout(center_pos: Vector3i, center_dims: Vector3i, peripheral_dims: Vector3i) -> Dictionary:
 	var layout = {}
@@ -1742,7 +1741,7 @@ func _calculate_isvi_layout(center_pos: Vector3i, center_dims: Vector3i, periphe
 	# Gap = max of peripheral width/height
 	var gap = maxi(peripheral_dims.x, peripheral_dims.y)
 	
-	# Center (unit_id=4) stays at its position (x, y only)
+	# Center (subunit_id=4) stays at its position (x, y only)
 	layout[4] = Vector2i(center_pos.x, center_pos.y)
 	
 	# Unit ID layout:
@@ -1790,9 +1789,9 @@ func _check_isvi_resize_capacity(center_dims: Vector3i, peripheral_dims: Vector3
 	var center_segment: AbstractCorticalArea = null
 	var peripheral_segment: AbstractCorticalArea = null
 	for segment in _isvi_all_segments:
-		if segment.unit_id == 4:
+		if segment.subunit_id == 4:
 			center_segment = segment
-		elif segment.unit_id == 0:
+		elif segment.subunit_id == 0:
 			peripheral_segment = segment
 	
 	if not center_segment or not peripheral_segment:
@@ -1845,11 +1844,11 @@ func _init_isvi_previews() -> void:
 		new_preview.connect_UI_signals([], [], closes_only)
 		
 		# Store this preview
-		_isvi_segment_previews[segment.unit_id] = new_preview
+		_isvi_segment_previews[segment.subunit_id] = new_preview
 		
 		# Cleanup when it's destroyed
-		var unit_id_copy = segment.unit_id  # Capture for closure
-		new_preview.tree_exiting.connect(func(): _isvi_segment_previews.erase(unit_id_copy))
+		var subunit_id_copy = segment.subunit_id  # Capture for closure
+		new_preview.tree_exiting.connect(func(): _isvi_segment_previews.erase(subunit_id_copy))
 
 ## Triggered when dimensions or position change for an isvi segment
 func _on_isvi_layout_changed() -> void:
@@ -1870,9 +1869,9 @@ func _on_isvi_layout_changed() -> void:
 	var peripheral_segment: AbstractCorticalArea = null
 	
 	for segment in _isvi_all_segments:
-		if segment.unit_id == 4:
+		if segment.subunit_id == 4:
 			center_segment = segment
-		elif segment.unit_id == 0:
+		elif segment.subunit_id == 0:
 			peripheral_segment = segment
 	
 	if not center_segment or not peripheral_segment:
@@ -1883,7 +1882,7 @@ func _on_isvi_layout_changed() -> void:
 	var center_dims: Vector3i
 	var peripheral_dims: Vector3i
 	
-	if edited_segment.unit_id == 4:
+	if edited_segment.subunit_id == 4:
 		# Editing center segment
 		center_dims = _vector_dimensions_spin.current_vector
 		peripheral_dims = peripheral_segment.dimensions_3D
@@ -1894,7 +1893,7 @@ func _on_isvi_layout_changed() -> void:
 	
 	# Check if dimensions changed (for layout recalculation)
 	var dims_changed = false
-	if edited_segment.unit_id == 4:
+	if edited_segment.subunit_id == 4:
 		dims_changed = (center_dims != center_segment.dimensions_3D)
 	else:
 		dims_changed = (peripheral_dims != peripheral_segment.dimensions_3D)
@@ -1903,7 +1902,7 @@ func _on_isvi_layout_changed() -> void:
 	if dims_changed:
 		# Refresh health data before capacity check to ensure accuracy
 		await FeagiCore.requests.single_health_check_call(true)
-		_isvi_would_overflow = _check_isvi_resize_capacity(center_dims, peripheral_dims, edited_segment.unit_id == 4)
+		_isvi_would_overflow = _check_isvi_resize_capacity(center_dims, peripheral_dims, edited_segment.subunit_id == 4)
 	else:
 		_isvi_would_overflow = false  # Movement doesn't change neuron count
 	
@@ -1911,26 +1910,26 @@ func _on_isvi_layout_changed() -> void:
 	
 	if dims_changed:
 		# Dimensions changed - recalculate layout based on new center position
-		new_layout = _calculate_isvi_layout(new_pos if edited_segment.unit_id == 4 else center_segment.coordinates_3D, center_dims, peripheral_dims)
+		new_layout = _calculate_isvi_layout(new_pos if edited_segment.subunit_id == 4 else center_segment.coordinates_3D, center_dims, peripheral_dims)
 	else:
 		# Only position changed - apply delta to all segments
 		new_layout = {}
 		for segment in _isvi_all_segments:
-			new_layout[segment.unit_id] = segment.coordinates_3D + position_delta
+			new_layout[segment.subunit_id] = segment.coordinates_3D + position_delta
 	
 	# Update positions for all segments (add to pending updates)
 	for segment in _isvi_all_segments:
-		if segment.unit_id in new_layout:
+		if segment.subunit_id in new_layout:
 			var pos_dict: Dictionary
 			
 			if dims_changed:
 				# Dimensions changed (resizing) - layout returns Vector2i, preserve ORIGINAL z
-				var xy_pos: Vector2i = new_layout[segment.unit_id]
-				var original_z = _isvi_original_z_values.get(segment.unit_id, segment.coordinates_3D.z)
+				var xy_pos: Vector2i = new_layout[segment.subunit_id]
+				var original_z = _isvi_original_z_values.get(segment.subunit_id, segment.coordinates_3D.z)
 				pos_dict = {"x": xy_pos.x, "y": xy_pos.y, "z": original_z}
 			else:
 				# Only position changed (movement) - layout returns Vector3i with delta applied
-				var xyz_pos: Vector3i = new_layout[segment.unit_id]
+				var xyz_pos: Vector3i = new_layout[segment.subunit_id]
 				pos_dict = {"x": xyz_pos.x, "y": xyz_pos.y, "z": xyz_pos.z}
 			
 			# Add to update dict for this specific cortical area
@@ -1939,9 +1938,9 @@ func _on_isvi_layout_changed() -> void:
 			_growing_cortical_update[segment.cortical_ID]["coordinates_3d"] = pos_dict
 	
 	# Also update dimension for all peripherals ONLY IF dimensions actually changed
-	if _cortical_area_refs[0].unit_id != 4 and dims_changed:
+	if _cortical_area_refs[0].subunit_id != 4 and dims_changed:
 		for segment in _isvi_all_segments:
-			if segment.unit_id != 4:  # All peripherals
+			if segment.subunit_id != 4:  # All peripherals
 				if not (segment.cortical_ID in _growing_cortical_update):
 					_growing_cortical_update[segment.cortical_ID] = {}
 				_growing_cortical_update[segment.cortical_ID]["cortical_dimensions"] = {
@@ -1973,20 +1972,20 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 		return
 	
 	# Update main preview for the segment being edited
-	if _cortical_area_refs[0].unit_id in layout:
+	if _cortical_area_refs[0].subunit_id in layout:
 		var preview_pos: Vector3i
 		
 		if is_resize:
 			# Resizing - layout returns Vector2i (x, y), add ORIGINAL z
-			var xy_pos: Vector2i = layout[_cortical_area_refs[0].unit_id]
-			var original_z = _isvi_original_z_values.get(_cortical_area_refs[0].unit_id, _cortical_area_refs[0].coordinates_3D.z)
+			var xy_pos: Vector2i = layout[_cortical_area_refs[0].subunit_id]
+			var original_z = _isvi_original_z_values.get(_cortical_area_refs[0].subunit_id, _cortical_area_refs[0].coordinates_3D.z)
 			preview_pos = Vector3i(xy_pos.x, xy_pos.y, original_z)
 		else:
 			# Movement - layout returns Vector3i with delta applied
-			preview_pos = layout[_cortical_area_refs[0].unit_id]
+			preview_pos = layout[_cortical_area_refs[0].subunit_id]
 		
 		_preview.set_new_position(preview_pos)
-		if _cortical_area_refs[0].unit_id == 4:
+		if _cortical_area_refs[0].subunit_id == 4:
 			_preview.set_new_dimensions(center_dims)
 		else:
 			_preview.set_new_dimensions(peripheral_dims)
@@ -2002,33 +2001,33 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 		if segment.cortical_ID == _cortical_area_refs[0].cortical_ID:
 			continue
 		
-		if segment.unit_id not in layout:
+		if segment.subunit_id not in layout:
 			continue
 		
 		var segment_pos_final: Vector3i
 		
 		if is_resize:
 			# Resizing - layout returns Vector2i (x, y), add ORIGINAL z
-			var xy_pos: Vector2i = layout[segment.unit_id]
-			var original_z = _isvi_original_z_values.get(segment.unit_id, segment.coordinates_3D.z)
+			var xy_pos: Vector2i = layout[segment.subunit_id]
+			var original_z = _isvi_original_z_values.get(segment.subunit_id, segment.coordinates_3D.z)
 			segment_pos_final = Vector3i(xy_pos.x, xy_pos.y, original_z)
 		else:
 			# Movement - layout returns Vector3i with delta applied
-			segment_pos_final = layout[segment.unit_id]
+			segment_pos_final = layout[segment.subunit_id]
 		
-		var segment_dims = center_dims if segment.unit_id == 4 else peripheral_dims
+		var segment_dims = center_dims if segment.subunit_id == 4 else peripheral_dims
 		
 		
 		# Check if we already have a preview for this segment
-		if segment.unit_id in _isvi_segment_previews:
-			var existing_preview = _isvi_segment_previews[segment.unit_id]
+		if segment.subunit_id in _isvi_segment_previews:
+			var existing_preview = _isvi_segment_previews[segment.subunit_id]
 			if existing_preview != null:
 				existing_preview.set_new_position(segment_pos_final)
 				existing_preview.set_new_dimensions(segment_dims)
 				existing_preview.set_warning_state(_isvi_would_overflow)
 			else:
 				# Preview was deleted, remove from dict
-				_isvi_segment_previews.erase(segment.unit_id)
+				_isvi_segment_previews.erase(segment.subunit_id)
 		else:
 			# Create new preview for this segment
 			var cortical_type = segment.cortical_type
@@ -2039,10 +2038,10 @@ func _update_isvi_visual_previews(layout: Dictionary, center_dims: Vector3i, per
 			new_preview.set_warning_state(_isvi_would_overflow)
 			
 			# Store this preview
-			_isvi_segment_previews[segment.unit_id] = new_preview
+			_isvi_segment_previews[segment.subunit_id] = new_preview
 			
 			# Cleanup when it's destroyed
-			var unit_id_copy = segment.unit_id  # Capture for closure
-			new_preview.tree_exiting.connect(func(): _isvi_segment_previews.erase(unit_id_copy))
+			var subunit_id_copy = segment.subunit_id  # Capture for closure
+			new_preview.tree_exiting.connect(func(): _isvi_segment_previews.erase(subunit_id_copy))
 
 #endregion

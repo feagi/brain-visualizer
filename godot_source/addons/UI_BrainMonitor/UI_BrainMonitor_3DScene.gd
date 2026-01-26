@@ -26,6 +26,9 @@ var _manipulation_start_dims: Vector3i = Vector3i.ZERO
 var _manipulation_start_param: float = 0.0
 var _manipulation_current_pos: Vector3i = Vector3i.ZERO
 var _manipulation_current_dims: Vector3i = Vector3i.ZERO
+var _manipulation_group_anchor_pos: Vector3i = Vector3i.ZERO
+var _manipulation_group_start_positions: Dictionary = {}  # AbstractCorticalArea -> Vector3i
+var _manipulation_group_previews: Dictionary = {}  # AbstractCorticalArea -> UI_BrainMonitor_InteractivePreview
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -1735,6 +1738,9 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 	_manipulation_dragging = false
 	_manipulation_axis = -1
 	_manipulation_start_param = 0.0
+	_manipulation_group_anchor_pos = _manipulation_start_pos
+	_manipulation_group_start_positions.clear()
+	_clear_manipulation_group_previews()
 
 	_manipulation_preview = create_preview(
 		area.coordinates_3D,
@@ -1761,6 +1767,7 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 	# Keep gizmo pinned as preview moves/resizes.
 	_manipulation_preview.user_moved_preview.connect(func(p: Vector3i):
 		_manipulation_current_pos = p
+		_update_manipulation_group_previews(p)
 		_update_manipulation_gizmo_transform()
 	)
 	_manipulation_preview.user_resized_preview.connect(func(d: Vector3i):
@@ -1768,6 +1775,8 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		_update_manipulation_capacity_warning()
 		_update_manipulation_gizmo_transform()
 	)
+	if mode == MANIPULATION_MODE.MOVE:
+		_setup_manipulation_group_previews(area)
 
 func _end_manipulation_session(clear_nodes: bool) -> void:
 	_manipulation_dragging = false
@@ -1775,6 +1784,7 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 	_manipulation_active = false
 	_manipulation_mode = MANIPULATION_MODE.MOVE
 	_manipulation_area = null
+	_clear_manipulation_group_previews()
 	# Safety: ensure camera pan is restored if session ends while dragging.
 	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
 		_pancake_cam.call("set_tank_pan_enabled", true)
@@ -1787,6 +1797,44 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 		_UI_layer_for_BM.clear_manipulation_position()
 	_manipulation_preview = null
 	_manipulation_gizmo = null
+	_manipulation_group_start_positions.clear()
+	_manipulation_group_anchor_pos = Vector3i.ZERO
+
+func _setup_manipulation_group_previews(area: AbstractCorticalArea) -> void:
+	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
+	if members.size() <= 1:
+		return
+	for member in members:
+		if member == area:
+			continue
+		_manipulation_group_start_positions[member] = member.coordinates_3D
+		var preview: UI_BrainMonitor_InteractivePreview = create_preview(
+			member.coordinates_3D,
+			member.dimensions_3D,
+			false,
+			member.cortical_type,
+			member,
+			false,
+			false
+		)
+		_manipulation_group_previews[member] = preview
+
+func _update_manipulation_group_previews(current_pos: Vector3i) -> void:
+	if _manipulation_group_previews.is_empty():
+		return
+	var delta = current_pos - _manipulation_group_anchor_pos
+	for member in _manipulation_group_previews.keys():
+		var preview: UI_BrainMonitor_InteractivePreview = _manipulation_group_previews[member]
+		if preview == null or not is_instance_valid(preview):
+			continue
+		var start_pos: Vector3i = _manipulation_group_start_positions.get(member, member.coordinates_3D)
+		preview.set_new_position(start_pos + delta)
+
+func _clear_manipulation_group_previews() -> void:
+	for preview in _manipulation_group_previews.values():
+		if preview != null and is_instance_valid(preview):
+			preview.queue_free()
+	_manipulation_group_previews.clear()
 
 func _get_preview_static_body(preview: UI_BrainMonitor_InteractivePreview) -> StaticBody3D:
 	if preview == null:
@@ -2012,18 +2060,50 @@ func _apply_move(new_pos: Vector3i) -> void:
 func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCorticalArea]:
 	if area == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
 		return []
-	if area.cortical_subtype.strip_edges() == "":
+	area.ensure_unit_subunit_ids_from_cortical_id()
+	if area.unit_id < 0 or area.subunit_id < 0:
 		return []
-	if area.group_id < 0 or area.unit_id < 0:
-		return []
+	var subtype_key := area.cortical_subtype.strip_edges()
+	var use_subtype := subtype_key != ""
+	var coding_signature := ""
+	if not use_subtype:
+		coding_signature = "%s|%s|%s|%s|%s" % [
+			String(area.encoding_type),
+			String(area.encoding_format),
+			String(area.coding_signage),
+			String(area.coding_behavior),
+			String(area.coding_type)
+		]
+	print("BV: Unit grouping source=%s unit_id=%d subunit_id=%d subtype='%s' signature='%s' type=%s" % [
+		area.cortical_ID,
+		area.unit_id,
+		area.subunit_id,
+		subtype_key,
+		coding_signature,
+		AbstractCorticalArea.cortical_type_to_str(area.cortical_type)
+	])
 	var members: Array[AbstractCorticalArea] = []
 	var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
 	for cortical_area in all_areas:
-		if cortical_area.cortical_subtype != area.cortical_subtype:
+		cortical_area.ensure_unit_subunit_ids_from_cortical_id()
+		if use_subtype:
+			if cortical_area.cortical_subtype != area.cortical_subtype:
+				continue
+		else:
+			if cortical_area.cortical_type != area.cortical_type:
+				continue
+			var other_signature := "%s|%s|%s|%s|%s" % [
+				String(cortical_area.encoding_type),
+				String(cortical_area.encoding_format),
+				String(cortical_area.coding_signage),
+				String(cortical_area.coding_behavior),
+				String(cortical_area.coding_type)
+			]
+			if other_signature != coding_signature:
+				continue
+		if cortical_area.unit_id != area.unit_id:
 			continue
-		if cortical_area.group_id != area.group_id:
-			continue
-		if cortical_area.unit_id < 0:
+		if cortical_area.subunit_id < 0:
 			continue
 		members.append(cortical_area)
 	return members

@@ -76,14 +76,14 @@ var encoding_type: String:
 var encoding_format: String:
 	get: return _encoding_format
 
-## Cortical subunit index (which area within a cortical unit, e.g., segment 0-4 for isvi)
+## Cortical unit index (which unit of this type)
+## This identifies which instance of a cortical unit type (e.g., unit 0, unit 1, etc.)
 var unit_id: int:
 	get: return _unit_id
 
-## Cortical unit index (which unit of this type, encoded in byte 7 of cortical ID)
-## This identifies which instance of a cortical unit type (e.g., unit 0, unit 1, etc.)
-var group_id: int:
-	get: return _group_id
+## Cortical subunit index (which area within a cortical unit, e.g., segment 0-4 for isvi)
+var subunit_id: int:
+	get: return _subunit_id
 
 ## IO coding signage (e.g., "Percentage Signed", "Percentage Unsigned")
 var coding_signage: String:
@@ -196,7 +196,7 @@ var _cortical_subtype: String = ""
 var _encoding_type: String = ""
 var _encoding_format: String = ""
 var _unit_id: int = -1
-var _group_id: int = -1
+var _subunit_id: int = -1
 var _coding_signage: String = ""
 var _coding_behavior: String = ""
 var _coding_type: String = ""
@@ -556,10 +556,14 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		if value != null:
 			_unit_id = int(value)
 	
-	if "group_id" in data.keys():
-		var value = data["group_id"]
+	if "subunit_id" in data.keys():
+		var value = data["subunit_id"]
 		if value != null:
-			_group_id = int(value)
+			_subunit_id = int(value)
+	
+	# Ensure IO unit/subunit IDs are available even if omitted by API.
+	# This derives values deterministically from cortical_id bytes (no defaults/fallbacks).
+	ensure_unit_subunit_ids_from_cortical_id()
 
 	if "coding_signage" in data.keys():
 		var value = data["coding_signage"]
@@ -758,6 +762,27 @@ func return_property_by_name_and_section(composition_section_name: StringName, p
 		else:
 			# Try get() for other properties
 			return get(property_name)
+
+## Ensures unit_id and subunit_id are derived from cortical_id when missing.
+## Uses byte layout: subunit_id = byte[6], unit_id = byte[7].
+func ensure_unit_subunit_ids_from_cortical_id() -> void:
+	if _unit_id >= 0 and _subunit_id >= 0:
+		return
+	if cortical_type not in [CORTICAL_AREA_TYPE.IPU, CORTICAL_AREA_TYPE.OPU]:
+		return
+	var raw_id: PackedByteArray = Marshalls.base64_to_raw(String(cortical_ID))
+	if raw_id.size() != 8:
+		return
+	if _cortical_subtype.strip_edges() == "":
+		var subtype_bytes: PackedByteArray = raw_id.slice(0, 4)
+		var subtype_raw: String = subtype_bytes.get_string_from_ascii()
+		subtype_raw = subtype_raw.replace("\u0000", "").strip_edges()
+		if subtype_raw != "":
+			_cortical_subtype = subtype_raw
+	if _subunit_id < 0:
+		_subunit_id = int(raw_id[6])
+	if _unit_id < 0:
+		_unit_id = int(raw_id[7])
 
 # The following functions are often overridden in child classes
 func _get_group() -> CORTICAL_AREA_TYPE:
