@@ -1772,10 +1772,13 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 	)
 	_manipulation_preview.user_resized_preview.connect(func(d: Vector3i):
 		_manipulation_current_dims = d
+		_update_manipulation_group_resize_previews(d)
 		_update_manipulation_capacity_warning()
 		_update_manipulation_gizmo_transform()
 	)
 	if mode == MANIPULATION_MODE.MOVE:
+		_setup_manipulation_group_previews(area)
+	elif mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area):
 		_setup_manipulation_group_previews(area)
 
 func _end_manipulation_session(clear_nodes: bool) -> void:
@@ -1804,9 +1807,14 @@ func _setup_manipulation_group_previews(area: AbstractCorticalArea) -> void:
 	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
 	if members.size() <= 1:
 		return
+	var is_peripheral_resize := _manipulation_mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area)
 	for member in members:
 		if member == area:
 			continue
+		if is_peripheral_resize:
+			member.ensure_unit_subunit_ids_from_cortical_id()
+			if member.subunit_id == 4:
+				continue
 		_manipulation_group_start_positions[member] = member.coordinates_3D
 		var preview: UI_BrainMonitor_InteractivePreview = create_preview(
 			member.coordinates_3D,
@@ -1829,6 +1837,17 @@ func _update_manipulation_group_previews(current_pos: Vector3i) -> void:
 			continue
 		var start_pos: Vector3i = _manipulation_group_start_positions.get(member, member.coordinates_3D)
 		preview.set_new_position(start_pos + delta)
+
+## Updates group previews during resize (peripheral ISVI).
+func _update_manipulation_group_resize_previews(new_dims: Vector3i) -> void:
+	if _manipulation_group_previews.is_empty():
+		return
+	if _manipulation_mode != MANIPULATION_MODE.RESIZE:
+		return
+	for preview in _manipulation_group_previews.values():
+		if preview == null or not is_instance_valid(preview):
+			continue
+		preview.set_new_dimensions(new_dims)
 
 func _clear_manipulation_group_previews() -> void:
 	for preview in _manipulation_group_previews.values():
@@ -2161,7 +2180,12 @@ func _prompt_confirm_and_apply_resize(new_dims: Vector3i) -> void:
 	if resize_plan.is_empty():
 		return
 	var msg := "Save new size for '%s'?\n\nFrom: %s\nTo:   %s" % [str(_manipulation_area.friendly_name), str(_manipulation_start_dims), str(new_dims)]
+	if _manipulation_area != null and _is_isvi_peripheral(_manipulation_area):
+		msg += "\n\nThis will resize all peripheral vision subunits (excluding the center)."
 	var accept := func() -> void:
+		if _manipulation_area != null and _is_isvi_peripheral(_manipulation_area):
+			await _apply_isvi_peripheral_resize(_manipulation_area, new_dims)
+			return
 		var payload: Dictionary = resize_plan["payload"]
 		var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
 		if result.has_errored:
@@ -2220,7 +2244,8 @@ func _is_isvi_peripheral(area: AbstractCorticalArea) -> bool:
 	if area == null:
 		return false
 	area.ensure_unit_subunit_ids_from_cortical_id()
-	if area.cortical_subtype.strip_edges() != "isvi":
+	var subtype := area.cortical_subtype.replace("\u0000", "").strip_edges()
+	if subtype != "isvi":
 		return false
 	return area.subunit_id in [0, 1, 2, 3, 5, 6, 7, 8]
 
