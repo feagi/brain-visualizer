@@ -2106,6 +2106,23 @@ func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCortic
 		if cortical_area.subunit_id < 0:
 			continue
 		members.append(cortical_area)
+	if members.size() <= 1 and area.cortical_type in [
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU,
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+	]:
+		# Fallback: group by unit_id + cortical_type when subtype/coding is missing.
+		var loose_members: Array[AbstractCorticalArea] = []
+		for cortical_area in all_areas:
+			cortical_area.ensure_unit_subunit_ids_from_cortical_id()
+			if cortical_area.cortical_type != area.cortical_type:
+				continue
+			if cortical_area.unit_id != area.unit_id:
+				continue
+			if cortical_area.subunit_id < 0:
+				continue
+			loose_members.append(cortical_area)
+		if loose_members.size() > members.size():
+			members = loose_members
 	return members
 
 ## Apply a move to all subunits in the same unit.
@@ -2258,13 +2275,16 @@ func _build_resize_plan(area: AbstractCorticalArea, new_dims: Vector3i) -> Dicti
 				"Device count is not available for I/O cortical area '%s'." % str(area.friendly_name)
 			))
 			return {}
-		if new_dims.x % device_count != 0:
+		if new_dims.z % device_count != 0:
 			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
 				"Resize blocked",
-				"Width must be a multiple of device count (%d)." % device_count
+				"Depth must be a multiple of device count (%d) for '%s'." % [
+					device_count,
+					str(area.friendly_name)
+				]
 			))
 			return {}
-		var per_device_dims = Vector3i(int(new_dims.x / device_count), new_dims.y, new_dims.z)
+		var per_device_dims = Vector3i(new_dims.x, new_dims.y, int(new_dims.z / device_count))
 		return {
 			"payload": {"cortical_dimensions_per_device": FEAGIUtils.vector3i_to_array(per_device_dims)},
 			"per_device_dims": per_device_dims,
@@ -2314,11 +2334,11 @@ func _resolve_device_count_for_resize(area: AbstractCorticalArea, new_dims: Vect
 		per_device_dims = (area as OPUCorticalArea).cortical_dimensions_per_device
 	if device_count > 0:
 		return device_count
-	if per_device_dims.x > 0 and new_dims.x > 0 and new_dims.x % per_device_dims.x == 0:
-		return int(new_dims.x / per_device_dims.x)
+	if per_device_dims.z > 0 and new_dims.z > 0 and new_dims.z % per_device_dims.z == 0:
+		return int(new_dims.z / per_device_dims.z)
 	var current_dims: Vector3i = area.dimensions_3D
-	if per_device_dims.x > 0 and current_dims.x > 0 and current_dims.x % per_device_dims.x == 0:
-		return int(current_dims.x / per_device_dims.x)
+	if per_device_dims.z > 0 and current_dims.z > 0 and current_dims.z % per_device_dims.z == 0:
+		return int(current_dims.z / per_device_dims.z)
 	return -1
 
 func _would_overflow_capacity(candidate_dims: Vector3i) -> bool:
