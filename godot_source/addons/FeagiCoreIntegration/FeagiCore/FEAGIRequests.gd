@@ -1158,19 +1158,9 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 		var area_data_raw: Dictionary = responses_dict[cortical_id]
 		# Log visualization_voxel_granularity if present (suppressed)
 		
-		# Handle both response formats:
-		# - { "cortical_id": { ...properties... } }
-		# - { "cortical_id": { "properties": { ...properties... } } }
-		var area_data: Dictionary = area_data_raw
-		if "properties" in area_data_raw and area_data_raw["properties"] is Dictionary:
-			# Merge top-level fields with properties (top-level takes precedence for fields like visualization_voxel_granularity)
-			area_data = area_data_raw["properties"].duplicate()
-			# Copy top-level fields - top-level takes precedence (overwrites properties version)
-			for key in area_data_raw.keys():
-				if key != "properties":
-					area_data[key] = area_data_raw[key]  # Top-level always wins
-					if key == "visualization_voxel_granularity":
-						pass
+		# Only use top-level response fields; legacy properties are ignored.
+		var area_data: Dictionary = area_data_raw.duplicate()
+		area_data.erase("properties")
 		# Ensure cortical_id is in the dict (some responses omit it).
 		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:
