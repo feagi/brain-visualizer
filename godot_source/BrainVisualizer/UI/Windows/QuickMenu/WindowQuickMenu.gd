@@ -2,7 +2,7 @@ extends BaseDraggableWindow
 class_name QuickCorticalMenu
 
 const WINDOW_NAME: StringName = "quick_menu"
-const CENTER_OFFSET: Vector2 = Vector2(0, 100)
+const SPAWN_DISTANCE_PX: float = 50.0
 var _mode: GenomeObject.ARRAY_MAKEUP
 var _selection: Array[GenomeObject]
 var _selection_context: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.UNKNOWN
@@ -42,9 +42,15 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 		close_window()
 		return
 	focus_exited.connect(_on_focus_lost)
-	var position_to_spawn: Vector2i = get_viewport().get_mouse_position() - (size / 2.0) - (CENTER_OFFSET * BV.UI.loaded_theme_scale.x)
-	if position_to_spawn.y < CENTER_OFFSET.y:
-		position_to_spawn.y += int(CENTER_OFFSET.y * 2.0)
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	var position_to_spawn: Vector2i = Vector2i(
+		mouse_pos.x - (size.x / 2.0),
+		mouse_pos.y - size.y - SPAWN_DISTANCE_PX
+	)
+	if position_to_spawn.y < 0:
+		position_to_spawn.y = mouse_pos.y + SPAWN_DISTANCE_PX
+		position_to_spawn.y = min(position_to_spawn.y, viewport_size.y - size.y)
 	position = position_to_spawn
 	
 	match(_mode):
