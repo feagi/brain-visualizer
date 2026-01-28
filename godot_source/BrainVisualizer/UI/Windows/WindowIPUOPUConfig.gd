@@ -391,6 +391,7 @@ func _render_device_config() -> void:
 		var header := Label.new()
 		header.text = "Agent: %s" % _get_agent_display_name(agent_id)
 		_config_content.add_child(header)
+		_editor_by_agent[agent_id] = []
 		if not _agent_capabilities_map.has(agent_id):
 			_add_info_label("No data available for this agent.")
 			continue
@@ -406,12 +407,83 @@ func _render_device_config() -> void:
 		if not (device_dict is Dictionary) or not device_dict.has(_selected_device_key):
 			_add_info_label("No %s registration available." % _selected_device_key)
 			continue
-		var editor := TextEdit.new()
-		editor.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		editor.custom_minimum_size = Vector2(0, 180)
-		editor.text = JSON.stringify(device_dict[_selected_device_key], "\t", false)
-		_config_content.add_child(editor)
-		_editor_by_agent[agent_id] = editor
+		var device_entries = device_dict[_selected_device_key]
+		var entries: Array = []
+		if device_entries is Array:
+			for entry_index in range(device_entries.size()):
+				entries.append({
+					"entry_index": entry_index,
+					"entry_key": entry_index,
+					"value": device_entries[entry_index],
+					"container_kind": "array"
+				})
+		elif device_entries is Dictionary:
+			var entry_keys: Array = device_entries.keys()
+			entry_keys.sort()
+			for entry_key in entry_keys:
+				entries.append({
+					"entry_index": entries.size(),
+					"entry_key": entry_key,
+					"value": device_entries[entry_key],
+					"container_kind": "dict"
+				})
+		else:
+			_add_info_label("Unsupported registration format for %s." % _selected_device_key)
+			continue
+		for entry_data in entries:
+			var entry = entry_data["value"]
+			var entry_panel := PanelContainer.new()
+			entry_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var entry_margin := MarginContainer.new()
+			entry_margin.add_theme_constant_override("margin_left", 8)
+			entry_margin.add_theme_constant_override("margin_top", 6)
+			entry_margin.add_theme_constant_override("margin_right", 8)
+			entry_margin.add_theme_constant_override("margin_bottom", 6)
+			entry_panel.add_child(entry_margin)
+			var entry_box := VBoxContainer.new()
+			entry_box.add_theme_constant_override("separation", 6)
+			entry_margin.add_child(entry_box)
+			var entry_label := Label.new()
+			entry_label.text = "Device %d" % int(entry_data["entry_index"])
+			entry_box.add_child(entry_label)
+			if entry is Dictionary:
+				var parameter_holder := VBoxContainer.new()
+				parameter_holder.add_theme_constant_override("separation", 4)
+				entry_box.add_child(parameter_holder)
+				_build_parameter_editors_from_entry(entry, parameter_holder)
+				_config_content.add_child(entry_panel)
+				_editor_by_agent[agent_id].append({
+					"device_key": entry_data["entry_key"],
+					"container_kind": entry_data["container_kind"],
+					"entry_kind": "dict",
+					"holder": parameter_holder
+				})
+				continue
+			if entry is Array and entry.size() == 2 and entry[0] is Dictionary and entry[1] is Dictionary:
+				var unit_holder := VBoxContainer.new()
+				unit_holder.add_theme_constant_override("separation", 4)
+				var unit_label := Label.new()
+				unit_label.text = "Unit Definition"
+				entry_box.add_child(unit_label)
+				entry_box.add_child(unit_holder)
+				_build_parameter_editors_from_entry(entry[0], unit_holder)
+				var props_holder := VBoxContainer.new()
+				props_holder.add_theme_constant_override("separation", 4)
+				var props_label := Label.new()
+				props_label.text = "Properties"
+				entry_box.add_child(props_label)
+				entry_box.add_child(props_holder)
+				_build_parameter_editors_from_entry(entry[1], props_holder)
+				_config_content.add_child(entry_panel)
+				_editor_by_agent[agent_id].append({
+					"device_key": entry_data["entry_key"],
+					"container_kind": entry_data["container_kind"],
+					"entry_kind": "pair",
+					"holder_unit": unit_holder,
+					"holder_props": props_holder
+				})
+				continue
+			_add_info_label("Unsupported device entry format for %s." % _selected_device_key)
 
 ## Apply edited JSON to the cached agent capability map.
 func _on_apply_pressed() -> void:
@@ -420,15 +492,6 @@ func _on_apply_pressed() -> void:
 	var updated_map: Dictionary = _agent_capabilities_map.duplicate(true)
 	var section_key := "output_units_and_decoder_properties" if _selected_section == SECTION_OUTPUT else "input_units_and_encoder_properties"
 	for agent_id in _editor_by_agent.keys():
-		var editor: TextEdit = _editor_by_agent[agent_id]
-		var raw_text := editor.text.strip_edges()
-		var parsed = JSON.parse_string(raw_text)
-		if parsed == null and raw_text != "null":
-			_show_error_popup("Invalid JSON", "Agent %s has invalid JSON." % agent_id)
-			return
-		if parsed is not Array:
-			_show_error_popup("Invalid Data", "Agent %s must provide a JSON array." % agent_id)
-			return
 		if not updated_map.has(agent_id):
 			continue
 		var agent_entry = updated_map[agent_id]
@@ -438,11 +501,166 @@ func _on_apply_pressed() -> void:
 		if not (registrations is Dictionary) or not registrations.has(section_key):
 			continue
 		var device_dict = registrations[section_key]
-		if device_dict is Dictionary:
-			device_dict[_selected_device_key] = parsed
+		if device_dict is Dictionary and device_dict.has(_selected_device_key):
+			var device_entries = device_dict[_selected_device_key]
+			for entry_data in _editor_by_agent[agent_id]:
+				var entry_kind = entry_data.get("entry_kind", "")
+				var container_kind = entry_data.get("container_kind", "")
+				var device_key = entry_data.get("device_key", null)
+				if entry_kind == "":
+					continue
+				if container_kind == "array" and device_entries is Array:
+					var entry_index = int(device_key)
+					if entry_index < 0 or entry_index >= device_entries.size():
+						continue
+					device_entries[entry_index] = _export_entry_for_kind(entry_kind, entry_data)
+				elif container_kind == "dict" and device_entries is Dictionary:
+					if device_key == null:
+						continue
+					device_entries[device_key] = _export_entry_for_kind(entry_kind, entry_data)
 	FeagiCore.feagi_local_cache.set_agent_capabilities_map(updated_map)
 	_agent_capabilities_map = updated_map
 	BV.NOTIF.add_notification("Device configuration updated in local cache.")
+
+## Build parameter editors for a device entry dictionary.
+func _build_parameter_editors_from_entry(entry: Dictionary, holder: VBoxContainer) -> void:
+	var keys: Array = entry.keys()
+	keys.sort()
+	for key in keys:
+		var parameter := _build_parameter_from_value(StringName(String(key)), entry[key])
+		if parameter == null:
+			continue
+		EditAbstractParameter.spawn_and_add_parameter_editor(parameter, holder)
+
+## Build a parameter object from a JSON value.
+func _build_parameter_from_value(label: StringName, value: Variant) -> AbstractParameter:
+	if value is bool:
+		var param := BooleanParameter.new()
+		param.label = label
+		param.description = ""
+		param.value = value
+		return param
+	if value is int:
+		var param := IntegerParameter.new()
+		param.label = label
+		param.description = ""
+		param.value = value
+		return param
+	if value is float:
+		var param := FloatParameter.new()
+		param.label = label
+		param.description = ""
+		param.value = value
+		return param
+	if value is StringName or value is String:
+		var param := StringParameter.new()
+		param.label = label
+		param.description = ""
+		param.value = StringName(String(value))
+		return param
+	if value is Array:
+		if _array_is_vector3(value):
+			var param := Vector3Parameter.new()
+			param.label = label
+			param.description = ""
+			param.value = Vector3(float(value[0]), float(value[1]), float(value[2]))
+			return param
+		var array_param := ObjectParameter.new()
+		array_param.label = label
+		array_param.description = ""
+		var subparams: Array[AbstractParameter] = []
+		for index in range(value.size()):
+			var subparam = _build_parameter_from_value(StringName(str(index)), value[index])
+			if subparam != null:
+				subparams.append(subparam)
+		array_param.value = subparams
+		return array_param
+	if value is Dictionary:
+		var param := ObjectParameter.new()
+		param.label = label
+		param.description = ""
+		var subparams: Array[AbstractParameter] = []
+		for subkey in value.keys():
+			var subparam = _build_parameter_from_value(StringName(String(subkey)), value[subkey])
+			if subparam != null:
+				subparams.append(subparam)
+		param.value = subparams
+		return param
+	return null
+
+## Export a device entry from parameter editor holder.
+func _export_entry_from_holder(holder: VBoxContainer) -> Dictionary:
+	var output: Dictionary = {}
+	for child in holder.get_children():
+		if child is not EditAbstractParameter:
+			continue
+		var parameter: AbstractParameter = (child as EditAbstractParameter).export()
+		var param_dict = parameter.get_as_JSON_formatable_dict()
+		for key in param_dict.keys():
+			output[key] = _normalize_json_value(param_dict[key])
+	return output
+
+## Export device entry based on editor kind.
+func _export_entry_for_kind(entry_kind: String, entry_data: Dictionary) -> Variant:
+	if entry_kind == "dict":
+		var holder: VBoxContainer = entry_data.get("holder", null)
+		if holder == null:
+			return {}
+		return _export_entry_from_holder(holder)
+	if entry_kind == "pair":
+		var unit_holder: VBoxContainer = entry_data.get("holder_unit", null)
+		var props_holder: VBoxContainer = entry_data.get("holder_props", null)
+		if unit_holder == null or props_holder == null:
+			return []
+		var unit_dict = _export_entry_from_holder(unit_holder)
+		var props_dict = _export_entry_from_holder(props_holder)
+		return [unit_dict, props_dict]
+	return {}
+
+## Normalize exported JSON values (convert numeric-key dictionaries to arrays).
+func _normalize_json_value(value: Variant) -> Variant:
+	if value is Dictionary:
+		var dict_value: Dictionary = value
+		if _is_array_dictionary(dict_value):
+			var array_out: Array = []
+			array_out.resize(dict_value.size())
+			for key in dict_value.keys():
+				var idx = int(String(key))
+				array_out[idx] = _normalize_json_value(dict_value[key])
+			return array_out
+		var normalized: Dictionary = {}
+		for key in dict_value.keys():
+			normalized[key] = _normalize_json_value(dict_value[key])
+		return normalized
+	if value is Array:
+		var out_array: Array = []
+		for item in value:
+			out_array.append(_normalize_json_value(item))
+		return out_array
+	return value
+
+func _is_array_dictionary(value: Dictionary) -> bool:
+	if value.is_empty():
+		return false
+	var indices: Array[int] = []
+	for key in value.keys():
+		var key_text := String(key)
+		if not key_text.is_valid_int():
+			return false
+		indices.append(int(key_text))
+	indices.sort()
+	for idx in range(indices.size()):
+		if indices[idx] != idx:
+			return false
+	return true
+
+func _array_is_vector3(value: Array) -> bool:
+	if value.size() != 3:
+		return false
+	for item in value:
+		if item is not int and item is not float:
+			return false
+	return true
 
 ## Refresh from FEAGI and rebuild UI.
 func _on_refresh_pressed() -> void:

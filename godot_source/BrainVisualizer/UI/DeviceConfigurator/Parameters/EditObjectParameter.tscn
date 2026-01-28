@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://bv_device_object"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditObjectParameter.gd" id="1_object"]
+
+[node name="Object" type="HBoxContainer"]
+theme_override_constants/separation = 8
+script = ExtResource("1_object")
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+mouse_filter = 1
+text = "NAME: "
+vertical_alignment = 1
+
+[node name="Holder" type="VBoxContainer" parent="."]
+layout_mode = 2

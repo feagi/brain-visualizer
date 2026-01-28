@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://bv_device_percentage"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditPercentageParameter.gd" id="1_percentage"]
+
+[node name="Percentage" type="HBoxContainer"]
+script = ExtResource("1_percentage")
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+mouse_filter = 1
+text = "NAME: "
+
+[node name="Value" type="SpinBox" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+suffix = "%"
