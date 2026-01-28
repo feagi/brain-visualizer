@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://c4nh5ikljookn"]
+[gd_scene load_steps=43 format=3 uid="uid://c4nh5ikljookn"]
 
 [ext_resource type="Script" uid="uid://earsw0yb7kdb" path="res://BrainVisualizer/UI/Windows/QuickMenu/WindowQuickMenu.gd" id="1_8td17"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_iacyx"]
@@ -34,6 +34,10 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Reset_C.jpg" id="36_reset_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Reset_H.jpg" id="37_reset_h"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Reset_D.jpg" id="38_reset_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setup_S.jpg" id="39_setup_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setup_C.jpg" id="40_setup_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setup_H.jpg" id="41_setup_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setup_D.jpg" id="42_setup_d"]
 [ext_resource type="Texture2D" uid="uid://c43o3nnvws52k" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_S.png" id="19_hi26y"]
 [ext_resource type="Texture2D" uid="uid://bg303qxw6wi2l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_C.png" id="20_oi7hc"]
 [ext_resource type="Texture2D" uid="uid://cv4in51l0ogon" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/map_block_block_H.png" id="21_o0jxf"]
@@ -220,6 +224,19 @@ texture_disabled = ExtResource("34_resize_icon_d")
 ignore_texture_size = true
 stretch_mode = 5
 
+[node name="SetupIOPU" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Open IPU/OPU configuration"
+focus_mode = 0
+theme_type_variation = &"TextureButton_Big"
+texture_normal = ExtResource("39_setup_s")
+texture_pressed = ExtResource("40_setup_c")
+texture_hover = ExtResource("41_setup_h")
+texture_disabled = ExtResource("42_setup_d")
+ignore_texture_size = true
+stretch_mode = 5
+
 [node name="Reset" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
@@ -254,5 +271,6 @@ stretch_mode = 5
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Relocate2D" to="." method="_button_relocate_2d"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Move3D" to="." method="_button_move_3d"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Resize3D" to="." method="_button_resize_3d"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/SetupIOPU" to="." method="_button_ipu_opu_config"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Reset" to="." method="_button_reset"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/Delete" to="." method="_button_delete"]

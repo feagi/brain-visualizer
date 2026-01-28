@@ -29,6 +29,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 	_btn_relocate_2d = _window_internals.get_node_or_null("ToolbarGrid/Relocate2D") as TextureButton
 	_btn_move_3d = _window_internals.get_node_or_null("ToolbarGrid/Move3D") as TextureButton
 	_btn_resize_3d = _window_internals.get_node_or_null("ToolbarGrid/Resize3D") as TextureButton
+	var iopu_config_button: TextureButton = _window_internals.get_node('ToolbarGrid/SetupIOPU')
 	var reset_button: TextureButton = _window_internals.get_node('ToolbarGrid/Reset')
 	var delete_button: TextureButton = _window_internals.get_node('ToolbarGrid/Delete')
 	
@@ -78,6 +79,10 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				return
 			var area: AbstractCorticalArea = (_selection[0] as AbstractCorticalArea)
 			_titlebar.title = area.friendly_name
+			var is_ipu_opu := area is IPUCorticalArea or area is OPUCorticalArea
+			iopu_config_button.visible = true
+			iopu_config_button.disabled = not is_ipu_opu
+			iopu_config_button.tooltip_text = "Open IPU/OPU configuration" if is_ipu_opu else "IPU/OPU configuration only."
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = true
 				_btn_move_3d.disabled = is_circuit_builder_context
@@ -111,6 +116,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			reset_button.visible = false
+			iopu_config_button.visible = false
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = false
 			if _btn_move_3d != null:
@@ -138,6 +144,15 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			reset_button.visible = true
 			reset_button.disabled = false
 			reset_button.tooltip_text = "Reset selected cortical areas..."
+			iopu_config_button.visible = true
+			var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
+			var all_ipu_opu := true
+			for area in areas:
+				if not (area is IPUCorticalArea or area is OPUCorticalArea):
+					all_ipu_opu = false
+					break
+			iopu_config_button.disabled = not all_ipu_opu
+			iopu_config_button.tooltip_text = "Open IPU/OPU configuration" if all_ipu_opu else "IPU/OPU configuration only."
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = true
 				_btn_relocate_2d.disabled = false
@@ -156,7 +171,6 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			move_to_region_button.tooltip_text = "Add to a region..."
 			_titlebar.title = "Selected multiple areas"
 			
-			var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
 				move_to_region_button.disabled = true
 				move_to_region_button.tooltip_text = "One of the selected areas is of Input, Output, or Core type which is not allowed inside a brain region."
@@ -167,6 +181,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
 			reset_button.visible = false
+			iopu_config_button.visible = false
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = true
 				_btn_relocate_2d.disabled = false
@@ -188,6 +203,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
 			reset_button.visible = false
+			iopu_config_button.visible = false
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = true
 				_btn_relocate_2d.disabled = false
@@ -277,6 +293,28 @@ func _button_add_to_region() -> void:
 
 func _button_delete() -> void:
 	BV.WM.spawn_confirm_deletion(_selection)
+	close_window()
+
+## Opens a placeholder IPU/OPU configuration popup.
+func _button_ipu_opu_config() -> void:
+	if _selection.size() == 0:
+		BV.NOTIF.add_notification("No cortical area selected for IPU/OPU configuration.")
+		close_window()
+		return
+	var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+	var all_ipu_opu := true
+	for area in areas:
+		if not (area is IPUCorticalArea or area is OPUCorticalArea):
+			all_ipu_opu = false
+			break
+	if not all_ipu_opu:
+		BV.NOTIF.add_notification("IPU/OPU configuration only.")
+		close_window()
+		return
+	BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+		"IPU/OPU Configuration",
+		"This configuration panel will be populated next."
+	))
 	close_window()
 
 ## Resets selected cortical areas to their default values.
