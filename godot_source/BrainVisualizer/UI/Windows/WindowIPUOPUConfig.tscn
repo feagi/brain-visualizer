@@ -55,35 +55,62 @@ theme_override_constants/separation = 12
 [node name="AgentLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
 layout_mode = 2
 text = "Agent"
+theme_override_font_sizes/font_size = 24
 
 [node name="AgentDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
 custom_minimum_size = Vector2(220, 36)
 layout_mode = 2
 
-[node name="InputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+[node name="InputsPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="InputsMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="InputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="InputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsRow"]
+[node name="InputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin/InputsRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(140, 0)
 text = "Inputs"
+theme_override_font_sizes/font_size = 24
 
-[node name="InputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsRow"]
+[node name="InputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin/InputsRow"]
 layout_mode = 2
 columns = 4
 theme_override_constants/separation = 8
 
-[node name="OutputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+[node name="OutputsPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="OutputsMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="OutputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="OutputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsRow"]
+[node name="OutputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin/OutputsRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(140, 0)
 text = "Outputs"
+theme_override_font_sizes/font_size = 24
 
-[node name="OutputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsRow"]
+[node name="OutputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin/OutputsRow"]
 layout_mode = 2
 columns = 4
 theme_override_constants/separation = 8
