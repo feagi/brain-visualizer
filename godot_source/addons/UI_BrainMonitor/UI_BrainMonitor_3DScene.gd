@@ -2866,6 +2866,9 @@ func _create_missing_brain_region_visualizations() -> void:
 		return
 	
 	var all_regions = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions
+	if not FeagiCore.feagi_local_cache.brain_regions.is_root_available():
+		print("❌ DEBUG: Root region not available yet; skipping region visualization refresh")
+		return
 	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	var new_regions_created = 0
 	

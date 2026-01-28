@@ -5,14 +5,43 @@ class_name WindowIPUOPUConfig
 const WINDOW_NAME: StringName = "ipu_opu_config"
 const SECTION_INPUT: StringName = "inputs"
 const SECTION_OUTPUT: StringName = "outputs"
+const ALL_AGENTS_OPTION: StringName = "__all_agents__"
 
 const _DEFAULT_INPUT_ICON: StringName = "res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png"
 const _DEFAULT_OUTPUT_ICON: StringName = "res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png"
 const _DEFAULT_GENERIC_ICON: StringName = "res://BrainVisualizer/UI/GenericResources/ButtonIcons/setting.png"
 
-var _all_agents_toggle: CheckBox
-var _agent_list_container: VBoxContainer
-var _io_tabs: TabContainer
+const INPUT_DEVICE_ICON_IDS: Dictionary = {
+	"Infrared": "iinf",
+	"Proximity": "ipro",
+	"Shock": "ishk",
+	"Battery": "ibat",
+	"Servo": "isvp",
+	"AnalogGPIO": "iagp",
+	"AnalogGpio": "iagp",
+	"DigitalGPIO": "idgp",
+	"DigitalGpio": "idgp",
+	"MiscData": "imis",
+	"TextEnglishInput": "iten",
+	"CountInput": "icnt",
+	"Vision": "iimg",
+	"SegmentedVision": "isvi",
+	"Accelerometer": "iacc",
+	"Gyroscope": "igyr",
+}
+
+const OUTPUT_DEVICE_ICON_IDS: Dictionary = {
+	"RotaryMotor": "omot",
+	"PositionalServo": "opse",
+	"Gaze": "ogaz",
+	"MiscData": "omis",
+	"TextEnglishOutput": "oten",
+	"CountOutput": "ocnt",
+	"ObjectSegmentation": "oifs",
+	"SimpleVisionOutput": "ovout",
+}
+
+var _agent_dropdown: OptionButton
 var _inputs_grid: GridContainer
 var _outputs_grid: GridContainer
 var _status_label: Label
@@ -21,16 +50,18 @@ var _refresh_button: Button
 var _apply_button: Button
 
 var _agent_capabilities_map: Dictionary = {}
-var _selected_agents: Array[StringName] = []
+var _selected_agent_id: StringName = ALL_AGENTS_OPTION
 var _selected_device_key: StringName = ""
 var _selected_section: StringName = SECTION_OUTPUT
 var _editor_by_agent: Dictionary = {}
 var _device_buttons: Dictionary = { SECTION_INPUT: {}, SECTION_OUTPUT: {} }
+var _input_button_group: ButtonGroup = ButtonGroup.new()
+var _output_button_group: ButtonGroup = ButtonGroup.new()
 
 ## Initializes the window and optionally focuses on a device section.
 func setup_with_focus(device_key: StringName = "", section: StringName = SECTION_OUTPUT) -> void:
 	_setup_base_window(WINDOW_NAME)
-	_titlebar.title = "IPU/OPU Configuration"
+	_titlebar.title = "Sensorimotor Configuration"
 	_selected_device_key = device_key
 	_selected_section = section
 	_bind_controls()
@@ -80,19 +111,16 @@ func _apply_fullscreen_layout() -> void:
 
 ## Bind node references and UI signals.
 func _bind_controls() -> void:
-	if _all_agents_toggle != null:
+	if _agent_dropdown != null:
 		return
-	_all_agents_toggle = $WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel/AgentAllToggle
-	_agent_list_container = $WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel/AgentScroll/AgentList
-	_io_tabs = $WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/IOSectionTabs
-	_inputs_grid = $WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/IOSectionTabs/Inputs/InputsGrid
-	_outputs_grid = $WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/IOSectionTabs/Outputs/OutputsGrid
+	_agent_dropdown = $WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel/AgentDropdown
+	_inputs_grid = $WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsRow/InputsGrid
+	_outputs_grid = $WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsRow/OutputsGrid
 	_status_label = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/StatusLabel
 	_config_content = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ConfigScroll/ConfigContent
 	_refresh_button = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow/RefreshButton
 	_apply_button = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow/ApplyButton
-	_all_agents_toggle.toggled.connect(_on_all_agents_toggled)
-	_io_tabs.tab_changed.connect(_on_tab_changed)
+	_agent_dropdown.item_selected.connect(_on_agent_selected)
 	_refresh_button.pressed.connect(_on_refresh_pressed)
 	_apply_button.pressed.connect(_on_apply_pressed)
 
@@ -111,54 +139,42 @@ func _refresh_from_feagi() -> void:
 ## Loads cached agent data and rebuilds UI elements.
 func _load_from_cache() -> void:
 	_agent_capabilities_map = FeagiCore.feagi_local_cache.agent_capabilities_map
-	_build_agent_list()
+	_build_agent_dropdown()
 	_rebuild_device_tabs()
 	_focus_device_if_available()
 
-## Build agent multi-selection list from cached capabilities.
-func _build_agent_list() -> void:
-	for child in _agent_list_container.get_children():
-		child.queue_free()
-	_selected_agents.clear()
-	var agent_ids: Array[StringName] = []
+## Build agent dropdown from cached capabilities.
+func _build_agent_dropdown() -> void:
+	if _agent_dropdown == null:
+		return
+	var items: Array[StringName] = []
 	for agent_id in _agent_capabilities_map.keys():
-		agent_ids.append(agent_id)
-	agent_ids.sort()
-	for agent_id in agent_ids:
-		var checkbox := CheckBox.new()
-		checkbox.text = String(agent_id)
-		checkbox.toggled.connect(_on_agent_toggled.bind(agent_id))
-		_agent_list_container.add_child(checkbox)
-	_selected_agents = agent_ids.duplicate()
-	_set_checkbox_state(_all_agents_toggle, agent_ids.size() > 0)
-	_set_all_agent_checkboxes(true)
+		items.append(agent_id)
+	items.sort()
+	_agent_dropdown.clear()
+	_agent_dropdown.add_item("All agents")
+	_agent_dropdown.set_item_metadata(0, ALL_AGENTS_OPTION)
+	for agent_id in items:
+		var display_name := _get_agent_display_name(agent_id)
+		var index := _agent_dropdown.get_item_count()
+		_agent_dropdown.add_item(String(display_name))
+		_agent_dropdown.set_item_metadata(index, agent_id)
+	_agent_dropdown.select(0)
+	_selected_agent_id = ALL_AGENTS_OPTION
 
-## Handle the "All agents" toggle.
-func _on_all_agents_toggled(pressed: bool) -> void:
-	_set_all_agent_checkboxes(pressed)
-	_update_selected_agents_from_ui()
-	_rebuild_device_tabs()
-
-## Track individual agent selections.
-func _on_agent_toggled(_pressed: bool, agent_id: StringName) -> void:
-	_update_selected_agents_from_ui()
-	var all_selected := _selected_agents.size() == _agent_capabilities_map.size()
-	_set_checkbox_state(_all_agents_toggle, all_selected)
+## Handle agent selection from dropdown.
+func _on_agent_selected(index: int) -> void:
+	var metadata = _agent_dropdown.get_item_metadata(index)
+	if metadata is StringName:
+		_selected_agent_id = metadata
+	elif metadata is String:
+		_selected_agent_id = StringName(metadata)
+	elif index <= 0:
+		_selected_agent_id = ALL_AGENTS_OPTION
+	else:
+		_selected_agent_id = StringName(_agent_dropdown.get_item_text(index))
 	_rebuild_device_tabs()
 	_focus_device_if_available()
-
-## Keeps the agent list checkbox states aligned.
-func _set_all_agent_checkboxes(pressed: bool) -> void:
-	for child in _agent_list_container.get_children():
-		if child is CheckBox:
-			_set_checkbox_state(child as CheckBox, pressed)
-
-## Update selected agent list from UI state.
-func _update_selected_agents_from_ui() -> void:
-	_selected_agents.clear()
-	for child in _agent_list_container.get_children():
-		if child is CheckBox and (child as CheckBox).button_pressed:
-			_selected_agents.append(StringName((child as CheckBox).text))
 
 ## Updates the device grid buttons for inputs and outputs.
 func _rebuild_device_tabs() -> void:
@@ -166,22 +182,24 @@ func _rebuild_device_tabs() -> void:
 	_clear_grid(_outputs_grid)
 	_device_buttons[SECTION_INPUT] = {}
 	_device_buttons[SECTION_OUTPUT] = {}
+	_input_button_group = ButtonGroup.new()
+	_output_button_group = ButtonGroup.new()
 	var input_devices := _collect_device_keys(false)
 	var output_devices := _collect_device_keys(true)
 	for device_key in input_devices:
-		var button := _create_device_button(device_key, false)
-		_inputs_grid.add_child(button)
-		_device_buttons[SECTION_INPUT][device_key] = button
+		var bundle := _create_device_button_bundle(device_key, false)
+		_inputs_grid.add_child(bundle.container)
+		_device_buttons[SECTION_INPUT][device_key] = bundle.button
 	for device_key in output_devices:
-		var button := _create_device_button(device_key, true)
-		_outputs_grid.add_child(button)
-		_device_buttons[SECTION_OUTPUT][device_key] = button
+		var bundle := _create_device_button_bundle(device_key, true)
+		_outputs_grid.add_child(bundle.container)
+		_device_buttons[SECTION_OUTPUT][device_key] = bundle.button
 
 ## Collect device keys for a given IO direction from selected agents.
 func _collect_device_keys(is_output: bool) -> Array[StringName]:
 	var keys: Array[StringName] = []
 	var section_key := "output_units_and_decoder_properties" if is_output else "input_units_and_encoder_properties"
-	for agent_id in _selected_agents:
+	for agent_id in _get_active_agent_ids():
 		if not _agent_capabilities_map.has(agent_id):
 			continue
 		var agent_entry = _agent_capabilities_map[agent_id]
@@ -191,22 +209,75 @@ func _collect_device_keys(is_output: bool) -> Array[StringName]:
 				var unit_dict = registrations[section_key]
 				if unit_dict is Dictionary:
 					for device_key in unit_dict.keys():
-						if device_key not in keys:
-							keys.append(device_key)
+						var key_name := StringName(String(device_key))
+						if key_name not in keys:
+							keys.append(key_name)
+		_collect_device_keys_from_capabilities(agent_entry, is_output, keys)
 	keys.sort()
 	return keys
 
+## Append device keys inferred from capability metadata (unit/source_units).
+func _collect_device_keys_from_capabilities(agent_entry: Dictionary, is_output: bool, keys: Array[StringName]) -> void:
+	if not agent_entry.has("capabilities"):
+		return
+	var caps = agent_entry["capabilities"]
+	if caps is not Dictionary:
+		return
+	if is_output:
+		if not caps.has("motor"):
+			return
+		var motor = caps["motor"]
+		if motor is Dictionary:
+			_append_capability_unit_key(motor, keys)
+			if motor.has("source_units") and motor["source_units"] is Array:
+				for spec in motor["source_units"]:
+					if spec is Dictionary:
+						_append_capability_unit_key(spec, keys)
+	else:
+		if not caps.has("vision"):
+			return
+		var vision = caps["vision"]
+		if vision is Dictionary:
+			_append_capability_unit_key(vision, keys)
+
+## Extract unit name from a capability dictionary and append.
+func _append_capability_unit_key(source: Dictionary, keys: Array[StringName]) -> void:
+	if not source.has("unit"):
+		return
+	var unit_value = source["unit"]
+	if unit_value is String or unit_value is StringName:
+		var unit_key := _to_pascal_case(String(unit_value))
+		if unit_key != "" and StringName(unit_key) not in keys:
+			keys.append(StringName(unit_key))
+
 ## Creates a device button with a default icon and selection handler.
-func _create_device_button(device_key: StringName, is_output: bool) -> Button:
-	var button := Button.new()
-	button.text = String(device_key)
-	button.custom_minimum_size = Vector2(180, 40)
-	button.icon = _get_device_icon(is_output)
+func _create_device_button_bundle(device_key: StringName, is_output: bool) -> Dictionary:
+	var container := VBoxContainer.new()
+	container.custom_minimum_size = Vector2(60, 50)
+	container.alignment = BoxContainer.ALIGNMENT_CENTER
+	var button: TextureButton = TextureButton.new()
+	button.custom_minimum_size = Vector2(16, 16)
+	button.ignore_texture_size = true
+	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	button.texture_normal = _get_device_icon(device_key, is_output)
+	button.texture_hover = button.texture_normal
+	button.texture_pressed = button.texture_normal
+	button.toggle_mode = true
+	button.button_group = _output_button_group if is_output else _input_button_group
 	button.pressed.connect(_on_device_selected.bind(device_key, is_output))
-	return button
+	var label := Label.new()
+	label.text = String(device_key)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	container.add_child(button)
+	container.add_child(label)
+	return { "container": container, "button": button }
 
 ## Resolve a default icon for device buttons.
-func _get_device_icon(is_output: bool) -> Texture2D:
+func _get_device_icon(device_key: StringName, is_output: bool) -> Texture2D:
+	var icon_id := _get_device_icon_id_from_enum(device_key, is_output)
+	if icon_id != "":
+		return UIManager.get_icon_texture_by_ID(icon_id, not is_output)
 	var icon_path := _DEFAULT_OUTPUT_ICON if is_output else _DEFAULT_INPUT_ICON
 	if ResourceLoader.exists(icon_path):
 		return load(icon_path)
@@ -214,15 +285,41 @@ func _get_device_icon(is_output: bool) -> Texture2D:
 		return load(_DEFAULT_GENERIC_ICON)
 	return null
 
+## Resolve icon IDs from FEAGI enum strings.
+func _get_device_icon_id_from_enum(device_key: StringName, is_output: bool) -> StringName:
+	var icon_map := OUTPUT_DEVICE_ICON_IDS if is_output else INPUT_DEVICE_ICON_IDS
+	var key_text := String(device_key)
+	if icon_map.has(key_text):
+		var icon_id = icon_map[key_text]
+		if icon_id is StringName:
+			return icon_id
+		if icon_id is String:
+			return StringName(icon_id)
+	var normalized := _to_pascal_case(key_text)
+	if normalized != "" and icon_map.has(normalized):
+		var normalized_id = icon_map[normalized]
+		if normalized_id is StringName:
+			return normalized_id
+		if normalized_id is String:
+			return StringName(normalized_id)
+	return ""
+
+## Convert snake_case strings to PascalCase for enum matching.
+func _to_pascal_case(text: String) -> String:
+	if text.find("_") == -1:
+		return text
+	var parts := text.split("_", false)
+	var result := ""
+	for part in parts:
+		if part.is_empty():
+			continue
+		result += part.substr(0, 1).to_upper() + part.substr(1)
+	return result
+
 ## Handle device selection from the grid.
 func _on_device_selected(device_key: StringName, is_output: bool) -> void:
 	_selected_device_key = device_key
 	_selected_section = SECTION_OUTPUT if is_output else SECTION_INPUT
-	_render_device_config()
-
-## Handle manual tab changes.
-func _on_tab_changed(tab_index: int) -> void:
-	_selected_section = SECTION_INPUT if tab_index == 0 else SECTION_OUTPUT
 	_render_device_config()
 
 ## Focus the device and section if available, otherwise pick the first available.
@@ -230,7 +327,9 @@ func _focus_device_if_available() -> void:
 	if _selected_device_key != "":
 		var section_buttons: Dictionary = _device_buttons.get(_selected_section, {})
 		if section_buttons.has(_selected_device_key):
-			_io_tabs.current_tab = 0 if _selected_section == SECTION_INPUT else 1
+			var button: BaseButton = section_buttons[_selected_device_key]
+			if button != null:
+				button.button_pressed = true
 			_render_device_config()
 			return
 	var fallback_keys: Array[StringName] = _collect_device_keys(false)
@@ -246,7 +345,11 @@ func _focus_device_if_available() -> void:
 	else:
 		_selected_section = SECTION_INPUT
 		_selected_device_key = fallback_keys[0]
-	_io_tabs.current_tab = 0 if _selected_section == SECTION_INPUT else 1
+	var section_buttons: Dictionary = _device_buttons.get(_selected_section, {})
+	if section_buttons.has(_selected_device_key):
+		var button: BaseButton = section_buttons[_selected_device_key]
+		if button != null:
+			button.button_pressed = true
 	_render_device_config()
 
 ## Render configuration editors for the selected device across agents.
@@ -258,9 +361,9 @@ func _render_device_config() -> void:
 		return
 	_set_status("Editing %s (%s)" % [_selected_device_key, _selected_section])
 	var section_key := "output_units_and_decoder_properties" if _selected_section == SECTION_OUTPUT else "input_units_and_encoder_properties"
-	for agent_id in _selected_agents:
+	for agent_id in _get_active_agent_ids():
 		var header := Label.new()
-		header.text = "Agent: %s" % agent_id
+		header.text = "Agent: %s" % _get_agent_display_name(agent_id)
 		_config_content.add_child(header)
 		if not _agent_capabilities_map.has(agent_id):
 			_add_info_label("No data available for this agent.")
@@ -319,6 +422,54 @@ func _on_apply_pressed() -> void:
 func _on_refresh_pressed() -> void:
 	await _refresh_from_feagi()
 
+## Determine which agent IDs are active based on selection.
+func _get_active_agent_ids() -> Array[StringName]:
+	var agent_ids: Array[StringName] = []
+	if _selected_agent_id == ALL_AGENTS_OPTION:
+		for agent_id in _agent_capabilities_map.keys():
+			agent_ids.append(agent_id)
+		agent_ids.sort()
+	else:
+		agent_ids = [_selected_agent_id]
+	return agent_ids
+
+## Resolve a human-friendly agent name for display.
+func _get_agent_display_name(agent_id: StringName) -> StringName:
+	if not _agent_capabilities_map.has(agent_id):
+		return agent_id
+	var entry = _agent_capabilities_map[agent_id]
+	if not (entry is Dictionary):
+		return agent_id
+	if entry.has("agent_name"):
+		var name = _read_string_field(entry, "agent_name")
+		if name != "":
+			return name
+	if not entry.has("capabilities"):
+		return agent_id
+	var caps = entry["capabilities"]
+	if caps is Dictionary:
+		var name = _read_string_field(caps, "agent_name")
+		if name != "":
+			return name
+		name = _read_string_field(caps, "name")
+		if name != "":
+			return name
+		name = _read_string_field(caps, "agent_type")
+		if name != "":
+			return name
+	return agent_id
+
+## Read a string field from a dictionary.
+func _read_string_field(source: Dictionary, key: StringName) -> StringName:
+	if not source.has(key):
+		return ""
+	var value = source[key]
+	if value is StringName:
+		return value
+	if value is String:
+		return StringName(value)
+	return ""
+
 ## Helper to clear the configuration content container.
 func _clear_config_content() -> void:
 	for child in _config_content.get_children():
@@ -334,15 +485,6 @@ func _add_info_label(message: String) -> void:
 func _set_status(message: String) -> void:
 	if _status_label != null:
 		_status_label.text = message
-
-## Helper to update checkbox state without triggering signals.
-func _set_checkbox_state(checkbox: CheckBox, pressed: bool) -> void:
-	if checkbox == null:
-		return
-	if checkbox.has_method("set_pressed_no_signal"):
-		checkbox.set_pressed_no_signal(pressed)
-	else:
-		checkbox.button_pressed = pressed
 
 ## Helper to clear all children from a grid container.
 func _clear_grid(grid: GridContainer) -> void:

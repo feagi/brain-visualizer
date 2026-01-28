@@ -14,6 +14,13 @@ var _outputs: VBoxContainer
 
 var t_v_1: Vector2
 
+func _enter_tree() -> void:
+	_ensure_item_rect_redraw_connection()
+
+func _exit_tree() -> void:
+	# Ensure the built-in redraw connection exists before teardown.
+	_ensure_item_rect_redraw_connection()
+
 func _gui_input(event):
 	if !(event is InputEventMouseButton): return
 	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
@@ -38,6 +45,12 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 	position_offset_changed.connect(_on_position_changed)
 	_dragged = false
 	minimum_size_changed.connect(_on_node_move)
+	_ensure_item_rect_redraw_connection()
+
+func _ensure_item_rect_redraw_connection() -> void:
+	var redraw_callable := Callable(self, "queue_redraw")
+	if not item_rect_changed.is_connected(redraw_callable):
+		item_rect_changed.connect(redraw_callable)
 
 
 	

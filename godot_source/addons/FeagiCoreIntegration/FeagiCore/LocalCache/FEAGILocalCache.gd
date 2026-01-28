@@ -347,6 +347,7 @@ var _previous_cortical_areas_hash: int = 0
 var _previous_brain_geometry_hash: int = 0
 var _previous_morphologies_hash: int = 0
 var _previous_cortical_mappings_hash: int = 0
+var _previous_agent_data_hash: int = 0
 var _hash_refresh_in_flight: Dictionary = {}
 var _pending_hash_values: Dictionary = {}
 
@@ -832,6 +833,12 @@ func _process_hash_change_detection(health: Dictionary) -> void:
 		_previous_cortical_mappings_hash,
 		&"_refresh_mappings_from_feagi"
 	)
+	_previous_agent_data_hash = _check_hash_and_queue(
+		&"agent_data_hash",
+		health.get("agent_data_hash", null),
+		_previous_agent_data_hash,
+		&"_refresh_agent_data_from_feagi"
+	)
 
 ## Determines if hash-driven refreshes should run
 func _should_process_hash_refreshes() -> bool:
@@ -901,6 +908,8 @@ func _set_previous_hash_value(hash_key: StringName, value: int) -> void:
 			_previous_morphologies_hash = value
 		&"cortical_mappings_hash":
 			_previous_cortical_mappings_hash = value
+		&"agent_data_hash":
+			_previous_agent_data_hash = value
 		_:
 			pass
 
@@ -963,6 +972,14 @@ func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
 	print("HASH REFRESH: mappings_reloaded emitted for cortical_mappings_hash")
 	mappings_reloaded.emit()
 	return mappings_output
+
+## Refresh agent capabilities from FEAGI
+func _refresh_agent_data_from_feagi() -> FeagiRequestOutput:
+	var agent_output: FeagiRequestOutput = await FeagiCore.requests.refresh_agent_capabilities_cache(true)
+	if agent_output.has_errored or not agent_output.success:
+		return agent_output
+	print("HASH REFRESH: agent_capabilities_reloaded emitted for agent_data_hash")
+	return agent_output
 
 ## Update cortical areas cache using summary data without wiping the entire genome
 func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_region_ID_mapping: Dictionary) -> void:

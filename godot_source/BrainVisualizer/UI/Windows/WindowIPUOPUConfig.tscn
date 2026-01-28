@@ -19,7 +19,7 @@ window_spawn_location = Vector2i(140, 100)
 
 [node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
 layout_mode = 2
-title = "IPU/OPU Configuration"
+title = "Sensorimotor Configuration"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -44,50 +44,46 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="HeaderRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin"]
+[node name="HeaderRow" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 
-[node name="AgentPanel" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
-custom_minimum_size = Vector2(260, 0)
+[node name="AgentPanel" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
 layout_mode = 2
-size_flags_horizontal = 0
-theme_override_constants/separation = 6
+theme_override_constants/separation = 12
 
 [node name="AgentLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
 layout_mode = 2
 text = "Agent"
 
-[node name="AgentAllToggle" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
-layout_mode = 2
-text = "All agents"
-
-[node name="AgentScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="AgentList" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel/AgentScroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 4
-
-[node name="IOSectionTabs" type="TabContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="Inputs" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/IOSectionTabs"]
+[node name="AgentDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
+custom_minimum_size = Vector2(220, 36)
 layout_mode = 2
 
-[node name="InputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/IOSectionTabs/Inputs"]
+[node name="InputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="InputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
+text = "Inputs"
+
+[node name="InputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsRow"]
 layout_mode = 2
 columns = 4
 theme_override_constants/separation = 8
 
-[node name="Outputs" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/IOSectionTabs"]
+[node name="OutputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
 layout_mode = 2
+theme_override_constants/separation = 12
 
-[node name="OutputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/IOSectionTabs/Outputs"]
+[node name="OutputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
+text = "Outputs"
+
+[node name="OutputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsRow"]
 layout_mode = 2
 columns = 4
 theme_override_constants/separation = 8
