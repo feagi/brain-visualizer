@@ -636,6 +636,7 @@ func set_health_dead() -> void:
 
 #region Other
 signal plasticity_queue_depth_changed(new_val: int)
+signal agent_capabilities_updated()
 
 
 
@@ -645,6 +646,9 @@ var plasticity_queue_depth: int:
 var configuration_jsons: Array[Dictionary]:
 	get: return _configuration_jsons
 
+var agent_capabilities_map: Dictionary:
+	get: return _agent_capabilities_map
+
 var IPU_cortical_ID_to_capability_key: Dictionary:
 	get: return _IPU_cortical_ID_to_capability_key
 
@@ -653,6 +657,7 @@ var OPU_cortical_ID_to_capability_key: Dictionary:
 
 var _plasticity_queue_depth: int = 3
 var _configuration_jsons: Array[Dictionary] = []
+var _agent_capabilities_map: Dictionary = {}
 var _OPU_cortical_ID_to_capability_key: Dictionary = {}
 var _IPU_cortical_ID_to_capability_key: Dictionary = {}
 
@@ -664,6 +669,16 @@ func update_plasticity_queue_depth(new_depth: int) -> void:
 
 func clear_configuration_jsons() -> void:
 	_configuration_jsons = []
+
+## Overwrites cached agent capability data (capabilities + device registrations).
+func set_agent_capabilities_map(new_map: Dictionary) -> void:
+	_agent_capabilities_map = new_map
+	agent_capabilities_updated.emit()
+
+## Clears cached agent capability data.
+func clear_agent_capabilities_map() -> void:
+	_agent_capabilities_map = {}
+	agent_capabilities_updated.emit()
 
 ## Add a configuration json to the cache. Dictionary should be the dictionary holding inputs / output keys
 func append_configuration_json(configuration: Dictionary) -> void:

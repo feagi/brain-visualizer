@@ -179,7 +179,6 @@ func reload_genome() -> FeagiRequestOutput:
 	# Use dedicated IPU/OPU type endpoints instead of generic cortical_types
 	var ipu_types_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalAreas_ipu_types)
 	var opu_types_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalAreas_opu_types)
-	var agent_list_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_list)
 	
 	# Get Cortical Area Data
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 1/7: Requesting cortical area data...")
@@ -293,31 +292,7 @@ func reload_genome() -> FeagiRequestOutput:
 	
 	# Get agent list
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 7/7: Processing agent data...")
-	FeagiCore.feagi_local_cache.clear_configuration_jsons()
-	var agent_list_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_list_request)
-	await agent_list_worker.worker_done
-	var agent_list_data: FeagiRequestOutput = agent_list_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(agent_list_data):
-		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 7: Agent list request failed!")
-		push_error("FEAGI Requests: Unable to grab FEAGI agent summary data!")
-		return agent_list_data
-	var agents: Array = agent_list_data.decode_response_as_array()
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Found ", agents.size(), " agents, processing individual agent data...")
-	for agent in agents:
-		if str(agent).begins_with("bv_"):
-			continue
-		print("FEAGI REQUEST: [3D_SCENE_DEBUG] Processing agent: ", agent)
-		var agent_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_properties + "?agent_id=" + str(agent))
-		var agent_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_request)
-		await agent_worker.worker_done
-		var agent_data: FeagiRequestOutput = agent_worker.retrieve_output_and_close()
-		if _return_if_HTTP_failed_and_automatically_handle(agent_data):
-			print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ Failed to get data for agent: ", agent)
-			push_error("unable to return agent data for %s!" % str(agent))
-			return agent_data
-		var agent_dict: Dictionary = agent_data.decode_response_as_dict()
-		agent_dict["capabilities"]["agent_ID"] = str(agent)
-		FeagiCore.feagi_local_cache.append_configuration_json(agent_dict["capabilities"])
+	await refresh_agent_capabilities_cache(true)
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 7 complete: Agent data processed")
 	
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ ALL STEPS COMPLETE: Genome reload finished successfully!")
@@ -342,6 +317,36 @@ func get_burst_delay() -> FeagiRequestOutput:
 	print("FEAGI REQUEST: Successfully retrieved delay between bursts as %f" % response.to_float())
 	FeagiCore.feagi_retrieved_burst_rate(response.to_float())
 	return FEAGI_response_data
+
+## Refreshes cached agent capabilities and device registrations using the bulk endpoint.
+func refresh_agent_capabilities_cache(include_device_registrations: bool = true) -> FeagiRequestOutput:
+	FeagiCore.feagi_local_cache.clear_configuration_jsons()
+	FeagiCore.feagi_local_cache.clear_agent_capabilities_map()
+	var query_suffix: StringName = "?include_device_registrations=true" if include_device_registrations else ""
+	var agent_caps_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
+		FeagiCore.network.http_API.address_list.GET_agent_capabilities_all + query_suffix
+	)
+	var agent_caps_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_caps_request)
+	await agent_caps_worker.worker_done
+	var agent_caps_data: FeagiRequestOutput = agent_caps_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(agent_caps_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI agent capability data!")
+		return agent_caps_data
+	var agent_caps_map: Dictionary = agent_caps_data.decode_response_as_dict()
+	var filtered_caps_map: Dictionary = {}
+	print("FEAGI REQUEST: Found ", agent_caps_map.size(), " agents, processing capability data...")
+	for agent_id in agent_caps_map.keys():
+		if str(agent_id).begins_with("bv_"):
+			continue
+		var agent_entry = agent_caps_map[agent_id]
+		if agent_entry is Dictionary:
+			filtered_caps_map[agent_id] = agent_entry
+			if agent_entry.has("capabilities") and agent_entry["capabilities"] is Dictionary:
+				var capabilities: Dictionary = agent_entry["capabilities"]
+				capabilities["agent_ID"] = str(agent_id)
+				FeagiCore.feagi_local_cache.append_configuration_json(capabilities)
+	FeagiCore.feagi_local_cache.set_agent_capabilities_map(filtered_caps_map)
+	return agent_caps_data
 
 
 ## Set the burst rate

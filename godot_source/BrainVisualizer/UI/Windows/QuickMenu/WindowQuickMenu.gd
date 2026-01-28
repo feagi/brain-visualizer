@@ -311,10 +311,10 @@ func _button_ipu_opu_config() -> void:
 		BV.NOTIF.add_notification("IPU/OPU configuration only.")
 		close_window()
 		return
-	BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
-		"IPU/OPU Configuration",
-		"This configuration panel will be populated next."
-	))
+	var focus_area: AbstractCorticalArea = _selection[0] as AbstractCorticalArea
+	var focus_key: StringName = focus_area.controller_ID if focus_area != null else &""
+	var focus_section: StringName = WindowIPUOPUConfig.SECTION_OUTPUT if focus_area is OPUCorticalArea else WindowIPUOPUConfig.SECTION_INPUT
+	BV.WM.spawn_ipu_opu_config(focus_key, focus_section)
 	close_window()
 
 ## Resets selected cortical areas to their default values.

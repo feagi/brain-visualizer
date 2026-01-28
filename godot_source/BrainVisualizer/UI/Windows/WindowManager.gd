@@ -27,6 +27,7 @@ const _PREFAB_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/O
 const _PREFAB_VIEW_PREVIEWS: PackedScene = preload("res://BrainVisualizer/UI/Windows/ViewPreviews/WindowViewPreviews.tscn")
 const _PREFAB_CAMERA_ANIMATIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.tscn")
 const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.tscn")
+const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.tscn")
 
 
 var loaded_windows: Dictionary
@@ -49,6 +50,11 @@ func spawn_guide() -> void:
 func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) -> void:
 	var cortical_window: AdvancedCorticalProperties = _default_spawn_window(_PREFAB_ADV_CORTICAL_PROPERTIES, AdvancedCorticalProperties.WINDOW_NAME) as AdvancedCorticalProperties
 	cortical_window.setup(cortical_areas)
+
+## Open the IPU/OPU configuration window with optional focus.
+func spawn_ipu_opu_config(focus_device_key: StringName = "", focus_section: StringName = WindowIPUOPUConfig.SECTION_OUTPUT) -> void:
+	var config_window: WindowIPUOPUConfig = _default_spawn_window(_PREFAB_IPU_OPU_CONFIG, WindowIPUOPUConfig.WINDOW_NAME) as WindowIPUOPUConfig
+	config_window.setup_with_focus(focus_device_key, focus_section)
 
 func spawn_create_morphology() -> void:
 	var create_morphology: WindowCreateMorphology = _default_spawn_window(_PREFAB_CREATE_MORPHOLOGY, WindowCreateMorphology.WINDOW_NAME) as WindowCreateMorphology
