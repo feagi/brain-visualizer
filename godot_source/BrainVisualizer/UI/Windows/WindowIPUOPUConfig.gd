@@ -253,10 +253,14 @@ func _append_capability_unit_key(source: Dictionary, keys: Array[StringName]) ->
 ## Creates a device button with a default icon and selection handler.
 func _create_device_button_bundle(device_key: StringName, is_output: bool) -> Dictionary:
 	var container := VBoxContainer.new()
-	container.custom_minimum_size = Vector2(60, 50)
+	container.custom_minimum_size = Vector2(256, 256)
+	container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	container.alignment = BoxContainer.ALIGNMENT_CENTER
 	var button: TextureButton = TextureButton.new()
-	button.custom_minimum_size = Vector2(16, 16)
+	button.custom_minimum_size = Vector2(128, 128)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	button.ignore_texture_size = true
 	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	button.texture_normal = _get_device_icon(device_key, is_output)
@@ -268,7 +272,10 @@ func _create_device_button_bundle(device_key: StringName, is_output: bool) -> Di
 	var label := Label.new()
 	label.text = String(device_key)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	label.custom_minimum_size = Vector2(128, 0)
+	label.max_lines_visible = 1
 	container.add_child(button)
 	container.add_child(label)
 	return { "container": container, "button": button }
@@ -277,11 +284,30 @@ func _create_device_button_bundle(device_key: StringName, is_output: bool) -> Di
 func _get_device_icon(device_key: StringName, is_output: bool) -> Texture2D:
 	var icon_id := _get_device_icon_id_from_enum(device_key, is_output)
 	if icon_id != "":
+		var knowns_path := "res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/%s.png" % String(icon_id)
+		print("Sensorimotor icon resolve: device=%s output=%s icon_id=%s path=%s exists=%s" % [
+			String(device_key),
+			str(is_output),
+			String(icon_id),
+			knowns_path,
+			str(ResourceLoader.exists(knowns_path))
+		])
 		return UIManager.get_icon_texture_by_ID(icon_id, not is_output)
 	var icon_path := _DEFAULT_OUTPUT_ICON if is_output else _DEFAULT_INPUT_ICON
+	print("Sensorimotor icon fallback: device=%s output=%s icon_id=NONE path=%s exists=%s" % [
+		String(device_key),
+		str(is_output),
+		icon_path,
+		str(ResourceLoader.exists(icon_path))
+	])
 	if ResourceLoader.exists(icon_path):
 		return load(icon_path)
 	if ResourceLoader.exists(_DEFAULT_GENERIC_ICON):
+		print("Sensorimotor icon fallback: device=%s output=%s using_generic=%s" % [
+			String(device_key),
+			str(is_output),
+			_DEFAULT_GENERIC_ICON
+		])
 		return load(_DEFAULT_GENERIC_ICON)
 	return null
 

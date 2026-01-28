@@ -833,11 +833,9 @@ func _process_hash_change_detection(health: Dictionary) -> void:
 		_previous_cortical_mappings_hash,
 		&"_refresh_mappings_from_feagi"
 	)
-	_previous_agent_data_hash = _check_hash_and_queue(
-		&"agent_data_hash",
+	_previous_agent_data_hash = _check_agent_hash_and_queue(
 		health.get("agent_data_hash", null),
-		_previous_agent_data_hash,
-		&"_refresh_agent_data_from_feagi"
+		_previous_agent_data_hash
 	)
 
 ## Determines if hash-driven refreshes should run
@@ -865,6 +863,21 @@ func _check_hash_and_queue(hash_key: StringName, current_value: Variant, previou
 		print("HASH CHANGE DETECTED: %s %d -> %d (refresh=%s)" % [hash_key, previous_value, current_hash, refresh_method])
 		_queue_hash_refresh(hash_key, current_hash, refresh_method)
 	
+	return previous_value
+
+## Evaluates agent hash changes and schedules refresh when needed
+func _check_agent_hash_and_queue(current_value: Variant, previous_value: int) -> int:
+	if current_value == null:
+		return previous_value
+	var current_hash: int = int(current_value)
+	if previous_value == 0:
+		if current_hash != 0 and agent_capabilities_map.is_empty():
+			print("HASH CHANGE DETECTED: agent_data_hash 0 -> %d (refresh=_refresh_agent_data_from_feagi)" % current_hash)
+			_queue_hash_refresh(&"agent_data_hash", current_hash, &"_refresh_agent_data_from_feagi")
+		return current_hash
+	if current_hash != previous_value:
+		print("HASH CHANGE DETECTED: agent_data_hash %d -> %d (refresh=_refresh_agent_data_from_feagi)" % [previous_value, current_hash])
+		_queue_hash_refresh(&"agent_data_hash", current_hash, &"_refresh_agent_data_from_feagi")
 	return previous_value
 
 ## Queue a hash refresh if one is not already running for the given key
