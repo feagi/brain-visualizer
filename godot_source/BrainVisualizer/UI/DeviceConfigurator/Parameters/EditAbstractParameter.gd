@@ -1,4 +1,4 @@
-extends HBoxContainer
+extends BoxContainer
 class_name EditAbstractParameter
 
 const PARAMETER_TSCNS_FOLDER_PATH: StringName = "res://BrainVisualizer/UI/DeviceConfigurator/Parameters/"

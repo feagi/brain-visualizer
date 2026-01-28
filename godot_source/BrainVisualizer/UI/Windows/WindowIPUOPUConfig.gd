@@ -10,6 +10,7 @@ const ALL_AGENTS_OPTION: StringName = "__all_agents__"
 const _DEFAULT_INPUT_ICON: StringName = "res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png"
 const _DEFAULT_OUTPUT_ICON: StringName = "res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png"
 const _DEFAULT_GENERIC_ICON: StringName = "res://BrainVisualizer/UI/GenericResources/ButtonIcons/setting.png"
+const COLLAPSIBLE_SECTION: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn")
 
 const INPUT_DEVICE_ICON_IDS: Dictionary = {
 	"Infrared": "iinf",
@@ -432,49 +433,21 @@ func _render_device_config() -> void:
 			continue
 		for entry_data in entries:
 			var entry = entry_data["value"]
-			var entry_panel := PanelContainer.new()
-			entry_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			var entry_margin := MarginContainer.new()
-			entry_margin.add_theme_constant_override("margin_left", 8)
-			entry_margin.add_theme_constant_override("margin_top", 6)
-			entry_margin.add_theme_constant_override("margin_right", 8)
-			entry_margin.add_theme_constant_override("margin_bottom", 6)
-			entry_panel.add_child(entry_margin)
-			var entry_box := VBoxContainer.new()
-			entry_box.add_theme_constant_override("separation", 6)
-			entry_margin.add_child(entry_box)
-			var entry_label := Label.new()
-			entry_label.text = "Device %d" % int(entry_data["entry_index"])
-			entry_box.add_child(entry_label)
+			var entry_holder := _create_collapsible_section("Device %d" % int(entry_data["entry_index"]), false)
 			if entry is Dictionary:
-				var parameter_holder := VBoxContainer.new()
-				parameter_holder.add_theme_constant_override("separation", 4)
-				entry_box.add_child(parameter_holder)
-				_build_parameter_editors_from_entry(entry, parameter_holder)
-				_config_content.add_child(entry_panel)
+				_build_parameter_editors_from_entry(entry, entry_holder)
 				_editor_by_agent[agent_id].append({
 					"device_key": entry_data["entry_key"],
 					"container_kind": entry_data["container_kind"],
 					"entry_kind": "dict",
-					"holder": parameter_holder
+					"holder": entry_holder
 				})
 				continue
 			if entry is Array and entry.size() == 2 and entry[0] is Dictionary and entry[1] is Dictionary:
-				var unit_holder := VBoxContainer.new()
-				unit_holder.add_theme_constant_override("separation", 4)
-				var unit_label := Label.new()
-				unit_label.text = "Unit Definition"
-				entry_box.add_child(unit_label)
-				entry_box.add_child(unit_holder)
+				var unit_holder := _create_collapsible_section("Unit Definition", false, entry_holder)
 				_build_parameter_editors_from_entry(entry[0], unit_holder)
-				var props_holder := VBoxContainer.new()
-				props_holder.add_theme_constant_override("separation", 4)
-				var props_label := Label.new()
-				props_label.text = "Properties"
-				entry_box.add_child(props_label)
-				entry_box.add_child(props_holder)
+				var props_holder := _create_collapsible_section("Properties", false, entry_holder)
 				_build_parameter_editors_from_entry(entry[1], props_holder)
-				_config_content.add_child(entry_panel)
 				_editor_by_agent[agent_id].append({
 					"device_key": entry_data["entry_key"],
 					"container_kind": entry_data["container_kind"],
@@ -527,10 +500,22 @@ func _build_parameter_editors_from_entry(entry: Dictionary, holder: VBoxContaine
 	var keys: Array = entry.keys()
 	keys.sort()
 	for key in keys:
-		var parameter := _build_parameter_from_value(StringName(String(key)), entry[key])
-		if parameter == null:
-			continue
-		EditAbstractParameter.spawn_and_add_parameter_editor(parameter, holder)
+		_append_editors_for_value(StringName(String(key)), entry[key], holder)
+
+func _append_editors_for_value(label: StringName, value: Variant, holder: VBoxContainer) -> void:
+	if value is Dictionary:
+		var section_holder := _create_collapsible_section(String(label), false, holder)
+		_build_parameter_editors_from_entry(value, section_holder)
+		return
+	if value is Array and not _array_is_vector3(value):
+		var section_holder := _create_collapsible_section(String(label), false, holder)
+		for index in range(value.size()):
+			_append_editors_for_value(StringName(str(index)), value[index], section_holder)
+		return
+	var parameter := _build_parameter_from_value(label, value)
+	if parameter == null:
+		return
+	EditAbstractParameter.spawn_and_add_parameter_editor(parameter, holder)
 
 ## Build a parameter object from a JSON value.
 func _build_parameter_from_value(label: StringName, value: Variant) -> AbstractParameter:
@@ -616,6 +601,22 @@ func _export_entry_for_kind(entry_kind: String, entry_data: Dictionary) -> Varia
 		var props_dict = _export_entry_from_holder(props_holder)
 		return [unit_dict, props_dict]
 	return {}
+
+func _create_collapsible_section(title: String, start_open: bool, parent: Control = null) -> VBoxContainer:
+	var collapsible: VerticalCollapsibleHiding = COLLAPSIBLE_SECTION.instantiate()
+	collapsible.section_text = StringName(title)
+	var title_label: Label = collapsible.get_node("VerticalCollapsible/HBoxContainer/Section_Title")
+	title_label.text = title
+	collapsible.start_open = start_open
+	if parent == null:
+		_config_content.add_child(collapsible)
+	else:
+		parent.add_child(collapsible)
+	var content_root: Control = collapsible.get_control()
+	var holder := VBoxContainer.new()
+	holder.add_theme_constant_override("separation", 4)
+	content_root.add_child(holder)
+	return holder
 
 ## Normalize exported JSON values (convert numeric-key dictionaries to arrays).
 func _normalize_json_value(value: Variant) -> Variant:

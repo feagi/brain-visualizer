@@ -30,6 +30,12 @@ func _ready():
 	#($VerticalCollapsible/HBoxContainer/Section_Title as Label).text = section_text #TODO
 	_collapsing_button_toggle = $VerticalCollapsible/HBoxContainer/Collapsible_Toggle
 	_collapsing_section = $VerticalCollapsible/PanelContainer
+	var header_row: HBoxContainer = $VerticalCollapsible/HBoxContainer
+	var header_label: Label = $VerticalCollapsible/HBoxContainer/Section_Title
+	header_row.mouse_filter = Control.MOUSE_FILTER_STOP
+	header_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	header_row.gui_input.connect(_on_header_gui_input)
+	header_label.gui_input.connect(_on_header_gui_input)
 	is_open = start_open
 
 ## Returns the first control in the collapsing section
@@ -53,3 +59,9 @@ func _toggle_button_texture(is_opened: bool) -> void:
 
 func _toggle_button_pressed() -> void:
 	is_open = !_is_open
+
+func _on_header_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.is_pressed():
+			_toggle_button_pressed()
