@@ -156,7 +156,8 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			_toggle_add_buttons(true)
 			_step4_button.disabled = false
 			# Keep the core morphology icon bar visible so user can reselect
-			_set_core_bar_visibility(true)
+			var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+			_set_core_bar_visibility(not destination_is_memory)
 		_:
 			push_error("UI: WINDOWS: WindowQuickConnect in unknown state!")
 	
@@ -186,14 +187,15 @@ func _setting_destination() -> void:
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
 	var mapping_defaults: MappingRestrictionDefault = MappingRestrictionsAPI.get_defaults_between_cortical_areas(_source, _destination)
+	var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
 	_selected_morphology = null
 	_step3_label.text = " Please Select a Connectivity Rule..."
 	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	
 	# ✅ CRITICAL FIX: Make the morphology container visible so the list appears
-	_step3_morphology_container.visible = true
+	_step3_morphology_container.visible = not destination_is_memory
 	# Show and (re)populate the Core Morphologies icon bar
-	_set_core_bar_visibility(true)
+	_set_core_bar_visibility(not destination_is_memory)
 	
 	# Get restrictions with proper null checking
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
@@ -207,8 +209,11 @@ func _setting_morphology() -> void:
 	_populate_core_morphology_icons(restrictions)
 	
 	# Auto-select default morphology if available
-	if mapping_defaults != null and mapping_defaults.try_get_default_morphology() != null:
-		_step3_scroll.select_morphology(mapping_defaults.try_get_default_morphology())
+	var default_morphology: BaseMorphology = mapping_defaults.try_get_default_morphology() if mapping_defaults != null else null
+	if default_morphology != null:
+		_step3_scroll.select_morphology(default_morphology)
+		if destination_is_memory:
+			_set_morphology(default_morphology)
 
 ## Repopulate icons when cache updates, only if we're in morphology selection view
 func _on_morphology_cache_changed(_m: BaseMorphology) -> void:
