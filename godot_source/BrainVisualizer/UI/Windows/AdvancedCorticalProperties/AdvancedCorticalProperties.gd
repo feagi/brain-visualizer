@@ -1017,6 +1017,9 @@ func _finalize_neuron_coding_update(update_data: Dictionary, area: AbstractCorti
 @export var _device_count: IntSpinBox
 @export var _line_voxel_neuron_density: IntInput
 @export var _line_synaptic_attractivity: IntInput
+@export var _line_neuron_count: IntInput
+@export var _line_incoming_synapse_count: IntInput
+@export var _line_outgoing_synapse_count: IntInput
 @export var _dropdown_io_preset: OptionButton
 @export var _dimensions_label: Label
 @export var _vector_dimensions_spin: Vector3iSpinboxField
@@ -1049,6 +1052,12 @@ func _init_summary() -> void:
 	if not is_all_io:
 		_connect_control_to_update_button(_line_voxel_neuron_density, "cortical_neuron_per_vox_count", _button_summary_send)
 	_connect_control_to_update_button(_line_synaptic_attractivity, "cortical_synaptic_attractivity", _button_summary_send)
+	if _line_neuron_count != null:
+		_line_neuron_count.editable = false
+	if _line_incoming_synapse_count != null:
+		_line_incoming_synapse_count.editable = false
+	if _line_outgoing_synapse_count != null:
+		_line_outgoing_synapse_count.editable = false
 	
 	# TODO renable region button, but check to make sure all types can be moved
 	
@@ -1150,6 +1159,9 @@ func _refresh_from_cache_summary() -> void:
 	if not is_all_io:
 		_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
 	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
+	_update_control_with_value_from_areas(_line_neuron_count, "", "reported_neuron_count")
+	_update_control_with_value_from_areas(_line_incoming_synapse_count, "", "incoming_synapse_count")
+	_update_control_with_value_from_areas(_line_outgoing_synapse_count, "", "outgoing_synapse_count")
 	if _line_unit_id != null:
 		var unit_row = _line_unit_id.get_parent()
 		if unit_row != null:

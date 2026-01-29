@@ -754,7 +754,7 @@ func _append_editors_for_value(
 		var section_holder := _create_collapsible_section(String(label), false, holder)
 		var tag_param := EnumParameter.new()
 		tag_param.label = StringName(tag_key)
-		tag_param.description = ""
+		tag_param.description = _schema_tag_description(schema)
 		tag_param.options = _keys_to_stringname_array(variants.keys())
 		tag_param.value = StringName(tag_value)
 		var tag_editor := EditAbstractParameter.spawn_and_add_parameter_editor(tag_param, section_holder)
@@ -783,16 +783,17 @@ func _append_editors_for_value(
 ## Build a parameter object from schema and value.
 func _build_parameter_from_schema(label: StringName, value: Variant, schema: Dictionary) -> AbstractParameter:
 	var kind := _get_schema_kind(schema)
+	var description := _schema_description(schema)
 	if kind == "bool":
 		var param := BooleanParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		param.value = bool(value)
 		return param
 	if kind == "int":
 		var param := IntegerParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		param.value = int(value)
 		param.minimum = int(schema.get("min", param.minimum))
 		param.maximum = int(schema.get("max", param.maximum))
@@ -800,7 +801,7 @@ func _build_parameter_from_schema(label: StringName, value: Variant, schema: Dic
 	if kind == "float":
 		var param := FloatParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		param.value = float(value)
 		param.minimum = float(schema.get("min", param.minimum))
 		param.maximum = float(schema.get("max", param.maximum))
@@ -808,20 +809,20 @@ func _build_parameter_from_schema(label: StringName, value: Variant, schema: Dic
 	if kind == "string":
 		var param := StringParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		param.value = StringName(String(value))
 		return param
 	if kind == "enum":
 		var param := EnumParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		param.options = _to_stringname_array(schema.get("options", []))
 		param.value = StringName(String(value))
 		return param
 	if kind == "optional":
 		var param := OptionalParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		param.enabled = value != null
 		var item_schema: Dictionary = schema.get("item", {})
 		var inner_value: Variant = value
@@ -836,12 +837,13 @@ func _build_parameter_from_schema(label: StringName, value: Variant, schema: Dic
 ## Build a parameter tree for complex schema types.
 func _build_parameter_tree_from_schema(label: StringName, value: Variant, schema: Dictionary) -> AbstractParameter:
 	var kind := _get_schema_kind(schema)
+	var description := _schema_description(schema)
 	if kind in ["bool", "int", "float", "string", "enum", "optional", "json_value"]:
 		return _build_parameter_from_schema(label, value, schema)
 	if kind == "object":
 		var param := ObjectParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		var subparams: Array[AbstractParameter] = []
 		var fields: Dictionary = schema.get("fields", {})
 		for field_key in fields.keys():
@@ -855,7 +857,7 @@ func _build_parameter_tree_from_schema(label: StringName, value: Variant, schema
 	if kind == "array":
 		var param := ObjectParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		var subparams: Array[AbstractParameter] = []
 		var item_schema: Dictionary = schema.get("items", {})
 		if value is Array:
@@ -868,7 +870,7 @@ func _build_parameter_tree_from_schema(label: StringName, value: Variant, schema
 	if kind == "map":
 		var param := ObjectParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		var subparams: Array[AbstractParameter] = []
 		var value_schema: Dictionary = schema.get("value", {})
 		if value is Dictionary:
@@ -881,7 +883,7 @@ func _build_parameter_tree_from_schema(label: StringName, value: Variant, schema
 	if kind == "tuple":
 		var param := ObjectParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		var subparams: Array[AbstractParameter] = []
 		var items: Array = schema.get("items", []) as Array
 		if value is Array:
@@ -895,7 +897,7 @@ func _build_parameter_tree_from_schema(label: StringName, value: Variant, schema
 	if kind == "externally_tagged_enum":
 		var param := ObjectParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		var subparams: Array[AbstractParameter] = []
 		var variants: Dictionary = schema.get("variants", {})
 		var variant_key = ""
@@ -921,7 +923,7 @@ func _build_parameter_tree_from_schema(label: StringName, value: Variant, schema
 	if kind == "tagged_union":
 		var param := ObjectParameter.new()
 		param.label = label
-		param.description = ""
+		param.description = description
 		var subparams: Array[AbstractParameter] = []
 		var tag_key: String = String(schema.get("tag", "type"))
 		var value_key: String = String(schema.get("value", "value"))
@@ -929,7 +931,7 @@ func _build_parameter_tree_from_schema(label: StringName, value: Variant, schema
 		var tag_value: String = String(value[tag_key]) if value is Dictionary and value.has(tag_key) else ""
 		var tag_param := EnumParameter.new()
 		tag_param.label = StringName(String(tag_key))
-		tag_param.description = ""
+		tag_param.description = _schema_tag_description(schema)
 		tag_param.options = _keys_to_stringname_array(variants.keys())
 		tag_param.value = StringName(tag_value)
 		subparams.append(tag_param)
@@ -986,6 +988,16 @@ func _build_parameter_from_value(label: StringName, value: Variant) -> AbstractP
 		param.value = Vector3(float(value[0]), float(value[1]), float(value[2]))
 		return param
 	return null
+
+func _schema_description(schema: Dictionary) -> String:
+	if schema.has("description"):
+		return String(schema.get("description", ""))
+	return ""
+
+func _schema_tag_description(schema: Dictionary) -> String:
+	if schema.has("tag_description"):
+		return String(schema.get("tag_description", ""))
+	return _schema_description(schema)
 
 func _is_int_like_float(value: float) -> bool:
 	return value == float(int(value))

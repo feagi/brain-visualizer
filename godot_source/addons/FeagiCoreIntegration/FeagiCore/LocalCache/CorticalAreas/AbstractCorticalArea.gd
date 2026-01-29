@@ -132,6 +132,18 @@ var direct_neural_points: PackedByteArray:
 var neuron_count: int:
 	get: return AbstractCorticalArea.get_neuron_count(_dimensions_3D, _cortical_neuron_per_vox_count)
 
+## Neuron count reported by FEAGI (runtime value).
+var reported_neuron_count: int:
+	get: return _reported_neuron_count
+
+## Incoming synapse count reported by FEAGI (runtime value).
+var incoming_synapse_count: int:
+	get: return _incoming_synapse_count
+
+## Outgoing synapse count reported by FEAGI (runtime value).
+var outgoing_synapse_count: int:
+	get: return _outgoing_synapse_count
+
 ## Visualization voxel granularity for large-area rendering (x, y, z)
 ## If set, this area uses aggregated rendering instead of individual neuron rendering
 ## null = normal rendering, Vector3i = aggregated rendering mode with granularity dimensions
@@ -186,6 +198,9 @@ var has_memory_parameters: bool:
 # Private Properties
 var _cortical_neuron_per_vox_count: int = 1
 var _cortical_synaptic_attractivity: int = 100
+var _reported_neuron_count: int = 0
+var _incoming_synapse_count: int = 0
+var _outgoing_synapse_count: int = 0
 var _coordinates_2D_available: bool = false  # if coordinates_2D are available from FEAGI
 var _coordinates_3D_available: bool = false  # if coordinates_3D are available from FEAGI
 var _cortical_visiblity: bool = true
@@ -535,6 +550,21 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		if value != null:
 			_cortical_synaptic_attractivity = int(value)
 			cortical_synaptic_attractivity_updated.emit(_cortical_synaptic_attractivity, self)
+
+	if "neuron_count" in data.keys():
+		var value = data["neuron_count"]
+		if value != null:
+			_reported_neuron_count = int(value)
+
+	if "incoming_synapse_count" in data.keys():
+		var value = data["incoming_synapse_count"]
+		if value != null:
+			_incoming_synapse_count = int(value)
+
+	if "outgoing_synapse_count" in data.keys():
+		var value = data["outgoing_synapse_count"]
+		if value != null:
+			_outgoing_synapse_count = int(value)
 	
 	# IPU/OPU-specific decoded cortical ID fields
 	if "cortical_subtype" in data.keys():

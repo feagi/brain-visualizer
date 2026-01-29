@@ -137,267 +137,667 @@ fn schema_json_input_output_definition() -> Dictionary {
     let mut fields = Dictionary::new();
     fields.set(
         "input_units_and_encoder_properties",
-        schema_map(
+        with_description(
+            schema_map(
             schema_string(),
             schema_array(schema_tuple(array_from_dicts(&[
                 schema_json_unit_definition(),
                 schema_json_encoder_properties(),
             ]))),
         ),
+            "Map of sensory unit keys to [unit_definition, encoder_properties].",
+        ),
     );
     fields.set(
         "output_units_and_decoder_properties",
-        schema_map(
+        with_description(
+            schema_map(
             schema_string(),
             schema_array(schema_tuple(array_from_dicts(&[
                 schema_json_unit_definition(),
                 schema_json_decoder_properties(),
             ]))),
         ),
+            "Map of motor unit keys to [unit_definition, decoder_properties].",
+        ),
     );
-    fields.set("feedbacks", schema_json_value());
+    fields.set(
+        "feedbacks",
+        with_description(schema_json_value(), "Feedback channels registered by agents."),
+    );
     schema_object(fields)
 }
 
 fn schema_json_unit_definition() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("friendly_name", schema_optional(schema_string()));
-    fields.set("cortical_unit_index", schema_int(0, 255));
-    fields.set("io_configuration_flags", schema_map(schema_string(), schema_json_value()));
-    fields.set("device_grouping", schema_array(schema_json_device_grouping()));
+    fields.set(
+        "friendly_name",
+        with_description(
+            schema_optional(schema_string()),
+            "Optional display name for this unit definition.",
+        ),
+    );
+    fields.set(
+        "cortical_unit_index",
+        with_description(
+            schema_int(0, 255),
+            "Unit instance index for the device type.",
+        ),
+    );
+    fields.set(
+        "io_configuration_flags",
+        with_description(
+            schema_map(schema_string(), schema_json_value()),
+            "I/O configuration flags used to derive encoding behavior.",
+        ),
+    );
+    fields.set(
+        "device_grouping",
+        with_description(
+            schema_array(schema_json_device_grouping()),
+            "Per-channel device definitions for this unit.",
+        ),
+    );
     schema_object(fields)
 }
 
 fn schema_json_device_grouping() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("friendly_name", schema_optional(schema_string()));
-    fields.set("device_properties", schema_map(schema_string(), schema_json_device_property_value()));
-    fields.set("channel_index_override", schema_optional(schema_int(0, 4294967295)));
-    fields.set("pipeline_stages", schema_array(schema_pipeline_stage_properties()));
+    fields.set(
+        "friendly_name",
+        with_description(
+            schema_optional(schema_string()),
+            "Optional display name for this channel.",
+        ),
+    );
+    fields.set(
+        "device_properties",
+        with_description(
+            schema_map(schema_string(), schema_json_device_property_value()),
+            "Device-specific properties used by encoders/decoders.",
+        ),
+    );
+    fields.set(
+        "channel_index_override",
+        with_description(
+            schema_optional(schema_int(0, 4294967295)),
+            "Override the generated channel index for this device group.",
+        ),
+    );
+    fields.set(
+        "pipeline_stages",
+        with_description(
+            schema_array(schema_pipeline_stage_properties()),
+            "Preprocessing stages applied before encoding/decoding.",
+        ),
+    );
     schema_object(fields)
 }
 
 fn schema_json_device_property_value() -> Dictionary {
     let mut variants = Dictionary::new();
-    variants.set("String", schema_string());
-    variants.set("Integer", schema_int(i64::MIN, i64::MAX));
-    variants.set("Float", schema_float(f64::MIN, f64::MAX));
-    variants.set("Dictionary", schema_map(schema_string(), schema_json_value()));
-    schema_tagged_union("type", "value", variants)
+    variants.set("String", with_description(schema_string(), "String value."));
+    variants.set(
+        "Integer",
+        with_description(schema_int(i64::MIN, i64::MAX), "Integer value."),
+    );
+    variants.set(
+        "Float",
+        with_description(schema_float(f64::MIN, f64::MAX), "Float value."),
+    );
+    variants.set(
+        "Dictionary",
+        with_description(
+            schema_map(schema_string(), schema_json_value()),
+            "Dictionary value.",
+        ),
+    );
+    with_description(
+        schema_tagged_union("type", "value", variants),
+        "Typed device property value.",
+    )
 }
 
 fn schema_json_encoder_properties() -> Dictionary {
     let mut variants = Dictionary::new();
-    variants.set("Boolean", schema_unit());
-    variants.set("CartesianPlane", schema_image_frame_properties());
-    variants.set("MiscData", schema_misc_data_dimensions());
+    variants.set(
+        "Boolean",
+        with_description(schema_unit(), "Boolean encoder (on/off)."),
+    );
+    variants.set(
+        "CartesianPlane",
+        with_description(
+            schema_image_frame_properties(),
+            "Image frame encoder using cartesian plane encoding.",
+        ),
+    );
+    variants.set(
+        "MiscData",
+        with_description(
+            schema_misc_data_dimensions(),
+            "Misc data encoder with explicit dimensions.",
+        ),
+    );
     variants.set(
         "Percentage",
-        schema_tuple(array_from_dicts(&[
-            schema_neuron_depth(),
-            schema_percentage_neuron_positioning(),
-            schema_bool(),
-            schema_percentage_channel_dimensionality(),
-        ])),
+        with_description(
+            schema_tuple(array_from_dicts(&[
+                with_description(
+                    schema_neuron_depth(),
+                    "Neuron depth (z layers) used by the percentage encoder.",
+                ),
+                with_description(
+                    schema_percentage_neuron_positioning(),
+                    "How percentage values map to neuron positions.",
+                ),
+                with_description(schema_bool(), "Enable signed percentage values."),
+                with_description(
+                    schema_percentage_channel_dimensionality(),
+                    "Channel dimensionality for percentage encoding.",
+                ),
+            ])),
+            "Tuple: [neuron_depth, positioning, signed, dimensionality].",
+        ),
     );
-    variants.set("SegmentedImageFrame", schema_segmented_image_frame_properties());
-    schema_externally_tagged_enum(variants)
+    variants.set(
+        "SegmentedImageFrame",
+        with_description(
+            schema_segmented_image_frame_properties(),
+            "Segmented image frame encoder for multi-region vision.",
+        ),
+    );
+    with_description(
+        schema_externally_tagged_enum(variants),
+        "Encoder property configuration for this unit.",
+    )
 }
 
 fn schema_json_decoder_properties() -> Dictionary {
     let mut variants = Dictionary::new();
-    variants.set("CartesianPlane", schema_image_frame_properties());
-    variants.set("MiscData", schema_misc_data_dimensions());
+    variants.set(
+        "CartesianPlane",
+        with_description(
+            schema_image_frame_properties(),
+            "Image frame decoder using cartesian plane encoding.",
+        ),
+    );
+    variants.set(
+        "MiscData",
+        with_description(
+            schema_misc_data_dimensions(),
+            "Misc data decoder with explicit dimensions.",
+        ),
+    );
     variants.set(
         "Percentage",
-        schema_tuple(array_from_dicts(&[
-            schema_neuron_depth(),
-            schema_percentage_neuron_positioning(),
-            schema_bool(),
-            schema_percentage_channel_dimensionality(),
-        ])),
+        with_description(
+            schema_tuple(array_from_dicts(&[
+                with_description(
+                    schema_neuron_depth(),
+                    "Neuron depth (z layers) used by the percentage decoder.",
+                ),
+                with_description(
+                    schema_percentage_neuron_positioning(),
+                    "How percentage values map to neuron positions.",
+                ),
+                with_description(schema_bool(), "Enable signed percentage values."),
+                with_description(
+                    schema_percentage_channel_dimensionality(),
+                    "Channel dimensionality for percentage decoding.",
+                ),
+            ])),
+            "Tuple: [neuron_depth, positioning, signed, dimensionality].",
+        ),
     );
     variants.set(
         "GazeProperties",
-        schema_tuple(array_from_dicts(&[
-            schema_neuron_depth(),
-            schema_neuron_depth(),
-            schema_percentage_neuron_positioning(),
-        ])),
+        with_description(
+            schema_tuple(array_from_dicts(&[
+                with_description(schema_neuron_depth(), "Neuron depth for gaze X."),
+                with_description(schema_neuron_depth(), "Neuron depth for gaze Y."),
+                with_description(
+                    schema_percentage_neuron_positioning(),
+                    "How gaze values map to neuron positions.",
+                ),
+            ])),
+            "Tuple: [x_depth, y_depth, positioning].",
+        ),
     );
     variants.set(
         "ImageFilteringSettings",
-        schema_tuple(array_from_dicts(&[
-            schema_neuron_depth(),
-            schema_neuron_depth(),
-            schema_neuron_depth(),
-            schema_percentage_neuron_positioning(),
-        ])),
+        with_description(
+            schema_tuple(array_from_dicts(&[
+                with_description(schema_neuron_depth(), "Neuron depth for brightness."),
+                with_description(schema_neuron_depth(), "Neuron depth for contrast."),
+                with_description(schema_neuron_depth(), "Neuron depth for diff thresholds."),
+                with_description(
+                    schema_percentage_neuron_positioning(),
+                    "How filter values map to neuron positions.",
+                ),
+            ])),
+            "Tuple: [brightness_depth, contrast_depth, diff_depth, positioning].",
+        ),
     );
-    schema_externally_tagged_enum(variants)
+    with_description(
+        schema_externally_tagged_enum(variants),
+        "Decoder property configuration for this unit.",
+    )
 }
 
 fn schema_pipeline_stage_properties() -> Dictionary {
     let mut variants = Dictionary::new();
     variants.set(
         "ImageFrameProcessor",
-        schema_object(dictionary_from_pairs(&[
-            ("transformer_definition", schema_image_frame_processor()),
-        ])),
+        with_description(
+            schema_object(dictionary_from_pairs(&[(
+                "transformer_definition",
+                with_description(
+                    schema_image_frame_processor(),
+                    "Image transform pipeline definition.",
+                ),
+            )])),
+            "Image processing stage for frames.",
+        ),
     );
     variants.set(
         "ImageFrameSegmentator",
-        schema_object(dictionary_from_pairs(&[
-            ("input_image_properties", schema_image_frame_properties()),
-            ("output_image_properties", schema_segmented_image_frame_properties()),
-            ("segmentation_gaze", schema_gaze_properties()),
-        ])),
+        with_description(
+            schema_object(dictionary_from_pairs(&[
+                (
+                    "input_image_properties",
+                    with_description(
+                        schema_image_frame_properties(),
+                        "Input image properties before segmentation.",
+                    ),
+                ),
+                (
+                    "output_image_properties",
+                    with_description(
+                        schema_segmented_image_frame_properties(),
+                        "Output segmented image properties.",
+                    ),
+                ),
+                (
+                    "segmentation_gaze",
+                    with_description(
+                        schema_gaze_properties(),
+                        "Gaze settings used to segment the image.",
+                    ),
+                ),
+            ])),
+            "Stage that segments image frames into regions.",
+        ),
     );
     variants.set(
         "ImageQuickDiff",
-        schema_object(dictionary_from_pairs(&[
-            ("per_pixel_allowed_range", schema_range_u8()),
-            ("acceptable_amount_of_activity_in_image", schema_range_percentage()),
-            ("image_properties", schema_image_frame_properties()),
-        ])),
+        with_description(
+            schema_object(dictionary_from_pairs(&[
+                (
+                    "per_pixel_allowed_range",
+                    with_description(
+                        schema_range_u8(),
+                        "Allowed per-pixel difference range.",
+                    ),
+                ),
+                (
+                    "acceptable_amount_of_activity_in_image",
+                    with_description(
+                        schema_range_percentage(),
+                        "Acceptable activity range for the image.",
+                    ),
+                ),
+                (
+                    "image_properties",
+                    with_description(
+                        schema_image_frame_properties(),
+                        "Image properties used for diffing.",
+                    ),
+                ),
+            ])),
+            "Stage that computes quick image differences.",
+        ),
     );
     variants.set(
         "ImagePixelValueCountThreshold",
-        schema_object(dictionary_from_pairs(&[
-            ("input_definition", schema_image_frame_properties()),
-            ("inclusive_pixel_range", schema_range_u8()),
-            ("acceptable_amount_of_activity_in_image", schema_range_percentage()),
-        ])),
+        with_description(
+            schema_object(dictionary_from_pairs(&[
+                (
+                    "input_definition",
+                    with_description(
+                        schema_image_frame_properties(),
+                        "Input image properties.",
+                    ),
+                ),
+                (
+                    "inclusive_pixel_range",
+                    with_description(
+                        schema_range_u8(),
+                        "Pixel value range to count (inclusive).",
+                    ),
+                ),
+                (
+                    "acceptable_amount_of_activity_in_image",
+                    with_description(
+                        schema_range_percentage(),
+                        "Acceptable activity range for the image.",
+                    ),
+                ),
+            ])),
+            "Stage that thresholds based on pixel value counts.",
+        ),
     );
-    schema_externally_tagged_enum(variants)
+    with_description(
+        schema_externally_tagged_enum(variants),
+        "Pipeline stage configuration.",
+    )
 }
 
 fn schema_image_frame_properties() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("image_resolution", schema_image_xy_resolution());
-    fields.set("color_space", schema_enum(&["Linear", "Gamma"]));
-    fields.set("color_channel_layout", schema_enum(&["GrayScale", "RG", "RGB", "RGBA"]));
+    fields.set(
+        "image_resolution",
+        with_description(
+            schema_image_xy_resolution(),
+            "Width and height of the image in pixels.",
+        ),
+    );
+    fields.set(
+        "color_space",
+        with_description(schema_enum(&["Linear", "Gamma"]), "Color space for the image."),
+    );
+    fields.set(
+        "color_channel_layout",
+        with_description(
+            schema_enum(&["GrayScale", "RG", "RGB", "RGBA"]),
+            "Color channel layout for the image.",
+        ),
+    );
     schema_object(fields)
 }
 
 fn schema_segmented_image_frame_properties() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("segment_xy_resolutions", schema_segmented_xy_resolutions());
-    fields.set("center_color_channel", schema_enum(&["GrayScale", "RG", "RGB", "RGBA"]));
-    fields.set("peripheral_color_channels", schema_enum(&["GrayScale", "RG", "RGB", "RGBA"]));
-    fields.set("color_space", schema_enum(&["Linear", "Gamma"]));
+    fields.set(
+        "segment_xy_resolutions",
+        with_description(
+            schema_segmented_xy_resolutions(),
+            "Resolution per segmentation tile.",
+        ),
+    );
+    fields.set(
+        "center_color_channel",
+        with_description(
+            schema_enum(&["GrayScale", "RG", "RGB", "RGBA"]),
+            "Color layout for the center segment.",
+        ),
+    );
+    fields.set(
+        "peripheral_color_channels",
+        with_description(
+            schema_enum(&["GrayScale", "RG", "RGB", "RGBA"]),
+            "Color layout for peripheral segments.",
+        ),
+    );
+    fields.set(
+        "color_space",
+        with_description(schema_enum(&["Linear", "Gamma"]), "Color space for segments."),
+    );
     schema_object(fields)
 }
 
 fn schema_gaze_properties() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("eccentricity_location_xy", schema_percentage_2d());
-    fields.set("modulation_size", schema_percentage());
+    fields.set(
+        "eccentricity_location_xy",
+        with_description(
+            schema_percentage_2d(),
+            "Normalized gaze location in the image (0..1).",
+        ),
+    );
+    fields.set(
+        "modulation_size",
+        with_description(schema_percentage(), "Normalized size of gaze modulation."),
+    );
     schema_object(fields)
 }
 
 fn schema_image_filtering_settings() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("brightness", schema_percentage());
-    fields.set("contrast", schema_percentage());
-    fields.set("per_pixel_diff_threshold", schema_percentage_2d());
-    fields.set("image_diff_threshold", schema_percentage_2d());
+    fields.set(
+        "brightness",
+        with_description(schema_percentage(), "Brightness adjustment (0..1)."),
+    );
+    fields.set(
+        "contrast",
+        with_description(schema_percentage(), "Contrast adjustment (0..1)."),
+    );
+    fields.set(
+        "per_pixel_diff_threshold",
+        with_description(
+            schema_percentage_2d(),
+            "Per-pixel difference threshold (0..1).",
+        ),
+    );
+    fields.set(
+        "image_diff_threshold",
+        with_description(
+            schema_percentage_2d(),
+            "Global image difference threshold (0..1).",
+        ),
+    );
     schema_object(fields)
 }
 
 fn schema_image_frame_processor() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("input_image_properties", schema_image_frame_properties());
-    fields.set("cropping_from", schema_optional(schema_corner_points()));
-    fields.set("final_resize_xy_to", schema_optional(schema_image_xy_resolution()));
-    fields.set("convert_color_space_to", schema_optional(schema_enum(&["Linear", "Gamma"])));
-    fields.set("offset_brightness_by", schema_optional(schema_int(i64::MIN, i64::MAX)));
-    fields.set("change_contrast_by", schema_optional(schema_float(f64::MIN, f64::MAX)));
-    fields.set("convert_to_grayscale", schema_bool());
+    fields.set(
+        "input_image_properties",
+        with_description(
+            schema_image_frame_properties(),
+            "Input image properties before processing.",
+        ),
+    );
+    fields.set(
+        "cropping_from",
+        with_description(
+            schema_optional(schema_corner_points()),
+            "Optional crop region (upper_left, lower_right).",
+        ),
+    );
+    fields.set(
+        "final_resize_xy_to",
+        with_description(
+            schema_optional(schema_image_xy_resolution()),
+            "Optional output resolution after processing.",
+        ),
+    );
+    fields.set(
+        "convert_color_space_to",
+        with_description(
+            schema_optional(schema_enum(&["Linear", "Gamma"])),
+            "Optional color space conversion.",
+        ),
+    );
+    fields.set(
+        "offset_brightness_by",
+        with_description(
+            schema_optional(schema_int(i64::MIN, i64::MAX)),
+            "Optional brightness offset (signed).",
+        ),
+    );
+    fields.set(
+        "change_contrast_by",
+        with_description(
+            schema_optional(schema_float(f64::MIN, f64::MAX)),
+            "Optional contrast change factor.",
+        ),
+    );
+    fields.set(
+        "convert_to_grayscale",
+        with_description(schema_bool(), "Convert to grayscale if true."),
+    );
     schema_object(fields)
 }
 
 fn schema_corner_points() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("upper_left", schema_image_xy_point());
-    fields.set("lower_right", schema_image_xy_point());
+    fields.set(
+        "upper_left",
+        with_description(schema_image_xy_point(), "Upper-left crop corner."),
+    );
+    fields.set(
+        "lower_right",
+        with_description(schema_image_xy_point(), "Lower-right crop corner."),
+    );
     schema_object(fields)
 }
 
 fn schema_segmented_xy_resolutions() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("lower_left", schema_image_xy_resolution());
-    fields.set("lower_middle", schema_image_xy_resolution());
-    fields.set("lower_right", schema_image_xy_resolution());
-    fields.set("middle_left", schema_image_xy_resolution());
-    fields.set("center", schema_image_xy_resolution());
-    fields.set("middle_right", schema_image_xy_resolution());
-    fields.set("upper_left", schema_image_xy_resolution());
-    fields.set("upper_middle", schema_image_xy_resolution());
-    fields.set("upper_right", schema_image_xy_resolution());
+    fields.set(
+        "lower_left",
+        with_description(schema_image_xy_resolution(), "Lower-left segment resolution."),
+    );
+    fields.set(
+        "lower_middle",
+        with_description(schema_image_xy_resolution(), "Lower-middle segment resolution."),
+    );
+    fields.set(
+        "lower_right",
+        with_description(schema_image_xy_resolution(), "Lower-right segment resolution."),
+    );
+    fields.set(
+        "middle_left",
+        with_description(schema_image_xy_resolution(), "Middle-left segment resolution."),
+    );
+    fields.set(
+        "center",
+        with_description(schema_image_xy_resolution(), "Center segment resolution."),
+    );
+    fields.set(
+        "middle_right",
+        with_description(schema_image_xy_resolution(), "Middle-right segment resolution."),
+    );
+    fields.set(
+        "upper_left",
+        with_description(schema_image_xy_resolution(), "Upper-left segment resolution."),
+    );
+    fields.set(
+        "upper_middle",
+        with_description(schema_image_xy_resolution(), "Upper-middle segment resolution."),
+    );
+    fields.set(
+        "upper_right",
+        with_description(schema_image_xy_resolution(), "Upper-right segment resolution."),
+    );
     schema_object(fields)
 }
 
 fn schema_image_xy_resolution() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("width", schema_int(1, i64::MAX));
-    fields.set("height", schema_int(1, i64::MAX));
+    fields.set(
+        "width",
+        with_description(schema_int(1, i64::MAX), "Image width in pixels."),
+    );
+    fields.set(
+        "height",
+        with_description(schema_int(1, i64::MAX), "Image height in pixels."),
+    );
     schema_object(fields)
 }
 
 fn schema_image_xy_point() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("x", schema_int(0, i64::MAX));
-    fields.set("y", schema_int(0, i64::MAX));
+    fields.set("x", with_description(schema_int(0, i64::MAX), "X coordinate."));
+    fields.set("y", with_description(schema_int(0, i64::MAX), "Y coordinate."));
     schema_object(fields)
 }
 
 fn schema_misc_data_dimensions() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("width", schema_int(1, i64::MAX));
-    fields.set("height", schema_int(1, i64::MAX));
-    fields.set("depth", schema_int(1, i64::MAX));
+    fields.set(
+        "width",
+        with_description(schema_int(1, i64::MAX), "Width dimension."),
+    );
+    fields.set(
+        "height",
+        with_description(schema_int(1, i64::MAX), "Height dimension."),
+    );
+    fields.set(
+        "depth",
+        with_description(schema_int(1, i64::MAX), "Depth dimension."),
+    );
     schema_object(fields)
 }
 
 fn schema_neuron_depth() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("value", schema_int(1, i64::MAX));
+    fields.set(
+        "value",
+        with_description(schema_int(1, i64::MAX), "Neuron depth (z layers)."),
+    );
     schema_object(fields)
 }
 
 fn schema_percentage_neuron_positioning() -> Dictionary {
-    schema_enum(&["Linear", "Fractional"])
+    with_description(
+        schema_enum(&["Linear", "Fractional"]),
+        "Positioning strategy for percentage channels.",
+    )
 }
 
 fn schema_percentage_channel_dimensionality() -> Dictionary {
-    schema_enum(&["D1", "D2", "D3", "D4"])
+    with_description(
+        schema_enum(&["D1", "D2", "D3", "D4"]),
+        "Dimensionality of the percentage channel.",
+    )
 }
 
 fn schema_percentage() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("value", schema_float(0.0, 1.0));
+    fields.set(
+        "value",
+        with_description(schema_float(0.0, 1.0), "Normalized value (0..1)."),
+    );
     schema_object(fields)
 }
 
 fn schema_percentage_2d() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("a", schema_percentage());
-    fields.set("b", schema_percentage());
+    fields.set(
+        "a",
+        with_description(schema_percentage(), "Normalized value A (0..1)."),
+    );
+    fields.set(
+        "b",
+        with_description(schema_percentage(), "Normalized value B (0..1)."),
+    );
     schema_object(fields)
 }
 
 fn schema_range_u8() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("start", schema_int(0, 255));
-    fields.set("end", schema_int(0, 255));
+    fields.set(
+        "start",
+        with_description(schema_int(0, 255), "Range start (0..255)."),
+    );
+    fields.set(
+        "end",
+        with_description(schema_int(0, 255), "Range end (0..255)."),
+    );
     schema_object(fields)
 }
 
 fn schema_range_percentage() -> Dictionary {
     let mut fields = Dictionary::new();
-    fields.set("start", schema_percentage());
-    fields.set("end", schema_percentage());
+    fields.set(
+        "start",
+        with_description(schema_percentage(), "Range start (0..1)."),
+    );
+    fields.set(
+        "end",
+        with_description(schema_percentage(), "Range end (0..1)."),
+    );
     schema_object(fields)
 }
 
@@ -443,6 +843,14 @@ fn schema_tagged_union(tag: &str, value_key: &str, variants: Dictionary) -> Dict
     schema.set("tag", tag);
     schema.set("value", value_key);
     schema.set("variants", variants);
+    schema.set(
+        "tag_description",
+        "Selects the variant type for this value.",
+    );
+    schema.set(
+        "value_description",
+        "Properties for the selected variant type.",
+    );
     schema
 }
 
@@ -497,6 +905,11 @@ fn schema_enum(options: &[&str]) -> Dictionary {
 fn schema_json_value() -> Dictionary {
     let mut schema = Dictionary::new();
     schema.set("kind", "json_value");
+    schema
+}
+
+fn with_description(mut schema: Dictionary, description: &str) -> Dictionary {
+    schema.set("description", description);
     schema
 }
 
