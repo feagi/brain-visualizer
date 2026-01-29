@@ -66,6 +66,7 @@ var _field_editors_by_agent: Dictionary = {}
 func setup_with_focus(device_key: StringName = "", section: StringName = SECTION_OUTPUT) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_titlebar.title = "Sensorimotor Configuration"
+	_ensure_window_overlay_order()
 	_selected_device_key = device_key
 	_selected_section = section
 	_bind_controls()
@@ -84,9 +85,15 @@ func setup_for_area(area: AbstractCorticalArea) -> void:
 func _ready() -> void:
 	super._ready()
 	_bind_controls()
+	_ensure_window_overlay_order()
 	if get_viewport() != null and not get_viewport().size_changed.is_connected(_on_viewport_resized):
 		get_viewport().size_changed.connect(_on_viewport_resized)
 	_apply_fullscreen_layout()
+
+## Ensure this window renders above global UI bars.
+func _ensure_window_overlay_order() -> void:
+	z_as_relative = false
+	z_index = 200
 
 ## Keep the window stretched to the viewport on theme updates.
 func _theme_updated(new_theme: Theme) -> void:
