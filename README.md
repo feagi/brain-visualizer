@@ -58,7 +58,7 @@ Learn how to use Brain Visualizer: [Video Tutorial](https://youtu.be/hH1KYexMQsA
 
 The fastest way to get started - no installation needed!
 
-[Launch NeuroRobotics Studio](https://neurorobotics.studio)
+[Launch NeuroRobotics Studio](https://brainsforrobots.com)
 
 ### FEAGI Desktop (All-in-One)
 
