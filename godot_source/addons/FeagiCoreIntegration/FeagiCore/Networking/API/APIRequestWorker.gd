@@ -105,6 +105,10 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 		_number_retries_done += 1
 		if _number_retries_done >= _request_definition.number_of_retries_allowed:
 			push_warning("FEAGI NETWORK HTTP: FEAGI failed to respond more times than retries allowed! Signaling disconnection")
+			if _request_definition.call_type == CALL_PROCESS_TYPE.POLLING and _timer != null:
+				_timer.stop()
+				_timer.paused = true
+			cancel_request()
 			_output_response = FeagiRequestOutput.response_no_response(_request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
 			_output_response.response_code = 0  # Ensure response_code is set
 			worker_done.emit()

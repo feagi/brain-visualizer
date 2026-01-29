@@ -58,6 +58,9 @@ func _update_line_endpoint_positions() -> void:
 		return
 	var CB_source_pos: Vector2 = _source_port.get_center_port_CB_position()
 	var CB_destination_pos: Vector2 = _destination_port.get_center_port_CB_position()
+	if not CB_source_pos.is_finite() or not CB_destination_pos.is_finite():
+		_request_dispose()
+		return
 	position_offset = (CB_source_pos + CB_destination_pos) / 2.0
 	
 	

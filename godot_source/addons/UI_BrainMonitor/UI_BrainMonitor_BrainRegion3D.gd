@@ -38,6 +38,7 @@ var _representing_region: BrainRegion
 var _frame_container: Node3D
 var _frame_collision: StaticBody3D
 var _input_areas_container: Node3D
+var _enable_large_box_logging: bool = false # Debug toggle to avoid log spam
 var _output_areas_container: Node3D
 var _conflict_areas_container: Node3D
 var _region_name_label: Label3D
@@ -1158,6 +1159,8 @@ func _create_mother_plate(size: Vector3, plate_name: String, plate_color: Color)
 
 ## Logs oversized BoxMesh instances to isolate large green boxes
 func _log_large_box_meshes(context: String) -> void:
+	if not _enable_large_box_logging:
+		return
 	# Only report unusually large boxes to avoid log spam.
 	var size_threshold = Vector3(200.0, 20.0, 2.0)
 	for node in get_children():
@@ -1175,7 +1178,7 @@ func _log_large_box_meshes_recursive(node: Node, context: String, size_threshold
 				var color = "none"
 				if mesh_instance.material_override is StandardMaterial3D:
 					color = str((mesh_instance.material_override as StandardMaterial3D).albedo_color)
-				print("🧪 LARGE BOX [%s]: node=%s path=%s size=%s scale=%s effective=%s local_pos=%s color=%s" % [
+				print("LARGE BOX [%s]: node=%s path=%s size=%s scale=%s effective=%s local_pos=%s color=%s" % [
 					context,
 					node.name,
 					mesh_instance.get_path(),
