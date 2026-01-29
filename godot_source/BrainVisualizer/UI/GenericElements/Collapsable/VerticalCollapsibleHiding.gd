@@ -30,12 +30,18 @@ func _ready():
 	#($VerticalCollapsible/HBoxContainer/Section_Title as Label).text = section_text #TODO
 	_collapsing_button_toggle = $VerticalCollapsible/HBoxContainer/Collapsible_Toggle
 	_collapsing_section = $VerticalCollapsible/PanelContainer
-	var header_row: HBoxContainer = $VerticalCollapsible/HBoxContainer
-	var header_label: Label = $VerticalCollapsible/HBoxContainer/Section_Title
-	header_row.mouse_filter = Control.MOUSE_FILTER_STOP
-	header_label.mouse_filter = Control.MOUSE_FILTER_STOP
-	header_row.gui_input.connect(_on_header_gui_input)
-	header_label.gui_input.connect(_on_header_gui_input)
+	var header_row := get_node_or_null("VerticalCollapsible/HBoxContainer") as HBoxContainer
+	var header_label := get_node_or_null("VerticalCollapsible/HBoxContainer/Section_Title") as Label
+	if header_row == null:
+		push_warning("VerticalCollapsibleHiding: missing header row at VerticalCollapsible/HBoxContainer.")
+	if header_label == null:
+		push_warning("VerticalCollapsibleHiding: missing header label at VerticalCollapsible/HBoxContainer/Section_Title.")
+	if header_row != null:
+		header_row.mouse_filter = Control.MOUSE_FILTER_STOP
+		header_row.gui_input.connect(_on_header_gui_input)
+	if header_label != null:
+		header_label.mouse_filter = Control.MOUSE_FILTER_STOP
+		header_label.gui_input.connect(_on_header_gui_input)
 	is_open = start_open
 
 ## Returns the first control in the collapsing section
