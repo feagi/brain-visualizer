@@ -35,6 +35,8 @@ var _transport_mode: TRANSPORT_MODE = TRANSPORT_MODE.UNKNOWN  # Track which tran
 var _feagi_endpoint_details: FeagiEndpointDetails = null  # Store endpoint details for later use
 var _heartbeat_timer: Timer = null  # Timer for sending periodic heartbeats to FEAGI
 var _heartbeat_interval: float = 15.0  # Send heartbeat every 15 seconds (matches FEAGI's expectation)
+var _reconnect_timer: Timer = null
+var _reconnect_in_progress: bool = false
 
 func _init():
 	http_API = FEAGIHTTPAPI.new()
@@ -74,6 +76,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	
 	# Store endpoint details for use throughout the connection lifecycle
 	_feagi_endpoint_details = feagi_endpoint_details
+	_stop_reconnect_loop()
 	
 	# We dont want prior connections from HTTP or WS to set off other code paths, remove signal connections
 	if http_API.FEAGI_http_health_changed.is_connected(_HTTP_health_changed):
@@ -96,7 +99,8 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	if http_API.http_health in [http_API.HTTP_HEALTH.NO_CONNECTION, http_API.HTTP_HEALTH.ERROR]:
 		_connection_state = CONNECTION_STATE.DISCONNECTED
 		connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.DISCONNECTED)
-		push_error("FEAGI NETWORK: Unable to commence a new connection as there was no HTTP response at endpoint %s" % _feagi_endpoint_details.full_http_address)
+		push_warning("FEAGI NETWORK: Unable to commence a new connection as there was no HTTP response at endpoint %s" % _feagi_endpoint_details.full_http_address)
+		_start_reconnect_loop()
 		return false
 	
 	# 𒓉 CHANGED: Register FIRST to get transport negotiation, THEN connect
@@ -110,6 +114,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		_transport_mode = TRANSPORT_MODE.SHARED_MEMORY  # Remember we're using SHM
 		_connection_state = CONNECTION_STATE.HEALTHY
 		connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.HEALTHY)
+		_stop_reconnect_loop()
 		# Skip to the end - signals will be connected at the bottom of the function
 		# (same as normal WebSocket flow after line ~110)
 		print("FEAGI NETWORK: Connecting to HTTP health signals for ongoing monitoring")
@@ -144,6 +149,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		http_API.disconnect_http() # HTTP is active, so lets ensure its disabled
 		connection_state_changed.emit(CONNECTION_STATE.INITIAL_WS_PROBING, CONNECTION_STATE.DISCONNECTED)
 		push_error("FEAGI NETWORK: Unable to commence a new connection as there was no WS response at endpoint %s" % _feagi_endpoint_details.full_websocket_address)
+		_start_reconnect_loop()
 		return false
 	
 	# both HTTP and WS are functioning! We are good to go!
@@ -151,6 +157,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	print("FEAGI NETWORK: ✅ Both HTTP and WebSocket connected successfully - transitioning to HEALTHY state")
 	_connection_state = CONNECTION_STATE.HEALTHY
 	connection_state_changed.emit(CONNECTION_STATE.INITIAL_WS_PROBING, CONNECTION_STATE.HEALTHY)
+	_stop_reconnect_loop()
 	
 	# connect signals for future changes
 	print("FEAGI NETWORK: Connecting to HTTP health signals for ongoing monitoring") 
@@ -502,3 +509,39 @@ func _send_heartbeat() -> void:
 	
 	# Optional: Log heartbeat send (can be removed once stable)
 	# print("💗 [HEARTBEAT] Sent heartbeat to FEAGI")
+
+## Start auto-reconnect loop while disconnected.
+func _start_reconnect_loop() -> void:
+	if _reconnect_timer and _reconnect_timer.is_inside_tree() and not _reconnect_timer.is_stopped():
+		return
+	if FeagiCore.feagi_settings == null:
+		push_warning("FEAGI NETWORK: Cannot start reconnect loop - settings not loaded")
+		return
+	var interval_seconds: float = FeagiCore.feagi_settings.seconds_between_healthcheck_pings
+	if _reconnect_timer == null:
+		_reconnect_timer = Timer.new()
+		_reconnect_timer.name = "ReconnectTimer"
+		_reconnect_timer.autostart = false
+		_reconnect_timer.one_shot = false
+		_reconnect_timer.timeout.connect(_on_reconnect_timer_timeout)
+		add_child(_reconnect_timer)
+	_reconnect_timer.wait_time = interval_seconds
+	_reconnect_timer.start()
+
+## Stop auto-reconnect loop.
+func _stop_reconnect_loop() -> void:
+	if _reconnect_timer != null:
+		_reconnect_timer.stop()
+
+func _on_reconnect_timer_timeout() -> void:
+	if _connection_state != CONNECTION_STATE.DISCONNECTED:
+		_stop_reconnect_loop()
+		return
+	if _reconnect_in_progress:
+		return
+	if _feagi_endpoint_details == null:
+		push_warning("FEAGI NETWORK: No endpoint details available for reconnect")
+		return
+	_reconnect_in_progress = true
+	await FeagiCore.attempt_connection_to_FEAGI(_feagi_endpoint_details)
+	_reconnect_in_progress = false

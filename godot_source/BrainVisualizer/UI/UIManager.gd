@@ -65,6 +65,8 @@ var _temp_bm_camera_pos: Vector3 = Vector3(0,0,0)
 var _temp_bm_camera_rot: Vector3
 var _fps_label: Label
 var _loading_status_label: Label
+var _manual_stim_pending_workers: Dictionary = {}
+var _manual_stim_timeouts: Dictionary = {}
 
 
 func _enter_tree():
@@ -486,27 +488,34 @@ func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[Stri
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	
 	# Add timeout mechanism
-	var worker_completed = false
-	var timeout_occurred = false
-	
-	get_tree().create_timer(10.0).timeout.connect(func():
-		if not worker_completed:
-			timeout_occurred = true
-			push_error("Manual stimulation: Request timed out")
-			if HTTP_FEAGI_request_worker != null:
-				HTTP_FEAGI_request_worker.kill_worker()
-	)
+	var worker_id: int = HTTP_FEAGI_request_worker.get_instance_id()
+	_manual_stim_pending_workers[worker_id] = weakref(HTTP_FEAGI_request_worker)
+	get_tree().create_timer(10.0).timeout.connect(_on_manual_stimulation_timeout.bind(worker_id))
 	
 	await HTTP_FEAGI_request_worker.worker_done
-	worker_completed = true
+	_manual_stim_pending_workers.erase(worker_id)
 	
-	if timeout_occurred:
+	var timed_out: bool = _manual_stim_timeouts.has(worker_id)
+	_manual_stim_timeouts.erase(worker_id)
+	if timed_out:
 		return
 	
 	var request_output: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	
 	if not request_output.success:
 		push_error("Manual stimulation failed: %s" % request_output.failed_requirement)
+
+## Handles manual stimulation timeouts without capturing freed instances.
+func _on_manual_stimulation_timeout(worker_id: int) -> void:
+	if not _manual_stim_pending_workers.has(worker_id):
+		return
+	_manual_stim_timeouts[worker_id] = true
+	push_error("Manual stimulation: Request timed out")
+	var worker_ref = _manual_stim_pending_workers[worker_id]
+	if worker_ref is WeakRef:
+		var worker = (worker_ref as WeakRef).get_ref()
+		if worker and is_instance_valid(worker):
+			(worker as APIRequestWorker).kill_worker()
 
 # CRITICAL: Central voxel selection handlers for QuickConnect functionality
 # These receive signals ONLY from brain region tab monitors and forward to main monitor
