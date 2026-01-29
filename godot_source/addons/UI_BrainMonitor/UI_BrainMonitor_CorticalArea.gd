@@ -202,7 +202,7 @@ func _exit_tree() -> void:
 	#
 	# `is_queued_for_deletion()` is true for real teardown (queue_free / scene shutdown), but false for re-parent.
 	if _representing_cortial_area != null and is_queued_for_deletion():
-		_representing_cortial_area.BV_unregister_directpoints_renderer()
+		_representing_cortial_area.BV_unregister_directpoints_renderer(_directpoints_renderer)
 
 func _process(_delta: float) -> void:
 	# Pulse the I/O indicator (if present) without relying on Tweens (robust to re-parenting).

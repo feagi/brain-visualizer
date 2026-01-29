@@ -202,6 +202,8 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 		return
 	if link.parent_region != representing_region:
 		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_established_mapping_set() and link.parent_chain.mapping_set != null and link.parent_chain.mapping_set.number_mappings == 0:
+		return
 	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
 		return
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
@@ -233,6 +235,8 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	if _representing_region != null and _representing_region.is_root_region():
 		return
 	if link.parent_region != representing_region:
+		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_established_mapping_set() and link.parent_chain.mapping_set != null and link.parent_chain.mapping_set.number_mappings == 0:
 		return
 	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
 		return

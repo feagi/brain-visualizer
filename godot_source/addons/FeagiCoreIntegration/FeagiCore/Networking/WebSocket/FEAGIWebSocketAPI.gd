@@ -322,8 +322,8 @@ func _process(_delta: float):
 								str(ok_apply), areas_applied, neurons_applied, err_apply
 							])
 						# Memory areas may not have a registered MultiMesh in the desktop fast-path cache.
-						# To ensure memory jelly animation still reacts to activity, route MEMORY areas through
-						# the standard bulk-array path (signals) using decoded Type11 data (no hardcoded IDs).
+						# Areas with multiple BV renderers cannot rely on the single-MultiMesh fast-path either.
+						# Route those areas through the standard bulk-array path using decoded Type11 data.
 						var decoded: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
 						var ok: bool = bool(decoded.get("success", false))
 						var areas_any: Variant = decoded.get("areas", null)
@@ -334,7 +334,9 @@ func _process(_delta: float):
 								var area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
 								if area_obj == null:
 									continue
-								if area_obj.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+								var requires_bulk := area_obj.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+								requires_bulk = requires_bulk or area_obj.BV_requires_bulk_directpoints_updates()
+								if not requires_bulk:
 									continue
 								var area_any: Variant = areas.get(cortical_id, null)
 								var area_data: Dictionary = area_any as Dictionary
