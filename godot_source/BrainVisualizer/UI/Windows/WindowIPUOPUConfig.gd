@@ -47,8 +47,8 @@ var _inputs_grid: GridContainer
 var _outputs_grid: GridContainer
 var _status_label: Label
 var _config_content: VBoxContainer
-var _refresh_button: Button
-var _apply_button: Button
+var _save_button: Button
+var _ignore_button: Button
 
 var _agent_capabilities_map: Dictionary = {}
 var _selected_agent_id: StringName = ALL_AGENTS_OPTION
@@ -58,6 +58,9 @@ var _editor_by_agent: Dictionary = {}
 var _device_buttons: Dictionary = { SECTION_INPUT: {}, SECTION_OUTPUT: {} }
 var _input_button_group: ButtonGroup = ButtonGroup.new()
 var _output_button_group: ButtonGroup = ButtonGroup.new()
+var _schema_map: Dictionary = {}
+var _schema_errors: Dictionary = {}
+var _field_editors_by_agent: Dictionary = {}
 
 ## Initializes the window and optionally focuses on a device section.
 func setup_with_focus(device_key: StringName = "", section: StringName = SECTION_OUTPUT) -> void:
@@ -119,11 +122,11 @@ func _bind_controls() -> void:
 	_outputs_grid = $WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin/OutputsRow/OutputsGrid
 	_status_label = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/StatusLabel
 	_config_content = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ConfigScroll/ConfigContent
-	_refresh_button = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow/RefreshButton
-	_apply_button = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow/ApplyButton
+	_ignore_button = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow/IgnoreChangesButton
+	_save_button = $WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow/SaveButton
 	_agent_dropdown.item_selected.connect(_on_agent_selected)
-	_refresh_button.pressed.connect(_on_refresh_pressed)
-	_apply_button.pressed.connect(_on_apply_pressed)
+	_ignore_button.pressed.connect(_on_ignore_pressed)
+	_save_button.pressed.connect(_on_save_pressed)
 
 ## Fetches latest agent capabilities and updates the UI.
 func _refresh_from_feagi() -> void:
@@ -140,9 +143,23 @@ func _refresh_from_feagi() -> void:
 ## Loads cached agent data and rebuilds UI elements.
 func _load_from_cache() -> void:
 	_agent_capabilities_map = FeagiCore.feagi_local_cache.agent_capabilities_map
+	_load_schema()
 	_build_agent_dropdown()
 	_rebuild_device_tabs()
 	_focus_device_if_available()
+
+## Load sensorimotor schema from Rust extension.
+func _load_schema() -> void:
+	_schema_map = {}
+	_schema_errors = {}
+	if not ClassDB.class_exists("FeagiSensorimotorSchema"):
+		_set_status("Sensorimotor schema unavailable. Rebuild rust extension.")
+		return
+	var schema_provider := FeagiSensorimotorSchema.new()
+	var schema = schema_provider.get_schema()
+	if schema is Dictionary:
+		_schema_map = schema
+	_schema_errors = FeagiCore.feagi_local_cache.agent_capabilities_schema_errors
 
 ## Build agent dropdown from cached capabilities.
 func _build_agent_dropdown() -> void:
@@ -383,16 +400,32 @@ func _focus_device_if_available() -> void:
 func _render_device_config() -> void:
 	_clear_config_content()
 	_editor_by_agent.clear()
+	_field_editors_by_agent.clear()
 	if _selected_device_key == "":
 		_set_status("Select a device to configure.")
 		return
+	if _schema_map.is_empty():
+		_set_status("Sensorimotor schema unavailable.")
+		_add_info_label("Sensorimotor schema is required for typed editing.")
+		return
 	_set_status("Editing %s (%s)" % [_selected_device_key, _selected_section])
 	var section_key := "output_units_and_decoder_properties" if _selected_section == SECTION_OUTPUT else "input_units_and_encoder_properties"
+	var unit_schema := _get_schema_node(&"json_unit_definition")
+	var props_schema := _get_schema_node(&"json_decoder_properties") if _selected_section == SECTION_OUTPUT else _get_schema_node(&"json_encoder_properties")
 	for agent_id in _get_active_agent_ids():
 		var header := Label.new()
 		header.text = "Agent: %s" % _get_agent_display_name(agent_id)
 		_config_content.add_child(header)
+		var error_key: Variant = agent_id
+		if not _schema_errors.has(error_key):
+			error_key = String(agent_id)
+		if _schema_errors.has(error_key):
+			var errors = _schema_errors[error_key]
+			if errors is Array:
+				for error_message in errors:
+					_add_info_label("Schema error: %s" % String(error_message))
 		_editor_by_agent[agent_id] = []
+		_field_editors_by_agent[agent_id] = {}
 		if not _agent_capabilities_map.has(agent_id):
 			_add_info_label("No data available for this agent.")
 			continue
@@ -435,7 +468,7 @@ func _render_device_config() -> void:
 			var entry = entry_data["value"]
 			var entry_holder := _create_collapsible_section("Device %d" % int(entry_data["entry_index"]), false)
 			if entry is Dictionary:
-				_build_parameter_editors_from_entry(entry, entry_holder)
+				_add_info_label("Unsupported registration format (missing schema).")
 				_editor_by_agent[agent_id].append({
 					"device_key": entry_data["entry_key"],
 					"container_kind": entry_data["container_kind"],
@@ -445,9 +478,27 @@ func _render_device_config() -> void:
 				continue
 			if entry is Array and entry.size() == 2 and entry[0] is Dictionary and entry[1] is Dictionary:
 				var unit_holder := _create_collapsible_section("Unit Definition", false, entry_holder)
-				_build_parameter_editors_from_entry(entry[0], unit_holder)
+				if unit_schema.is_empty():
+					_add_info_label("Unit definition schema unavailable.")
+				else:
+					_build_parameter_editors_from_entry(
+						entry[0],
+						unit_holder,
+						unit_schema,
+						agent_id,
+						[section_key, _selected_device_key, entry_data["entry_key"], 0]
+					)
 				var props_holder := _create_collapsible_section("Properties", false, entry_holder)
-				_build_parameter_editors_from_entry(entry[1], props_holder)
+				if props_schema.is_empty():
+					_add_info_label("Properties schema unavailable.")
+				else:
+					_build_parameter_editors_from_entry(
+						entry[1],
+						props_holder,
+						props_schema,
+						agent_id,
+						[section_key, _selected_device_key, entry_data["entry_key"], 1]
+					)
 				_editor_by_agent[agent_id].append({
 					"device_key": entry_data["entry_key"],
 					"container_kind": entry_data["container_kind"],
@@ -457,11 +508,42 @@ func _render_device_config() -> void:
 				})
 				continue
 			_add_info_label("Unsupported device entry format for %s." % _selected_device_key)
+		_apply_schema_error_highlights(agent_id)
 
-## Apply edited JSON to the cached agent capability map.
-func _on_apply_pressed() -> void:
-	if _selected_device_key == "":
+## Ignore edits and close the window.
+func _on_ignore_pressed() -> void:
+	close_window()
+
+## Save edits to FEAGI backend.
+func _on_save_pressed() -> void:
+	var updated_map := _apply_edits_to_cache()
+	if updated_map.is_empty():
 		return
+	if FeagiCore == null or FeagiCore.requests == null:
+		_show_error_popup("Save Failed", "FEAGI is not available.")
+		return
+	for agent_id in updated_map.keys():
+		var agent_entry = updated_map[agent_id]
+		if agent_entry is not Dictionary:
+			continue
+		if not agent_entry.has("device_registrations"):
+			continue
+		var registrations = agent_entry["device_registrations"]
+		if registrations is not Dictionary:
+			continue
+		var response: FeagiRequestOutput = await FeagiCore.requests.import_device_registrations(
+			agent_id,
+			registrations
+		)
+		if response.has_errored or not response.success:
+			_show_error_popup("Save Failed", "Failed to save device registrations for agent %s." % agent_id)
+			return
+	BV.NOTIF.add_notification("Device registrations saved to FEAGI.")
+
+## Apply edits to the local cache and return updated map.
+func _apply_edits_to_cache() -> Dictionary:
+	if _selected_device_key == "":
+		return {}
 	var updated_map: Dictionary = _agent_capabilities_map.duplicate(true)
 	var section_key := "output_units_and_decoder_properties" if _selected_section == SECTION_OUTPUT else "input_units_and_encoder_properties"
 	for agent_id in _editor_by_agent.keys():
@@ -493,31 +575,367 @@ func _on_apply_pressed() -> void:
 					device_entries[device_key] = _export_entry_for_kind(entry_kind, entry_data)
 	FeagiCore.feagi_local_cache.set_agent_capabilities_map(updated_map)
 	_agent_capabilities_map = updated_map
-	BV.NOTIF.add_notification("Device configuration updated in local cache.")
+	return updated_map
 
-## Build parameter editors for a device entry dictionary.
-func _build_parameter_editors_from_entry(entry: Dictionary, holder: VBoxContainer) -> void:
+## Build parameter editors for a device entry dictionary using schema.
+func _build_parameter_editors_from_entry(
+	entry: Dictionary,
+	holder: VBoxContainer,
+	schema: Dictionary,
+	agent_id: StringName,
+	path_prefix: Array
+) -> void:
+	if schema.is_empty():
+		_add_info_label("Schema missing for entry.")
+		return
+	var kind := _get_schema_kind(schema)
+	if kind != "object":
+		_add_info_label("Unsupported schema kind for entry: %s" % kind)
+		return
+	var fields: Dictionary = schema.get("fields", {})
 	var keys: Array = entry.keys()
 	keys.sort()
 	for key in keys:
-		_append_editors_for_value(StringName(String(key)), entry[key], holder)
+		var field_schema: Dictionary = fields.get(key, {})
+		_append_editors_for_value(
+			StringName(String(key)),
+			entry[key],
+			holder,
+			field_schema,
+			agent_id,
+			_build_path_parts(path_prefix, String(key))
+		)
 
-func _append_editors_for_value(label: StringName, value: Variant, holder: VBoxContainer) -> void:
-	if value is Dictionary:
-		var section_holder := _create_collapsible_section(String(label), false, holder)
-		_build_parameter_editors_from_entry(value, section_holder)
+## Append parameter editors for a value using schema.
+func _append_editors_for_value(
+	label: StringName,
+	value: Variant,
+	holder: VBoxContainer,
+	schema: Dictionary,
+	agent_id: StringName,
+	path_parts: Array[String],
+	append_label: bool = true
+) -> void:
+	if schema.is_empty():
+		_add_info_label("Unsupported field: %s" % label)
 		return
-	if value is Array and not _array_is_vector3(value):
+	var current_path := path_parts.duplicate()
+	if append_label:
+		current_path.append(String(label))
+	var kind := _get_schema_kind(schema)
+	if kind == "object":
+		if value is not Dictionary:
+			_add_info_label("Expected object for %s." % label)
+			return
 		var section_holder := _create_collapsible_section(String(label), false, holder)
+		var fields: Dictionary = schema.get("fields", {})
+		var keys: Array = value.keys()
+		keys.sort()
+		for key in keys:
+			var field_schema: Dictionary = fields.get(key, {})
+			_append_editors_for_value(
+				StringName(String(key)),
+				value[key],
+				section_holder,
+				field_schema,
+				agent_id,
+				current_path.duplicate()
+			)
+		return
+	if kind == "array":
+		if value is not Array:
+			_add_info_label("Expected array for %s." % label)
+			return
+		var section_holder := _create_collapsible_section(String(label), false, holder)
+		var item_schema: Dictionary = schema.get("items", {})
 		for index in range(value.size()):
-			_append_editors_for_value(StringName(str(index)), value[index], section_holder)
+			_append_editors_for_value(
+				StringName(str(index)),
+				value[index],
+				section_holder,
+				item_schema,
+				agent_id,
+				current_path.duplicate()
+			)
 		return
-	var parameter := _build_parameter_from_value(label, value)
+	if kind == "map":
+		if value is not Dictionary:
+			_add_info_label("Expected map for %s." % label)
+			return
+		var section_holder := _create_collapsible_section(String(label), false, holder)
+		var value_schema: Dictionary = schema.get("value", {})
+		var keys: Array = value.keys()
+		keys.sort()
+		for key in keys:
+			_append_editors_for_value(
+				StringName(String(key)),
+				value[key],
+				section_holder,
+				value_schema,
+				agent_id,
+				current_path.duplicate()
+			)
+		return
+	if kind == "tuple":
+		if value is not Array:
+			_add_info_label("Expected tuple for %s." % label)
+			return
+		var section_holder := _create_collapsible_section(String(label), false, holder)
+		var items: Array = schema.get("items", []) as Array
+		for index in range(min(value.size(), items.size())):
+			var item_schema: Dictionary = items[index] as Dictionary
+			_append_editors_for_value(
+				StringName(str(index)),
+				value[index],
+				section_holder,
+				item_schema,
+				agent_id,
+				current_path.duplicate()
+			)
+		return
+	if kind == "externally_tagged_enum":
+		var variants: Dictionary = schema.get("variants", {})
+		var variant_key = ""
+		var variant_value: Variant = null
+		if value is Dictionary and value.size() == 1:
+			variant_key = String(value.keys()[0])
+			variant_value = value[variant_key]
+		elif value is StringName or value is String:
+			variant_key = String(value)
+			variant_value = null
+		else:
+			_add_info_label("Expected enum object for %s." % label)
+			return
+		var variant_schema: Dictionary = variants.get(variant_key, {})
+		var section_holder := _create_collapsible_section("%s: %s" % [label, variant_key], false, holder)
+		if variant_schema.is_empty():
+			_add_info_label("Unsupported enum variant: %s" % variant_key)
+			return
+		if variant_value == null:
+			if _get_schema_kind(variant_schema) == "unit":
+				_add_info_label("No configurable properties for %s." % variant_key)
+			else:
+				_add_info_label("Missing enum payload for %s." % variant_key)
+			return
+		var variant_path := current_path.duplicate()
+		variant_path.append(String(variant_key))
+		_append_editors_for_value(
+			StringName("value"),
+			variant_value,
+			section_holder,
+			variant_schema,
+			agent_id,
+			variant_path,
+			false
+		)
+		return
+	if kind == "unit":
+		_add_info_label("No configurable properties for %s." % label)
+		return
+	if kind == "tagged_union":
+		if value is not Dictionary:
+			_add_info_label("Expected tagged union for %s." % label)
+			return
+		var tag_key: String = String(schema.get("tag", "type"))
+		var value_key: String = String(schema.get("value", "value"))
+		if not value.has(tag_key):
+			_add_info_label("Missing tag for %s." % label)
+			return
+		var tag_value: String = String(value[tag_key])
+		var variants: Dictionary = schema.get("variants", {})
+		var variant_schema: Dictionary = variants.get(tag_value, {})
+		var section_holder := _create_collapsible_section(String(label), false, holder)
+		var tag_param := EnumParameter.new()
+		tag_param.label = StringName(tag_key)
+		tag_param.description = ""
+		tag_param.options = _keys_to_stringname_array(variants.keys())
+		tag_param.value = StringName(tag_value)
+		var tag_editor := EditAbstractParameter.spawn_and_add_parameter_editor(tag_param, section_holder)
+		if tag_editor != null:
+			_register_field_editor(agent_id, _build_path_parts(current_path, tag_key), tag_editor)
+		if variant_schema.is_empty():
+			_add_info_label("Unsupported tagged value: %s" % tag_value)
+			return
+		if value.has(value_key):
+			_append_editors_for_value(
+				StringName(value_key),
+				value[value_key],
+				section_holder,
+				variant_schema,
+				agent_id,
+				current_path.duplicate()
+			)
+		return
+	var parameter := _build_parameter_from_schema(label, value, schema)
 	if parameter == null:
 		return
-	EditAbstractParameter.spawn_and_add_parameter_editor(parameter, holder)
+	var editor := EditAbstractParameter.spawn_and_add_parameter_editor(parameter, holder)
+	if editor != null:
+		_register_field_editor(agent_id, current_path, editor)
 
-## Build a parameter object from a JSON value.
+## Build a parameter object from schema and value.
+func _build_parameter_from_schema(label: StringName, value: Variant, schema: Dictionary) -> AbstractParameter:
+	var kind := _get_schema_kind(schema)
+	if kind == "bool":
+		var param := BooleanParameter.new()
+		param.label = label
+		param.description = ""
+		param.value = bool(value)
+		return param
+	if kind == "int":
+		var param := IntegerParameter.new()
+		param.label = label
+		param.description = ""
+		param.value = int(value)
+		param.minimum = int(schema.get("min", param.minimum))
+		param.maximum = int(schema.get("max", param.maximum))
+		return param
+	if kind == "float":
+		var param := FloatParameter.new()
+		param.label = label
+		param.description = ""
+		param.value = float(value)
+		param.minimum = float(schema.get("min", param.minimum))
+		param.maximum = float(schema.get("max", param.maximum))
+		return param
+	if kind == "string":
+		var param := StringParameter.new()
+		param.label = label
+		param.description = ""
+		param.value = StringName(String(value))
+		return param
+	if kind == "enum":
+		var param := EnumParameter.new()
+		param.label = label
+		param.description = ""
+		param.options = _to_stringname_array(schema.get("options", []))
+		param.value = StringName(String(value))
+		return param
+	if kind == "optional":
+		var param := OptionalParameter.new()
+		param.label = label
+		param.description = ""
+		param.enabled = value != null
+		var item_schema: Dictionary = schema.get("item", {})
+		var inner_value: Variant = value
+		if inner_value == null:
+			inner_value = _default_value_for_schema(item_schema)
+		param.inner = _build_parameter_tree_from_schema(label, inner_value, item_schema)
+		return param
+	if kind == "json_value":
+		return _build_parameter_from_value(label, value)
+	return _build_parameter_from_value(label, value)
+
+## Build a parameter tree for complex schema types.
+func _build_parameter_tree_from_schema(label: StringName, value: Variant, schema: Dictionary) -> AbstractParameter:
+	var kind := _get_schema_kind(schema)
+	if kind in ["bool", "int", "float", "string", "enum", "optional", "json_value"]:
+		return _build_parameter_from_schema(label, value, schema)
+	if kind == "object":
+		var param := ObjectParameter.new()
+		param.label = label
+		param.description = ""
+		var subparams: Array[AbstractParameter] = []
+		var fields: Dictionary = schema.get("fields", {})
+		for field_key in fields.keys():
+			var field_schema: Dictionary = fields[field_key]
+			var field_value: Variant = value[field_key] if value is Dictionary and value.has(field_key) else _default_value_for_schema(field_schema)
+			var subparam := _build_parameter_tree_from_schema(StringName(String(field_key)), field_value, field_schema)
+			if subparam != null:
+				subparams.append(subparam)
+		param.value = subparams
+		return param
+	if kind == "array":
+		var param := ObjectParameter.new()
+		param.label = label
+		param.description = ""
+		var subparams: Array[AbstractParameter] = []
+		var item_schema: Dictionary = schema.get("items", {})
+		if value is Array:
+			for index in range(value.size()):
+				var subparam := _build_parameter_tree_from_schema(StringName(str(index)), value[index], item_schema)
+				if subparam != null:
+					subparams.append(subparam)
+		param.value = subparams
+		return param
+	if kind == "map":
+		var param := ObjectParameter.new()
+		param.label = label
+		param.description = ""
+		var subparams: Array[AbstractParameter] = []
+		var value_schema: Dictionary = schema.get("value", {})
+		if value is Dictionary:
+			for map_key in value.keys():
+				var subparam := _build_parameter_tree_from_schema(StringName(String(map_key)), value[map_key], value_schema)
+				if subparam != null:
+					subparams.append(subparam)
+		param.value = subparams
+		return param
+	if kind == "tuple":
+		var param := ObjectParameter.new()
+		param.label = label
+		param.description = ""
+		var subparams: Array[AbstractParameter] = []
+		var items: Array = schema.get("items", []) as Array
+		if value is Array:
+			for index in range(min(value.size(), items.size())):
+				var item_schema: Dictionary = items[index] as Dictionary
+				var subparam := _build_parameter_tree_from_schema(StringName(str(index)), value[index], item_schema)
+				if subparam != null:
+					subparams.append(subparam)
+		param.value = subparams
+		return param
+	if kind == "externally_tagged_enum":
+		var param := ObjectParameter.new()
+		param.label = label
+		param.description = ""
+		var subparams: Array[AbstractParameter] = []
+		var variants: Dictionary = schema.get("variants", {})
+		var variant_key = ""
+		var variant_value: Variant = null
+		if value is Dictionary and value.size() == 1:
+			variant_key = String(value.keys()[0])
+			variant_value = value[variant_key]
+		elif value is StringName or value is String:
+			variant_key = String(value)
+			variant_value = null
+		if variant_key != "":
+			var variant_schema: Dictionary = variants.get(variant_key, {})
+			if variant_schema.is_empty():
+				return param
+			if _get_schema_kind(variant_schema) == "unit":
+				param.value = []
+				return param
+			var subparam := _build_parameter_tree_from_schema(StringName(String(variant_key)), variant_value, variant_schema)
+			if subparam != null:
+				subparams.append(subparam)
+		param.value = subparams
+		return param
+	if kind == "tagged_union":
+		var param := ObjectParameter.new()
+		param.label = label
+		param.description = ""
+		var subparams: Array[AbstractParameter] = []
+		var tag_key: String = String(schema.get("tag", "type"))
+		var value_key: String = String(schema.get("value", "value"))
+		var variants: Dictionary = schema.get("variants", {})
+		var tag_value: String = String(value[tag_key]) if value is Dictionary and value.has(tag_key) else ""
+		var tag_param := EnumParameter.new()
+		tag_param.label = StringName(String(tag_key))
+		tag_param.description = ""
+		tag_param.options = _keys_to_stringname_array(variants.keys())
+		tag_param.value = StringName(tag_value)
+		subparams.append(tag_param)
+		var variant_schema: Dictionary = variants.get(tag_value, {})
+		if value is Dictionary and value.has(value_key):
+			var value_param := _build_parameter_tree_from_schema(StringName(String(value_key)), value[value_key], variant_schema)
+			if value_param != null:
+				subparams.append(value_param)
+		param.value = subparams
+		return param
+	return _build_parameter_from_value(label, value)
+
+## Build a parameter object from a JSON value (schema-free JSONValue).
 func _build_parameter_from_value(label: StringName, value: Variant) -> AbstractParameter:
 	if value is bool:
 		var param := BooleanParameter.new()
@@ -530,48 +948,44 @@ func _build_parameter_from_value(label: StringName, value: Variant) -> AbstractP
 		param.label = label
 		param.description = ""
 		param.value = value
+		if _requires_positive_int(label):
+			param.minimum = 0
 		return param
 	if value is float:
-		var param := FloatParameter.new()
-		param.label = label
-		param.description = ""
-		param.value = value
-		return param
+		if _is_int_like_float(value):
+			var int_param := IntegerParameter.new()
+			int_param.label = label
+			int_param.description = ""
+			int_param.value = int(value)
+			int_param.maximum = max(int_param.maximum, int_param.value)
+			if _requires_positive_int(label):
+				int_param.minimum = 0
+			return int_param
+		var float_param := FloatParameter.new()
+		float_param.label = label
+		float_param.description = ""
+		float_param.value = value
+		return float_param
 	if value is StringName or value is String:
 		var param := StringParameter.new()
 		param.label = label
 		param.description = ""
 		param.value = StringName(String(value))
 		return param
-	if value is Array:
-		if _array_is_vector3(value):
-			var param := Vector3Parameter.new()
-			param.label = label
-			param.description = ""
-			param.value = Vector3(float(value[0]), float(value[1]), float(value[2]))
-			return param
-		var array_param := ObjectParameter.new()
-		array_param.label = label
-		array_param.description = ""
-		var subparams: Array[AbstractParameter] = []
-		for index in range(value.size()):
-			var subparam = _build_parameter_from_value(StringName(str(index)), value[index])
-			if subparam != null:
-				subparams.append(subparam)
-		array_param.value = subparams
-		return array_param
-	if value is Dictionary:
-		var param := ObjectParameter.new()
+	if value is Array and _array_is_vector3(value):
+		var param := Vector3Parameter.new()
 		param.label = label
 		param.description = ""
-		var subparams: Array[AbstractParameter] = []
-		for subkey in value.keys():
-			var subparam = _build_parameter_from_value(StringName(String(subkey)), value[subkey])
-			if subparam != null:
-				subparams.append(subparam)
-		param.value = subparams
+		param.value = Vector3(float(value[0]), float(value[1]), float(value[2]))
 		return param
 	return null
+
+func _is_int_like_float(value: float) -> bool:
+	return value == float(int(value))
+
+func _requires_positive_int(label: StringName) -> bool:
+	var text := String(label).to_lower()
+	return text.find("index") != -1
 
 ## Export a device entry from parameter editor holder.
 func _export_entry_from_holder(holder: VBoxContainer) -> Dictionary:
@@ -618,6 +1032,129 @@ func _create_collapsible_section(title: String, start_open: bool, parent: Contro
 	content_root.add_child(holder)
 	return holder
 
+## Build path parts by appending a string segment.
+func _build_path_parts(prefix: Array, segment: String) -> Array[String]:
+	var parts: Array[String] = []
+	for item in prefix:
+		parts.append(str(item))
+	parts.append(segment)
+	return parts
+
+## Register field editor for schema error highlighting.
+func _register_field_editor(agent_id: StringName, path_parts: Array[String], editor: EditAbstractParameter) -> void:
+	if not _field_editors_by_agent.has(agent_id):
+		_field_editors_by_agent[agent_id] = {}
+	var registry: Dictionary = _field_editors_by_agent[agent_id]
+	var full_path := "device_registrations." + ".".join(path_parts)
+	registry[full_path] = editor
+
+## Apply schema error highlights to editors for a specific agent.
+func _apply_schema_error_highlights(agent_id: StringName) -> void:
+	var error_key: Variant = agent_id
+	if not _schema_errors.has(error_key):
+		error_key = String(agent_id)
+	if not _schema_errors.has(error_key):
+		return
+	var errors = _schema_errors[error_key]
+	if errors is not Array:
+		return
+	var registry: Dictionary = _field_editors_by_agent.get(agent_id, {})
+	for error_message in errors:
+		var message_text := str(error_message)
+		var path_end := message_text.find(":")
+		var path_text := message_text if path_end == -1 else message_text.substr(0, path_end)
+		if registry.has(path_text):
+			var editor = registry[path_text]
+			if editor is EditAbstractParameter:
+				(editor as EditAbstractParameter).set_schema_error(message_text)
+
+## Fetch a schema node by key from the schema map.
+func _get_schema_node(key: StringName) -> Dictionary:
+	if _schema_map.has(key):
+		var node = _schema_map[key]
+		if node is Dictionary:
+			return node
+	return {}
+
+## Return the kind string for a schema node.
+func _get_schema_kind(schema: Dictionary) -> String:
+	if schema.has("kind"):
+		return String(schema["kind"])
+	return ""
+
+## Convert an array of keys into sorted StringName options.
+func _keys_to_stringname_array(keys: Array) -> Array[StringName]:
+	var output: Array[StringName] = []
+	for key in keys:
+		output.append(StringName(String(key)))
+	output.sort()
+	return output
+
+## Convert generic array to StringName array.
+func _to_stringname_array(values: Array) -> Array[StringName]:
+	var output: Array[StringName] = []
+	for value in values:
+		output.append(StringName(str(value)))
+	return output
+
+## Build a default value for a schema node.
+func _default_value_for_schema(schema: Dictionary) -> Variant:
+	if schema.is_empty():
+		return null
+	var kind := _get_schema_kind(schema)
+	if kind == "bool":
+		return false
+	if kind == "int":
+		return int(schema.get("min", 0))
+	if kind == "float":
+		return float(schema.get("min", 0.0))
+	if kind == "string":
+		return ""
+	if kind == "enum":
+		var options: Array = schema.get("options", [])
+		return options[0] if options.size() > 0 else ""
+	if kind == "unit":
+		return null
+	if kind == "optional":
+		return null
+	if kind == "object":
+		var fields: Dictionary = schema.get("fields", {})
+		var output: Dictionary = {}
+		for field_key in fields.keys():
+			output[field_key] = _default_value_for_schema(fields[field_key])
+		return output
+	if kind == "array":
+		return []
+	if kind == "tuple":
+		var items: Array = schema.get("items", [])
+		var output: Array = []
+		for item_schema in items:
+			output.append(_default_value_for_schema(item_schema))
+		return output
+	if kind == "map":
+		return {}
+	if kind == "externally_tagged_enum":
+		var variants: Dictionary = schema.get("variants", {})
+		var keys: Array = variants.keys()
+		keys.sort()
+		if keys.is_empty():
+			return {}
+		var variant_key = keys[0]
+		var default_value = _default_value_for_schema(variants[variant_key])
+		return { variant_key: default_value }
+	if kind == "tagged_union":
+		var variants: Dictionary = schema.get("variants", {})
+		var keys: Array = variants.keys()
+		keys.sort()
+		if keys.is_empty():
+			return {}
+		var variant_key = keys[0]
+		var tag_key: String = String(schema.get("tag", "type"))
+		var value_key: String = String(schema.get("value", "value"))
+		var default_value = _default_value_for_schema(variants[variant_key])
+		return { tag_key: variant_key, value_key: default_value }
+	return null
+
 ## Normalize exported JSON values (convert numeric-key dictionaries to arrays).
 func _normalize_json_value(value: Variant) -> Variant:
 	if value is Dictionary:
@@ -662,10 +1199,6 @@ func _array_is_vector3(value: Array) -> bool:
 		if item is not int and item is not float:
 			return false
 	return true
-
-## Refresh from FEAGI and rebuild UI.
-func _on_refresh_pressed() -> void:
-	await _refresh_from_feagi()
 
 ## Determine which agent IDs are active based on selection.
 func _get_active_agent_ids() -> Array[StringName]:

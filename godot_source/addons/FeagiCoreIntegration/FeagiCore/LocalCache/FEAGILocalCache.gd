@@ -650,6 +650,12 @@ var configuration_jsons: Array[Dictionary]:
 var agent_capabilities_map: Dictionary:
 	get: return _agent_capabilities_map
 
+var agent_capabilities_raw_json: String:
+	get: return _agent_capabilities_raw_json
+
+var agent_capabilities_schema_errors: Dictionary:
+	get: return _agent_capabilities_schema_errors
+
 var IPU_cortical_ID_to_capability_key: Dictionary:
 	get: return _IPU_cortical_ID_to_capability_key
 
@@ -659,6 +665,8 @@ var OPU_cortical_ID_to_capability_key: Dictionary:
 var _plasticity_queue_depth: int = 3
 var _configuration_jsons: Array[Dictionary] = []
 var _agent_capabilities_map: Dictionary = {}
+var _agent_capabilities_raw_json: String = ""
+var _agent_capabilities_schema_errors: Dictionary = {}
 var _OPU_cortical_ID_to_capability_key: Dictionary = {}
 var _IPU_cortical_ID_to_capability_key: Dictionary = {}
 
@@ -676,9 +684,19 @@ func set_agent_capabilities_map(new_map: Dictionary) -> void:
 	_agent_capabilities_map = new_map
 	agent_capabilities_updated.emit()
 
+## Store raw agent capability JSON for schema validation.
+func set_agent_capabilities_raw_json(raw_json: String) -> void:
+	_agent_capabilities_raw_json = raw_json
+
+## Store schema validation errors for agent capabilities.
+func set_agent_capabilities_schema_errors(errors: Dictionary) -> void:
+	_agent_capabilities_schema_errors = errors
+
 ## Clears cached agent capability data.
 func clear_agent_capabilities_map() -> void:
 	_agent_capabilities_map = {}
+	_agent_capabilities_raw_json = ""
+	_agent_capabilities_schema_errors = {}
 	agent_capabilities_updated.emit()
 
 ## Add a configuration json to the cache. Dictionary should be the dictionary holding inputs / output keys

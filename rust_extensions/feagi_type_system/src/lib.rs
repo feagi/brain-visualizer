@@ -15,10 +15,12 @@ Licensed under the Apache License, Version 2.0
 use godot::prelude::*;
 
 mod cortical_type;
+mod sensorimotor_schema;
 mod type_factory;
 mod validation;
 
 pub use cortical_type::FeagiCorticalType;
+pub use sensorimotor_schema::FeagiSensorimotorSchema;
 pub use type_factory::FeagiCorticalTypeFactory;
 pub use validation::FeagiTypeValidator;
 

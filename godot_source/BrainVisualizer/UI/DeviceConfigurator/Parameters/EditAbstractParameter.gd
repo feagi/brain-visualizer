@@ -26,6 +26,12 @@ static func spawn_and_add_parameter_editor(parameter: AbstractParameter, parent_
 	elif parameter is PercentageParameter:
 		edit_UI = load(PARAMETER_TSCNS_FOLDER_PATH + "EditPercentageParameter.tscn").instantiate()
 		(edit_UI as EditPercentageParameter).setup(parameter)
+	elif parameter is EnumParameter:
+		edit_UI = load(PARAMETER_TSCNS_FOLDER_PATH + "EditEnumParameter.tscn").instantiate()
+		(edit_UI as EditEnumParameter).setup(parameter)
+	elif parameter is OptionalParameter:
+		edit_UI = load(PARAMETER_TSCNS_FOLDER_PATH + "EditOptionalParameter.tscn").instantiate()
+		(edit_UI as EditOptionalParameter).setup(parameter)
 	elif parameter is StringParameter:
 		edit_UI = load(PARAMETER_TSCNS_FOLDER_PATH + "EditStringParameter.tscn").instantiate()
 		(edit_UI as EditStringParameter).setup(parameter)
@@ -41,6 +47,13 @@ func base_setup(parameter: AbstractParameter) -> void:
 	label_text.tooltip_text = parameter.description
 	name = parameter.label
 	_cached_parameter_duplicate = parameter.duplicate(true)
+
+## Highlight this editor with a schema error.
+func set_schema_error(message: String) -> void:
+	var label_text: Label = $Label
+	label_text.add_theme_color_override("font_color", Color(1, 0.4, 0.4))
+	label_text.tooltip_text = message
+	modulate = Color(1, 0.9, 0.9)
 
 func export() -> AbstractParameter:
 	# NOTE: Be sure to extend this in child classes to update values!

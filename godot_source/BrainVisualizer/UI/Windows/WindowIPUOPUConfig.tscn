@@ -148,12 +148,17 @@ theme_override_constants/separation = 10
 
 [node name="ButtonRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent"]
 layout_mode = 2
-theme_override_constants/separation = 8
+alignment = 2
+theme_override_constants/separation = 12
 
-[node name="RefreshButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow"]
+[node name="IgnoreChangesButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
-text = "Refresh from FEAGI"
+theme_type_variation = &"Button_big"
+text = "Ignore changes"
 
-[node name="ApplyButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow"]
+[node name="SaveButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
-text = "Apply to Cache"
+theme_type_variation = &"Button_big"
+text = "Save"

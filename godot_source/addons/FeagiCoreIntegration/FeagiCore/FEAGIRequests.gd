@@ -332,7 +332,22 @@ func refresh_agent_capabilities_cache(include_device_registrations: bool = true)
 	if _return_if_HTTP_failed_and_automatically_handle(agent_caps_data):
 		push_error("FEAGI Requests: Unable to grab FEAGI agent capability data!")
 		return agent_caps_data
-	var agent_caps_map: Dictionary = agent_caps_data.decode_response_as_dict()
+	var agent_caps_map: Dictionary = {}
+	var raw_json := agent_caps_data.decode_response_as_string()
+	FeagiCore.feagi_local_cache.set_agent_capabilities_raw_json(raw_json)
+	FeagiCore.feagi_local_cache.set_agent_capabilities_schema_errors({})
+	if ClassDB.class_exists("FeagiSensorimotorSchema"):
+		var schema := FeagiSensorimotorSchema.new()
+		var parsed = schema.parse_agent_capabilities(raw_json)
+		if parsed is Dictionary and not parsed.is_empty():
+			agent_caps_map = parsed
+		else:
+			agent_caps_map = agent_caps_data.decode_response_as_dict()
+		var schema_errors = schema.validate_agent_capabilities(raw_json)
+		if schema_errors is Dictionary:
+			FeagiCore.feagi_local_cache.set_agent_capabilities_schema_errors(schema_errors)
+	else:
+		agent_caps_map = agent_caps_data.decode_response_as_dict()
 	var filtered_caps_map: Dictionary = {}
 	print("FEAGI REQUEST: Found ", agent_caps_map.size(), " agents, processing capability data...")
 	for agent_id in agent_caps_map.keys():
@@ -347,6 +362,22 @@ func refresh_agent_capabilities_cache(include_device_registrations: bool = true)
 				FeagiCore.feagi_local_cache.append_configuration_json(capabilities)
 	FeagiCore.feagi_local_cache.set_agent_capabilities_map(filtered_caps_map)
 	return agent_caps_data
+
+## Import device registrations for a specific agent.
+func import_device_registrations(agent_id: StringName, device_registrations: Dictionary) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var base_url: StringName = FeagiCore.network.http_API.address_list.POST_agent_device_registrations
+	var full_url: StringName = StringName(String(base_url).replace("{agent_id}", str(agent_id)))
+	var dict_to_send: Dictionary = { "device_registrations": device_registrations }
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(full_url, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to import device registrations for agent %s!" % agent_id)
+	return FEAGI_response_data
 
 
 ## Set the burst rate
