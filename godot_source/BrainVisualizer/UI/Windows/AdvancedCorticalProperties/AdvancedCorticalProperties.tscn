@@ -760,7 +760,7 @@ layout_mode = 2
 
 [node name="initial_neuron_lifespan" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 layout_mode = 2
-tooltip_text = "Number of neurons within each voxel"
+tooltip_text = "Starting lifespan in bursts for newly created memory neurons."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/initial_neuron_lifespan"]
 layout_mode = 2
@@ -774,7 +774,7 @@ script = ExtResource("9_xe4wg")
 
 [node name="lifespan_growth_rate" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 layout_mode = 2
-tooltip_text = "The rate of success in accepting incoming synapses"
+tooltip_text = "Amount added to lifespan on each reactivation (non-LTM only)."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/lifespan_growth_rate"]
 layout_mode = 2
@@ -788,7 +788,7 @@ script = ExtResource("9_xe4wg")
 
 [node name="longterm_memory_threshold" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 layout_mode = 2
-tooltip_text = "The mount of membrane potential increase each neuron can have on downstream neurons"
+tooltip_text = "Lifespan threshold at which memory neurons become long-term."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/longterm_memory_threshold"]
 layout_mode = 2
@@ -802,7 +802,7 @@ script = ExtResource("9_xe4wg")
 
 [node name="temporal_depth" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 layout_mode = 2
-tooltip_text = "The mount of membrane potential increase each neuron can have on downstream neurons"
+tooltip_text = "Number of bursts to include when detecting upstream firing patterns."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/temporal_depth"]
 layout_mode = 2

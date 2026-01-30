@@ -144,12 +144,21 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 			
 			# Connect signals and init previews
 			if _is_isvi_segment and len(_isvi_all_segments) > 0:
-				_vector_position.user_updated_vector.connect(_on_isvi_layout_changed.unbind(1))
-				_vector_dimensions_spin.user_updated_vector.connect(_on_isvi_layout_changed.unbind(1))
+				_connect_isvi_layout_signals()
 				_init_isvi_previews()
 	
 	# Establish connections from core to the UI elements
 	#TODO
+
+## Ensure isvi layout signals are connected once.
+func _connect_isvi_layout_signals() -> void:
+	if _vector_position == null or _vector_dimensions_spin == null:
+		return
+	var layout_callable := _on_isvi_layout_changed.unbind(1)
+	if not _vector_position.user_updated_vector.is_connected(layout_callable):
+		_vector_position.user_updated_vector.connect(layout_callable)
+	if not _vector_dimensions_spin.user_updated_vector.is_connected(layout_callable):
+		_vector_dimensions_spin.user_updated_vector.connect(layout_callable)
 
 func close_window() -> void:
 	super()
@@ -1095,8 +1104,7 @@ func _init_summary() -> void:
 		
 		# Connect isvi layout handler for real-time updates
 		if _is_isvi_segment:
-			_vector_position.user_updated_vector.connect(_on_isvi_layout_changed.unbind(1))
-			_vector_dimensions_spin.user_updated_vector.connect(_on_isvi_layout_changed.unbind(1))
+			_connect_isvi_layout_signals()
 		
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
