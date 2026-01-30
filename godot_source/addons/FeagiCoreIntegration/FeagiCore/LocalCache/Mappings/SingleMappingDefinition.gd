@@ -60,8 +60,8 @@ static func _safe_convert_to_vector3i(data: Variant, field_name: String = "") ->
 ## Given the dictionary from FEAGI directly creates a [SingleMappingDefinition] object
 static func from_FEAGI_JSON(mapping_property: Dictionary) -> SingleMappingDefinition:
 	if !(mapping_property["morphology_id"] in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys()):
-		push_error("Unable to find morphology %s in cache when creating MappingProperty! Creating SingleMappingDefinition with null morphology!" % mapping_property["morphology_id"])
-		return SingleMappingDefinition.create_default_mapping(null)
+		push_error("Unable to find morphology %s in cache when creating MappingProperty! Skipping mapping entry." % mapping_property["morphology_id"])
+		return null
 	var morphology_cached: BaseMorphology =  FeagiCore.feagi_local_cache.morphologies.available_morphologies[mapping_property["morphology_id"]]
 	var scalar_used: Vector3i = _safe_convert_to_vector3i(mapping_property["morphology_scalar"], "morphology_scalar")
 	# FEAGI treats this value as a synapse weight (u8) on creation; BV should use integer values.
@@ -91,7 +91,10 @@ static func from_FEAGI_JSON(mapping_property: Dictionary) -> SingleMappingDefini
 static func from_FEAGI_JSON_array(mapping_dicts: Array[Dictionary]) -> Array[SingleMappingDefinition]:
 	var output: Array[SingleMappingDefinition] = []
 	for mapping_dict: Dictionary in mapping_dicts:
-		output.append(SingleMappingDefinition.from_FEAGI_JSON(mapping_dict))
+		var mapping := SingleMappingDefinition.from_FEAGI_JSON(mapping_dict)
+		if mapping == null:
+			continue
+		output.append(mapping)
 	return output
 
 ## Returns an array of the [SingleMappingDefinition] objects as FEAGI formatted dictionaries

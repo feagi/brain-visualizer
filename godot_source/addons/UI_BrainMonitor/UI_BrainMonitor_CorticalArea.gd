@@ -250,6 +250,9 @@ func _retry_directpoints_fastpath_registration(defined_cortical_area: AbstractCo
 ## - Both: bidirectional (double-headed)
 ## Skips indicators for areas currently positioned on brain-region plates.
 func _refresh_io_direction_indicator(_unused = null) -> void:
+	if not _io_direction_indicators_allowed_by_scene():
+		_clear_io_direction_indicator()
+		return
 	# Skip indicators for plate-positioned areas (explicit user requirement).
 	if _is_on_brain_region_plate():
 		_clear_io_direction_indicator()
@@ -662,6 +665,17 @@ func _is_on_brain_region_plate() -> bool:
 			return true
 		current_parent = current_parent.get_parent()
 	return false
+
+func _io_direction_indicators_allowed_by_scene() -> bool:
+	var current := get_parent()
+	while current != null:
+		if current is UI_BrainMonitor_3DScene:
+			var bm := current as UI_BrainMonitor_3DScene
+			if bm.has_method("are_io_direction_indicators_allowed"):
+				return bm.are_io_direction_indicators_allowed()
+			return true
+		current = current.get_parent()
+	return true
 
 func _get_containing_region_context() -> BrainRegion:
 	# Prefer the nearest brain-region frame (subregion context). Otherwise, use the main BM 3D scene's region.

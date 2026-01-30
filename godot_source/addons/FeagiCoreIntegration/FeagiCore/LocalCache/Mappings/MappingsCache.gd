@@ -37,8 +37,11 @@ func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractC
 		return
 	
 	## Mapping doesn't exist, create it!
-	_established_mappings[source.cortical_ID][destination.cortical_ID] = InterCorticalMappingSet.from_FEAGI_JSON(mappings_JSON, source, destination)
-	mapping_created.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
+	var mapping_set := InterCorticalMappingSet.from_FEAGI_JSON(mappings_JSON, source, destination)
+	if mapping_set == null:
+		return
+	_established_mappings[source.cortical_ID][destination.cortical_ID] = mapping_set
+	mapping_created.emit(mapping_set)
 
 ## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
 func FEAGI_set_mapping(source: AbstractCorticalArea, destination: AbstractCorticalArea, new_mappings: Array[SingleMappingDefinition]):

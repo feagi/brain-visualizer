@@ -385,7 +385,16 @@ func _play_startup_camera_intro() -> void:
 		_pancake_cam.fov = final_fov
 		_pancake_cam.movement_mode = _startup_prev_cam_mode
 		_pancake_cam.allow_user_control = true
+		call_deferred("_refresh_all_io_direction_indicators")
 	)
+
+func are_io_direction_indicators_allowed() -> bool:
+	return not _startup_intro_animating
+
+func _refresh_all_io_direction_indicators() -> void:
+	for cortical_viz in _cortical_visualizations_by_ID.values():
+		if cortical_viz != null and is_instance_valid(cortical_viz):
+			cortical_viz._refresh_io_direction_indicator()
 
 ## Updates camera along a quadratic Bézier curve and eases FOV
 func _update_startup_camera_bezier(t: float) -> void:

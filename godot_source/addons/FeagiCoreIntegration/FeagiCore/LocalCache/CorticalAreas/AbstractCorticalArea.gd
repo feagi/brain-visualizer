@@ -779,8 +779,11 @@ func BV_requires_bulk_directpoints_updates() -> bool:
 func BV_notify_directpoints_activity(point_count: int) -> void:
 	_bv_prune_directpoints_renderers()
 	for entry in _bv_directpoints_renderers_by_id.values():
-		var renderer: Object = entry.get("renderer", null)
-		if renderer != null and renderer.has_method("bv_notify_activity"):
+		var renderer_value = entry.get("renderer", null)
+		if renderer_value == null or not (renderer_value is Object) or not is_instance_valid(renderer_value):
+			continue
+		var renderer := renderer_value as Object
+		if renderer.has_method("bv_notify_activity"):
 			renderer.call("bv_notify_activity", point_count)
 
 ## Brain Visualizer: refresh DirectPoints renderer visuals when cortical properties change.
@@ -788,8 +791,11 @@ func BV_notify_directpoints_activity(point_count: int) -> void:
 func BV_refresh_directpoints_renderer_visuals() -> void:
 	_bv_prune_directpoints_renderers()
 	for entry in _bv_directpoints_renderers_by_id.values():
-		var renderer: Object = entry.get("renderer", null)
-		if renderer != null and renderer.has_method("_refresh_visualization_voxel_granularity_from_cache"):
+		var renderer_value = entry.get("renderer", null)
+		if renderer_value == null or not (renderer_value is Object) or not is_instance_valid(renderer_value):
+			continue
+		var renderer := renderer_value as Object
+		if renderer.has_method("_refresh_visualization_voxel_granularity_from_cache"):
 			renderer.call("_refresh_visualization_voxel_granularity_from_cache")
 
 ## Brain Visualizer: remove invalid renderer references to avoid stale fast-path caches.
@@ -797,8 +803,8 @@ func _bv_prune_directpoints_renderers() -> void:
 	var to_remove: Array[int] = []
 	for renderer_id in _bv_directpoints_renderers_by_id.keys():
 		var entry: Dictionary = _bv_directpoints_renderers_by_id.get(renderer_id, {})
-		var renderer: Object = entry.get("renderer", null)
-		if renderer == null or not is_instance_valid(renderer):
+		var renderer_value = entry.get("renderer", null)
+		if renderer_value == null or not (renderer_value is Object) or not is_instance_valid(renderer_value):
 			to_remove.append(renderer_id)
 	for renderer_id in to_remove:
 		_bv_directpoints_renderers_by_id.erase(renderer_id)
@@ -808,7 +814,14 @@ func _bv_sync_primary_directpoints_renderer() -> void:
 	_bv_prune_directpoints_renderers()
 	if _bv_directpoints_renderers_by_id.size() == 1:
 		var entry: Dictionary = _bv_directpoints_renderers_by_id.values()[0]
-		_bv_directpoints_renderer = entry.get("renderer", null)
+		var renderer_value = entry.get("renderer", null)
+		if renderer_value == null or not (renderer_value is Object) or not is_instance_valid(renderer_value):
+			_bv_directpoints_renderers_by_id.clear()
+			_bv_directpoints_renderer = null
+			_bv_directpoints_multimesh = null
+			_bv_directpoints_dimensions = Vector3.ZERO
+			return
+		_bv_directpoints_renderer = renderer_value as Object
 		_bv_directpoints_multimesh = entry.get("multimesh", null)
 		_bv_directpoints_dimensions = entry.get("dimensions", Vector3.ZERO)
 		return
