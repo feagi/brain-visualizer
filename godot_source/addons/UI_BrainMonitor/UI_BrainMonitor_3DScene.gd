@@ -1499,6 +1499,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var selected_neurons: Array[Vector3i] = BM_cortical_area.get_neuron_selection_states()
 					if !selected_neurons.is_empty():
 						dict[BM_cortical_area.cortical_area.cortical_ID] = selected_neurons
+				if dict.is_empty():
+					return
 				# Emit signal to fire selected neurons
 				requesting_to_fire_selected_neurons.emit(dict)
 				return

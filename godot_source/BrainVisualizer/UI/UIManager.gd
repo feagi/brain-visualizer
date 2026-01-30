@@ -192,6 +192,9 @@ func FEAGI_about_to_reset_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] FEAGI_about_to_reset_genome() called - preparing for genome reload")
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
+	if _selection_system:
+		_selection_system.clear_all_highlighted()
+	_root_UI_view.reset()
 	#_root_UI_view.close_all_non_root_brain_region_views()
 	#toggle_loading_screen(true)
 	if _temp_bm_holder:

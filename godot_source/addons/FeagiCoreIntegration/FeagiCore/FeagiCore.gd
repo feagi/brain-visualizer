@@ -69,6 +69,7 @@ func _enter_tree():
 	feagi_local_cache = FEAGILocalCache.new()
 	feagi_local_cache.genome_refresh_needed.connect(_on_genome_refresh_needed)
 	feagi_local_cache.agent_reregistration_needed.connect(_on_agent_reregistration_needed)
+	feagi_local_cache.feagi_session_changed.connect(_on_feagi_session_changed)
 	requests = FEAGIRequests.new()
 	# At this point, the scripts are initialized, but no attempt to connect to FEAGI was made.
 
@@ -522,6 +523,17 @@ func _recieve_genome_reset_request():
 	else:
 		print("⚠️ FEAGICORE: Ignoring genome reset request - current state doesn't warrant reload: %s" % GENOME_LOAD_STATE.keys()[genome_load_state])
 		print("   💡 NOTE: Reset requests only trigger from GENOME_READY or GENOME_PROCESSING states")
+
+## Handles new FEAGI instance detection from healthcheck session ID.
+func _on_feagi_session_changed(previous_session: int, current_session: int) -> void:
+	print("FEAGICORE: FEAGI session changed (old: %d -> new: %d) - triggering full reload" % [previous_session, current_session])
+	if genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
+		print("FEAGICORE: Already reloading genome - skipping duplicate session reload")
+		return
+	if genome_load_state == GENOME_LOAD_STATE.UNKNOWN:
+		print("FEAGICORE: Session change detected while disconnected - connection flow will handle reload")
+		return
+	_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
 
 func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: String):
 	# Allow force reloads to override stuck GENOME_RELOADING state

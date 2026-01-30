@@ -333,6 +333,7 @@ var _simulation_timestep: float = 0.05  # Default 50ms
 # Memory area stats from health check
 var memory_area_stats: Dictionary = {}  # cortical_id -> {neuron_count, created_total, deleted_total, last_updated}
 signal memory_area_stats_updated(stats: Dictionary)
+signal feagi_session_changed(previous_session: int, current_session: int)
 
 # Genome change detection tracking
 var _previous_feagi_session: int = 0
@@ -340,6 +341,7 @@ var _previous_genome_num: int = 0
 var _had_valid_session: bool = false  # Track if we ever had a valid session (to detect FEAGI restart)
 var _last_genome_change_time: int = 0  # Time of last change detection
 var _genome_change_cooldown_ms: int = 10000  # 10 second cooldown
+var _last_seen_feagi_session: int = 0
 
 # Hash change detection tracking (event-driven hashes from health_check)
 var _previous_brain_regions_hash: int = 0
@@ -355,6 +357,18 @@ var _pending_amalgamation: StringName = ""
 
 ## Given a dict form feagi of health info, update cached health values
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
+	
+	# FEAGI SESSION CHANGE: detect new FEAGI instances as early as possible
+	if "feagi_session" in health:
+		var feagi_session_value_only = health["feagi_session"]
+		if feagi_session_value_only != null and (typeof(feagi_session_value_only) == TYPE_INT or typeof(feagi_session_value_only) == TYPE_FLOAT):
+			var current_session_only = int(feagi_session_value_only)
+			if current_session_only > 0 and _last_seen_feagi_session != current_session_only:
+				var previous_session = _last_seen_feagi_session
+				_last_seen_feagi_session = current_session_only
+				if previous_session > 0:
+					print("FEAGI CACHE: Session changed (old: %d -> new: %d) - requesting full reload" % [previous_session, current_session_only])
+					feagi_session_changed.emit(previous_session, current_session_only)
 	
 	# GENOME CHANGE DETECTION: Check feagi_session and genome_num for changes
 	if "feagi_session" in health and "genome_num" in health:
@@ -383,7 +397,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 													conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_HTTP or
 													conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_WS)
 						if is_already_connected:
-							print("🔍 [AGENT-REG] FEAGI became ready (session: %d) while BV is connected - triggering re-registration" % current_session)
+							print("[AGENT-REG] FEAGI became ready (session: %d) while BV is connected - triggering re-registration" % current_session)
 							agent_reregistration_needed.emit("FEAGI became ready (session: %d)" % current_session)
 		
 		# Genome change detection requires BOTH feagi_session and genome_num to be non-null
@@ -403,7 +417,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 			
 			# If session changed and we previously had a valid session, trigger agent re-registration
 			if session_changed and _previous_feagi_session != 0:
-				print("🔍 [AGENT-REG] FEAGI session changed (old: %d → new: %d) - agent needs to re-register" % [_previous_feagi_session, current_feagi_session])
+				print("[AGENT-REG] FEAGI session changed (old: %d → new: %d) - agent needs to re-register" % [_previous_feagi_session, current_feagi_session])
 				agent_reregistration_needed.emit("FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_feagi_session])
 
 			# Genome changes: only detect actual changes (not initial from 0)
