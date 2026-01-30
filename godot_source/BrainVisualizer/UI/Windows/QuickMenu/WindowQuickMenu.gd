@@ -109,9 +109,15 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				move_to_region_button.disabled = true
 				move_to_region_button.tooltip_text = "System Cortical Areas cannot be moved into a Circuit"
 			if area is MemoryCorticalArea:
-				quick_connect_CA_N_button.visible = false
-				quick_connect_N_CA_button.visible = false
-				quick_connect_N_N_button.visible = false
+				quick_connect_CA_N_button.visible = true
+				quick_connect_N_CA_button.visible = true
+				quick_connect_N_N_button.visible = true
+				quick_connect_CA_N_button.disabled = true
+				quick_connect_N_CA_button.disabled = true
+				quick_connect_N_N_button.disabled = true
+				quick_connect_CA_N_button.tooltip_text = "Neuron block based operations are unavailable for memory cortical areas."
+				quick_connect_N_CA_button.tooltip_text = "Neuron block based operations are unavailable for memory cortical areas."
+				quick_connect_N_N_button.tooltip_text = "Neuron block based operations are unavailable for memory cortical areas."
 				
 			
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:

@@ -90,6 +90,8 @@ var _memory_inactive_emission: Color
 var _memory_inactive_emission_energy: float
 var _memory_inactive_rim_intensity: float
 var _memory_inactive_jello_strength: float
+var _memory_default_radius: float = 1.5
+var _memory_default_height: float = 3.0
 
 func setup(area: AbstractCorticalArea) -> void:
 	# Store cortical area properties for later use
@@ -209,8 +211,8 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Use different meshes based on cortical area type/ID
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		var sphere_mesh = SphereMesh.new()
-		sphere_mesh.radius = 1.5  # 3x larger: 0.5 * 3 = 1.5
-		sphere_mesh.height = 3.0  # 3x larger: 1.0 * 3 = 3.0
+		sphere_mesh.radius = _memory_default_radius  # 3x larger: 0.5 * 3 = 1.5
+		sphere_mesh.height = _memory_default_height  # 3x larger: 1.0 * 3 = 3.0
 		sphere_mesh.radial_segments = 16  # Good balance of quality vs performance
 		sphere_mesh.rings = 8
 		_outline_mesh_instance.mesh = sphere_mesh
@@ -1284,6 +1286,9 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 	"""Update memory sphere size based on neuron count"""
 	if _cortical_area_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		return
+	if neuron_count <= 0:
+		_apply_default_memory_sphere_size()
+		return
 	
 	# Size the memory sphere by treating its volume as proportional to neuron_count.
 	#
@@ -1292,6 +1297,11 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 	var volume := float(neuron_count)
 	var sphere_radius := pow((3.0 * volume) / (4.0 * PI), 1.0 / 3.0)
 	var sphere_height := sphere_radius * 2.0
+
+	# Guard against non-finite sizes to prevent invalid transforms.
+	if not is_finite(sphere_radius) or not is_finite(sphere_height) or sphere_radius < 0.0:
+		_apply_default_memory_sphere_size()
+		return
 	
 	
 	# Update the sphere mesh
@@ -1328,6 +1338,9 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 				# For a sphere, the center Y should be at: plate_top_y + AREA_ABOVE_PLATE_GAP + sphere_radius
 				var sphere_bottom_y = plate_top_y + AREA_ABOVE_PLATE_GAP
 				var sphere_center_y = sphere_bottom_y + sphere_radius
+				if not is_finite(sphere_center_y):
+					_apply_default_memory_sphere_size()
+					return
 				
 				# Update the static body's global Y position to keep sphere afloat
 				var current_pos = _static_body.global_position
@@ -1337,6 +1350,26 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 				if _friendly_name_label != null:
 					var label_y_offset = -(sphere_radius + 2.0)
 					_friendly_name_label.global_position = Vector3(current_pos.x, sphere_center_y + label_y_offset, current_pos.z)
+
+	if has_meta("_memory_size_invalid_logged"):
+		remove_meta("_memory_size_invalid_logged")
+
+func _apply_default_memory_sphere_size() -> void:
+	# Default size used when stats are invalid or unavailable.
+	if _cortical_area_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		return
+	if not has_meta("_memory_size_invalid_logged"):
+		set_meta("_memory_size_invalid_logged", true)
+		push_warning("Memory sphere size invalid; using default size for %s." % _cortical_area_id)
+	if _outline_mesh_instance and _outline_mesh_instance.mesh is SphereMesh:
+		var sphere_mesh = _outline_mesh_instance.mesh as SphereMesh
+		sphere_mesh.radius = _memory_default_radius
+		sphere_mesh.height = _memory_default_height
+	if _static_body:
+		var collision_shape = _static_body.get_child(0) as CollisionShape3D
+		if collision_shape and collision_shape.shape is SphereShape3D:
+			var sphere_shape = collision_shape.shape as SphereShape3D
+			sphere_shape.radius = _memory_default_radius
 
 ## Helper to find the parent brain region 3D visualization
 func _find_parent_brain_region() -> UI_BrainMonitor_BrainRegion3D:
