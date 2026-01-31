@@ -982,7 +982,6 @@ func _add_plate_border(plate_node: MeshInstance3D, plate_size: Vector3, plate_co
 	border_material.albedo_color = Color(0.9, 0.9, 0.95, 0.95)
 	border_material.metallic = 0.1
 	border_material.roughness = 0.25
-	border_material.specular = 0.7
 	border_material.emission_enabled = true
 	border_material.emission = Color(0.6, 0.6, 0.7, 0.9)
 	border_material.emission_energy = 0.55

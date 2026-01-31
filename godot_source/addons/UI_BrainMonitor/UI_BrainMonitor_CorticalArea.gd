@@ -1878,6 +1878,8 @@ func _is_mapping_set_plastic(mapping_set: InterCorticalMappingSet) -> bool:
 	
 	# Check all mappings in the set
 	for mapping in mapping_set.mappings:
+		if mapping.morphology_used != null and mapping.morphology_used.name == &"bi_directional_stdp":
+			return true  # Bi-directional STDP is inherently plastic
 		if mapping.is_plastic:
 			return true  # At least one plastic connection found
 	
