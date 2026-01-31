@@ -1575,7 +1575,7 @@ func _populate_cortical_areas() -> void:
 		if not existing_viz:
 			# CRITICAL FIX: Create the cortical area visualization if it doesn't exist
 			# print("    🏗️ Creating missing visualization for input area %s" % area.cortical_ID)
-			existing_viz = brain_monitor_3d._add_cortical_area(area)
+			existing_viz = brain_monitor_3d.add_cortical_area(area)
 			if not existing_viz:
 				# print("      ❌ Failed to create visualization for input area %s" % area.cortical_ID)
 				continue
@@ -1625,7 +1625,7 @@ func _populate_cortical_areas() -> void:
 		if not existing_viz:
 			# CRITICAL FIX: Create the cortical area visualization if it doesn't exist
 			# print("    🏗️ Creating missing visualization for output area %s" % area.cortical_ID)
-			existing_viz = brain_monitor_3d._add_cortical_area(area)
+			existing_viz = brain_monitor_3d.add_cortical_area(area)
 			if not existing_viz:
 				# print("      ❌ Failed to create visualization for output area %s" % area.cortical_ID)
 				continue
@@ -1675,7 +1675,7 @@ func _populate_cortical_areas() -> void:
 		if not existing_viz:
 			# CRITICAL FIX: Create the cortical area visualization if it doesn't exist
 			# print("    🏗️ Creating missing visualization for conflict area %s" % area.cortical_ID)
-			existing_viz = brain_monitor_3d._add_cortical_area(area)
+			existing_viz = brain_monitor_3d.add_cortical_area(area)
 			if not existing_viz:
 				# print("      ❌ Failed to create visualization for conflict area %s" % area.cortical_ID)
 				continue

@@ -2648,6 +2648,10 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	
 	return rendering_area
 
+## Public wrapper to avoid external access to private member.
+func add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalArea:
+	return _add_cortical_area(area)
+
 ## Gets an existing cortical area visualization by ID (used by brain region frames)
 func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
 	var viz = _cortical_visualizations_by_ID.get(cortical_id, null)

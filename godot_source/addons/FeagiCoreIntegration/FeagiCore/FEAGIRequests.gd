@@ -1269,7 +1269,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 			# Force-add if not present due to filter timing
 			var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(response["cortical_id"], null)
 			if new_area_obj != null:
-				bm._add_cortical_area(new_area_obj)
+				_call_add_cortical_area(bm, new_area_obj)
 	print("FEAGI REQUEST: Fetched detailed properties for newly created cortical area %s" % response["cortical_id"])
 	
 	return FEAGI_response_data
@@ -1323,7 +1323,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 		if bm != null:
 			var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(response["cortical_id"], null)
 			if new_area_obj != null:
-				bm._add_cortical_area(new_area_obj)
+				_call_add_cortical_area(bm, new_area_obj)
 	print("FEAGI REQUEST: Fetched detailed properties for newly created memory cortical area %s" % response["cortical_id"])
 	
 	return FEAGI_response_data
@@ -1443,11 +1443,19 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 			for cortical_id in created_cortical_ids:
 				var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_id, null)
 				if new_area_obj != null:
-					bm._add_cortical_area(new_area_obj)
+					_call_add_cortical_area(bm, new_area_obj)
 	
 	print("FEAGI REQUEST: All newly created IOPU cortical areas for type %s, unit %d have been added to cache." % [IOPU_template.ID, unit_id])
 	
 	return FEAGI_response_data
+
+## Safely call add_cortical_area on a brain monitor without static member resolution.
+func _call_add_cortical_area(brain_monitor: Object, area: AbstractCorticalArea) -> Variant:
+	if brain_monitor == null or area == null:
+		return null
+	if brain_monitor.has_method("add_cortical_area"):
+		return brain_monitor.call("add_cortical_area", area)
+	return null
 
 
 ## Clone a given cortical area
@@ -1559,7 +1567,7 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 					continue
 				any_bm_found = true
 				print("FEAGI REQUEST: Manually injecting cloned area %s into BM for region %s" % [new_id, target_region_id])
-				bm._add_cortical_area(final_area_obj)
+				_call_add_cortical_area(bm, final_area_obj)
 			if !any_bm_found:
 				print("⚠️ FEAGI REQUEST: No Brain Monitor tab found for region %s to auto-add cloned area %s" % [target_region_id, new_id])
 		
@@ -1590,7 +1598,7 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 						if BV.UI:
 							var bm_target: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(target_region)
 							if bm_target != null:
-								bm_target._add_cortical_area(new_area_obj)
+								_call_add_cortical_area(bm_target, new_area_obj)
 		# Refresh mapping cache so UI components (3D scene, Circuit Builder) see new connections
 		var mapping_summary: FeagiRequestOutput = await get_mapping_summary()
 		if mapping_summary != null and mapping_summary.success:
@@ -3031,7 +3039,7 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 						# Check if visualization already exists
 						if not brain_monitor.has_cortical_area_visualization(area.cortical_ID):
 							print("FEAGI REQUEST: 🆕 Creating visualization for cortical area %s in region %s" % [area.cortical_ID, region_id])
-							var created_viz = brain_monitor._add_cortical_area(area)
+							var created_viz = _call_add_cortical_area(brain_monitor, area)
 							if created_viz:
 								areas_created += 1
 								print("FEAGI REQUEST: ✅ Successfully created visualization for %s" % area.cortical_ID)
