@@ -948,6 +948,7 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 ## Create a 3D curve connecting two points
 func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
+	var is_bidirectional = _is_mapping_set_bidirectional_plastic(mapping_set)
 	
 	# If inhibitory and excitatory coexist between two areas, render two independent arcs.
 	# - Excitatory: green
@@ -965,14 +966,14 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		mixed_node.name = "MIXED_" + plastic_prefix + connection_id
 		
 		# Slightly different bend multipliers for separation
-		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, is_global_mode, 0.43)
-		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, is_global_mode, 0.37)
+		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, is_bidirectional, is_global_mode, 0.43)
+		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, is_bidirectional, is_global_mode, 0.37)
 		mixed_node.add_child(excitatory_curve)
 		mixed_node.add_child(inhibitory_curve)
 		return mixed_node
 	
 	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
-	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, is_global_mode, 0.4)
+	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, is_bidirectional, is_global_mode, 0.4)
 
 ## Internal helper that creates a single visual arc for a connection.
 ## arc_height_multiplier controls the curve bend height relative to distance (e.g. 0.4 = 40% of distance).
@@ -982,6 +983,7 @@ func _create_connection_curve_variant(
 	connection_id: StringName,
 	is_inhibitory: bool,
 	is_plastic: bool,
+	is_bidirectional: bool,
 	is_global_mode: bool,
 	arc_height_multiplier: float
 ) -> Node3D:
@@ -1006,6 +1008,21 @@ func _create_connection_curve_variant(
 	
 	# Store curve points for pulse animation
 	var curve_points: Array[Vector3] = []
+	
+	# For bidirectional plastic connections, render as electric arc
+	if is_plastic and is_bidirectional:
+		var arc_points = _create_electric_arc_segments(
+			connection_node,
+			start_pos,
+			control_point,
+			end_pos,
+			is_inhibitory,
+			is_global_mode,
+			connection_id
+		)
+		_add_electric_arc_animation(connection_node, start_pos, control_point, end_pos)
+		# Skip default pulse animation so arc stays visually distinct.
+		return connection_node
 	
 	# For plastic connections, create dashed lines
 	if is_plastic:
@@ -1289,6 +1306,166 @@ func _estimate_curve_length(start_pos: Vector3, control_pos: Vector3, end_pos: V
 		prev_point = current_point
 	
 	return total_length
+
+## Tangent of a quadratic Bezier curve at t
+func _quadratic_bezier_tangent(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
+	return 2.0 * (1.0 - t) * (p1 - p0) + 2.0 * t * (p2 - p1)
+
+## Create electric arc segments for bidirectional plastic connections
+func _create_electric_arc_segments(
+	connection_node: Node3D,
+	start_pos: Vector3,
+	control_point: Vector3,
+	end_pos: Vector3,
+	is_inhibitory: bool,
+	is_global_mode: bool,
+	connection_id: StringName
+) -> Array[Vector3]:
+	var arc_length = _estimate_curve_length(start_pos, control_point, end_pos)
+	var segment_count = max(8, int(arc_length * 1.5))
+	var t_values: Array[float] = []
+	for i in range(segment_count + 1):
+		t_values.append(float(i) / float(segment_count))
+	
+	var jitter_strength = max(0.35, arc_length * 0.03)
+	var seed_offset = float(hash(String(connection_id))) * 0.001
+	var points = _build_electric_arc_points(start_pos, control_point, end_pos, t_values, seed_offset, jitter_strength)
+	
+	var material = _create_electric_arc_material(is_inhibitory, is_global_mode)
+	var segments: Array = []
+	for i in range(segment_count):
+		var segment = _create_curve_segment(points[i], points[i + 1], i, material)
+		connection_node.add_child(segment)
+		segments.append(segment)
+	
+	connection_node.set_meta("electric_arc_segments", segments)
+	connection_node.set_meta("electric_arc_t_values", t_values)
+	connection_node.set_meta("electric_arc_seed", seed_offset)
+	return points
+
+## Build jittered arc points for electric arc animation
+func _build_electric_arc_points(
+	start_pos: Vector3,
+	control_point: Vector3,
+	end_pos: Vector3,
+	t_values: Array[float],
+	time_offset: float,
+	jitter_strength: float
+) -> Array[Vector3]:
+	var points: Array[Vector3] = []
+	for t in t_values:
+		var base = _quadratic_bezier(start_pos, control_point, end_pos, t)
+		var offset = _electric_arc_offset(start_pos, control_point, end_pos, t, time_offset, jitter_strength)
+		points.append(base + offset)
+	return points
+
+## Compute offset for electric arc jitter
+func _electric_arc_offset(
+	start_pos: Vector3,
+	control_point: Vector3,
+	end_pos: Vector3,
+	t: float,
+	time_offset: float,
+	jitter_strength: float
+) -> Vector3:
+	var tangent = _quadratic_bezier_tangent(start_pos, control_point, end_pos, t)
+	if tangent.length() < 0.001:
+		return Vector3.ZERO
+	var dir = tangent.normalized()
+	var up_vector = Vector3.UP
+	if abs(dir.dot(Vector3.UP)) > 0.9:
+		up_vector = Vector3.FORWARD
+	var right_vector = up_vector.cross(dir).normalized()
+	var corrected_up = dir.cross(right_vector).normalized()
+	
+	var time = Time.get_ticks_msec() / 1000.0
+	var phase = time_offset + time * 3.5 + t * TAU
+	var noise_x = sin(phase * 2.7 + t * 11.3)
+	var noise_y = cos(phase * 3.9 + t * 8.1)
+	var noise_z = sin(phase * 4.3 + t * 6.7)
+	
+	var lateral = (right_vector * noise_x + corrected_up * noise_y) * jitter_strength
+	var longitudinal = dir * noise_z * jitter_strength * 0.15
+	return lateral + longitudinal
+
+## Electric arc material for bidirectional plastic connections
+func _create_electric_arc_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
+	var material = StandardMaterial3D.new()
+	if is_global_mode:
+		material.albedo_color = Color(0.6, 0.7, 0.9, 0.85)
+		material.emission = Color(0.4, 0.6, 0.9)
+	elif is_inhibitory:
+		material.albedo_color = Color(0.9, 0.4, 1.0, 0.9)
+		material.emission = Color(0.8, 0.3, 1.0)
+	else:
+		material.albedo_color = Color(0.4, 0.9, 1.0, 0.9)
+		material.emission = Color(0.3, 0.8, 1.0)
+	
+	material.emission_enabled = true
+	material.emission_energy = 4.0
+	material.flags_unshaded = true
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
+
+## Update an existing curve segment with new endpoints
+func _update_curve_segment(segment: MeshInstance3D, start_pos: Vector3, end_pos: Vector3) -> void:
+	if segment == null or not is_instance_valid(segment):
+		return
+	var direction = (end_pos - start_pos)
+	var segment_length = direction.length()
+	var center_pos = (start_pos + end_pos) / 2.0
+	segment.position = center_pos
+	var cylinder_mesh = segment.mesh as CylinderMesh
+	if cylinder_mesh != null:
+		cylinder_mesh.height = segment_length
+	if direction.length() > 0.001:
+		var normalized_direction = direction.normalized()
+		var up_vector = Vector3.UP
+		if abs(normalized_direction.dot(Vector3.UP)) > 0.9:
+			up_vector = Vector3.FORWARD
+		var right_vector = up_vector.cross(normalized_direction).normalized()
+		var corrected_up = normalized_direction.cross(right_vector).normalized()
+		var basis = Basis(right_vector, normalized_direction, corrected_up)
+		segment.basis = basis
+
+## Add flicker + jitter animation to electric arc segments
+func _add_electric_arc_animation(connection_node: Node3D, start_pos: Vector3, control_point: Vector3, end_pos: Vector3) -> void:
+	if connection_node == null:
+		return
+	var segments = connection_node.get_meta("electric_arc_segments", []) as Array
+	var t_values = connection_node.get_meta("electric_arc_t_values", []) as Array
+	if segments.is_empty() or t_values.is_empty():
+		return
+	
+	var seed_offset = float(connection_node.get_meta("electric_arc_seed", 0.0))
+	var arc_tween = create_tween()
+	arc_tween.set_loops()
+	
+	var arc_callback = func(animation_time: float) -> void:
+		if connection_node == null or not is_instance_valid(connection_node):
+			arc_tween.kill()
+			return
+		var jitter_strength = max(0.35, _estimate_curve_length(start_pos, control_point, end_pos) * 0.03)
+		var points = _build_electric_arc_points(
+			start_pos,
+			control_point,
+			end_pos,
+			t_values,
+			seed_offset + animation_time * 1.3,
+			jitter_strength
+		)
+		for i in range(segments.size()):
+			var segment = segments[i] as MeshInstance3D
+			if segment == null or not is_instance_valid(segment):
+				continue
+			_update_curve_segment(segment, points[i], points[i + 1])
+			if segment.material_override is StandardMaterial3D:
+				var material = segment.material_override as StandardMaterial3D
+				var flicker = 0.7 + (sin(animation_time * 9.0 + float(i)) * 0.3)
+				material.emission_energy = 3.5 * flicker
+	arc_tween.tween_method(arc_callback, 0.0, 100.0, 0.35)
 
 ## Create a single segment of the curve
 func _create_curve_segment(start_pos: Vector3, end_pos: Vector3, segment_index: int, material: StandardMaterial3D) -> MeshInstance3D:
@@ -1705,6 +1882,24 @@ func _is_mapping_set_plastic(mapping_set: InterCorticalMappingSet) -> bool:
 			return true  # At least one plastic connection found
 	
 	return false  # All connections are non-plastic
+
+## Helper function to determine if a mapping set is plastic and bidirectional (mixed sign)
+func _is_mapping_set_bidirectional_plastic(mapping_set: InterCorticalMappingSet) -> bool:
+	if mapping_set == null or mapping_set.mappings.is_empty():
+		return false
+	for mapping in mapping_set.mappings:
+		if mapping.morphology_used != null and mapping.morphology_used.name == &"bi_directional_stdp":
+			return true
+	var source_area: AbstractCorticalArea = mapping_set.source_cortical_area
+	var destination_area: AbstractCorticalArea = mapping_set.destination_cortical_area
+	if source_area == null or destination_area == null:
+		return false
+	if not _is_mapping_set_plastic(mapping_set):
+		return false
+	var reciprocal_set = destination_area.efferent_mappings.get(source_area, null)
+	if reciprocal_set == null:
+		return false
+	return _is_mapping_set_plastic(reciprocal_set)
 
 ## Helper function to determine if MAJORITY of mappings in a set are plastic (for connection-wide effects)
 func _is_mapping_set_majority_plastic(mapping_set: InterCorticalMappingSet) -> bool:
