@@ -157,7 +157,9 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			_step4_button.disabled = false
 			# Keep the core morphology icon bar visible so user can reselect
 			var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
-			_set_core_bar_visibility(not destination_is_memory)
+			var source_is_memory: bool = (_source != null and _source.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+			var allow_memory_choice: bool = destination_is_memory and source_is_memory
+			_set_core_bar_visibility((not destination_is_memory) or allow_memory_choice)
 		_:
 			push_error("UI: WINDOWS: WindowQuickConnect in unknown state!")
 	
@@ -188,14 +190,16 @@ func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
 	var mapping_defaults: MappingRestrictionDefault = MappingRestrictionsAPI.get_defaults_between_cortical_areas(_source, _destination)
 	var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+	var source_is_memory: bool = (_source != null and _source.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+	var allow_memory_choice: bool = destination_is_memory and source_is_memory
 	_selected_morphology = null
 	_step3_label.text = " Please Select a Connectivity Rule..."
 	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	
 	# ✅ CRITICAL FIX: Make the morphology container visible so the list appears
-	_step3_morphology_container.visible = not destination_is_memory
+	_step3_morphology_container.visible = (not destination_is_memory) or allow_memory_choice
 	# Show and (re)populate the Core Morphologies icon bar
-	_set_core_bar_visibility(not destination_is_memory)
+	_set_core_bar_visibility((not destination_is_memory) or allow_memory_choice)
 	
 	# Get restrictions with proper null checking
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
@@ -212,7 +216,7 @@ func _setting_morphology() -> void:
 	var default_morphology: BaseMorphology = mapping_defaults.try_get_default_morphology() if mapping_defaults != null else null
 	if default_morphology != null:
 		_step3_scroll.select_morphology(default_morphology)
-		if destination_is_memory:
+		if destination_is_memory and not allow_memory_choice:
 			_set_morphology(default_morphology)
 
 ## Repopulate icons when cache updates, only if we're in morphology selection view

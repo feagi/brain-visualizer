@@ -42,11 +42,13 @@ static func get_restrictions_between_cortical_areas(source: GenomeObject, destin
 	
 	# Special handling for memory areas - check if either source or destination is memory
 	if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-		# Memory areas should always use memory morphology
+		# Memory-to-memory allows memory + bi_directional_stdp
 		var memory_restriction = MappingRestrictionCorticalMorphology.new()
 		memory_restriction.cortical_source_type = source_area.cortical_type
 		memory_restriction.cortical_destination_type = destination_area.cortical_type
 		var memory_names: Array[StringName] = [&"memory"]
+		if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			memory_names.append(&"bi_directional_stdp")
 		memory_restriction.restricted_to_morphology_of_names = memory_names
 		return memory_restriction
 	
@@ -97,11 +99,11 @@ static func _add_default_to_cache(source_type: AbstractCorticalArea.CORTICAL_ARE
 
 ## Create built-in mapping restrictions for memory cortical areas
 static func _create_builtin_restrictions() -> void:
-	# Memory cortical areas should only use memory morphology
+	# Memory cortical areas should only use memory morphology (memory-to-memory allows bi_directional_stdp)
 	var memory_restriction = MappingRestrictionCorticalMorphology.new()
 	memory_restriction.cortical_source_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	memory_restriction.cortical_destination_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
-	var memory_names: Array[StringName] = [&"memory"]
+	var memory_names: Array[StringName] = [&"memory", &"bi_directional_stdp"]
 	memory_restriction.restricted_to_morphology_of_names = memory_names
 	
 	# Memory areas connecting to any other type should also use memory morphology
