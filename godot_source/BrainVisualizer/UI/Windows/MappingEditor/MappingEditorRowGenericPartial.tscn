@@ -17,7 +17,7 @@
 [ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="14_naw4t"]
 
 [node name="MappingEditorRowGenericPartial" type="HBoxContainer"]
-offset_right = 1300.0
+offset_right = 1400.0
 offset_bottom = 32.0
 size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
@@ -80,6 +80,14 @@ ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("10_mpnb3")
 enable_autoscaling_with_theme = false
+
+[node name="Plasticity_Window" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+tooltip_text = "Plasticity Window"
+alignment = 1
+script = ExtResource("15_8f0j2")
+initial_int = 3
 
 [node name="Plasticity_Constant" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(100, 0)

@@ -10,7 +10,7 @@ const DEFAULT_PLASTICITY: bool = false
 const DEFAULT_PLASTICITY_CONSTANT: float = 1.0
 const DEFAULT_LTP_MULTIPLIER: float = 1.0
 const DEFAULT_LTD_MULTIPLIER: float = 1.0
-const DEFAULT_PLASTICITY_WINDOW: int = 5
+const DEFAULT_PLASTICITY_WINDOW: int = 3
 
 
 var morphology_used: BaseMorphology:
