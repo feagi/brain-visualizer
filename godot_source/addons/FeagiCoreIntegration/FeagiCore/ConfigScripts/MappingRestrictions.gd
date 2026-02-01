@@ -42,13 +42,13 @@ static func get_restrictions_between_cortical_areas(source: GenomeObject, destin
 	
 	# Special handling for memory areas - check if either source or destination is memory
 	if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-		# Memory-to-memory allows memory + bi_directional_stdp
+		# Memory-to-memory allows episodic_memory + associative_memory (bi-directional STDP)
 		var memory_restriction = MappingRestrictionCorticalMorphology.new()
 		memory_restriction.cortical_source_type = source_area.cortical_type
 		memory_restriction.cortical_destination_type = destination_area.cortical_type
-		var memory_names: Array[StringName] = [&"memory"]
+		var memory_names: Array[StringName] = [&"episodic_memory"]
 		if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-			memory_names.append(&"bi_directional_stdp")
+			memory_names.append(&"associative_memory")
 		memory_restriction.restricted_to_morphology_of_names = memory_names
 		return memory_restriction
 	
@@ -72,12 +72,12 @@ static func get_defaults_between_cortical_areas(source: GenomeObject, destinatio
 	if key in _defaults_cache:
 		return _defaults_cache[key]
 	
-	# Special handling for memory areas - default to memory morphology
+	# Special handling for memory areas - default to episodic_memory morphology
 	if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		var memory_default = MappingRestrictionDefault.new()
 		memory_default.cortical_source_type = source_area.cortical_type
 		memory_default.cortical_destination_type = destination_area.cortical_type
-		memory_default.name_of_default_morphology = &"memory"
+		memory_default.name_of_default_morphology = &"episodic_memory"
 		return memory_default
 	
 	# No specific defaults found
@@ -99,20 +99,20 @@ static func _add_default_to_cache(source_type: AbstractCorticalArea.CORTICAL_ARE
 
 ## Create built-in mapping restrictions for memory cortical areas
 static func _create_builtin_restrictions() -> void:
-	# Memory cortical areas should only use memory morphology (memory-to-memory allows bi_directional_stdp)
+	# Memory cortical areas should only use episodic_memory morphology (memory-to-memory allows associative_memory)
 	var memory_restriction = MappingRestrictionCorticalMorphology.new()
 	memory_restriction.cortical_source_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	memory_restriction.cortical_destination_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
-	var memory_names: Array[StringName] = [&"memory", &"bi_directional_stdp"]
+	var memory_names: Array[StringName] = [&"episodic_memory", &"associative_memory"]
 	memory_restriction.restricted_to_morphology_of_names = memory_names
 	
-	# Memory areas connecting to any other type should also use memory morphology
+	# Memory areas connecting to any other type should also use episodic_memory morphology
 	var memory_to_any_restriction = MappingRestrictionCorticalMorphology.new()
 	memory_to_any_restriction.cortical_source_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	memory_to_any_restriction.cortical_destination_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN # Will match any destination
 	memory_to_any_restriction.restricted_to_morphology_of_names = memory_names
 	
-	# Any area connecting to memory should also use memory morphology
+	# Any area connecting to memory should also use episodic_memory morphology
 	var any_to_memory_restriction = MappingRestrictionCorticalMorphology.new()
 	any_to_memory_restriction.cortical_source_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN # Will match any source
 	any_to_memory_restriction.cortical_destination_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
@@ -121,10 +121,10 @@ static func _create_builtin_restrictions() -> void:
 	# Add restrictions to cache
 	_add_restriction_to_cache(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, memory_restriction)
 	
-	# Create memory morphology default for memory areas
+	# Create episodic_memory morphology default for memory areas
 	var memory_default = MappingRestrictionDefault.new()
 	memory_default.cortical_source_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	memory_default.cortical_destination_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
-	memory_default.name_of_default_morphology = &"memory"
+	memory_default.name_of_default_morphology = &"episodic_memory"
 	
 	_add_default_to_cache(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, memory_default)

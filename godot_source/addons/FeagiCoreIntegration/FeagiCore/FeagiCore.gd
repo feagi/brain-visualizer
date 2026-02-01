@@ -132,18 +132,6 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	var health_url: StringName = addr_list.GET_system_healthCheck
 	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(health_url)
 	
-	var process_output_for_cache: Callable = func(polled_result: FeagiRequestOutput) :  # Functional Programming my beloved
-		if polled_result.has_timed_out:
-			print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️ Health check timed out")
-			return
-		if polled_result.has_errored:
-			print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Health check errored")
-			return
-		var health_data: Dictionary = polled_result.decode_response_as_dict()
-		print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check successful, updating cache...")
-		print("FEAGICORE: [3D_SCENE_DEBUG] Health check data received: ", health_data)
-		feagi_local_cache.update_health_from_FEAGI_dict(health_data)
-	
 	_polling_health_check_worker = FeagiCore.network.http_API.make_HTTP_call(health_check_request)
 
 	await _polling_health_check_worker.worker_done
@@ -160,7 +148,7 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 		return
 	
 	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check contains required keys")
-	process_output_for_cache.call(raw_output)
+	_process_health_check_output(raw_output)
 	
 	# Start periodic HTTP health check for simulation_timestep (websocket doesn't have it)
 	_start_periodic_simulation_timestep_check()
@@ -185,6 +173,18 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 		_change_genome_state(GENOME_LOAD_STATE.NO_GENOME_AVAILABLE)
 	
 	feagi_local_cache.genome_availability_or_brain_readiness_changed.connect(_if_brain_readiness_or_genome_availability_changes)
+
+func _process_health_check_output(polled_result: FeagiRequestOutput) -> void:
+	if polled_result.has_timed_out:
+		print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️ Health check timed out")
+		return
+	if polled_result.has_errored:
+		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Health check errored")
+		return
+	var health_data: Dictionary = polled_result.decode_response_as_dict()
+	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check successful, updating cache...")
+	print("FEAGICORE: [3D_SCENE_DEBUG] Health check data received: ", health_data)
+	feagi_local_cache.update_health_from_FEAGI_dict(health_data)
 
 func _start_periodic_simulation_timestep_check() -> void:
 	"""Start persistent HTTP health check - this should NEVER stop as long as BV is running"""

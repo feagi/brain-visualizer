@@ -2419,10 +2419,23 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
 	
 	# Define Request
+	var mapping_payload: Array[Dictionary] = SingleMappingDefinition.to_FEAGI_JSON_array(mappings)
+	for mapping_entry: Dictionary in mapping_payload:
+		if mapping_entry.get("morphology_id", "") == "associative_memory":
+			mapping_entry["plasticity_flag"] = true
+			if !"plasticity_constant" in mapping_entry:
+				mapping_entry["plasticity_constant"] = SingleMappingDefinition.DEFAULT_PLASTICITY_CONSTANT
+			if !"ltp_multiplier" in mapping_entry:
+				mapping_entry["ltp_multiplier"] = SingleMappingDefinition.DEFAULT_LTP_MULTIPLIER
+			if !"ltd_multiplier" in mapping_entry:
+				mapping_entry["ltd_multiplier"] = SingleMappingDefinition.DEFAULT_LTD_MULTIPLIER
+			if !"plasticity_window" in mapping_entry:
+				mapping_entry["plasticity_window"] = SingleMappingDefinition.DEFAULT_PLASTICITY_WINDOW
+			mapping_entry["plasticity_window"] = int(mapping_entry["plasticity_window"])
 	var dict_to_send: Dictionary = {
 		"src_cortical_area": source_cortical_ID,
 		"dst_cortical_area": destination_cortical_ID,
-		"mapping_string": SingleMappingDefinition.to_FEAGI_JSON_array(mappings)
+		"mapping_string": mapping_payload
 		}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_mappingProperties, dict_to_send)
 	

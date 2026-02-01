@@ -128,7 +128,8 @@ func _apply_bi_directional_stdp_lock(morphology: BaseMorphology) -> void:
 			_plasticity.disabled = false
 
 func _is_bi_directional_stdp_morphology(morphology: BaseMorphology) -> bool:
-	return morphology != null and morphology.name == &"bi_directional_stdp"
+	# associative_memory is the morphology ID for bi-directional STDP
+	return morphology != null and morphology.name == &"associative_memory"
 
 func _on_edit_pressed() -> void:
 	var morphology: BaseMorphology = _morphologies.get_selected_morphology()

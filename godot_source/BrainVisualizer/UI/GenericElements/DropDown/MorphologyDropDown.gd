@@ -20,6 +20,11 @@ var _listed_morphologies: Array[BaseMorphology] = []
 var _popup: PopupMenu
 var _default_width: float
 
+const MORPHOLOGY_DISPLAY_NAME_OVERRIDES := {
+	&"episodic_memory": "Episodic Memory",
+	&"associative_memory": "Associative Memory",
+}
+
 func _ready():
 	_default_width = custom_minimum_size.x
 	_popup = get_popup()
@@ -52,7 +57,7 @@ func overwrite_morphologies(new_morphology: Array[BaseMorphology]) -> void:
 ## Add a singular morphology to the end of the drop down
 func add_morphology(new_morphology: BaseMorphology) -> void:
 	_listed_morphologies.append(new_morphology)
-	add_item(new_morphology.name) # using name only since as of writing, morphologies do not have IDs
+	add_item(_get_morphology_display_name(new_morphology)) # using name only since as of writing, morphologies do not have IDs
 	if hide_circle_select_icon:
 		_popup.set_item_as_radio_checkable(_popup.get_item_count() - 1, false) # Remove Circle Selection
 	
@@ -111,3 +116,11 @@ func _morphology_was_added_to_cache(added_morphology: BaseMorphology) -> void:
 
 func _on_theme_change(_new_theme: Theme = null) -> void:
 	custom_minimum_size.x = _default_width * BV.UI.loaded_theme_scale.x
+
+func _get_morphology_display_name(morphology: BaseMorphology) -> String:
+	if morphology == null:
+		return ""
+	var override_name: String = MORPHOLOGY_DISPLAY_NAME_OVERRIDES.get(morphology.name, "")
+	if override_name != "":
+		return override_name
+	return str(morphology.name)

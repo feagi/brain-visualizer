@@ -1158,10 +1158,10 @@ func _create_synthetic_partial_mapping(area: AbstractCorticalArea, region: Brain
 	# Create a minimal synthetic mapping based on the area's current state
 	var synthetic_mappings: Array[SingleMappingDefinition] = []
 	
-	# Try to get a suitable morphology, fallback to memory morphology, then to null
-	var morphology: BaseMorphology = morphologies.try_get_morphology_object(&"memory")
+	# Try to get a suitable morphology, fallback to episodic_memory morphology, then to null
+	var morphology: BaseMorphology = morphologies.try_get_morphology_object(&"episodic_memory")
 	if morphology == null:
-		# If memory morphology doesn't exist, try to get any available morphology
+		# If episodic_memory morphology doesn't exist, try to get any available morphology
 		if morphologies.available_morphologies.size() > 0:
 			var first_key = morphologies.available_morphologies.keys()[0]
 			morphology = morphologies.available_morphologies[first_key]

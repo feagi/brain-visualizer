@@ -290,9 +290,9 @@ func _populate_core_morphology_icons(restrictions: MappingRestrictionCorticalMor
 			continue
 		total_core_seen += 1
 		print("  - CORE candidate:", morphology_name)
-		# Exclude memory morphology if destination is not a memory area
-		if not destination_is_memory and String(morphology_name).to_lower() == "memory":
-			print("    > excluded 'memory' for non-memory destination")
+		# Exclude episodic_memory morphology if destination is not a memory area
+		if not destination_is_memory and String(morphology_name).to_lower() == "episodic_memory":
+			print("    > excluded 'episodic_memory' for non-memory destination")
 			continue
 		if len(allowed_names) > 0 and morphology_name not in allowed_names:
 			print("    > excluded by allowed list (not in allowed)")
