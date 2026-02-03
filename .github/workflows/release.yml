@@ -299,7 +299,12 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd rust_extensions
+          BUILD_START=$(date +%s)
+          echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           python3 build.py --release --no-clean
+          BUILD_END=$(date +%s)
+          echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
           
           # Verify universal binaries on macOS (should contain both arm64 and x86_64)
           if [[ "${{ runner.os }}" == "macOS" ]]; then
@@ -318,7 +323,12 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd rust_extensions
+          BUILD_START=$(date +%s)
+          echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           python build.py --release --no-clean
+          BUILD_END=$(date +%s)
+          echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
 
       - name: Verify Rust extensions are in place
         shell: bash
@@ -517,7 +527,12 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd rust_extensions
+          BUILD_START=$(date +%s)
+          echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           python3 build.py --release --no-clean
+          BUILD_END=$(date +%s)
+          echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
           
           # Verify universal binaries on macOS
           if [[ "${{ runner.os }}" == "macOS" ]]; then
@@ -535,7 +550,12 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd rust_extensions
+          BUILD_START=$(date +%s)
+          echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           python build.py --release --no-clean
+          BUILD_END=$(date +%s)
+          echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
 
       - name: Find and stage binaries
         shell: bash
@@ -1237,6 +1257,23 @@ jobs:
           echo ""
           echo "Checking wheel sizes against PyPI's 100 MB limit:"
           find wheels -name "*.whl" -exec sh -c 'SIZE=$(stat -c%s "$1" 2>/dev/null || du -b "$1" | cut -f1); SIZE_MB=$((SIZE / 1024 / 1024)); echo "  $1: ${SIZE_MB} MB"; if [ "$SIZE_MB" -gt 100 ]; then echo "    ⚠️  EXCEEDS 100 MB LIMIT!"; fi' _ {} \;
+
+      - name: Log package sizes vs PyPI limit
+        run: |
+          echo "Package sizes (limit: 100 MB):"
+          echo ""
+          for wheel in $(find wheels -name "*.whl" | sort); do
+            if [ -f "$wheel" ]; then
+              SIZE_BYTES=$(stat -c%s "$wheel" 2>/dev/null || du -b "$wheel" | cut -f1)
+              SIZE_MB=$((SIZE_BYTES / 1024 / 1024))
+              OVER_MB=$((SIZE_MB - 100))
+              if [ "$SIZE_MB" -gt 100 ]; then
+                echo "  $(basename "$wheel"): ${SIZE_MB} MB (${SIZE_BYTES} bytes) - OVER by ${OVER_MB} MB"
+              else
+                echo "  $(basename "$wheel"): ${SIZE_MB} MB (${SIZE_BYTES} bytes)"
+              fi
+            fi
+          done
 
       - name: Extract package names from wheels
         run: |
