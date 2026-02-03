@@ -587,6 +587,16 @@ func toggle_loading_screen(is_on: bool) -> void:
 func update_loading_status(message: String) -> void:
 	if _loading_status_label:
 		_loading_status_label.text = message
+		_loading_status_label.mouse_filter = Control.MOUSE_FILTER_STOP
+		var endpoint = FeagiCore.network._feagi_endpoint_details
+		var http_addr = endpoint.full_http_address if endpoint != null else "unknown"
+		var ws_addr = endpoint.full_websocket_address if endpoint != null else "unknown"
+		var transport = FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]
+		var ws_retry = FeagiCore.network.websocket_API._retry_count if FeagiCore.network.websocket_API != null else 0
+		var ws_retry_max = FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections if FeagiCore.feagi_settings != null else 0
+		var http_retrying = FeagiCore.network.http_API._retrying_workers.size() if FeagiCore.network.http_API != null else 0
+		var shm_path = FeagiCore.network.websocket_API._shm_path if FeagiCore.network.websocket_API != null else ""
+		_loading_status_label.tooltip_text = "FEAGI HTTP: %s\nFEAGI WS: %s\nTransport: %s\nSHM path: %s\nWS retries: %d / %d\nHTTP retrying workers: %d" % [http_addr, ws_addr, transport, shm_path if shm_path != "" else "not active", ws_retry, ws_retry_max, http_retrying]
 		print("UIMANAGER: Loading status: %s" % message)
 
 ## Show the shutdown screen with custom styling
