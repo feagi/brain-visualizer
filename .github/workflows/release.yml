@@ -489,7 +489,7 @@ jobs:
         shell: bash
         run: |
           cd exports
-          zip -r ${{ matrix.package_name }} BrainVisualizer-Remote.app
+          zip -r ${{ matrix.package_name }} ${{ matrix.output_name }}
 
       - name: Create distribution package (Windows)
         if: runner.os == 'Windows'
