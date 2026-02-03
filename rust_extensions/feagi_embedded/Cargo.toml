@@ -8,7 +8,7 @@ description = "FEAGI Embedded - GDExtension for running FEAGI in Godot applicati
 
 [dependencies]
 # Godot Rust bindings (desktop only - no WASM support for embedded FEAGI)
-godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
+godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["api-4-5"] }
 
 # FEAGI library (local path)
 feagi = { path = "../../../feagi-rs", default-features = false, features = ["embedded"] }
