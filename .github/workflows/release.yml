@@ -238,8 +238,12 @@ jobs:
       - name: Log Rust cache status
         shell: bash
         run: |
-          if [ "${{ steps.rust-target-cache.outputs.cache-hit }}" == "true" ]; then
-            echo "✅ Rust cache HIT - using cached dependencies and target/"
+          REGISTRY_HIT="${{ steps.rust-registry-cache.outputs.cache-hit }}"
+          TARGET_HIT="${{ steps.rust-target-cache.outputs.cache-hit }}"
+          echo "Rust registry cache hit: $REGISTRY_HIT"
+          echo "Rust target cache hit: $TARGET_HIT"
+          if [ "$TARGET_HIT" == "true" ]; then
+            echo "Rust cache HIT - using cached dependencies and target/"
             echo ""
             echo "Cache contents:"
             echo "Cargo registry size:"
@@ -257,7 +261,7 @@ jobs:
               fi
             done
           else
-            echo "⚠️  Rust cache MISS - will rebuild from scratch"
+            echo "Rust cache MISS - will rebuild from scratch"
             echo "This will take longer (~10-15 min for first build)"
             echo ""
             echo "Checking if target directories exist:"
@@ -395,6 +399,54 @@ jobs:
           
           echo "✅ All Rust extensions verified in place"
 
+      - name: Stage rust libraries artifact
+        shell: bash
+        run: |
+          echo "Staging rust libraries for artifact..."
+          mkdir -p rust-libs
+          
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            LIB_PREFIX=""
+            LIB_EXT="dll"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            LIB_PREFIX="lib"
+            LIB_EXT="dylib"
+          else
+            LIB_PREFIX="lib"
+            LIB_EXT="so"
+          fi
+          
+          DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/release"
+          DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/release"
+          SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
+          TYPE_SYSTEM_DIR="godot_source/addons/FeagiCoreIntegration"
+          
+          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" 2>/dev/null | head -1)
+          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" 2>/dev/null | head -1)
+          TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" 2>/dev/null | head -1)
+          
+          if [ -z "$DESERIALIZER_LIB" ] || [ -z "$SHARED_VIDEO_LIB" ] || [ -z "$TYPE_SYSTEM_LIB" ]; then
+            echo "ERROR: One or more Rust libraries are missing; cannot stage artifact."
+            echo "DESERIALIZER_LIB: ${DESERIALIZER_LIB:-missing}"
+            echo "SHARED_VIDEO_LIB: ${SHARED_VIDEO_LIB:-missing}"
+            echo "TYPE_SYSTEM_LIB: ${TYPE_SYSTEM_LIB:-missing}"
+            exit 1
+          fi
+          
+          cp -v "$DESERIALIZER_LIB" "rust-libs/${LIB_PREFIX}feagi_data_deserializer.${LIB_EXT}"
+          cp -v "$SHARED_VIDEO_LIB" "rust-libs/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}"
+          cp -v "$TYPE_SYSTEM_LIB" "rust-libs/${LIB_PREFIX}feagi_type_system.${LIB_EXT}"
+          
+          echo "Rust libraries staged:"
+          ls -lh rust-libs/
+
+      - name: Upload rust libraries artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-libs-${{ matrix.platform }}
+          path: rust-libs/*
+          retention-days: 1
+
       - name: Clean Godot cache (fresh import)
         shell: bash
         run: |
@@ -465,7 +517,7 @@ jobs:
 
   build-rust-binaries:
     name: Build Rust Binaries (${{ matrix.platform }})
-    needs: validate-version
+    needs: [validate-version, build-bv-remote]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -490,101 +542,16 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Cache Rust registry
-        uses: actions/cache@v4
-        id: rust-registry-cache
+      - name: Download rust libraries artifact
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-rust-registry-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-rust-registry-
-            ${{ runner.os }}-rust-
+          name: rust-libs-${{ matrix.platform }}
+          path: rust-libs
 
-      - name: Cache Rust targets
-        uses: actions/cache@v4
-        id: rust-target-cache
-        with:
-          path: rust_extensions/*/target
-          key: ${{ runner.os }}-${{ matrix.platform }}-rust-target-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.platform }}-rust-target-
-            ${{ runner.os }}-rust-target-
-
-      - name: Log Rust cache status
+      - name: Stage binaries from rust libraries artifact
         shell: bash
         run: |
-          if [ "${{ steps.rust-target-cache.outputs.cache-hit }}" == "true" ]; then
-            echo "✅ Rust cache HIT - using cached dependencies and target/"
-            echo ""
-            echo "Cache contents:"
-            echo "Cargo registry size:"
-            du -sh ~/.cargo/registry 2>/dev/null || echo "  Registry: N/A"
-            echo ""
-            echo "Target directories (should contain previous builds):"
-            for dir in rust_extensions/*/target; do
-              if [ -d "$dir" ]; then
-                size=$(du -sh "$dir" 2>/dev/null | cut -f1)
-                echo "  $dir: $size"
-                # Check if release binaries exist
-                find "$dir" -name "*.dll" -o -name "*.so" -o -name "*.dylib" 2>/dev/null | head -3 | while read -r bin; do
-                  echo "    - $(basename "$bin")"
-                done
-              fi
-            done
-          else
-            echo "⚠️  Rust cache MISS - will rebuild from scratch"
-            echo "This will take longer (~10-15 min for first build)"
-            echo ""
-            echo "Checking if target directories exist:"
-            ls -la rust_extensions/*/target 2>/dev/null || echo "  No target directories found (expected for cache miss)"
-          fi
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-
-      - name: Build Rust extensions (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          cd rust_extensions
-          BUILD_START=$(date +%s)
-          echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            python3 build.py --release --no-clean --local-arch
-          else
-            python3 build.py --release --no-clean
-          fi
-          BUILD_END=$(date +%s)
-          echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
-          
-          # Verify macOS binaries are single-arch
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            echo "Verifying macOS binaries..."
-            for lib in $(find godot_source/addons -name "*.dylib" -type f); do
-              ARCHS=$(file "$lib" 2>/dev/null | grep -oE 'arm64|x86_64' | tr '\n' ' ' || echo "unknown")
-              echo "  $lib architectures: $ARCHS"
-            done
-          fi
-
-      - name: Build Rust extensions (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          cd rust_extensions
-          BUILD_START=$(date +%s)
-          echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          python build.py --release --no-clean
-          BUILD_END=$(date +%s)
-          echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
-
-      - name: Find and stage binaries
-        shell: bash
-        run: |
-          echo "Finding Rust extension binaries..."
+          echo "Staging Rust extension binaries..."
           
           # Create staging directory
           mkdir -p binaries-staging
@@ -593,45 +560,22 @@ jobs:
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             LIB_PREFIX=""
             LIB_EXT="dll"
-            LIB_PATTERN="feagi_*.dll"
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             LIB_PREFIX="lib"
             LIB_EXT="dylib"
-            LIB_PATTERN="libfeagi_*.dylib"
           else
             LIB_PREFIX="lib"
             LIB_EXT="so"
-            LIB_PATTERN="libfeagi_*.so"
           fi
           
-          # Find and copy only the main extension libraries (exclude deps/)
-          # Pattern 1: Standard location: rust_extensions/*/target/release/
           for ext in feagi_data_deserializer feagi_shared_video feagi_type_system; do
-            # Look for the library file directly in target/release/ (not in deps/)
-            lib_file="rust_extensions/$ext/target/release/${LIB_PREFIX}${ext}.${LIB_EXT}"
-            if [ -f "$lib_file" ]; then
-              cp -v "$lib_file" "binaries-staging/${LIB_PREFIX}${ext}.${LIB_EXT}"
+            lib_file="rust-libs/${LIB_PREFIX}${ext}.${LIB_EXT}"
+            if [ ! -f "$lib_file" ]; then
+              echo "ERROR: Missing rust library: $lib_file"
+              exit 1
             fi
+            cp -v "$lib_file" "binaries-staging/${LIB_PREFIX}${ext}.${LIB_EXT}"
           done
-          
-          # Pattern 2: Architecture-specific targets (Linux/Windows)
-          # Linux: rust_extensions/*/target/x86_64-unknown-linux-gnu/release/
-          # Windows: rust_extensions/*/target/x86_64-pc-windows-msvc/release/
-          if [[ "${{ runner.os }}" == "Linux" ]]; then
-            for ext in feagi_data_deserializer feagi_shared_video feagi_type_system; do
-              lib_file="rust_extensions/$ext/target/x86_64-unknown-linux-gnu/release/${LIB_PREFIX}${ext}.${LIB_EXT}"
-              if [ -f "$lib_file" ]; then
-                cp -v "$lib_file" "binaries-staging/${LIB_PREFIX}${ext}.${LIB_EXT}"
-              fi
-            done
-          elif [[ "${{ runner.os }}" == "Windows" ]]; then
-            for ext in feagi_data_deserializer feagi_shared_video feagi_type_system; do
-              lib_file="rust_extensions/$ext/target/x86_64-pc-windows-msvc/release/${ext}.${LIB_EXT}"
-              if [ -f "$lib_file" ]; then
-                cp -v "$lib_file" "binaries-staging/${ext}.${LIB_EXT}"
-              fi
-            done
-          fi
           
           echo ""
           echo "Binaries found in staging:"
