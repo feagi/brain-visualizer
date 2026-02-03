@@ -341,11 +341,12 @@ jobs:
 
       - name: Build Rust extensions (Windows)
         if: runner.os == 'Windows'
+        shell: bash
         run: |
           cd rust_extensions
           BUILD_START=$(date +%s)
           echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          python build.py --release --no-clean
+          python3 build.py --release --no-clean
           BUILD_END=$(date +%s)
           echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
