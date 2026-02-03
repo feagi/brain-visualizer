@@ -489,6 +489,12 @@ jobs:
         shell: bash
         run: |
           cd exports
+          if [ ! -d "${{ matrix.output_name }}" ]; then
+            echo "ERROR: Expected app bundle not found: ${{ matrix.output_name }}"
+            echo "Exports directory contents:"
+            ls -la
+            exit 1
+          fi
           zip -r ${{ matrix.package_name }} ${{ matrix.output_name }}
 
       - name: Create distribution package (Windows)
