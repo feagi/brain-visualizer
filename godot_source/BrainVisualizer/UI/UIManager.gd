@@ -588,16 +588,54 @@ func update_loading_status(message: String) -> void:
 	if _loading_status_label:
 		_loading_status_label.text = message
 		_loading_status_label.mouse_filter = Control.MOUSE_FILTER_STOP
-		var endpoint = FeagiCore.network._feagi_endpoint_details
-		var http_addr = endpoint.full_http_address if endpoint != null else "unknown"
-		var ws_addr = endpoint.full_websocket_address if endpoint != null else "unknown"
-		var transport = FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]
-		var ws_retry = FeagiCore.network.websocket_API._retry_count if FeagiCore.network.websocket_API != null else 0
-		var ws_retry_max = FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections if FeagiCore.feagi_settings != null else 0
-		var http_retrying = FeagiCore.network.http_API._retrying_workers.size() if FeagiCore.network.http_API != null else 0
-		var shm_path = FeagiCore.network.websocket_API._shm_path if FeagiCore.network.websocket_API != null else ""
-		_loading_status_label.tooltip_text = "FEAGI HTTP: %s\nFEAGI WS: %s\nTransport: %s\nSHM path: %s\nWS retries: %d / %d\nHTTP retrying workers: %d" % [http_addr, ws_addr, transport, shm_path if shm_path != "" else "not active", ws_retry, ws_retry_max, http_retrying]
+		_loading_status_label.tooltip_text = _build_loading_status_tooltip()
 		print("UIMANAGER: Loading status: %s" % message)
+
+## Builds the loading status tooltip (connection + failure details).
+func _build_loading_status_tooltip() -> String:
+	var endpoint = FeagiCore.network._feagi_endpoint_details
+	var http_addr = endpoint.full_http_address if endpoint != null else "unknown"
+	var ws_addr = endpoint.full_websocket_address if endpoint != null else "unknown"
+	var transport = FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]
+	var ws_retry = FeagiCore.network.websocket_API._retry_count if FeagiCore.network.websocket_API != null else 0
+	var ws_retry_max = FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections if FeagiCore.feagi_settings != null else 0
+	var http_retrying = FeagiCore.network.http_API._retrying_workers.size() if FeagiCore.network.http_API != null else 0
+	var shm_path = FeagiCore.network.websocket_API._shm_path if FeagiCore.network.websocket_API != null else ""
+	var failure_summary = _build_loading_failure_summary()
+	return "FEAGI HTTP: %s\nFEAGI WS: %s\nTransport: %s\nSHM path: %s\nWS retries: %d / %d\nHTTP retrying workers: %d\nFailure status: %s" % [
+		http_addr,
+		ws_addr,
+		transport,
+		shm_path if shm_path != "" else "not active",
+		ws_retry,
+		ws_retry_max,
+		http_retrying,
+		failure_summary
+	]
+
+## Returns a concise summary of why loading is blocked.
+func _build_loading_failure_summary() -> String:
+	var reasons: Array[String] = []
+	var connection_healthy = FeagiCore.network.connection_state == FEAGINetworking.CONNECTION_STATE.HEALTHY
+	var brain_ready = FeagiCore.feagi_local_cache.brain_readiness
+	var genome_available = FeagiCore.feagi_local_cache.genome_availability
+	var genome_scene_ready = FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY
+	var websocket_ok = true
+	if FeagiCore.network._transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
+		websocket_ok = FeagiCore.network.websocket_API.socket_health == FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.CONNECTED
+	if not connection_healthy:
+		reasons.append("connection not healthy")
+	if not brain_ready:
+		reasons.append("brain not ready")
+	if not genome_available:
+		reasons.append("no genome available")
+	if not genome_scene_ready:
+		reasons.append("3D scene loading")
+	if genome_scene_ready and not _3d_scene_instantiated:
+		reasons.append("3D scene instantiating")
+	if not websocket_ok:
+		reasons.append("websocket not connected")
+	return "ok" if reasons.is_empty() else ", ".join(reasons)
 
 ## Show the shutdown screen with custom styling
 func show_shutdown_screen() -> void:
