@@ -12,3 +12,4 @@ class_name FeagiGeneralSettings
 @export var seconds_warning_notification: float ## how long to show warning notifications
 @export var seconds_error_notification: float ## how long to show error notifications
 @export var agent_descriptor_b64: String = "" ## base64 AgentDescriptor for BV registration
+@export var auth_token_b64: String = "" ## base64 32-byte auth token for registration; if empty, a default is used (dummy auth)

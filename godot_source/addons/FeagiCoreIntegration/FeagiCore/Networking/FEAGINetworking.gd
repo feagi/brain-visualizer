@@ -200,6 +200,49 @@ func _get_feagi_burst_frequency() -> float:
 	print("𒓉 [REG] ✅ FEAGI burst: %.3fs timestep = %.1f Hz" % [timestep, frequency])
 	return frequency
 
+## Returns auth_token for registration: base64 string that decodes to 32 bytes. Uses auth_token_b64 from settings if set and valid; else default (zeros) for dummy auth.
+func _get_registration_auth_token_b64() -> String:
+	if FeagiCore.feagi_settings != null and FeagiCore.feagi_settings.auth_token_b64.strip_edges().length() > 0:
+		var raw: PackedByteArray = Marshalls.base64_to_raw(FeagiCore.feagi_settings.auth_token_b64.strip_edges())
+		if raw.size() == 32:
+			return FeagiCore.feagi_settings.auth_token_b64.strip_edges()
+	var default_token := PackedByteArray()
+	default_token.resize(32)
+	default_token.fill(0)
+	return Marshalls.raw_to_base64(default_token)
+
+## FEAGI 2.0 expects AgentDescriptor base64 decoding to 72 bytes (4 + 32 + 32 + 4).
+## Legacy configs may have 48-byte format (4 + 20 + 20 + 4). This normalizes to 72 bytes when needed.
+func _normalize_agent_descriptor_b64(b64: String) -> String:
+	if b64.is_empty():
+		return ""
+	var raw: PackedByteArray = Marshalls.base64_to_raw(b64)
+	if raw.size() == 0 and b64.length() > 0:
+		push_error("𒓉 [REG] Invalid agent_descriptor_b64: base64 decode failed.")
+		return ""
+	if raw.size() == 72:
+		return b64
+	if raw.size() == 48:
+		# Expand old format to new: instance_id(4) + manufacturer(20->32) + agent_name(20->32) + version(4)
+		var out := PackedByteArray()
+		out.resize(72)
+		out.fill(0)
+		# instance_id [0..4]
+		for i in range(4):
+			out[i] = raw[i]
+		# manufacturer [4..36] (copy 20, pad 12)
+		for i in range(20):
+			out[4 + i] = raw[4 + i]
+		# agent_name [36..68] (copy 20, pad 12)
+		for i in range(20):
+			out[36 + i] = raw[24 + i]
+		# version [68..72]
+		for i in range(4):
+			out[68 + i] = raw[44 + i]
+		return Marshalls.raw_to_base64(out)
+	push_error("𒓉 [REG] Invalid agent_descriptor_b64: decoded size is %d bytes; FEAGI expects 72 (or legacy 48). Update your descriptor." % raw.size())
+	return ""
+
 func _call_register_agent_for_shm() -> bool:
 	# STEP 1: Query FEAGI's burst frequency BEFORE registration
 	var feagi_hz = await _get_feagi_burst_frequency()
@@ -219,9 +262,20 @@ func _call_register_agent_for_shm() -> bool:
 		push_error("𒓉 [REG] Missing agent_descriptor_b64 in FEAGI settings; cannot register BV agent")
 		return false
 
-	var agent_descriptor_b64: String = FeagiCore.feagi_settings.agent_descriptor_b64
+	var agent_descriptor_b64: String = _normalize_agent_descriptor_b64(FeagiCore.feagi_settings.agent_descriptor_b64.strip_edges())
+	if agent_descriptor_b64.is_empty():
+		return false
 
-	# Build registration payload (matches FEAGI 2.0 infrastructure agent schema)
+	# Auth token: FEAGI 2.0 requires base64-encoded 32-byte token. Use setting if set, else default (zeros) for dummy auth.
+	var auth_token_b64: String = _get_registration_auth_token_b64()
+
+	# Registration request contract (feagi-api AgentRegistrationRequest + endpoint behavior):
+	# - agent_type (string), agent_id (base64 AgentDescriptor 72 bytes), agent_data_port (u16), agent_version, controller_version
+	# - capabilities: for viz-only, must have capabilities.visualization (object) with rate_hz (number > 0)
+	# - auth_token (string): required; base64 decode must be exactly 32 bytes
+	# - chosen_transport (optional): "zmq" | "ws" | "websocket". If omitted, server uses config default.
+	#   Server returns "Missing required protocol publisher" when chosen_transport has no matching transport
+	#   enabled in FEAGI (e.g. chosen_transport=websocket but feagi_configuration.toml has no "websocket" in [transports] available).
 	var payload := {
 		"agent_type": "visualization",
 		"agent_id": agent_descriptor_b64,
@@ -236,9 +290,8 @@ func _call_register_agent_for_shm() -> bool:
 			}
 		},
 		"metadata": {"request_shared_memory": true},
-		# Request HYBRID so FEAGI returns shm_paths when available; BV will switch to SHM and skip WS.
-		# If FEAGI cannot provide SHM, it will still advertise WebSocket in transports and BV will connect via WS.
-		"chosen_transport": "hybrid"
+		"chosen_transport": "websocket",
+		"auth_token": auth_token_b64
 	}
 	# Avoid chained member resolution at parse time; guard address_list
 	var addr_list = http_API.get("address_list")
@@ -258,11 +311,13 @@ func _call_register_agent_for_shm() -> bool:
 			var body := out.decode_response_as_dict()
 			var msg: String = str(body.get("message", "Unknown error"))
 			print("𒓉 [REG] Error body: ", body)
-			push_error("𒓉 [REG] Registration failed: HTTP registration failed: %s" % msg)
 			if "Missing required protocol publisher" in msg or "Missing required protocol puller" in msg:
-				push_error("𒓉 [REG] Fix: Enable WebSocket transport in FEAGI config. In feagi_configuration.toml set [transports] available = [\"zmq\", \"websocket\"] and ensure [websocket] host/ports are set.")
+				push_error("𒓉 [REG] FEAGI has no WebSocket transport enabled. Enable it in feagi_configuration.toml: under [transports] set available = [\"zmq\", \"websocket\"] and under [websocket] set host and sensory_port, motor_port, visualization_port.")
+				push_error("𒓉 [REG] Registration failed: %s" % msg)
 			elif out.response_code >= 400 and out.response_code < 500 and "transport" in msg.to_lower():
-				push_error("𒓉 [REG] Requested transport (e.g. websocket) not supported by FEAGI.")
+				push_error("𒓉 [REG] Requested transport not supported by FEAGI: %s" % msg)
+			else:
+				push_error("𒓉 [REG] Registration failed: HTTP registration failed: %s" % msg)
 			return false
 		return false
 	var resp := out.decode_response_as_dict()
@@ -495,7 +550,9 @@ func _send_heartbeat() -> void:
 		push_warning("💗 [HEARTBEAT] Missing agent_descriptor_b64; skipping heartbeat")
 		return
 
-	var agent_descriptor_b64: String = FeagiCore.feagi_settings.agent_descriptor_b64
+	var agent_descriptor_b64: String = _normalize_agent_descriptor_b64(FeagiCore.feagi_settings.agent_descriptor_b64.strip_edges())
+	if agent_descriptor_b64.is_empty():
+		return
 
 	# Build heartbeat payload
 	var payload := {

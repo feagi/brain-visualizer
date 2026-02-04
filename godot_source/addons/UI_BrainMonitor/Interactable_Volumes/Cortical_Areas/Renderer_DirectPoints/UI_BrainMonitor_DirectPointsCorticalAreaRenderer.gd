@@ -111,12 +111,12 @@ func setup(area: AbstractCorticalArea) -> void:
 	else:
 		_visualization_settings = VisualizationSettings.new()
 	
-	# Initialize Rust processor - REQUIRED, no fallback!
-	if not ClassDB.class_exists("FeagiDataDeserializer"):
-		push_error("🦀 CRITICAL: Rust deserializer not found! Build with: cd rust_extensions/feagi_data_deserializer && ./build.sh")
-		return
-	
-	_rust_processor = ClassDB.instantiate("FeagiDataDeserializer")
+	# Initialize Rust processor when GDExtension is available (optional when extension is disabled)
+	if ClassDB.class_exists("FeagiDataDeserializer"):
+		_rust_processor = ClassDB.instantiate("FeagiDataDeserializer")
+	else:
+		push_warning("Rust deserializer (FeagiDataDeserializer) not loaded; direct neural points will not render. Build/enable: rust_extensions/feagi_data_deserializer")
+		_rust_processor = null
 	_warning_threshold = _visualization_settings.performance_warning_threshold
 
 	# Create static body for collision detection
@@ -634,7 +634,10 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 		if point_count % 100 == 0 or point_count <= 10:
 			print("   🔥 [%s] Processing %d aggregated rendering chunks" % [_cortical_area_id, point_count])
 	
-	# Call Rust to apply directly to MultiMesh - NO GDScript LOOP!
+	# Call Rust to apply directly to MultiMesh when deserializer is available
+	if _rust_processor == null:
+		_clear_all_neurons()
+		return
 	# NOTE: For aggregated rendering mode, coordinates are granularity centers, mesh size is granularity dimensions
 	# Rust processor will correctly position chunk boxes in Godot space
 	var result = _rust_processor.apply_arrays_to_multimesh(
