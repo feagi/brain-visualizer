@@ -256,13 +256,13 @@ func _call_register_agent_for_shm() -> bool:
 		print("𒓉 [REG] Error? ", out.has_errored, ", Timeout? ", out.has_timed_out)
 		if out.has_errored:
 			var body := out.decode_response_as_dict()
+			var msg: String = str(body.get("message", "Unknown error"))
 			print("𒓉 [REG] Error body: ", body)
-			# Check if FEAGI rejected the requested transport
-			if out.response_code >= 400 and out.response_code < 500:
-				push_error("𒓉 [REG] ❌ FEAGI rejected registration (HTTP %d): %s" % [out.response_code, body.get("message", "Unknown error")])
-				if body.has("message") and "transport" in str(body["message"]).to_lower():
-					push_error("𒓉 [REG] ❌ Requested transport 'websocket' not supported by FEAGI")
-					# TODO: Could retry with different transport or inform user
+			push_error("𒓉 [REG] Registration failed: HTTP registration failed: %s" % msg)
+			if "Missing required protocol publisher" in msg or "Missing required protocol puller" in msg:
+				push_error("𒓉 [REG] Fix: Enable WebSocket transport in FEAGI config. In feagi_configuration.toml set [transports] available = [\"zmq\", \"websocket\"] and ensure [websocket] host/ports are set.")
+			elif out.response_code >= 400 and out.response_code < 500 and "transport" in msg.to_lower():
+				push_error("𒓉 [REG] Requested transport (e.g. websocket) not supported by FEAGI.")
 			return false
 		return false
 	var resp := out.decode_response_as_dict()
