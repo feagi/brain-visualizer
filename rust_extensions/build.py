@@ -405,12 +405,15 @@ def main():
             print(f"[CLEANUP] Removing legacy file: {path}")
             path.unlink()
     
-    # Final success message
+    # Final success message (addon2_path was reassigned to feagi_shared_video above)
+    feagi_core_path = godot_source / "addons" / "FeagiCoreIntegration"
     print_section("Build Complete!")
     print("[SUCCESS] All Rust extensions built successfully!")
     print("[INFO] Libraries deployed to:")
-    print(f"  - {addon1_path / 'target' / 'release' / lib1_name}")
-    print(f"  - {addon2_path / 'target' / 'release' / lib1_name}")
+    print(f"  - {addon1_path / 'target' / 'release' / lib1_name} (feagi_rust_deserializer)")
+    print(f"  - {feagi_core_path / lib1_name} (FeagiCoreIntegration)")
+    print(f"  - {addon2_path / 'target' / 'release' / lib2_name} (feagi_shared_video)")
+    print(f"  - {feagi_core_path / lib3_name} (feagi_type_system)")
     print("[TIP] Restart Godot to load the new extensions.")
     print("[TEST] To test the integration, run the test_rust_deserializer.tscn scene in Godot.")
 
