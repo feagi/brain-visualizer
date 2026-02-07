@@ -286,36 +286,50 @@ func _load_guide_order(base_dir: String) -> Array[String]:
 	return ordered_filenames
 
 ## Collect all markdown files within the guides directory.
+## Uses ResourceLoader.list_directory() so guides are found in the exported app (.pck);
+## DirAccess.open(res://...) does not list files correctly in exported builds.
 func _collect_markdown_files(base_dir: String) -> Array[String]:
 	# Load the desired order from _guide_order.txt
 	var ordered_filenames := _load_guide_order(base_dir)
-	
+
 	var results: Array[String] = []
-	var dir := DirAccess.open(base_dir)
-	if dir == null:
-		push_error("WindowGuide: Unable to open guides directory at %s." % base_dir)
-		return results
-	dir.list_dir_begin()
-	var name := dir.get_next()
-	while name != "":
-		if name == "." or name == "..":
+	# ResourceLoader.list_directory() works in exported games (pck); DirAccess does not.
+	var names: PackedStringArray = ResourceLoader.list_directory(base_dir)
+	if names.is_empty():
+		# Fallback for editor or older engine: try DirAccess (editor only)
+		var dir := DirAccess.open(base_dir)
+		if dir == null:
+			push_error("WindowGuide: Unable to open guides directory at %s." % base_dir)
+			return results
+		dir.list_dir_begin()
+		var name := dir.get_next()
+		while name != "":
+			if name == "." or name == "..":
+				name = dir.get_next()
+				continue
+			var path := base_dir.path_join(name)
+			if dir.current_is_dir():
+				results.append_array(_collect_markdown_files(path))
+			elif _is_markdown_path(path):
+				results.append(path)
 			name = dir.get_next()
-			continue
-		var path := base_dir.path_join(name)
-		if dir.current_is_dir():
-			results.append_array(_collect_markdown_files(path))
-		elif _is_markdown_path(path):
-			results.append(path)
-		name = dir.get_next()
-	dir.list_dir_end()
-	
+		dir.list_dir_end()
+	else:
+		for name in names:
+			if name == "." or name == "..":
+				continue
+			var path := base_dir.path_join(name)
+			# list_directory returns both files and dirs; skip dirs (no extension or not .md)
+			if _is_markdown_path(path):
+				results.append(path)
+
 	# Sort by custom order, then alphabetically for any not in the list
 	results.sort_custom(func(a: String, b: String) -> bool:
 		var a_name := a.get_file()
 		var b_name := b.get_file()
 		var a_index := ordered_filenames.find(a_name)
 		var b_index := ordered_filenames.find(b_name)
-		
+
 		# If both are in the ordered list, sort by their position
 		if a_index >= 0 and b_index >= 0:
 			return a_index < b_index
@@ -328,7 +342,7 @@ func _collect_markdown_files(base_dir: String) -> Array[String]:
 		# If neither are in the ordered list, sort alphabetically
 		return a_name < b_name
 	)
-	
+
 	return results
 
 ## Extract the first heading title from a markdown file.
