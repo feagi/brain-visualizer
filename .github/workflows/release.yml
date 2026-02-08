@@ -1346,31 +1346,62 @@ jobs:
           echo "See: https://docs.pypi.org/trusted-publishers/using-github-actions/"
           echo "     https://docs.pypi.org/trusted-publishers/troubleshooting/"
 
-      - name: Publish platform packages to PyPI
+      - name: Check wheel sizes for PyPI upload (100 MB limit)
+        id: check
+        run: |
+          LIMIT=$((100 * 1024 * 1024))
+          for dir in wheel-linux wheel-macos-arm64 wheel-macos-x86_64 wheel-windows wheel-meta; do
+            key="upload_${dir#wheel-}"
+            key="${key//-/_}"
+            path="wheels/${dir}"
+            wheel=""
+            [ -d "$path" ] && wheel=$(find "$path" -name "*.whl" 2>/dev/null | head -1)
+            if [ -z "$wheel" ] || [ ! -f "$wheel" ]; then
+              echo "${key}=false" >> $GITHUB_OUTPUT
+              echo "  $dir: skip (no wheel)"
+              continue
+            fi
+            size=$(stat -c%s "$wheel" 2>/dev/null || echo 0)
+            size_mb=$((size / 1024 / 1024))
+            if [ "$size" -le "$LIMIT" ]; then
+              echo "${key}=true" >> $GITHUB_OUTPUT
+              echo "  $dir: ${size_mb} MB - will upload"
+            else
+              echo "${key}=false" >> $GITHUB_OUTPUT
+              echo "  $dir: ${size_mb} MB - SKIP (exceeds 100 MB PyPI limit)"
+            fi
+          done
+
+      - name: Publish platform packages to PyPI (Linux)
+        if: steps.check.outputs.upload_linux == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: wheels/wheel-linux/
           skip-existing: true
 
       - name: Publish platform packages to PyPI (macOS arm64)
+        if: steps.check.outputs.upload_macos_arm64 == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: wheels/wheel-macos-arm64/
           skip-existing: true
 
       - name: Publish platform packages to PyPI (macOS x86_64)
+        if: steps.check.outputs.upload_macos_x86_64 == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: wheels/wheel-macos-x86_64/
           skip-existing: true
 
       - name: Publish platform packages to PyPI (Windows)
+        if: steps.check.outputs.upload_windows == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: wheels/wheel-windows/
           skip-existing: true
 
       - name: Publish meta package to PyPI
+        if: steps.check.outputs.upload_meta == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: wheels/wheel-meta/
