@@ -463,7 +463,7 @@ tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Sign
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
-text = "Coding Signage"
+text = "Coding Format"
 
 [node name="Coding_Signage" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Signage"]
 custom_minimum_size = Vector2(150, 0)

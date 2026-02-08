@@ -1,3 +1,12 @@
 {
-  "circuits": {}
+  "circuits": {
+    "logic_and_gate": {
+      "title": "Logic AND Gate",
+      "icon_path": "logic_and_gate/circuit_image.png"
+    },
+    "logic_or_gate": {
+      "title": "Logic OR Gate",
+      "icon_path": "logic_or_gate/circuit_image.png"
+    }
+  }
 }

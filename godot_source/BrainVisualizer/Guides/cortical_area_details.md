@@ -122,7 +122,7 @@ When editing **Position** or **Dimensions**, a live preview appears in the Brain
 
 Controls how sensory data is encoded into neural activity (IPU) or decoded from neural activity (OPU).
 
-### Coding Signage
+### Coding Format
 
 Determines how values are interpreted:
 - **Positive** - Only positive values
