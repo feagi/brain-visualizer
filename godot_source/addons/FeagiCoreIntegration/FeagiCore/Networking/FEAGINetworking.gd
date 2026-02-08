@@ -235,10 +235,10 @@ func _call_register_agent_for_shm() -> bool:
 				"bridge_proxy": false
 			}
 		},
-		"metadata": {"request_shared_memory": true},
-		# Request HYBRID so FEAGI returns shm_paths when available; BV will switch to SHM and skip WS.
-		# If FEAGI cannot provide SHM, it will still advertise WebSocket in transports and BV will connect via WS.
-		"chosen_transport": "hybrid"
+		"metadata": {"request_shared_memory": false},
+		# Default to WebSocket so registration succeeds on all platforms (e.g. Windows where viz SHM is not available).
+		# FEAGI will not allocate visualization SHM; BV receives neuron data via WebSocket.
+		"chosen_transport": "websocket"
 	}
 	# Avoid chained member resolution at parse time; guard address_list
 	var addr_list = http_API.get("address_list")
