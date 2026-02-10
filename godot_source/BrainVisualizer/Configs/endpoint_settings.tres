@@ -6,4 +6,4 @@
 script = ExtResource("1_mipp4")
 header = ["Content-Type: application/json"]
 full_http_address = &"http://127.0.0.1:8000"
-full_websocket_address = &"ws://127.0.0.1:9050"
+full_websocket_address = &"ws://127.0.0.1:9053"

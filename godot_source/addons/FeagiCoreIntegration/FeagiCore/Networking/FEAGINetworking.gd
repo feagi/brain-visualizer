@@ -399,7 +399,9 @@ func _call_register_agent_for_shm() -> bool:
 				if transport_type == "websocket" and enabled:
 					var ws_host: String = transport_dict.get("host", "127.0.0.1")
 					var ports: Dictionary = transport_dict.get("ports", {})
-					var ws_viz_port: int = int(ports.get("visualization", 9050))
+					# Note: registration_port is for initial connection, visualization_port is for data stream
+				var ws_registration_port: int = int(ports.get("registration", 9053))
+				var ws_viz_port: int = int(ports.get("visualization", 9050))
 					
 					# Use host directly from config (config is source of truth)
 					# Config should use 127.0.0.1 for localhost-only connections
