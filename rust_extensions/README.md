@@ -145,9 +145,16 @@ Run the test script to verify the integration:
    - Try manual build: `cd feagi_data_deserializer && cargo build --release`
 
 3. **WebSocket processing disabled**
-   - Check that the Rust deserializer is properly initialized (look for 🦀 log messages)
+   - Check that the Rust deserializer is properly initialized (look for log messages)
    - Ensure the shared library is in the correct location
    - Verify the .gdextension file paths are correct
+
+4. **BV does not load at all (one extension may be failing)**
+   - Use the bisect script to find which GDExtension causes the failure:
+   - From `rust_extensions/`: `./bisect_extensions.sh status` to list extensions
+   - `./bisect_extensions.sh disable-all`, then open the project in Godot. If it still fails, the cause is likely not a Rust extension.
+   - Then `./bisect_extensions.sh enable 1`, open Godot; if BV fails, extension 1 is the culprit. Otherwise enable 2, 3, etc. until you find the one that breaks load.
+   - When done: `./bisect_extensions.sh enable-all`
 
 ### Debug Mode
 
