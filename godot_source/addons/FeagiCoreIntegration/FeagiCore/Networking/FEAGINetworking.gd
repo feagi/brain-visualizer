@@ -414,13 +414,13 @@ func _call_register_agent_for_shm() -> bool:
 				# Connect to registration port, not visualization port
 				var ws_address: String = "ws://%s:%d" % [ws_host, ws_registration_port]
 				print("𒓉 [TRANSPORT] Connecting to registration endpoint: ", ws_address)
-					
-					# Update endpoint with FEAGI-provided address
-					if _feagi_endpoint_details:
-						_feagi_endpoint_details.full_websocket_address = ws_address
-					
-					# WebSocket connection will proceed with FEAGI-provided address
-					return false
+				
+				# Update endpoint with FEAGI-provided address
+				if _feagi_endpoint_details:
+					_feagi_endpoint_details.full_websocket_address = ws_address
+				
+				# WebSocket connection will proceed with FEAGI-provided address
+				return false
 			
 			# No WebSocket found, check if ZMQ is available
 			print("𒓉 [TRANSPORT] No WebSocket transport available from FEAGI")
