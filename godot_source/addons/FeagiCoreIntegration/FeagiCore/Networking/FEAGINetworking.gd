@@ -220,27 +220,50 @@ func _normalize_agent_descriptor_b64(b64: String) -> String:
 	if raw.size() == 0 and b64.length() > 0:
 		push_error("𒓉 [REG] Invalid agent_descriptor_b64: base64 decode failed.")
 		return ""
-	if raw.size() == 72:
+	if raw.size() == 200:
+		# New format (feagi-core beta.9+) - no conversion needed
 		return b64
-	if raw.size() == 48:
-		# Expand old format to new: instance_id(4) + manufacturer(20->32) + agent_name(20->32) + version(4)
+	if raw.size() == 72:
+		# Expand 72-byte to 200-byte format for new feagi-core
+		# Old: instance_id(4) + manufacturer(32) + agent_name(32) + version(4)
+		# New: instance_id(4) + manufacturer(128) + agent_name(64) + version(4)
 		var out := PackedByteArray()
-		out.resize(72)
+		out.resize(200)
 		out.fill(0)
 		# instance_id [0..4]
 		for i in range(4):
 			out[i] = raw[i]
-		# manufacturer [4..36] (copy 20, pad 12)
+		# manufacturer [4..132] (copy 32, pad 96)
+		for i in range(32):
+			out[4 + i] = raw[4 + i]
+		# agent_name [132..196] (copy 32, pad 32)
+		for i in range(32):
+			out[132 + i] = raw[36 + i]
+		# version [196..200]
+		for i in range(4):
+			out[196 + i] = raw[68 + i]
+		return Marshalls.raw_to_base64(out)
+	if raw.size() == 48:
+		# Expand very old 48-byte to 200-byte format
+		# Legacy: instance_id(4) + manufacturer(20) + agent_name(20) + version(4)
+		# New: instance_id(4) + manufacturer(128) + agent_name(64) + version(4)
+		var out := PackedByteArray()
+		out.resize(200)
+		out.fill(0)
+		# instance_id [0..4]
+		for i in range(4):
+			out[i] = raw[i]
+		# manufacturer [4..132] (copy 20, pad 108)
 		for i in range(20):
 			out[4 + i] = raw[4 + i]
-		# agent_name [36..68] (copy 20, pad 12)
+		# agent_name [132..196] (copy 20, pad 44)
 		for i in range(20):
-			out[36 + i] = raw[24 + i]
-		# version [68..72]
+			out[132 + i] = raw[24 + i]
+		# version [196..200]
 		for i in range(4):
-			out[68 + i] = raw[44 + i]
+			out[196 + i] = raw[44 + i]
 		return Marshalls.raw_to_base64(out)
-	push_error("𒓉 [REG] Invalid agent_descriptor_b64: decoded size is %d bytes; FEAGI expects 72 (or legacy 48). Update your descriptor." % raw.size())
+	push_error("𒓉 [REG] Invalid agent_descriptor_b64: decoded size is %d bytes; FEAGI expects 200 (new feagi-core) or 72/48 (legacy). Update your descriptor." % raw.size())
 	return ""
 
 func _call_register_agent_for_shm() -> bool:
