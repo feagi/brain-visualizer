@@ -399,21 +399,18 @@ func _call_register_agent_for_shm() -> bool:
 				if transport_type == "websocket" and enabled:
 					var ws_host: String = transport_dict.get("host", "127.0.0.1")
 					var ports: Dictionary = transport_dict.get("ports", {})
-					# Note: registration_port is for initial connection, visualization_port is for data stream
 					var ws_registration_port: int = int(ports.get("registration", 9053))
 					var ws_viz_port: int = int(ports.get("visualization", 9050))
-					
-					# Use host directly from config (config is source of truth)
-					# Config should use 127.0.0.1 for localhost-only connections
 					
 					print("𒓉 [TRANSPORT] ✅ Found WebSocket transport:")
 					print("    Host: ", ws_host)
 					print("    Registration port: ", ws_registration_port)
 					print("    Visualization port: ", ws_viz_port)
 					
-					# Connect to registration port, not visualization port
-					var ws_address: String = "ws://%s:%d" % [ws_host, ws_registration_port]
-					print("𒓉 [TRANSPORT] Connecting to registration endpoint: ", ws_address)
+					# For visualization-only agents (like BV), connect directly to visualization port
+					# Embodiment agents would connect to registration port first
+					var ws_address: String = "ws://%s:%d" % [ws_host, ws_viz_port]
+					print("𒓉 [TRANSPORT] Connecting to visualization endpoint: ", ws_address)
 					
 					# Update endpoint with FEAGI-provided address
 					if _feagi_endpoint_details:
