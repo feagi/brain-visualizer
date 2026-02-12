@@ -419,7 +419,7 @@ func reload_genome_await():
 								ws.connect_websocket()
 						# Re-register the agent to refresh transport info after FEAGI restart
 						if network:
-							await network._call_register_agent_for_shm()
+							await network._register_agent_via_transport()
 						# Schedule a short watchdog to ensure WS stays connected after reload
 						_ensure_ws_connected_after_reload(30)
 						return
@@ -471,7 +471,7 @@ func reload_genome_await():
 			ws.connect_websocket()
 	# Re-register the agent to refresh transport info after FEAGI restart
 	if network:
-		await network._call_register_agent_for_shm()
+		await network._register_agent_via_transport()
 	# Schedule a short watchdog to ensure WS stays connected after reload
 	_ensure_ws_connected_after_reload(30)
 
@@ -567,7 +567,7 @@ func _on_agent_reregistration_needed(reason: String):
 	# If we're already connected but FEAGI restarted, just re-register
 	if conn_state == network.CONNECTION_STATE.HEALTHY or conn_state == network.CONNECTION_STATE.RETRYING_HTTP or conn_state == network.CONNECTION_STATE.RETRYING_WS:
 		print("🔍 [AGENT-REG] Re-registering agent with FEAGI...")
-		await network._call_register_agent_for_shm()
+		await network._register_agent_via_transport()
 		print("🔍 [AGENT-REG] Agent re-registration completed")
 		
 		# If WebSocket was disconnected, reconnect it now

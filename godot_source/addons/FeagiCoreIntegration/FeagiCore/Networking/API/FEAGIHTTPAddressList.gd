@@ -44,6 +44,7 @@ var GET_agent_list: StringName = "/v1/agent/list"
 var GET_agent_properties: StringName = "/v1/agent/properties"
 var GET_agent_capabilities_all: StringName = "/v1/agent/capabilities/all"
 var GET_agent_shared_mem: StringName = "/v1/agent/shared_mem"
+var GET_network_connection_info: StringName = "/v1/network/connection_info"
 var GET_input_vision: StringName = "/v1/input/vision"
 
 # Post Requests

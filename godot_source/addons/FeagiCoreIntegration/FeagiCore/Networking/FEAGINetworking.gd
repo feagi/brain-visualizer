@@ -1,6 +1,7 @@
 extends Node
 class_name FEAGINetworking
 ## Handles All Networking to and from FEAGI
+const TRANSPORT_DEBUG_REV: String = "ws-endpoint-resolver-rev-12"
 
 # NOTE: For most signals, get them from http_API and websocket_API directly, no need for duplicates
 
@@ -37,6 +38,7 @@ var _heartbeat_timer: Timer = null  # Timer for sending periodic heartbeats to F
 var _heartbeat_interval: float = 15.0  # Send heartbeat every 15 seconds (matches FEAGI's expectation)
 var _reconnect_timer: Timer = null
 var _reconnect_in_progress: bool = false
+var _transport_registration_failed: bool = false
 
 func _init():
 	http_API = FEAGIHTTPAPI.new()
@@ -76,6 +78,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	
 	# Store endpoint details for use throughout the connection lifecycle
 	_feagi_endpoint_details = feagi_endpoint_details
+	_transport_registration_failed = false
 	_stop_reconnect_loop()
 	
 	# We dont want prior connections from HTTP or WS to set off other code paths, remove signal connections
@@ -103,9 +106,9 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		_start_reconnect_loop()
 		return false
 	
-	# 𒓉 CHANGED: Register FIRST to get transport negotiation, THEN connect
-	print("FEAGI NETWORK: Registering with FEAGI to negotiate transport...")
-	var shm_enabled: bool = await _call_register_agent_for_shm()
+	# REST registration is deprecated; transport setup is now resolved without REST calls.
+	print("FEAGI NETWORK: Preparing transport (REST registration disabled)...")
+	var shm_enabled: bool = await _register_agent_via_transport()
 	
 	# Check if SHM was already enabled during registration (early return)
 	# If so, skip WebSocket connection entirely
@@ -124,10 +127,14 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		print("FEAGI NETWORK: Connecting to websocket health signals for monitoring (SHM mode)")
 		websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
 		
-		# Start heartbeat after successful registration
-		start_heartbeat()
-		
 		return true
+
+	if _transport_registration_failed:
+		_connection_state = CONNECTION_STATE.DISCONNECTED
+		connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.DISCONNECTED)
+		push_error("FEAGI NETWORK: Transport registration failed; refusing direct WebSocket fallback. Ensure WS registration endpoint is reachable.")
+		_start_reconnect_loop()
+		return false
 	
 	# No SHM available or not recommended - proceed with WebSocket connection
 	_transport_mode = TRANSPORT_MODE.WEBSOCKET  # Remember we're using WebSocket
@@ -165,9 +172,6 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	print("FEAGI NETWORK: Connecting to websocket health signals for ongoing monitoring")
 	websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
 	
-	# Start heartbeat after successful registration
-	start_heartbeat()
-	
 	return true
 
 func _get_feagi_burst_frequency() -> float:
@@ -200,236 +204,275 @@ func _get_feagi_burst_frequency() -> float:
 	print("𒓉 [REG] ✅ FEAGI burst: %.3fs timestep = %.1f Hz" % [timestep, frequency])
 	return frequency
 
-## Returns auth_token for registration: base64 string that decodes to 32 bytes. Uses auth_token_b64 from settings if set and valid; else default (zeros) for dummy auth.
+## Deprecated: REST agent registration is disabled.
 func _get_registration_auth_token_b64() -> String:
-	if FeagiCore.feagi_settings != null and FeagiCore.feagi_settings.auth_token_b64.strip_edges().length() > 0:
-		var raw: PackedByteArray = Marshalls.base64_to_raw(FeagiCore.feagi_settings.auth_token_b64.strip_edges())
-		if raw.size() == 32:
-			return FeagiCore.feagi_settings.auth_token_b64.strip_edges()
-	var default_token := PackedByteArray()
-	default_token.resize(32)
-	default_token.fill(0)
-	return Marshalls.raw_to_base64(default_token)
-
-## FEAGI 2.0 expects AgentDescriptor base64 decoding to 72 bytes (4 + 32 + 32 + 4).
-## Legacy configs may have 48-byte format (4 + 20 + 20 + 4). This normalizes to 72 bytes when needed.
-func _normalize_agent_descriptor_b64(b64: String) -> String:
-	if b64.is_empty():
-		return ""
-	var raw: PackedByteArray = Marshalls.base64_to_raw(b64)
-	if raw.size() == 0 and b64.length() > 0:
-		push_error("𒓉 [REG] Invalid agent_descriptor_b64: base64 decode failed.")
-		return ""
-	if raw.size() == 200:
-		# New format (feagi-core beta.9+) - no conversion needed
-		return b64
-	if raw.size() == 72:
-		# Expand 72-byte to 200-byte format for new feagi-core
-		# Old: instance_id(4) + manufacturer(32) + agent_name(32) + version(4)
-		# New: instance_id(4) + manufacturer(128) + agent_name(64) + version(4)
-		var out := PackedByteArray()
-		out.resize(200)
-		out.fill(0)
-		# instance_id [0..4]
-		for i in range(4):
-			out[i] = raw[i]
-		# manufacturer [4..132] (copy 32, pad 96)
-		for i in range(32):
-			out[4 + i] = raw[4 + i]
-		# agent_name [132..196] (copy 32, pad 32)
-		for i in range(32):
-			out[132 + i] = raw[36 + i]
-		# version [196..200]
-		for i in range(4):
-			out[196 + i] = raw[68 + i]
-		return Marshalls.raw_to_base64(out)
-	if raw.size() == 48:
-		# Expand very old 48-byte to 200-byte format
-		# Legacy: instance_id(4) + manufacturer(20) + agent_name(20) + version(4)
-		# New: instance_id(4) + manufacturer(128) + agent_name(64) + version(4)
-		var out := PackedByteArray()
-		out.resize(200)
-		out.fill(0)
-		# instance_id [0..4]
-		for i in range(4):
-			out[i] = raw[i]
-		# manufacturer [4..132] (copy 20, pad 108)
-		for i in range(20):
-			out[4 + i] = raw[4 + i]
-		# agent_name [132..196] (copy 20, pad 44)
-		for i in range(20):
-			out[132 + i] = raw[24 + i]
-		# version [196..200]
-		for i in range(4):
-			out[196 + i] = raw[44 + i]
-		return Marshalls.raw_to_base64(out)
-	push_error("𒓉 [REG] Invalid agent_descriptor_b64: decoded size is %d bytes; FEAGI expects 200 (new feagi-core) or 72/48 (legacy). Update your descriptor." % raw.size())
 	return ""
 
-func _call_register_agent_for_shm() -> bool:
-	# STEP 1: Query FEAGI's burst frequency BEFORE registration
+## Deprecated: REST agent registration is disabled.
+func _normalize_agent_descriptor_b64(b64: String) -> String:
+	return b64
+
+func _register_agent_via_transport() -> bool:
+	# REST registration is no longer supported. Register via transport-specific client.
+	print("𒓉 [TRANSPORT] Resolver revision: ", TRANSPORT_DEBUG_REV)
+	print("𒓉 [TRANSPORT] Registering visualization agent via WebSocket transport")
+	# STEP 1: Query FEAGI's burst frequency
 	var feagi_hz = await _get_feagi_burst_frequency()
 	if feagi_hz <= 0.0:
-		print("𒓉 [REG] ⚠️ Failed to get FEAGI burst frequency, defaulting to 20 Hz request")
+		print("𒓉 [TRANSPORT] ⚠️ Failed to get FEAGI burst frequency, defaulting to 20 Hz")
 		feagi_hz = 20.0
 	
-	# STEP 2: Calculate requested rate = min(feagi_frequency, 20)
-	# - If FEAGI < 20 Hz → request FEAGI's exact rate
-	# - If FEAGI >= 20 Hz → cap at 20 Hz (BV default)
+	# STEP 2: Calculate target rate = min(feagi_frequency, 20)
 	var requested_hz = min(feagi_hz, 20.0)
-	print("𒓉 [REG] FEAGI running at %.1f Hz, BV will request %.1f Hz (capped at 20 Hz)" % [feagi_hz, requested_hz])
-	# Ensure SHM polling has a negotiated rate even if registration response omits `rates`
+	print("𒓉 [TRANSPORT] FEAGI running at %.1f Hz, BV target %.1f Hz (capped at 20 Hz)" % [feagi_hz, requested_hz])
+	# Ensure SHM polling has a deterministic rate.
 	set_meta("_negotiated_viz_hz", requested_hz)
-	
-	if FeagiCore.feagi_settings == null or FeagiCore.feagi_settings.agent_descriptor_b64.strip_edges() == "":
-		push_error("𒓉 [REG] Missing agent_descriptor_b64 in FEAGI settings; cannot register BV agent")
+	# SHM may already be active from environment variables consumed by FEAGIWebSocketAPI.
+	if websocket_API and websocket_API.get("_use_shared_mem"):
+		print("𒓉 [TRANSPORT] SHM already active via environment configuration")
+		return true
+
+	# Perform transport registration through Rust extension (no REST endpoint).
+	if not ClassDB.class_exists("FeagiAgentClient"):
+		push_warning("𒓉 [TRANSPORT] FeagiAgentClient extension unavailable; falling back to configured WebSocket endpoint.")
 		return false
 
-	var agent_descriptor_b64: String = _normalize_agent_descriptor_b64(FeagiCore.feagi_settings.agent_descriptor_b64.strip_edges())
-	if agent_descriptor_b64.is_empty():
+	var agent_client = ClassDB.instantiate("FeagiAgentClient")
+	if agent_client == null:
+		push_warning("𒓉 [TRANSPORT] Failed to instantiate FeagiAgentClient; falling back to configured WebSocket endpoint.")
 		return false
 
-	# Auth token: FEAGI 2.0 requires base64-encoded 32-byte token. Use setting if set, else default (zeros) for dummy auth.
-	var auth_token_b64: String = _get_registration_auth_token_b64()
+	var resolved_ws_endpoints: Dictionary = await _resolve_ws_endpoints()
+	print("𒓉 [TRANSPORT] Resolved WS endpoints (%s): %s" % [TRANSPORT_DEBUG_REV, resolved_ws_endpoints])
+	var registration_ws_url: String = str(resolved_ws_endpoints.get("registration", "")).strip_edges()
+	var advertised_viz_ws_url: String = str(resolved_ws_endpoints.get("visualization", "")).strip_edges()
+	var configured_viz_ws_url: String = str(_feagi_endpoint_details.full_websocket_address).strip_edges()
+	# Some FEAGI builds may publish swapped endpoint labels in connection_info.
+	# If "registration" points to our configured visualization URL and an alternate
+	# visualization endpoint is advertised, use that alternate as the registration target.
+	if registration_ws_url != "" \
+		and advertised_viz_ws_url != "" \
+		and registration_ws_url == configured_viz_ws_url \
+		and advertised_viz_ws_url != configured_viz_ws_url:
+		push_warning(
+			"𒓉 [TRANSPORT] connection_info appears to expose swapped WS labels; using %s for registration instead of %s." % [
+				advertised_viz_ws_url, registration_ws_url
+			]
+		)
+		registration_ws_url = advertised_viz_ws_url
+	if registration_ws_url.strip_edges() == "":
+		_transport_registration_failed = true
+		push_error("𒓉 [TRANSPORT] Could not resolve WebSocket registration endpoint from /v1/network/connection_info.")
+		return false
+	print("𒓉 [TRANSPORT] Using WS registration endpoint: ", registration_ws_url)
+	var descriptor_b64 := ""
+	var auth_token_b64 := ""
+	if FeagiCore.feagi_settings != null:
+		descriptor_b64 = str(FeagiCore.feagi_settings.agent_descriptor_b64).strip_edges()
+		auth_token_b64 = str(FeagiCore.feagi_settings.auth_token_b64).strip_edges()
 
-	# Registration request contract (feagi-api AgentRegistrationRequest + endpoint behavior):
-	# - agent_type (string), agent_id (base64 AgentDescriptor 72 bytes), agent_data_port (u16), agent_version, controller_version
-	# - capabilities: for viz-only, must have capabilities.visualization (object) with rate_hz (number > 0)
-	# - auth_token (string): required; base64 decode must be exactly 32 bytes
-	# - chosen_transport (optional): "zmq" | "ws" | "websocket". If omitted, server uses config default.
-	#   Server returns "Missing required protocol publisher" when chosen_transport has no matching transport
-	#   enabled in FEAGI (e.g. chosen_transport=websocket but feagi_configuration.toml has no "websocket" in [transports] available).
-	var payload := {
-		"agent_type": "visualization",
-		"agent_id": agent_descriptor_b64,
-		"agent_data_port": 0,
-		"agent_version": ProjectSettings.get_setting("application/config/version", "dev"),
-		"controller_version": ProjectSettings.get_setting("application/config/version", "dev"),
-		"capabilities": {
-			"visualization": {
-				"visualization_type": "3d_brain",
-				"rate_hz": requested_hz,
-				"bridge_proxy": false
-			}
-		},
-		"metadata": {"request_shared_memory": true},
-		"chosen_transport": "websocket",
-		"auth_token": auth_token_b64
-	}
-	# Avoid chained member resolution at parse time; guard address_list
+	var registration_output: Dictionary = agent_client.register_via_websocket(
+		registration_ws_url,
+		descriptor_b64,
+		auth_token_b64
+	)
+	print("𒓉 [TRANSPORT] registration_output: ", registration_output)
+	if not bool(registration_output.get("success", false)):
+		var reg_error: String = str(registration_output.get("error", "unknown registration error"))
+		_transport_registration_failed = true
+		push_error("𒓉 [TRANSPORT] Transport registration failed (%s)." % reg_error)
+		return false
+
+	var registered_ws_url := str(registration_output.get("visualization_ws_url", "")).strip_edges()
+	if registered_ws_url != "":
+		if advertised_viz_ws_url != "" and registered_ws_url != advertised_viz_ws_url:
+			push_warning(
+				"𒓉 [TRANSPORT] Registration returned visualization endpoint %s, but FEAGI advertises %s. Using advertised visualization endpoint." % [
+					registered_ws_url, advertised_viz_ws_url
+				]
+			)
+			_feagi_endpoint_details.full_websocket_address = advertised_viz_ws_url
+			print("𒓉 [TRANSPORT] Using advertised visualization endpoint: ", advertised_viz_ws_url)
+		else:
+			_feagi_endpoint_details.full_websocket_address = registered_ws_url
+			print("𒓉 [TRANSPORT] Registered visualization endpoint: ", registered_ws_url)
+	elif advertised_viz_ws_url != "":
+		_feagi_endpoint_details.full_websocket_address = advertised_viz_ws_url
+		print("𒓉 [TRANSPORT] Using advertised visualization endpoint: ", advertised_viz_ws_url)
+	else:
+		push_warning("𒓉 [TRANSPORT] Registration succeeded without visualization_ws_url; using configured WebSocket endpoint.")
+		return false
+
+	var registered_agent_id := str(registration_output.get("agent_id_b64", "")).strip_edges()
+	if registered_agent_id != "":
+		set_meta("_registered_agent_id_b64", registered_agent_id)
+		print("𒓉 [TRANSPORT] Registered agent_id: ", registered_agent_id)
+
+	return false
+
+func _resolve_ws_endpoints() -> Dictionary:
+	# Resolve WebSocket registration and visualization endpoints from FEAGI network connection info.
+	# Use direct HTTPClient polling to avoid signal ordering/race issues during startup.
 	var addr_list = http_API.get("address_list")
 	if addr_list == null:
-		push_warning("FEAGI NETWORK: HTTP address list not initialized; skipping agent register")
-		return false
-	var post_url: StringName = addr_list.POST_agent_register
-	var def := APIRequestWorkerDefinition.define_single_POST_call(post_url, payload)
-	var worker := http_API.make_HTTP_call(def)
-	print("𒓉 [REG] Posting /v1/agent/register …")
-	await worker.worker_done
-	var out := worker.retrieve_output_and_close()
-	if out.has_errored or out.has_timed_out:
-		print("𒓉 [REG] Agent register failed or timed out")
-		print("𒓉 [REG] Error? ", out.has_errored, ", Timeout? ", out.has_timed_out)
-		if out.has_errored:
-			var body := out.decode_response_as_dict()
-			var msg: String = str(body.get("message", "Unknown error"))
-			print("𒓉 [REG] Error body: ", body)
-			if "Missing required protocol publisher" in msg or "Missing required protocol puller" in msg:
-				push_error("𒓉 [REG] FEAGI has no WebSocket transport enabled. Enable it in feagi_configuration.toml: under [transports] set available = [\"zmq\", \"websocket\"] and under [websocket] set host and sensory_port, motor_port, visualization_port.")
-				push_error("𒓉 [REG] Registration failed: %s" % msg)
-			elif out.response_code >= 400 and out.response_code < 500 and "transport" in msg.to_lower():
-				push_error("𒓉 [REG] Requested transport not supported by FEAGI: %s" % msg)
-			else:
-				push_error("𒓉 [REG] Registration failed: HTTP registration failed: %s" % msg)
-			return false
-		return false
-	var resp := out.decode_response_as_dict()
-	print("𒓉 [REG] Response: ", resp)
-	
-	# Extract negotiated visualization rate
-	if resp.has("rates") and typeof(resp["rates"]) == TYPE_DICTIONARY:
-		var rates: Dictionary = resp["rates"]
-		if rates.has("visualization"):
-			var viz_rates: Dictionary = rates["visualization"]
-			var requested_hz_response = viz_rates.get("requested_hz", 20.0)
-			var feagi_hz_from_response = viz_rates.get("feagi_hz", 0.0)
-			var negotiated_hz_response = viz_rates.get("negotiated_hz", 20.0)
-			print("𒓉 [RATE-NEGO] Visualization rate negotiation:")
-			print("  FEAGI burst: %.1f Hz" % feagi_hz_from_response)
-			print("  BV requested: %.1f Hz (min(FEAGI, 20))" % requested_hz_response)
-			print("  Negotiated: %.1f Hz" % negotiated_hz_response)
-			# Store negotiated rate for future use (e.g., timing expectations)
-			set_meta("_negotiated_viz_hz", negotiated_hz_response)
-	
-	# Check registration success and transport negotiation
-	if resp.get("status", "") == "success":
-		# FEAGI 2.0: Check SHM paths first (legacy compatibility)
-		if resp.has("shm_paths") and typeof(resp["shm_paths"]) == TYPE_DICTIONARY:
-			var shm_paths: Dictionary = resp["shm_paths"]
-			if shm_paths.has("visualization"):
-				var viz_path: String = str(shm_paths["visualization"])
-				print("𒓉 [TRANSPORT] ✅ Using SHM transport: ", viz_path)
-				OS.set_environment("FEAGI_VIZ_NEURONS_SHM", viz_path)
-				
-				# Enable SHM visualization and SKIP WebSocket connection
-				if websocket_API and websocket_API.has_method("enable_shared_memory_visualization"):
-					websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
-					websocket_API.enable_shared_memory_visualization(viz_path)
-					print("𒓉 [TRANSPORT] ✅ SHM visualization enabled, WebSocket will be skipped")
-				return true  # Success - using SHM, no need for WebSocket
-		
-		# FEAGI 2.0: Parse new transports array format
-		if resp.has("transports") and typeof(resp["transports"]) == TYPE_ARRAY:
-			var transports: Array = resp["transports"]
-			var recommended: String = resp.get("recommended_transport", "zmq")
-			
-			print("𒓉 [TRANSPORT] FEAGI 2.0 multi-transport registration:")
-			print("𒓉 [TRANSPORT] Available transports: ", transports.size())
-			print("𒓉 [TRANSPORT] Recommended: ", recommended)
-			
-			# Try to find WebSocket transport
-			for transport_option in transports:
-				if typeof(transport_option) != TYPE_DICTIONARY:
-					continue
-				
-				var transport_dict: Dictionary = transport_option
-				var transport_type: String = transport_dict.get("transport_type", "")
-				var enabled: bool = transport_dict.get("enabled", false)
-				
-				if transport_type == "websocket" and enabled:
-					var ws_host: String = transport_dict.get("host", "127.0.0.1")
-					var ports: Dictionary = transport_dict.get("ports", {})
-					var ws_registration_port: int = int(ports.get("registration", 9053))
-					var ws_viz_port: int = int(ports.get("visualization", 9050))
-					
-					print("𒓉 [TRANSPORT] ✅ Found WebSocket transport:")
-					print("    Host: ", ws_host)
-					print("    Registration port: ", ws_registration_port)
-					print("    Visualization port: ", ws_viz_port)
-					
-					# For visualization-only agents (like BV), connect directly to visualization port
-					# Embodiment agents would connect to registration port first
-					var ws_address: String = "ws://%s:%d" % [ws_host, ws_viz_port]
-					print("𒓉 [TRANSPORT] Connecting to visualization endpoint: ", ws_address)
-					
-					# Update endpoint with FEAGI-provided address
-					if _feagi_endpoint_details:
-						_feagi_endpoint_details.full_websocket_address = ws_address
-					
-					# WebSocket connection will proceed with FEAGI-provided address
-					return false
-			
-			# No WebSocket found, check if ZMQ is available
-			print("𒓉 [TRANSPORT] No WebSocket transport available from FEAGI")
-			print("𒓉 [TRANSPORT] Falling back to default configuration")
-			return false
-		
-		# Legacy format compatibility (old registration response)
-		print("𒓉 [TRANSPORT] Legacy registration format detected")
-		return false
-	
-	# Default: SHM not available, fall back to WebSocket
-	return false
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: address_list is null")
+		return {}
+	var info_url: StringName = addr_list.GET_network_connection_info
+	print("𒓉 [TRANSPORT] Resolving WS endpoints from: ", info_url)
+
+	var url_text: String = str(info_url).strip_edges()
+	var url_re := RegEx.new()
+	var compile_ok: Error = url_re.compile("^http://([^/:]+):(\\d+)(/.*)$")
+	if compile_ok != OK:
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: failed to compile URL regex")
+		return {}
+	var match: RegExMatch = url_re.search(url_text)
+	if match == null:
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: invalid URL format: ", url_text)
+		return {}
+	var host: String = match.get_string(1)
+	var port: int = int(match.get_string(2))
+	var path: String = match.get_string(3)
+
+	var client := HTTPClient.new()
+	var connect_err: Error = client.connect_to_host(host, port)
+	if connect_err != OK:
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: connect_to_host failed=", connect_err)
+		return {}
+
+	var started_ms: int = Time.get_ticks_msec()
+	while client.get_status() in [HTTPClient.STATUS_RESOLVING, HTTPClient.STATUS_CONNECTING]:
+		var poll_err := client.poll()
+		if poll_err != OK:
+			print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: poll(connect) failed=", poll_err)
+			client.close()
+			return {}
+		if Time.get_ticks_msec() - started_ms > 3000:
+			print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: connect timeout exceeded 3s")
+			client.close()
+			return {}
+		await get_tree().process_frame
+
+	if client.get_status() != HTTPClient.STATUS_CONNECTED:
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: client not connected, status=", client.get_status())
+		client.close()
+		return {}
+
+	var request_err: Error = client.request(HTTPClient.METHOD_GET, path, http_API.get_headers())
+	if request_err != OK:
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: request() failed=", request_err)
+		client.close()
+		return {}
+
+	var request_started_ms: int = Time.get_ticks_msec()
+	while client.get_status() == HTTPClient.STATUS_REQUESTING:
+		var req_poll_err := client.poll()
+		if req_poll_err != OK:
+			print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: poll(request) failed=", req_poll_err)
+			client.close()
+			return {}
+		if Time.get_ticks_msec() - request_started_ms > 3000:
+			print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: request timeout exceeded 3s")
+			client.close()
+			return {}
+		await get_tree().process_frame
+
+	var response_code: int = client.get_response_code()
+	var body := PackedByteArray()
+	if client.has_response():
+		var body_started_ms: int = Time.get_ticks_msec()
+		while client.get_status() == HTTPClient.STATUS_BODY:
+			var body_poll_err := client.poll()
+			if body_poll_err != OK:
+				print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: poll(body) failed=", body_poll_err)
+				client.close()
+				return {}
+			var chunk: PackedByteArray = client.read_response_body_chunk()
+			if chunk.size() > 0:
+				body.append_array(chunk)
+			if Time.get_ticks_msec() - body_started_ms > 3000:
+				print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: body timeout exceeded 3s")
+				client.close()
+				return {}
+			await get_tree().process_frame
+	client.close()
+
+	var errored: bool = response_code != 200
+	print("𒓉 [TRANSPORT] connection_info response: code=%s errored=%s body_bytes=%s" % [
+		response_code, errored, body.size()
+	])
+	if errored:
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: non-200 response_code=", response_code)
+		return {}
+
+	var raw_response: String = body.get_string_from_utf8()
+	var raw_preview: String = raw_response.replace("\u0000", "").strip_edges()
+	if raw_preview.length() > 240:
+		raw_preview = raw_preview.substr(0, 240)
+	print("𒓉 [TRANSPORT] connection_info raw preview: ", raw_preview)
+	var extracted := _extract_ws_endpoints_from_raw_response(raw_response)
+	if not extracted.is_empty():
+		print("𒓉 [TRANSPORT] Resolved WS endpoints from raw response: ", extracted)
+		return extracted
+	var parser := JSON.new()
+	var parse_err: Error = parser.parse(raw_response.replace("\u0000", "").strip_edges())
+	var info: Dictionary = {}
+	if parse_err == OK and parser.data is Dictionary:
+		info = parser.data
+	print("𒓉 [TRANSPORT] connection_info parsed keys: ", info.keys() if not info.is_empty() else [])
+	if info.is_empty():
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: parsed info empty")
+		push_warning("𒓉 [TRANSPORT] connection_info decode returned empty dictionary. response_code=%s body_bytes=%s parse_err=%s" % [response_code, body.size(), parse_err])
+		return {}
+	if not info.has("websocket") or typeof(info["websocket"]) != TYPE_DICTIONARY:
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: missing websocket dictionary")
+		return {}
+	var ws_cfg: Dictionary = info["websocket"]
+	if not ws_cfg.get("enabled", false):
+		print("𒓉 [TRANSPORT] _resolve_ws_endpoints early return: websocket transport disabled")
+		return {}
+	var ws_endpoints: Dictionary = {}
+	if ws_cfg.has("endpoints") and typeof(ws_cfg["endpoints"]) == TYPE_DICTIONARY:
+		ws_endpoints = ws_cfg["endpoints"]
+	var ws_ports: Dictionary = {}
+	if ws_cfg.has("ports") and typeof(ws_cfg["ports"]) == TYPE_DICTIONARY:
+		ws_ports = ws_cfg["ports"]
+	var ws_host: String = str(ws_cfg.get("host", "")).strip_edges()
+	var registration_url: String = str(ws_endpoints.get("registration", "")).strip_edges()
+	var visualization_url: String = str(ws_endpoints.get("visualization", "")).strip_edges()
+	if registration_url == "" and ws_host != "":
+		var registration_port: int = int(ws_ports.get("registration", 0))
+		if registration_port > 0:
+			registration_url = "ws://%s:%d" % [ws_host, registration_port]
+	if visualization_url == "" and ws_host != "":
+		var visualization_port: int = int(ws_ports.get("visualization", 0))
+		if visualization_port > 0:
+			visualization_url = "ws://%s:%d" % [ws_host, visualization_port]
+	return {
+		"registration": registration_url,
+		"visualization": visualization_url
+	}
+
+func _extract_ws_endpoints_from_raw_response(raw_response: String) -> Dictionary:
+	var cleaned: String = raw_response.replace("\u0000", "").strip_edges()
+	if cleaned == "":
+		return {}
+	var reg := RegEx.new()
+	if reg.compile("\"registration\"\\s*:\\s*\"(ws://[^\"]+)\"") != OK:
+		return {}
+	var viz := RegEx.new()
+	if viz.compile("\"visualization\"\\s*:\\s*\"(ws://[^\"]+)\"") != OK:
+		return {}
+	var reg_match: RegExMatch = reg.search(cleaned)
+	var viz_match: RegExMatch = viz.search(cleaned)
+	var registration_url: String = reg_match.get_string(1).strip_edges() if reg_match != null else ""
+	var visualization_url: String = viz_match.get_string(1).strip_edges() if viz_match != null else ""
+	if registration_url == "" and visualization_url == "":
+		return {}
+	return {
+		"registration": registration_url,
+		"visualization": visualization_url
+	}
 	
 ## Completely disconnect all networking systems from FEAGI
 func disconnect_networking() -> void:
@@ -529,21 +572,8 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 
 ## Start sending periodic heartbeats to FEAGI
 func start_heartbeat() -> void:
-	# Stop any existing heartbeat timer
-	stop_heartbeat()
-	
-	# Create and configure heartbeat timer
-	_heartbeat_timer = Timer.new()
-	_heartbeat_timer.name = "HeartbeatTimer"
-	_heartbeat_timer.wait_time = _heartbeat_interval
-	_heartbeat_timer.autostart = true
-	_heartbeat_timer.timeout.connect(_send_heartbeat)
-	add_child(_heartbeat_timer)
-	
-	print("💗 [HEARTBEAT] Started heartbeat timer (interval: %.1fs)" % _heartbeat_interval)
-	
-	# Send initial heartbeat immediately
-	_send_heartbeat()
+	# Agent heartbeat over REST is deprecated and intentionally disabled.
+	return
 
 
 ## Stop sending heartbeats to FEAGI
@@ -554,42 +584,12 @@ func stop_heartbeat() -> void:
 			_heartbeat_timer.timeout.disconnect(_send_heartbeat)
 		_heartbeat_timer.queue_free()
 		_heartbeat_timer = null
-		print("💗 [HEARTBEAT] Stopped heartbeat timer")
 
 
 ## Send a single heartbeat to FEAGI
 func _send_heartbeat() -> void:
-	# Guard: Ensure HTTP API is available
-	if not http_API or http_API.http_health != FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE:
-		push_warning("💗 [HEARTBEAT] Skipping heartbeat - HTTP not connected")
-		return
-	
-	# Guard: Ensure address list is available
-	var addr_list = http_API.get("address_list")
-	if addr_list == null:
-		push_warning("💗 [HEARTBEAT] Skipping heartbeat - address list not initialized")
-		return
-	
-	if FeagiCore.feagi_settings == null or FeagiCore.feagi_settings.agent_descriptor_b64.strip_edges() == "":
-		push_warning("💗 [HEARTBEAT] Missing agent_descriptor_b64; skipping heartbeat")
-		return
-
-	var agent_descriptor_b64: String = _normalize_agent_descriptor_b64(FeagiCore.feagi_settings.agent_descriptor_b64.strip_edges())
-	if agent_descriptor_b64.is_empty():
-		return
-
-	# Build heartbeat payload
-	var payload := {
-		"agent_id": agent_descriptor_b64
-	}
-	
-	# Send heartbeat (fire and forget - don't await)
-	var heartbeat_url: StringName = addr_list.POST_agent_heartbeat
-	var def := APIRequestWorkerDefinition.define_single_POST_call(heartbeat_url, payload)
-	var worker := http_API.make_HTTP_call(def)
-	
-	# Optional: Log heartbeat send (can be removed once stable)
-	# print("💗 [HEARTBEAT] Sent heartbeat to FEAGI")
+	# Agent heartbeat over REST is deprecated and intentionally disabled.
+	return
 
 ## Start auto-reconnect loop while disconnected.
 func _start_reconnect_loop() -> void:

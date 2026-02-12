@@ -4,14 +4,11 @@
 //! registration and session_id handling (required for FeagiByteContainer flows).
 
 use godot::prelude::*;
-use feagi_agent::clients::RegistrationAgent;
-use feagi_agent::registration::{
-    AgentCapabilities, AgentDescriptor, AuthToken, RegistrationRequest,
-};
+use feagi_agent::clients::{AgentRegistrationStatus, CommandControlSubAgent};
+use feagi_agent::{AgentCapabilities, AgentDescriptor, AuthToken};
 use base64::Engine;
-use feagi_io::core::protocol_implementations::ProtocolImplementation;
-use feagi_io::core::protocol_implementations::websocket::FeagiWebSocketClientRequesterProperties;
-use feagi_io::core::traits_and_enums::client::FeagiClientRequesterProperties;
+use feagi_io::protocol_implementations::websocket::websocket_std::FeagiWebSocketClientRequesterProperties;
+use feagi_io::traits_and_enums::shared::TransportProtocolEndpoint;
 
 struct FeagiAgentClientLib;
 
@@ -36,8 +33,8 @@ impl IRefCounted for FeagiAgentClient {
 #[godot_api]
 impl FeagiAgentClient {
     /// Register with FEAGI via the standard WebSocket registration endpoint using the feagi-agent SDK.
-    /// Returns a Dictionary with: success (bool), visualization_ws_url (String), session_id_b64 (String), error (String).
-    /// Session ID must be used with FeagiByteContainer for visualization and sensory data.
+    /// Returns a Dictionary with: success (bool), visualization_ws_url (String), agent_id_b64 (String), error (String).
+    /// Agent ID must be used with FeagiByteContainer for visualization and sensory data.
     #[func]
     pub fn register_via_websocket(
         &self,
@@ -67,70 +64,146 @@ impl FeagiAgentClient {
             Ok(p) => p,
             Err(e) => return vdict!("success": false, "error": format!("WebSocket requester: {}", e)),
         };
-        let mut registration_agent = RegistrationAgent::new(requester_props.as_boxed_client_requester());
+        let mut registration_agent = CommandControlSubAgent::new(Box::new(requester_props));
 
-        if let Err(e) = registration_agent.connect() {
-            let _ = registration_agent.disconnect();
+        if let Err(e) = registration_agent.request_connect() {
             return vdict!("success": false, "error": format!("Connect: {}", e));
         }
 
-        let request = RegistrationRequest::new(
+        if let Err(e) = registration_agent.request_registration(
             agent_descriptor,
             auth_token,
             vec![AgentCapabilities::ReceiveNeuronVisualizations],
-            ProtocolImplementation::WebSocket,
-        );
+        ) {
+            return vdict!("success": false, "error": format!("Registration request: {}", e));
+        }
 
-        let result = registration_agent.try_register(request);
-        let _ = registration_agent.disconnect();
-
-        match result {
-            Ok((session_id, endpoints)) => {
-                let viz_url = endpoints
-                    .get(&AgentCapabilities::ReceiveNeuronVisualizations)
-                    .cloned()
-                    .unwrap_or_default();
-                let session_id_b64 = base64::engine::general_purpose::STANDARD.encode(session_id.bytes());
-                vdict!(
-                    "success": true,
-                    "visualization_ws_url": viz_url,
-                    "session_id_b64": session_id_b64,
-                    "error": ""
-                )
+        // Poll registration response (blocking loop with bounded timeout)
+        let start = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(30);
+        loop {
+            match registration_agent.poll_for_messages() {
+                Ok(_) => {
+                    if let AgentRegistrationStatus::Registered(agent_id, endpoints) =
+                        registration_agent.registration_status()
+                    {
+                        let viz_url = endpoints
+                            .get(&AgentCapabilities::ReceiveNeuronVisualizations)
+                            .map(Self::endpoint_to_string)
+                            .unwrap_or_default();
+                        let agent_id_b64 = base64::engine::general_purpose::STANDARD.encode(agent_id.bytes());
+                        return vdict!(
+                            "success": true,
+                            "visualization_ws_url": viz_url,
+                            "agent_id_b64": agent_id_b64,
+                            "error": ""
+                        );
+                    }
+                }
+                Err(e) => {
+                    return vdict!(
+                        "success": false,
+                        "visualization_ws_url": "",
+                        "agent_id_b64": "",
+                        "error": format!("{}", e)
+                    );
+                }
             }
-            Err(e) => vdict!(
-                "success": false,
-                "visualization_ws_url": "",
-                "session_id_b64": "",
-                "error": format!("{}", e)
-            ),
+
+            if start.elapsed() >= timeout {
+                return vdict!(
+                    "success": false,
+                    "visualization_ws_url": "",
+                    "agent_id_b64": "",
+                    "error": "Registration timeout"
+                );
+            }
+
+            std::thread::sleep(std::time::Duration::from_millis(5));
         }
     }
 
-    /// Extract session ID bytes from a FeagiByteContainer buffer (first bytes after header).
+    /// Extract agent ID bytes from a FeagiByteContainer buffer (first bytes after header).
     /// Returns PackedByteArray of 8 bytes or empty if buffer is too short.
     /// Used to validate incoming visualization data matches our registered session.
     #[func]
     pub fn get_session_id_from_byte_container(&self, buffer: PackedByteArray) -> PackedByteArray {
         use feagi_serialization::FeagiByteContainer;
         let bytes: Vec<u8> = buffer.to_vec();
-        if bytes.len() < FeagiByteContainer::GLOBAL_BYTE_HEADER_BYTE_COUNT + FeagiByteContainer::SESSION_ID_BYTE_COUNT {
+        if bytes.len() < FeagiByteContainer::GLOBAL_BYTE_HEADER_BYTE_COUNT + FeagiByteContainer::AGENT_ID_BYTE_COUNT {
             return PackedByteArray::new();
         }
         let offset = FeagiByteContainer::GLOBAL_BYTE_HEADER_BYTE_COUNT;
-        let end = offset + FeagiByteContainer::SESSION_ID_BYTE_COUNT;
+        let end = offset + FeagiByteContainer::AGENT_ID_BYTE_COUNT;
         PackedByteArray::from(&bytes[offset..end])
     }
 }
 
 impl FeagiAgentClient {
+    fn endpoint_to_string(endpoint: &TransportProtocolEndpoint) -> String {
+        match endpoint {
+            TransportProtocolEndpoint::WebSocket(url) => url.as_str().to_string(),
+            TransportProtocolEndpoint::Zmq(url) => url.as_str().to_string(),
+        }
+    }
+
     fn decode_agent_descriptor(b64: &str) -> Result<AgentDescriptor, String> {
-        let raw = if b64.trim().is_empty() {
-            Self::default_agent_descriptor_b64()
-        } else {
-            b64.to_string()
+        if b64.trim().is_empty() {
+            return AgentDescriptor::new("neuraville", "brain-visualizer", 1)
+                .map_err(|e| format!("agent_descriptor: {}", e));
+        }
+
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(b64)
+            .map_err(|e| format!("agent_descriptor: invalid base64: {}", e))?;
+
+        let (manufacturer, agent_name, agent_version) = match decoded.len() {
+            // New layout: instance_id(4) + manufacturer(128) + agent_name(64) + version(4) = 200
+            200 => {
+                let manufacturer = String::from_utf8_lossy(&decoded[4..132])
+                    .trim_end_matches('\0')
+                    .to_string();
+                let agent_name = String::from_utf8_lossy(&decoded[132..196])
+                    .trim_end_matches('\0')
+                    .to_string();
+                let agent_version =
+                    u32::from_le_bytes([decoded[196], decoded[197], decoded[198], decoded[199]]);
+                (manufacturer, agent_name, agent_version)
+            }
+            // Legacy layout: instance_id(4) + manufacturer(32) + agent_name(32) + version(4) = 72
+            72 => {
+                let manufacturer = String::from_utf8_lossy(&decoded[4..36])
+                    .trim_end_matches('\0')
+                    .to_string();
+                let agent_name = String::from_utf8_lossy(&decoded[36..68])
+                    .trim_end_matches('\0')
+                    .to_string();
+                let agent_version =
+                    u32::from_le_bytes([decoded[68], decoded[69], decoded[70], decoded[71]]);
+                (manufacturer, agent_name, agent_version)
+            }
+            // Very old layout: instance_id(4) + manufacturer(20) + agent_name(20) + version(4) = 48
+            48 => {
+                let manufacturer = String::from_utf8_lossy(&decoded[4..24])
+                    .trim_end_matches('\0')
+                    .to_string();
+                let agent_name = String::from_utf8_lossy(&decoded[24..44])
+                    .trim_end_matches('\0')
+                    .to_string();
+                let agent_version =
+                    u32::from_le_bytes([decoded[44], decoded[45], decoded[46], decoded[47]]);
+                (manufacturer, agent_name, agent_version)
+            }
+            size => {
+                return Err(format!(
+                    "agent_descriptor: unsupported descriptor encoding length {} (expected 200/72/48 bytes)",
+                    size
+                ));
+            }
         };
-        AgentDescriptor::try_from_base64(&raw).map_err(|e| format!("agent_descriptor: {}", e))
+
+        AgentDescriptor::new(&manufacturer, &agent_name, agent_version)
+            .map_err(|e| format!("agent_descriptor: {}", e))
     }
 
     fn decode_auth_token(b64: &str) -> Result<AuthToken, String> {
@@ -142,13 +215,4 @@ impl FeagiAgentClient {
         AuthToken::from_base64(&raw).ok_or_else(|| "auth_token: must be base64 of 32 bytes".to_string())
     }
 
-    fn default_agent_descriptor_b64() -> String {
-        // 72 bytes: 4 (instance_id LE) + 32 (manufacturer) + 32 (agent_name) + 4 (version LE)
-        let mut bytes = [0u8; 72];
-        bytes[0..4].copy_from_slice(&1u32.to_le_bytes());
-        bytes[4..14].copy_from_slice(b"neuraville");
-        bytes[36..52].copy_from_slice(b"brain-visualizer");
-        bytes[68..72].copy_from_slice(&1u32.to_le_bytes());
-        base64::engine::general_purpose::STANDARD.encode(&bytes[..])
-    }
 }
