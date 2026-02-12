@@ -35,7 +35,7 @@ var _connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
 var _transport_mode: TRANSPORT_MODE = TRANSPORT_MODE.UNKNOWN  # Track which transport is being used
 var _feagi_endpoint_details: FeagiEndpointDetails = null  # Store endpoint details for later use
 var _heartbeat_timer: Timer = null  # Timer for sending periodic heartbeats to FEAGI
-var _heartbeat_interval: float = 15.0  # Send heartbeat every 15 seconds (matches FEAGI's expectation)
+var _heartbeat_interval: float = 5.0  # Send heartbeat every 5 seconds to provide margin against 30s liveness timeout.
 var _reconnect_timer: Timer = null
 var _reconnect_in_progress: bool = false
 var _transport_registration_failed: bool = false
@@ -265,17 +265,28 @@ func _register_agent_via_transport() -> bool:
 		push_error("𒓉 [TRANSPORT] Could not resolve WebSocket registration endpoint from /v1/network/connection_info.")
 		return false
 	print("𒓉 [TRANSPORT] Using WS registration endpoint: ", registration_ws_url)
+	set_meta("_registration_ws_url", registration_ws_url)
 	var descriptor_b64 := ""
 	var auth_token_b64 := ""
 	if FeagiCore.feagi_settings != null:
 		descriptor_b64 = str(FeagiCore.feagi_settings.agent_descriptor_b64).strip_edges()
 		auth_token_b64 = str(FeagiCore.feagi_settings.auth_token_b64).strip_edges()
 
-	var registration_output: Dictionary = agent_client.register_via_websocket(
-		registration_ws_url,
-		descriptor_b64,
-		auth_token_b64
-	)
+	var registration_output: Dictionary
+	if agent_client.has_method("register_via_websocket_with_heartbeat"):
+		registration_output = agent_client.register_via_websocket_with_heartbeat(
+			registration_ws_url,
+			descriptor_b64,
+			auth_token_b64,
+			_heartbeat_interval
+		)
+	else:
+		push_warning("𒓉 [TRANSPORT] feagi_agent_client extension is running legacy API; using default heartbeat interval.")
+		registration_output = agent_client.register_via_websocket(
+			registration_ws_url,
+			descriptor_b64,
+			auth_token_b64
+		)
 	print("𒓉 [TRANSPORT] registration_output: ", registration_output)
 	if not bool(registration_output.get("success", false)):
 		var reg_error: String = str(registration_output.get("error", "unknown registration error"))
@@ -578,6 +589,18 @@ func start_heartbeat() -> void:
 
 ## Stop sending heartbeats to FEAGI
 func stop_heartbeat() -> void:
+	var registered_agent_id := ""
+	if has_meta("_registered_agent_id_b64"):
+		registered_agent_id = str(get_meta("_registered_agent_id_b64")).strip_edges()
+	var registration_ws_url := ""
+	if has_meta("_registration_ws_url"):
+		registration_ws_url = str(get_meta("_registration_ws_url")).strip_edges()
+	if registered_agent_id != "" and ClassDB.class_exists("FeagiAgentClient"):
+		var agent_client = ClassDB.instantiate("FeagiAgentClient")
+		if agent_client != null:
+			agent_client.stop_heartbeat_for_agent(registered_agent_id)
+			if registration_ws_url != "":
+				agent_client.deregister_via_websocket(registration_ws_url, registered_agent_id)
 	if _heartbeat_timer != null:
 		_heartbeat_timer.stop()
 		if _heartbeat_timer.timeout.is_connected(_send_heartbeat):
