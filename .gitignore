@@ -55,6 +55,8 @@ MANIFEST
 
 # Containerized DB data
 data/
+!godot_source/BrainVisualizer/UI/DeviceConfigurator/Data/
+!godot_source/BrainVisualizer/UI/DeviceConfigurator/Data/**
 
 # Log directories and files with date extensions
 logs/
