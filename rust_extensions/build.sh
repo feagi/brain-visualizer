@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Unix/macOS wrapper for the Python build script
 # This allows users to continue running './build.sh' on Unix systems
 #
