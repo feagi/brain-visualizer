@@ -2,6 +2,10 @@
 extends EditorExportPlugin
 
 const GUIDES_DIR := "res://BrainVisualizer/Guides"
+const REQUIRED_GDEXTENSION_MANIFESTS := [
+	"res://addons/FeagiCoreIntegration/feagi_agent_client.gdextension",
+	"res://addons/FeagiCoreIntegration/feagi_type_system.gdextension",
+]
 
 func _get_name() -> String:
 	return "FEAGI Desktop Export Filter"
@@ -11,6 +15,7 @@ func _export_begin(features: PackedStringArray, is_debug: bool, path: String, fl
 	print("[FEAGI Export Filter] Filtering out data deserializer extension")
 	print("[FEAGI Export Filter] Filtering out feagi_embedded (Remote mode - embedded not needed)")
 	_add_guide_files()
+	_add_required_gdextension_manifests()
 
 ## Add user guide .md and _guide_order.txt to the export.
 ## Godot excludes non-imported text files from the pck; these must be added explicitly.
@@ -47,6 +52,25 @@ func _add_guide_files() -> void:
 	dir.list_dir_end()
 	if count > 0:
 		print("[FEAGI Export Filter] Added %d guide files to export" % count)
+
+## Ensure required GDExtension manifests are always included in exported PCK.
+## This avoids runtime "GDExtension dynamic library not found" due to manifest omission.
+func _add_required_gdextension_manifests() -> void:
+	var added := 0
+	for manifest_path in REQUIRED_GDEXTENSION_MANIFESTS:
+		if not FileAccess.file_exists(manifest_path):
+			push_warning("[FEAGI Export Filter] Required manifest missing: %s" % manifest_path)
+			continue
+		var file := FileAccess.open(manifest_path, FileAccess.READ)
+		if file == null:
+			push_warning("[FEAGI Export Filter] Could not read manifest: %s" % manifest_path)
+			continue
+		var content := file.get_as_text()
+		file.close()
+		add_file(manifest_path, content.to_utf8_buffer(), false)
+		added += 1
+	if added > 0:
+		print("[FEAGI Export Filter] Added %d GDExtension manifests to export" % added)
 
 func _export_file(path: String, type: String, features: PackedStringArray) -> void:
 	# Skip the data deserializer extension file - it's only needed for web
