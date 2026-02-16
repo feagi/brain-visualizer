@@ -61,12 +61,18 @@ python build.py
 The automated build script compiles and installs:
 1. **feagi_data_deserializer**: High-performance data deserialization
 2. **feagi_shared_video**: Shared memory video reader
+3. **feagi_agent_client**: FEAGI agent client bridge required by `FeagiCoreIntegration`
 
 For each extension, it:
 - Builds both debug and release versions
 - Copies libraries to Godot addon directories (`godot_source/addons/`)
 - Creates universal binaries on macOS (arm64 + x86_64)
 - Cleans up old files in incorrect locations
+
+Deployment targets:
+- `feagi_data_deserializer` -> `addons/feagi_rust_deserializer` and `addons/FeagiCoreIntegration` (legacy compatibility path)
+- `feagi_shared_video` -> `addons/feagi_shared_video`
+- `feagi_agent_client` -> `addons/FeagiCoreIntegration` (including Windows `target/x86_64-pc-windows-msvc/{debug,release}` paths)
 
 ### Manual Build (Advanced)
 

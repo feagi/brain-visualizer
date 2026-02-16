@@ -342,6 +342,21 @@ def main():
         build_universal_macos(project2_path, addon2_path, lib2_name, release_only=release_only)
     elif platform.system() == "Darwin" and local_arch_only:
         print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
+
+    # Build feagi_agent_client (required by FeagiCoreIntegration.gdextension)
+    project4_path, addon4_path, lib4_name = build_rust_library(
+        "feagi_agent_client",
+        root_dir / "feagi_agent_client",
+        godot_source / "addons" / "FeagiCoreIntegration",
+        release_only=release_only,
+        no_clean=no_clean
+    )
+
+    # Build universal binaries on macOS (unless --local-arch is specified)
+    if platform.system() == "Darwin" and not local_arch_only:
+        build_universal_macos(project4_path, addon4_path, lib4_name, release_only=release_only)
+    elif platform.system() == "Darwin" and local_arch_only:
+        print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
     
     # Build feagi_type_system (deploy directly to FeagiCoreIntegration addon)
     print_section("Building feagi_type_system")
@@ -413,6 +428,7 @@ def main():
     print(f"  - {addon1_path / 'target' / 'release' / lib1_name} (feagi_rust_deserializer)")
     print(f"  - {feagi_core_path / lib1_name} (FeagiCoreIntegration)")
     print(f"  - {addon2_path / 'target' / 'release' / lib2_name} (feagi_shared_video)")
+    print(f"  - {feagi_core_path} ({lib4_name}, platform-specific location)")
     print(f"  - {feagi_core_path / lib3_name} (feagi_type_system)")
     print("[TIP] Restart Godot to load the new extensions.")
     print("[TEST] To test the integration, run the test_rust_deserializer.tscn scene in Godot.")
