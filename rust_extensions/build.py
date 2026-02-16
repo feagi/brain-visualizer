@@ -83,13 +83,13 @@ def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=
     
     # Build release (always)
     print("[BUILD] Building Rust library (release mode - optimized)...")
-    run_command(["cargo", "build", "--release"], cwd=project_path)
+    run_command(["cargo", "build", "--release", "--locked"], cwd=project_path)
     
     # Build debug (only if not release_only)
     debug_lib = None
     if not release_only:
         print("[BUILD] Building Rust library (debug mode - for development)...")
-        run_command(["cargo", "build"], cwd=project_path)
+        run_command(["cargo", "build", "--locked"], cwd=project_path)
         debug_lib = project_path / "target" / "debug" / lib_name
         if not debug_lib.exists():
             print(f"[ERROR] Build failed - debug library not found: {debug_lib}")
@@ -110,7 +110,6 @@ def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=
     
     # Determine target triple and copy paths based on platform
     system = platform.system()
-    machine = platform.machine()
     
     if system == "Linux":
         # Linux: copy to target/x86_64-unknown-linux-gnu/release/
@@ -180,8 +179,6 @@ def build_universal_macos(project_path, addon_path, lib_name, release_only=False
     """
     print_section("Building macOS Universal Binaries")
     
-    project_name = project_path.name
-    
     # Add targets (silently)
     subprocess.run(
         ["rustup", "target", "add", "aarch64-apple-darwin"],
@@ -195,13 +192,13 @@ def build_universal_macos(project_path, addon_path, lib_name, release_only=False
     # Build release for both architectures
     print("[BUILD] Building arm64 (release)...")
     run_command(
-        ["cargo", "build", "--release", "--target", "aarch64-apple-darwin"],
+        ["cargo", "build", "--release", "--locked", "--target", "aarch64-apple-darwin"],
         cwd=project_path
     )
     
     print("[BUILD] Building x86_64 (release)...")
     run_command(
-        ["cargo", "build", "--release", "--target", "x86_64-apple-darwin"],
+        ["cargo", "build", "--release", "--locked", "--target", "x86_64-apple-darwin"],
         cwd=project_path
     )
     
@@ -218,13 +215,13 @@ def build_universal_macos(project_path, addon_path, lib_name, release_only=False
     if not release_only:
         print("[BUILD] Building arm64 (debug)...")
         run_command(
-            ["cargo", "build", "--target", "aarch64-apple-darwin"],
+            ["cargo", "build", "--locked", "--target", "aarch64-apple-darwin"],
             cwd=project_path
         )
         
         print("[BUILD] Building x86_64 (debug)...")
         run_command(
-            ["cargo", "build", "--target", "x86_64-apple-darwin"],
+            ["cargo", "build", "--locked", "--target", "x86_64-apple-darwin"],
             cwd=project_path
         )
         
@@ -378,7 +375,7 @@ def main():
     
     # Build release
     print("[BUILD] Building feagi_type_system (release mode)...")
-    run_command(["cargo", "build", "--release"], cwd=project3_path)
+    run_command(["cargo", "build", "--release", "--locked"], cwd=project3_path)
     
     # Check if build was successful
     release_lib = project3_path / "target" / "release" / lib3_name
@@ -395,8 +392,8 @@ def main():
     # Build universal binary on macOS if needed
     if platform.system() == "Darwin" and not local_arch_only:
         # Build for both architectures
-        run_command(["cargo", "build", "--release", "--target", "aarch64-apple-darwin"], cwd=project3_path)
-        run_command(["cargo", "build", "--release", "--target", "x86_64-apple-darwin"], cwd=project3_path)
+        run_command(["cargo", "build", "--release", "--locked", "--target", "aarch64-apple-darwin"], cwd=project3_path)
+        run_command(["cargo", "build", "--release", "--locked", "--target", "x86_64-apple-darwin"], cwd=project3_path)
         
         # Create universal binary
         arm64_lib = project3_path / "target" / "aarch64-apple-darwin" / "release" / lib3_name

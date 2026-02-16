@@ -213,6 +213,11 @@ jobs:
             exit 1
           fi
 
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain-file: rust_extensions/rust-toolchain.toml
+
       - name: Cache Rust registry
         uses: actions/cache@v4
         id: rust-registry-cache

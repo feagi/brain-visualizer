@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Godot 4 bindings
-godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["serde", "api-4-5"] }
+godot = { git = "https://github.com/godot-rust/gdext", rev = "3416265e2f894be3c1a916f8590524f7be94ed3f", features = ["serde", "api-4-5"] }
 
 # FEAGI core dependencies (crates.io)
 feagi-structures = { version = "0.0.1-beta.4" }

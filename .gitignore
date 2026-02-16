@@ -85,7 +85,6 @@ godot_source/.vscode/
 
 # Rust build artifacts in rust_extensions/ directory
 rust_extensions/**/target/
-rust_extensions/**/Cargo.lock
 rust_extensions/**/*.pdb
 
 # Rust GDExtension generated files in wrong locations
