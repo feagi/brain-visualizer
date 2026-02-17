@@ -2621,10 +2621,14 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	var is_directly_in_root = _representing_region.is_cortical_area_in_region_directly(area)
 	var is_io_of_child_region = _is_area_input_output_of_child_region(area)
 	var is_io_of_this_region = _is_area_input_output_of_region(area)
-	
-	
-	# Only create if the area is directly in this region OR it's needed as I/O for this region/child region
-	if not is_directly_in_root and not is_io_of_child_region and not is_io_of_this_region:
+	# Special core areas (power, memory) always show in root view when in cache (API may omit them from root's "areas")
+	var is_special_core_in_root = _representing_region.is_root_region() and (
+		AbstractCorticalArea.is_power_area(area.cortical_ID) or
+		area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	)
+
+	# Only create if the area is directly in this region OR it's needed as I/O OR it's a special core area in root view
+	if not is_directly_in_root and not is_io_of_child_region and not is_io_of_this_region and not is_special_core_in_root:
 		print("  ❌ BM REJECTED %s: not in region %s (directly=%s, io_child=%s, io_self=%s)" % [area.cortical_ID, _representing_region.region_ID, is_directly_in_root, is_io_of_child_region, is_io_of_this_region])
 		return null
 
@@ -2867,7 +2871,16 @@ func _add_missing_cortical_area_visualizations() -> void:
 				if area.cortical_ID not in _cortical_visualizations_by_ID:
 					added_any = true
 				_add_cortical_area(area)
-	
+
+	# When viewing root, ensure special core areas (power, memory) from cache are shown (API may omit them from root's "areas")
+	if _representing_region.is_root_region() and FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.cortical_areas:
+		for area in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
+			if area.cortical_ID in _cortical_visualizations_by_ID:
+				continue
+			if AbstractCorticalArea.is_power_area(area.cortical_ID) or area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+				added_any = true
+				_add_cortical_area(area)
+
 	if added_any:
 		call_deferred("_auto_frame_camera_to_objects")
 		call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")

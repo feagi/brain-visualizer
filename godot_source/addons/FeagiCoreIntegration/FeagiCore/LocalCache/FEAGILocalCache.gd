@@ -1059,7 +1059,7 @@ func _resolve_parent_region_for_area(area_JSON_summary: Dictionary, cortical_are
 		if root_region == null:
 			return null
 		parent_region_id = root_region.region_ID
-	
+
 	if not brain_regions.available_brain_regions.has(parent_region_id):
 		return null
 	return brain_regions.available_brain_regions[parent_region_id]

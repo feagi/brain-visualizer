@@ -329,6 +329,14 @@ func refresh_agent_capabilities_cache(include_device_registrations: bool = true)
 	var agent_caps_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_caps_request)
 	await agent_caps_worker.worker_done
 	var agent_caps_data: FeagiRequestOutput = agent_caps_worker.retrieve_output_and_close()
+	# Current FEAGI builds may not expose the legacy bulk capabilities endpoint.
+	# Treat 404 as "feature unavailable" and keep running with an empty cache.
+	if agent_caps_data.response_code == 404:
+		push_warning("FEAGI Requests: Agent capabilities endpoint unavailable (404); skipping cache refresh.")
+		FeagiCore.feagi_local_cache.set_agent_capabilities_raw_json("{}")
+		FeagiCore.feagi_local_cache.set_agent_capabilities_schema_errors({})
+		FeagiCore.feagi_local_cache.set_agent_capabilities_map({})
+		return FeagiRequestOutput.generic_success()
 	if _return_if_HTTP_failed_and_automatically_handle(agent_caps_data):
 		push_error("FEAGI Requests: Unable to grab FEAGI agent capability data!")
 		return agent_caps_data

@@ -5,13 +5,12 @@ edition = "2021"
 
 [dependencies]
 # Godot Rust bindings
-godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["experimental-wasm", "lazy-function-tables", "api-4-5"] }
+godot = { git = "https://github.com/godot-rust/gdext", rev = "3416265e2f894be3c1a916f8590524f7be94ed3f", features = ["experimental-wasm", "lazy-function-tables", "api-4-5"] }
 
-# FEAGI data serialization library (crates.io)
-feagi-serialization = { version = "0.0.1-beta.4" }
-feagi-structures = { version = "0.0.1-beta.4" }
-# FEAGI sensorimotor library for FDP decoding (crates.io)
-feagi-sensorimotor = { version = "0.0.1-beta.4" }
+# FEAGI data serialization (match feagi-core; path when inside FEAGI-2.0 repo)
+feagi-serialization = { path = "../../../feagi-core/crates/feagi-serialization" }
+feagi-structures = { path = "../../../feagi-core/crates/feagi-structures" }
+feagi-sensorimotor = { path = "../../../feagi-core/crates/feagi-sensorimotor" }
 
 # Additional dependencies for data handling
 serde = { version = "1.0", features = ["derive"] }

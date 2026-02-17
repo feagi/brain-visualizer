@@ -1,0 +1,29 @@
+[package]
+name = "feagi_agent_client"
+version = "0.1.0"
+edition = "2021"
+description = "FEAGI agent registration client GDExtension - uses feagi-agent SDK for standard registration and session/byte-container handling"
+
+[dependencies]
+godot = { git = "https://github.com/godot-rust/gdext", rev = "2862a25b222ee6e18dede2594617f4bf3e3d1027", features = ["experimental-wasm", "lazy-function-tables", "api-4-5"] }
+
+# FEAGI agent SDK (path when building inside FEAGI-2.0 repo)
+feagi-agent = { path = "../../../feagi-core/crates/feagi-agent", default-features = false, features = ["agent-client", "agent-transport-websocket-std"] }
+# For FeagiByteContainer constants / session extraction
+feagi-serialization = { path = "../../../feagi-core/crates/feagi-serialization" }
+# Used by feagi-agent registration endpoint types
+feagi-io = { path = "../../../feagi-core/crates/feagi-io", default-features = false, features = ["feagi-client", "websocket-transport-std"] }
+base64 = "0.22"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+debug = true

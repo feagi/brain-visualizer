@@ -31,7 +31,7 @@ The Rust extensions replace computationally intensive GDScript operations with n
 
 ### Prerequisites
 
-- **Rust toolchain** (1.70+)
+- **Rust toolchain** (pinned via `rust-toolchain.toml`: `1.93.1`)
 - **Python 3.6+** (for cross-platform build script)
 - **Godot 4.1+**
 - **Git** access to FEAGI repositories
@@ -54,6 +54,15 @@ build.bat
 python build.py
 ```
 
+Fast local iteration (debug-only, skips release build):
+```bash
+python build.py --dev --no-clean
+```
+
+The build script uses `cargo --locked` to enforce deterministic dependency resolution.
+If lockfiles are out of date, regenerate intentionally and commit the updated
+`Cargo.lock` files in `rust_extensions/*/`.
+
 > 📖 **For detailed build system documentation, see [BUILD_SYSTEM.md](./BUILD_SYSTEM.md)**
 
 ### What Gets Built
@@ -61,12 +70,18 @@ python build.py
 The automated build script compiles and installs:
 1. **feagi_data_deserializer**: High-performance data deserialization
 2. **feagi_shared_video**: Shared memory video reader
+3. **feagi_agent_client**: FEAGI agent client bridge required by `FeagiCoreIntegration`
 
 For each extension, it:
-- Builds both debug and release versions
+- Builds debug and/or release versions based on flags
 - Copies libraries to Godot addon directories (`godot_source/addons/`)
-- Creates universal binaries on macOS (arm64 + x86_64)
+- Creates universal binaries on macOS (arm64 + x86_64) when release is enabled
 - Cleans up old files in incorrect locations
+
+Deployment targets:
+- `feagi_data_deserializer` -> `addons/feagi_rust_deserializer` and `addons/FeagiCoreIntegration` (legacy compatibility path)
+- `feagi_shared_video` -> `addons/feagi_shared_video`
+- `feagi_agent_client` -> `addons/FeagiCoreIntegration` (including Windows `target/x86_64-pc-windows-msvc/{debug,release}` paths)
 
 ### Manual Build (Advanced)
 
@@ -138,11 +153,11 @@ Run the test script to verify the integration:
 
 2. **Build failures**
    - Ensure Python 3.6+ is installed: `python --version` or `python3 --version`
-   - Update Rust toolchain: `rustup update`
+   - Install the pinned Rust toolchain: `rustup toolchain install 1.93.1`
    - Clear cargo cache: `cargo clean`
    - Check network connectivity for git dependencies
    - On macOS: Ensure Xcode command-line tools are installed: `xcode-select --install`
-   - Try manual build: `cd feagi_data_deserializer && cargo build --release`
+   - Try manual build: `cd feagi_data_deserializer && cargo build --release --locked`
 
 3. **WebSocket processing disabled**
    - Check that the Rust deserializer is properly initialized (look for log messages)

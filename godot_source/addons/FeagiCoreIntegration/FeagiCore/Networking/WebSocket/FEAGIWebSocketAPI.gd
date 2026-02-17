@@ -86,6 +86,8 @@ var _shm_debug_logs: bool = false
 # Rate-limited WS backlog diagnostics (logging only)
 var _ws_last_backlog_log_ms: int = 0
 var _ws_disabled_by_shm_notice_printed: bool = false
+# One-time warning when Type 11 is skipped due to missing Rust deserializer (no silent drop)
+var _ws_deserializer_missing_warned: bool = false
 
 # WS receive diagnostics (rate-limited)
 var _ws_last_rx_log_ms: int = 0
@@ -299,7 +301,10 @@ func _process(_delta: float):
 
 			if newest_binary_len > 0:
 				if not _rust_deserializer:
-					push_error("❌ [WS] Rust deserializer not available!")
+					# Deserializer GDExtension not loaded: Type 11 WebSocket data is dropped; neural activity will not render until it is available.
+					if not _ws_deserializer_missing_warned:
+						_ws_deserializer_missing_warned = true
+						push_warning("[WS] Rust deserializer (FeagiDataDeserializer) not available. WebSocket Type 11 neural data is not being processed; build/enable rust_extensions/feagi_data_deserializer for neural activity.")
 				else:
 					if _USE_DESKTOP_TYPE11_FASTPATH and not OS.has_feature("web"):
 						_refresh_bv_fastpath_cache_if_needed()
@@ -714,9 +719,11 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 					else:
 						_handle_missing_cortical_area(cortical_id)
 			else:
-				# Use Rust-based high-performance deserializer (REQUIRED on desktop)
+				# Use Rust-based high-performance deserializer (required on desktop; optional when GDExtension disabled)
 				if _rust_deserializer == null:
-					push_error("🦀 CRITICAL: Rust deserializer is null! Cannot process Type 11 data.")
+					if not _ws_deserializer_missing_warned:
+						_ws_deserializer_missing_warned = true
+						push_warning("[WS] Rust deserializer (FeagiDataDeserializer) not available. Type 11 neural data is not being processed; build/enable rust_extensions/feagi_data_deserializer for neural activity.")
 					return
 				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(bytes)
 				if !decoded_result.success:

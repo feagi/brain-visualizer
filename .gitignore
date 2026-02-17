@@ -55,6 +55,8 @@ MANIFEST
 
 # Containerized DB data
 data/
+!godot_source/BrainVisualizer/UI/DeviceConfigurator/Data/
+!godot_source/BrainVisualizer/UI/DeviceConfigurator/Data/**
 
 # Log directories and files with date extensions
 logs/
@@ -83,7 +85,6 @@ godot_source/.vscode/
 
 # Rust build artifacts in rust_extensions/ directory
 rust_extensions/**/target/
-rust_extensions/**/Cargo.lock
 rust_extensions/**/*.pdb
 
 # Rust GDExtension generated files in wrong locations
@@ -100,6 +101,10 @@ godot_source/feagi_data_deserializer.gdextension.uid
 # Ignore ALL debug builds
 godot_source/addons/feagi_rust_deserializer/target/debug/
 godot_source/addons/feagi_shared_video/target/debug/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-unknown-linux-gnu/debug/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-pc-windows-msvc/debug/
+godot_source/addons/feagi_shared_video/target/x86_64-unknown-linux-gnu/debug/
+godot_source/addons/feagi_shared_video/target/x86_64-pc-windows-msvc/debug/
 
 # Ignore intermediate build artifacts in release directories
 godot_source/addons/feagi_rust_deserializer/target/release/build/
@@ -107,21 +112,45 @@ godot_source/addons/feagi_rust_deserializer/target/release/deps/
 godot_source/addons/feagi_rust_deserializer/target/release/examples/
 godot_source/addons/feagi_rust_deserializer/target/release/incremental/
 godot_source/addons/feagi_rust_deserializer/target/release/*.d
+godot_source/addons/feagi_rust_deserializer/target/x86_64-unknown-linux-gnu/release/build/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-unknown-linux-gnu/release/deps/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-unknown-linux-gnu/release/examples/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-unknown-linux-gnu/release/incremental/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-unknown-linux-gnu/release/*.d
+godot_source/addons/feagi_rust_deserializer/target/x86_64-pc-windows-msvc/release/build/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-pc-windows-msvc/release/deps/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-pc-windows-msvc/release/examples/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-pc-windows-msvc/release/incremental/
+godot_source/addons/feagi_rust_deserializer/target/x86_64-pc-windows-msvc/release/*.d
 
 godot_source/addons/feagi_shared_video/target/release/build/
 godot_source/addons/feagi_shared_video/target/release/deps/
 godot_source/addons/feagi_shared_video/target/release/examples/
 godot_source/addons/feagi_shared_video/target/release/incremental/
 godot_source/addons/feagi_shared_video/target/release/*.d
+godot_source/addons/feagi_shared_video/target/x86_64-unknown-linux-gnu/release/build/
+godot_source/addons/feagi_shared_video/target/x86_64-unknown-linux-gnu/release/deps/
+godot_source/addons/feagi_shared_video/target/x86_64-unknown-linux-gnu/release/examples/
+godot_source/addons/feagi_shared_video/target/x86_64-unknown-linux-gnu/release/incremental/
+godot_source/addons/feagi_shared_video/target/x86_64-unknown-linux-gnu/release/*.d
+godot_source/addons/feagi_shared_video/target/x86_64-pc-windows-msvc/release/build/
+godot_source/addons/feagi_shared_video/target/x86_64-pc-windows-msvc/release/deps/
+godot_source/addons/feagi_shared_video/target/x86_64-pc-windows-msvc/release/examples/
+godot_source/addons/feagi_shared_video/target/x86_64-pc-windows-msvc/release/incremental/
+godot_source/addons/feagi_shared_video/target/x86_64-pc-windows-msvc/release/*.d
 
 # Allow the final RELEASE binaries (these will be committed)
 !godot_source/addons/feagi_rust_deserializer/target/release/*.dylib
 !godot_source/addons/feagi_rust_deserializer/target/release/*.dll
 !godot_source/addons/feagi_rust_deserializer/target/release/*.so
+!godot_source/addons/feagi_rust_deserializer/target/x86_64-unknown-linux-gnu/release/*.so
+!godot_source/addons/feagi_rust_deserializer/target/x86_64-pc-windows-msvc/release/*.dll
 
 !godot_source/addons/feagi_shared_video/target/release/*.dylib
 !godot_source/addons/feagi_shared_video/target/release/*.dll
 !godot_source/addons/feagi_shared_video/target/release/*.so
+!godot_source/addons/feagi_shared_video/target/x86_64-unknown-linux-gnu/release/*.so
+!godot_source/addons/feagi_shared_video/target/x86_64-pc-windows-msvc/release/*.dll
 
 # Temporary Rust files
 rust_extensions/**/*--temp.*

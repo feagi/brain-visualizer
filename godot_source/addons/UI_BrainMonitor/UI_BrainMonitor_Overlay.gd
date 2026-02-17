@@ -3,7 +3,7 @@ class_name UI_BrainMonitor_Overlay
 ## UI overlay for Brain Monitor
 
 var _mouse_context_label: Label
-var _fdp_deserializer: FeagiDataDeserializer = null
+var _fdp_deserializer: Object = null  # FeagiDataDeserializer when extension loaded
 
 func _process(_delta: float) -> void:
 	# Keep overlay size synced to viewport size (hover label is now global).
@@ -40,7 +40,7 @@ func _ready() -> void:
 	
 	# Initialize FDP deserializer for decoding voxel values
 	if ClassDB.class_exists("FeagiDataDeserializer"):
-		_fdp_deserializer = FeagiDataDeserializer.new()
+		_fdp_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
 	else:
 		push_warning("FeagiDataDeserializer not available - FDP voxel decoding will be disabled")
 

@@ -8,6 +8,7 @@ Supports: macOS (arm64/x86_64/universal), Linux, Windows
 Usage:
     python build.py                  # Build both debug and release (for developers)
     python build.py --release        # Build release only (for CI/CD)
+    python build.py --dev            # Build debug only (fast local iteration)
     python build.py --local-arch     # Build for local architecture only (faster)
     python build.py --release --local-arch  # Combine options
 """
@@ -53,14 +54,22 @@ def print_section(message):
     print(f"{'='*60}\n")
 
 
-def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=False, no_clean=False):
-    """Build a Rust library in release mode (and optionally debug mode).
+def build_rust_library(
+    project_name,
+    project_dir,
+    godot_addon_dir,
+    build_release=True,
+    build_debug=True,
+    no_clean=False,
+):
+    """Build a Rust library in one or both modes and deploy to addon paths.
     
     Args:
         project_name: Name of the Rust project
         project_dir: Path to the Rust project directory
         godot_addon_dir: Path to the Godot addon directory
-        release_only: If True, only build release (for CI/CD). If False, build both debug and release.
+        build_release: If True, build and deploy release artifacts.
+        build_debug: If True, build and deploy debug artifacts.
         no_clean: If True, skip cargo clean (useful for CI caching). If False, clean before building.
     """
     print_section(f"Building {project_name}")
@@ -81,24 +90,25 @@ def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=
     else:
         print("[INFO] Skipping cargo clean (using cache)")
     
-    # Build release (always)
-    print("[BUILD] Building Rust library (release mode - optimized)...")
-    run_command(["cargo", "build", "--release"], cwd=project_path)
-    
-    # Build debug (only if not release_only)
+    release_lib = None
     debug_lib = None
-    if not release_only:
+    if build_release:
+        print("[BUILD] Building Rust library (release mode - optimized)...")
+        run_command(["cargo", "build", "--release", "--locked"], cwd=project_path)
+        release_lib = project_path / "target" / "release" / lib_name
+        if not release_lib.exists():
+            print(f"[ERROR] Build failed - release library not found: {release_lib}")
+            sys.exit(1)
+    
+    if build_debug:
         print("[BUILD] Building Rust library (debug mode - for development)...")
-        run_command(["cargo", "build"], cwd=project_path)
+        run_command(["cargo", "build", "--locked"], cwd=project_path)
         debug_lib = project_path / "target" / "debug" / lib_name
         if not debug_lib.exists():
             print(f"[ERROR] Build failed - debug library not found: {debug_lib}")
             sys.exit(1)
-    
-    # Check if release build was successful
-    release_lib = project_path / "target" / "release" / lib_name
-    if not release_lib.exists():
-        print(f"[ERROR] Build failed - release library not found: {release_lib}")
+    if not build_release and not build_debug:
+        print("[ERROR] Invalid build mode: at least one of release/debug must be enabled")
         sys.exit(1)
     
     print("[SUCCESS] Build successful!")
@@ -110,61 +120,69 @@ def build_rust_library(project_name, project_dir, godot_addon_dir, release_only=
     
     # Determine target triple and copy paths based on platform
     system = platform.system()
-    machine = platform.machine()
     
     if system == "Linux":
         # Linux: copy to target/x86_64-unknown-linux-gnu/release/
         target_triple = "x86_64-unknown-linux-gnu"
-        release_dest = addon_path / "target" / target_triple / "release"
-        release_dest.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(release_lib, release_dest / lib_name)
-        
-        if not release_only and debug_lib:
+        if build_release and release_lib:
+            release_dest = addon_path / "target" / target_triple / "release"
+            release_dest.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(release_lib, release_dest / lib_name)
+        if build_debug and debug_lib:
             debug_dest = addon_path / "target" / target_triple / "debug"
             debug_dest.mkdir(parents=True, exist_ok=True)
             shutil.copy2(debug_lib, debug_dest / lib_name)
     elif system == "Darwin":
         # macOS: copy directly to addon directory (for .gdextension compatibility)
         # Also copy to target/release/ for legacy compatibility
-        shutil.copy2(release_lib, addon_path / lib_name)
-        (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
-        
-        if not release_only and debug_lib:
-            shutil.copy2(debug_lib, addon_path / lib_name.replace(".dylib", "_debug.dylib"))
+        if build_release and release_lib:
+            shutil.copy2(release_lib, addon_path / lib_name)
+            (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
+            shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
+        if build_debug and debug_lib:
+            if not build_release:
+                # Dev/debug-only mode: ensure debug manifest paths resolve directly.
+                shutil.copy2(debug_lib, addon_path / lib_name)
+            else:
+                shutil.copy2(debug_lib, addon_path / lib_name.replace(".dylib", "_debug.dylib"))
             (addon_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
             shutil.copy2(debug_lib, addon_path / "target" / "debug" / lib_name)
     elif system == "Windows":
         # Windows: copy to target/x86_64-pc-windows-msvc/release/
         target_triple = "x86_64-pc-windows-msvc"
-        release_dest = addon_path / "target" / target_triple / "release"
-        release_dest.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(release_lib, release_dest / lib_name)
-        
-        if not release_only and debug_lib:
+        if build_release and release_lib:
+            release_dest = addon_path / "target" / target_triple / "release"
+            release_dest.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(release_lib, release_dest / lib_name)
+        if build_debug and debug_lib:
             debug_dest = addon_path / "target" / target_triple / "debug"
             debug_dest.mkdir(parents=True, exist_ok=True)
             shutil.copy2(debug_lib, debug_dest / lib_name)
     else:
         # Fallback: copy to target/release/
-        (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
-        if not release_only and debug_lib:
+        if build_release and release_lib:
+            (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
+            shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
+        if build_debug and debug_lib:
             (addon_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
             shutil.copy2(debug_lib, addon_path / "target" / "debug" / lib_name)
     
     print("[SUCCESS] Files copied successfully!")
     
     # Display file sizes
-    if system == "Darwin":
-        release_size = (addon_path / lib_name).stat().st_size
-    elif system == "Linux":
-        release_size = (addon_path / "target" / "x86_64-unknown-linux-gnu" / "release" / lib_name).stat().st_size
-    elif system == "Windows":
-        release_size = (addon_path / "target" / "x86_64-pc-windows-msvc" / "release" / lib_name).stat().st_size
-    else:
-        release_size = (addon_path / "target" / "release" / lib_name).stat().st_size
-    print(f"[INFO] Release library size: {release_size / (1024*1024):.2f} MB")
+    if build_release:
+        if system == "Darwin":
+            release_size = (addon_path / lib_name).stat().st_size
+        elif system == "Linux":
+            release_size = (addon_path / "target" / "x86_64-unknown-linux-gnu" / "release" / lib_name).stat().st_size
+        elif system == "Windows":
+            release_size = (addon_path / "target" / "x86_64-pc-windows-msvc" / "release" / lib_name).stat().st_size
+        else:
+            release_size = (addon_path / "target" / "release" / lib_name).stat().st_size
+        print(f"[INFO] Release library size: {release_size / (1024*1024):.2f} MB")
+    if build_debug and debug_lib:
+        debug_size = debug_lib.stat().st_size
+        print(f"[INFO] Debug library size: {debug_size / (1024*1024):.2f} MB")
     
     return project_path, addon_path, lib_name
 
@@ -180,8 +198,6 @@ def build_universal_macos(project_path, addon_path, lib_name, release_only=False
     """
     print_section("Building macOS Universal Binaries")
     
-    project_name = project_path.name
-    
     # Add targets (silently)
     subprocess.run(
         ["rustup", "target", "add", "aarch64-apple-darwin"],
@@ -195,13 +211,13 @@ def build_universal_macos(project_path, addon_path, lib_name, release_only=False
     # Build release for both architectures
     print("[BUILD] Building arm64 (release)...")
     run_command(
-        ["cargo", "build", "--release", "--target", "aarch64-apple-darwin"],
+        ["cargo", "build", "--release", "--locked", "--target", "aarch64-apple-darwin"],
         cwd=project_path
     )
     
     print("[BUILD] Building x86_64 (release)...")
     run_command(
-        ["cargo", "build", "--release", "--target", "x86_64-apple-darwin"],
+        ["cargo", "build", "--release", "--locked", "--target", "x86_64-apple-darwin"],
         cwd=project_path
     )
     
@@ -218,13 +234,13 @@ def build_universal_macos(project_path, addon_path, lib_name, release_only=False
     if not release_only:
         print("[BUILD] Building arm64 (debug)...")
         run_command(
-            ["cargo", "build", "--target", "aarch64-apple-darwin"],
+            ["cargo", "build", "--locked", "--target", "aarch64-apple-darwin"],
             cwd=project_path
         )
         
         print("[BUILD] Building x86_64 (debug)...")
         run_command(
-            ["cargo", "build", "--target", "x86_64-apple-darwin"],
+            ["cargo", "build", "--locked", "--target", "x86_64-apple-darwin"],
             cwd=project_path
         )
         
@@ -245,12 +261,22 @@ def main():
     """Main build process."""
     # Parse command line arguments
     release_only = "--release" in sys.argv or "--release-only" in sys.argv
+    dev_mode = "--dev" in sys.argv
     local_arch_only = "--local-arch" in sys.argv or "--native" in sys.argv
     no_clean = "--no-clean" in sys.argv
     
+    if release_only and dev_mode:
+        print("[ERROR] --release and --dev are mutually exclusive")
+        sys.exit(1)
+    
+    build_release = not dev_mode
+    build_debug = dev_mode or not release_only
+    
     print_section("FEAGI Rust Extensions Build")
     print(f"Platform: {platform.system()} ({platform.machine()})")
-    if release_only:
+    if dev_mode:
+        print("[MODE] Dev mode (debug only - fastest local iteration)")
+    elif release_only:
         print("[MODE] Release only (CI/CD mode)")
     else:
         print("[MODE] Debug + Release (Developer mode)")
@@ -266,7 +292,8 @@ def main():
         "feagi_data_deserializer",
         root_dir / "feagi_data_deserializer",
         godot_source / "addons" / "feagi_rust_deserializer",
-        release_only=release_only,
+        build_release=build_release,
+        build_debug=build_debug,
         no_clean=no_clean
     )
     
@@ -280,8 +307,9 @@ def main():
         target_triple = "x86_64-unknown-linux-gnu"
         release_dest = addon2_path / "target" / target_triple / "release"
         release_dest.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
-        if not release_only:
+        if build_release:
+            shutil.copy2(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
+        if build_debug:
             debug_dest = addon2_path / "target" / target_triple / "debug"
             debug_dest.mkdir(parents=True, exist_ok=True)
             debug_lib = project1_path / "target" / "debug" / lib1_name
@@ -289,8 +317,13 @@ def main():
                 shutil.copy2(debug_lib, debug_dest / lib1_name)
     elif system == "Darwin":
         # macOS: copy directly to addon directory (as expected by .gdextension)
-        shutil.copy2(project1_path / "target" / "release" / lib1_name, addon2_path / lib1_name)
-        if not release_only:
+        if build_release:
+            shutil.copy2(project1_path / "target" / "release" / lib1_name, addon2_path / lib1_name)
+        elif build_debug:
+            debug_lib = project1_path / "target" / "debug" / lib1_name
+            if debug_lib.exists():
+                shutil.copy2(debug_lib, addon2_path / lib1_name)
+        if build_release and build_debug:
             debug_lib = project1_path / "target" / "debug" / lib1_name
             if debug_lib.exists():
                 shutil.copy2(debug_lib, addon2_path / lib1_name.replace(".dylib", "_debug.dylib"))
@@ -299,8 +332,9 @@ def main():
         target_triple = "x86_64-pc-windows-msvc"
         release_dest = addon2_path / "target" / target_triple / "release"
         release_dest.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
-        if not release_only:
+        if build_release:
+            shutil.copy2(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
+        if build_debug:
             debug_dest = addon2_path / "target" / target_triple / "debug"
             debug_dest.mkdir(parents=True, exist_ok=True)
             debug_lib = project1_path / "target" / "debug" / lib1_name
@@ -308,9 +342,10 @@ def main():
                 shutil.copy2(debug_lib, debug_dest / lib1_name)
     else:
         # Fallback: copy to target/release/
-        (addon2_path / "target" / "release").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(project1_path / "target" / "release" / lib1_name, addon2_path / "target" / "release" / lib1_name)
-        if not release_only:
+        if build_release:
+            (addon2_path / "target" / "release").mkdir(parents=True, exist_ok=True)
+            shutil.copy2(project1_path / "target" / "release" / lib1_name, addon2_path / "target" / "release" / lib1_name)
+        if build_debug:
             (addon2_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
             debug_lib = project1_path / "target" / "debug" / lib1_name
             if debug_lib.exists():
@@ -318,14 +353,14 @@ def main():
     print("[SUCCESS] Deployed to both addon locations!")
     
     # Build universal binaries on macOS (unless --local-arch is specified)
-    if platform.system() == "Darwin" and not local_arch_only:
-        build_universal_macos(project1_path, addon1_path, lib1_name, release_only=release_only)
+    if platform.system() == "Darwin" and not local_arch_only and build_release:
+        build_universal_macos(project1_path, addon1_path, lib1_name, release_only=release_only and not dev_mode)
         # Also copy universal binaries to FeagiCoreIntegration (directly to addon directory for .gdextension)
         if (addon1_path / "target" / "release" / lib1_name).exists():
             shutil.copy2(addon1_path / "target" / "release" / lib1_name, addon2_path / lib1_name)
-        if not release_only and (addon1_path / "target" / "debug" / lib1_name).exists():
+        if build_debug and (addon1_path / "target" / "debug" / lib1_name).exists():
             shutil.copy2(addon1_path / "target" / "debug" / lib1_name, addon2_path / lib1_name.replace(".dylib", "_debug.dylib"))
-    elif platform.system() == "Darwin" and local_arch_only:
+    elif platform.system() == "Darwin" and local_arch_only and build_release:
         print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
     
     # Build feagi_shared_video
@@ -333,14 +368,31 @@ def main():
         "feagi_shared_video",
         root_dir / "feagi_shared_video",
         godot_source / "addons" / "feagi_shared_video",
-        release_only=release_only,
+        build_release=build_release,
+        build_debug=build_debug,
         no_clean=no_clean
     )
     
     # Build universal binaries on macOS (unless --local-arch is specified)
-    if platform.system() == "Darwin" and not local_arch_only:
-        build_universal_macos(project2_path, addon2_path, lib2_name, release_only=release_only)
-    elif platform.system() == "Darwin" and local_arch_only:
+    if platform.system() == "Darwin" and not local_arch_only and build_release:
+        build_universal_macos(project2_path, addon2_path, lib2_name, release_only=release_only and not dev_mode)
+    elif platform.system() == "Darwin" and local_arch_only and build_release:
+        print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
+
+    # Build feagi_agent_client (required by FeagiCoreIntegration.gdextension)
+    project4_path, addon4_path, lib4_name = build_rust_library(
+        "feagi_agent_client",
+        root_dir / "feagi_agent_client",
+        godot_source / "addons" / "FeagiCoreIntegration",
+        build_release=build_release,
+        build_debug=build_debug,
+        no_clean=no_clean
+    )
+
+    # Build universal binaries on macOS (unless --local-arch is specified)
+    if platform.system() == "Darwin" and not local_arch_only and build_release:
+        build_universal_macos(project4_path, addon4_path, lib4_name, release_only=release_only and not dev_mode)
+    elif platform.system() == "Darwin" and local_arch_only and build_release:
         print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
     
     # Build feagi_type_system (deploy directly to FeagiCoreIntegration addon)
@@ -361,27 +413,40 @@ def main():
     else:
         print("[INFO] Skipping cargo clean (using cache)")
     
-    # Build release
-    print("[BUILD] Building feagi_type_system (release mode)...")
-    run_command(["cargo", "build", "--release"], cwd=project3_path)
+    release_lib = None
+    debug_lib = None
     
-    # Check if build was successful
-    release_lib = project3_path / "target" / "release" / lib3_name
-    if not release_lib.exists():
-        print(f"[ERROR] Build failed - release library not found: {release_lib}")
-        sys.exit(1)
+    if build_release:
+        print("[BUILD] Building feagi_type_system (release mode)...")
+        run_command(["cargo", "build", "--release", "--locked"], cwd=project3_path)
+        release_lib = project3_path / "target" / "release" / lib3_name
+        if not release_lib.exists():
+            print(f"[ERROR] Build failed - release library not found: {release_lib}")
+            sys.exit(1)
+    
+    if build_debug:
+        print("[BUILD] Building feagi_type_system (debug mode)...")
+        run_command(["cargo", "build", "--locked"], cwd=project3_path)
+        debug_lib = project3_path / "target" / "debug" / lib3_name
+        if not debug_lib.exists():
+            print(f"[ERROR] Build failed - debug library not found: {debug_lib}")
+            sys.exit(1)
     
     # Copy directly to FeagiCoreIntegration addon (not in target subdirectory)
     addon3_path = godot_source / "addons" / "FeagiCoreIntegration"
     addon3_path.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(release_lib, addon3_path / lib3_name)
-    print(f"[SUCCESS] feagi_type_system deployed to: {addon3_path / lib3_name}")
+    if build_release and release_lib:
+        shutil.copy2(release_lib, addon3_path / lib3_name)
+        print(f"[SUCCESS] feagi_type_system deployed (release) to: {addon3_path / lib3_name}")
+    elif build_debug and debug_lib:
+        shutil.copy2(debug_lib, addon3_path / lib3_name)
+        print(f"[SUCCESS] feagi_type_system deployed (debug) to: {addon3_path / lib3_name}")
     
     # Build universal binary on macOS if needed
-    if platform.system() == "Darwin" and not local_arch_only:
+    if platform.system() == "Darwin" and not local_arch_only and build_release:
         # Build for both architectures
-        run_command(["cargo", "build", "--release", "--target", "aarch64-apple-darwin"], cwd=project3_path)
-        run_command(["cargo", "build", "--release", "--target", "x86_64-apple-darwin"], cwd=project3_path)
+        run_command(["cargo", "build", "--release", "--locked", "--target", "aarch64-apple-darwin"], cwd=project3_path)
+        run_command(["cargo", "build", "--release", "--locked", "--target", "x86_64-apple-darwin"], cwd=project3_path)
         
         # Create universal binary
         arm64_lib = project3_path / "target" / "aarch64-apple-darwin" / "release" / lib3_name
@@ -410,9 +475,14 @@ def main():
     print_section("Build Complete!")
     print("[SUCCESS] All Rust extensions built successfully!")
     print("[INFO] Libraries deployed to:")
-    print(f"  - {addon1_path / 'target' / 'release' / lib1_name} (feagi_rust_deserializer)")
-    print(f"  - {feagi_core_path / lib1_name} (FeagiCoreIntegration)")
-    print(f"  - {addon2_path / 'target' / 'release' / lib2_name} (feagi_shared_video)")
+    if build_release:
+        print(f"  - {addon1_path / 'target' / 'release' / lib1_name} (feagi_rust_deserializer)")
+        print(f"  - {feagi_core_path / lib1_name} (FeagiCoreIntegration)")
+        print(f"  - {addon2_path / 'target' / 'release' / lib2_name} (feagi_shared_video)")
+    if build_debug:
+        print(f"  - {addon1_path / 'target' / 'debug' / lib1_name} (feagi_rust_deserializer)")
+        print(f"  - {addon2_path / 'target' / 'debug' / lib2_name} (feagi_shared_video)")
+    print(f"  - {feagi_core_path} ({lib4_name}, platform-specific location)")
     print(f"  - {feagi_core_path / lib3_name} (feagi_type_system)")
     print("[TIP] Restart Godot to load the new extensions.")
     print("[TEST] To test the integration, run the test_rust_deserializer.tscn scene in Godot.")

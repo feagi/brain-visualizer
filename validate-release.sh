@@ -56,7 +56,7 @@ case "$PLATFORM" in
         TARGET_TRIPLE="x86_64-unknown-linux-gnu"
         DESERIALIZER_PATH="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release/libfeagi_data_deserializer.so"
         TYPE_SYSTEM_PATH="godot_source/addons/FeagiCoreIntegration/libfeagi_type_system.so"
-        SHARED_VIDEO_PATH="godot_source/addons/feagi_shared_video/target/release/libfeagi_shared_video.so"
+        SHARED_VIDEO_PATH="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release/libfeagi_shared_video.so"
         ;;
     Darwin)
         PLATFORM_NAME="macos"
@@ -69,7 +69,7 @@ case "$PLATFORM" in
         TARGET_TRIPLE="x86_64-pc-windows-msvc"
         DESERIALIZER_PATH="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release/feagi_data_deserializer.dll"
         TYPE_SYSTEM_PATH="godot_source/addons/FeagiCoreIntegration/feagi_type_system.dll"
-        SHARED_VIDEO_PATH="godot_source/addons/feagi_shared_video/target/release/feagi_shared_video.dll"
+        SHARED_VIDEO_PATH="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release/feagi_shared_video.dll"
         ;;
     *)
         check_warning "Unknown platform: $PLATFORM (skipping path validation)"
@@ -127,7 +127,7 @@ check_gdextension_path() {
         return
     fi
     
-    if grep -q "$expected_pattern" "$gdext_file"; then
+    if grep -Eq "$expected_pattern" "$gdext_file"; then
         check_success "$description: .gdextension has correct path pattern"
     else
         check_error "$description: .gdextension missing expected path pattern: $expected_pattern"
@@ -151,11 +151,11 @@ check_gdextension_path \
     "libfeagi_type_system" \
     "feagi_type_system (all platforms)"
 
-# feagi_shared_video: All platforms expect target/release/ (not platform-specific)
+# feagi_shared_video: Linux/Windows use target triples, macOS uses target/release
 check_gdextension_path \
     "godot_source/addons/feagi_shared_video/feagi_shared_video.gdextension" \
-    "target/release" \
-    "feagi_shared_video (all platforms)"
+    "target/release|target/x86_64-unknown-linux-gnu/release|target/x86_64-pc-windows-msvc/release" \
+    "feagi_shared_video (cross-platform paths)"
 
 # 4. Check if build.py builds feagi_type_system
 echo ""

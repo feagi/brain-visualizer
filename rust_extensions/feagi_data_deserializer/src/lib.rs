@@ -114,19 +114,20 @@ impl FeagiDataDeserializer {
         //             rust_buffer.len(), first_byte, preview);
         
         // Canonical pipeline (transport-independent):
-        // - FEAGI produces FeagiByteContainer v2 (first byte == 2) containing Type 11 structures
+        // - FEAGI produces FeagiByteContainer (v2 first byte == 2, v3 first byte == 3) containing Type 11 structures
         // - SHM transports the bytes as-is (no compression required)
         // - WS may optionally compress at the transport layer, but BV should only decode the canonical bytes
         //
         // Therefore, we do NOT require LZ4 here. We decode either:
-        // - FeagiByteContainer v2 (first byte == 2)
+        // - FeagiByteContainer v2 or v3 (first byte == 2 or 3)
         // - Raw Type 11 struct bytes (first byte == 11) if the container was unwrapped upstream
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
             use feagi_serialization::FeagiByteContainer;
             use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 
-            if first_byte == 2 {
-                // FeagiByteContainer v2
+            let is_container = first_byte == 2 || first_byte == FeagiByteContainer::CURRENT_FBS_VERSION;
+            if is_container {
+                // FeagiByteContainer v2 or v3
                 let mut byte_container = FeagiByteContainer::new_empty();
                 let mut data_vec = rust_buffer;
 
@@ -222,12 +223,13 @@ impl FeagiDataDeserializer {
         let first_byte = rust_buffer[0];
         
         // Canonical pipeline (transport-independent):
-        // - FeagiByteContainer v2 (first byte == 2) containing Type 11
+        // - FeagiByteContainer v2 or v3 (first byte == 2 or 3) containing Type 11
         // - Or raw Type 11 (first byte == 11) if upstream unwrapped the container
         // Always materialize an owned CorticalMappedXYZPNeuronVoxels so we can safely
         // use it for the duration of this function without borrowing temporary objects.
-        let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if first_byte == 2 {
-            use feagi_serialization::FeagiByteContainer;
+        use feagi_serialization::FeagiByteContainer;
+        let is_container = first_byte == 2 || first_byte == FeagiByteContainer::CURRENT_FBS_VERSION;
+        let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if is_container {
             let mut byte_container = FeagiByteContainer::new_empty();
             let mut data_vec = rust_buffer;
             if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
@@ -492,10 +494,11 @@ impl FeagiDataDeserializer {
             use feagi_serialization::FeagiByteContainer;
 
             // Canonical pipeline (transport-independent):
-            // - FeagiByteContainer v2 (first byte == 2) containing Type 11 structures
+            // - FeagiByteContainer v2 or v3 (first byte == 2 or 3) containing Type 11 structures
             // - Or raw Type 11 struct bytes (first byte == 11) if upstream unwrapped it
             let first_byte = rust_buffer[0];
-            let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if first_byte == 2 {
+            let is_container = first_byte == 2 || first_byte == feagi_serialization::FeagiByteContainer::CURRENT_FBS_VERSION;
+            let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if is_container {
                 let mut byte_container = FeagiByteContainer::new_empty();
                 let mut data_vec = rust_buffer;
 

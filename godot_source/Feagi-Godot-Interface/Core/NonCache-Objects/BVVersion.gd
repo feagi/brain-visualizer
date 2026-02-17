@@ -1,5 +1,5 @@
 extends Object
-class_name BVVersion
+class_name BVVersionLegacy
 ## NOTE: This class is updated by github actions, what you see here isnt what you get!
 
 var manual_version: float:
