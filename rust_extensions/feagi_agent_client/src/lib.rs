@@ -4,7 +4,7 @@
 //! registration and session_id handling (required for FeagiByteContainer flows).
 
 use base64::Engine;
-use feagi_agent::clients::{AgentRegistrationStatus, CommandControlSubAgent};
+use feagi_agent::clients::{AgentRegistrationStatus, CommandControlAgent};
 use feagi_agent::command_and_control::agent_registration_message::{
     AgentRegistrationMessage, DeregistrationRequest, DeregistrationResponse,
 };
@@ -127,7 +127,7 @@ impl FeagiAgentClient {
                 return vdict!("success": false, "error": format!("WebSocket requester: {}", e))
             }
         };
-        let mut registration_agent = CommandControlSubAgent::new(Box::new(requester_props));
+        let mut registration_agent = CommandControlAgent::new(Box::new(requester_props));
 
         if let Err(e) = registration_agent.request_connect() {
             return vdict!("success": false, "error": format!("Connect: {}", e));
