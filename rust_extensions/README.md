@@ -54,6 +54,11 @@ build.bat
 python build.py
 ```
 
+Fast local iteration (debug-only, skips release build):
+```bash
+python build.py --dev --no-clean
+```
+
 The build script uses `cargo --locked` to enforce deterministic dependency resolution.
 If lockfiles are out of date, regenerate intentionally and commit the updated
 `Cargo.lock` files in `rust_extensions/*/`.
@@ -68,9 +73,9 @@ The automated build script compiles and installs:
 3. **feagi_agent_client**: FEAGI agent client bridge required by `FeagiCoreIntegration`
 
 For each extension, it:
-- Builds both debug and release versions
+- Builds debug and/or release versions based on flags
 - Copies libraries to Godot addon directories (`godot_source/addons/`)
-- Creates universal binaries on macOS (arm64 + x86_64)
+- Creates universal binaries on macOS (arm64 + x86_64) when release is enabled
 - Cleans up old files in incorrect locations
 
 Deployment targets:

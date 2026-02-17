@@ -361,10 +361,22 @@ jobs:
         run: |
           echo "Checking for Rust extensions after build.py..."
           
-          # build.py copies to these locations
-          DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/release"
-          DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/release"
-          SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
+          # build.py copies to platform-specific locations
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            TARGET_TRIPLE="x86_64-pc-windows-msvc"
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
+          elif [[ "${{ runner.os }}" == "Linux" ]]; then
+            TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
+          else
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
+          fi
           TYPE_SYSTEM_DIR="godot_source/addons/FeagiCoreIntegration"
           
           # Check what files exist
@@ -381,9 +393,9 @@ jobs:
           ls -la "$TYPE_SYSTEM_DIR"/*feagi_type_system* 2>/dev/null || echo "No type_system files found"
           
           # Verify required files exist (build.py should have copied them)
-          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" 2>/dev/null | head -1)
-          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" 2>/dev/null | head -1)
-          TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" 2>/dev/null | head -1)
+          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1)
+          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1)
+          TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1)
           
           if [ -z "$DESERIALIZER_LIB" ]; then
             echo "❌ ERROR: feagi_data_deserializer library not found!"
@@ -422,14 +434,26 @@ jobs:
             LIB_EXT="so"
           fi
           
-          DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/release"
-          DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/release"
-          SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            TARGET_TRIPLE="x86_64-pc-windows-msvc"
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
+          elif [[ "${{ runner.os }}" == "Linux" ]]; then
+            TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
+          else
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
+          fi
           TYPE_SYSTEM_DIR="godot_source/addons/FeagiCoreIntegration"
           
-          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" 2>/dev/null | head -1)
-          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" 2>/dev/null | head -1)
-          TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" 2>/dev/null | head -1)
+          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1)
+          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1)
+          TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1)
           
           if [ -z "$DESERIALIZER_LIB" ] || [ -z "$SHARED_VIDEO_LIB" ] || [ -z "$TYPE_SYSTEM_LIB" ]; then
             echo "ERROR: One or more Rust libraries are missing; cannot stage artifact."

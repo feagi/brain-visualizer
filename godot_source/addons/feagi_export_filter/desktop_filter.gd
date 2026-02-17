@@ -5,6 +5,7 @@ const GUIDES_DIR := "res://BrainVisualizer/Guides"
 const REQUIRED_GDEXTENSION_MANIFESTS := [
 	"res://addons/FeagiCoreIntegration/feagi_agent_client.gdextension",
 	"res://addons/FeagiCoreIntegration/feagi_type_system.gdextension",
+	"res://addons/feagi_shared_video/feagi_shared_video.gdextension",
 ]
 
 func _get_name() -> String:
