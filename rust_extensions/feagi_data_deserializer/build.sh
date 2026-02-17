@@ -1,72 +1,67 @@
 #!/bin/bash
-# Build script for feagi_data_deserializer Rust extension
-# This script builds the Rust library for use with Godot
+# Build script for feagi_data_deserializer Rust extension.
+# Builds the Rust library and copies it to where feagi_data_deserializer.gdextension expects it.
+# Must be run from this directory (rust_extensions/feagi_data_deserializer).
+# For CI and multi-platform builds, use rust_extensions/build.py instead.
 
-set -e  # Exit on error
+set -e
 
-echo "🦀 Building FEAGI Data Deserializer with Rust acceleration..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# Detect platform
+# Destination: addons/FeagiCoreIntegration (paths under it must match .gdextension)
+GODOT_ADDON_DIR="${SCRIPT_DIR}/../../godot_source/addons/FeagiCoreIntegration"
+if [ ! -d "$(dirname "$GODOT_ADDON_DIR")" ]; then
+    echo "[ERROR] Godot addon directory not found: $GODOT_ADDON_DIR (run from rust_extensions/feagi_data_deserializer)"
+    exit 1
+fi
+
+echo "[BUILD] FEAGI Data Deserializer (release)..."
+cargo build --release --locked
+
 PLATFORM=$(uname -s)
-echo "Platform detected: $PLATFORM"
-
-# Build in release mode for maximum performance
-echo "Building in release mode (optimized for performance)..."
-cargo build --release
-
-# Copy the built library next to the .gdextension that Godot actually loads.
-# IMPORTANT: `addons/FeagiCoreIntegration/feagi_data_deserializer.gdextension` references
-# `libfeagi_data_deserializer.dylib` with no path, so the dylib must live in the same folder.
-GODOT_ADDON_DIR="../../godot_source/addons/FeagiCoreIntegration"
-mkdir -p "$GODOT_ADDON_DIR"
-
 case "$PLATFORM" in
     Darwin)
-        echo "macOS detected..."
-        if [ -f "target/release/libfeagi_data_deserializer.dylib" ]; then
-            cp target/release/libfeagi_data_deserializer.dylib "$GODOT_ADDON_DIR/"
-            echo "✅ Copied libfeagi_data_deserializer.dylib to $GODOT_ADDON_DIR"
-        else
-            echo "❌ Build failed - library not found"
+        # .gdextension: macos.release = "libfeagi_data_deserializer.dylib" (same dir as .gdextension)
+        SRC="target/release/libfeagi_data_deserializer.dylib"
+        if [ ! -f "$SRC" ]; then
+            echo "[ERROR] Build failed - library not found: $SRC"
             exit 1
         fi
+        mkdir -p "$GODOT_ADDON_DIR"
+        cp "$SRC" "$GODOT_ADDON_DIR/"
+        echo "[OK] Copied to $GODOT_ADDON_DIR/libfeagi_data_deserializer.dylib"
         ;;
     Linux)
-        echo "Linux detected..."
-        if [ -f "target/release/libfeagi_data_deserializer.so" ]; then
-            cp target/release/libfeagi_data_deserializer.so "$GODOT_ADDON_DIR/"
-            echo "✅ Copied libfeagi_data_deserializer.so to $GODOT_ADDON_DIR"
-        else
-            echo "❌ Build failed - library not found"
+        # .gdextension: linux.release.x86_64 = "target/x86_64-unknown-linux-gnu/release/libfeagi_data_deserializer.so"
+        TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+        SRC="target/release/libfeagi_data_deserializer.so"
+        DEST_DIR="$GODOT_ADDON_DIR/target/$TARGET_TRIPLE/release"
+        if [ ! -f "$SRC" ]; then
+            echo "[ERROR] Build failed - library not found: $SRC"
             exit 1
         fi
+        mkdir -p "$DEST_DIR"
+        cp "$SRC" "$DEST_DIR/"
+        echo "[OK] Copied to $DEST_DIR/libfeagi_data_deserializer.so"
         ;;
     MINGW*|MSYS*|CYGWIN*)
-        echo "Windows detected..."
-        if [ -f "target/release/feagi_data_deserializer.dll" ]; then
-            cp target/release/feagi_data_deserializer.dll "$GODOT_ADDON_DIR/"
-            echo "✅ Copied feagi_data_deserializer.dll to $GODOT_ADDON_DIR"
-        else
-            echo "❌ Build failed - library not found"
+        # .gdextension: windows.release.x86_64 = "target/x86_64-pc-windows-msvc/release/feagi_data_deserializer.dll"
+        TARGET_TRIPLE="x86_64-pc-windows-msvc"
+        SRC="target/release/feagi_data_deserializer.dll"
+        DEST_DIR="$GODOT_ADDON_DIR/target/$TARGET_TRIPLE/release"
+        if [ ! -f "$SRC" ]; then
+            echo "[ERROR] Build failed - library not found: $SRC"
             exit 1
         fi
+        mkdir -p "$DEST_DIR"
+        cp "$SRC" "$DEST_DIR/"
+        echo "[OK] Copied to $DEST_DIR/feagi_data_deserializer.dll"
         ;;
     *)
-        echo "❌ Unsupported platform: $PLATFORM"
+        echo "[ERROR] Unsupported platform: $PLATFORM"
         exit 1
         ;;
 esac
 
-echo ""
-echo "🎉 Build complete!"
-echo ""
-echo "The Rust extension is now ready to use with Godot."
-echo "When you run the brain visualizer, you should see:"
-echo "   🦀 [area_id] Rust acceleration ENABLED - no limits, will warn if exceeding 50000 neurons"
-echo ""
-echo "Performance improvements:"
-echo "   - 40-50x faster neuron processing"
-echo "   - NO HARD LIMITS - processes unlimited neurons!"
-echo "   - Parallel processing across all CPU cores (desktop)"
-echo "   - Sequential processing for WASM (web)"
-echo ""
+echo "[DONE] Build complete. Restart Godot to load the extension."

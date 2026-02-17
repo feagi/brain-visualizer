@@ -363,21 +363,19 @@ def main():
     elif platform.system() == "Darwin" and local_arch_only and build_release:
         print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
     
-    # Build feagi_shared_video
-    project2_path, addon2_path, lib2_name = build_rust_library(
-        "feagi_shared_video",
-        root_dir / "feagi_shared_video",
-        godot_source / "addons" / "feagi_shared_video",
-        build_release=build_release,
-        build_debug=build_debug,
-        no_clean=no_clean
-    )
-    
-    # Build universal binaries on macOS (unless --local-arch is specified)
-    if platform.system() == "Darwin" and not local_arch_only and build_release:
-        build_universal_macos(project2_path, addon2_path, lib2_name, release_only=release_only and not dev_mode)
-    elif platform.system() == "Darwin" and local_arch_only and build_release:
-        print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
+    # feagi_shared_video - commented out from build
+    # project2_path, addon2_path, lib2_name = build_rust_library(
+    #     "feagi_shared_video",
+    #     root_dir / "feagi_shared_video",
+    #     godot_source / "addons" / "feagi_shared_video",
+    #     build_release=build_release,
+    #     build_debug=build_debug,
+    #     no_clean=no_clean
+    # )
+    # if platform.system() == "Darwin" and not local_arch_only and build_release:
+    #     build_universal_macos(project2_path, addon2_path, lib2_name, release_only=release_only and not dev_mode)
+    # elif platform.system() == "Darwin" and local_arch_only and build_release:
+    #     print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
 
     # Build feagi_agent_client (required by FeagiCoreIntegration.gdextension)
     project4_path, addon4_path, lib4_name = build_rust_library(
@@ -457,12 +455,12 @@ def main():
             run_command(["lipo", "-create", str(arm64_lib), str(x86_64_lib), "-output", str(universal_lib)])
             print(f"[SUCCESS] Universal binary created: {universal_lib}")
     
-    # Clean up old library files in wrong locations
+    # Clean up old library files in legacy/wrong locations only.
+    # Do not remove addon2_path / lib: FeagiCoreIntegration is the current deploy target for the deserializer.
     print_section("Cleaning Up Legacy Files")
     cleanup_paths = [
         godot_source / "libfeagi_data_deserializer.dylib",
         addon1_path / "libfeagi_data_deserializer.dylib",
-        addon2_path / "libfeagi_data_deserializer.dylib",
         addon2_path / "bin" / "macos" / "libfeagi_data_deserializer.dylib",
     ]
     for path in cleanup_paths:
@@ -470,7 +468,7 @@ def main():
             print(f"[CLEANUP] Removing legacy file: {path}")
             path.unlink()
     
-    # Final success message (addon2_path was reassigned to feagi_shared_video above)
+    # Final success message (feagi_shared_video commented out; addon2_path = FeagiCoreIntegration here)
     feagi_core_path = godot_source / "addons" / "FeagiCoreIntegration"
     print_section("Build Complete!")
     print("[SUCCESS] All Rust extensions built successfully!")
@@ -478,10 +476,8 @@ def main():
     if build_release:
         print(f"  - {addon1_path / 'target' / 'release' / lib1_name} (feagi_rust_deserializer)")
         print(f"  - {feagi_core_path / lib1_name} (FeagiCoreIntegration)")
-        print(f"  - {addon2_path / 'target' / 'release' / lib2_name} (feagi_shared_video)")
     if build_debug:
         print(f"  - {addon1_path / 'target' / 'debug' / lib1_name} (feagi_rust_deserializer)")
-        print(f"  - {addon2_path / 'target' / 'debug' / lib2_name} (feagi_shared_video)")
     print(f"  - {feagi_core_path} ({lib4_name}, platform-specific location)")
     print(f"  - {feagi_core_path / lib3_name} (feagi_type_system)")
     print("[TIP] Restart Godot to load the new extensions.")

@@ -290,6 +290,22 @@ func _register_agent_via_transport() -> bool:
 	print("𒓉 [TRANSPORT] registration_output: ", registration_output)
 	if not bool(registration_output.get("success", false)):
 		var reg_error: String = str(registration_output.get("error", "unknown registration error"))
+		# FEAGI may still consider this client registered (e.g. re-registration or duplicate call).
+		# Use advertised/configured visualization endpoint and continue.
+		if "already registered" in reg_error.to_lower() or "client already" in reg_error.to_lower():
+			print("𒓉 [TRANSPORT] Client already registered on FEAGI; using advertised/configured visualization endpoint.")
+			if advertised_viz_ws_url != "":
+				_feagi_endpoint_details.full_websocket_address = advertised_viz_ws_url
+				print("𒓉 [TRANSPORT] Using advertised visualization endpoint: ", advertised_viz_ws_url)
+			elif configured_viz_ws_url != "":
+				_feagi_endpoint_details.full_websocket_address = configured_viz_ws_url
+				print("𒓉 [TRANSPORT] Using configured visualization endpoint: ", configured_viz_ws_url)
+			else:
+				_transport_registration_failed = true
+				push_error("𒓉 [TRANSPORT] Already registered but no visualization URL available.")
+				return false
+			# Return false so caller connects WebSocket for visualization (we did not enable SHM).
+			return false
 		_transport_registration_failed = true
 		push_error("𒓉 [TRANSPORT] Transport registration failed (%s)." % reg_error)
 		return false
