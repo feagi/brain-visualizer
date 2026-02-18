@@ -56,7 +56,8 @@ func setup(area: AbstractCorticalArea) -> void:
 	_position_FEAGI_space = area.coordinates_3D # such that when calling Update dimensions, the location is correct
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)
-	# Dimensions updates position itself as well
+	# Initialize activation texture to empty so shader never samples unset texture (avoids out-of-region red)
+	_clear_activation_texture()
 
 func update_friendly_name(new_name: String) -> void:
 	_friendly_name_label.text = new_name
@@ -103,41 +104,45 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
-	# Validate data size - need at least 4 bytes for dimensions (2x uint16)
+	# Expected format: [width:u16][height:u16][FORMAT_RF image data]. Legacy Type 10 from WebSocket
+	# sends raw SVO bytes (bytes.slice(8)) with NO this header; treating those bytes as header+image
+	# produces wrong dimensions and garbage texture -> shader draws faint red noise (out of order/scale).
+	# Reject payloads that do not match exact size and sane dimensions.
 	if visualization_data.size() < 4:
-		print("⚠️ SVO RENDERER: Skipping invalid data (size too small: ", visualization_data.size(), " bytes)")
+		_clear_activation_texture()
 		return
-	
-	print("🔄 SVO RENDERER: Processing Type 10 (NEURON_FLAT/SVO) visualization data (", visualization_data.size(), " bytes)")
-	
+
 	var retrieved_image_dimensions: Vector2i = Vector2i(visualization_data.decode_u16(0), visualization_data.decode_u16(2))
-	
-	# Validate dimensions
+
+	# Validate dimensions (sanity: avoid garbage from raw SVO being interpreted as dimensions)
 	if retrieved_image_dimensions.x <= 0 or retrieved_image_dimensions.y <= 0:
-		print("⚠️ SVO RENDERER: Skipping invalid dimensions: ", retrieved_image_dimensions)
+		_clear_activation_texture()
 		return
-	
-	# Calculate expected data size: 4 bytes header + image data
-	var expected_image_data_size = retrieved_image_dimensions.x * retrieved_image_dimensions.y * 4  # FORMAT_RF = 4 bytes per pixel
-	var expected_total_size = 4 + expected_image_data_size
-	
-	if visualization_data.size() < expected_total_size:
-		print("⚠️ SVO RENDERER: Data size mismatch. Expected ", expected_total_size, " bytes, got ", visualization_data.size())
+	const MAX_SVO_TEXTURE_SIDE: int = 4096
+	if retrieved_image_dimensions.x > MAX_SVO_TEXTURE_SIDE or retrieved_image_dimensions.y > MAX_SVO_TEXTURE_SIDE:
+		_clear_activation_texture()
 		return
-	
+
+	# Exact size match: 4-byte header + FORMAT_RF image (4 bytes per pixel). Raw SVO payloads
+	# from legacy Type 10 will not match, so we avoid drawing garbage activation.
+	var expected_image_data_size: int = retrieved_image_dimensions.x * retrieved_image_dimensions.y * 4
+	var expected_total_size: int = 4 + expected_image_data_size
+	if visualization_data.size() != expected_total_size:
+		_clear_activation_texture()
+		return
+
 	# Always use create_from_data + set_image for atomic texture replacement to prevent flashing
-	# This avoids the non-atomic set_data() + update() path which can cause brief cleared states
 	_activation_image = Image.create_from_data(retrieved_image_dimensions.x, retrieved_image_dimensions.y, false, Image.Format.FORMAT_RF, visualization_data.slice(4))
 	_activation_image_texture.set_image(_activation_image)
-	
-	var dimensions_changed = retrieved_image_dimensions != _activation_image_dimensions
-	if dimensions_changed:
-		_activation_image_dimensions = retrieved_image_dimensions
-		print("   📊 Created new SVO texture: ", _activation_image_dimensions)
-	else:
-		print("   🔄 Updated existing SVO texture: ", _activation_image_dimensions)
-	
-	# Update shader parameter - texture reference is stable, so this should not cause flashing
+	_activation_image_dimensions = retrieved_image_dimensions
+	_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
+
+func _clear_activation_texture() -> void:
+	# Set activation to empty SVO (no nodes) so shader does not draw spurious red. Avoids faint
+	# out-of-order/out-of-scale red when legacy Type 10 sends raw SVO bytes instead of header+image.
+	var empty_img := Image.create_from_data(1, 1, false, Image.Format.FORMAT_RF, PackedByteArray([0, 0, 0, 0]))
+	_activation_image_texture.set_image(empty_img)
+	_activation_image_dimensions = Vector2i(1, 1)
 	_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:

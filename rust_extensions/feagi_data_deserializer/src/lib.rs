@@ -299,13 +299,13 @@ impl FeagiDataDeserializer {
             dimensions.y / 2.0,
             dimensions.z / 2.0,
         );
-        let offset = Vector3::new(0.5, 0.5, 0.5);
+        let offset = Vector3::ZERO;
         let scale = Vector3::new(
             1.0 / dimensions.x,
             1.0 / dimensions.y,
             1.0 / -dimensions.z,  // Note: negative Z
         );
-        
+
         // Collect all neurons into a flat vector
         let mut all_neurons = Vec::with_capacity(process_count);
         for (_, neuron_array) in neuron_data_ref.mappings.iter() {
@@ -411,18 +411,21 @@ impl FeagiDataDeserializer {
         // Set instance count
         multi_mesh.set_instance_count(array_len as i32);
         
-        // Pre-calculate constants
+        // Pre-calculate constants. Offset ZERO per NEURON_POSITION_SCALING_FIX.md (no 0.5 shift).
         let half_dimensions = Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
-        let offset = Vector3::new(0.5, 0.5, 0.5);
+        let offset = Vector3::ZERO;
         let scale = Vector3::new(1.0 / dimensions.x, 1.0 / dimensions.y, 1.0 / -dimensions.z);
         let z_max = dimensions.z;
-        
+        let max_x = (dimensions.x as u32).saturating_sub(1);
+        let max_y = (dimensions.y as u32).saturating_sub(1);
+        let max_z = (dimensions.z as u32).saturating_sub(1);
+
         // Apply transforms and colors directly (NO GDScript LOOP!)
         for i in 0..array_len {
-            let x = x_array[i] as u32;
-            let y = y_array[i] as u32;
-            let z = z_array[i] as u32;
-            
+            let x = (x_array[i] as u32).min(max_x);
+            let y = (y_array[i] as u32).min(max_y);
+            let z = (z_array[i] as u32).min(max_z);
+
             let transform_data = Self::calculate_transform(x, y, z, half_dimensions, offset, scale);
             let color_data = Self::calculate_color(z, z_max);
             
@@ -588,15 +591,18 @@ impl FeagiDataDeserializer {
 
                 let half_dimensions =
                     Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
-                let offset = Vector3::new(0.5, 0.5, 0.5);
+                let offset = Vector3::ZERO;
                 let scale =
                     Vector3::new(1.0 / dimensions.x, 1.0 / dimensions.y, 1.0 / -dimensions.z);
                 let z_max = dimensions.z;
+                let max_x = (dimensions.x as u32).saturating_sub(1);
+                let max_y = (dimensions.y as u32).saturating_sub(1);
+                let max_z = (dimensions.z as u32).saturating_sub(1);
 
                 for (i, neuron) in neuron_array.iter().enumerate() {
-                    let x = neuron.neuron_voxel_coordinate.x as u32;
-                    let y = neuron.neuron_voxel_coordinate.y as u32;
-                    let z = neuron.neuron_voxel_coordinate.z as u32;
+                    let x = (neuron.neuron_voxel_coordinate.x as u32).min(max_x);
+                    let y = (neuron.neuron_voxel_coordinate.y as u32).min(max_y);
+                    let z = (neuron.neuron_voxel_coordinate.z as u32).min(max_z);
 
                     let transform_data =
                         Self::calculate_transform(x, y, z, half_dimensions, offset, scale);
@@ -713,18 +719,25 @@ impl FeagiDataDeserializer {
             dimensions.y / 2.0,
             dimensions.z / 2.0,
         );
-        let offset = Vector3::new(0.5, 0.5, 0.5);
+        let offset = Vector3::ZERO;
         let scale = Vector3::new(
             1.0 / dimensions.x,
             1.0 / dimensions.y,
             1.0 / -dimensions.z,
         );
-        
-        // Collect coordinates
+        let max_x = (dimensions.x as i32).saturating_sub(1).max(0);
+        let max_y = (dimensions.y as i32).saturating_sub(1).max(0);
+        let max_z = (dimensions.z as i32).saturating_sub(1).max(0);
+
+        // Collect coordinates (clamped to area bounds to prevent overflow visualization)
         let coords: Vec<(i32, i32, i32)> = (0..process_count)
-            .map(|i| (x_array[i], y_array[i], z_array[i]))
+            .map(|i| (
+                x_array[i].clamp(0, max_x),
+                y_array[i].clamp(0, max_y),
+                z_array[i].clamp(0, max_z),
+            ))
             .collect();
-        
+
         // Process neurons - use parallel processing on desktop, sequential on WASM
         let (transforms, colors) = self.process_coords_internal(&coords, half_dimensions, offset, scale, dimensions.z);
         
@@ -1397,7 +1410,7 @@ impl FeagiDataDeserializer {
         scale: Vector3,
     ) -> [f32; 12] {
         let feagi_pos = Vector3::new(x as f32, y as f32, z as f32);
-        // Calculate centered position WITHOUT scaling (matches GDScript: centered_pos = feagi_pos - half_dimensions + offset)
+        // Centered position: feagi_pos - half_dimensions + offset (offset ZERO per NEURON_POSITION_SCALING_FIX.md)
         let centered_pos = Vector3::new(
             feagi_pos.x - half_dimensions.x + offset.x,
             feagi_pos.y - half_dimensions.y + offset.y,

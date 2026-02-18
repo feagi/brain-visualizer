@@ -330,7 +330,7 @@ dependencies = [
 
 [[package]]
 name = "feagi-sensorimotor"
-version = "0.0.1-beta.8"
+version = "0.0.1-beta.18"
 dependencies = [
  "feagi-serialization",
  "feagi-structures",
@@ -345,7 +345,7 @@ dependencies = [
 
 [[package]]
 name = "feagi-serialization"
-version = "0.0.1-beta.8"
+version = "0.0.1-beta.18"
 dependencies = [
  "byteorder",
  "feagi-structures",
@@ -355,7 +355,7 @@ dependencies = [
 
 [[package]]
 name = "feagi-structures"
-version = "0.0.1-beta.8"
+version = "0.0.1-beta.18"
 dependencies = [
  "base64",
  "ndarray",
