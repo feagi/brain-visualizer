@@ -2,15 +2,19 @@
 extends EditorExportPlugin
 
 const GUIDES_DIR := "res://BrainVisualizer/Guides"
+var _is_macos_export: bool = false
+
 const REQUIRED_GDEXTENSION_MANIFESTS := [
 	"res://addons/FeagiCoreIntegration/feagi_agent_client.gdextension",
 	"res://addons/FeagiCoreIntegration/feagi_type_system.gdextension",
+	"res://addons/feagi_shared_video/feagi_shared_video.gdextension",
 ]
 
 func _get_name() -> String:
 	return "FEAGI Desktop Export Filter"
 
 func _export_begin(features: PackedStringArray, is_debug: bool, path: String, flags: int) -> void:
+	_is_macos_export = features.has("macos")
 	print("[FEAGI Export Filter] Desktop export started")
 	print("[FEAGI Export Filter] Filtering out data deserializer extension")
 	print("[FEAGI Export Filter] Filtering out feagi_embedded (Remote mode - embedded not needed)")
@@ -58,6 +62,9 @@ func _add_guide_files() -> void:
 func _add_required_gdextension_manifests() -> void:
 	var added := 0
 	for manifest_path in REQUIRED_GDEXTENSION_MANIFESTS:
+		# shared_video is optional on Linux/Windows CI exports, but kept on macOS.
+		if manifest_path == "res://addons/feagi_shared_video/feagi_shared_video.gdextension" and not _is_macos_export:
+			continue
 		if not FileAccess.file_exists(manifest_path):
 			push_warning("[FEAGI Export Filter] Required manifest missing: %s" % manifest_path)
 			continue
@@ -85,9 +92,9 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 		skip()
 		return
 
-	# Skip feagi_shared_video addon in desktop CI exports unless explicitly bundled.
-	# The shared-video Rust extension is currently optional and may not be built.
-	if path.begins_with("res://addons/feagi_shared_video/"):
+	# shared_video is optional on Linux/Windows CI exports.
+	# Keep it on macOS where the existing flow already passes.
+	if not _is_macos_export and path.begins_with("res://addons/feagi_shared_video/"):
 		skip()
 		return
 
