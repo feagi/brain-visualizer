@@ -359,11 +359,9 @@ jobs:
       - name: Verify Rust extensions are in place
         shell: bash
         run: |
-          echo "Checking for Rust extensions after build.py..."
-          # Linux/Windows: ensure cwd is workspace (relative path find failed; macOS passed)
-          if [[ "${{ runner.os }}" == "Linux" ]] || [[ "${{ runner.os }}" == "Windows" ]]; then
-            cd "${{ github.workspace }}"
-          fi
+          ROOT="${{ github.workspace }}"
+          cd "$ROOT"
+          echo "Checking for Rust extensions after build.py... (PWD=$PWD)"
           
           # build.py copies to platform-specific locations
           if [[ "${{ runner.os }}" == "Windows" ]]; then
@@ -381,7 +379,7 @@ jobs:
             DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration"
             SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
           fi
-          TYPE_SYSTEM_DIR="godot_source/addons/FeagiCoreIntegration"
+          TYPE_SYSTEM_DIR="${ROOT}/godot_source/addons/FeagiCoreIntegration"
           
           # Check what files exist
           echo "Files in feagi_rust_deserializer:"
@@ -399,29 +397,25 @@ jobs:
           # Verify required files exist (build.py should have copied them)
           DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1)
           SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1)
-          # Linux/Windows: glob then take first existing path (avoid ls with missing file)
-          if [[ "${{ runner.os }}" == "Linux" ]] || [[ "${{ runner.os }}" == "Windows" ]]; then
-            TYPE_SYSTEM_LIB=""
-            for f in "$TYPE_SYSTEM_DIR"/libfeagi_type_system.* "$TYPE_SYSTEM_DIR"/feagi_type_system.dll; do
-              [ -f "$f" ] && TYPE_SYSTEM_LIB="$f" && break
-            done
-          else
-            TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1)
-          fi
+          TYPE_SYSTEM_LIB=""
+          for f in "$TYPE_SYSTEM_DIR"/libfeagi_type_system.* "$TYPE_SYSTEM_DIR"/feagi_type_system.dll; do
+            [ -f "$f" ] && TYPE_SYSTEM_LIB="$f" && break
+          done
           
           if [ -z "$DESERIALIZER_LIB" ]; then
-            echo "❌ ERROR: feagi_data_deserializer library not found!"
+            echo "ERROR: feagi_data_deserializer library not found!"
             echo "Expected in: $DESERIALIZER_SOURCE or $DESERIALIZER_LEGACY"
             exit 1
           fi
           
           if [ -z "$SHARED_VIDEO_LIB" ]; then
-            echo "⚠️  feagi_shared_video not built (optional; commented out in build)"
+            echo "feagi_shared_video not built (optional; commented out in build)"
           fi
           
           if [ -z "$TYPE_SYSTEM_LIB" ]; then
             echo "ERROR: feagi_type_system library not found!"
-            echo "Expected in: $TYPE_SYSTEM_DIR"
+            echo "TYPE_SYSTEM_DIR=$TYPE_SYSTEM_DIR"
+            echo "Directory exists: $([ -d "$TYPE_SYSTEM_DIR" ] && echo yes || echo no)"
             ls -la "$TYPE_SYSTEM_DIR" 2>/dev/null || true
             exit 1
           fi
