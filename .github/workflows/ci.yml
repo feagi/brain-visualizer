@@ -264,8 +264,8 @@ jobs:
           cd godot_source
           echo "Checking for built extensions..."
           ls -la addons/feagi_rust_deserializer/
-          ls -la addons/feagi_shared_video/
-          echo "✅ Extensions verification completed"
+          ls -la addons/feagi_shared_video/ 2>/dev/null || echo "feagi_shared_video addon not present (optional)"
+          echo "Extensions verification completed"
 
       - name: Test Godot project import (headless)
         run: |

@@ -404,9 +404,7 @@ jobs:
           fi
           
           if [ -z "$SHARED_VIDEO_LIB" ]; then
-            echo "❌ ERROR: feagi_shared_video library not found!"
-            echo "Expected in: $SHARED_VIDEO_SOURCE"
-            exit 1
+            echo "⚠️  feagi_shared_video not built (optional; commented out in build)"
           fi
           
           if [ -z "$TYPE_SYSTEM_LIB" ]; then
@@ -455,16 +453,19 @@ jobs:
           SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1)
           TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1)
           
-          if [ -z "$DESERIALIZER_LIB" ] || [ -z "$SHARED_VIDEO_LIB" ] || [ -z "$TYPE_SYSTEM_LIB" ]; then
-            echo "ERROR: One or more Rust libraries are missing; cannot stage artifact."
+          if [ -z "$DESERIALIZER_LIB" ] || [ -z "$TYPE_SYSTEM_LIB" ]; then
+            echo "ERROR: Required Rust libraries missing; cannot stage artifact."
             echo "DESERIALIZER_LIB: ${DESERIALIZER_LIB:-missing}"
-            echo "SHARED_VIDEO_LIB: ${SHARED_VIDEO_LIB:-missing}"
             echo "TYPE_SYSTEM_LIB: ${TYPE_SYSTEM_LIB:-missing}"
             exit 1
           fi
           
           cp -v "$DESERIALIZER_LIB" "rust-libs/${LIB_PREFIX}feagi_data_deserializer.${LIB_EXT}"
-          cp -v "$SHARED_VIDEO_LIB" "rust-libs/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}"
+          if [ -n "$SHARED_VIDEO_LIB" ]; then
+            cp -v "$SHARED_VIDEO_LIB" "rust-libs/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}"
+          else
+            echo "Skipping feagi_shared_video (not built)"
+          fi
           cp -v "$TYPE_SYSTEM_LIB" "rust-libs/${LIB_PREFIX}feagi_type_system.${LIB_EXT}"
           
           echo "Rust libraries staged:"
@@ -604,7 +605,7 @@ jobs:
             LIB_EXT="so"
           fi
           
-          for ext in feagi_data_deserializer feagi_shared_video feagi_type_system; do
+          for ext in feagi_data_deserializer feagi_type_system; do
             lib_file="rust-libs/${LIB_PREFIX}${ext}.${LIB_EXT}"
             if [ ! -f "$lib_file" ]; then
               echo "ERROR: Missing rust library: $lib_file"
@@ -612,6 +613,9 @@ jobs:
             fi
             cp -v "$lib_file" "binaries-staging/${LIB_PREFIX}${ext}.${LIB_EXT}"
           done
+          if [ -f "rust-libs/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}" ]; then
+            cp -v "rust-libs/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}" "binaries-staging/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}"
+          fi
           
           echo ""
           echo "Binaries found in staging:"
@@ -621,9 +625,8 @@ jobs:
             echo ""
             echo "❌ ERROR: No binaries found to upload!"
             echo ""
-            echo "Expected files:"
+            echo "Expected files (feagi_shared_video optional):"
             echo "  - binaries-staging/${LIB_PREFIX}feagi_data_deserializer.${LIB_EXT}"
-            echo "  - binaries-staging/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}"
             echo "  - binaries-staging/${LIB_PREFIX}feagi_type_system.${LIB_EXT}"
             echo ""
             echo "Searching for target directories:"
@@ -634,13 +637,18 @@ jobs:
             exit 1
           fi
           
-          # Verify we have exactly 3 libraries
+          # Verify we have at least 2 required libraries (feagi_shared_video optional)
           LIB_COUNT=$(ls -1 binaries-staging/*.${LIB_EXT} 2>/dev/null | wc -l || echo "0")
-          if [ "$LIB_COUNT" -ne 3 ]; then
+          if [ "$LIB_COUNT" -lt 2 ]; then
             echo ""
-            echo "⚠️  WARNING: Expected 3 libraries, found $LIB_COUNT"
+            echo "ERROR: Expected at least 2 libraries (feagi_data_deserializer, feagi_type_system), found $LIB_COUNT"
             echo "Files in staging:"
             ls -lh binaries-staging/
+            exit 1
+          fi
+          if [ "$LIB_COUNT" -lt 3 ]; then
+            echo ""
+            echo "Note: feagi_shared_video not included (optional)"
           fi
 
       - name: Upload binaries artifact

@@ -147,7 +147,7 @@
 │            │      ├─ macOS    (parallel)                │
 │            │      └─ Windows  (parallel)                │
 │            │      Time: ~15 min                          │
-│            │      Artifacts: 3 libraries                 │
+│            │      Artifacts: 2 required + 1 optional   │
 │            │                                             │
 │            ├────► Job 2: Export Mode 1 (Embedded)       │
 │            │      Needs: Job 1                           │
