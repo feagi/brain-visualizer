@@ -400,12 +400,12 @@ jobs:
           ls -la "$TYPE_SYSTEM_DIR"/*feagi_type_system* 2>/dev/null || echo "No type_system files found"
           
           # Verify required files exist (build.py should have copied them)
-          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1)
-          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1)
+          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1 || true)
+          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1 || true)
           # macOS: keep original logic that was passing (relative path + find)
           # Linux/Windows: explicit path test (absolute path set above)
           if [[ "${{ runner.os }}" == "macOS" ]]; then
-            TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1)
+            TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1 || true)
           elif [[ "${{ runner.os }}" == "Windows" ]]; then
             [ -f "$TYPE_SYSTEM_DIR/feagi_type_system.dll" ] && TYPE_SYSTEM_LIB="$TYPE_SYSTEM_DIR/feagi_type_system.dll"
           else
@@ -466,9 +466,9 @@ jobs:
           fi
           TYPE_SYSTEM_DIR="godot_source/addons/FeagiCoreIntegration"
           
-          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1)
-          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1)
-          TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1)
+          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1 || true)
+          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1 || true)
+          TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1 || true)
           
           if [ -z "$DESERIALIZER_LIB" ] || [ -z "$TYPE_SYSTEM_LIB" ]; then
             echo "ERROR: Required Rust libraries missing; cannot stage artifact."
