@@ -93,11 +93,13 @@ godot_source/libfeagi_data_deserializer.dll
 godot_source/libfeagi_data_deserializer.so
 godot_source/feagi_data_deserializer.gdextension.uid
 
-# FeagiCoreIntegration: built by build.py/build.sh locally or in CI; do not commit
+# FeagiCoreIntegration: built by build.py/build.sh locally or in CI; do not commit.
+# If these were ever committed, untrack with: git rm -r --cached <repo-root>/godot_source/addons/FeagiCoreIntegration/target/
 godot_source/addons/FeagiCoreIntegration/*.dylib
 godot_source/addons/FeagiCoreIntegration/*.dll
 godot_source/addons/FeagiCoreIntegration/*.so
 godot_source/addons/FeagiCoreIntegration/target/
+godot_source/addons/FeagiCoreIntegration/target/**/*
 
 # feagi_shared_video: binaries at addon root (if any) are local build artifacts
 godot_source/addons/feagi_shared_video/*.dylib
