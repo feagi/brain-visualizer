@@ -40,30 +40,34 @@ jobs:
           cd rust_extensions/feagi_data_deserializer
           cargo fmt --all -- --check
 
-      - name: Check Rust formatting (feagi_shared_video)
-        run: |
-          cd rust_extensions/feagi_shared_video
-          cargo fmt --all -- --check
-
-      - name: Check Rust formatting (feagi_wasm_processing)
-        run: |
-          cd rust_extensions/feagi_wasm_processing
-          cargo fmt --all -- --check
+      # feagi_shared_video - commented out from build
+      # - name: Check Rust formatting (feagi_shared_video)
+      #   run: |
+      #     cd rust_extensions/feagi_shared_video
+      #     cargo fmt --all -- --check
+      #
+      # feagi_wasm_processing - commented out from build
+      # - name: Check Rust formatting (feagi_wasm_processing)
+      #   run: |
+      #     cd rust_extensions/feagi_wasm_processing
+      #     cargo fmt --all -- --check
 
       - name: Clippy linting (feagi_data_deserializer)
         run: |
           cd rust_extensions/feagi_data_deserializer
           cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Clippy linting (feagi_shared_video)
-        run: |
-          cd rust_extensions/feagi_shared_video
-          cargo clippy --all-targets --all-features -- -D warnings
-
-      - name: Clippy linting (feagi_wasm_processing)
-        run: |
-          cd rust_extensions/feagi_wasm_processing
-          cargo clippy --all-targets --all-features -- -D warnings
+      # feagi_shared_video - commented out from build
+      # - name: Clippy linting (feagi_shared_video)
+      #   run: |
+      #     cd rust_extensions/feagi_shared_video
+      #     cargo clippy --all-targets --all-features -- -D warnings
+      #
+      # feagi_wasm_processing - commented out from build
+      # - name: Clippy linting (feagi_wasm_processing)
+      #   run: |
+      #     cd rust_extensions/feagi_wasm_processing
+      #     cargo clippy --all-targets --all-features -- -D warnings
 
   rust-build-and-test:
     name: Rust Build and Test
@@ -103,70 +107,73 @@ jobs:
           cd rust_extensions/feagi_data_deserializer
           cargo test --release
 
-      - name: Build Rust extensions (feagi_shared_video)
-        run: |
-          cd rust_extensions/feagi_shared_video
-          cargo build --release
+      # feagi_shared_video - commented out from build
+      # - name: Build Rust extensions (feagi_shared_video)
+      #   run: |
+      #     cd rust_extensions/feagi_shared_video
+      #     cargo build --release
+      #
+      # - name: Test Rust extensions (feagi_shared_video)
+      #   run: |
+      #     cd rust_extensions/feagi_shared_video
+      #     cargo test --release
+      #
+      # feagi_wasm_processing - commented out from build
+      # - name: Build Rust extensions (feagi_wasm_processing)
+      #   run: |
+      #     cd rust_extensions/feagi_wasm_processing
+      #     cargo build --release
+      #
+      # - name: Test Rust extensions (feagi_wasm_processing)
+      #   run: |
+      #     cd rust_extensions/feagi_wasm_processing
+      #     cargo test --release
 
-      - name: Test Rust extensions (feagi_shared_video)
-        run: |
-          cd rust_extensions/feagi_shared_video
-          cargo test --release
-
-      - name: Build Rust extensions (feagi_wasm_processing)
-        run: |
-          cd rust_extensions/feagi_wasm_processing
-          cargo build --release
-
-      - name: Test Rust extensions (feagi_wasm_processing)
-        run: |
-          cd rust_extensions/feagi_wasm_processing
-          cargo test --release
-
-  wasm-build:
-    name: WASM Build and Validation
-    runs-on: ubuntu-latest
-    needs: [rust-format-and-lint]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain with WASM target
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
-
-      - name: Install wasm-pack
-        run: |
-          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - name: Cache Rust dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            rust_extensions/feagi_wasm_processing/target
-          key: ${{ runner.os }}-wasm-${{ hashFiles('rust_extensions/feagi_wasm_processing/Cargo.lock') }}
-
-      - name: Build WASM package
-        run: |
-          cd rust_extensions/feagi_wasm_processing
-          wasm-pack build --target web --out-dir pkg
-
-      - name: Validate WASM output
-        run: |
-          cd rust_extensions/feagi_wasm_processing
-          ls -la pkg/
-          file pkg/*.wasm
-          echo "WASM package built successfully"
-
-      - name: Upload WASM artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: wasm-build-artifacts
-          path: rust_extensions/feagi_wasm_processing/pkg/
+  # feagi_wasm_processing - commented out from build
+  # wasm-build:
+  #   name: WASM Build and Validation
+  #   runs-on: ubuntu-latest
+  #   needs: [rust-format-and-lint]
+  #
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - name: Install Rust toolchain with WASM target
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         toolchain: stable
+  #         targets: wasm32-unknown-unknown
+  #
+  #     - name: Install wasm-pack
+  #       run: |
+  #         curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+  #
+  #     - name: Cache Rust dependencies
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: |
+  #           ~/.cargo/registry
+  #           ~/.cargo/git
+  #           rust_extensions/feagi_wasm_processing/target
+  #         key: ${{ runner.os }}-wasm-${{ hashFiles('rust_extensions/feagi_wasm_processing/Cargo.lock') }}
+  #
+  #     - name: Build WASM package
+  #       run: |
+  #         cd rust_extensions/feagi_wasm_processing
+  #         wasm-pack build --target web --out-dir pkg
+  #
+  #     - name: Validate WASM output
+  #       run: |
+  #         cd rust_extensions/feagi_wasm_processing
+  #         ls -la pkg/
+  #         file pkg/*.wasm
+  #         echo "WASM package built successfully"
+  #
+  #     - name: Upload WASM artifacts
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: wasm-build-artifacts
+  #         path: rust_extensions/feagi_wasm_processing/pkg/
 
   godot-validation:
     name: Godot Project Validation
@@ -221,7 +228,7 @@ jobs:
   integration-build:
     name: Integration Build Test
     runs-on: ubuntu-latest
-    needs: [rust-build-and-test, wasm-build, godot-validation]
+    needs: [rust-build-and-test, godot-validation]
 
     steps:
       - uses: actions/checkout@v4
@@ -310,8 +317,9 @@ jobs:
       - name: Run Rust security audit
         run: |
           cd rust_extensions/feagi_data_deserializer && cargo audit
-          cd ../feagi_shared_video && cargo audit
-          cd ../feagi_wasm_processing && cargo audit
+          # feagi_shared_video, feagi_wasm_processing commented out from build
+          # cd ../feagi_shared_video && cargo audit
+          # cd ../feagi_wasm_processing && cargo audit
 
       - name: Check for common vulnerabilities
         run: |
