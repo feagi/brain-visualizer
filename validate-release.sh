@@ -151,11 +151,15 @@ check_gdextension_path \
     "libfeagi_type_system" \
     "feagi_type_system (all platforms)"
 
-# feagi_shared_video: Linux/Windows use target triples, macOS uses target/release
-check_gdextension_path \
-    "godot_source/addons/feagi_shared_video/feagi_shared_video.gdextension" \
-    "target/release|target/x86_64-unknown-linux-gnu/release|target/x86_64-pc-windows-msvc/release" \
-    "feagi_shared_video (cross-platform paths)"
+# feagi_shared_video: optional (not built in CI); only validate if addon exists
+if [ -f "godot_source/addons/feagi_shared_video/feagi_shared_video.gdextension" ]; then
+    check_gdextension_path \
+        "godot_source/addons/feagi_shared_video/feagi_shared_video.gdextension" \
+        "target/release|target/x86_64-unknown-linux-gnu/release|target/x86_64-pc-windows-msvc/release" \
+        "feagi_shared_video (cross-platform paths)"
+else
+    check_success "feagi_shared_video addon not present (optional, skipped)"
+fi
 
 # 4. Check if build.py builds feagi_type_system
 echo ""
@@ -173,10 +177,11 @@ else
     check_error "build.py missing feagi_data_deserializer build"
 fi
 
+# feagi_shared_video is optional (commented out in build.py for CI)
 if grep -q "feagi_shared_video" rust_extensions/build.py 2>/dev/null; then
-    check_success "build.py includes feagi_shared_video"
+    check_success "build.py references feagi_shared_video (optional)"
 else
-    check_error "build.py missing feagi_shared_video build"
+    check_warning "build.py has no feagi_shared_video (optional; expected when not built)"
 fi
 
 # 5. Check version consistency
