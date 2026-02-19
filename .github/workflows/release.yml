@@ -360,7 +360,13 @@ jobs:
         shell: bash
         run: |
           ROOT="${{ github.workspace }}"
-          cd "$ROOT"
+          # Linux/Windows need explicit cd + absolute path; macOS left as-is (was already passing)
+          if [[ "${{ runner.os }}" == "Linux" ]] || [[ "${{ runner.os }}" == "Windows" ]]; then
+            cd "$ROOT"
+            TYPE_SYSTEM_DIR="${ROOT}/godot_source/addons/FeagiCoreIntegration"
+          else
+            TYPE_SYSTEM_DIR="godot_source/addons/FeagiCoreIntegration"
+          fi
           echo "Checking for Rust extensions after build.py... (PWD=$PWD)"
           
           # build.py copies to platform-specific locations
@@ -379,7 +385,6 @@ jobs:
             DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration"
             SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
           fi
-          TYPE_SYSTEM_DIR="${ROOT}/godot_source/addons/FeagiCoreIntegration"
           
           # Check what files exist
           echo "Files in feagi_rust_deserializer:"
@@ -397,10 +402,15 @@ jobs:
           # Verify required files exist (build.py should have copied them)
           DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1)
           SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1)
-          TYPE_SYSTEM_LIB=""
-          for f in "$TYPE_SYSTEM_DIR"/libfeagi_type_system.* "$TYPE_SYSTEM_DIR"/feagi_type_system.dll; do
-            [ -f "$f" ] && TYPE_SYSTEM_LIB="$f" && break
-          done
+          # macOS: keep original logic that was passing (relative path + find)
+          # Linux/Windows: explicit path test (absolute path set above)
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1)
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            [ -f "$TYPE_SYSTEM_DIR/feagi_type_system.dll" ] && TYPE_SYSTEM_LIB="$TYPE_SYSTEM_DIR/feagi_type_system.dll"
+          else
+            [ -f "$TYPE_SYSTEM_DIR/libfeagi_type_system.so" ] && TYPE_SYSTEM_LIB="$TYPE_SYSTEM_DIR/libfeagi_type_system.so"
+          fi
           
           if [ -z "$DESERIALIZER_LIB" ]; then
             echo "ERROR: feagi_data_deserializer library not found!"
