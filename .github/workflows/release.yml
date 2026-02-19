@@ -399,9 +399,12 @@ jobs:
           # Verify required files exist (build.py should have copied them)
           DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1)
           SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1)
-          # Use same glob as listing above (find was unreliable on Linux/Windows)
+          # Linux/Windows: glob then take first existing path (avoid ls with missing file)
           if [[ "${{ runner.os }}" == "Linux" ]] || [[ "${{ runner.os }}" == "Windows" ]]; then
-            TYPE_SYSTEM_LIB=$(ls "$TYPE_SYSTEM_DIR"/libfeagi_type_system.* "$TYPE_SYSTEM_DIR"/feagi_type_system.dll 2>/dev/null | head -1)
+            TYPE_SYSTEM_LIB=""
+            for f in "$TYPE_SYSTEM_DIR"/libfeagi_type_system.* "$TYPE_SYSTEM_DIR"/feagi_type_system.dll; do
+              [ -f "$f" ] && TYPE_SYSTEM_LIB="$f" && break
+            done
           else
             TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1)
           fi
