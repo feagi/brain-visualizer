@@ -5,7 +5,6 @@ const GUIDES_DIR := "res://BrainVisualizer/Guides"
 const REQUIRED_GDEXTENSION_MANIFESTS := [
 	"res://addons/FeagiCoreIntegration/feagi_agent_client.gdextension",
 	"res://addons/FeagiCoreIntegration/feagi_type_system.gdextension",
-	"res://addons/feagi_shared_video/feagi_shared_video.gdextension",
 ]
 
 func _get_name() -> String:
@@ -83,6 +82,12 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 	# Skip feagi_embedded addon - Remote mode connects to external FEAGI, does not need in-process embedded
 	# Saves ~6MB on PyPI package size
 	if path.begins_with("res://addons/feagi_embedded/"):
+		skip()
+		return
+
+	# Skip feagi_shared_video addon in desktop CI exports unless explicitly bundled.
+	# The shared-video Rust extension is currently optional and may not be built.
+	if path.begins_with("res://addons/feagi_shared_video/"):
 		skip()
 		return
 
