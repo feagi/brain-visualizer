@@ -1235,11 +1235,12 @@ jobs:
           cd feagi-bv-platform/feagi-bv-meta
           sed -i.bak "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
           
-          # Update dependencies in setup.py
+          # Update dependencies in setup.py.
+          # Use environment markers so ALL platform deps are in metadata regardless of
+          # build host. Otherwise building on Linux bakes only feagi-bv-linux, and
+          # pip install feagi-bv on Windows never pulls feagi-bv-windows.
           cat > setup.py << 'EOFPY'
           from setuptools import setup, find_packages
-          import sys
-          import platform
           
           def get_version():
               """Extract version from pyproject.toml."""
@@ -1253,24 +1254,7 @@ jobs:
               return "1.0.0"
           
           VERSION = get_version()
-          
-          # Determine platform-specific dependency
-          platform_deps = []
-          if sys.platform.startswith('linux'):
-              platform_deps = [f'feagi-bv-linux>={VERSION}']
-          elif sys.platform == 'darwin':
-              # Detect macOS architecture
-              machine = platform.machine().lower()
-              if machine in ('arm64', 'aarch64'):
-                  platform_deps = [f'feagi-bv-macos-arm64>={VERSION}']
-              elif machine in ('x86_64', 'amd64'):
-                  platform_deps = [f'feagi-bv-macos-x86_64>={VERSION}']
-              else:
-                  # Fallback to arm64 (Apple Silicon is now default)
-                  platform_deps = [f'feagi-bv-macos-arm64>={VERSION}']
-          elif sys.platform == 'win32':
-              platform_deps = [f'feagi-bv-windows>={VERSION}']
-          
+
           setup(
               name="feagi-bv",
               version=VERSION,
@@ -1278,7 +1262,11 @@ jobs:
               install_requires=[
                   'feagi-core>=2.1.1',
                   'toml>=0.10.2',
-              ] + platform_deps,
+                  f'feagi-bv-linux>={VERSION} ; sys_platform == "linux"',
+                  f'feagi-bv-windows>={VERSION} ; sys_platform == "win32"',
+                  f'feagi-bv-macos-arm64>={VERSION} ; sys_platform == "darwin" and platform_machine == "arm64"',
+                  f'feagi-bv-macos-x86_64>={VERSION} ; sys_platform == "darwin" and platform_machine == "x86_64"',
+              ],
           )
           EOFPY
           
