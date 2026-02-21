@@ -51,6 +51,29 @@ var _output_plate_click_area: StaticBody3D
 var _conflict_plate_click_area: StaticBody3D
 var _mother_plate_click_area: StaticBody3D
 var _region_label_click_area: StaticBody3D
+var _stored_collision_state: Dictionary = {}  # int (instance_id) -> {layer: int, mask: int}
+
+## Disable collision so gizmo raycasts can reach arrows when region is hidden during manipulation.
+func set_collision_enabled(enabled: bool) -> void:
+	if enabled:
+		for id in _stored_collision_state:
+			var node = instance_from_id(id) as CollisionObject3D
+			if node != null and is_instance_valid(node):
+				var state: Dictionary = _stored_collision_state[id]
+				node.collision_layer = state.layer
+				node.collision_mask = state.mask
+		_stored_collision_state.clear()
+	else:
+		_store_and_disable_collision_recursive(self)
+
+func _store_and_disable_collision_recursive(node: Node) -> void:
+	if node is CollisionObject3D:
+		var co: CollisionObject3D = node as CollisionObject3D
+		_stored_collision_state[co.get_instance_id()] = {"layer": co.collision_layer, "mask": co.collision_mask}
+		co.collision_layer = 0
+		co.collision_mask = 0
+	for child in node.get_children():
+		_store_and_disable_collision_recursive(child)
 
 ## Logs dimensions of all I/O cortical areas for plate sizing calculations
 func _log_io_area_dimensions(brain_region: BrainRegion) -> void:

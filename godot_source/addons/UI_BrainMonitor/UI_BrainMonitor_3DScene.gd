@@ -558,7 +558,8 @@ func _compute_world_aabb(node: Node) -> AABB:
 func _process(delta: float) -> void:
 	if _startup_intro_animating and _pancake_cam != null:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
-	if _manipulation_active and (_manipulation_gizmo == null or _manipulation_preview == null):
+	var has_preview := _manipulation_preview != null or (_manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview))
+	if _manipulation_active and (_manipulation_gizmo == null or not has_preview):
 		_manipulation_active = false
 	_emit_tab_hover_event()
 	if _debug_large_mesh_scan_enabled:
@@ -595,6 +596,16 @@ func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody
 	if hit.is_empty():
 		return null
 	return hit[&"collider"] as StaticBody3D
+
+## Raycast only against gizmo (axes + close). Use when manipulation active so cortical areas/plates cannot block.
+func _raycast_gizmo(ray_query: PhysicsRayQueryParameters3D) -> Dictionary:
+	var gizmo_query := PhysicsRayQueryParameters3D.new()
+	gizmo_query.from = ray_query.from
+	gizmo_query.to = ray_query.to
+	gizmo_query.collision_mask = UI_BrainMonitor_RuntimeTransformGizmo.GIZMO_AXIS_LAYER | UI_BrainMonitor_RuntimeTransformGizmo.CLOSE_LAYER
+	gizmo_query.collide_with_areas = false
+	gizmo_query.collide_with_bodies = true
+	return _world_3D.direct_space_state.intersect_ray(gizmo_query)
 
 func _emit_tab_hover_event() -> void:
 	if _pancake_cam == null or BV == null or BV.UI == null:
@@ -1530,6 +1541,29 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			
 			
 			
+			# When manipulation active, raycast gizmo first (axes + close) so cortical areas/plates cannot block.
+			if _manipulation_active:
+				var gizmo_hit: Dictionary = _raycast_gizmo(bm_input_event.get_ray_query())
+				if not gizmo_hit.is_empty():
+					var hit_body: StaticBody3D = gizmo_hit[&"collider"] as StaticBody3D
+					if is_instance_valid(hit_body):
+						if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) and hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
+							if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
+								_cancel_manipulation()
+							continue
+						if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
+							if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+								if bm_input_event.button_pressed:
+									_start_manipulation_drag(hit_body, bm_input_event)
+								else:
+									_manipulation_dragging = false
+									if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
+										_pancake_cam.call("set_tank_pan_enabled", true)
+							continue
+				# Gizmo not hit: click outside, save.
+				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
+					_finish_manipulation_drag_and_confirm(true)
+					continue
 			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
 			if close_body != null:
 				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
@@ -1537,35 +1571,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
-				# Clicking over nothing
-				if _manipulation_active and bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
-					_finish_manipulation_drag_and_confirm(true)
-					continue
 				if _UI_layer_for_BM:
 					_UI_layer_for_BM.clear_plate_hover()
 				continue
-				
-			var hit_body: StaticBody3D = hit[&"collider"]
-
-			# Runtime manipulation gizmo takes priority over normal selection/hover.
-			if _manipulation_active and is_instance_valid(hit_body):
-				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) and hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
-					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
-						_cancel_manipulation()
-					continue
-				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
-					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-						if bm_input_event.button_pressed:
-							_start_manipulation_drag(hit_body, bm_input_event)
-						else:
-							_manipulation_dragging = false
-							if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
-								_pancake_cam.call("set_tank_pan_enabled", true)
-					continue
-				# Click on something other than gizmo (preview, cortical area, etc.) while in manipulation: save.
-				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
-					_finish_manipulation_drag_and_confirm(true)
-					continue
+			var hit_body: StaticBody3D = hit[&"collider"] as StaticBody3D
 			
 			# Check if we hit a cortical area renderer
 			if hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
@@ -1825,6 +1834,10 @@ func start_brain_region_manipulation(region: BrainRegion) -> void:
 	var region_frame: Node3D = _brain_region_visualizations_by_ID.get(region.region_ID, null)
 	if region_frame != null and is_instance_valid(region_frame):
 		region_frame.visible = false
+		if region_frame.has_method("set_collision_enabled"):
+			region_frame.set_collision_enabled(false)
+	if _pancake_cam != null:
+		_pancake_cam.current = true
 	_update_manipulation_position_label()
 	_manipulation_gizmo = UI_BrainMonitor_RuntimeTransformGizmo.new()
 	_manipulation_gizmo.setup(UI_BrainMonitor_RuntimeTransformGizmo.MODE.MOVE)
@@ -1863,6 +1876,8 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 		if region_to_restore != null:
 			var region_frame: Node3D = _brain_region_visualizations_by_ID.get(region_to_restore.region_ID, null)
 			if region_frame != null and is_instance_valid(region_frame):
+				if region_frame.has_method("set_collision_enabled"):
+					region_frame.set_collision_enabled(true)
 				region_frame.visible = true
 	if _UI_layer_for_BM and _UI_layer_for_BM.has_method("clear_manipulation_position"):
 		_UI_layer_for_BM.clear_manipulation_position()
