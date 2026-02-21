@@ -57,7 +57,7 @@ The UI supports the following scale multipliers:
 - 2.0x (200%)
 
 ### Default Scale
-- Starts at index 2, which corresponds to 1.0x (100% scale)
+- Starts at index 3, which corresponds to 1.25x (125% scale)
 - This provides a sensible baseline that users can adjust up or down
 
 ### How It Works

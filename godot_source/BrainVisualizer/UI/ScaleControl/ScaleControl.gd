@@ -3,8 +3,8 @@ class_name ScaleControl
 ## Independent UI scale control positioned at top-right corner
 
 # Index into BV.UI.possible_UI_scales (expected ascending: 0.5, 0.75, 1.0, 1.25, 1.5, 2.0).
-# Default: +2 levels relative to 1.0x -> 1.5x.
-var _index_scale: int = 4
+# Default: +1 level relative to 1.0x -> 1.25x.
+var _index_scale: int = 3
 var _increase_button: TextureButton
 var _decrease_button: TextureButton
 

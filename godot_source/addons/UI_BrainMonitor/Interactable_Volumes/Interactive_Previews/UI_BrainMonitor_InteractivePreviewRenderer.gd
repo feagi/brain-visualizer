@@ -120,5 +120,5 @@ func set_warning_color(is_warning: bool) -> void:
 		print("🔴 PREVIEW: Turning RED (capacity overflow warning)")
 		_mat.set_shader_parameter("color", Color(1.0, 0.2, 0.2, 0.7))  # Red with transparency
 	else:
-		# Reset to default preview color
-		_mat.set_shader_parameter("color", Color(0.4, 0.4, 0.8, 0.5))  # Default blue (matches .tres default)
+		# Reset to default preview color (mustard for visibility)
+		_mat.set_shader_parameter("color", Color(0.85, 0.7, 0.15, 0.6))

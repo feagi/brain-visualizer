@@ -24,6 +24,7 @@ var _manipulation_axis: int = -1  # UI_BrainMonitor_RuntimeTransformGizmo.AXIS
 var _manipulation_start_pos: Vector3i = Vector3i.ZERO
 var _manipulation_start_dims: Vector3i = Vector3i.ZERO
 var _manipulation_start_param: float = 0.0
+var _manipulation_axis_origin: Vector3 = Vector3.ZERO  # Fixed axis origin during drag; avoids feedback when gizmo moves with preview
 var _manipulation_current_pos: Vector3i = Vector3i.ZERO
 var _manipulation_current_dims: Vector3i = Vector3i.ZERO
 var _manipulation_group_anchor_pos: Vector3i = Vector3i.ZERO
@@ -1965,12 +1966,15 @@ func _start_manipulation_drag(hit_body: StaticBody3D, bm_input_event: UI_BrainMo
 		_pancake_cam.call("set_tank_pan_enabled", false)
 	_manipulation_axis = int(hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS))
 	_manipulation_dragging = true
+	# Fixed axis origin for the entire drag; the gizmo moves with the preview, so using gizmo position
+	# would cause param to shift each frame and produce choppy back-and-forth movement.
+	_manipulation_axis_origin = _manipulation_gizmo.global_position
 	# IMPORTANT: baseline must come from the current preview state, not the underlying cortical area,
 	# because the user may be doing multiple drags before confirming/saving to FEAGI.
 	_manipulation_start_pos = _manipulation_current_pos
 	_manipulation_start_dims = _manipulation_current_dims
 	_manipulation_start_param = _axis_param_from_ray(
-		_manipulation_gizmo.global_position,
+		_manipulation_axis_origin,
 		_axis_dir_world(_manipulation_axis),
 		bm_input_event.get_ray_query()
 	)
@@ -1979,7 +1983,7 @@ func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover
 	if not _manipulation_active or not _manipulation_dragging or _manipulation_preview == null or _manipulation_gizmo == null:
 		return
 	var axis_dir := _axis_dir_world(_manipulation_axis)
-	var param := _axis_param_from_ray(_manipulation_gizmo.global_position, axis_dir, bm_hover_event.get_ray_query())
+	var param := _axis_param_from_ray(_manipulation_axis_origin, axis_dir, bm_hover_event.get_ray_query())
 	var step_delta := int(round(param - _manipulation_start_param))
 	if step_delta == 0:
 		return

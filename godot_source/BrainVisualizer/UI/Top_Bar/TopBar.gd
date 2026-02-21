@@ -1,7 +1,7 @@
 extends HBoxContainer
 class_name TopBar
 
-@export var starting_size_index: int = 4
+@export var starting_size_index: int = 3
 @export var theme_scalar_nodes_to_not_include_or_search: Array[Node] = []
 
 signal request_UI_mode(mode: TempSplit.STATES)

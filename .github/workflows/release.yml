@@ -531,6 +531,32 @@ jobs:
           echo "Exporting to: ../exports/${{ matrix.output_name }}"
           ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
 
+      - name: Copy GDExtension DLLs to exports (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd exports
+          MISSING=0
+          for dll in feagi_type_system feagi_data_deserializer; do
+            src="../godot_source/addons/FeagiCoreIntegration/${dll}.dll"
+            [ "$dll" = "feagi_data_deserializer" ] && src="../godot_source/addons/FeagiCoreIntegration/target/x86_64-pc-windows-msvc/release/${dll}.dll"
+            if [ -f "$src" ]; then
+              cp -v "$src" .
+            else
+              echo "::warning::GDExtension DLL missing: ${dll}.dll (source: $src)"
+              MISSING=1
+            fi
+          done
+          SHARED_VIDEO="../godot_source/addons/feagi_shared_video/target/x86_64-pc-windows-msvc/release/feagi_shared_video.dll"
+          if [ -f "$SHARED_VIDEO" ]; then
+            cp -v "$SHARED_VIDEO" .
+          else
+            echo "::warning::Optional GDExtension DLL missing: feagi_shared_video.dll"
+          fi
+          echo "DLLs in exports:"
+          ls -la *.dll 2>/dev/null || echo "No DLLs found"
+          [ "$MISSING" -eq 1 ] && echo "::warning::Required GDExtension DLLs were missing; BV may have degraded functionality at runtime."
+
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
         shell: bash

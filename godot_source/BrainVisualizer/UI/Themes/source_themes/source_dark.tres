@@ -1,5 +1,8 @@
 [gd_resource type="Theme" load_steps=32 format=3 uid="uid://cjrivk0518jvv"]
 
+[ext_resource type="FontFile" uid="uid://bh64osym6xaul" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_nbs6y"]
+[ext_resource type="Texture2D" uid="uid://p8vhuh3lka7o" path="res://BrainVisualizer/UI/GenericResources/SplitHandleBarsVertical.svg" id="2_split_handle_v"]
+[ext_resource type="Texture2D" uid="uid://dj6lv36osqjnl" path="res://BrainVisualizer/UI/GenericResources/SplitHandleBarsHorizontal.svg" id="3_split_handle_h"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -162,6 +165,8 @@ HBoxContainer_farther/constants/separation = 24
 HBoxContainer_fatherest/base_type = &"HBoxContainer"
 HBoxContainer_fatherest/constants/separation = 32
 HSplitContainer/constants/separation = 20
+HSplitContainer/icons/grabber = ExtResource("2_split_handle_v")
+HSplitContainer/icons/touch_dragger = ExtResource("2_split_handle_v")
 Label/font_sizes/font_size = 16
 Label_Header/base_type = &"Label"
 Label_Header/font_sizes/font_size = 20
@@ -169,6 +174,7 @@ Label_Title/base_type = &"Label"
 Label_Title/font_sizes/font_size = 20
 Label_UniformWidth/base_type = &"Label"
 Label_UniformWidth/font_sizes/font_size = 16
+Label_UniformWidth/fonts/font = ExtResource("1_nbs6y")
 LineEdit/constants/size_x = 0
 LineEdit/font_sizes/font_size = 16
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")
@@ -231,6 +237,10 @@ SplitContainer/colors/touch_dragger_pressed_color = Color(0.97, 0.98, 0.99, 0.68
 SplitContainer/constants/autohide = 0
 SplitContainer/constants/minimum_grab_thickness = 12
 SplitContainer/constants/separation = 20
+SplitContainer/icons/h_grabber = ExtResource("2_split_handle_v")
+SplitContainer/icons/h_touch_dragger = ExtResource("2_split_handle_v")
+SplitContainer/icons/v_grabber = ExtResource("3_split_handle_h")
+SplitContainer/icons/v_touch_dragger = ExtResource("3_split_handle_h")
 TabContainer/font_sizes/font_size = 16
 TextEdit/font_sizes/font_size = 16
 TextEdit/styles/normal = SubResource("StyleBoxFlat_242sy")
@@ -272,5 +282,7 @@ VBoxContainer_far/constants/separation = 8
 VBoxContainer_farther/base_type = &"VBoxContainer"
 VBoxContainer_farther/constants/separation = 24
 VSplitContainer/constants/separation = 20
+VSplitContainer/icons/grabber = ExtResource("3_split_handle_h")
+VSplitContainer/icons/touch_dragger = ExtResource("3_split_handle_h")
 generic_scale/constants/size_x = 4
 generic_scale/constants/size_y = 4
