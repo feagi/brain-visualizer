@@ -16,6 +16,7 @@ const KIND_MOVE: StringName = &"move"
 const KIND_RESIZE: StringName = &"resize"
 const KIND_CLOSE: StringName = &"close"
 const CLOSE_LAYER: int = 1 << 20
+const GIZMO_AXIS_LAYER: int = 1 << 19
 
 var _mode: MODE = MODE.MOVE
 var _axis_length: float = 0.0
@@ -71,6 +72,7 @@ func _add_axis(axis: AXIS, color: Color, dir: Vector3, axis_length: float, shaft
 	shaft_mat.emission_enabled = true
 	shaft_mat.emission = color
 	shaft_mat.emission_energy = 0.8
+	shaft_mat.no_depth_test = true
 	shaft.material_override = shaft_mat
 
 	# Godot cylinder is oriented along Y. Align Y to axis dir.
@@ -99,6 +101,8 @@ func _add_axis(axis: AXIS, color: Color, dir: Vector3, axis_length: float, shaft
 	body.name = "Pick_%s" % AXIS.keys()[axis]
 	body.set_meta(META_AXIS, axis)
 	body.set_meta(META_KIND, KIND_MOVE if _mode == MODE.MOVE else KIND_RESIZE)
+	body.collision_layer = GIZMO_AXIS_LAYER
+	body.collision_mask = GIZMO_AXIS_LAYER
 
 	var shape := CollisionShape3D.new()
 	var pick_cyl := CylinderShape3D.new()
@@ -123,6 +127,7 @@ func _add_close_handle(axis_length: float) -> void:
 	sprite.texture = _create_close_icon_texture()
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sprite.pixel_size = 0.01
+	sprite.no_depth_test = true
 	close_root.add_child(sprite)
 	_close_sprite = sprite
 

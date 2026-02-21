@@ -16,7 +16,7 @@ script = ExtResource("1_1ef3e")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_shuhl")]
 layout_mode = 2
-title = "Edit Brain Region"
+title = "Edit Neural Circuit"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -34,7 +34,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Region Name"
+text = "Circuit Name"
 
 [node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
 custom_minimum_size = Vector2(200, 0)
