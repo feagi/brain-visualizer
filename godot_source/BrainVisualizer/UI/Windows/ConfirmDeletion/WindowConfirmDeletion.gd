@@ -50,6 +50,15 @@ func setup(selection: Array[GenomeObject], region_deleting_internals: bool = fal
 		_:
 			push_error("UI: Unknown deletion target for deletion confirmation window! Closing!")
 			close_window()
+	set_process_unhandled_key_input(true)
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := event as InputEventKey
+		if key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER:
+			_yes_pressed()
+		elif key.keycode == KEY_ESCAPE:
+			_no_pressed()
 
 func _scroll_show_objects(objects: Array[GenomeObject]) -> void:
 	for object in objects:
