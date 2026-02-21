@@ -555,7 +555,7 @@ jobs:
           fi
           echo "DLLs in exports:"
           ls -la *.dll 2>/dev/null || echo "No DLLs found"
-          [ "$MISSING" -eq 1 ] && echo "::warning::Required GDExtension DLLs were missing; BV may have degraded functionality at runtime."
+          [ "$MISSING" -eq 1 ] && echo "::warning::Required GDExtension DLLs were missing; BV may have degraded functionality at runtime." || true
 
       - name: Create distribution package (macOS)
         if: runner.os == 'macOS'
