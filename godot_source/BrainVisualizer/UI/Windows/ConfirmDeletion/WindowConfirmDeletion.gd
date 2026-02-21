@@ -33,16 +33,16 @@ func setup(selection: Array[GenomeObject], region_deleting_internals: bool = fal
 			else:
 				_scroll_show_objects(internals)
 			if region_deleting_internals:
-				_label.text = "Are you sure you wish to delete brain region %s with these %d internals?" % [selection[0].friendly_name, len(internals)]
+				_label.text = "Are you sure you wish to delete neural circuit %s with these %d internals?" % [selection[0].friendly_name, len(internals)]
 			else:
 				# raising internals instead
-				_label.text = "Are you sure you wish to delete brain region %s and raise its %d internals to the parent region %s?" % [selection[0].friendly_name, len(internals), selection[0].current_parent_region.friendly_name]
+				_label.text = "Are you sure you wish to delete neural circuit %s and raise its %d internals to the parent circuit %s?" % [selection[0].friendly_name, len(internals), selection[0].current_parent_region.friendly_name]
 				
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			_label.text = "Are you sure you wish to delete %d cortical areas?" % len(selection)
 			_scroll_show_objects(selection)
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
-			_label.text = "Are you sure you wish to delete %d brain regions and their internals?" % len(selection)
+			_label.text = "Are you sure you wish to delete %d neural circuits and their internals?" % len(selection)
 			_scroll_show_objects(selection)
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
 			_label.text = "Are you sure you wish to delete %d objects and their internals?" % len(selection)

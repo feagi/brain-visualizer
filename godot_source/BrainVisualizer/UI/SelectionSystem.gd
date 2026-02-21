@@ -14,6 +14,8 @@ enum SOURCE_CONTEXT {
 	FROM_CIRCUIT_BUILDER_CLICK,
 	FROM_CIRCUIT_BUILDER_DRAG,
 	FROM_OBJECT_SELECTION_WINDOW,
+	FROM_3D_SCENE,
+	FROM_3D_SCENE_ON_PLATE,  ## Cortical area on another region's plate; relocate from within that region
 	UNKNOWN
 }
 

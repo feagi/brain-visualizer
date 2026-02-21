@@ -40,7 +40,7 @@ static func config_for_selecting_new_parent_region(current_parent: BrainRegion, 
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
 	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION
 	output.starting_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	output.pick_instructions = "Please select the new parent Brain Region:"
+	output.pick_instructions = "Please select the new parent neural circuit:"
 	output.hide_all_cortical_areas = true
 	output.preselected_objects = [current_parent]
 	
@@ -74,7 +74,7 @@ static func config_for_single_brain_region_selection(starting_region: BrainRegio
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
 	output.target_type = GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION
 	output.starting_region = starting_region
-	output.pick_instructions = "Please select a Brain Region:"
+	output.pick_instructions = "Please select a neural circuit:"
 	if currently_picked_region != null:
 		output.preselected_objects = [currently_picked_region]
 	output.regions_to_disable = unpickable_regions

@@ -86,7 +86,7 @@ func _create_region_button_pressed() -> void:
 	print("🏗️ REGION CREATION: 2D=%s, 3D=%s" % [coords_2D, coords_3D])
 	
 	if region_name == "":
-		var popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Name", "Please define a name for your Brain Region!")
+		var popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Name", "Please define a name for your neural circuit!")
 		BV.WM.spawn_popup(popup)
 		return
 	FeagiCore.requests.create_region(region, selected, region_name, coords_2D, coords_3D)

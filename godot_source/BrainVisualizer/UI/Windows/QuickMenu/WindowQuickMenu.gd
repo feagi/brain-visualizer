@@ -61,6 +61,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK,
 				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_DRAG
 			]
+			var is_on_plate_of_other_region := _selection_context == SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = is_circuit_builder_context
 				_btn_relocate_2d.disabled = not is_circuit_builder_context
@@ -68,7 +69,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			open_3d_tab_button.visible = false  # Hide 3D tab button for cortical areas
 			details_button.tooltip_text = "View Cortical Area Details"
 			quick_connect_button.tooltip_text = "Quick Connet: Map two areas together."
-			move_to_region_button.tooltip_text = "Add to a region..."
+			move_to_region_button.tooltip_text = "Add to a circuit..."
 			clone_button.tooltip_text = "Clone Cortical Area..."
 			reset_button.tooltip_text = "Reset this Cortical Area..."
 			delete_button.tooltip_text = "Delete this Cortical Area..."
@@ -85,12 +86,12 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			iopu_config_button.tooltip_text = "Open IPU/OPU configuration" if is_ipu_opu else "IPU/OPU configuration only."
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = true
-				_btn_move_3d.disabled = is_circuit_builder_context
-				_btn_move_3d.tooltip_text = "Relocate this cortical area (3D gizmo)"
+				_btn_move_3d.disabled = is_circuit_builder_context or is_on_plate_of_other_region
+				_btn_move_3d.tooltip_text = "Relocate from within the area's circuit" if is_on_plate_of_other_region else "Relocate this cortical area (3D gizmo)"
 			if _btn_resize_3d != null:
 				_btn_resize_3d.visible = true
-				_btn_resize_3d.disabled = is_circuit_builder_context or not area.user_can_edit_dimensions_directly
-				_btn_resize_3d.tooltip_text = "Resize this cortical area (3D gizmo)" if area.user_can_edit_dimensions_directly else "This cortical area cannot be resized"
+				_btn_resize_3d.disabled = is_circuit_builder_context or is_on_plate_of_other_region or not area.user_can_edit_dimensions_directly
+				_btn_resize_3d.tooltip_text = "Resize from within the area's circuit" if is_on_plate_of_other_region else ("Resize this cortical area (3D gizmo)" if area.user_can_edit_dimensions_directly else "This cortical area cannot be resized")
 			if is_circuit_builder_context:
 				quick_connect_CA_N_button.disabled = true
 				quick_connect_N_CA_button.disabled = true
@@ -138,7 +139,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			quick_connect_N_N_button.visible = false
 			details_button.tooltip_text = "View Circuit Details"
 			open_3d_tab_button.tooltip_text = "Open Circuit in 3D Tab"
-			move_to_region_button.tooltip_text = "Add to a Circuit..."
+			move_to_region_button.tooltip_text = "Add to a circuit..."
 			delete_button.tooltip_text = "Delete this Circuit..."
 			
 			# 🚨 SAFETY CHECK: This should never happen due to earlier check, but be defensive
@@ -176,12 +177,12 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
 			details_button.tooltip_text = "View Details of these Cortical Areas"
-			move_to_region_button.tooltip_text = "Add to a region..."
+			move_to_region_button.tooltip_text = "Add to a circuit..."
 			_titlebar.title = "Selected multiple areas"
 			
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
 				move_to_region_button.disabled = true
-				move_to_region_button.tooltip_text = "One of the selected areas is of Input, Output, or Core type which is not allowed inside a brain region."
+				move_to_region_button.tooltip_text = "One of the selected areas is of Input, Output, or Core type which is not allowed inside a neural circuit."
 			if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
 				delete_button.disabled = true
 				delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"
@@ -193,7 +194,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = true
 				_btn_relocate_2d.disabled = false
-				_btn_relocate_2d.tooltip_text = "Relocate selected regions (2D)"
+				_btn_relocate_2d.tooltip_text = "Relocate selected circuits (2D)"
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = false
 			if _btn_resize_3d != null:
@@ -206,8 +207,8 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			quick_connect_CA_N_button.visible = false
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
-			move_to_region_button.tooltip_text = "Add to a region..."
-			_titlebar.title = "Selected multiple regions"
+			move_to_region_button.tooltip_text = "Add to a circuit..."
+			_titlebar.title = "Selected multiple circuits"
 
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
 			reset_button.visible = false
@@ -227,13 +228,13 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			quick_connect_CA_N_button.visible = false
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
-			move_to_region_button.tooltip_text = "Add to a region..."
+			move_to_region_button.tooltip_text = "Add to a circuit..."
 			_titlebar.title = "Selected multiple objects"
 			
 			var filtered_areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
 			if !AbstractCorticalArea.can_all_areas_exist_in_subregion(filtered_areas):
 				move_to_region_button.disabled = true
-				move_to_region_button.tooltip_text = "One or more of the selected objects cannot be moved to a region"
+				move_to_region_button.tooltip_text = "One or more of the selected objects cannot be moved to a circuit"
 			if !AbstractCorticalArea.can_all_areas_be_deleted(filtered_areas):
 				delete_button.disabled = true
 				delete_button.tooltip_text = "One or more of the selected objects cannot be deleted"
@@ -345,13 +346,13 @@ func _button_open_3d_tab() -> void:
 	# 🚨 SAFETY CHECK: Ensure selection array is not empty and contains a brain region
 	if _selection.size() == 0:
 		push_error("BV UI: QuickMenu _button_open_3d_tab called with empty _selection array!")
-		BV.NOTIF.add_notification("No brain region selected for 3D tab!")
+		BV.NOTIF.add_notification("No neural circuit selected for 3D tab!")
 		close_window()
 		return
 		
 	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 		push_error("BV UI: QuickMenu _button_open_3d_tab called but selection is not a single brain region!")
-		BV.NOTIF.add_notification("3D tabs can only be created for single brain regions!")
+		BV.NOTIF.add_notification("3D tabs can only be created for single neural circuits!")
 		close_window()
 		return
 	
@@ -387,14 +388,14 @@ func _button_move_3d() -> void:
 	if _mode == GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 		var region: BrainRegion = _selection[0] as BrainRegion
 		if region == null or region.current_parent_region == null:
-			BV.NOTIF.add_notification("Cannot relocate root region.")
+			BV.NOTIF.add_notification("Cannot relocate root circuit.")
 			close_window()
 			return
 		var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(region.current_parent_region)
 		if bm == null:
 			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
 				"Move (3D) Unavailable",
-				"No active 3D Brain Monitor found for this circuit's parent.\n\nOpen a 3D tab for the parent region, then try again."
+				"No active 3D Brain Monitor found for this circuit's parent.\n\nOpen a 3D tab for the parent circuit, then try again."
 			))
 			close_window()
 			return
@@ -408,7 +409,7 @@ func _button_move_3d() -> void:
 	if area == null or area.current_parent_region == null:
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
 			"Move (3D) Unavailable",
-			"Cannot start 3D relocation: no parent region available for this cortical area."
+			"Cannot start 3D relocation: no parent circuit available for this cortical area."
 		))
 		close_window()
 		return
@@ -416,7 +417,7 @@ func _button_move_3d() -> void:
 	if bm == null:
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
 			"Move (3D) Unavailable",
-			"No active 3D Brain Monitor found for this area's parent region.\n\nOpen a 3D tab for that region, then try again."
+			"No active 3D Brain Monitor found for this area's parent circuit.\n\nOpen a 3D tab for that circuit, then try again."
 		))
 		close_window()
 		return
@@ -445,7 +446,7 @@ func _button_resize_3d() -> void:
 	if area.current_parent_region == null:
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
 			"Resize (3D) Unavailable",
-			"Cannot start 3D resizing: no parent region available for this cortical area."
+			"Cannot start 3D resizing: no parent circuit available for this cortical area."
 		))
 		close_window()
 		return
@@ -453,7 +454,7 @@ func _button_resize_3d() -> void:
 	if bm == null:
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
 			"Resize (3D) Unavailable",
-			"No active 3D Brain Monitor found for this area's parent region.\n\nOpen a 3D tab for that region, then try again."
+			"No active 3D Brain Monitor found for this area's parent circuit.\n\nOpen a 3D tab for that circuit, then try again."
 		))
 		close_window()
 		return

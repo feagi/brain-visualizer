@@ -1651,7 +1651,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 								
 								# Single left-click on cortical area - select it (only for MAIN button without Ctrl)
 								if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-									BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN, arr_test)
+									var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
+									if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
+										ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
+									BV.UI.selection_system.select_objects(ctx, arr_test)
 									BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
 									#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
 									#clicked_cortical_area.emit(hit_parent_parent.cortical_area)
@@ -1849,7 +1852,7 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 func start_brain_region_manipulation(region: BrainRegion) -> void:
 	if region == null or region.is_root_region():
 		if region != null and region.is_root_region():
-			BV.NOTIF.add_notification("Root region cannot be relocated.")
+			BV.NOTIF.add_notification("Root circuit cannot be relocated.")
 		return
 	if _manipulation_active:
 		_end_manipulation_session(true)
