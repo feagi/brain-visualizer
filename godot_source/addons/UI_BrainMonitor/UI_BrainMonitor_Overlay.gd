@@ -162,11 +162,17 @@ func clear_plate_hover() -> void:
 	# For now, we clear unconditionally when plate hover ends
 	_clear_global_context()
 
-## Show manipulation position during 3D relocate/resize.
+## Show manipulation position during 3D relocate/resize (cortical area).
 func show_manipulation_position(cortical_area: AbstractCorticalArea, position_3d: Vector3i) -> void:
 	if cortical_area == null:
 		return
 	_set_global_context("Move - " + cortical_area.friendly_name + "  " + str(position_3d))
+
+## Show manipulation position during 3D relocate (brain region).
+func show_manipulation_position_region(brain_region: BrainRegion, position_3d: Vector3i) -> void:
+	if brain_region == null:
+		return
+	_set_global_context("Move - " + brain_region.friendly_name + "  " + str(position_3d))
 
 func clear_manipulation_position() -> void:
 	_clear_global_context()

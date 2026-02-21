@@ -17,7 +17,9 @@ enum MANIPULATION_MODE { MOVE, RESIZE }
 var _manipulation_active: bool = false
 var _manipulation_mode: MANIPULATION_MODE = MANIPULATION_MODE.MOVE
 var _manipulation_area: AbstractCorticalArea = null
+var _manipulation_region: BrainRegion = null
 var _manipulation_preview: UI_BrainMonitor_InteractivePreview = null
+var _manipulation_region_preview: UI_BrainMonitor_BrainRegionPreview = null
 var _manipulation_gizmo: UI_BrainMonitor_RuntimeTransformGizmo = null
 var _manipulation_dragging: bool = false
 var _manipulation_axis: int = -1  # UI_BrainMonitor_RuntimeTransformGizmo.AXIS
@@ -25,6 +27,8 @@ var _manipulation_start_pos: Vector3i = Vector3i.ZERO
 var _manipulation_start_dims: Vector3i = Vector3i.ZERO
 var _manipulation_start_param: float = 0.0
 var _manipulation_axis_origin: Vector3 = Vector3.ZERO  # Fixed axis origin during drag; avoids feedback when gizmo moves with preview
+var _manipulation_drag_start_pos: Vector3i = Vector3i.ZERO  # Position when drag started; used for "did user move?" check (not updated during drag)
+var _manipulation_drag_start_dims: Vector3i = Vector3i.ZERO
 var _manipulation_current_pos: Vector3i = Vector3i.ZERO
 var _manipulation_current_dims: Vector3i = Vector3i.ZERO
 var _manipulation_group_anchor_pos: Vector3i = Vector3i.ZERO
@@ -686,14 +690,17 @@ func _on_container_mouse_exited() -> void:
 	_clear_bridge_segment()
 	_qc_last_mouse_entry_pos = Vector2.ZERO
 
-## Allow Enter to confirm and close manipulation without clicking the X.
+## Enter: save. Escape: cancel (reset to original).
 func _unhandled_input(event: InputEvent) -> void:
 	if not _manipulation_active:
 		return
 	if event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and (key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER):
-			_finish_manipulation_drag_and_confirm()
+		if key.pressed and not key.echo:
+			if key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER:
+				_finish_manipulation_drag_and_confirm(true)
+			elif key.keycode == KEY_ESCAPE:
+				_cancel_manipulation()
 
 func _create_world3d_with_environment() -> World3D:
 	var new_world = World3D.new()
@@ -1526,18 +1533,16 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
 			if close_body != null:
 				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
-					_finish_manipulation_drag_and_confirm(true)
+					_cancel_manipulation()
 				continue
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
 				# Clicking over nothing
-				# Clear plate hover label if we click on empty space
+				if _manipulation_active and bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
+					_finish_manipulation_drag_and_confirm(true)
+					continue
 				if _UI_layer_for_BM:
 					_UI_layer_for_BM.clear_plate_hover()
-				
-				# Right-click camera reset removed to allow trackpad rotation
-				# Users can still reset camera by pressing R key
-				
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
@@ -1546,14 +1551,20 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if _manipulation_active and is_instance_valid(hit_body):
 				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) and hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND) == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
-						_finish_manipulation_drag_and_confirm(true)
+						_cancel_manipulation()
 					continue
 				if hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
 						if bm_input_event.button_pressed:
 							_start_manipulation_drag(hit_body, bm_input_event)
 						else:
-							_finish_manipulation_drag_and_confirm()
+							_manipulation_dragging = false
+							if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
+								_pancake_cam.call("set_tank_pan_enabled", true)
+					continue
+				# Click on something other than gizmo (preview, cortical area, etc.) while in manipulation: save.
+				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
+					_finish_manipulation_drag_and_confirm(true)
 					continue
 			
 			# Check if we hit a cortical area renderer
@@ -1793,12 +1804,51 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 	elif mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area):
 		_setup_manipulation_group_previews(area)
 
+## Starts a runtime manipulation session for a brain region (move plates in 3D).
+## Shares gizmo and drag logic with cortical area; only preview type and apply differ.
+func start_brain_region_manipulation(region: BrainRegion) -> void:
+	if region == null or region.is_root_region():
+		if region != null and region.is_root_region():
+			BV.NOTIF.add_notification("Root region cannot be relocated.")
+		return
+	if _manipulation_active:
+		_end_manipulation_session(true)
+	_manipulation_active = true
+	_manipulation_mode = MANIPULATION_MODE.MOVE
+	_manipulation_region = region
+	_manipulation_area = null
+	_manipulation_preview = null
+	_manipulation_start_pos = region.coordinates_3D
+	_manipulation_current_pos = _manipulation_start_pos
+	_manipulation_group_anchor_pos = _manipulation_start_pos
+	_manipulation_region_preview = create_brain_region_preview(region, region.coordinates_3D)
+	var region_frame: Node3D = _brain_region_visualizations_by_ID.get(region.region_ID, null)
+	if region_frame != null and is_instance_valid(region_frame):
+		region_frame.visible = false
+	_update_manipulation_position_label()
+	_manipulation_gizmo = UI_BrainMonitor_RuntimeTransformGizmo.new()
+	_manipulation_gizmo.setup(UI_BrainMonitor_RuntimeTransformGizmo.MODE.MOVE)
+	_node_3D_root.add_child(_manipulation_gizmo)
+	_update_manipulation_gizmo_transform()
+	if _pancake_cam != null and not _pancake_cam.camera_user_moved.is_connected(_update_manipulation_gizmo_transform):
+		_pancake_cam.camera_user_moved.connect(_update_manipulation_gizmo_transform)
+	_manipulation_region_preview.user_moved_preview.connect(func(p: Vector3i):
+		_manipulation_current_pos = p
+		_update_manipulation_gizmo_transform()
+	)
+
+## Cancel manipulation: reset to original position, do not save.
+func _cancel_manipulation() -> void:
+	_end_manipulation_session(true)
+
 func _end_manipulation_session(clear_nodes: bool) -> void:
 	_manipulation_dragging = false
 	_manipulation_axis = -1
 	_manipulation_active = false
 	_manipulation_mode = MANIPULATION_MODE.MOVE
+	var region_to_restore: BrainRegion = _manipulation_region
 	_manipulation_area = null
+	_manipulation_region = null
 	_clear_manipulation_group_previews()
 	# Safety: ensure camera pan is restored if session ends while dragging.
 	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
@@ -1806,11 +1856,18 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 	if clear_nodes:
 		if is_instance_valid(_manipulation_preview):
 			_manipulation_preview.queue_free()
+		if is_instance_valid(_manipulation_region_preview):
+			_manipulation_region_preview.queue_free()
 		if is_instance_valid(_manipulation_gizmo):
 			_manipulation_gizmo.queue_free()
+		if region_to_restore != null:
+			var region_frame: Node3D = _brain_region_visualizations_by_ID.get(region_to_restore.region_ID, null)
+			if region_frame != null and is_instance_valid(region_frame):
+				region_frame.visible = true
 	if _UI_layer_for_BM and _UI_layer_for_BM.has_method("clear_manipulation_position"):
 		_UI_layer_for_BM.clear_manipulation_position()
 	_manipulation_preview = null
+	_manipulation_region_preview = null
 	_manipulation_gizmo = null
 	_manipulation_group_start_positions.clear()
 	_manipulation_group_anchor_pos = Vector3i.ZERO
@@ -1874,15 +1931,31 @@ func _get_preview_static_body(preview: UI_BrainMonitor_InteractivePreview) -> St
 	return body as StaticBody3D
 
 func _update_manipulation_gizmo_transform() -> void:
-	if not _manipulation_active or _manipulation_gizmo == null or _manipulation_preview == null:
+	if not _manipulation_active or _manipulation_gizmo == null:
+		return
+	# Brain region path (shared gizmo logic; different anchor source)
+	if _manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview):
+		var anchor: Vector3 = _manipulation_region_preview.global_position
+		var gizmo_scale: float = _get_gizmo_scale_for_camera(anchor)
+		_manipulation_gizmo.scale = Vector3.ONE * gizmo_scale
+		var axis_len: float = _manipulation_gizmo.get_axis_length() if _manipulation_gizmo.has_method("get_axis_length") else 0.0
+		axis_len *= gizmo_scale
+		var offset_x: float = 8.0 + (axis_len * 0.5)
+		_manipulation_gizmo.global_position = anchor + Vector3(offset_x, 0.0, 0.0)
+		if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
+			var camera_pos: Vector3 = _pancake_cam.global_position
+			var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
+			var close_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
+			_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
+		return
+	# Cortical area path (unchanged)
+	if _manipulation_preview == null:
 		return
 	var body := _get_preview_static_body(_manipulation_preview)
 	if body == null:
 		return
 	var gizmo_scale: float = _get_gizmo_scale_for_camera(body.global_position)
 	_manipulation_gizmo.scale = Vector3.ONE * gizmo_scale
-	# Place gizmo on the +X (right) side of the volume, outside its bounds.
-	# This makes it easier to access for very large cortical areas.
 	var axis_len: float = _manipulation_gizmo.get_axis_length() if _manipulation_gizmo.has_method("get_axis_length") else 0.0
 	axis_len *= gizmo_scale
 	var offset_x: float = (body.scale.x * 0.5) + (axis_len * 0.5)
@@ -1921,7 +1994,7 @@ func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_positi
 	_node_3D_root.add_child(preview)  # Add to 3D scene root
 	preview.setup(brain_region, initial_FEAGI_position)
 	preview.tree_exiting.connect(_brain_region_preview_closing)
-	print("🔮 Created brain region preview for: %s" % brain_region.friendly_name)
+	print("Created brain region preview for: %s" % brain_region.friendly_name)
 	# Defer indicator spawn to ensure preview children are initialized and transforms updated
 	_spawn_indicator_for_node_center(preview)
 	# Use weak reference to self to avoid capturing freed objects
@@ -1959,7 +2032,8 @@ func _brain_region_preview_closing():
 
 
 func _start_manipulation_drag(hit_body: StaticBody3D, bm_input_event: UI_BrainMonitor_InputEvent_Click) -> void:
-	if not _manipulation_active or _manipulation_preview == null or _manipulation_gizmo == null:
+	var has_preview := _manipulation_preview != null or (_manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview))
+	if not _manipulation_active or not has_preview or _manipulation_gizmo == null:
 		return
 	# Prevent camera pan (left-drag) while user is dragging gizmo.
 	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
@@ -1972,6 +2046,8 @@ func _start_manipulation_drag(hit_body: StaticBody3D, bm_input_event: UI_BrainMo
 	# IMPORTANT: baseline must come from the current preview state, not the underlying cortical area,
 	# because the user may be doing multiple drags before confirming/saving to FEAGI.
 	_manipulation_start_pos = _manipulation_current_pos
+	_manipulation_drag_start_pos = _manipulation_current_pos
+	_manipulation_drag_start_dims = _manipulation_current_dims
 	_manipulation_start_dims = _manipulation_current_dims
 	_manipulation_start_param = _axis_param_from_ray(
 		_manipulation_axis_origin,
@@ -1980,7 +2056,8 @@ func _start_manipulation_drag(hit_body: StaticBody3D, bm_input_event: UI_BrainMo
 	)
 
 func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover) -> void:
-	if not _manipulation_active or not _manipulation_dragging or _manipulation_preview == null or _manipulation_gizmo == null:
+	var has_preview := _manipulation_preview != null or (_manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview))
+	if not _manipulation_active or not _manipulation_dragging or not has_preview or _manipulation_gizmo == null:
 		return
 	var axis_dir := _axis_dir_world(_manipulation_axis)
 	var param := _axis_param_from_ray(_manipulation_axis_origin, axis_dir, bm_hover_event.get_ray_query())
@@ -2000,7 +2077,10 @@ func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover
 			UI_BrainMonitor_RuntimeTransformGizmo.AXIS.Z:
 				new_pos.z += step_delta
 		_manipulation_current_pos = new_pos
-		_manipulation_preview.set_new_position(new_pos)
+		if _manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview):
+			_manipulation_region_preview.update_position_with_new_FEAGI_coordinate(new_pos)
+		else:
+			_manipulation_preview.set_new_position(new_pos)
 		_update_manipulation_position_label()
 	else:
 		var new_dims := _manipulation_current_dims
@@ -2023,9 +2103,12 @@ func _update_manipulation_position_label() -> void:
 	_ensure_ui_overlay()
 	if _UI_layer_for_BM == null:
 		return
-	if _manipulation_mode == MANIPULATION_MODE.MOVE and _UI_layer_for_BM.has_method("show_manipulation_position"):
-		_UI_layer_for_BM.show_manipulation_position(_manipulation_area, _manipulation_current_pos)
-	elif _manipulation_mode == MANIPULATION_MODE.RESIZE and _UI_layer_for_BM.has_method("show_manipulation_dimensions"):
+	if _manipulation_mode == MANIPULATION_MODE.MOVE:
+		if _manipulation_region != null and _UI_layer_for_BM.has_method("show_manipulation_position_region"):
+			_UI_layer_for_BM.show_manipulation_position_region(_manipulation_region, _manipulation_current_pos)
+		elif _manipulation_area != null and _UI_layer_for_BM.has_method("show_manipulation_position"):
+			_UI_layer_for_BM.show_manipulation_position(_manipulation_area, _manipulation_current_pos)
+	elif _manipulation_mode == MANIPULATION_MODE.RESIZE and _manipulation_area != null and _UI_layer_for_BM.has_method("show_manipulation_dimensions"):
 		_UI_layer_for_BM.show_manipulation_dimensions(_manipulation_area, _manipulation_current_dims)
 
 func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
@@ -2035,20 +2118,28 @@ func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 	# Re-enable camera pan now that gizmo drag ended.
 	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
 		_pancake_cam.call("set_tank_pan_enabled", true)
-	if _manipulation_area == null or _manipulation_preview == null or FeagiCore == null or FeagiCore.requests == null:
-		return
+	# Cortical area: original guards. Brain region: separate guards.
+	if _manipulation_region != null:
+		if _manipulation_region_preview == null or not is_instance_valid(_manipulation_region_preview) or FeagiCore == null or FeagiCore.requests == null:
+			return
+	else:
+		if _manipulation_area == null or _manipulation_preview == null or FeagiCore == null or FeagiCore.requests == null:
+			return
 	var candidate_pos := _manipulation_current_pos
 	var candidate_dims := _manipulation_current_dims
 
 	if _manipulation_mode == MANIPULATION_MODE.MOVE:
-		if candidate_pos == _manipulation_start_pos and not force_commit:
+		if candidate_pos == _manipulation_drag_start_pos and not force_commit:
 			_end_manipulation_session(true)
 			return
-		_apply_move(candidate_pos)
+		if _manipulation_region != null:
+			_apply_region_move(candidate_pos)
+		else:
+			_apply_move(candidate_pos)
 		return
 
 	# RESIZE
-	if candidate_dims == _manipulation_start_dims and not force_commit:
+	if candidate_dims == _manipulation_drag_start_dims and not force_commit:
 		_end_manipulation_session(true)
 		return
 	if _would_overflow_capacity(candidate_dims):
@@ -2088,6 +2179,37 @@ func _apply_move(new_pos: Vector3i) -> void:
 	if _manipulation_area != null:
 		_manipulation_area.FEAGI_change_coordinates_3D(new_pos)
 		_manipulation_area.FEAGI_change_dimensions_3D(_manipulation_current_dims)
+	_end_manipulation_session(true)
+
+func _apply_region_move(new_pos: Vector3i) -> void:
+	if _manipulation_region == null or _manipulation_region.current_parent_region == null:
+		_end_manipulation_session(true)
+		return
+	var result: FeagiRequestOutput = await FeagiCore.requests.edit_region_object(
+		_manipulation_region,
+		_manipulation_region.current_parent_region,
+		_manipulation_region.friendly_name,
+		"",
+		_manipulation_region.coordinates_2D,
+		new_pos
+	)
+	if result.has_errored:
+		var details = result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Move failed",
+			"FEAGI rejected the region update.\n\n%s\n%s" % [details[0], details[1]]
+		))
+		_end_manipulation_session(true)
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		var save_details = save_result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Save failed",
+			"Saved position but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+		))
+	if _manipulation_region != null:
+		_manipulation_region.FEAGI_change_coordinates_3D(new_pos)
 	_end_manipulation_session(true)
 
 ## Collect all cortical areas that are part of the same unit (subtype + group).

@@ -126,7 +126,9 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = false
 			if _btn_move_3d != null:
-				_btn_move_3d.visible = false
+				_btn_move_3d.visible = true
+				_btn_move_3d.disabled = false
+				_btn_move_3d.tooltip_text = "Relocate this circuit (3D gizmo)"
 			if _btn_resize_3d != null:
 				_btn_resize_3d.visible = false
 			quick_connect_button.visible = false
@@ -380,6 +382,23 @@ func _button_open_3d_tab() -> void:
 func _button_move_3d() -> void:
 	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
+		close_window()
+		return
+	if _mode == GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
+		var region: BrainRegion = _selection[0] as BrainRegion
+		if region == null or region.current_parent_region == null:
+			BV.NOTIF.add_notification("Cannot relocate root region.")
+			close_window()
+			return
+		var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(region.current_parent_region)
+		if bm == null:
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Move (3D) Unavailable",
+				"No active 3D Brain Monitor found for this circuit's parent.\n\nOpen a 3D tab for the parent region, then try again."
+			))
+			close_window()
+			return
+		bm.start_brain_region_manipulation(region)
 		close_window()
 		return
 	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
