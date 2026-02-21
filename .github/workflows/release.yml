@@ -510,8 +510,9 @@ jobs:
         run: |
           cd godot_source
           echo "Importing Godot resources (fonts, SVGs, etc.)..."
-          # Import must succeed - script compilation errors will fail here
-          if ! ${GODOT} --headless --import --quit 2>&1 | tee /tmp/godot-import.log; then
+          # Godot 4.x headless bug: --quit exits before import completes (fonts, SVGs).
+          # Use --quit-after 2 to allow import to finish (see godotengine/godot#77508).
+          if ! ${GODOT} --headless --import --quit-after 2 2>&1 | tee /tmp/godot-import.log; then
             echo "❌ ERROR: Godot import failed!"
             echo ""
             echo "Checking for script errors:"
