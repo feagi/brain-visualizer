@@ -584,6 +584,23 @@ func _process(delta: float) -> void:
 	else:
 		_enter_key_latched = false
 
+## True when mouse is over gizmo close button or axis (so position label should not overwrite hover text).
+func _is_mouse_over_gizmo() -> bool:
+	if not _manipulation_active or _manipulation_gizmo == null or _pancake_cam == null:
+		return false
+	var sv: SubViewport = $SubViewport as SubViewport
+	if sv == null:
+		return false
+	var mouse_pos: Vector2 = sv.get_mouse_position()
+	var ray_start: Vector3 = _pancake_cam.project_ray_origin(mouse_pos)
+	var ray_end: Vector3 = ray_start + (_pancake_cam.project_ray_normal(mouse_pos) * UI_BrainMonitor_PancakeCamera.RAYCAST_LENGTH)
+	var rq := PhysicsRayQueryParameters3D.new()
+	rq.from = ray_start
+	rq.to = ray_end
+	if _raycast_close_handle(rq) != null:
+		return true
+	return not _raycast_gizmo(rq).is_empty()
+
 ## Raycast only against the close handle collider.
 func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody3D:
 	var close_query := PhysicsRayQueryParameters3D.new()
@@ -1317,6 +1334,20 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				if close_body != null:
 					hover_close = true
 				_manipulation_gizmo.set_close_hovered(hover_close)
+			if _manipulation_active and _UI_layer_for_BM != null:
+				if close_body != null:
+					_UI_layer_for_BM.show_gizmo_cancel_hover()
+					continue
+				var gizmo_hit: Dictionary = _raycast_gizmo(bm_input_event.get_ray_query())
+				if not gizmo_hit.is_empty():
+					var body: StaticBody3D = gizmo_hit.get(&"collider") as StaticBody3D
+					if body and body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND):
+						var kind: StringName = body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND)
+						if kind != UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE and body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
+							var axis: int = body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS)
+							var is_move: bool = kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_MOVE
+							_UI_layer_for_BM.show_gizmo_axis_hover(axis, is_move)
+							continue
 			var source_bm = BV.UI.qc_guide_source_bm
 			# Compute end point and hover state if either we own the guide or we need to draw a bridge
 			var need_visual := _qc_guide_active or (source_bm != null)
@@ -2117,6 +2148,9 @@ func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover
 func _update_manipulation_position_label() -> void:
 	_ensure_ui_overlay()
 	if _UI_layer_for_BM == null:
+		return
+	# Do not overwrite when mouse is over gizmo (close or axis) - hover handler shows that
+	if _is_mouse_over_gizmo():
 		return
 	if _manipulation_mode == MANIPULATION_MODE.MOVE:
 		if _manipulation_region != null and _UI_layer_for_BM.has_method("show_manipulation_position_region"):
