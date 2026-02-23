@@ -16,6 +16,7 @@ const _PREFAB_QUICK_MENU: PackedScene = preload("res://BrainVisualizer/UI/Window
 const _PREFAB_CLONE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/Windows/CloneCorticalArea/WindowCloneCorticalArea.tscn")
 const _PREFAB_IMPORT_AMALGAMATION: PackedScene = preload("res://BrainVisualizer/UI/Windows/AmalgamationRequest/WindowAmalgamationRequest.tscn")
 const _PREFAB_CONFIGURABLE_POPUP: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfigurablePopup/WindowConfigurablePopup.tscn")
+const _PREFAB_RAW_CONNECTIVITY_EDIT: PackedScene = preload("res://BrainVisualizer/UI/Windows/RawConnectivityEdit/WindowRawConnectivityEdit.tscn")
 const _PREFAB_DEVELOPER_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowDeveloperOptions.tscn")
 const _PREFAB_SELECT_GENOME_OBJECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.tscn")
 const _PREFAB_CREATE_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateRegion/WindowCreateRegion.tscn")
@@ -169,6 +170,11 @@ func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> WindowConfigu
 	var configurable_popup: WindowConfigurablePopup = _default_spawn_window(_PREFAB_CONFIGURABLE_POPUP, popup_definition.window_name) as WindowConfigurablePopup
 	configurable_popup.setup(popup_definition)
 	return configurable_popup
+
+func spawn_raw_connectivity_edit(mode: WindowRawConnectivityEdit.MODE, initial_json: String, on_save: Callable) -> WindowRawConnectivityEdit:
+	var edit_window: WindowRawConnectivityEdit = _default_spawn_window(_PREFAB_RAW_CONNECTIVITY_EDIT, WindowRawConnectivityEdit.WINDOW_NAME) as WindowRawConnectivityEdit
+	edit_window.setup(mode, initial_json, on_save)
+	return edit_window
 
 func spawn_create_region(parent_region: BrainRegion, selected_objects: Array[GenomeObject]) -> void:
 	var create_region: WindowCreateRegion = _default_spawn_window(_PREFAB_CREATE_REGION, WindowCreateRegion.WINDOW_NAME) as WindowCreateRegion
