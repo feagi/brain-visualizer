@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://bvectgrid01"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/VisualVectorEdit/VectorEditGrid.gd" id="1_script"]
+
+[node name="VectorEditGrid" type="Control"]
+custom_minimum_size = Vector2(360, 360)
+script = ExtResource("1_script")
