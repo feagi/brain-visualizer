@@ -47,6 +47,10 @@ func _ready():
 	_field_z.prefix = int_z_prefix
 	_field_z.suffix = int_z_suffix
 
+	_field_x.min_int_value = 0
+	_field_y.min_int_value = 0
+	_field_z.min_int_value = 0
+
 	_field_x.current_patternval = PatternVal.new(initial_vector.x)
 	_field_y.current_patternval = PatternVal.new(initial_vector.y)
 	_field_z.current_patternval = PatternVal.new(initial_vector.z)

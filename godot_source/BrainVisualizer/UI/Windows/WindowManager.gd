@@ -18,6 +18,7 @@ const _PREFAB_IMPORT_AMALGAMATION: PackedScene = preload("res://BrainVisualizer/
 const _PREFAB_CONFIGURABLE_POPUP: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfigurablePopup/WindowConfigurablePopup.tscn")
 const _PREFAB_RAW_CONNECTIVITY_EDIT: PackedScene = preload("res://BrainVisualizer/UI/Windows/RawConnectivityEdit/WindowRawConnectivityEdit.tscn")
 const _PREFAB_VISUAL_VECTOR_EDIT: PackedScene = preload("res://BrainVisualizer/UI/Windows/VisualVectorEdit/WindowVisualVectorEdit.tscn")
+const _PREFAB_PATTERN_VISUAL_EDIT: PackedScene = preload("res://BrainVisualizer/UI/Windows/PatternVisualEdit/WindowPatternVisualEdit.tscn")
 const _PREFAB_DEVELOPER_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowDeveloperOptions.tscn")
 const _PREFAB_SELECT_GENOME_OBJECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.tscn")
 const _PREFAB_CREATE_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateRegion/WindowCreateRegion.tscn")
@@ -180,6 +181,11 @@ func spawn_raw_connectivity_edit(mode: WindowRawConnectivityEdit.MODE, initial_j
 func spawn_visual_vector_edit(initial_vectors: Array[Vector3i], on_save: Callable) -> WindowVisualVectorEdit:
 	var edit_window: WindowVisualVectorEdit = _default_spawn_window(_PREFAB_VISUAL_VECTOR_EDIT, WindowVisualVectorEdit.WINDOW_NAME) as WindowVisualVectorEdit
 	edit_window.setup(initial_vectors, on_save)
+	return edit_window
+
+func spawn_pattern_visual_edit(initial_pair: PatternVector3Pairs, on_save: Callable) -> WindowPatternVisualEdit:
+	var edit_window: WindowPatternVisualEdit = _default_spawn_window(_PREFAB_PATTERN_VISUAL_EDIT, WindowPatternVisualEdit.WINDOW_NAME) as WindowPatternVisualEdit
+	edit_window.setup(initial_pair, on_save)
 	return edit_window
 
 func spawn_create_region(parent_region: BrainRegion, selected_objects: Array[GenomeObject]) -> void:

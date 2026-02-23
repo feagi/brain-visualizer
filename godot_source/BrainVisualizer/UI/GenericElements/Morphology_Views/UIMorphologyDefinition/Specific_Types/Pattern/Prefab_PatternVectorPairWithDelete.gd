@@ -16,7 +16,15 @@ func setup(setup_data: Dictionary, _irrelevant2):
 func _allow_editing(editing_allowed: bool) -> void:
 	$PV1.editable = editing_allowed
 	$PV2.editable = editing_allowed
+	$VisualEditButton.visible = editing_allowed
 	$DeleteButton.visible = editing_allowed
+
+func _on_visual_edit_button_pressed() -> void:
+	BV.WM.spawn_pattern_visual_edit(
+		current_vector_pair,
+		func(pair: PatternVector3Pairs) -> void:
+			current_vector_pair = pair
+	)
 
 # Connected Via UI to the pressed signal from the delete button
 func _on_delete_button_pressed() -> void:
