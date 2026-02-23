@@ -93,7 +93,7 @@ func _set_vector_array(input_vectors: Array[Vector3i], is_morphology_editable: b
 
 func _on_raw_edit_pressed() -> void:
 	var arr: Array = FEAGIUtils.vector3i_array_to_array_of_arrays(get_vector_array())
-	var initial_json: String = JSON.stringify(arr)
+	var initial_json: String = FEAGIUtils.array_to_json_one_element_per_line(arr)
 	BV.WM.spawn_raw_connectivity_edit(
 		WindowRawConnectivityEdit.MODE.VECTORS,
 		initial_json,
