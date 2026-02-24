@@ -56,6 +56,9 @@ func remove_override_usecase(usecase: OVERRIDE_USECASE) -> void:
 		return
 	_override_use_cases.remove_at(index)
 
+func has_override_usecase(usecase: OVERRIDE_USECASE) -> bool:
+	return usecase in _override_use_cases
+
 func clear_all_highlighted() -> void:
 	for object in _highlighted_genome_objects:
 		object.UI_set_highlighted_state(false)

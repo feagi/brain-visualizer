@@ -1660,7 +1660,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					currently_moused_over_volumes.append(hit_parent_parent)
 					var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
 					if bm_input_event.button_pressed:
-						if UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
+						var quick_connect_override_active: bool = BV != null and BV.UI != null and BV.UI.selection_system != null and BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
+						if not quick_connect_override_active and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
 							# Additional safety check - object might have been freed between initial check and method calls
 							if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
 								continue

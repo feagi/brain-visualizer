@@ -119,6 +119,11 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		if not defined_cortical_area.dimensions_3D_updated.is_connected(_directpoints_renderer.update_dimensions):
 			defined_cortical_area.dimensions_3D_updated.connect(_directpoints_renderer.update_dimensions)
 	
+	# Mirror SelectionSystem highlight state to 3D renderer selection outline/highlight.
+	if not defined_cortical_area.UI_highlighted_state_updated.is_connected(_on_ui_highlighted_state_updated):
+		defined_cortical_area.UI_highlighted_state_updated.connect(_on_ui_highlighted_state_updated)
+	_on_ui_highlighted_state_updated(defined_cortical_area.UI_is_highlighted)
+	
 	# Connect legacy SVO visualization data to DDA renderer (for translucent structure)
 	if _dda_renderer != null:
 		if not defined_cortical_area.recieved_new_neuron_activation_data.is_connected(_dda_renderer.update_visualization_data):
@@ -802,6 +807,12 @@ func clear_all_neuron_selection_states() -> void:
 
 func get_neuron_selection_states() -> Array[Vector3i]:
 	return _selected_neuron_coordinates
+
+func _on_ui_highlighted_state_updated(is_highlighted: bool) -> void:
+	if _dda_renderer != null and _dda_renderer.has_method("set_cortical_area_selection"):
+		_dda_renderer.set_cortical_area_selection(is_highlighted)
+	if _directpoints_renderer != null and _directpoints_renderer.has_method("set_cortical_area_selection"):
+		_directpoints_renderer.set_cortical_area_selection(is_highlighted)
 
 func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
 	# Special cases: Memory and Power cortical areas use DirectPoints rendering
