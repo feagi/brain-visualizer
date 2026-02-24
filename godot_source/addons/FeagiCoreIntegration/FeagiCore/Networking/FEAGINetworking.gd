@@ -593,6 +593,9 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 			if prev_state == CONNECTION_STATE.RETRYING_HTTP: # are both actually broken?
 				new_state = CONNECTION_STATE.RETRYING_HTTP_WS
 	
+	# Avoid no-op emissions so UI/state listeners do not process duplicate transitions.
+	if prev_state == new_state:
+		return
 	_connection_state = new_state
 	connection_state_changed.emit(prev_state, new_state)
 

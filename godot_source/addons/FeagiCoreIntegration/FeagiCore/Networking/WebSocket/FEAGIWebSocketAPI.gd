@@ -1243,6 +1243,9 @@ func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 
 func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health
+	# Avoid no-op emissions to reduce downstream duplicate state handling.
+	if prev_health == new_health:
+		return
 	_socket_health = new_health
 	print("[%s] 🔌 [WS] _set_socket_health: %s → %s" % [_get_timestamp(), WEBSOCKET_HEALTH.keys()[prev_health], WEBSOCKET_HEALTH.keys()[new_health]])
 	print("[%s] 📡 [WS] Emitting FEAGI_socket_health_changed signal (connected listeners: %d)" % [_get_timestamp(), FEAGI_socket_health_changed.get_connections().size()])
