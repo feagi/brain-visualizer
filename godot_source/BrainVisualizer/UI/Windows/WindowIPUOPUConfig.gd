@@ -1232,29 +1232,90 @@ func _get_active_agent_ids() -> Array[StringName]:
 
 ## Resolve a human-friendly agent name for display.
 func _get_agent_display_name(agent_id: StringName) -> StringName:
-	if not _agent_capabilities_map.has(agent_id):
-		return agent_id
-	var entry = _agent_capabilities_map[agent_id]
+	var entry = _resolve_agent_entry(agent_id)
 	if not (entry is Dictionary):
 		return agent_id
-	if entry.has("agent_name"):
-		var name = _read_string_field(entry, "agent_name")
-		if name != "":
-			return name
-	if not entry.has("capabilities"):
-		return agent_id
-	var caps = entry["capabilities"]
-	if caps is Dictionary:
-		var name = _read_string_field(caps, "agent_name")
-		if name != "":
-			return name
-		name = _read_string_field(caps, "name")
-		if name != "":
-			return name
-		name = _read_string_field(caps, "agent_type")
-		if name != "":
-			return name
+	var name := _extract_agent_display_name(entry)
+	if name != "" and not _is_unusable_agent_label(name, agent_id):
+		return name
+	var inferred_name := _infer_agent_display_name(entry)
+	if inferred_name != "":
+		return inferred_name
 	return agent_id
+
+## Resolve agent entry for StringName/String key variants.
+func _resolve_agent_entry(agent_id: StringName) -> Variant:
+	if _agent_capabilities_map.has(agent_id):
+		return _agent_capabilities_map[agent_id]
+	var agent_id_text := String(agent_id)
+	if _agent_capabilities_map.has(agent_id_text):
+		return _agent_capabilities_map[agent_id_text]
+	return null
+
+## Extract a human-readable name from known FEAGI payload variants.
+func _extract_agent_display_name(entry: Dictionary) -> StringName:
+	var direct_keys: Array[StringName] = [&"agent_name", &"friendly_name", &"display_name", &"name", &"agent_type"]
+	for key in direct_keys:
+		var direct_name := _read_string_field(entry, key)
+		if direct_name != "":
+			return direct_name
+
+	var nested_sections: Array[StringName] = [&"capabilities", &"metadata", &"properties", &"agent"]
+	for section in nested_sections:
+		if not entry.has(section):
+			continue
+		var section_value = entry[section]
+		if section_value is not Dictionary:
+			continue
+		var nested_dict: Dictionary = section_value
+		for key in direct_keys:
+			var nested_name := _read_string_field(nested_dict, key)
+			if nested_name != "":
+				return nested_name
+	return ""
+
+## Returns true when a label is effectively the opaque ID and unsuitable for UI display.
+func _is_unusable_agent_label(label: StringName, agent_id: StringName) -> bool:
+	var text := String(label).strip_edges()
+	if text == "":
+		return true
+	if text == String(agent_id):
+		return true
+	return _looks_like_encoded_agent_id(text)
+
+## Detect opaque base64-like IDs so UI can show inferred readable names instead.
+func _looks_like_encoded_agent_id(value: String) -> bool:
+	if value.length() < 24:
+		return false
+	for i in value.length():
+		var ch := value.unicode_at(i)
+		var is_upper := ch >= 65 and ch <= 90
+		var is_lower := ch >= 97 and ch <= 122
+		var is_digit := ch >= 48 and ch <= 57
+		var is_base64_symbol := ch == 43 or ch == 47 or ch == 61
+		if not (is_upper or is_lower or is_digit or is_base64_symbol):
+			return false
+	return true
+
+## Infer human-friendly agent label from capability signature.
+func _infer_agent_display_name(entry: Dictionary) -> StringName:
+	if not entry.has("capabilities"):
+		return ""
+	var caps = entry["capabilities"]
+	if caps is not Dictionary:
+		return ""
+	var has_visualization: bool = caps.has("visualization") or caps.has("receive_neuron_visualizations")
+	var has_motor: bool = caps.has("motor") or caps.has("receive_motor_data")
+	var has_vision: bool = caps.has("vision") or caps.has("input")
+	if has_visualization and not has_motor and not has_vision:
+		return "Brain Visualizer"
+	if has_motor and not has_vision:
+		return "Motor Agent"
+	if has_vision and not has_motor:
+		return "Vision Agent"
+	if has_vision and has_motor:
+		return "Sensorimotor Agent"
+	return ""
 
 ## Read a string field from a dictionary.
 func _read_string_field(source: Dictionary, key: StringName) -> StringName:
