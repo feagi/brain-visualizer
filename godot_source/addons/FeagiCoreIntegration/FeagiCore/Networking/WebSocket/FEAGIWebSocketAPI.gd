@@ -437,7 +437,10 @@ func _process(_delta: float):
 			if is_immediate_failure and _retry_count > 10:
 				print("[%s] ❌ [WS] Too many immediate failures - FEAGI websocket likely not available" % _get_timestamp())
 				print("[%s] 🔌 [WS] Notifying network layer about websocket failure" % _get_timestamp())
-				push_error("FEAGI Websocket: Repeated immediate failures - websocket service may be down!")
+				push_warning(
+					"FEAGI Websocket: Repeated immediate failures while reconnecting. "
+					+ "This may occur during FEAGI restart; waiting for normal recovery."
+				)
 				_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
 				set_process(false)
 				return
