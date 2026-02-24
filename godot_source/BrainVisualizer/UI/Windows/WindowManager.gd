@@ -248,6 +248,11 @@ func spawn_move_to_region(objects: Array[GenomeObject], starting_region: BrainRe
 	move_to_region.setup(objects, starting_region)
 
 func spawn_quick_cortical_menu(selected_objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.UNKNOWN) -> void:
+	if QuickCorticalMenu.WINDOW_NAME in loaded_windows:
+		var existing_menu: QuickCorticalMenu = loaded_windows[QuickCorticalMenu.WINDOW_NAME] as QuickCorticalMenu
+		if existing_menu != null and existing_menu.try_refresh_without_respawn(selected_objects, context):
+			bring_window_to_top(existing_menu)
+			return
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_PREFAB_QUICK_MENU, QuickCorticalMenu.WINDOW_NAME) as QuickCorticalMenu
 	quick_cortical_menu.setup(selected_objects, context)
 

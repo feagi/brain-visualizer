@@ -34,6 +34,7 @@ var _manipulation_current_dims: Vector3i = Vector3i.ZERO
 var _manipulation_group_anchor_pos: Vector3i = Vector3i.ZERO
 var _manipulation_group_start_positions: Dictionary = {}  # AbstractCorticalArea -> Vector3i
 var _manipulation_group_previews: Dictionary = {}  # AbstractCorticalArea -> UI_BrainMonitor_InteractivePreview
+var _manipulation_explicit_members: Array[AbstractCorticalArea] = []  # Explicit user-selected members for multi-area manipulation
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -340,6 +341,8 @@ func _play_startup_camera_intro() -> void:
 	_pancake_cam.movement_mode = UI_BrainMonitor_PancakeCamera.MODE.ANIMATION
 	_pancake_cam.allow_user_control = false
 	_startup_intro_animating = true
+	# Immediately hide I/O direction arrows for the full intro duration.
+	_refresh_all_io_direction_indicators()
 	
 	# Apply start transform and widened FOV, keep looking at the center during motion
 	_pancake_cam.position = start_pos
@@ -1871,6 +1874,7 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 	_manipulation_group_anchor_pos = _manipulation_start_pos
 	_manipulation_group_start_positions.clear()
 	_clear_manipulation_group_previews()
+	_manipulation_explicit_members.clear()
 
 	_manipulation_preview = create_preview(
 		area.coordinates_3D,
@@ -1910,6 +1914,46 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		_setup_manipulation_group_previews(area)
 	elif mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area):
 		_setup_manipulation_group_previews(area)
+
+## Starts a runtime manipulation session for multiple cortical areas selected by the user.
+## Uses one anchor area plus group previews so a single gizmo can move all selected areas together.
+func start_cortical_area_multi_manipulation(areas: Array[AbstractCorticalArea], mode: MANIPULATION_MODE = MANIPULATION_MODE.MOVE) -> void:
+	if areas.is_empty():
+		return
+	var unique_areas: Array[AbstractCorticalArea] = []
+	for area in areas:
+		if area == null:
+			continue
+		if area not in unique_areas:
+			unique_areas.append(area)
+	if unique_areas.is_empty():
+		return
+	# Multi-area 3D manipulation currently supports MOVE only.
+	if mode != MANIPULATION_MODE.MOVE:
+		mode = MANIPULATION_MODE.MOVE
+	var anchor_area: AbstractCorticalArea = unique_areas[0]
+	start_cortical_area_manipulation(anchor_area, mode)
+	if not _manipulation_active:
+		return
+	_manipulation_explicit_members = unique_areas.duplicate()
+	# Override group members with explicit user selection instead of unit/subunit auto-grouping.
+	_manipulation_group_anchor_pos = anchor_area.coordinates_3D
+	_manipulation_group_start_positions.clear()
+	_clear_manipulation_group_previews()
+	for member in unique_areas:
+		if member == anchor_area:
+			continue
+		_manipulation_group_start_positions[member] = member.coordinates_3D
+		var preview: UI_BrainMonitor_InteractivePreview = create_preview(
+			member.coordinates_3D,
+			member.dimensions_3D,
+			false,
+			member.cortical_type,
+			member,
+			false,
+			false
+		)
+		_manipulation_group_previews[member] = preview
 
 ## Starts a runtime manipulation session for a brain region (move plates in 3D).
 ## Shares gizmo and drag logic with cortical area; only preview type and apply differ.
@@ -1984,6 +2028,7 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 	_manipulation_gizmo = null
 	_manipulation_group_start_positions.clear()
 	_manipulation_group_anchor_pos = Vector3i.ZERO
+	_manipulation_explicit_members.clear()
 
 func _setup_manipulation_group_previews(area: AbstractCorticalArea) -> void:
 	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
@@ -2270,6 +2315,10 @@ func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 	_prompt_confirm_and_apply_resize(candidate_dims)
 
 func _apply_move(new_pos: Vector3i) -> void:
+	var selected_members: Array[AbstractCorticalArea] = _manipulation_explicit_members
+	if selected_members.size() > 1:
+		await _apply_group_move(selected_members, new_pos)
+		return
 	var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(_manipulation_area)
 	if unit_members.size() > 1:
 		await _apply_group_move(unit_members, new_pos)

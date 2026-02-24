@@ -43,16 +43,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 		close_window()
 		return
 	focus_exited.connect(_on_focus_lost)
-	var viewport_size: Vector2 = get_viewport_rect().size
-	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
-	var position_to_spawn: Vector2i = Vector2i(
-		mouse_pos.x - (size.x / 2.0),
-		mouse_pos.y - size.y - SPAWN_DISTANCE_PX
-	)
-	if position_to_spawn.y < 0:
-		position_to_spawn.y = mouse_pos.y + SPAWN_DISTANCE_PX
-		position_to_spawn.y = min(position_to_spawn.y, viewport_size.y - size.y)
-	position = position_to_spawn
+	_reposition_near_mouse()
 	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
@@ -154,6 +145,10 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			reset_button.disabled = false
 			reset_button.tooltip_text = "Reset selected cortical areas..."
 			iopu_config_button.visible = true
+			var is_circuit_builder_context := _selection_context in [
+				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK,
+				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_DRAG
+			]
 			var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
 			var all_ipu_opu := true
 			for area in areas:
@@ -165,7 +160,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = true
 				_btn_relocate_2d.disabled = false
-				_btn_relocate_2d.tooltip_text = "Relocate selected areas (2D)"
+				_btn_relocate_2d.tooltip_text = "Relocate selected areas (2D)" if is_circuit_builder_context else "Relocate selected areas (3D gizmo)"
 			if _btn_move_3d != null:
 				_btn_move_3d.visible = false
 			if _btn_resize_3d != null:
@@ -186,6 +181,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
 				delete_button.disabled = true
 				delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"
+			_refresh_multi_cortical_controls()
 				
 			
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
@@ -402,6 +398,30 @@ func _button_move_3d() -> void:
 		bm.start_brain_region_manipulation(region)
 		close_window()
 		return
+	if _mode == GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+		var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+		if areas.is_empty():
+			close_window()
+			return
+		var anchor: AbstractCorticalArea = areas[0]
+		if anchor == null or anchor.current_parent_region == null:
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Move (3D) Unavailable",
+				"Cannot start 3D relocation: no parent circuit available for selected cortical areas."
+			))
+			close_window()
+			return
+		var bm_multi: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(anchor.current_parent_region)
+		if bm_multi == null:
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Move (3D) Unavailable",
+				"No active 3D Brain Monitor found for selected areas' parent circuit.\n\nOpen a 3D tab for that circuit, then try again."
+			))
+			close_window()
+			return
+		bm_multi.start_cortical_area_multi_manipulation(areas, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
+		close_window()
+		return
 	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 		close_window()
 		return
@@ -474,6 +494,32 @@ func _button_relocate_2d() -> void:
 	]:
 		close_window()
 		return
+	if _mode == GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS and _selection_context in [
+		SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE,
+		SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
+	]:
+		var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+		if areas.is_empty():
+			close_window()
+			return
+		var parent_region: BrainRegion = areas[0].current_parent_region
+		if parent_region == null:
+			BV.NOTIF.add_notification("Cannot relocate: selected areas are missing parent circuit.")
+			close_window()
+			return
+		for area in areas:
+			if area == null or area.current_parent_region != parent_region:
+				BV.NOTIF.add_notification("3D multi-relocate requires all selected areas to be in the same circuit.")
+				close_window()
+				return
+		var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(parent_region)
+		if bm == null:
+			BV.NOTIF.add_notification("No active Brain Monitor tab found for selected areas.")
+			close_window()
+			return
+		bm.start_cortical_area_multi_manipulation(areas, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
+		close_window()
+		return
 	var cb := _get_active_cb_from_ui()
 	if cb == null:
 		BV.NOTIF.add_notification("No active Circuit Builder tab found.")
@@ -529,6 +575,65 @@ func _debug_selection_state(context: String) -> void:
 # Override close_window to add safety debugging
 func close_window() -> void:
 	_debug_selection_state("close_window")
+	if _mode == GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS and BV != null and BV.UI != null and BV.UI.selection_system != null:
+		BV.UI.selection_system.clear_all_highlighted()
 	if _selection.size() == 0:
 		pass
 	super.close_window()
+
+## Update the existing quick menu for multi-area selection without respawning.
+## Returns true when refreshed; false if mode mismatch requires respawn.
+func try_refresh_without_respawn(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT) -> bool:
+	var new_mode: GenomeObject.ARRAY_MAKEUP = GenomeObject.get_makeup_of_array(selection)
+	if _mode != GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS or new_mode != GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+		return false
+	_selection = selection
+	_selection_context = context
+	_refresh_multi_cortical_controls()
+	_reposition_near_mouse()
+	return true
+
+func _reposition_near_mouse() -> void:
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	var position_to_spawn: Vector2i = Vector2i(
+		mouse_pos.x - (size.x / 2.0),
+		mouse_pos.y - size.y - SPAWN_DISTANCE_PX
+	)
+	if position_to_spawn.y < 0:
+		position_to_spawn.y = mouse_pos.y + SPAWN_DISTANCE_PX
+		position_to_spawn.y = min(position_to_spawn.y, viewport_size.y - size.y)
+	position = position_to_spawn
+
+func _refresh_multi_cortical_controls() -> void:
+	var iopu_config_button: TextureButton = _window_internals.get_node('ToolbarGrid/SetupIOPU')
+	var move_to_region_button: TextureButton = _window_internals.get_node('ToolbarGrid/AddToRegion')
+	var delete_button: TextureButton = _window_internals.get_node('ToolbarGrid/Delete')
+	var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+	_titlebar.title = "Selected multiple areas"
+	move_to_region_button.disabled = false
+	move_to_region_button.tooltip_text = "Add to a circuit..."
+	delete_button.disabled = false
+	delete_button.tooltip_text = "Delete selected cortical areas..."
+	var all_ipu_opu := true
+	for area in areas:
+		if not (area is IPUCorticalArea or area is OPUCorticalArea):
+			all_ipu_opu = false
+			break
+	iopu_config_button.visible = true
+	iopu_config_button.disabled = not all_ipu_opu
+	iopu_config_button.tooltip_text = "Open IPU/OPU configuration" if all_ipu_opu else "IPU/OPU configuration only."
+	var is_circuit_builder_context := _selection_context in [
+		SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK,
+		SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_DRAG
+	]
+	if _btn_relocate_2d != null:
+		_btn_relocate_2d.visible = true
+		_btn_relocate_2d.disabled = false
+		_btn_relocate_2d.tooltip_text = "Relocate selected areas (2D)" if is_circuit_builder_context else "Relocate selected areas (3D gizmo)"
+	if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
+		move_to_region_button.disabled = true
+		move_to_region_button.tooltip_text = "One of the selected areas is of Input, Output, or Core type which is not allowed inside a neural circuit."
+	if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
+		delete_button.disabled = true
+		delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"

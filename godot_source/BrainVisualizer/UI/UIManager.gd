@@ -674,6 +674,9 @@ func update_shutdown_status(message: String) -> void:
 
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
 	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
+		if objects.is_empty():
+			_window_manager.force_close_window(QuickCorticalMenu.WINDOW_NAME)
+			return
 		_window_manager.spawn_quick_cortical_menu(objects, context)
 	if SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES in override_usecases:
 		var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(objects)
