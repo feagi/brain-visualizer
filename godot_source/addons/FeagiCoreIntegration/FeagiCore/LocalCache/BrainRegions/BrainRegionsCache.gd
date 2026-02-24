@@ -85,6 +85,12 @@ func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> voi
 ## Applies region summary updates without clearing the entire cache.
 ## Returns a mapping of cortical_area_id -> parent_region_id for subsequent cortical area refresh.
 func FEAGI_apply_region_summary_diff(region_summary_data: Dictionary) -> Dictionary:
+	# During FEAGI restart windows, region summary may be transient/incomplete.
+	# Do not run destructive diff logic unless a root region is present in the payload.
+	if not _summary_has_root_region(region_summary_data):
+		push_warning("CORE CACHE: Region summary missing root region; skipping destructive region diff for this refresh cycle.")
+		return {}
+
 	# Remove regions no longer present.
 	var removed_count: int = 0
 	var added_count: int = 0
@@ -143,6 +149,16 @@ func FEAGI_apply_region_summary_diff(region_summary_data: Dictionary) -> Diction
 
 	print("FEAGI CACHE: Region diff applied (added=%d, removed=%d, parent_updates=%d)" % [added_count, removed_count, updated_parent_count])
 	return cortical_area_mapping
+
+func _summary_has_root_region(region_summary_data: Dictionary) -> bool:
+	for region_id in region_summary_data.keys():
+		var region_data: Variant = region_summary_data.get(region_id, null)
+		if typeof(region_data) != TYPE_DICTIONARY:
+			continue
+		var parent_id: Variant = (region_data as Dictionary).get("parent_region_id", null)
+		if parent_id == null:
+			return true
+	return false
 
 ## Clears all regions from the cache - used during full genome reload
 func FEAGI_clear_all_regions() -> void:
