@@ -1630,7 +1630,10 @@ func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) 
 		delete_request,
 		"Yes"
 		)
-	var popup_request: Callable = BV.WM.spawn_popup.bind(delete_popup)
+	var popup_request: Callable = func() -> void:
+		var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+		popup_window.set_enter_confirms_button("Yes")
+		popup_window.call_deferred("focus_button_with_text", "Yes")
 	item.get_delete_button().pressed.connect(popup_request)
 
 func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
@@ -1649,7 +1652,10 @@ func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) 
 		delete_request,
 		"Yes"
 		)
-	var popup_request: Callable = BV.WM.spawn_popup.bind(delete_popup)
+	var popup_request: Callable = func() -> void:
+		var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+		popup_window.set_enter_confirms_button("Yes")
+		popup_window.call_deferred("focus_button_with_text", "Yes")
 	item.get_delete_button().pressed.connect(popup_request)
 
 func _remove_recursive_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:

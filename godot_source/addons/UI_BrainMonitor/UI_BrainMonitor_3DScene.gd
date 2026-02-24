@@ -720,15 +720,23 @@ func _on_container_mouse_exited() -> void:
 
 ## Enter: save. Escape: cancel (reset to original).
 func _unhandled_input(event: InputEvent) -> void:
-	if not _manipulation_active:
-		return
 	if event is InputEventKey:
 		var key := event as InputEventKey
 		if key.pressed and not key.echo:
+			if key.keycode == KEY_ESCAPE:
+				# Priority 1: active manipulation session uses Escape to cancel.
+				if _manipulation_active:
+					_cancel_manipulation()
+					return
+				# Priority 2: clear all current selection/highlights in Brain Monitor.
+				if BV != null and BV.UI != null and BV.UI.selection_system != null:
+					BV.UI.selection_system.clear_all_highlighted()
+					clear_all_selected_cortical_area_neurons()
+					return
 			if key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER:
+				if not _manipulation_active:
+					return
 				_finish_manipulation_drag_and_confirm(true)
-			elif key.keycode == KEY_ESCAPE:
-				_cancel_manipulation()
 
 func _create_world3d_with_environment() -> World3D:
 	var new_world = World3D.new()
@@ -1675,27 +1683,34 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 								if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
 									continue
 								
-								# Check for ctrl+click to focus camera on cortical area
+								# Ctrl+1/2/3+click focuses camera by plane; plain Ctrl+click toggles multi-select.
 								if Input.is_physical_key_pressed(KEY_CTRL):
-									# Ctrl+Click: Focus camera on the cortical area's bounding box
-									if _pancake_cam:
-										var focus_plane: StringName = &"xy"
-										if Input.is_physical_key_pressed(KEY_2):
-											focus_plane = &"xz"
-										elif Input.is_physical_key_pressed(KEY_3):
-											focus_plane = &"yz"
-										elif Input.is_physical_key_pressed(KEY_1):
-											focus_plane = &"xy"
-										# Compute world-space AABB of the cortical area renderer
-										var cortical_aabb = _compute_world_aabb(hit_parent)
-										if cortical_aabb.size != Vector3.ZERO and (cortical_aabb.size.x + cortical_aabb.size.y + cortical_aabb.size.z) > 0.01:
-											# Frame camera to show entire bounding box from requested plane.
-											_frame_camera_to_aabb_with_plane(cortical_aabb, focus_plane)
-											print("Focused camera on cortical area: %s (%s plane)" % [hit_parent_parent.cortical_area.cortical_ID, String(focus_plane).to_upper()])
-										else:
-											# Fallback: use cortical area's global position if AABB is invalid
-											_pancake_cam.teleport_to_look_at_without_changing_angle(hit_parent.global_position)
-											print("Focused camera on cortical area: %s (fallback)" % hit_parent_parent.cortical_area.cortical_ID)
+									var focus_plane: StringName = &""
+									if Input.is_physical_key_pressed(KEY_1):
+										focus_plane = &"xy"
+									elif Input.is_physical_key_pressed(KEY_2):
+										focus_plane = &"xz"
+									elif Input.is_physical_key_pressed(KEY_3):
+										focus_plane = &"yz"
+									if focus_plane != &"":
+										# Ctrl+1/2/3+Click: Focus camera on cortical area by requested plane.
+										if _pancake_cam:
+											var cortical_aabb = _compute_world_aabb(hit_parent)
+											if cortical_aabb.size != Vector3.ZERO and (cortical_aabb.size.x + cortical_aabb.size.y + cortical_aabb.size.z) > 0.01:
+												_frame_camera_to_aabb_with_plane(cortical_aabb, focus_plane)
+												print("Focused camera on cortical area: %s (%s plane)" % [hit_parent_parent.cortical_area.cortical_ID, String(focus_plane).to_upper()])
+											else:
+												_pancake_cam.teleport_to_look_at_without_changing_angle(hit_parent.global_position)
+												print("Focused camera on cortical area: %s (fallback)" % hit_parent_parent.cortical_area.cortical_ID)
+									else:
+										# Plain Ctrl+Click: toggle area in multi-selection and spawn/refresh one quick menu.
+										var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
+										if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
+											ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
+										var added_result: SelectionSystem.ERROR = BV.UI.selection_system.add_to_highlighted(hit_parent_parent.cortical_area)
+										if added_result == SelectionSystem.ERROR.ALREADY_HIGHLIGHTED:
+											BV.UI.selection_system.remove_from_highlighted(hit_parent_parent.cortical_area)
+										BV.UI.selection_system.select_objects(ctx)
 									continue
 								
 								# Single left-click on cortical area - select it (only for MAIN button without Ctrl)
