@@ -7,8 +7,9 @@ const WEBGL_DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactabl
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
 const FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE: int = 18
 const FRIENDLY_NAME_LABEL_SMOOTH_SPEED: float = 10.0
-const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN: float = 3.0
-const FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE: float = 0.35
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN: float = 2.75
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX: float = 4.5
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE: float = 0.18
 
 # TODO right now, particularly for selection, we recreate the SVO tree entirely every time a single node is added / removed. This is slow, and we should be adding / removing SVO nodes instead
 
@@ -217,7 +218,11 @@ func _update_friendly_name_label_target_position() -> bool:
 	if cam == null:
 		return false
 	var half_y: float = absf(_static_body.scale.y) * 0.5
-	var bottom_gap: float = maxf(FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN, half_y * FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE)
+	var bottom_gap: float = clampf(
+		half_y * FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX
+	)
 	var y_offset: float = -(half_y + bottom_gap)
 	var edge_margin: float = maxf(0.75, minf(_static_body.scale.x, _static_body.scale.z) * 0.15)
 	# Renderer base class extends Node (not Node3D), so compute camera relation in StaticBody3D space.
