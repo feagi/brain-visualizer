@@ -2997,6 +2997,7 @@ func _refresh_stale_cortical_area_visualizations_from_cache() -> void:
 
 	var cache_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
 	var stale_ids: Array[StringName] = []
+	var remapped_ids: Dictionary = {}
 
 	for area_id in _cortical_visualizations_by_ID.keys():
 		var viz = _cortical_visualizations_by_ID.get(area_id, null)
@@ -3005,11 +3006,22 @@ func _refresh_stale_cortical_area_visualizations_from_cache() -> void:
 			continue
 
 		var current_area: AbstractCorticalArea = viz.cortical_area
+		if current_area != null and current_area.cortical_ID != area_id:
+			remapped_ids[area_id] = current_area.cortical_ID
+			continue
 		var fresh_area: AbstractCorticalArea = cache_areas.get(area_id, null)
 		if fresh_area == null:
+			stale_ids.append(area_id)
 			continue
 		if current_area != fresh_area:
 			stale_ids.append(area_id)
+
+	for old_id in remapped_ids.keys():
+		var new_id: StringName = remapped_ids[old_id]
+		var existing_viz = _cortical_visualizations_by_ID.get(old_id, null)
+		_cortical_visualizations_by_ID.erase(old_id)
+		if existing_viz != null and is_instance_valid(existing_viz):
+			_cortical_visualizations_by_ID[new_id] = existing_viz
 
 	for area_id in stale_ids:
 		var stale_viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(area_id, null)
@@ -3026,7 +3038,7 @@ func _refresh_stale_cortical_area_visualizations_from_cache() -> void:
 		if fresh_area != null:
 			_add_cortical_area(fresh_area)
 
-	if stale_ids.size() > 0:
+	if stale_ids.size() > 0 or remapped_ids.size() > 0:
 		call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 ## Creates visualizations for any new cortical areas in this region after cache refresh

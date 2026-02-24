@@ -111,7 +111,7 @@ func setup(region: BrainRegion) -> void:
 
 func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	if (area.cortical_ID in cortical_nodes.keys()):
-		push_error("UI CB: Unable to add cortical area %s node when a node of it already exists!!" % area.cortical_ID)
+		push_warning("UI CB: Cortical area %s node already exists; skipping duplicate add (can occur during FEAGI restart/cache resync)." % area.cortical_ID)
 		return
 	var cortical_node: CBNodeCorticalArea = PREFAB_NODE_CORTICALAREA.instantiate()
 	_cortical_nodes[area.cortical_ID] = cortical_node

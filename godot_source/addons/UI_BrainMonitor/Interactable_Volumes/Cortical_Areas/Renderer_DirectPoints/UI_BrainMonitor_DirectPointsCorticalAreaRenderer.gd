@@ -22,6 +22,7 @@ const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_
 const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/MemoryJelloMaterial.tres"
 const POWER_NEON_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonMaterial.tres"
 const TESLA_COIL_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilMaterial.tres"
+const FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE: int = 18
 
 # Visual scale for voxel meshes (world units). Matches existing individual-voxel sizing.
 const _VOXEL_VISUAL_SCALE: float = 0.8
@@ -351,7 +352,29 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 
 func update_friendly_name(new_name: String) -> void:
-	_friendly_name_label.text = new_name
+	_friendly_name_label.text = _wrap_friendly_name_text(new_name)
+
+func _wrap_friendly_name_text(label_text: String) -> String:
+	var normalized_text := label_text.strip_edges()
+	if normalized_text.is_empty():
+		return ""
+	var wrapped_lines := PackedStringArray()
+	for raw_line in normalized_text.split("\n"):
+		var words := raw_line.split(" ", false)
+		if words.is_empty():
+			wrapped_lines.append("")
+			continue
+		var current_line: String = words[0]
+		for i in range(1, words.size()):
+			var word: String = words[i]
+			var candidate_line := "%s %s" % [current_line, word]
+			if candidate_line.length() <= FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE:
+				current_line = candidate_line
+			else:
+				wrapped_lines.append(current_line)
+				current_line = word
+		wrapped_lines.append(current_line)
+	return "\n".join(wrapped_lines)
 
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Vector3i) -> void:
 	super(new_FEAGI_coordinate_position)

@@ -209,8 +209,16 @@ func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
 
 ## FEAGI states that a region is to be removed and internals raised
 func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
-	var contained_objects: Array[GenomeObject] = []
+	if region == null or not is_instance_valid(region):
+		push_warning("CORE CACHE: Cannot remove null/invalid region reference. Skipping.")
+		return
+	if region.is_root_region():
+		push_warning("CORE CACHE: Cannot remove root region via raise internals path. Skipping.")
+		return
 	var new_parent: BrainRegion = region.current_parent_region
+	if new_parent == null or not is_instance_valid(new_parent):
+		push_warning("CORE CACHE: Cannot remove region %s because parent region reference is missing. Skipping." % region.region_ID)
+		return
 	for object: GenomeObject in region.get_all_included_genome_objects():
 		object.FEAGI_change_parent_brain_region(new_parent)
 	region_about_to_be_removed.emit(region)

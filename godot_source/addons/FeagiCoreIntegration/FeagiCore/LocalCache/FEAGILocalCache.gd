@@ -744,6 +744,9 @@ func FEAGI_remap_cortical_id(old_id: StringName, new_id: StringName) -> void:
 	if _OPU_cortical_ID_to_capability_key.has(old_id):
 		_OPU_cortical_ID_to_capability_key[new_id] = _OPU_cortical_ID_to_capability_key[old_id]
 		_OPU_cortical_ID_to_capability_key.erase(old_id)
+	# Notify BV listeners so any ID-keyed caches/visuals refresh immediately after remap.
+	cortical_areas_reloaded.emit()
+	mappings_reloaded.emit()
 	
 
 #endregion

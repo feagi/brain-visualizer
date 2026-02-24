@@ -151,13 +151,16 @@ func FEAGI_edited_region(title: StringName, _description: StringName, new_parent
 ## FEAGI confirmed this region is deleted. Called by [BrainRegionCache]
 func FEAGI_delete_this_region() -> void:
 	if len(_contained_regions) != 0:
-		push_error("CORE CACHE: Cannot remove region %s as it still contains regions! Skipping!" % [_genome_ID])
+		push_warning("CORE CACHE: Cannot remove region %s as it still contains regions! Skipping!" % [_genome_ID])
 		return
 	if len(_contained_cortical_areas) != 0:
-		push_error("CORE CACHE: Cannot remove region %s as it still contains cortical areas! Skipping!" % [_genome_ID])
+		push_warning("CORE CACHE: Cannot remove region %s as it still contains cortical areas! Skipping!" % [_genome_ID])
 		return
 	if is_root_region():
-		push_error("CORE CACHE: Cannot remove root region region! Skipping!")
+		push_warning("CORE CACHE: Cannot remove root region region! Skipping!")
+		return
+	if current_parent_region == null or not is_instance_valid(current_parent_region):
+		push_warning("CORE CACHE: Cannot remove region %s because parent region reference is missing. Skipping!" % [_genome_ID])
 		return
 	about_to_be_deleted.emit()
 	current_parent_region.FEAGI_genome_object_deregister_as_child(self)
