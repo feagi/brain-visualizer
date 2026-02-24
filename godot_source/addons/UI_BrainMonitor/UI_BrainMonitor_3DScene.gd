@@ -2977,15 +2977,57 @@ func _on_cache_reloaded_refresh_all_connections() -> void:
 				cortical_viz._show_neural_connections()
 
 func _on_cortical_areas_reloaded() -> void:
-	# Lightweight refresh: add any missing visuals and update labels.
+	# Lightweight refresh: rebind visuals if cache replaced area objects, then add any missing visuals.
+	_refresh_stale_cortical_area_visualizations_from_cache()
 	_add_missing_cortical_area_visualizations()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 func _on_brain_regions_reloaded() -> void:
 	# Lightweight refresh: ensure region frames exist and re-evaluate I/O area visibility.
+	_refresh_stale_cortical_area_visualizations_from_cache()
 	_create_missing_brain_region_visualizations()
 	_add_missing_cortical_area_visualizations()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+
+## Recreate cortical visualizations whose cache object changed under the same cortical ID.
+## This keeps signal wiring valid after FEAGI/genome reloads where cache instances are rebuilt.
+func _refresh_stale_cortical_area_visualizations_from_cache() -> void:
+	if not FeagiCore.feagi_local_cache or not FeagiCore.feagi_local_cache.cortical_areas:
+		return
+
+	var cache_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
+	var stale_ids: Array[StringName] = []
+
+	for area_id in _cortical_visualizations_by_ID.keys():
+		var viz = _cortical_visualizations_by_ID.get(area_id, null)
+		if viz == null or not is_instance_valid(viz):
+			_cortical_visualizations_by_ID.erase(area_id)
+			continue
+
+		var current_area: AbstractCorticalArea = viz.cortical_area
+		var fresh_area: AbstractCorticalArea = cache_areas.get(area_id, null)
+		if fresh_area == null:
+			continue
+		if current_area != fresh_area:
+			stale_ids.append(area_id)
+
+	for area_id in stale_ids:
+		var stale_viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(area_id, null)
+		if stale_viz != null and is_instance_valid(stale_viz):
+			var stale_area: AbstractCorticalArea = stale_viz.cortical_area
+			if stale_area != null:
+				var remove_callable := Callable(self, "_remove_cortical_area").bind(stale_area)
+				if stale_area.about_to_be_deleted.is_connected(remove_callable):
+					stale_area.about_to_be_deleted.disconnect(remove_callable)
+			stale_viz.queue_free()
+		_cortical_visualizations_by_ID.erase(area_id)
+
+		var fresh_area: AbstractCorticalArea = cache_areas.get(area_id, null)
+		if fresh_area != null:
+			_add_cortical_area(fresh_area)
+
+	if stale_ids.size() > 0:
+		call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 ## Creates visualizations for any new cortical areas in this region after cache refresh
 func _add_missing_cortical_area_visualizations() -> void:

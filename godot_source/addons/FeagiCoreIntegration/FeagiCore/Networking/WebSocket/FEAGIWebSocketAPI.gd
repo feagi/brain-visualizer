@@ -1230,6 +1230,10 @@ func _on_genome_reloaded() -> void:
 	print("   🔄 Genome reloaded - resetting missing cortical area tracking")
 	_missing_cortical_areas.clear()
 	_case_mapping_cache.clear()  # Clear case mapping cache too
+	# Force immediate rebuild of desktop Type11 fast-path caches on next packet.
+	_bv_fast_multimeshes_by_id.clear()
+	_bv_fast_dimensions_by_id.clear()
+	_bv_fast_cache_last_refresh_ms = 0
 
 func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 	"""Convert byte array to hex string for debugging"""
