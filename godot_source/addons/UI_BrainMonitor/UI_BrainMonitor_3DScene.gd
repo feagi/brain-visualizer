@@ -900,15 +900,22 @@ func _compute_region_frame_aabb(region_frame: Node3D) -> AABB:
 
 ## Frames the camera to show the entire AABB with appropriate distance
 func _frame_camera_to_aabb(aabb: AABB) -> void:
+	_frame_camera_to_aabb_with_plane(aabb, &"xy")
+
+## Frames the camera to show the AABB from a selected world plane.
+## plane_name values:
+## - "xy": camera normal to XY plane (along +/-Z)
+## - "xz": camera normal to XZ plane (along +/-Y)
+## - "yz": camera normal to YZ plane (along +/-X)
+func _frame_camera_to_aabb_with_plane(aabb: AABB, plane_name: StringName) -> void:
 	if _pancake_cam == null:
 		return
 	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
 		# Invalid AABB - cannot frame, caller should handle fallback
 		return
 	var center := aabb.position + (aabb.size / 2.0)
-	# Choose a straight-on view along +Z, level (no pitch), so we face the circuit
-	var up := Vector3.UP
-	var dir_hint := Vector3(0, 0, 1) # camera behind +Z looking toward -Z at center
+	var view_dir := _resolve_view_direction_for_plane(center, plane_name)
+	var up := _resolve_up_for_plane(plane_name)
 	# Compute FOVs (guard bad/zero FOV)
 	var fov_used: float = _pancake_cam.fov
 	if fov_used < 5.0:
@@ -917,27 +924,32 @@ func _frame_camera_to_aabb(aabb: AABB) -> void:
 	var vp_size := _pancake_cam.get_viewport().get_visible_rect().size
 	var aspect: float = vp_size.x / max(1.0, vp_size.y)
 	var hfov_rad: float = 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
-	# Half extents
-	var half_w: float = max(0.01, aabb.size.x * 0.5)
-	var half_h: float = max(0.01, aabb.size.y * 0.5)
 	# Compute distance with balanced padding and depth accommodation.
-	var distance: float = _compute_frame_distance_for_aabb(aabb, vfov_rad, hfov_rad)
-	# Set camera position and orientation (level, centered in Y)
-	var cam_pos := center + (dir_hint * distance)
-	cam_pos.y = center.y
+	var distance: float = _compute_frame_distance_for_aabb_from_orientation(aabb, vfov_rad, hfov_rad, view_dir, up)
+	# Set camera position and orientation.
+	var cam_pos := center + (view_dir * distance)
 	_pancake_cam.global_position = cam_pos
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
 
 
 ## Frame the camera to an AABB with explicit padding controls.
 func _frame_camera_to_aabb_with_padding(aabb: AABB, padding_factor: float, depth_padding_factor: float) -> void:
+	_frame_camera_to_aabb_with_padding_and_plane(aabb, padding_factor, depth_padding_factor, &"xy")
+
+## Frame the camera to an AABB with explicit padding controls and plane orientation.
+func _frame_camera_to_aabb_with_padding_and_plane(
+	aabb: AABB,
+	padding_factor: float,
+	depth_padding_factor: float,
+	plane_name: StringName
+) -> void:
 	if _pancake_cam == null:
 		return
 	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
 		return
 	var center := aabb.position + (aabb.size / 2.0)
-	var up := Vector3.UP
-	var dir_hint := Vector3(0, 0, 1)
+	var view_dir := _resolve_view_direction_for_plane(center, plane_name)
+	var up := _resolve_up_for_plane(plane_name)
 	var fov_used: float = _pancake_cam.fov
 	if fov_used < 5.0:
 		fov_used = 70.0
@@ -945,9 +957,11 @@ func _frame_camera_to_aabb_with_padding(aabb: AABB, padding_factor: float, depth
 	var vp_size := _pancake_cam.get_viewport().get_visible_rect().size
 	var aspect: float = vp_size.x / max(1.0, vp_size.y)
 	var hfov_rad: float = 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
-	var half_w: float = max(0.01, aabb.size.x * 0.5)
-	var half_h: float = max(0.01, aabb.size.y * 0.5)
-	var half_d: float = max(0.01, aabb.size.z * 0.5)
+	var extents := aabb.size * 0.5
+	var right := up.cross(-view_dir).normalized()
+	var half_w := max(0.01, extents.dot(Vector3(abs(right.x), abs(right.y), abs(right.z))))
+	var half_h := max(0.01, extents.dot(Vector3(abs(up.x), abs(up.y), abs(up.z))))
+	var half_d := max(0.01, extents.dot(Vector3(abs(view_dir.x), abs(view_dir.y), abs(view_dir.z))))
 	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
 	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
 	var distance: float = max(dist_by_h, dist_by_w) * padding_factor
@@ -955,17 +969,27 @@ func _frame_camera_to_aabb_with_padding(aabb: AABB, padding_factor: float, depth
 	var min_dist: float = max(half_d * 1.05, auto_frame_min_dist * 0.5)
 	var max_dist: float = 3000.0
 	distance = clamp(distance, min_dist, max_dist)
-	var cam_pos := center + (dir_hint * distance)
-	cam_pos.y = center.y
+	var cam_pos := center + (view_dir * distance)
 	_pancake_cam.global_position = cam_pos
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
 
 
 ## Compute framing distance with balanced padding and depth.
 func _compute_frame_distance_for_aabb(aabb: AABB, vfov_rad: float, hfov_rad: float) -> float:
-	var half_w: float = max(0.01, aabb.size.x * 0.5)
-	var half_h: float = max(0.01, aabb.size.y * 0.5)
-	var half_d: float = max(0.01, aabb.size.z * 0.5)
+	return _compute_frame_distance_for_aabb_from_orientation(aabb, vfov_rad, hfov_rad, Vector3(0, 0, 1), Vector3.UP)
+
+func _compute_frame_distance_for_aabb_from_orientation(
+	aabb: AABB,
+	vfov_rad: float,
+	hfov_rad: float,
+	view_dir: Vector3,
+	up: Vector3
+) -> float:
+	var extents := aabb.size * 0.5
+	var right := up.cross(-view_dir).normalized()
+	var half_w := max(0.01, extents.dot(Vector3(abs(right.x), abs(right.y), abs(right.z))))
+	var half_h := max(0.01, extents.dot(Vector3(abs(up.x), abs(up.y), abs(up.z))))
+	var half_d := max(0.01, extents.dot(Vector3(abs(view_dir.x), abs(view_dir.y), abs(view_dir.z))))
 	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
 	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
 	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
@@ -975,8 +999,25 @@ func _compute_frame_distance_for_aabb(aabb: AABB, vfov_rad: float, hfov_rad: flo
 	var min_dist: float = max(half_d * 1.1, auto_frame_min_dist * 0.5)
 	var max_dist: float = 3000.0
 	return clamp(distance, min_dist, max_dist)
-	_pancake_cam.current = true
-	_pancake_cam.near = 0.05
+
+func _resolve_up_for_plane(plane_name: StringName) -> Vector3:
+	match plane_name:
+		&"xz":
+			return Vector3(0, 0, 1)
+		&"yz":
+			return Vector3.UP
+		_:
+			return Vector3.UP
+
+func _resolve_view_direction_for_plane(center: Vector3, plane_name: StringName) -> Vector3:
+	var to_camera := _pancake_cam.global_position - center
+	match plane_name:
+		&"xz":
+			return Vector3(0, signf(to_camera.y), 0) if abs(to_camera.y) > 0.001 else Vector3(0, 1, 0)
+		&"yz":
+			return Vector3(signf(to_camera.x), 0, 0) if abs(to_camera.x) > 0.001 else Vector3(1, 0, 0)
+		_:
+			return Vector3(0, 0, signf(to_camera.z)) if abs(to_camera.z) > 0.001 else Vector3(0, 0, 1)
 
 ## Computes AABB over active previews (interactive and brain-region previews)
 func _compute_previews_aabb() -> AABB:
@@ -1637,12 +1678,19 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 								if Input.is_physical_key_pressed(KEY_CTRL):
 									# Ctrl+Click: Focus camera on the cortical area's bounding box
 									if _pancake_cam:
+										var focus_plane: StringName = &"xy"
+										if Input.is_physical_key_pressed(KEY_2):
+											focus_plane = &"xz"
+										elif Input.is_physical_key_pressed(KEY_3):
+											focus_plane = &"yz"
+										elif Input.is_physical_key_pressed(KEY_1):
+											focus_plane = &"xy"
 										# Compute world-space AABB of the cortical area renderer
 										var cortical_aabb = _compute_world_aabb(hit_parent)
 										if cortical_aabb.size != Vector3.ZERO and (cortical_aabb.size.x + cortical_aabb.size.y + cortical_aabb.size.z) > 0.01:
-											# Frame camera to show entire bounding box
-											_frame_camera_to_aabb(cortical_aabb)
-											print("Focused camera on cortical area: %s" % hit_parent_parent.cortical_area.cortical_ID)
+											# Frame camera to show entire bounding box from requested plane.
+											_frame_camera_to_aabb_with_plane(cortical_aabb, focus_plane)
+											print("Focused camera on cortical area: %s (%s plane)" % [hit_parent_parent.cortical_area.cortical_ID, String(focus_plane).to_upper()])
 										else:
 											# Fallback: use cortical area's global position if AABB is invalid
 											_pancake_cam.teleport_to_look_at_without_changing_angle(hit_parent.global_position)

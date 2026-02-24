@@ -4,6 +4,7 @@ class_name WindowGuide
 const WINDOW_NAME: StringName = "guide_window"
 const MIN_WINDOW_WIDTH: int = 600
 const MIN_WINDOW_HEIGHT: int = 400
+const DEFAULT_WINDOW_VIEWPORT_RATIO: float = 0.8
 
 @export var guides_directory: String = "res://BrainVisualizer/Guides"
 
@@ -29,6 +30,8 @@ var _resize_mode: String = ""  # "corner" or "right"
 ## Initialize and setup the guide window.
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
+	_apply_default_window_size_to_viewport()
+	call_deferred("_apply_default_window_size_to_viewport")
 	
 	# Toolbar references
 	_search_bar = $WindowPanel/WindowMargin/WindowInternals/GuideToolbar/SearchBar
@@ -54,6 +57,20 @@ func setup() -> void:
 	_refresh_topics()
 	call_deferred("_update_sidebar_width")
 	resized.connect(_update_sidebar_width)
+
+## Size the guide window to a fraction of the active BV viewport.
+func _apply_default_window_size_to_viewport() -> void:
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var visible_size: Vector2 = viewport.get_visible_rect().size
+	if visible_size.x <= 0.0 or visible_size.y <= 0.0:
+		return
+	var target_size: Vector2 = visible_size * DEFAULT_WINDOW_VIEWPORT_RATIO
+	target_size.x = clamp(target_size.x, float(MIN_WINDOW_WIDTH), visible_size.x)
+	target_size.y = clamp(target_size.y, float(MIN_WINDOW_HEIGHT), visible_size.y)
+	custom_minimum_size = target_size
+	size = target_size
 
 ## Style the font size buttons with different A sizes (small and large).
 func _apply_font_size_button_styles() -> void:

@@ -8,6 +8,7 @@
 index.md
 getting_started.md
 navigation.md
+navigation_actions_reference.md
 camera_controls.md
 camera_animations.md
 split_view.md
