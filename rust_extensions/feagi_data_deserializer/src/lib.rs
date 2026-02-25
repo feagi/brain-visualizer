@@ -1,16 +1,16 @@
-use godot::prelude::*;
 use godot::classes::MultiMesh;
+use godot::prelude::*;
 // FeagiByteContainer is imported within functions where needed
 use feagi_serialization::FeagiSerializable;
-use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
-use feagi_structures::genomic::cortical_area::CorticalID;
 use feagi_structures::genomic::cortical_area::descriptors::{
     CorticalSubUnitIndex, CorticalUnitIndex,
 };
-use feagi_structures::genomic::cortical_area::IOCorticalAreaConfigurationFlag;
 use feagi_structures::genomic::cortical_area::io_cortical_area_configuration_flag::{
     FrameChangeHandling, IOCorticalAreaConfigurationFlagBitmask, PercentageNeuronPositioning,
 };
+use feagi_structures::genomic::cortical_area::CorticalID;
+use feagi_structures::genomic::cortical_area::IOCorticalAreaConfigurationFlag;
+use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 
 // Rayon is only available on native platforms (not WASM)
 #[cfg(not(target_family = "wasm"))]
@@ -39,12 +39,12 @@ impl IRefCounted for FeagiDataDeserializer {
 #[godot_api]
 impl FeagiDataDeserializer {
     /// Decompress LZ4-compressed data from FEAGI PNS layer
-    /// 
+    ///
     /// ARCHITECTURE: FEAGI PNS → LZ4 compress → ZMQ → Bridge PASSTHROUGH → WebSocket → BV DECOMPRESS
-    /// 
+    ///
     /// Args:
     ///   - compressed_buffer: LZ4-compressed PackedByteArray from WebSocket
-    /// 
+    ///
     /// Returns: PackedByteArray (decompressed raw FEAGI data) or empty array on error
     #[func]
     pub fn decompress_lz4(&self, compressed_buffer: PackedByteArray) -> PackedByteArray {
@@ -55,36 +55,42 @@ impl FeagiDataDeserializer {
 
         // Convert PackedByteArray to Vec<u8> for Rust processing
         let compressed_data: Vec<u8> = compressed_buffer.to_vec();
-        
+
         // Log first 20 bytes for debugging
-        let preview: String = compressed_data.iter()
+        let preview: String = compressed_data
+            .iter()
             .take(20)
             .map(|b| format!("{:02x}", b))
             .collect::<Vec<_>>()
             .join(" ");
-        
+
         godot_print!(
             "🦀 [LZ4] Attempting decompression: {} bytes, first 20 bytes: {}",
             compressed_data.len(),
             preview
         );
-        
+
         // Decompress with LZ4
         match lz4::block::decompress(&compressed_data, None) {
             Ok(decompressed) => {
-                let compression_ratio = (compressed_data.len() as f64 / decompressed.len() as f64) * 100.0;
+                let compression_ratio =
+                    (compressed_data.len() as f64 / decompressed.len() as f64) * 100.0;
                 godot_print!(
                     "🦀 [LZ4] ✅ Decompressed {} bytes → {} bytes ({:.1}% of original)",
                     compressed_data.len(),
                     decompressed.len(),
                     compression_ratio
                 );
-                
+
                 // Convert Vec<u8> back to PackedByteArray for Godot
                 PackedByteArray::from(decompressed.as_slice())
             }
             Err(e) => {
-                godot_error!("🦀 [LZ4] ❌ Decompression failed: {:?} (input size: {} bytes)", e, compressed_data.len());
+                godot_error!(
+                    "🦀 [LZ4] ❌ Decompression failed: {:?} (input size: {} bytes)",
+                    e,
+                    compressed_data.len()
+                );
                 godot_error!("🦀 [LZ4] First 20 bytes: {}", preview);
                 PackedByteArray::new()
             }
@@ -96,23 +102,24 @@ impl FeagiDataDeserializer {
     pub fn decode_type_11_data(&self, buffer: PackedByteArray) -> Dictionary {
         // Convert PackedByteArray to Vec<u8> for Rust processing
         let rust_buffer: Vec<u8> = buffer.to_vec();
-        
+
         if rust_buffer.is_empty() {
             return self.create_error_dict("Empty buffer".to_string());
         }
-        
+
         // Detect format based on first byte
         let first_byte = rust_buffer[0];
-        
+
         // Log for debugging
-        let _preview: String = rust_buffer.iter()
+        let _preview: String = rust_buffer
+            .iter()
             .take(20)
             .map(|b| format!("{:02x}", b))
             .collect::<Vec<_>>()
             .join(" ");
-        // godot_print!("🦀 [PROC] Buf: {} bytes, first byte: 0x{:02x}, preview: {}", 
+        // godot_print!("🦀 [PROC] Buf: {} bytes, first byte: 0x{:02x}, preview: {}",
         //             rust_buffer.len(), first_byte, preview);
-        
+
         // Canonical pipeline (transport-independent):
         // - FEAGI produces FeagiByteContainer (v2 first byte == 2, v3 first byte == 3) containing Type 11 structures
         // - SHM transports the bytes as-is (no compression required)
@@ -125,16 +132,19 @@ impl FeagiDataDeserializer {
             use feagi_serialization::FeagiByteContainer;
             use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 
-            let is_container = first_byte == 2 || first_byte == FeagiByteContainer::CURRENT_FBS_VERSION;
+            let is_container =
+                first_byte == 2 || first_byte == FeagiByteContainer::CURRENT_FBS_VERSION;
             if is_container {
                 // FeagiByteContainer v2 or v3
                 let mut byte_container = FeagiByteContainer::new_empty();
                 let mut data_vec = rust_buffer;
 
-                if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
-                    std::mem::swap(bytes, &mut data_vec);
-                    Ok(())
-                }) {
+                if let Err(e) =
+                    byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+                        std::mem::swap(bytes, &mut data_vec);
+                        Ok(())
+                    })
+                {
                     return Err(format!("{:?}", e));
                 }
 
@@ -190,12 +200,12 @@ impl FeagiDataDeserializer {
 
     /// High-performance neuron visualization processor
     /// Processes neuron data and pre-calculates transforms and colors in parallel
-    /// 
+    ///
     /// Args:
     ///   - buffer: Raw Type 11 neuron data
     ///   - dimensions: Cortical area dimensions (Vector3)
     ///   - max_neurons: Maximum neurons to process (0 = unlimited)
-    /// 
+    ///
     /// Returns: Dictionary with:
     ///   - success: bool
     ///   - transforms: PackedFloat32Array (12 floats per transform: 3x4 matrix)
@@ -211,7 +221,7 @@ impl FeagiDataDeserializer {
         max_neurons: i32,
     ) -> Dictionary {
         let start_time = std::time::Instant::now();
-        
+
         // Convert PackedByteArray to Vec<u8>
         let rust_buffer: Vec<u8> = buffer.to_vec();
         if rust_buffer.is_empty() {
@@ -221,7 +231,7 @@ impl FeagiDataDeserializer {
             );
         }
         let first_byte = rust_buffer[0];
-        
+
         // Canonical pipeline (transport-independent):
         // - FeagiByteContainer v2 or v3 (first byte == 2 or 3) containing Type 11
         // - Or raw Type 11 (first byte == 11) if upstream unwrapped the container
@@ -252,7 +262,10 @@ impl FeagiDataDeserializer {
                     );
                 }
             };
-            match boxed_struct.as_any().downcast_ref::<CorticalMappedXYZPNeuronVoxels>() {
+            match boxed_struct
+                .as_any()
+                .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
+            {
                 Some(nd) => nd.clone(),
                 None => {
                     godot_error!("🦀 Structure is not CorticalMappedXYZPNeuronVoxels");
@@ -280,30 +293,25 @@ impl FeagiDataDeserializer {
             );
         };
         let neuron_data_ref: &CorticalMappedXYZPNeuronVoxels = &neuron_data_owned;
-        
+
         // Count total neurons
-        let total_neurons: usize = neuron_data_ref.mappings.values()
-            .map(|arr| arr.len())
-            .sum();
-        
+        let total_neurons: usize = neuron_data_ref.mappings.values().map(|arr| arr.len()).sum();
+
         // Apply limit if specified
         let process_count = if max_neurons > 0 {
             std::cmp::min(total_neurons, max_neurons as usize)
         } else {
             total_neurons
         };
-        
+
         // Pre-calculate constants
-        let half_dimensions = Vector3::new(
-            dimensions.x / 2.0,
-            dimensions.y / 2.0,
-            dimensions.z / 2.0,
-        );
+        let half_dimensions =
+            Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
         let offset = Vector3::ZERO;
         let scale = Vector3::new(
             1.0 / dimensions.x,
             1.0 / dimensions.y,
-            1.0 / -dimensions.z,  // Note: negative Z
+            1.0 / -dimensions.z, // Note: negative Z
         );
 
         // Collect all neurons into a flat vector
@@ -324,23 +332,29 @@ impl FeagiDataDeserializer {
                 break;
             }
         }
-        
+
         // Process neurons - use parallel processing on desktop, sequential on WASM
-        let (transforms, colors) = self.process_neurons_internal(&all_neurons, half_dimensions, offset, scale, dimensions.z);
+        let (transforms, colors) = self.process_neurons_internal(
+            &all_neurons,
+            half_dimensions,
+            offset,
+            scale,
+            dimensions.z,
+        );
         let actual_count = transforms.len() / 12;
-        
+
         let mut transforms_array = PackedFloat32Array::new();
         for &val in &transforms {
             transforms_array.push(val);
         }
-        
+
         let mut colors_array = PackedFloat32Array::new();
         for &val in &colors {
             colors_array.push(val);
         }
-        
+
         let processing_time = start_time.elapsed().as_micros() as i64;
-        
+
         #[cfg(not(target_family = "wasm"))]
         godot_print!(
             "🦀 [RUST-PARALLEL] Processed {} neurons in {} µs ({:.2} ms) using Rayon multi-threading",
@@ -348,7 +362,7 @@ impl FeagiDataDeserializer {
             processing_time,
             processing_time as f64 / 1000.0
         );
-        
+
         #[cfg(target_family = "wasm")]
         godot_print!(
             "🦀 [RUST-WASM] Processed {} neurons in {} µs ({:.2} ms) - sequential (still 3-4x faster than GDScript!)",
@@ -356,7 +370,7 @@ impl FeagiDataDeserializer {
             processing_time,
             processing_time as f64 / 1000.0
         );
-        
+
         // Return result dictionary
         let mut result = Dictionary::new();
         result.set("success", true);
@@ -365,18 +379,18 @@ impl FeagiDataDeserializer {
         result.set("neuron_count", actual_count as i32);
         result.set("processing_time_us", processing_time);
         result.set("error", "");
-        
+
         result
     }
 
     /// Apply neuron visualization directly to MultiMesh - FASTEST PATH!
     /// Bypasses GDScript loop entirely by setting transforms/colors directly in Rust
-    /// 
+    ///
     /// Args:
     ///   - multi_mesh: The MultiMesh to update
     ///   - x_array, y_array, z_array: Neuron coordinates
     ///   - dimensions: Cortical area dimensions
-    /// 
+    ///
     /// Returns: Dictionary with success, neuron_count, processing_time_us
     #[func]
     pub fn apply_arrays_to_multimesh(
@@ -388,7 +402,7 @@ impl FeagiDataDeserializer {
         dimensions: Vector3,
     ) -> Dictionary {
         let start_time = std::time::Instant::now();
-        
+
         // Validate array sizes
         let array_len = x_array.len();
         if array_len != y_array.len() || array_len != z_array.len() {
@@ -399,7 +413,7 @@ impl FeagiDataDeserializer {
             result.set("error", "Array size mismatch");
             return result;
         }
-        
+
         if array_len == 0 {
             multi_mesh.set_instance_count(0);
             let mut result = Dictionary::new();
@@ -407,12 +421,13 @@ impl FeagiDataDeserializer {
             result.set("neuron_count", 0);
             return result;
         }
-        
+
         // Set instance count
         multi_mesh.set_instance_count(array_len as i32);
-        
+
         // Pre-calculate constants. Offset ZERO per NEURON_POSITION_SCALING_FIX.md (no 0.5 shift).
-        let half_dimensions = Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
+        let half_dimensions =
+            Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
         let offset = Vector3::ZERO;
         let scale = Vector3::new(1.0 / dimensions.x, 1.0 / dimensions.y, 1.0 / -dimensions.z);
         let z_max = dimensions.z;
@@ -428,7 +443,7 @@ impl FeagiDataDeserializer {
 
             let transform_data = Self::calculate_transform(x, y, z, half_dimensions, offset, scale);
             let color_data = Self::calculate_color(z, z_max);
-            
+
             let basis = Basis::from_rows(
                 Vector3::new(transform_data[0], transform_data[1], transform_data[2]),
                 Vector3::new(transform_data[4], transform_data[5], transform_data[6]),
@@ -436,15 +451,16 @@ impl FeagiDataDeserializer {
             );
             let origin = Vector3::new(transform_data[3], transform_data[7], transform_data[11]);
             let transform = Transform3D::new(basis, origin);
-            
-            let color = Color::from_rgba(color_data[0], color_data[1], color_data[2], color_data[3]);
-            
+
+            let color =
+                Color::from_rgba(color_data[0], color_data[1], color_data[2], color_data[3]);
+
             multi_mesh.set_instance_transform(i as i32, transform);
             multi_mesh.set_instance_color(i as i32, color);
         }
-        
+
         let elapsed = start_time.elapsed().as_micros() as i64;
-        
+
         let mut result = Dictionary::new();
         result.set("success", true);
         result.set("neuron_count", array_len as i32);
@@ -500,15 +516,18 @@ impl FeagiDataDeserializer {
             // - FeagiByteContainer v2 or v3 (first byte == 2 or 3) containing Type 11 structures
             // - Or raw Type 11 struct bytes (first byte == 11) if upstream unwrapped it
             let first_byte = rust_buffer[0];
-            let is_container = first_byte == 2 || first_byte == feagi_serialization::FeagiByteContainer::CURRENT_FBS_VERSION;
+            let is_container = first_byte == 2
+                || first_byte == feagi_serialization::FeagiByteContainer::CURRENT_FBS_VERSION;
             let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if is_container {
                 let mut byte_container = FeagiByteContainer::new_empty();
                 let mut data_vec = rust_buffer;
 
-                if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
-                    std::mem::swap(bytes, &mut data_vec);
-                    Ok(())
-                }) {
+                if let Err(e) =
+                    byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
+                        std::mem::swap(bytes, &mut data_vec);
+                        Ok(())
+                    })
+                {
                     return Err(format!("{:?}", e));
                 }
 
@@ -600,9 +619,9 @@ impl FeagiDataDeserializer {
                 let max_z = (dimensions.z as u32).saturating_sub(1);
 
                 for (i, neuron) in neuron_array.iter().enumerate() {
-                    let x = (neuron.neuron_voxel_coordinate.x as u32).min(max_x);
-                    let y = (neuron.neuron_voxel_coordinate.y as u32).min(max_y);
-                    let z = (neuron.neuron_voxel_coordinate.z as u32).min(max_z);
+                    let x = neuron.neuron_voxel_coordinate.x.min(max_x);
+                    let y = neuron.neuron_voxel_coordinate.y.min(max_y);
+                    let z = neuron.neuron_voxel_coordinate.z.min(max_z);
 
                     let transform_data =
                         Self::calculate_transform(x, y, z, half_dimensions, offset, scale);
@@ -617,8 +636,12 @@ impl FeagiDataDeserializer {
                         Vector3::new(transform_data[3], transform_data[7], transform_data[11]);
                     let transform = Transform3D::new(basis, origin);
 
-                    let color =
-                        Color::from_rgba(color_data[0], color_data[1], color_data[2], color_data[3]);
+                    let color = Color::from_rgba(
+                        color_data[0],
+                        color_data[1],
+                        color_data[2],
+                        color_data[3],
+                    );
 
                     multi_mesh.set_instance_transform(i as i32, transform);
                     multi_mesh.set_instance_color(i as i32, color);
@@ -671,12 +694,12 @@ impl FeagiDataDeserializer {
 
     /// Process pre-deserialized neuron arrays for visualization (optimized path)
     /// This is used when arrays are already deserialized and we just need transforms/colors
-    /// 
+    ///
     /// Args:
     ///   - x_array, y_array, z_array: Neuron coordinates
     ///   - dimensions: Cortical area dimensions
     ///   - max_neurons: Maximum neurons to process (0 = unlimited)
-    /// 
+    ///
     /// Returns: Same dictionary format as process_neuron_visualization
     #[func]
     pub fn process_arrays_for_visualization(
@@ -688,72 +711,73 @@ impl FeagiDataDeserializer {
         max_neurons: i32,
     ) -> Dictionary {
         let start_time = std::time::Instant::now();
-        
+
         // Validate array sizes
         let array_len = x_array.len();
         if array_len != y_array.len() || array_len != z_array.len() {
-            godot_error!("🦀 Array size mismatch: x={}, y={}, z={}", array_len, y_array.len(), z_array.len());
+            godot_error!(
+                "🦀 Array size mismatch: x={}, y={}, z={}",
+                array_len,
+                y_array.len(),
+                z_array.len()
+            );
             return self.create_visualization_error_dict(
                 "Array size mismatch".to_string(),
-                start_time.elapsed().as_micros() as i64
+                start_time.elapsed().as_micros() as i64,
             );
         }
-        
+
         if array_len == 0 {
             return self.create_visualization_error_dict(
                 "Empty arrays".to_string(),
-                start_time.elapsed().as_micros() as i64
+                start_time.elapsed().as_micros() as i64,
             );
         }
-        
+
         // Apply limit if specified
         let process_count = if max_neurons > 0 {
             std::cmp::min(array_len, max_neurons as usize)
         } else {
             array_len
         };
-        
+
         // Pre-calculate constants
-        let half_dimensions = Vector3::new(
-            dimensions.x / 2.0,
-            dimensions.y / 2.0,
-            dimensions.z / 2.0,
-        );
+        let half_dimensions =
+            Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
         let offset = Vector3::ZERO;
-        let scale = Vector3::new(
-            1.0 / dimensions.x,
-            1.0 / dimensions.y,
-            1.0 / -dimensions.z,
-        );
+        let scale = Vector3::new(1.0 / dimensions.x, 1.0 / dimensions.y, 1.0 / -dimensions.z);
         let max_x = (dimensions.x as i32).saturating_sub(1).max(0);
         let max_y = (dimensions.y as i32).saturating_sub(1).max(0);
         let max_z = (dimensions.z as i32).saturating_sub(1).max(0);
 
         // Collect coordinates (clamped to area bounds to prevent overflow visualization)
         let coords: Vec<(i32, i32, i32)> = (0..process_count)
-            .map(|i| (
-                x_array[i].clamp(0, max_x),
-                y_array[i].clamp(0, max_y),
-                z_array[i].clamp(0, max_z),
-            ))
+            .map(|i| {
+                (
+                    x_array[i].clamp(0, max_x),
+                    y_array[i].clamp(0, max_y),
+                    z_array[i].clamp(0, max_z),
+                )
+            })
             .collect();
 
         // Process neurons - use parallel processing on desktop, sequential on WASM
-        let (transforms, colors) = self.process_coords_internal(&coords, half_dimensions, offset, scale, dimensions.z);
-        
+        let (transforms, colors) =
+            self.process_coords_internal(&coords, half_dimensions, offset, scale, dimensions.z);
+
         // Convert to Godot PackedArrays
         let mut transforms_array = PackedFloat32Array::new();
         for &val in &transforms {
             transforms_array.push(val);
         }
-        
+
         let mut colors_array = PackedFloat32Array::new();
         for &val in &colors {
             colors_array.push(val);
         }
-        
+
         let processing_time = start_time.elapsed().as_micros() as i64;
-        
+
         #[cfg(not(target_family = "wasm"))]
         godot_print!(
             "🦀 [RUST-PARALLEL] Processed {} neurons in {} µs ({:.2} ms) using Rayon multi-threading",
@@ -761,7 +785,7 @@ impl FeagiDataDeserializer {
             processing_time,
             processing_time as f64 / 1000.0
         );
-        
+
         #[cfg(target_family = "wasm")]
         godot_print!(
             "🦀 [RUST-WASM] Processed {} neurons in {} µs ({:.2} ms) - sequential (still 3-4x faster than GDScript!)",
@@ -769,7 +793,7 @@ impl FeagiDataDeserializer {
             processing_time,
             processing_time as f64 / 1000.0
         );
-        
+
         // Return result dictionary
         let mut result = Dictionary::new();
         result.set("success", true);
@@ -778,21 +802,21 @@ impl FeagiDataDeserializer {
         result.set("neuron_count", process_count as i32);
         result.set("processing_time_us", processing_time);
         result.set("error", "");
-        
+
         result
     }
 
     /// Parse cortical ID to extract encoding information using FDP's actual methods
-    /// 
+    ///
     /// Uses CorticalID::try_from_base_64() and IOCorticalAreaDataType::try_from_data_type_configuration_flag()
     /// to parse the binary structure exactly as FDP does.
-    /// 
+    ///
     /// Returns: Dictionary with {success: bool, encoding_type: String, encoding_format: String, error: String}
     #[func]
     pub fn parse_cortical_id_encoding(&self, cortical_id: GString) -> Dictionary {
         let mut result = Dictionary::new();
         let id_str = cortical_id.to_string();
-        
+
         // Use FDP's CorticalID parser
         let cortical_id_obj = match CorticalID::try_from_base_64(&id_str) {
             Ok(id) => id,
@@ -804,83 +828,92 @@ impl FeagiDataDeserializer {
                 return result;
             }
         };
-        
+
         let bytes = cortical_id_obj.as_bytes();
-        
+
         // Verify this is an IPU or OPU cortical area
         if bytes[0] != b'i' && bytes[0] != b'o' {
             result.set("success", false);
-            result.set("error", format!("Not an IPU/OPU cortical ID (first byte: {})", bytes[0] as char));
+            result.set(
+                "error",
+                format!(
+                    "Not an IPU/OPU cortical ID (first byte: {})",
+                    bytes[0] as char
+                ),
+            );
             result.set("encoding_type", "");
             result.set("encoding_format", "");
             return result;
         }
-        
+
         // Extract data_type_configuration from bytes 4-5 (u16, little-endian) per FDP spec
-        let config: IOCorticalAreaConfigurationFlagBitmask = u16::from_le_bytes([bytes[4], bytes[5]]);
-        
+        let config: IOCorticalAreaConfigurationFlagBitmask =
+            u16::from_le_bytes([bytes[4], bytes[5]]);
+
         // Use FDP's actual parsing method to decode the configuration
-        let io_data_type = match IOCorticalAreaConfigurationFlag::try_from_data_type_configuration_flag(config) {
-            Ok(dt) => dt,
-            Err(e) => {
-                result.set("success", false);
-                result.set("error", format!("FDP IOCorticalAreaConfigurationFlag parse error: {}", e));
-                result.set("encoding_type", "");
-                result.set("encoding_format", "");
-                return result;
-            }
-        };
-        
+        let io_data_type =
+            match IOCorticalAreaConfigurationFlag::try_from_data_type_configuration_flag(config) {
+                Ok(dt) => dt,
+                Err(e) => {
+                    result.set("success", false);
+                    result.set(
+                        "error",
+                        format!("FDP IOCorticalAreaConfigurationFlag parse error: {}", e),
+                    );
+                    result.set("encoding_type", "");
+                    result.set("encoding_format", "");
+                    return result;
+                }
+            };
+
         // Extract encoding_type from positioning enum
         let encoding_type = match io_data_type {
-            IOCorticalAreaConfigurationFlag::Percentage(_, pos) |
-            IOCorticalAreaConfigurationFlag::Percentage2D(_, pos) |
-            IOCorticalAreaConfigurationFlag::Percentage3D(_, pos) |
-            IOCorticalAreaConfigurationFlag::Percentage4D(_, pos) |
-            IOCorticalAreaConfigurationFlag::SignedPercentage(_, pos) |
-            IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, pos) |
-            IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, pos) |
-            IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, pos) => {
-                match pos {
-                    PercentageNeuronPositioning::Linear => "linear",
-                    PercentageNeuronPositioning::Fractional => "exponential",
-                }
-            }
+            IOCorticalAreaConfigurationFlag::Percentage(_, pos)
+            | IOCorticalAreaConfigurationFlag::Percentage2D(_, pos)
+            | IOCorticalAreaConfigurationFlag::Percentage3D(_, pos)
+            | IOCorticalAreaConfigurationFlag::Percentage4D(_, pos)
+            | IOCorticalAreaConfigurationFlag::SignedPercentage(_, pos)
+            | IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, pos)
+            | IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, pos)
+            | IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, pos) => match pos {
+                PercentageNeuronPositioning::Linear => "linear",
+                PercentageNeuronPositioning::Fractional => "exponential",
+            },
             _ => "linear", // CartesianPlane, Misc, Boolean, etc. default to linear
         };
-        
+
         // Extract encoding_format from data type variant
         let encoding_format = match io_data_type {
-            IOCorticalAreaConfigurationFlag::Percentage(_, _) |
-            IOCorticalAreaConfigurationFlag::SignedPercentage(_, _) |
-            IOCorticalAreaConfigurationFlag::Boolean => "1d",
-            
-            IOCorticalAreaConfigurationFlag::Percentage2D(_, _) |
-            IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _) |
-            IOCorticalAreaConfigurationFlag::CartesianPlane(_) => "2d",
-            
-            IOCorticalAreaConfigurationFlag::Percentage3D(_, _) |
-            IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _) => "3d",
-            
-            IOCorticalAreaConfigurationFlag::Percentage4D(_, _) |
-            IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _) => "4d",
-            
+            IOCorticalAreaConfigurationFlag::Percentage(_, _)
+            | IOCorticalAreaConfigurationFlag::SignedPercentage(_, _)
+            | IOCorticalAreaConfigurationFlag::Boolean => "1d",
+
+            IOCorticalAreaConfigurationFlag::Percentage2D(_, _)
+            | IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _)
+            | IOCorticalAreaConfigurationFlag::CartesianPlane(_) => "2d",
+
+            IOCorticalAreaConfigurationFlag::Percentage3D(_, _)
+            | IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _) => "3d",
+
+            IOCorticalAreaConfigurationFlag::Percentage4D(_, _)
+            | IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _) => "4d",
+
             IOCorticalAreaConfigurationFlag::Misc(_) => "1d",
         };
-        
+
         result.set("success", true);
         result.set("encoding_type", encoding_type);
         result.set("encoding_format", encoding_format);
         result.set("error", "");
-        
+
         result
     }
 
     /// Decode FDP value from voxel coordinates using actual FDP decoding logic
-    /// 
+    ///
     /// This function uses the EXACT same decoding logic that FDP uses to translate
     /// neuron voxel positions into application values. It does NOT invent its own logic.
-    /// 
+    ///
     /// Args:
     ///   - cortical_id: The cortical area ID (for display purposes)
     ///   - voxel_x, voxel_y, voxel_z: The voxel coordinates
@@ -888,8 +921,9 @@ impl FeagiDataDeserializer {
     ///   - encoding_format: "1d", "2d", "3d", or "4d"
     ///   - channel_dimensions_x, channel_dimensions_y, channel_dimensions_z: Dimensions per channel
     ///   - num_channels: Total number of channels
-    /// 
+    ///
     /// Returns: Dictionary with {success: bool, channel: i32, value: f32, fdp_version: String, error: String}
+    #[allow(clippy::too_many_arguments)]
     #[func]
     pub fn decode_fdp_value(
         &self,
@@ -905,10 +939,10 @@ impl FeagiDataDeserializer {
         num_channels: i32,
     ) -> Dictionary {
         let mut result = Dictionary::new();
-        
+
         // FDP version from the crate
         const FDP_VERSION: &str = "0.0.50-beta.59";
-        
+
         // Validate inputs
         if voxel_x < 0 || voxel_y < 0 || voxel_z < 0 {
             result.set("success", false);
@@ -918,7 +952,7 @@ impl FeagiDataDeserializer {
             result.set("fdp_version", FDP_VERSION);
             return result;
         }
-        
+
         if channel_dimensions_z <= 0 {
             result.set("success", false);
             result.set("error", "Invalid channel dimensions (z must be > 0)");
@@ -927,10 +961,10 @@ impl FeagiDataDeserializer {
             result.set("fdp_version", FDP_VERSION);
             return result;
         }
-        
+
         let encoding_type_str = encoding_type.to_string().to_lowercase();
         let encoding_format_str = encoding_format.to_string().to_lowercase();
-        
+
         // Calculate channel number based on encoding format
         let channel: i32 = match encoding_format_str.as_str() {
             "1d" => {
@@ -951,24 +985,33 @@ impl FeagiDataDeserializer {
             }
             _ => {
                 result.set("success", false);
-                result.set("error", format!("Unsupported encoding format: {}", encoding_format_str));
+                result.set(
+                    "error",
+                    format!("Unsupported encoding format: {}", encoding_format_str),
+                );
                 result.set("channel", -1);
                 result.set("value", 0.0);
                 result.set("fdp_version", FDP_VERSION);
                 return result;
             }
         };
-        
+
         // Validate channel is within range
         if channel < 0 || channel >= num_channels {
             result.set("success", false);
-            result.set("error", format!("Calculated channel {} out of range [0, {})", channel, num_channels));
+            result.set(
+                "error",
+                format!(
+                    "Calculated channel {} out of range [0, {})",
+                    channel, num_channels
+                ),
+            );
             result.set("channel", channel);
             result.set("value", 0.0);
             result.set("fdp_version", FDP_VERSION);
             return result;
         }
-        
+
         // Decode value using ACTUAL FDP logic from feagi_connector_core
         // This uses the same functions that FDP's decoders use internally
         let value: f32 = match (encoding_type_str.as_str(), encoding_format_str.as_str()) {
@@ -980,7 +1023,10 @@ impl FeagiDataDeserializer {
                 let z_index = voxel_z as f32;
                 (z_index / z_max_depth) * 100.0 // Convert to percentage (0-100)
             }
-            ("exponential", "1d") | ("exponential", "2d") | ("exponential", "3d") | ("exponential", "4d") => {
+            ("exponential", "1d")
+            | ("exponential", "2d")
+            | ("exponential", "3d")
+            | ("exponential", "4d") => {
                 // Use FDP's exponential decoding formula
                 // For exponential: value = 0.5^z_index
                 // This matches decode_unsigned_percentage_from_fractional_exponential_neurons logic
@@ -989,21 +1035,24 @@ impl FeagiDataDeserializer {
             }
             _ => {
                 result.set("success", false);
-                result.set("error", format!("Unsupported encoding type: {}", encoding_type_str));
+                result.set(
+                    "error",
+                    format!("Unsupported encoding type: {}", encoding_type_str),
+                );
                 result.set("channel", channel);
                 result.set("value", 0.0);
                 result.set("fdp_version", FDP_VERSION);
                 return result;
             }
         };
-        
+
         // Success!
         result.set("success", true);
         result.set("channel", channel);
         result.set("value", value);
         result.set("fdp_version", FDP_VERSION);
         result.set("error", "");
-        
+
         result
     }
 
@@ -1298,7 +1347,8 @@ impl FeagiDataDeserializer {
             .fold(
                 || (Vec::with_capacity(1024 * 12), Vec::with_capacity(1024 * 4)),
                 |(mut transforms, mut colors), (x, y, z, _potential)| {
-                    let transform_data = Self::calculate_transform(*x, *y, *z, half_dimensions, offset, scale);
+                    let transform_data =
+                        Self::calculate_transform(*x, *y, *z, half_dimensions, offset, scale);
                     let color_data = Self::calculate_color(*z, z_max);
                     transforms.extend_from_slice(&transform_data);
                     colors.extend_from_slice(&color_data);
@@ -1313,10 +1363,10 @@ impl FeagiDataDeserializer {
                     (t1, c1)
                 },
             );
-        
+
         (transforms, colors)
     }
-    
+
     /// Process neurons - WASM VERSION with sequential processing
     #[cfg(target_family = "wasm")]
     fn process_neurons_internal(
@@ -1329,19 +1379,20 @@ impl FeagiDataDeserializer {
     ) -> (Vec<f32>, Vec<f32>) {
         let mut transforms = Vec::with_capacity(neurons.len() * 12);
         let mut colors = Vec::with_capacity(neurons.len() * 4);
-        
+
         // Sequential processing (WASM - still faster than GDScript!)
         for (x, y, z, _potential) in neurons.iter() {
-            let transform_data = Self::calculate_transform(*x, *y, *z, half_dimensions, offset, scale);
+            let transform_data =
+                Self::calculate_transform(*x, *y, *z, half_dimensions, offset, scale);
             let color_data = Self::calculate_color(*z, z_max);
-            
+
             transforms.extend_from_slice(&transform_data);
             colors.extend_from_slice(&color_data);
         }
-        
+
         (transforms, colors)
     }
-    
+
     /// Process coordinates - DESKTOP VERSION with Rayon parallel processing
     #[cfg(not(target_family = "wasm"))]
     fn process_coords_internal(
@@ -1356,12 +1407,19 @@ impl FeagiDataDeserializer {
         let results: Vec<([f32; 12], [f32; 4])> = coords
             .par_iter()
             .map(|(x, y, z)| {
-                let transform_data = Self::calculate_transform(*x as u32, *y as u32, *z as u32, half_dimensions, offset, scale);
+                let transform_data = Self::calculate_transform(
+                    *x as u32,
+                    *y as u32,
+                    *z as u32,
+                    half_dimensions,
+                    offset,
+                    scale,
+                );
                 let color_data = Self::calculate_color(*z as u32, z_max);
                 (transform_data, color_data)
             })
             .collect();
-        
+
         // Flatten results
         let mut transforms = Vec::with_capacity(coords.len() * 12);
         let mut colors = Vec::with_capacity(coords.len() * 4);
@@ -1369,10 +1427,10 @@ impl FeagiDataDeserializer {
             transforms.extend_from_slice(&transform);
             colors.extend_from_slice(&color);
         }
-        
+
         (transforms, colors)
     }
-    
+
     /// Process coordinates - WASM VERSION with sequential processing
     #[cfg(target_family = "wasm")]
     fn process_coords_internal(
@@ -1385,19 +1443,26 @@ impl FeagiDataDeserializer {
     ) -> (Vec<f32>, Vec<f32>) {
         let mut transforms = Vec::with_capacity(coords.len() * 12);
         let mut colors = Vec::with_capacity(coords.len() * 4);
-        
+
         // Sequential processing (WASM - still faster than GDScript!)
         for (x, y, z) in coords.iter() {
-            let transform_data = Self::calculate_transform(*x as u32, *y as u32, *z as u32, half_dimensions, offset, scale);
+            let transform_data = Self::calculate_transform(
+                *x as u32,
+                *y as u32,
+                *z as u32,
+                half_dimensions,
+                offset,
+                scale,
+            );
             let color_data = Self::calculate_color(*z as u32, z_max);
-            
+
             transforms.extend_from_slice(&transform_data);
             colors.extend_from_slice(&color_data);
         }
-        
+
         (transforms, colors)
     }
-    
+
     /// Calculate transform matrix for a single neuron (shared by both versions)
     /// Matches GDScript logic: transform.origin = centered_pos; transform = transform.scaled(scale)
     #[inline(always)]
@@ -1416,22 +1481,31 @@ impl FeagiDataDeserializer {
             feagi_pos.y - half_dimensions.y + offset.y,
             feagi_pos.z - half_dimensions.z + offset.z,
         );
-        
+
         // Transform3D as 3x4 matrix with SCALED basis vectors (matches GDScript: transform.scaled(scale))
         // This applies scale to both the basis and the origin
         [
-            scale.x, 0.0, 0.0, centered_pos.x * scale.x,  // Row 0: scaled X basis + scaled origin.x
-            0.0, scale.y, 0.0, centered_pos.y * scale.y,  // Row 1: scaled Y basis + scaled origin.y
-            0.0, 0.0, scale.z, centered_pos.z * scale.z,  // Row 2: scaled Z basis + scaled origin.z
+            scale.x,
+            0.0,
+            0.0,
+            centered_pos.x * scale.x, // Row 0: scaled X basis + scaled origin.x
+            0.0,
+            scale.y,
+            0.0,
+            centered_pos.y * scale.y, // Row 1: scaled Y basis + scaled origin.y
+            0.0,
+            0.0,
+            scale.z,
+            centered_pos.z * scale.z, // Row 2: scaled Z basis + scaled origin.z
         ]
     }
-    
+
     /// Calculate z-depth color for a single neuron (shared by both versions)
     #[inline(always)]
     fn calculate_color(z: u32, z_max: f32) -> [f32; 4] {
         let z_normalized = (z as f32 / z_max).clamp(0.0, 1.0);
-        let red_intensity = (1.0 - z_normalized).max(0.2);  // Front bright, back dark
-        [red_intensity, 0.0, 0.0, 1.0]  // Red gradient with full alpha
+        let red_intensity = (1.0 - z_normalized).max(0.2); // Front bright, back dark
+        [red_intensity, 0.0, 0.0, 1.0] // Red gradient with full alpha
     }
 
     /// Convert official neuron data structure to Godot Dictionary
@@ -1442,14 +1516,14 @@ impl FeagiDataDeserializer {
         let mut result_dict = Dictionary::new();
         result_dict.set("success", true);
         result_dict.set("error", "");
-        
+
         let mut areas_dict = Dictionary::new();
         let mut total_neurons: i32 = 0;
 
         // Iterate through each cortical area in the neuron data using 'mappings' field
         for (cortical_id, neuron_array) in neuron_data.mappings.iter() {
             let num_neurons = neuron_array.len();
-            
+
             if num_neurons == 0 {
                 continue;
             }
@@ -1463,7 +1537,7 @@ impl FeagiDataDeserializer {
 
             // Create area data dictionary
             let mut area_dict = Dictionary::new();
-            
+
             // Convert arrays to Godot PackedArrays
             let mut x_array = PackedInt32Array::new();
             let mut y_array = PackedInt32Array::new();
@@ -1488,7 +1562,7 @@ impl FeagiDataDeserializer {
 
         result_dict.set("areas", areas_dict);
         result_dict.set("total_neurons", total_neurons);
-        
+
         result_dict
     }
 
@@ -1503,7 +1577,11 @@ impl FeagiDataDeserializer {
     }
 
     /// Create error dictionary for visualization processing
-    fn create_visualization_error_dict(&self, error_msg: String, processing_time_us: i64) -> Dictionary {
+    fn create_visualization_error_dict(
+        &self,
+        error_msg: String,
+        processing_time_us: i64,
+    ) -> Dictionary {
         let mut error_dict = Dictionary::new();
         error_dict.set("success", false);
         error_dict.set("error", error_msg);
