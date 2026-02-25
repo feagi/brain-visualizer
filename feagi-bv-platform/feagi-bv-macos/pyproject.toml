@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "feagi-bv-macos"
-version = "2.1.5"
+version = "2.3.2"
 description = "Brain Visualizer binaries for macOS (part of feagi-bv)"
 readme = "README.md"
 requires-python = ">=3.10"
