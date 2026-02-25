@@ -437,7 +437,10 @@ func _process(_delta: float):
 			if is_immediate_failure and _retry_count > 10:
 				print("[%s] ❌ [WS] Too many immediate failures - FEAGI websocket likely not available" % _get_timestamp())
 				print("[%s] 🔌 [WS] Notifying network layer about websocket failure" % _get_timestamp())
-				push_error("FEAGI Websocket: Repeated immediate failures - websocket service may be down!")
+				push_warning(
+					"FEAGI Websocket: Repeated immediate failures while reconnecting. "
+					+ "This may occur during FEAGI restart; waiting for normal recovery."
+				)
 				_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
 				set_process(false)
 				return
@@ -1230,6 +1233,10 @@ func _on_genome_reloaded() -> void:
 	print("   🔄 Genome reloaded - resetting missing cortical area tracking")
 	_missing_cortical_areas.clear()
 	_case_mapping_cache.clear()  # Clear case mapping cache too
+	# Force immediate rebuild of desktop Type11 fast-path caches on next packet.
+	_bv_fast_multimeshes_by_id.clear()
+	_bv_fast_dimensions_by_id.clear()
+	_bv_fast_cache_last_refresh_ms = 0
 
 func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 	"""Convert byte array to hex string for debugging"""
@@ -1243,6 +1250,9 @@ func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 
 func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health
+	# Avoid no-op emissions to reduce downstream duplicate state handling.
+	if prev_health == new_health:
+		return
 	_socket_health = new_health
 	print("[%s] 🔌 [WS] _set_socket_health: %s → %s" % [_get_timestamp(), WEBSOCKET_HEALTH.keys()[prev_health], WEBSOCKET_HEALTH.keys()[new_health]])
 	print("[%s] 📡 [WS] Emitting FEAGI_socket_health_changed signal (connected listeners: %d)" % [_get_timestamp(), FEAGI_socket_health_changed.get_connections().size()])

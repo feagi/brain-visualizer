@@ -12,6 +12,7 @@ class_name AdvancedCorticalProperties
 @export var controls_to_hide_in_simple_mode: Array[Control] = [] #NOTE custom logic for sections, do not include those here
 
 const WINDOW_NAME: StringName = "adv_cortical_properties"
+const UPDATE_FAILED_POPUP_MIN_SIZE: Vector2i = Vector2i(440, 0)
 const IO_PRESET_INPUT: StringName = "Input"
 const IO_PRESET_OUTPUT: StringName = "Output"
 const IO_PRESET_INTERCONNECT: StringName = "Interconnect"
@@ -476,7 +477,7 @@ func _send_update(send_button: Button) -> void:
 				
 				# Show popup with more detailed error message
 				var detailed_popup_message = "FEAGI was unable to update cortical areas %s.\n\n%s\n\nCheck console for full details." % [area_names_str, error_message]
-				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
+				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message, "OK", UPDATE_FAILED_POPUP_MIN_SIZE))
 				close_window()
 			else:
 				print("✅ UI: Successfully updated cortical areas %s" % area_names_str)
@@ -553,7 +554,7 @@ func _send_update(send_button: Button) -> void:
 					
 					# Show popup with more detailed error message
 					var detailed_popup_message = "FEAGI was unable to update cortical area '%s'.\n\n%s\n\nCheck console for full details." % [cortical_id, error_message]
-					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
+					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message, "OK", UPDATE_FAILED_POPUP_MIN_SIZE))
 					close_window()
 				else:
 					print("✅ UI: Successfully updated cortical area '%s'" % cortical_id)
@@ -610,7 +611,7 @@ func _send_unit_group_update(send_button: Button, update_data: Dictionary) -> bo
 	var members = _get_unit_group_members(area)
 	if members.is_empty():
 		var message = "No unit group members were found for this unit. Unable to apply the Unit Index update."
-		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", message))
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", message, "OK", UPDATE_FAILED_POPUP_MIN_SIZE))
 		return false
 	print("UI: Attempting to update unit group (%d areas) with data: %s" % [members.size(), update_data])
 	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_areas(members, update_data)
@@ -625,7 +626,7 @@ func _send_unit_group_update(send_button: Button, update_data: Dictionary) -> bo
 		print("UI: - Failed requirement: %s" % result.failed_requirement)
 		print("UI: - Failed requirement key: %s" % result.failed_requirement_key)
 		var detailed_popup_message = "FEAGI was unable to update the unit group.\n\n%s\n\nCheck console for full details." % error_message
-		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message))
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message, "OK", UPDATE_FAILED_POPUP_MIN_SIZE))
 		return false
 	print("✅ UI: Successfully updated unit group")
 	if update_data.has("unit_id"):
@@ -1629,7 +1630,10 @@ func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) 
 		delete_request,
 		"Yes"
 		)
-	var popup_request: Callable = BV.WM.spawn_popup.bind(delete_popup)
+	var popup_request: Callable = func() -> void:
+		var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+		popup_window.set_enter_confirms_button("Yes")
+		popup_window.call_deferred("focus_button_with_text", "Yes")
 	item.get_delete_button().pressed.connect(popup_request)
 
 func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
@@ -1648,7 +1652,10 @@ func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) 
 		delete_request,
 		"Yes"
 		)
-	var popup_request: Callable = BV.WM.spawn_popup.bind(delete_popup)
+	var popup_request: Callable = func() -> void:
+		var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+		popup_window.set_enter_confirms_button("Yes")
+		popup_window.call_deferred("focus_button_with_text", "Yes")
 	item.get_delete_button().pressed.connect(popup_request)
 
 func _remove_recursive_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:

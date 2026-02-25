@@ -1,0 +1,62 @@
+[gd_scene load_steps=3 format=3 uid="uid://crwe0qv8b5k2m"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/RawConnectivityEdit/WindowRawConnectivityEdit.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+
+[node name="WindowRawConnectivityEdit" type="VBoxContainer"]
+custom_minimum_size = Vector2(480, 360)
+layout_mode = 3
+theme_override_constants/separation = 0
+script = ExtResource("1_script")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+layout_mode = 2
+title = "Raw Edit"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Content" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TextEdit" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals/Content"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "[[0,0,0], [1,2,3], ...]"
+wrap_mode = 0
+
+[node name="ErrorLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+text = ""
+
+[node name="ButtonRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="Spacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+[node name="Save" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Save"

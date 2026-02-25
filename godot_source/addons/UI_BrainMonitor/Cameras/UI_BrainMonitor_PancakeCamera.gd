@@ -126,11 +126,14 @@ func _unhandled_input(event: InputEvent) -> void:
 						var move: Vector3 = Vector3(event.relative.x * -TANK_CAMERA_PAN_SPEED, event.relative.y * TANK_CAMERA_PAN_SPEED, 0)
 						translate(move)
 				elif event is InputEventMouseButton:
+					var zoom_step: float = TANK_CAMERA_MOVEMENT_SPEED
+					if Input.is_key_pressed(key_tank_fast_camera):
+						zoom_step *= TANK_CAMERA_FAST_MULTIPLIER
 					match event.button_index:
 						MOUSE_BUTTON_WHEEL_DOWN:
-							translate(Vector3(0,0,TANK_CAMERA_MOVEMENT_SPEED))
+							translate(Vector3(0,0,zoom_step))
 						MOUSE_BUTTON_WHEEL_UP:
-							translate(Vector3(0,0,-TANK_CAMERA_MOVEMENT_SPEED))
+							translate(Vector3(0,0,-zoom_step))
 
 		# BM Interactions
 		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(event.button_mask)

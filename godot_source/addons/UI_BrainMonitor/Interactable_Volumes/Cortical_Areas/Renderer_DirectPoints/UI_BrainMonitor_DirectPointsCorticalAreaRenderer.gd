@@ -22,6 +22,11 @@ const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_
 const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/MemoryJelloMaterial.tres"
 const POWER_NEON_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonMaterial.tres"
 const TESLA_COIL_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilMaterial.tres"
+const FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE: int = 18
+const FRIENDLY_NAME_LABEL_SMOOTH_SPEED: float = 10.0
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN: float = 2.75
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX: float = 4.5
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE: float = 0.18
 
 # Visual scale for voxel meshes (world units). Matches existing individual-voxel sizing.
 const _VOXEL_VISUAL_SCALE: float = 0.8
@@ -48,6 +53,9 @@ var _is_hovered_over: bool = false
 var _is_selected: bool = false
 var _current_neuron_count: int = 0
 var _warning_threshold: int = 50000  # Warn if exceeding this many neurons
+var _last_label_outside_dir_xz: Vector2 = Vector2(0.0, 1.0)
+var _friendly_name_label_target_position: Vector3 = Vector3.ZERO
+var _has_friendly_name_label_target_position: bool = false
 
 # Rust processing (required - no fallback!)
 var _rust_processor: Object = null  # FeagiDataDeserializer instance
@@ -304,6 +312,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		_static_body.add_child(_friendly_name_label)
 	else:
 		add_child(_friendly_name_label)
+	set_process(true)
 
 	# Set initial properties
 	_position_FEAGI_space = area.coordinates_3D
@@ -351,7 +360,29 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 
 func update_friendly_name(new_name: String) -> void:
-	_friendly_name_label.text = new_name
+	_friendly_name_label.text = _wrap_friendly_name_text(new_name)
+
+func _wrap_friendly_name_text(label_text: String) -> String:
+	var normalized_text := label_text.strip_edges()
+	if normalized_text.is_empty():
+		return ""
+	var wrapped_lines := PackedStringArray()
+	for raw_line in normalized_text.split("\n"):
+		var words := raw_line.split(" ", false)
+		if words.is_empty():
+			wrapped_lines.append("")
+			continue
+		var current_line: String = words[0]
+		for i in range(1, words.size()):
+			var word: String = words[i]
+			var candidate_line := "%s %s" % [current_line, word]
+			if candidate_line.length() <= FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE:
+				current_line = candidate_line
+			else:
+				wrapped_lines.append(current_line)
+				current_line = word
+		wrapped_lines.append(current_line)
+	return "\n".join(wrapped_lines)
 
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Vector3i) -> void:
 	super(new_FEAGI_coordinate_position)
@@ -415,27 +446,62 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	# print("DirectPoints voxel renderer dimensions updated: ", new_dimensions)  # Suppressed - called too frequently
 
-## Keeps the friendly-name label below the cortical area, but snaps its Z to the camera-facing edge
-## (avoids the label sitting at the center of the cortical depth).
+func _process(delta: float) -> void:
+	var had_target := _has_friendly_name_label_target_position
+	if not _update_friendly_name_label_target_position():
+		return
+	if not had_target:
+		_friendly_name_label.position = _friendly_name_label_target_position
+		return
+	var alpha: float = clampf(1.0 - exp(-FRIENDLY_NAME_LABEL_SMOOTH_SPEED * delta), 0.0, 1.0)
+	_friendly_name_label.position = _friendly_name_label.position.lerp(_friendly_name_label_target_position, alpha)
+
+## Keeps the friendly-name label below the cortical area and continuously outside the area footprint.
+## Target position tracks camera movement; final motion is time-smoothed in _process().
 func bv_update_friendly_name_label_position() -> void:
+	var had_target := _has_friendly_name_label_target_position
+	if not _update_friendly_name_label_target_position():
+		return
+	if not had_target:
+		_friendly_name_label.position = _friendly_name_label_target_position
+
+func _update_friendly_name_label_target_position() -> bool:
 	if _static_body == null or _friendly_name_label == null:
-		return
+		return false
 	if _should_use_png_icon_by_id(_cortical_area_id):
-		return
+		return false
 	var viewport := get_viewport()
 	if viewport == null:
-		return
+		return false
 	var cam := viewport.get_camera_3d()
 	if cam == null:
-		return
-	
-	var y_offset: float = -(_static_body.scale.y / 2.0 + 2.0)
-	# Renderer base class extends Node (not Node3D), so compute camera relation in the StaticBody3D's space.
+		return false
+	var half_y: float = absf(_static_body.scale.y) * 0.5
+	var bottom_gap: float = clampf(
+		half_y * FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX
+	)
+	var y_offset: float = -(half_y + bottom_gap)
+	var edge_margin: float = maxf(0.75, minf(_static_body.scale.x, _static_body.scale.z) * 0.15)
+	# Renderer base class extends Node (not Node3D), so compute camera relation in StaticBody3D space.
 	var cam_in_body_local: Vector3 = _static_body.to_local(cam.global_position)
-	var z_sign: float = -1.0 if cam_in_body_local.z < 0.0 else 1.0
-	var z_edge: float = _static_body.position.z + z_sign * (_static_body.scale.z / 2.0)
-	
-	_friendly_name_label.position = Vector3(_static_body.position.x, _static_body.position.y + y_offset, z_edge)
+	var cam_dir_xz := Vector2(cam_in_body_local.x, cam_in_body_local.z)
+	if cam_dir_xz.length_squared() > 0.0001:
+		_last_label_outside_dir_xz = cam_dir_xz.normalized()
+
+	var dir_xz: Vector2 = _last_label_outside_dir_xz
+	var half_x: float = absf(_static_body.scale.x) * 0.5
+	var half_z: float = absf(_static_body.scale.z) * 0.5
+	# Support distance to rectangle boundary along direction (continuous, no axis snapping).
+	var edge_distance: float = absf(dir_xz.x) * half_x + absf(dir_xz.y) * half_z
+	var center_x: float = _static_body.position.x
+	var center_z: float = _static_body.position.z
+	var label_x: float = center_x + dir_xz.x * (edge_distance + edge_margin)
+	var label_z: float = center_z + dir_xz.y * (edge_distance + edge_margin)
+	_friendly_name_label_target_position = Vector3(label_x, _static_body.position.y + y_offset, label_z)
+	_has_friendly_name_label_target_position = true
+	return true
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# This method handles legacy SVO data for backward compatibility

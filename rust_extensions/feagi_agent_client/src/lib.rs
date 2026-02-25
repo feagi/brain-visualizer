@@ -315,7 +315,7 @@ impl FeagiAgentClient {
     }
 
     /// Extract agent ID bytes from a FeagiByteContainer buffer (first bytes after header).
-    /// Returns PackedByteArray of 8 bytes or empty if buffer is too short.
+    /// Returns PackedByteArray of 48 bytes or empty if buffer is too short.
     /// Used to validate incoming visualization data matches our registered session.
     #[func]
     pub fn get_session_id_from_byte_container(&self, buffer: PackedByteArray) -> PackedByteArray {
@@ -474,49 +474,22 @@ impl FeagiAgentClient {
             .decode(b64)
             .map_err(|e| format!("agent_descriptor: invalid base64: {}", e))?;
 
-        let (manufacturer, agent_name, agent_version) = match decoded.len() {
-            // New layout: instance_id(4) + manufacturer(128) + agent_name(64) + version(4) = 200
-            200 => {
-                let manufacturer = String::from_utf8_lossy(&decoded[4..132])
-                    .trim_end_matches('\0')
-                    .to_string();
-                let agent_name = String::from_utf8_lossy(&decoded[132..196])
-                    .trim_end_matches('\0')
-                    .to_string();
-                let agent_version =
-                    u32::from_le_bytes([decoded[196], decoded[197], decoded[198], decoded[199]]);
-                (manufacturer, agent_name, agent_version)
-            }
-            // Legacy layout: instance_id(4) + manufacturer(32) + agent_name(32) + version(4) = 72
-            72 => {
-                let manufacturer = String::from_utf8_lossy(&decoded[4..36])
-                    .trim_end_matches('\0')
-                    .to_string();
-                let agent_name = String::from_utf8_lossy(&decoded[36..68])
-                    .trim_end_matches('\0')
-                    .to_string();
-                let agent_version =
-                    u32::from_le_bytes([decoded[68], decoded[69], decoded[70], decoded[71]]);
-                (manufacturer, agent_name, agent_version)
-            }
-            // Very old layout: instance_id(4) + manufacturer(20) + agent_name(20) + version(4) = 48
-            48 => {
-                let manufacturer = String::from_utf8_lossy(&decoded[4..24])
-                    .trim_end_matches('\0')
-                    .to_string();
-                let agent_name = String::from_utf8_lossy(&decoded[24..44])
-                    .trim_end_matches('\0')
-                    .to_string();
-                let agent_version =
-                    u32::from_le_bytes([decoded[44], decoded[45], decoded[46], decoded[47]]);
-                (manufacturer, agent_name, agent_version)
-            }
-            size => {
-                return Err(format!(
-                    "agent_descriptor: unsupported descriptor encoding length {} (expected 200/72/48 bytes)",
-                    size
-                ));
-            }
+        // Single format: instance_id(4) + manufacturer(20) + agent_name(20) + version(4) = 48 bytes
+        let (manufacturer, agent_name, agent_version) = if decoded.len() == 48 {
+            let manufacturer = String::from_utf8_lossy(&decoded[4..24])
+                .trim_end_matches('\0')
+                .to_string();
+            let agent_name = String::from_utf8_lossy(&decoded[24..44])
+                .trim_end_matches('\0')
+                .to_string();
+            let agent_version =
+                u32::from_le_bytes([decoded[44], decoded[45], decoded[46], decoded[47]]);
+            (manufacturer, agent_name, agent_version)
+        } else {
+            return Err(format!(
+                "agent_descriptor: expected 48-byte AgentDescriptor, got {} bytes",
+                decoded.len()
+            ));
         };
 
         AgentDescriptor::new(&manufacturer, &agent_name, agent_version)

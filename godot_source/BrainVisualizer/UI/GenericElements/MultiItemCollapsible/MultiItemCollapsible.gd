@@ -5,6 +5,7 @@ class_name MultiItemCollapsible
 @export var setup_as_vertical: bool = false
 @export var child_nodes_to_run_toggle_collapse_on: Array[Control] = []
 @export var start_open: bool = false
+@export var show_toggle_button: bool = true
 
 signal toggled(is_open: bool)
 
@@ -21,6 +22,7 @@ var _opened: bool
 func _ready() -> void:
 	_texture_button = $texture_button
 	_close_button_default_scale = _texture_button.custom_minimum_size
+	_texture_button.visible = show_toggle_button
 	for child: Control in ($Place_child_nodes_here).get_children():
 		_children.append(child)
 		_texture_button.texture_normal = texture_closed

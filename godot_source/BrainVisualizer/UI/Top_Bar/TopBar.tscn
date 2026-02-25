@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=27 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" uid="uid://yg0uidt8aocq" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" uid="uid://dqxgqll112i2k" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_o4dth"]
@@ -12,7 +12,6 @@
 [ext_resource type="Texture2D" uid="uid://bk40nytvlo77n" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
 [ext_resource type="Texture2D" uid="uid://dxocxtd21klr" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_output"]
 [ext_resource type="Texture2D" uid="uid://bju6nvb78mvmc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
-[ext_resource type="PackedScene" uid="uid://byvcu1dqoe5uo" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.tscn" id="10_3567y"]
 [ext_resource type="Texture2D" uid="uid://dh415j4p2qk2b" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
 [ext_resource type="Texture2D" uid="uid://iwxqjaw2as5t" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="11_0uis6"]
 [ext_resource type="Texture2D" uid="uid://c3limm84uggd7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_D.png" id="12_2iype"]
@@ -20,7 +19,7 @@
 [ext_resource type="Texture2D" uid="uid://p50gm8kyuyqf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_C.png" id="14_ww002"]
 [ext_resource type="Texture2D" uid="uid://btc3gkgoeomma" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_H.png" id="15_585hi"]
 [ext_resource type="Texture2D" uid="uid://brc1qexp6eajy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
-[ext_resource type="Texture2D" uid="uid://lgpw7fwv70iy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/setting.png" id="19_fxjdk"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_S.jpg" id="19_fxjdk"]
 [ext_resource type="Script" uid="uid://dfllqleqyhqy4" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="20_6yf7l"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_S.jpg" id="27_cam_anim_s"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="28_cam_anim_h"]
@@ -30,6 +29,9 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_H.jpg" id="32_guide_h"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_C.jpg" id="33_guide_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_D.jpg" id="34_guide_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_H.jpg" id="35_settings_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_C.jpg" id="36_settings_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_D.jpg" id="37_settings_d"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="22_eye_s"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="23_eye_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="24_eye_h"]
@@ -352,20 +354,30 @@ theme_type_variation = &"MarginContainer_far"
 layout_mode = 2
 size_flags_horizontal = 1
 size_flags_vertical = 1
-child_nodes_to_run_toggle_collapse_on = [NodePath("Place_child_nodes_here/StateIndicator")]
+child_nodes_to_run_toggle_collapse_on = []
 start_open = true
+show_toggle_button = false
 
-[node name="Options" type="TextureRect" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
+[node name="OptionsPanel" type="PanelContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
 layout_mode = 2
-size_flags_horizontal = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/OptionsPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="Options" type="TextureRect" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/OptionsPanel/MarginContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 tooltip_text = "Brain Visualizer Settings"
 texture = ExtResource("19_fxjdk")
 expand_mode = 3
 script = ExtResource("20_6yf7l")
 texture_normal = ExtResource("19_fxjdk")
-texture_pressed = ExtResource("19_fxjdk")
-texture_hover = ExtResource("19_fxjdk")
-texture_disabled = ExtResource("19_fxjdk")
+texture_pressed = ExtResource("36_settings_c")
+texture_hover = ExtResource("35_settings_h")
+texture_disabled = ExtResource("37_settings_d")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
@@ -421,9 +433,6 @@ editable = false
 expand_to_text_length = true
 script = ExtResource("7_g1qxj")
 
-[node name="StateIndicator" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="5" instance=ExtResource("10_3567y")]
-layout_mode = 2
-
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList" to="." method="_open_brain_regions"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_BrainRegions" to="." method="_open_create_brain_region"]
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList" to="." method="_open_inputs"]
@@ -436,7 +445,7 @@ layout_mode = 2
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 [connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
 [connection signal="toggled" from="ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle" to="." method="_placeholder_toggle_changed"]
-[connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/Options" to="." method="_open_options"]
+[connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/OptionsPanel/MarginContainer/Options" to="." method="_open_options"]
 [connection signal="pressed" from="CameraAnimationsPanel/MarginContainer/CameraAnimations" to="." method="_open_camera_animations"]
 [connection signal="pressed" from="GuidePanel/MarginContainer/GuideButton" to="." method="_open_guide"]
 

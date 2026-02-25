@@ -13,6 +13,8 @@ func _ready():
 	_increase_button = $Panel/VBoxContainer/IncreaseButton
 	_decrease_button = $Panel/VBoxContainer/DecreaseButton
 	
+	_sync_index_with_loaded_theme()
+	
 	# Initialize button states
 	_update_button_states()
 
@@ -33,6 +35,16 @@ func _decrease_scale() -> void:
 func _update_button_states() -> void:
 	_increase_button.disabled = _index_scale == len(BV.UI.possible_UI_scales) - 1
 	_decrease_button.disabled = _index_scale == 0
+
+## Aligns button state with the startup theme selected by UIManager.
+func _sync_index_with_loaded_theme() -> void:
+	if BV.UI.possible_UI_scales.is_empty():
+		return
+	var current_scale: float = BV.UI.loaded_theme_scale.x
+	for i in range(BV.UI.possible_UI_scales.size()):
+		if abs(BV.UI.possible_UI_scales[i] - current_scale) < 0.0001:
+			_index_scale = i
+			return
 
 
 

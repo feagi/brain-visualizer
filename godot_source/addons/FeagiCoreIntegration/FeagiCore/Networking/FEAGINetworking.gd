@@ -261,8 +261,10 @@ func _register_agent_via_transport() -> bool:
 		)
 		registration_ws_url = advertised_viz_ws_url
 	if registration_ws_url.strip_edges() == "":
-		_transport_registration_failed = true
-		push_error("𒓉 [TRANSPORT] Could not resolve WebSocket registration endpoint from /v1/network/connection_info.")
+		push_warning(
+			"𒓉 [TRANSPORT] WebSocket registration endpoint is currently unavailable from /v1/network/connection_info. "
+			+ "This can occur while FEAGI is restarting; proceeding with existing reconnect flow."
+		)
 		return false
 	print("𒓉 [TRANSPORT] Using WS registration endpoint: ", registration_ws_url)
 	set_meta("_registration_ws_url", registration_ws_url)
@@ -593,6 +595,9 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 			if prev_state == CONNECTION_STATE.RETRYING_HTTP: # are both actually broken?
 				new_state = CONNECTION_STATE.RETRYING_HTTP_WS
 	
+	# Avoid no-op emissions so UI/state listeners do not process duplicate transitions.
+	if prev_state == new_state:
+		return
 	_connection_state = new_state
 	connection_state_changed.emit(prev_state, new_state)
 

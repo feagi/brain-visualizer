@@ -5,12 +5,16 @@ signal editability_changed(can_edit: bool) # used by scroll element children to 
 
 var _vectors_scroll: BaseScroll
 var _add_vector: TextureButton
+var _raw_edit: Button
+var _visual_edit: Button
 var _loaded_morphology: VectorMorphology
 var _allow_editing_if_morphology_editable: bool
 
 func _ready() -> void:
 	_vectors_scroll = $Vectors
 	_add_vector = $header/add_vector
+	_raw_edit = $header/raw_edit
+	_visual_edit = $header/visual_edit
 
 func setup(allow_editing_if_morphology_editable: bool) -> void:
 	_allow_editing_if_morphology_editable = allow_editing_if_morphology_editable
@@ -38,6 +42,8 @@ func set_from_vector_morphology(vector_morphology: VectorMorphology) -> void:
 	_loaded_morphology.editability_changed.connect(_editability_updated)
 	var can_edit: bool = _determine_boolean_editability(vector_morphology.get_latest_known_editability())
 	_add_vector.disabled = !can_edit
+	_raw_edit.disabled = !can_edit
+	_visual_edit.disabled = !can_edit
 	_set_vector_array(vector_morphology.vectors, can_edit)
 
 ## Spawn in an additional row, usually for editing
@@ -57,6 +63,8 @@ func _editability_updated(new_editability: BaseMorphology.EDITABILITY) -> void:
 	#NOTE: Due to how this is used in signals, we cannot simplify the input to a bool
 	var can_edit: bool = _determine_boolean_editability(new_editability)
 	_add_vector.disabled = !can_edit
+	_raw_edit.disabled = !can_edit
+	_visual_edit.disabled = !can_edit
 	editability_changed.emit(can_edit)
 	
 func _determine_boolean_editability(editability: BaseMorphology.EDITABILITY) -> bool:
@@ -86,3 +94,23 @@ func _set_vector_array(input_vectors: Array[Vector3i], is_morphology_editable: b
 				"vector": vector
 			}
 		)
+
+func _on_raw_edit_pressed() -> void:
+	var arr: Array = FEAGIUtils.vector3i_array_to_array_of_arrays(get_vector_array())
+	var initial_json: String = FEAGIUtils.array_to_json_one_element_per_line(arr)
+	BV.WM.spawn_raw_connectivity_edit(
+		WindowRawConnectivityEdit.MODE.VECTORS,
+		initial_json,
+		func(parsed: Variant) -> void:
+			var vectors: Array[Vector3i] = parsed
+			var can_edit: bool = _determine_boolean_editability(_loaded_morphology.get_latest_known_editability()) if _loaded_morphology != null else true
+			_set_vector_array(vectors, can_edit)
+	)
+
+func _on_visual_edit_pressed() -> void:
+	BV.WM.spawn_visual_vector_edit(
+		get_vector_array(),
+		func(vectors: Array[Vector3i]) -> void:
+			var can_edit: bool = _determine_boolean_editability(_loaded_morphology.get_latest_known_editability()) if _loaded_morphology != null else true
+			_set_vector_array(vectors, can_edit)
+	)

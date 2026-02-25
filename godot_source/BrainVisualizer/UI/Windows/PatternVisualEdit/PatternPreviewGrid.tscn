@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://bpatprevgrid01"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/PatternVisualEdit/PatternPreviewGrid.gd" id="1_script"]
+
+[node name="PatternPreviewGrid" type="Control"]
+custom_minimum_size = Vector2(360, 360)
+script = ExtResource("1_script")

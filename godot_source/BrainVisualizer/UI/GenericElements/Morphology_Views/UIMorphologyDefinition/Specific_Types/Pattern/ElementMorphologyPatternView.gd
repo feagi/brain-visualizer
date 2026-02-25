@@ -5,6 +5,7 @@ signal editability_changed(can_edit: bool) # used by scroll element children to 
 
 var _pattern_pair_scroll: BaseScroll
 var _add_pattern: TextureButton
+var _raw_edit: Button
 var _loaded_morphology: PatternMorphology
 var _allow_editing_if_morphology_editable: bool
 var _subheader: HBoxContainer
@@ -12,6 +13,7 @@ var _subheader: HBoxContainer
 func _ready() -> void:
 	_pattern_pair_scroll = $Patterns
 	_add_pattern = $header/add_vector
+	_raw_edit = $header/raw_edit
 	_subheader = $subheader
 	_update_subheader_positions()
 
@@ -33,6 +35,7 @@ func set_from_pattern_morphology(pattern_morphology: PatternMorphology) -> void:
 	_loaded_morphology.editability_changed.connect(_editability_updated)
 	var can_edit: bool = _determine_boolean_editability(pattern_morphology.get_latest_known_editability())
 	_add_pattern.disabled = !can_edit
+	_raw_edit.disabled = !can_edit
 	_set_pattern_pair_array(pattern_morphology.patterns, can_edit)
 	
 ## Spawn in an additional row, usually for editing
@@ -55,6 +58,7 @@ func _editability_updated(new_editability: BaseMorphology.EDITABILITY) -> void:
 	#NOTE: Due to how this is used in signals, we cannot simplify the input to a bool
 	var can_edit: bool = _determine_boolean_editability(new_editability)
 	_add_pattern.disabled = !can_edit
+	_raw_edit.disabled = !can_edit
 	editability_changed.emit(can_edit)
 
 func _determine_boolean_editability(editability: BaseMorphology.EDITABILITY) -> bool:
@@ -82,6 +86,18 @@ func _set_pattern_pair_array(input_pattern_pairs: Array[PatternVector3Pairs], is
 			"allow_editing": is_editable,
 			"vectorPair": pattern_pair
 		})
+
+func _on_raw_edit_pressed() -> void:
+	var arr: Array = FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(get_pattern_pair_array())
+	var initial_json: String = FEAGIUtils.array_to_json_one_element_per_line(arr)
+	BV.WM.spawn_raw_connectivity_edit(
+		WindowRawConnectivityEdit.MODE.PATTERNS,
+		initial_json,
+		func(parsed: Variant) -> void:
+			var pairs: Array[PatternVector3Pairs] = parsed
+			var can_edit: bool = _determine_boolean_editability(_loaded_morphology.get_latest_known_editability()) if _loaded_morphology != null else true
+			_set_pattern_pair_array(pairs, can_edit)
+	)
 
 func _update_subheader_positions() -> void:
 	var gap1: Control = $subheader/initial_gap

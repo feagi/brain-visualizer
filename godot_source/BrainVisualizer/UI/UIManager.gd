@@ -68,13 +68,26 @@ var _loading_status_label: Label
 var _manual_stim_pending_workers: Dictionary = {}
 var _manual_stim_timeouts: Dictionary = {}
 
+# Startup UI scaling thresholds based only on monitor DPI and resolution.
+const UI_STARTUP_DPI_XLARGE: int = 180
+const UI_STARTUP_DPI_LARGE: int = 150
+const UI_STARTUP_DPI_MEDIUM: int = 125
+const UI_STARTUP_DPI_STANDARD: int = 96
+const UI_STARTUP_LONG_SIDE_ULTRAWIDE: int = 3000
+const UI_STARTUP_LONG_SIDE_WIDE: int = 2500
+const UI_SCALE_SMALL: float = 0.75
+const UI_SCALE_STANDARD: float = 1.0
+const UI_SCALE_MEDIUM: float = 1.25
+const UI_SCALE_LARGE: float = 1.5
+const UI_SCALE_XLARGE: float = 2.0
+
 
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
 	get_viewport().size_changed.connect(_update_screen_size)
 	_find_possible_scales()
-	# Default UI scale at startup: +1 level from 1.0x (1.25x).
-	_load_new_theme(load("res://BrainVisualizer/UI/Themes/1.25-DARK.tres"))
+	# Select startup scale from monitor DPI + monitor resolution only.
+	request_switch_to_theme(_select_startup_scale_from_display_metrics(), UIManager.THEME_COLORS.DARK)
 
 func _process(_delta: float):
 	if _fps_label:
@@ -661,6 +674,9 @@ func update_shutdown_status(message: String) -> void:
 
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
 	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
+		if objects.is_empty():
+			_window_manager.force_close_window(QuickCorticalMenu.WINDOW_NAME)
+			return
 		_window_manager.spawn_quick_cortical_menu(objects, context)
 	if SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES in override_usecases:
 		var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(objects)
@@ -863,11 +879,34 @@ func _load_new_theme(theme: Theme) -> void:
 
 
 func _find_possible_scales() -> void:
+	_possible_UI_scales.clear()
 	var file_list: PackedStringArray = DirAccess.get_files_at(THEME_FOLDER)
 	for file: StringName in file_list:
 		var first_part: StringName = file.get_slice("-", 0)
 		if first_part.is_valid_float():
 			_possible_UI_scales.append(first_part.to_float())
+	_possible_UI_scales.sort()
+
+## Chooses startup UI scale using monitor DPI and resolution only.
+func _select_startup_scale_from_display_metrics() -> float:
+	var current_screen: int = get_window().current_screen
+	var screen_size: Vector2i = DisplayServer.screen_get_size(current_screen)
+	var dpi: int = DisplayServer.screen_get_dpi(current_screen)
+	var long_side: int = maxi(screen_size.x, screen_size.y)
+	
+	print("UIMANAGER: Startup display metrics -> screen=%d size=%s dpi=%d" % [current_screen, screen_size, dpi])
+	
+	if dpi >= UI_STARTUP_DPI_XLARGE:
+		return UI_SCALE_XLARGE
+	if dpi >= UI_STARTUP_DPI_LARGE:
+		return UI_SCALE_LARGE
+	if dpi >= UI_STARTUP_DPI_MEDIUM:
+		return UI_SCALE_MEDIUM
+	if dpi <= UI_STARTUP_DPI_STANDARD and long_side >= UI_STARTUP_LONG_SIDE_ULTRAWIDE:
+		return UI_SCALE_SMALL
+	if dpi <= UI_STARTUP_DPI_STANDARD and long_side >= UI_STARTUP_LONG_SIDE_WIDE:
+		return UI_SCALE_STANDARD
+	return UI_SCALE_MEDIUM
 
 #endregion
 

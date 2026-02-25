@@ -75,6 +75,19 @@ func _yes_pressed() -> void:
 				FeagiCore.requests.delete_regions_and_raise_internals(_deletion_targets[0] as BrainRegion)
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			FeagiCore.requests.mass_delete_cortical_areas(GenomeObject.filter_cortical_areas(_deletion_targets)) #idc
+		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
+			# Backend exposes single-region delete for "raise internals", so batch via iteration.
+			for region in GenomeObject.filter_brain_regions(_deletion_targets):
+				FeagiCore.requests.delete_regions_and_raise_internals(region)
+		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
+			# Mixed selections can include both cortical areas and regions.
+			var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(_deletion_targets)
+			if not cortical_areas.is_empty():
+				FeagiCore.requests.mass_delete_cortical_areas(cortical_areas)
+			for region in GenomeObject.filter_brain_regions(_deletion_targets):
+				FeagiCore.requests.delete_regions_and_raise_internals(region)
+		_:
+			push_warning("UI: ConfirmDeletion received unsupported mode %s." % _mode)
 	close_window()
 
 func _no_pressed() -> void:

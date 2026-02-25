@@ -47,6 +47,7 @@ const IO_ARROW_SIZE_MIN_SHAFT_H: float = 0.18
 const IO_ARROW_SIZE_MAX_SHAFT_H: float = 0.85
 const IO_ARROW_SIZE_MIN_HEAD_H: float = 0.12
 const IO_ARROW_SIZE_MAX_HEAD_H: float = 0.55
+const IO_ARROW_SHAFT_RADIUS_MULTIPLIER: float = 0.50
 const IO_ARROW_LABEL_Y_GAP_MULT: float = 0.65  # Extra spacing above arrow head(s), in head-height units
 
 # Distance-based scaling for pulse spheres (flow animation)
@@ -117,6 +118,11 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 			defined_cortical_area.coordinates_3D_updated.connect(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 		if not defined_cortical_area.dimensions_3D_updated.is_connected(_directpoints_renderer.update_dimensions):
 			defined_cortical_area.dimensions_3D_updated.connect(_directpoints_renderer.update_dimensions)
+	
+	# Mirror SelectionSystem highlight state to 3D renderer selection outline/highlight.
+	if not defined_cortical_area.UI_highlighted_state_updated.is_connected(_on_ui_highlighted_state_updated):
+		defined_cortical_area.UI_highlighted_state_updated.connect(_on_ui_highlighted_state_updated)
+	_on_ui_highlighted_state_updated(defined_cortical_area.UI_is_highlighted)
 	
 	# Connect legacy SVO visualization data to DDA renderer (for translucent structure)
 	if _dda_renderer != null:
@@ -301,7 +307,7 @@ func _create_io_direction_indicator(mode: StringName) -> void:
 	var root := Node3D.new()
 	root.name = "IODirectionIndicator"
 
-	# Shared material for all pieces (magenta, unshaded, transparent, emissive).
+	# Shared material for unibody arrow (single mesh, unshaded, transparent, emissive).
 	var mat := StandardMaterial3D.new()
 	mat.flags_unshaded = true
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -311,52 +317,16 @@ func _create_io_direction_indicator(mode: StringName) -> void:
 	mat.emission = IO_ARROW_EMISSION_COLOR
 	mat.emission_energy = IO_ARROW_EMISSION_MIN
 
-	# Shaft
-	var shaft := MeshInstance3D.new()
-	shaft.name = "ArrowShaft"
-	var shaft_mesh := CylinderMesh.new()
-	shaft_mesh.height = IO_ARROW_SIZE_MIN_SHAFT_H
-	shaft_mesh.top_radius = IO_ARROW_SIZE_MIN_RADIUS
-	shaft_mesh.bottom_radius = IO_ARROW_SIZE_MIN_RADIUS
-	shaft_mesh.radial_segments = 10
-	shaft.mesh = shaft_mesh
-	shaft.material_override = mat
-	root.add_child(shaft)
-
-	# Head(s) (cone via CylinderMesh top_radius=0)
-	if mode == &"bidirectional":
-		var head_up := MeshInstance3D.new()
-		head_up.name = "ArrowHeadUp"
-		var head_mesh_up := CylinderMesh.new()
-		head_mesh_up.height = IO_ARROW_SIZE_MIN_HEAD_H
-		head_mesh_up.top_radius = 0.0
-		head_mesh_up.bottom_radius = IO_ARROW_SIZE_MIN_RADIUS * 1.35
-		head_mesh_up.radial_segments = 10
-		head_up.mesh = head_mesh_up
-		head_up.material_override = mat
-		head_up.position = Vector3.ZERO
-		root.add_child(head_up)
-
-		var head_down := MeshInstance3D.new()
-		head_down.name = "ArrowHeadDown"
-		var head_mesh_down := head_mesh_up.duplicate() as CylinderMesh
-		head_down.mesh = head_mesh_down
-		head_down.material_override = mat
-		head_down.position = Vector3.ZERO
-		head_down.rotation = Vector3(PI, 0.0, 0.0)
-		root.add_child(head_down)
-	else:
-		var head := MeshInstance3D.new()
-		head.name = "ArrowHead"
-		var head_mesh := CylinderMesh.new()
-		head_mesh.height = IO_ARROW_SIZE_MIN_HEAD_H
-		head_mesh.top_radius = 0.0
-		head_mesh.bottom_radius = IO_ARROW_SIZE_MIN_RADIUS * 1.35
-		head_mesh.radial_segments = 10
-		head.mesh = head_mesh
-		head.material_override = mat
-		head.position = Vector3.ZERO
-		root.add_child(head)
+	var body := MeshInstance3D.new()
+	body.name = "ArrowBody"
+	body.mesh = _build_unibody_arrow_mesh(
+		mode,
+		IO_ARROW_SIZE_MIN_RADIUS,
+		IO_ARROW_SIZE_MIN_SHAFT_H,
+		IO_ARROW_SIZE_MIN_HEAD_H
+	)
+	body.material_override = mat
+	root.add_child(body)
 
 	parent_body.add_child(root)
 	_io_direction_indicator = root
@@ -510,46 +480,89 @@ func _update_io_direction_indicator_label_visibility() -> void:
 	_io_direction_indicator_label.visible = _is_volume_moused_over and _io_direction_indicator_mode != &"none"
 
 func _update_io_direction_indicator_geometry(mode: StringName, radius: float, shaft_h: float, head_h: float) -> void:
-	var shaft := _io_direction_indicator.get_node_or_null("ArrowShaft") as MeshInstance3D
-	if shaft != null:
-		var shaft_mesh := CylinderMesh.new()
-		shaft_mesh.height = shaft_h
-		shaft_mesh.top_radius = radius
-		shaft_mesh.bottom_radius = radius
-		shaft_mesh.radial_segments = 10
-		shaft.mesh = shaft_mesh
-		shaft.position = Vector3.ZERO
+	var body := _io_direction_indicator.get_node_or_null("ArrowBody") as MeshInstance3D
+	if body == null:
+		return
+	body.mesh = _build_unibody_arrow_mesh(mode, radius, shaft_h, head_h)
 
+func _build_unibody_arrow_mesh(mode: StringName, base_radius: float, shaft_h: float, head_h: float) -> ArrayMesh:
+	var shaft_radius := base_radius * IO_ARROW_SHAFT_RADIUS_MULTIPLIER
+	var tip_radius := maxf(0.001, base_radius * 0.06)
+	var head_radius := base_radius * 1.35
+	var transition_h := maxf(0.01, head_h * 0.35)
+
+	var profile: Array[Vector2] = []
 	if mode == &"bidirectional":
-		var head_up := _io_direction_indicator.get_node_or_null("ArrowHeadUp") as MeshInstance3D
-		var head_down := _io_direction_indicator.get_node_or_null("ArrowHeadDown") as MeshInstance3D
-		if head_up != null:
-			var mesh_up := CylinderMesh.new()
-			mesh_up.height = head_h
-			mesh_up.top_radius = 0.0
-			mesh_up.bottom_radius = radius * 1.35
-			mesh_up.radial_segments = 10
-			head_up.mesh = mesh_up
-			head_up.position = Vector3(0.0, (shaft_h / 2.0) + (head_h / 2.0), 0.0)
-		if head_down != null:
-			var mesh_down := CylinderMesh.new()
-			mesh_down.height = head_h
-			mesh_down.top_radius = 0.0
-			mesh_down.bottom_radius = radius * 1.35
-			mesh_down.radial_segments = 10
-			head_down.mesh = mesh_down
-			head_down.position = Vector3(0.0, -((shaft_h / 2.0) + (head_h / 2.0)), 0.0)
-			head_down.rotation = Vector3(PI, 0.0, 0.0)
+		var total_h := shaft_h + (2.0 * head_h)
+		var bottom_tip_y := -total_h * 0.5
+		var bottom_head_base_y := bottom_tip_y + head_h
+		var shaft_top_y := bottom_head_base_y + shaft_h
+		var top_tip_y := total_h * 0.5
+		profile = [
+			Vector2(tip_radius, bottom_tip_y),
+			Vector2(head_radius * 0.22, bottom_tip_y + head_h * 0.22),
+			Vector2(head_radius * 0.52, bottom_tip_y + head_h * 0.52),
+			Vector2(head_radius, bottom_head_base_y),
+			Vector2(lerpf(head_radius, shaft_radius, 0.55), bottom_head_base_y + transition_h * 0.55),
+			Vector2(shaft_radius, bottom_head_base_y + transition_h),
+			Vector2(shaft_radius, shaft_top_y - transition_h),
+			Vector2(lerpf(head_radius, shaft_radius, 0.55), shaft_top_y - transition_h * 0.55),
+			Vector2(head_radius, shaft_top_y),
+			Vector2(head_radius * 0.52, shaft_top_y + head_h * 0.48),
+			Vector2(head_radius * 0.22, shaft_top_y + head_h * 0.78),
+			Vector2(tip_radius, top_tip_y),
+		]
 	else:
-		var head := _io_direction_indicator.get_node_or_null("ArrowHead") as MeshInstance3D
-		if head != null:
-			var head_mesh := CylinderMesh.new()
-			head_mesh.height = head_h
-			head_mesh.top_radius = 0.0
-			head_mesh.bottom_radius = radius * 1.35
-			head_mesh.radial_segments = 10
-			head.mesh = head_mesh
-			head.position = Vector3(0.0, (shaft_h / 2.0) + (head_h / 2.0), 0.0)
+		var total_h := shaft_h + head_h
+		var shaft_bottom_y := -total_h * 0.5
+		var shaft_top_y := shaft_bottom_y + shaft_h
+		var tip_y := total_h * 0.5
+		profile = [
+			Vector2(shaft_radius, shaft_bottom_y),
+			Vector2(shaft_radius, shaft_top_y - transition_h),
+			Vector2(lerpf(head_radius, shaft_radius, 0.55), shaft_top_y - transition_h * 0.55),
+			Vector2(head_radius, shaft_top_y),
+			Vector2(head_radius * 0.52, shaft_top_y + head_h * 0.48),
+			Vector2(head_radius * 0.22, shaft_top_y + head_h * 0.78),
+			Vector2(tip_radius, tip_y),
+		]
+	return _build_revolved_profile_mesh(profile, 14)
+
+func _build_revolved_profile_mesh(profile: Array[Vector2], radial_segments: int) -> ArrayMesh:
+	if profile.size() < 2:
+		return ArrayMesh.new()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+
+	for ring_idx in range(profile.size()):
+		var radius := maxf(0.0, profile[ring_idx].x)
+		var y := profile[ring_idx].y
+		for seg_idx in range(radial_segments):
+			var t := float(seg_idx) / float(radial_segments)
+			var angle := t * TAU
+			var x := cos(angle) * radius
+			var z := sin(angle) * radius
+			st.set_uv(Vector2(t, float(ring_idx) / float(profile.size() - 1)))
+			st.add_vertex(Vector3(x, y, z))
+
+	for ring_idx in range(profile.size() - 1):
+		var ring_start := ring_idx * radial_segments
+		var next_ring_start := (ring_idx + 1) * radial_segments
+		for seg_idx in range(radial_segments):
+			var next_seg := (seg_idx + 1) % radial_segments
+			var a := ring_start + seg_idx
+			var b := ring_start + next_seg
+			var c := next_ring_start + seg_idx
+			var d := next_ring_start + next_seg
+			st.add_index(a)
+			st.add_index(c)
+			st.add_index(b)
+			st.add_index(b)
+			st.add_index(c)
+			st.add_index(d)
+
+	st.generate_normals()
+	return st.commit()
 
 ## Computes a merged local-space AABB for all MeshInstance3D descendants under `root`.
 ## Falls back to a small default AABB if no meshes are found yet.
@@ -794,6 +807,12 @@ func clear_all_neuron_selection_states() -> void:
 
 func get_neuron_selection_states() -> Array[Vector3i]:
 	return _selected_neuron_coordinates
+
+func _on_ui_highlighted_state_updated(is_highlighted: bool) -> void:
+	if _dda_renderer != null and _dda_renderer.has_method("set_cortical_area_selection"):
+		_dda_renderer.set_cortical_area_selection(is_highlighted)
+	if _directpoints_renderer != null and _directpoints_renderer.has_method("set_cortical_area_selection"):
+		_directpoints_renderer.set_cortical_area_selection(is_highlighted)
 
 func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
 	# Special cases: Memory and Power cortical areas use DirectPoints rendering

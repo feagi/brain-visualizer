@@ -85,6 +85,12 @@ func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> voi
 ## Applies region summary updates without clearing the entire cache.
 ## Returns a mapping of cortical_area_id -> parent_region_id for subsequent cortical area refresh.
 func FEAGI_apply_region_summary_diff(region_summary_data: Dictionary) -> Dictionary:
+	# During FEAGI restart windows, region summary may be transient/incomplete.
+	# Do not run destructive diff logic unless a root region is present in the payload.
+	if not _summary_has_root_region(region_summary_data):
+		push_warning("CORE CACHE: Region summary missing root region; skipping destructive region diff for this refresh cycle.")
+		return {}
+
 	# Remove regions no longer present.
 	var removed_count: int = 0
 	var added_count: int = 0
@@ -144,6 +150,16 @@ func FEAGI_apply_region_summary_diff(region_summary_data: Dictionary) -> Diction
 	print("FEAGI CACHE: Region diff applied (added=%d, removed=%d, parent_updates=%d)" % [added_count, removed_count, updated_parent_count])
 	return cortical_area_mapping
 
+func _summary_has_root_region(region_summary_data: Dictionary) -> bool:
+	for region_id in region_summary_data.keys():
+		var region_data: Variant = region_summary_data.get(region_id, null)
+		if typeof(region_data) != TYPE_DICTIONARY:
+			continue
+		var parent_id: Variant = (region_data as Dictionary).get("parent_region_id", null)
+		if parent_id == null:
+			return true
+	return false
+
 ## Clears all regions from the cache - used during full genome reload
 func FEAGI_clear_all_regions() -> void:
 	_available_brain_regions.clear()
@@ -193,8 +209,16 @@ func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
 
 ## FEAGI states that a region is to be removed and internals raised
 func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
-	var contained_objects: Array[GenomeObject] = []
+	if region == null or not is_instance_valid(region):
+		push_warning("CORE CACHE: Cannot remove null/invalid region reference. Skipping.")
+		return
+	if region.is_root_region():
+		push_warning("CORE CACHE: Cannot remove root region via raise internals path. Skipping.")
+		return
 	var new_parent: BrainRegion = region.current_parent_region
+	if new_parent == null or not is_instance_valid(new_parent):
+		push_warning("CORE CACHE: Cannot remove region %s because parent region reference is missing. Skipping." % region.region_ID)
+		return
 	for object: GenomeObject in region.get_all_included_genome_objects():
 		object.FEAGI_change_parent_brain_region(new_parent)
 	region_about_to_be_removed.emit(region)

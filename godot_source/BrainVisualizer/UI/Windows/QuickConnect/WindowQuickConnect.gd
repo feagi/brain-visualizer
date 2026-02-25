@@ -48,6 +48,7 @@ var _finished_selecting: bool = false
 
 var _source: AbstractCorticalArea = null
 var _destination: AbstractCorticalArea = null
+var _destinations: Array[AbstractCorticalArea] = []
 var _selected_morphology: BaseMorphology = null
 
 func _ready() -> void:
@@ -117,15 +118,26 @@ func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.S
 		POSSIBLE_STATES.SOURCE:
 			_set_source(cortical_area)
 		POSSIBLE_STATES.DESTINATION:
-			_set_destination(cortical_area)
+			_toggle_destination(cortical_area)
 		_:
 			return
 
 func establish_connection_button():
 	print("UI: WINDOW: QUICKCONNECT: User Requesting quick connection...")
-
-	# Make sure the cache has the current mapping state of the cortical to source area to append to
-	FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, _selected_morphology)
+	if _source == null:
+		return
+	if _selected_morphology == null:
+		return
+	if _destinations.is_empty():
+		return
+	# Make sure the cache has the current mapping state of the cortical to source area to append to.
+	# This supports one-to-many quick connect in a single Establish action.
+	for destination_area in _destinations:
+		if destination_area == null:
+			continue
+		if destination_area == _source:
+			continue
+		FeagiCore.requests.append_default_mapping_between_corticals(_source, destination_area, _selected_morphology)
 	## TODO: This is technically a race condition, if a user clicks through the quick connect fast enough
 	close_window()
 
@@ -139,7 +151,7 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			_setting_source()
 
 		POSSIBLE_STATES.DESTINATION:
-			_toggle_add_buttons(false)
+			_toggle_add_buttons(true)
 			_step4_button.disabled = true
 			_set_core_bar_visibility(false)
 			_setting_destination()
@@ -175,9 +187,12 @@ func _setting_source() -> void:
 
 func _setting_destination() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Destination Area...")
+	_clear_destination_highlights()
 	_destination = null
-	_step2_label.text = " Please Select A Destination Area..."
+	_destinations.clear()
+	_step2_label.text = " Click destination target(s) to add/remove."
 	_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
+	_step4_button.disabled = true
 	# Begin live 3D guide from source center to mouse tip while picking destination
 	if _source != null:
 		var bm = BV.UI.get_brain_monitor_for_cortical_area(_source)
@@ -487,22 +502,62 @@ func _set_source(cortical_area: AbstractCorticalArea) -> void:
 		current_state = POSSIBLE_STATES.IDLE
 
 
-func _set_destination(cortical_area: AbstractCorticalArea) -> void:
-	_destination = cortical_area
-	_step2_label.text = " Selected Destination Area: [" + cortical_area.friendly_name + "]"
-	_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
-	# Stop the live guide once a destination is chosen
-	var bm_on_dest = BV.UI.get_brain_monitor_for_cortical_area(_source)
-	if bm_on_dest != null and bm_on_dest.has_method("stop_quick_connect_guide"):
-		bm_on_dest.stop_quick_connect_guide()
-	BV.UI.qc_guide_source_bm = null
-	FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
-	if !_finished_selecting:
-		_step3_panel.visible = true
-		current_state = POSSIBLE_STATES.MORPHOLOGY
-		pass
+func _toggle_destination(cortical_area: AbstractCorticalArea) -> void:
+	if cortical_area == null:
+		return
+	if cortical_area == _source:
+		return
+	var previous_primary: AbstractCorticalArea = _destination
+	if cortical_area in _destinations:
+		_destinations.erase(cortical_area)
+		_set_destination_highlight_state(cortical_area, false)
 	else:
-		current_state = POSSIBLE_STATES.IDLE
+		_destinations.append(cortical_area)
+		_set_destination_highlight_state(cortical_area, true)
+	_destination = _destinations[0] if not _destinations.is_empty() else null
+	if _destinations.is_empty():
+		_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
+		_step2_label.text = " Click destination target(s) to add/remove."
+		_step3_panel.visible = false
+		_step3_morphology_container.visible = false
+		_set_core_bar_visibility(false)
+		_step4_button.disabled = true
+	else:
+		_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
+		_update_destination_label()
+		_step3_panel.visible = true
+		_setting_morphology()
+		_step4_button.disabled = true
+	# Refresh mapping preview/default context when primary destination changes.
+	if _source != null and _destination != null and _destination != previous_primary:
+		FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
+
+func _update_destination_label() -> void:
+	if _destinations.is_empty():
+		_step2_label.text = " Click destination target(s) to add/remove."
+		return
+	var target_names: PackedStringArray = []
+	for area in _destinations:
+		if area != null:
+			target_names.append(area.friendly_name)
+	_step2_label.text = " Selected Destination Targets (%d):\n - %s" % [_destinations.size(), "\n - ".join(target_names)]
+
+func _set_destination_highlight_state(cortical_area: AbstractCorticalArea, is_selected: bool) -> void:
+	if cortical_area == null:
+		return
+	if BV == null or BV.UI == null or BV.UI.selection_system == null:
+		return
+	if is_selected:
+		BV.UI.selection_system.add_to_highlighted(cortical_area)
+	else:
+		BV.UI.selection_system.remove_from_highlighted(cortical_area)
+
+func _clear_destination_highlights() -> void:
+	if BV == null or BV.UI == null or BV.UI.selection_system == null:
+		return
+	for cortical_area in _destinations:
+		if cortical_area != null:
+			BV.UI.selection_system.remove_from_highlighted(cortical_area)
 
 
 func _set_morphology(morphology: BaseMorphology) -> void:
@@ -528,7 +583,7 @@ func _set_completion_state():
 		_finished_selecting = false
 		_step4_button.visible = false
 		return
-	if _destination == null:
+	if _destinations.is_empty():
 		_finished_selecting = false
 		_step4_button.visible = false
 		return
@@ -540,11 +595,11 @@ func _set_completion_state():
 	_step4_button.visible = true
 		
 func close_window():
+	if _source != null:
+		var bm_on_dest = BV.UI.get_brain_monitor_for_cortical_area(_source)
+		if bm_on_dest != null and bm_on_dest.has_method("stop_quick_connect_guide"):
+			bm_on_dest.stop_quick_connect_guide()
+	BV.UI.qc_guide_source_bm = null
 	super()
 	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
-	# Ensure guide is cleared if window closed early or cancelled
-	if _source != null:
-		var bm = BV.UI.get_brain_monitor_for_cortical_area(_source)
-		if bm != null and bm.has_method("stop_quick_connect_guide"):
-			bm.stop_quick_connect_guide()
-	BV.UI.qc_guide_source_bm = null
+	_clear_destination_highlights()
