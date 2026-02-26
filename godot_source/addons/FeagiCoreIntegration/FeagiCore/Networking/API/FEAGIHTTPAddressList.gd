@@ -72,6 +72,7 @@ var POST_agent_device_registrations: StringName = "/v1/agent/{agent_id}/device_r
 var PUT_genome_corticalArea: StringName = "/v1/cortical_area/cortical_area"
 var PUT_genome_mappingProperties: StringName = "/v1/cortical_mapping/mapping_properties"
 var PUT_genome_morphology: StringName = "/v1/morphology/morphology"
+var PUT_morphology_rename: StringName = "/v1/morphology/rename"
 var PUT_genome_coord2d: StringName = "/v1/cortical_area/coord_2d"
 var PUT_genome_relocate_members: StringName = "/v1/region/relocate_members"
 var PUT_region_region: StringName = "/v1/region/region"

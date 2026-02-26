@@ -4,6 +4,7 @@ class_name MorphologiesCache
 
 signal morphology_added(morphology: BaseMorphology)
 signal morphology_about_to_be_removed(morphology: BaseMorphology) # Must have this since dropdown popups do not support independent processing
+signal morphology_renamed(old_name: StringName, morphology: BaseMorphology)
 signal morphology_updated(morphology: BaseMorphology)
 
 ## A list of all available morphologies in the FEAGI genome by name
@@ -44,6 +45,20 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 		morphology_internal_class = BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.UNKNOWN
 	updating_morphology.feagi_update(morphology_properties["parameters"], morphology_internal_class)
 	morphology_updated.emit(updating_morphology)
+
+## Updates cache after a successful rename. Call only after FEAGI rename succeeds.
+func rename_morphology_in_cache(old_name: StringName, new_name: StringName) -> void:
+	if old_name not in _available_morphologies.keys():
+		push_error("Attempted to rename non-cached morphology %s, Skipping..." % [old_name])
+		return
+	if new_name in _available_morphologies.keys():
+		push_error("Attempted to rename morphology %s to existing name %s, Skipping..." % [old_name, new_name])
+		return
+	var morphology: BaseMorphology = _available_morphologies[old_name]
+	_available_morphologies.erase(old_name)
+	morphology.name = new_name
+	_available_morphologies[new_name] = morphology
+	morphology_renamed.emit(old_name, morphology)
 
 ## Should only be called by FEAGI - removes a morphology by name
 func remove_morphology(morphology_Name: StringName) -> void:

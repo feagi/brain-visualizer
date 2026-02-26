@@ -2293,6 +2293,44 @@ func update_composite_morphology(morphology_name: StringName, source_seed: Vecto
 	return FEAGI_response_data
 
 
+## Rename a custom morphology. Core morphologies cannot be renamed.
+func rename_morphology(old_morphology_id: StringName, new_morphology_id: StringName) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !old_morphology_id in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
+		push_error("FEAGI Requests: Morphology %s doesn't exist to rename!" % old_morphology_id)
+		return FeagiRequestOutput.requirement_fail("MORPHOLOGY_MISSING")
+	var morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[old_morphology_id]
+	if morphology.internal_class == BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE:
+		push_error("FEAGI Requests: Cannot rename core morphology %s!" % old_morphology_id)
+		return FeagiRequestOutput.requirement_fail("CORE_MORPHOLOGY_NOT_RENAMEABLE")
+	var new_trimmed: String = String(new_morphology_id).strip_edges()
+	if new_trimmed.is_empty():
+		push_error("FEAGI Requests: New morphology name cannot be empty!")
+		return FeagiRequestOutput.requirement_fail("NEW_NAME_EMPTY")
+	if new_trimmed == String(old_morphology_id):
+		return FeagiRequestOutput.requirement_fail("SAME_NAME")
+	if new_trimmed in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
+		push_error("FEAGI Requests: Morphology with name %s already exists!" % new_trimmed)
+		return FeagiRequestOutput.requirement_fail("NAME_EXISTS")
+	var dict_to_send: Dictionary = {
+		"old_morphology_id": old_morphology_id,
+		"new_morphology_id": new_trimmed
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_morphology_rename, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to rename morphology from %s to %s!" % [old_morphology_id, new_trimmed])
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully renamed morphology from %s to %s" % [old_morphology_id, new_trimmed])
+	FeagiCore.feagi_local_cache.morphologies.rename_morphology_in_cache(old_morphology_id, new_trimmed)
+	await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
+	return FEAGI_response_data
+
+
 ## Delete a morphology
 func delete_morphology(morphology: BaseMorphology) -> FeagiRequestOutput:
 	# Requirement checking

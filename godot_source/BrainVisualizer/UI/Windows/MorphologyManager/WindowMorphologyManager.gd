@@ -10,6 +10,7 @@ func _ready() -> void:
 
 func setup(morphology: BaseMorphology = null) -> void:
 	_setup_base_window(WINDOW_NAME)
+	_UI_morphology_overviews.repopulate_morphology_list()
 	if morphology != null:
 		load_morphology(morphology)
 
