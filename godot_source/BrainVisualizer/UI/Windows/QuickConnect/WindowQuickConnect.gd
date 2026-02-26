@@ -79,6 +79,8 @@ func _ready() -> void:
 		FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_on_morphology_cache_changed)
 	if not FeagiCore.feagi_local_cache.morphologies.morphology_added.is_connected(_on_morphology_cache_changed):
 		FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_on_morphology_cache_changed)
+	if not FeagiCore.feagi_local_cache.morphologies.morphology_renamed.is_connected(_on_morphology_renamed_for_cache):
+		FeagiCore.feagi_local_cache.morphologies.morphology_renamed.connect(_on_morphology_renamed_for_cache)
 	
 	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
 	if not BV.UI.selection_system.objects_selection_event_called.is_connected(_on_user_selection):
@@ -235,6 +237,9 @@ func _setting_morphology() -> void:
 			_set_morphology(default_morphology)
 
 ## Repopulate icons when cache updates, only if we're in morphology selection view
+func _on_morphology_renamed_for_cache(_old_name: StringName, m: BaseMorphology) -> void:
+	_on_morphology_cache_changed(m)
+
 func _on_morphology_cache_changed(_m: BaseMorphology) -> void:
 	if _current_state != POSSIBLE_STATES.MORPHOLOGY:
 		return

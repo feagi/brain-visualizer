@@ -1010,6 +1010,10 @@ func _refresh_morphologies_from_feagi() -> FeagiRequestOutput:
 	morphologies_reloaded.emit()
 	return morphologies_output
 
+## Public method to refresh cortical mappings from FEAGI (e.g. after morphology rename).
+func refresh_mappings_from_feagi() -> FeagiRequestOutput:
+	return await _refresh_mappings_from_feagi()
+
 ## Refresh cortical mappings from FEAGI
 func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
 	var mappings_output: FeagiRequestOutput = await FeagiCore.requests.get_mapping_summary()

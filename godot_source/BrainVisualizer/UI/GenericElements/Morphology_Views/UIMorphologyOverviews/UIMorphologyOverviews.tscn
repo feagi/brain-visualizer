@@ -55,11 +55,11 @@ theme_override_constants/separation = 8
 custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
 
-[node name="Name" type="Label" parent="SelectedDetails/HBoxContainer"]
+[node name="Name" type="LineEdit" parent="SelectedDetails/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_type_variation = &"Label_Header"
-text = "No Connectivity Rule Loaded!"
+placeholder_text = "No Connectivity Rule Loaded!"
+editable = false
 
 [node name="Separator" type="HSeparator" parent="SelectedDetails"]
 layout_mode = 2
