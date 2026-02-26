@@ -18,6 +18,7 @@ use feagi_io::AgentID;
 use feagi_serialization::FeagiByteContainer;
 use godot::prelude::*;
 use std::collections::HashMap;
+use std::sync::mpsc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
@@ -30,6 +31,7 @@ unsafe impl ExtensionLibrary for FeagiAgentClientLib {}
 
 type HeartbeatStopFlag = Arc<AtomicBool>;
 type HeartbeatRegistry = HashMap<String, HeartbeatStopFlag>;
+type RegistrationResult = Result<(String, String), String>;
 
 fn heartbeat_registry() -> &'static Mutex<HeartbeatRegistry> {
     static REGISTRY: OnceLock<Mutex<HeartbeatRegistry>> = OnceLock::new();
@@ -53,6 +55,9 @@ impl IRefCounted for FeagiAgentClient {
 
 #[godot_api]
 impl FeagiAgentClient {
+    const REGISTRATION_POLL_TIMEOUT: Duration = Duration::from_secs(30);
+    const REGISTRATION_WALL_TIMEOUT: Duration = Duration::from_secs(35);
+
     /// Register with FEAGI via the standard WebSocket registration endpoint using the feagi-agent SDK.
     /// Returns a Dictionary with: success (bool), visualization_ws_url (String), agent_id_b64 (String), error (String).
     /// Agent ID must be used with FeagiByteContainer for visualization and sensory data.
@@ -111,85 +116,112 @@ impl FeagiAgentClient {
             );
         }
 
-        let agent_descriptor = match Self::decode_agent_descriptor(&agent_b64) {
-            Ok(ad) => ad,
-            Err(e) => return vdict!("success": false, "error": e),
-        };
+        let (result_tx, result_rx) = mpsc::channel::<RegistrationResult>();
+        let url_for_worker = url.clone();
+        let agent_b64_for_worker = agent_b64.clone();
+        let token_b64_for_worker = token_b64.clone();
 
-        let auth_token = match Self::decode_auth_token(&token_b64) {
+        let worker_spawn = thread::Builder::new()
+            .name("bv-feagi-registration".to_string())
+            .spawn(move || {
+                let result = Self::perform_registration_blocking(
+                    &url_for_worker,
+                    &agent_b64_for_worker,
+                    &token_b64_for_worker,
+                    heartbeat_interval_s,
+                );
+                let _ = result_tx.send(result);
+            });
+
+        if worker_spawn.is_err() {
+            return vdict!(
+                "success": false,
+                "visualization_ws_url": "",
+                "agent_id_b64": "",
+                "error": "Failed to spawn registration worker"
+            );
+        }
+
+        match result_rx.recv_timeout(Self::REGISTRATION_WALL_TIMEOUT) {
+            Ok(Ok((viz_url, agent_id_b64))) => vdict!(
+                "success": true,
+                "visualization_ws_url": viz_url,
+                "agent_id_b64": agent_id_b64,
+                "error": ""
+            ),
+            Ok(Err(error)) => vdict!(
+                "success": false,
+                "visualization_ws_url": "",
+                "agent_id_b64": "",
+                "error": error
+            ),
+            Err(_) => vdict!(
+                "success": false,
+                "visualization_ws_url": "",
+                "agent_id_b64": "",
+                "error": format!(
+                    "Registration timed out after {}s",
+                    Self::REGISTRATION_WALL_TIMEOUT.as_secs()
+                )
+            ),
+        }
+    }
+
+    fn perform_registration_blocking(
+        url: &str,
+        agent_b64: &str,
+        token_b64: &str,
+        _heartbeat_interval_s: f64,
+    ) -> RegistrationResult {
+        let agent_descriptor = match Self::decode_agent_descriptor(agent_b64) {
+            Ok(ad) => ad,
+            Err(e) => return Err(e),
+        };
+        let auth_token = match Self::decode_auth_token(token_b64) {
             Ok(t) => t,
-            Err(e) => return vdict!("success": false, "error": e),
+            Err(e) => return Err(e),
         };
 
         let requester_props = match FeagiWebSocketClientRequesterProperties::new(&url) {
             Ok(p) => p,
-            Err(e) => {
-                return vdict!("success": false, "error": format!("WebSocket requester: {}", e))
-            }
+            Err(e) => return Err(format!("WebSocket requester: {}", e)),
         };
         let mut registration_agent = CommandControlAgent::new(Box::new(requester_props));
 
-        if let Err(e) = registration_agent.request_connect() {
-            return vdict!("success": false, "error": format!("Connect: {}", e));
-        }
+        registration_agent
+            .request_connect()
+            .map_err(|e| format!("Connect: {}", e))?;
+        registration_agent
+            .request_registration(
+                agent_descriptor,
+                auth_token,
+                vec![AgentCapabilities::ReceiveNeuronVisualizations],
+            )
+            .map_err(|e| format!("Registration request: {}", e))?;
 
-        if let Err(e) = registration_agent.request_registration(
-            agent_descriptor,
-            auth_token,
-            vec![AgentCapabilities::ReceiveNeuronVisualizations],
-        ) {
-            return vdict!("success": false, "error": format!("Registration request: {}", e));
-        }
-
-        // Poll registration response (blocking loop with bounded timeout)
-        let start = std::time::Instant::now();
-        let timeout = std::time::Duration::from_secs(30);
-        loop {
-            match registration_agent.poll_for_messages() {
-                Ok(_) => {
-                    if let AgentRegistrationStatus::Registered(agent_id, endpoints) =
-                        registration_agent.registration_status()
-                    {
-                        let viz_url = endpoints
-                            .get(&AgentCapabilities::ReceiveNeuronVisualizations)
-                            .map(Self::endpoint_to_string)
-                            .unwrap_or_default();
-                        let agent_id_b64 =
-                            base64::engine::general_purpose::STANDARD.encode(agent_id.bytes());
-                        Self::start_or_replace_background_heartbeat(
-                            agent_id_b64.clone(),
-                            url.clone(),
-                            Duration::from_secs_f64(heartbeat_interval_s),
-                        );
-                        return vdict!(
-                            "success": true,
-                            "visualization_ws_url": viz_url,
-                            "agent_id_b64": agent_id_b64,
-                            "error": ""
-                        );
-                    }
-                }
-                Err(e) => {
-                    return vdict!(
-                        "success": false,
-                        "visualization_ws_url": "",
-                        "agent_id_b64": "",
-                        "error": format!("{}", e)
-                    );
-                }
+        let start = Instant::now();
+        while start.elapsed() < Self::REGISTRATION_POLL_TIMEOUT {
+            registration_agent
+                .poll_for_messages()
+                .map_err(|e| format!("Poll: {}", e))?;
+            if let AgentRegistrationStatus::Registered(agent_id, endpoints) =
+                registration_agent.registration_status()
+            {
+                let viz_url = endpoints
+                    .get(&AgentCapabilities::ReceiveNeuronVisualizations)
+                    .map(Self::endpoint_to_string)
+                    .ok_or_else(|| {
+                        "Registration succeeded but missing ReceiveNeuronVisualizations endpoint"
+                            .to_string()
+                    })?;
+                let agent_id_b64 =
+                    base64::engine::general_purpose::STANDARD.encode(agent_id.bytes());
+                return Ok((viz_url, agent_id_b64));
             }
-
-            if start.elapsed() >= timeout {
-                return vdict!(
-                    "success": false,
-                    "visualization_ws_url": "",
-                    "agent_id_b64": "",
-                    "error": "Registration timeout"
-                );
-            }
-
-            std::thread::sleep(std::time::Duration::from_millis(5));
+            thread::sleep(Duration::from_millis(2));
         }
+
+        Err("Registration timeout".to_string())
     }
 
     /// Stop background command/control heartbeat for a registered session.
@@ -466,8 +498,7 @@ impl FeagiAgentClient {
 
     fn decode_agent_descriptor(b64: &str) -> Result<AgentDescriptor, String> {
         if b64.trim().is_empty() {
-            return AgentDescriptor::new("neuraville", "brain-visualizer", 1)
-                .map_err(|e| format!("agent_descriptor: {}", e));
+            return Err("agent_descriptor: empty value is not allowed".to_string());
         }
 
         let decoded = base64::engine::general_purpose::STANDARD
@@ -497,12 +528,10 @@ impl FeagiAgentClient {
     }
 
     fn decode_auth_token(b64: &str) -> Result<AuthToken, String> {
-        let raw = if b64.trim().is_empty() {
-            base64::engine::general_purpose::STANDARD.encode([0u8; 32])
-        } else {
-            b64.to_string()
-        };
-        AuthToken::from_base64(&raw)
+        if b64.trim().is_empty() {
+            return Err("auth_token: empty value is not allowed".to_string());
+        }
+        AuthToken::from_base64(b64)
             .ok_or_else(|| "auth_token: must be base64 of 32 bytes".to_string())
     }
 }

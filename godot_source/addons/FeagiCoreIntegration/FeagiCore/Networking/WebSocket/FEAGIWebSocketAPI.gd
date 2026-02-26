@@ -12,6 +12,7 @@ enum WEBSOCKET_HEALTH {
 const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 67108864 # 64 MiB
 const DEF_SOCKET_BUFFER_SIZE: int = 67108864 # 64 MiB
 const DEF_PING_INTERVAL_SECONDS: float = 2.0
+const DEF_CONNECT_TIMEOUT_SECONDS: float = 5.0
 const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string via websocket if genome is reloaded / changed
 const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
 
@@ -226,8 +227,27 @@ func _process(_delta: float):
 	_socket.poll()
 	match(_socket.get_ready_state()):
 		WebSocketPeer.State.STATE_CONNECTING:
-			# Currently connecting to feagi, waiting for FEAGI to confirm
-			pass
+			# Currently connecting to FEAGI. Guard against indefinite CONNECTING stalls.
+			var connect_elapsed_ms: int = Time.get_ticks_msec() - _last_connect_time
+			if connect_elapsed_ms > int(DEF_CONNECT_TIMEOUT_SECONDS * 1000.0):
+				print("[%s] ⚠️ [WS] STATE_CONNECTING timed out after %dms - forcing reconnect path" % [_get_timestamp(), connect_elapsed_ms])
+				if _socket:
+					_socket.close()
+				if _retry_count < FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections:
+					if _socket_health != WEBSOCKET_HEALTH.RETRYING:
+						_set_socket_health(WEBSOCKET_HEALTH.RETRYING)
+					FEAGI_socket_retrying_connection.emit(_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections)
+					if not _retry_timer_active:
+						_retry_timer_active = true
+						get_tree().create_timer(2.0).timeout.connect(func():
+							_retry_timer_active = false
+							_reconnect_websocket()
+						)
+					_retry_count += 1
+				else:
+					print("[%s] ❌ [WS] Exhausted retries while stuck in CONNECTING" % _get_timestamp())
+					_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
+					set_process(false)
 		WebSocketPeer.State.STATE_OPEN:
 			# Connection active with FEAGI
 			if _socket_health != WEBSOCKET_HEALTH.CONNECTED:
