@@ -137,8 +137,6 @@ func establish_connection_button():
 	for destination_area in _destinations:
 		if destination_area == null:
 			continue
-		if destination_area == _source:
-			continue
 		FeagiCore.requests.append_default_mapping_between_corticals(_source, destination_area, _selected_morphology)
 	## TODO: This is technically a race condition, if a user clicks through the quick connect fast enough
 	close_window()
@@ -509,8 +507,6 @@ func _set_source(cortical_area: AbstractCorticalArea) -> void:
 
 func _toggle_destination(cortical_area: AbstractCorticalArea) -> void:
 	if cortical_area == null:
-		return
-	if cortical_area == _source:
 		return
 	var previous_primary: AbstractCorticalArea = _destination
 	if cortical_area in _destinations:
