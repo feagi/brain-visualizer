@@ -95,14 +95,22 @@ func _ready() -> void:
 	set_process_unhandled_key_input(true)
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
+	if event is InputEventKey:
 		var key := event as InputEventKey
-		if key.keycode == KEY_ESCAPE:
-			close_window()
-		elif (key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER):
-			# Enter acts as clicking Establish when enabled
-			if _step4_button != null and !_step4_button.disabled:
-				establish_connection_button()
+		if key.echo:
+			return
+		if key.pressed:
+			if key.keycode == KEY_ESCAPE:
+				close_window()
+			elif (key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER):
+				# Enter acts as clicking Establish when enabled
+				if _step4_button != null and !_step4_button.disabled:
+					establish_connection_button()
+			return
+		# On Ctrl release, finalize multi-destination picking and move to rule selection.
+		if _is_ctrl_key(key.keycode) and _current_state == POSSIBLE_STATES.DESTINATION and not _destinations.is_empty():
+			_step3_panel.visible = true
+			_setting_morphology()
 
 func setup(cortical_source_if_picked: AbstractCorticalArea) -> void:
 	_setup_base_window(WINDOW_NAME)
@@ -110,16 +118,23 @@ func setup(cortical_source_if_picked: AbstractCorticalArea) -> void:
 		_set_source(cortical_source_if_picked)
 
 func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, _override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
-	if len(objects) != 1:
-		return
-	if objects[0] is BrainRegion:
-		return
-	var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea
-	
 	match _current_state:
 		POSSIBLE_STATES.SOURCE:
+			if len(objects) != 1:
+				return
+			if objects[0] is BrainRegion:
+				return
+			var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea
 			_set_source(cortical_area)
 		POSSIBLE_STATES.DESTINATION:
+			if _is_ctrl_modifier_held() or len(objects) != 1:
+				_sync_destinations_from_selected_objects(objects)
+				return
+			if len(objects) != 1:
+				return
+			if objects[0] is BrainRegion:
+				return
+			var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea
 			_toggle_destination(cortical_area)
 		_:
 			return
@@ -136,8 +151,6 @@ func establish_connection_button():
 	# This supports one-to-many quick connect in a single Establish action.
 	for destination_area in _destinations:
 		if destination_area == null:
-			continue
-		if destination_area == _source:
 			continue
 		FeagiCore.requests.append_default_mapping_between_corticals(_source, destination_area, _selected_morphology)
 	## TODO: This is technically a race condition, if a user clicks through the quick connect fast enough
@@ -205,6 +218,7 @@ func _setting_destination() -> void:
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
+	_stop_quick_connect_guide()
 	var mapping_defaults: MappingRestrictionDefault = MappingRestrictionsAPI.get_defaults_between_cortical_areas(_source, _destination)
 	var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
 	var source_is_memory: bool = (_source != null and _source.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
@@ -510,8 +524,6 @@ func _set_source(cortical_area: AbstractCorticalArea) -> void:
 func _toggle_destination(cortical_area: AbstractCorticalArea) -> void:
 	if cortical_area == null:
 		return
-	if cortical_area == _source:
-		return
 	var previous_primary: AbstractCorticalArea = _destination
 	if cortical_area in _destinations:
 		_destinations.erase(cortical_area)
@@ -530,10 +542,47 @@ func _toggle_destination(cortical_area: AbstractCorticalArea) -> void:
 	else:
 		_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
 		_update_destination_label()
-		_step3_panel.visible = true
-		_setting_morphology()
+		# Keep destination mode active while Ctrl is held so multi-select can continue
+		# with the live guide still visible. Transition to morphology when Ctrl is released.
+		if _is_ctrl_modifier_held():
+			_step3_panel.visible = false
+			_step3_morphology_container.visible = false
+			_set_core_bar_visibility(false)
+		else:
+			_step3_panel.visible = true
+			_setting_morphology()
 		_step4_button.disabled = true
 	# Refresh mapping preview/default context when primary destination changes.
+	if _source != null and _destination != null and _destination != previous_primary:
+		FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
+
+func _sync_destinations_from_selected_objects(objects: Array[GenomeObject]) -> void:
+	var previous_primary: AbstractCorticalArea = _destination
+	_destinations.clear()
+	for obj in objects:
+		if obj is AbstractCorticalArea:
+			_destinations.append(obj as AbstractCorticalArea)
+	_destination = _destinations[0] if not _destinations.is_empty() else null
+	if _destinations.is_empty():
+		_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
+		_step2_label.text = " Click destination target(s) to add/remove."
+		_step3_panel.visible = false
+		_step3_morphology_container.visible = false
+		_set_core_bar_visibility(false)
+		_step4_button.disabled = true
+	else:
+		_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
+		_update_destination_label()
+		# Keep destination mode active while Ctrl is held so multi-select can continue
+		# with the live guide still visible. Transition to morphology when Ctrl is released.
+		if _is_ctrl_modifier_held():
+			_step3_panel.visible = false
+			_step3_morphology_container.visible = false
+			_set_core_bar_visibility(false)
+		else:
+			_step3_panel.visible = true
+			_setting_morphology()
+		_step4_button.disabled = true
 	if _source != null and _destination != null and _destination != previous_primary:
 		FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 
@@ -576,6 +625,21 @@ func _set_morphology(morphology: BaseMorphology) -> void:
 	# IDLE keeps the core icon bar visible (we adjusted this earlier).
 	current_state = POSSIBLE_STATES.IDLE
 
+func _stop_quick_connect_guide() -> void:
+	if _source == null:
+		BV.UI.qc_guide_source_bm = null
+		return
+	var source_bm = BV.UI.get_brain_monitor_for_cortical_area(_source)
+	if source_bm != null and source_bm.has_method("stop_quick_connect_guide"):
+		source_bm.stop_quick_connect_guide()
+	BV.UI.qc_guide_source_bm = null
+
+func _is_ctrl_modifier_held() -> bool:
+	return Input.is_physical_key_pressed(KEY_CTRL)
+
+func _is_ctrl_key(keycode: int) -> bool:
+	return keycode == KEY_CTRL
+
 
 func _toggle_add_buttons(is_enabled: bool):
 	_step1_button.visible = is_enabled
@@ -600,11 +664,7 @@ func _set_completion_state():
 	_step4_button.visible = true
 		
 func close_window():
-	if _source != null:
-		var bm_on_dest = BV.UI.get_brain_monitor_for_cortical_area(_source)
-		if bm_on_dest != null and bm_on_dest.has_method("stop_quick_connect_guide"):
-			bm_on_dest.stop_quick_connect_guide()
-	BV.UI.qc_guide_source_bm = null
+	_stop_quick_connect_guide()
 	super()
 	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
 	_clear_destination_highlights()

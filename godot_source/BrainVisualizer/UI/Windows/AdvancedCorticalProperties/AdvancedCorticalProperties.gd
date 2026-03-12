@@ -13,6 +13,9 @@ class_name AdvancedCorticalProperties
 
 const WINDOW_NAME: StringName = "adv_cortical_properties"
 const UPDATE_FAILED_POPUP_MIN_SIZE: Vector2i = Vector2i(440, 0)
+const INITIAL_WINDOW_LEFT_X: int = 0
+const INITIAL_WINDOW_BOTTOM_MARGIN: int = 0
+const MIN_SCROLLABLE_HEIGHT: int = 180
 const IO_PRESET_INPUT: StringName = "Input"
 const IO_PRESET_OUTPUT: StringName = "Output"
 const IO_PRESET_INTERCONNECT: StringName = "Interconnect"
@@ -26,6 +29,7 @@ var _aux_previews: Array[UI_BrainMonitor_InteractivePreview] = []
 var _aux_preview_to_bm: Dictionary = {}
 var _host_preview_bm: UI_BrainMonitor_3DScene = null
 var _skip_unit_id_confirmation: bool = false
+var _content_scroll: ScrollContainer = null
 
 # isvi segmented vision variables
 var _is_isvi_segment: bool = false
@@ -38,7 +42,56 @@ var _isvi_would_overflow: bool = false  # True if current resize would exceed NP
 
 func _ready():
 	super()
+	_ensure_window_content_scroll_container()
 	BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES)
+
+## Ensures section content is vertically scrollable when taller than available height.
+## Built once and reused to avoid repeated reparenting.
+func _ensure_window_content_scroll_container() -> void:
+	if _window_margin == null or _window_internals == null:
+		return
+	if _content_scroll != null and is_instance_valid(_content_scroll):
+		return
+
+	var existing_scroll := _window_margin.get_node_or_null("WindowInternalsScroll") as ScrollContainer
+	if existing_scroll != null:
+		_content_scroll = existing_scroll
+		return
+
+	var scroll := ScrollContainer.new()
+	scroll.name = "WindowInternalsScroll"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+
+	_window_margin.add_child(scroll)
+	_window_margin.move_child(scroll, 0)
+	_window_internals.reparent(scroll)
+	_window_internals.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_window_internals.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_content_scroll = scroll
+
+## On open, place window directly under top bar at left edge and use full available height.
+func _apply_initial_window_geometry() -> void:
+	if BV == null or BV.UI == null:
+		return
+	var viewport_height: int = int(get_viewport_rect().size.y)
+	var top_bar_bottom_y: int = 0
+	if BV.UI.top_bar != null:
+		top_bar_bottom_y = int(BV.UI.top_bar.position.y + BV.UI.top_bar.size.y)
+
+	position = Vector2i(INITIAL_WINDOW_LEFT_X, top_bar_bottom_y)
+	var available_window_height: int = maxi(MIN_SCROLLABLE_HEIGHT, viewport_height - top_bar_bottom_y - INITIAL_WINDOW_BOTTOM_MARGIN)
+	size = Vector2i(size.x, available_window_height)
+
+	if _window_panel != null:
+		_window_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if _window_margin != null:
+		_window_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if _content_scroll != null and is_instance_valid(_content_scroll):
+		var titlebar_height: int = int(_titlebar.size.y) if _titlebar != null else 0
+		_content_scroll.custom_minimum_size.y = maxi(MIN_SCROLLABLE_HEIGHT, available_window_height - titlebar_height)
 
 func _are_all_io_areas() -> bool:
 	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
@@ -67,6 +120,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	BV.UI.advanced_mode_setting_changed.connect(_toggle_visiblity_based_on_advanced_mode)
 	
 	_setup_base_window(WINDOW_NAME)
+	_apply_initial_window_geometry()
 	_cortical_area_refs = cortical_area_references
 	
 	# Some sections are only in single cortical area mode
@@ -1097,16 +1151,19 @@ func _init_summary() -> void:
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
 		if _vector_visualization_voxel_granularity != null:
 			_connect_control_to_update_button(_vector_visualization_voxel_granularity, "visualization_voxel_granularity", _button_summary_send)
-	if is_all_io and _line_unit_id != null:
-		_line_unit_id.editable = true
-		_connect_control_to_update_button(_line_unit_id, "unit_id", _button_summary_send)
+
+		# Always drive live 3D preview from details-panel edits in single-select mode.
 		_vector_position.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		_vector_dimensions_spin.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
-		
+
 		# Connect isvi layout handler for real-time updates
 		if _is_isvi_segment:
 			_connect_isvi_layout_signals()
-		
+
+		if is_all_io and _line_unit_id != null:
+			_line_unit_id.editable = true
+			_connect_control_to_update_button(_line_unit_id, "unit_id", _button_summary_send)
+
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
 			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)

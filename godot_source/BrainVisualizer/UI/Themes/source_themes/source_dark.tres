@@ -168,6 +168,7 @@ HSplitContainer/constants/separation = 20
 HSplitContainer/icons/grabber = ExtResource("2_split_handle_v")
 HSplitContainer/icons/touch_dragger = ExtResource("2_split_handle_v")
 Label/font_sizes/font_size = 16
+TooltipLabel/font_sizes/font_size = 18
 Label_Header/base_type = &"Label"
 Label_Header/font_sizes/font_size = 20
 Label_Title/base_type = &"Label"
