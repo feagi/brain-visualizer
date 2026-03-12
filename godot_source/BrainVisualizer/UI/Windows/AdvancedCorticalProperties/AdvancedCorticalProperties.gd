@@ -1097,16 +1097,19 @@ func _init_summary() -> void:
 		_connect_control_to_update_button(_vector_position, "coordinates_3d", _button_summary_send)
 		if _vector_visualization_voxel_granularity != null:
 			_connect_control_to_update_button(_vector_visualization_voxel_granularity, "visualization_voxel_granularity", _button_summary_send)
-	if is_all_io and _line_unit_id != null:
-		_line_unit_id.editable = true
-		_connect_control_to_update_button(_line_unit_id, "unit_id", _button_summary_send)
+
+		# Always drive live 3D preview from details-panel edits in single-select mode.
 		_vector_position.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
 		_vector_dimensions_spin.user_updated_vector.connect(_setup_bm_prevew.unbind(1))
-		
+
 		# Connect isvi layout handler for real-time updates
 		if _is_isvi_segment:
 			_connect_isvi_layout_signals()
-		
+
+		if is_all_io and _line_unit_id != null:
+			_line_unit_id.editable = true
+			_connect_control_to_update_button(_line_unit_id, "unit_id", _button_summary_send)
+
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
 			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
