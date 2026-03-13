@@ -2658,7 +2658,6 @@ func _update_brain_region_io_mappings(brain_region: BrainRegion, area_ids: Array
 		# Ensure the associated ConnectionChainLink(s) are deregistered cleanly.
 		# Otherwise the 3D plate composition can remain stale (open links not removed).
 		mapping.FEAGI_deleted_mapping_set()
-		brain_region.partial_mappings.erase(mapping)
 	
 	# Create new partial mappings based on FEAGI response
 	for area_id_str in area_ids:
@@ -2674,6 +2673,8 @@ func _update_brain_region_io_mappings(brain_region: BrainRegion, area_ids: Array
 				area_id           # label
 			)
 			brain_region.partial_mappings.append(partial_mapping)
+			# Keep deletion handling consistent with FEAGI_establish_partial_mappings_from_JSONs().
+			partial_mapping.mappings_about_to_be_deleted.connect(brain_region._FEAGI_partical_mapping_removed)
 			print("      ✅ Added %s mapping for area: %s" % [mapping_type, area_id])
 		else:
 			print("      ⚠️  Area %s not found in cache, skipping" % area_id)

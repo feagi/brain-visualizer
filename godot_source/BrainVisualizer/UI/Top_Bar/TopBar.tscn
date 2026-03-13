@@ -343,6 +343,27 @@ texture_pressed = ExtResource("33_guide_c")
 texture_hover = ExtResource("32_guide_h")
 texture_disabled = ExtResource("34_guide_d")
 
+[node name="SettingsPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="SettingsPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_far"
+
+[node name="SettingsButton" type="TextureRect" parent="SettingsPanel/MarginContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Brain Visualizer Settings"
+texture = ExtResource("19_fxjdk")
+expand_mode = 3
+script = ExtResource("20_6yf7l")
+texture_normal = ExtResource("19_fxjdk")
+texture_pressed = ExtResource("36_settings_c")
+texture_hover = ExtResource("35_settings_h")
+texture_disabled = ExtResource("37_settings_d")
+
 [node name="DetailsPanel" type="PanelContainer" parent="."]
 layout_mode = 2
 
@@ -357,27 +378,6 @@ size_flags_vertical = 1
 child_nodes_to_run_toggle_collapse_on = []
 start_open = true
 show_toggle_button = false
-
-[node name="OptionsPanel" type="PanelContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="0"]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/OptionsPanel"]
-layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
-
-[node name="Options" type="TextureRect" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/OptionsPanel/MarginContainer"]
-custom_minimum_size = Vector2(64, 64)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-tooltip_text = "Brain Visualizer Settings"
-texture = ExtResource("19_fxjdk")
-expand_mode = 3
-script = ExtResource("20_6yf7l")
-texture_normal = ExtResource("19_fxjdk")
-texture_pressed = ExtResource("36_settings_c")
-texture_hover = ExtResource("35_settings_h")
-texture_disabled = ExtResource("37_settings_d")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
 layout_mode = 2
@@ -445,7 +445,7 @@ script = ExtResource("7_g1qxj")
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 [connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
 [connection signal="toggled" from="ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle" to="." method="_placeholder_toggle_changed"]
-[connection signal="pressed" from="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/OptionsPanel/MarginContainer/Options" to="." method="_open_options"]
+[connection signal="pressed" from="SettingsPanel/MarginContainer/SettingsButton" to="." method="_open_options"]
 [connection signal="pressed" from="CameraAnimationsPanel/MarginContainer/CameraAnimations" to="." method="_open_camera_animations"]
 [connection signal="pressed" from="GuidePanel/MarginContainer/GuideButton" to="." method="_open_guide"]
 
