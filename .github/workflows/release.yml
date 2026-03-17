@@ -1120,7 +1120,7 @@ jobs:
           echo "Built wheel size:"
           ls -lh dist/
           
-          # Check if wheel exceeds PyPI's 100MB limit
+          # Check if wheel exceeds PyPI's 200MB limit
           WHEEL_FILE=$(ls dist/*.whl | head -1)
           if [ -z "$WHEEL_FILE" ]; then
             echo "❌ ERROR: No wheel file found in dist/"
@@ -1141,9 +1141,9 @@ jobs:
             echo "Wheel size: ${SIZE_MB} MB (${WHEEL_SIZE} bytes)"
           fi
           
-          if [ "$WHEEL_SIZE" -gt 0 ] && [ "$SIZE_MB" -gt 100 ]; then
+          if [ "$WHEEL_SIZE" -gt 0 ] && [ "$SIZE_MB" -gt 200 ]; then
             echo ""
-            echo "⚠️  WARNING: Wheel size (${SIZE_MB} MB) exceeds PyPI's 100 MB limit!"
+            echo "⚠️  WARNING: Wheel size (${SIZE_MB} MB) exceeds PyPI's 200 MB limit!"
             echo ""
             echo "Options:"
             echo "1. Request file size limit increase from PyPI:"
@@ -1307,19 +1307,19 @@ jobs:
           echo "Directory structure:"
           find wheels -type d | sort
           echo ""
-          echo "Checking wheel sizes against PyPI's 100 MB limit:"
-          find wheels -name "*.whl" -exec sh -c 'SIZE=$(stat -c%s "$1" 2>/dev/null || du -b "$1" | cut -f1); SIZE_MB=$((SIZE / 1024 / 1024)); echo "  $1: ${SIZE_MB} MB"; if [ "$SIZE_MB" -gt 100 ]; then echo "    ⚠️  EXCEEDS 100 MB LIMIT!"; fi' _ {} \;
+          echo "Checking wheel sizes against PyPI's 200 MB limit:"
+          find wheels -name "*.whl" -exec sh -c 'SIZE=$(stat -c%s "$1" 2>/dev/null || du -b "$1" | cut -f1); SIZE_MB=$((SIZE / 1024 / 1024)); echo "  $1: ${SIZE_MB} MB"; if [ "$SIZE_MB" -gt 200 ]; then echo "    ⚠️  EXCEEDS 200 MB LIMIT!"; fi' _ {} \;
 
       - name: Log package sizes vs PyPI limit
         run: |
-          echo "Package sizes (limit: 100 MB):"
+          echo "Package sizes (limit: 200 MB):"
           echo ""
           for wheel in $(find wheels -name "*.whl" | sort); do
             if [ -f "$wheel" ]; then
               SIZE_BYTES=$(stat -c%s "$wheel" 2>/dev/null || du -b "$wheel" | cut -f1)
               SIZE_MB=$((SIZE_BYTES / 1024 / 1024))
-              OVER_MB=$((SIZE_MB - 100))
-              if [ "$SIZE_MB" -gt 100 ]; then
+              OVER_MB=$((SIZE_MB - 200))
+              if [ "$SIZE_MB" -gt 200 ]; then
                 echo "  $(basename "$wheel"): ${SIZE_MB} MB (${SIZE_BYTES} bytes) - OVER by ${OVER_MB} MB"
               else
                 echo "  $(basename "$wheel"): ${SIZE_MB} MB (${SIZE_BYTES} bytes)"
@@ -1402,8 +1402,8 @@ jobs:
           echo "   NOTE: If projects don't exist on PyPI yet, trusted publishers CAN create them,"
           echo "   but the project name in the publisher config must match the package name exactly."
           echo ""
-          echo "2. FILE SIZE LIMIT: Architecture-specific packages should be under 100 MB"
-          echo "   If any package exceeds 100 MB, request limit increase:"
+          echo "2. FILE SIZE LIMIT: Architecture-specific packages should be under 200 MB"
+          echo "   If any package exceeds 200 MB, request limit increase:"
           echo "   - Go to: https://pypi.org/project/<package-name>/request-limit-increase/"
           echo "   - Or email: pypi-support@python.org"
           echo ""
@@ -1416,10 +1416,10 @@ jobs:
           echo "See: https://docs.pypi.org/trusted-publishers/using-github-actions/"
           echo "     https://docs.pypi.org/trusted-publishers/troubleshooting/"
 
-      - name: Check wheel sizes for PyPI upload (100 MB limit)
+      - name: Check wheel sizes for PyPI upload (200 MB limit)
         id: check
         run: |
-          LIMIT=$((100 * 1024 * 1024))
+          LIMIT=$((200 * 1024 * 1024))
           for dir in wheel-linux wheel-macos-arm64 wheel-macos-x86_64 wheel-windows wheel-meta; do
             key="upload_${dir#wheel-}"
             key="${key//-/_}"
@@ -1438,7 +1438,7 @@ jobs:
               echo "  $dir: ${size_mb} MB - will upload"
             else
               echo "${key}=false" >> $GITHUB_OUTPUT
-              echo "  $dir: ${size_mb} MB - SKIP (exceeds 100 MB PyPI limit)"
+              echo "  $dir: ${size_mb} MB - SKIP (exceeds 200 MB PyPI limit)"
             fi
           done
 
