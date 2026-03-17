@@ -213,10 +213,26 @@ jobs:
             exit 1
           fi
 
-      - name: Install pinned Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Cache Rust toolchain (rustup)
+        uses: actions/cache@v4
         with:
-          toolchain-file: rust_extensions/rust-toolchain.toml
+          path: |
+            ~/.rustup
+            ~/.cargo/bin
+          key: ${{ runner.os }}-rustup-${{ hashFiles('rust_extensions/rust-toolchain.toml') }}
+
+      - name: Install pinned Rust toolchain
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 60
+          command: |
+            TOOLCHAIN=$(grep 'channel' rust_extensions/rust-toolchain.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain "$TOOLCHAIN" --profile minimal
+            export PATH="$HOME/.cargo/bin:$PATH"
+            rustup component add rustfmt clippy
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Cache Rust registry
         uses: actions/cache@v4
