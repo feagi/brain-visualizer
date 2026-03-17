@@ -65,14 +65,29 @@ var _temp_bm_camera_pos: Vector3 = Vector3(0,0,0)
 var _temp_bm_camera_rot: Vector3
 var _fps_label: Label
 var _loading_status_label: Label
+var _manual_stim_pending_workers: Dictionary = {}
+var _manual_stim_timeouts: Dictionary = {}
+
+# Startup UI scaling thresholds based only on monitor DPI and resolution.
+const UI_STARTUP_DPI_XLARGE: int = 180
+const UI_STARTUP_DPI_LARGE: int = 150
+const UI_STARTUP_DPI_MEDIUM: int = 125
+const UI_STARTUP_DPI_STANDARD: int = 96
+const UI_STARTUP_LONG_SIDE_ULTRAWIDE: int = 3000
+const UI_STARTUP_LONG_SIDE_WIDE: int = 2500
+const UI_SCALE_SMALL: float = 0.75
+const UI_SCALE_STANDARD: float = 1.0
+const UI_SCALE_MEDIUM: float = 1.25
+const UI_SCALE_LARGE: float = 1.5
+const UI_SCALE_XLARGE: float = 2.0
 
 
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
 	get_viewport().size_changed.connect(_update_screen_size)
 	_find_possible_scales()
-	# Default UI scale at startup: +2 levels from 1.0x (e.g., 1.5x with current theme set).
-	_load_new_theme(load("res://BrainVisualizer/UI/Themes/1.5-DARK.tres")) #TODO temporary!
+	# Select startup scale from monitor DPI + monitor resolution only.
+	request_switch_to_theme(_select_startup_scale_from_display_metrics(), UIManager.THEME_COLORS.DARK)
 
 func _process(_delta: float):
 	if _fps_label:
@@ -190,6 +205,9 @@ func FEAGI_about_to_reset_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] FEAGI_about_to_reset_genome() called - preparing for genome reload")
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
+	if _selection_system:
+		_selection_system.clear_all_highlighted()
+	_root_UI_view.reset()
 	#_root_UI_view.close_all_non_root_brain_region_views()
 	#toggle_loading_screen(true)
 	if _temp_bm_holder:
@@ -486,27 +504,34 @@ func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[Stri
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	
 	# Add timeout mechanism
-	var worker_completed = false
-	var timeout_occurred = false
-	
-	get_tree().create_timer(10.0).timeout.connect(func():
-		if not worker_completed:
-			timeout_occurred = true
-			push_error("Manual stimulation: Request timed out")
-			if HTTP_FEAGI_request_worker != null:
-				HTTP_FEAGI_request_worker.kill_worker()
-	)
+	var worker_id: int = HTTP_FEAGI_request_worker.get_instance_id()
+	_manual_stim_pending_workers[worker_id] = weakref(HTTP_FEAGI_request_worker)
+	get_tree().create_timer(10.0).timeout.connect(_on_manual_stimulation_timeout.bind(worker_id))
 	
 	await HTTP_FEAGI_request_worker.worker_done
-	worker_completed = true
+	_manual_stim_pending_workers.erase(worker_id)
 	
-	if timeout_occurred:
+	var timed_out: bool = _manual_stim_timeouts.has(worker_id)
+	_manual_stim_timeouts.erase(worker_id)
+	if timed_out:
 		return
 	
 	var request_output: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	
 	if not request_output.success:
 		push_error("Manual stimulation failed: %s" % request_output.failed_requirement)
+
+## Handles manual stimulation timeouts without capturing freed instances.
+func _on_manual_stimulation_timeout(worker_id: int) -> void:
+	if not _manual_stim_pending_workers.has(worker_id):
+		return
+	_manual_stim_timeouts[worker_id] = true
+	push_error("Manual stimulation: Request timed out")
+	var worker_ref = _manual_stim_pending_workers[worker_id]
+	if worker_ref is WeakRef:
+		var worker = (worker_ref as WeakRef).get_ref()
+		if worker and is_instance_valid(worker):
+			(worker as APIRequestWorker).kill_worker()
 
 # CRITICAL: Central voxel selection handlers for QuickConnect functionality
 # These receive signals ONLY from brain region tab monitors and forward to main monitor
@@ -575,7 +600,55 @@ func toggle_loading_screen(is_on: bool) -> void:
 func update_loading_status(message: String) -> void:
 	if _loading_status_label:
 		_loading_status_label.text = message
+		_loading_status_label.mouse_filter = Control.MOUSE_FILTER_STOP
+		_loading_status_label.tooltip_text = _build_loading_status_tooltip()
 		print("UIMANAGER: Loading status: %s" % message)
+
+## Builds the loading status tooltip (connection + failure details).
+func _build_loading_status_tooltip() -> String:
+	var endpoint = FeagiCore.network._feagi_endpoint_details
+	var http_addr = endpoint.full_http_address if endpoint != null else "unknown"
+	var ws_addr = endpoint.full_websocket_address if endpoint != null else "unknown"
+	var transport = FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]
+	var ws_retry = FeagiCore.network.websocket_API._retry_count if FeagiCore.network.websocket_API != null else 0
+	var ws_retry_max = FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections if FeagiCore.feagi_settings != null else 0
+	var http_retrying = FeagiCore.network.http_API._retrying_workers.size() if FeagiCore.network.http_API != null else 0
+	var shm_path = FeagiCore.network.websocket_API._shm_path if FeagiCore.network.websocket_API != null else ""
+	var failure_summary = _build_loading_failure_summary()
+	return "FEAGI HTTP: %s\nFEAGI WS: %s\nTransport: %s\nSHM path: %s\nWS retries: %d / %d\nHTTP retrying workers: %d\nFailure status: %s" % [
+		http_addr,
+		ws_addr,
+		transport,
+		shm_path if shm_path != "" else "not active",
+		ws_retry,
+		ws_retry_max,
+		http_retrying,
+		failure_summary
+	]
+
+## Returns a concise summary of why loading is blocked.
+func _build_loading_failure_summary() -> String:
+	var reasons: Array[String] = []
+	var connection_healthy = FeagiCore.network.connection_state == FEAGINetworking.CONNECTION_STATE.HEALTHY
+	var brain_ready = FeagiCore.feagi_local_cache.brain_readiness
+	var genome_available = FeagiCore.feagi_local_cache.genome_availability
+	var genome_scene_ready = FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY
+	var websocket_ok = true
+	if FeagiCore.network._transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
+		websocket_ok = FeagiCore.network.websocket_API.socket_health == FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.CONNECTED
+	if not connection_healthy:
+		reasons.append("connection not healthy")
+	if not brain_ready:
+		reasons.append("brain not ready")
+	if not genome_available:
+		reasons.append("no genome available")
+	if not genome_scene_ready:
+		reasons.append("3D scene loading")
+	if genome_scene_ready and not _3d_scene_instantiated:
+		reasons.append("3D scene instantiating")
+	if not websocket_ok:
+		reasons.append("websocket not connected")
+	return "ok" if reasons.is_empty() else ", ".join(reasons)
 
 ## Show the shutdown screen with custom styling
 func show_shutdown_screen() -> void:
@@ -601,6 +674,9 @@ func update_shutdown_status(message: String) -> void:
 
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
 	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
+		if objects.is_empty():
+			_window_manager.force_close_window(QuickCorticalMenu.WINDOW_NAME)
+			return
 		_window_manager.spawn_quick_cortical_menu(objects, context)
 	if SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES in override_usecases:
 		var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(objects)
@@ -803,11 +879,34 @@ func _load_new_theme(theme: Theme) -> void:
 
 
 func _find_possible_scales() -> void:
+	_possible_UI_scales.clear()
 	var file_list: PackedStringArray = DirAccess.get_files_at(THEME_FOLDER)
 	for file: StringName in file_list:
 		var first_part: StringName = file.get_slice("-", 0)
 		if first_part.is_valid_float():
 			_possible_UI_scales.append(first_part.to_float())
+	_possible_UI_scales.sort()
+
+## Chooses startup UI scale using monitor DPI and resolution only.
+func _select_startup_scale_from_display_metrics() -> float:
+	var current_screen: int = get_window().current_screen
+	var screen_size: Vector2i = DisplayServer.screen_get_size(current_screen)
+	var dpi: int = DisplayServer.screen_get_dpi(current_screen)
+	var long_side: int = maxi(screen_size.x, screen_size.y)
+	
+	print("UIMANAGER: Startup display metrics -> screen=%d size=%s dpi=%d" % [current_screen, screen_size, dpi])
+	
+	if dpi >= UI_STARTUP_DPI_XLARGE:
+		return UI_SCALE_XLARGE
+	if dpi >= UI_STARTUP_DPI_LARGE:
+		return UI_SCALE_LARGE
+	if dpi >= UI_STARTUP_DPI_MEDIUM:
+		return UI_SCALE_MEDIUM
+	if dpi <= UI_STARTUP_DPI_STANDARD and long_side >= UI_STARTUP_LONG_SIDE_ULTRAWIDE:
+		return UI_SCALE_SMALL
+	if dpi <= UI_STARTUP_DPI_STANDARD and long_side >= UI_STARTUP_LONG_SIDE_WIDE:
+		return UI_SCALE_STANDARD
+	return UI_SCALE_MEDIUM
 
 #endregion
 
@@ -827,26 +926,28 @@ func _proxy_notification_cortical_area_added(cortical_area: AbstractCorticalArea
 func _proxy_notification_cortical_area_updated(cortical_area: AbstractCorticalArea) -> void:
 	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 		return
+	if FeagiCore.feagi_local_cache.cortical_areas.suppress_update_notifications:
+		return
 	
-	print("UI: Cortical area %s properties updated - refreshing visualization" % cortical_area.cortical_ID)
-	print("  🔍 Current dimensions: %s" % cortical_area.dimensions_3D)
-	print("  🔍 Current coordinates: %s" % cortical_area.coordinates_3D)
-	print("  🔍 Current visibility (cortical_visibility): %s" % cortical_area.cortical_visibility)
-	print("  🔍 Cortical type: %s" % cortical_area.cortical_type)
-	print("  🔍 Voxel granularity: %s" % cortical_area.visualization_voxel_granularity)
+	# print("UI: Cortical area %s properties updated - refreshing visualization" % cortical_area.cortical_ID)
+	# print("  🔍 Current dimensions: %s" % cortical_area.dimensions_3D)
+	# print("  🔍 Current coordinates: %s" % cortical_area.coordinates_3D)
+	# print("  🔍 Current visibility (cortical_visibility): %s" % cortical_area.cortical_visibility)
+	# print("  🔍 Cortical type: %s" % cortical_area.cortical_type)
+	# print("  🔍 Voxel granularity: %s" % cortical_area.visualization_voxel_granularity)
 	
 	# CRITICAL FIX (similar to clone coordinate fix): Force-trigger dimension update signal
 	# to refresh renderer even if dimensions haven't changed. This ensures visualization
 	# stays in sync after property updates (e.g., firing threshold changes).
 	# The renderer is connected to dimensions_3D_updated signal and will refresh all visuals.
-	print("  🔧 Emitting dimensions_3D_updated signal with dims: %s" % cortical_area.dimensions_3D)
+	# print("  🔧 Emitting dimensions_3D_updated signal with dims: %s" % cortical_area.dimensions_3D)
 	var current_dims = cortical_area.dimensions_3D
 	cortical_area.dimensions_3D_updated.emit(current_dims)
 	
 	# Also refresh granularity-specific visuals
-	print("  🔧 Calling BV_refresh_directpoints_renderer_visuals()")
+	# print("  🔧 Calling BV_refresh_directpoints_renderer_visuals()")
 	cortical_area.BV_refresh_directpoints_renderer_visuals()
-	print("  ✅ Visualization refresh complete for %s" % cortical_area.cortical_ID)
+	# print("  ✅ Visualization refresh complete for %s" % cortical_area.cortical_ID)
 	
 	# Show notification
 	_notification_system.add_notification("Confirmed update of cortical area %s!" % cortical_area.friendly_name)

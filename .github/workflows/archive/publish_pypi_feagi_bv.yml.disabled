@@ -1,0 +1,561 @@
+name: Publish to PyPI - Brain Visualizer
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      bv_version:
+        description: 'Brain Visualizer release tag (e.g., v1.2.3)'
+        required: true
+      bv_binary_version:
+        description: 'BV release to download binaries from (defaults to bv_version if empty)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry run (build only, do not publish)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  BV_MAJOR_VERSION: "2"  # Currently supporting BV 2.x versions
+
+jobs:
+  validate-version:
+    name: Validate BV Version
+    runs-on: ubuntu-latest
+    outputs:
+      bv_version: ${{ steps.validate.outputs.bv_version }}
+      bv_binary_version: ${{ steps.validate.outputs.bv_binary_version }}
+    steps:
+      - name: Determine version and target
+        id: validate
+        shell: bash
+        run: |
+          # Determine BV version
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            BV_TAG="${{ inputs.bv_version }}"
+            # Allow overriding binary source version
+            if [ -n "${{ inputs.bv_binary_version }}" ]; then
+              BV_BINARY_TAG="${{ inputs.bv_binary_version }}"
+            else
+              BV_BINARY_TAG="${BV_TAG}"
+            fi
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            BV_TAG="${{ github.event.release.tag_name }}"
+            BV_BINARY_TAG="${BV_TAG}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            BV_TAG="${{ github.ref_name }}"
+            BV_BINARY_TAG="${BV_TAG}"
+          else
+            echo "ERROR: Cannot determine version - unexpected trigger"
+            exit 1
+          fi
+          
+          # Always publish to production PyPI
+          # Pre-releases are handled automatically by pip based on version format
+          TARGET_REPO="pypi"
+          
+          # Extract version number (remove 'v' prefix if present)
+          BV_VERSION="${BV_TAG#v}"
+          BV_BINARY_VERSION="${BV_BINARY_TAG#v}"
+          
+          # Validate PEP 440 compliance
+          echo "Validating version format: $BV_VERSION"
+          
+          # PEP 440 regex pattern
+          # Matches: X.Y.Z, X.Y.ZaN, X.Y.ZbN, X.Y.ZrcN, X.Y.Z.postN, X.Y.Z.devN
+          # Does NOT match: X.Y.Z-beta, X.Y.Z_beta, vX.Y.Z, etc.
+          if [[ ! "$BV_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+|b[0-9]+|rc[0-9]+)?(\.post[0-9]+)?(\.dev[0-9]+)?$ ]]; then
+            echo "ERROR: ERROR: Version '$BV_VERSION' does not comply with PEP 440"
+            echo ""
+            echo "Valid PEP 440 formats:"
+            echo "  - 2.1.0         (stable release)"
+            echo "  - 2.1.0a1       (alpha 1)"
+            echo "  - 2.1.0b1       (beta 1)"
+            echo "  - 2.1.0rc1      (release candidate 1)"
+            echo "  - 2.1.0.post1   (post release)"
+            echo "  - 2.1.0.dev1    (development)"
+            echo ""
+            echo "Invalid formats:"
+            echo "  - 2.1.0-beta1   (wrong separator)"
+            echo "  - 2.1.0_beta1   (wrong separator)"
+            echo "  - v2.1.0        (v prefix not allowed in version)"
+            echo "  - 2.1.0beta1    (missing separator)"
+            echo ""
+            echo "Note: Git tags can use 'v' prefix (e.g., v2.1.0b1)"
+            echo "      but the version extracted must be PEP 440 compliant"
+            exit 1
+          fi
+          
+          echo "Version format is PEP 440 compliant"
+          
+          echo "version=${BV_VERSION}" >> $GITHUB_OUTPUT
+          echo "binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
+          
+          # Extract major version
+          BV_MAJOR=$(echo "$BV_VERSION" | cut -d. -f1)
+          
+          # Get the gating major version
+          GATE_MAJOR="${{ env.BV_MAJOR_VERSION }}"
+          
+          echo ""
+          echo "Brain Visualizer release: ${BV_TAG} (version: ${BV_VERSION})"
+          echo "Binary source: ${BV_BINARY_TAG} (version: ${BV_BINARY_VERSION})"
+          echo "Major version gate: ${GATE_MAJOR}"
+          echo "Target repository: PyPI (production)"
+          
+          # Validate major version matches gate
+          if [ "$BV_MAJOR" != "$GATE_MAJOR" ]; then
+            echo "ERROR: ERROR: BrainVisualizer major version ${BV_MAJOR} does not match gate ${GATE_MAJOR}"
+            echo "To process BV ${BV_VERSION}, update BV_MAJOR_VERSION in the workflow to '${BV_MAJOR}'"
+            exit 1
+          fi
+          
+          echo "Version check passed: BV ${BV_VERSION} matches gate ${GATE_MAJOR}.x.x"
+          
+          echo "bv_version=${BV_VERSION}" >> $GITHUB_OUTPUT
+          echo "bv_binary_version=${BV_BINARY_VERSION}" >> $GITHUB_OUTPUT
+
+  wait-for-distribution-packages:
+    name: Wait for Distribution Packages
+    needs: validate-version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Wait for BrainVisualizer distribution packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name || github.ref_name }}"
+          echo "Waiting for distribution packages to be attached to release $TAG_NAME"
+          echo "These are created by build-distribution-packages.yml workflow"
+          echo ""
+          
+          MAX_WAIT=1800  # 30 minutes
+          SLEEP_INTERVAL=30
+          ELAPSED=0
+          
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            echo "Checking for release assets... (${ELAPSED}s elapsed)"
+            
+            # Get release assets
+            ASSETS=$(gh release view "$TAG_NAME" --json assets --jq '.assets[].name')
+            
+            echo "Current assets:"
+            echo "$ASSETS"
+            echo ""
+            
+            # Check if all required distribution packages exist
+            HAS_LINUX=$(echo "$ASSETS" | grep -c "BrainVisualizer-Remote-Linux" || true)
+            HAS_MACOS=$(echo "$ASSETS" | grep -c "BrainVisualizer-Remote-macOS" || true)
+            HAS_WINDOWS=$(echo "$ASSETS" | grep -c "BrainVisualizer-Remote-Windows" || true)
+            
+            if [ "$HAS_LINUX" -gt 0 ] && [ "$HAS_MACOS" -gt 0 ] && [ "$HAS_WINDOWS" -gt 0 ]; then
+              echo "✅ All distribution packages found!"
+              echo "  - BrainVisualizer-Remote-Linux"
+              echo "  - BrainVisualizer-Remote-macOS"
+              echo "  - BrainVisualizer-Remote-Windows"
+              exit 0
+            fi
+            
+            echo "⏳ Waiting for distribution packages to be uploaded..."
+            echo "   Missing: $([ "$HAS_LINUX" -eq 0 ] && echo "Linux ")$([ "$HAS_MACOS" -eq 0 ] && echo "macOS ")$([ "$HAS_WINDOWS" -eq 0 ] && echo "Windows")"
+            sleep $SLEEP_INTERVAL
+            ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
+          done
+          
+          echo "❌ Timeout waiting for distribution packages"
+          echo "Make sure build-distribution-packages.yml workflow completed successfully"
+          exit 1
+
+  package-rust-binaries:
+    name: Package and Attach Rust Binaries to Release
+    needs: validate-version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify binaries exist in repo
+        run: |
+          echo "Checking for committed Rust binaries..."
+          echo ""
+          echo "Linux binaries:"
+          find godot_source/addons -name "*.so" -type f -exec ls -lh {} \;
+          echo ""
+          echo "macOS binaries:"
+          find godot_source/addons -name "*.dylib" -type f -exec ls -lh {} \;
+          echo ""
+          echo "Windows binaries:"
+          find godot_source/addons -name "*.dll" -type f -exec ls -lh {} \;
+          echo ""
+          
+          # Count binaries
+          BINARY_COUNT=$(find godot_source/addons -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) | wc -l)
+          echo "Total binaries found: $BINARY_COUNT"
+          
+          if [ "$BINARY_COUNT" -lt 6 ]; then
+            echo "ERROR: Expected at least 6 binaries (2 extensions × 3 platforms)"
+            echo "Make sure binaries are committed to staging before creating release"
+            exit 1
+          fi
+
+      - name: Package binaries for release
+        run: |
+          mkdir -p release-packages
+          
+          # Package Linux binaries
+          echo "Packaging Linux binaries..."
+          cd godot_source/addons
+          tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz \
+            feagi_rust_deserializer/target/release/*.so \
+            feagi_shared_video/target/release/*.so 2>/dev/null || true
+          cd ../..
+          
+          # Package macOS binaries
+          echo "Packaging macOS binaries..."
+          cd godot_source/addons
+          tar -czf ../../release-packages/rust-binaries-macos-universal.tar.gz \
+            feagi_rust_deserializer/target/release/*.dylib \
+            feagi_shared_video/target/release/*.dylib 2>/dev/null || true
+          cd ../..
+          
+          # Package Windows binaries
+          echo "Packaging Windows binaries..."
+          cd godot_source/addons
+          zip -r ../../release-packages/rust-binaries-windows-x86_64.zip \
+            feagi_rust_deserializer/target/release/*.dll \
+            feagi_shared_video/target/release/*.dll 2>/dev/null || true
+          cd ../..
+          
+          echo ""
+          echo "Release packages created:"
+          ls -lh release-packages/
+
+      - name: Upload binaries to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name || github.ref_name }}"
+          echo "Uploading Rust binaries to release: $TAG_NAME"
+          
+          # Upload all packages
+          for package in release-packages/*; do
+            if [ -f "$package" ]; then
+              echo "Uploading: $(basename $package)"
+              gh release upload "$TAG_NAME" "$package" --clobber
+            fi
+          done
+          
+          echo "✅ Rust binaries uploaded to release $TAG_NAME"
+
+  build-platform-packages:
+    name: Build feagi-bv-${{ matrix.platform }} wheel
+    needs: [validate-version, wait-for-distribution-packages]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            download_artifact: BrainVisualizer-Remote-Linux
+            binary_name: BrainVisualizer-Remote.x86_64
+          - os: macos-latest
+            platform: macos
+            download_artifact: BrainVisualizer-Remote-macOS
+            binary_name: BrainVisualizer-Remote.app
+          - os: windows-latest
+            platform: windows
+            download_artifact: BrainVisualizer-Remote-Windows
+            binary_name: BrainVisualizer-Remote.exe
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+
+      - name: Download BV release artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          BV_BINARY_VERSION="${{ needs.validate-version.outputs.bv_binary_version }}"
+          BV_BINARY_TAG="v${BV_BINARY_VERSION}"
+          PKG_VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          
+          echo "Downloading BrainVisualizer ${BV_BINARY_TAG} artifact: ${{ matrix.download_artifact }}"
+          echo "Will package as version: ${PKG_VERSION}"
+          
+          gh release download "$BV_BINARY_TAG" --pattern "${{ matrix.download_artifact }}.*" --dir downloads/
+          
+          echo "Downloaded files:"
+          ls -lh downloads/
+
+      - name: Extract BV binary (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cd downloads
+          
+          if [ -f "${{ matrix.download_artifact }}.tar.gz" ]; then
+            tar -xzf "${{ matrix.download_artifact }}.tar.gz"
+          elif [ -f "${{ matrix.download_artifact }}.zip" ]; then
+            unzip -q "${{ matrix.download_artifact }}.zip"
+          fi
+          
+          echo "Extracted contents:"
+          ls -lRh
+
+      - name: Extract BV binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd downloads
+          
+          if (Test-Path "${{ matrix.download_artifact }}.zip") {
+            Expand-Archive -Path "${{ matrix.download_artifact }}.zip" -DestinationPath . -Force
+          }
+          
+          Write-Host "Extracted contents:"
+          Get-ChildItem -Recurse
+
+      - name: Update package version
+        shell: bash
+        run: |
+          BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          
+          echo "Updating feagi-bv-${{ matrix.platform }} version to ${BV_VERSION}"
+          
+          PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
+          
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            sed -i "s/^version = .*/version = \"${BV_VERSION}\"/" "$PKG_DIR/pyproject.toml"
+          else
+            sed -i.bak "s/^version = .*/version = \"${BV_VERSION}\"/" "$PKG_DIR/pyproject.toml"
+            rm -f "$PKG_DIR/pyproject.toml.bak"
+          fi
+          
+          echo "Updated pyproject.toml:"
+          grep "^version = " "$PKG_DIR/pyproject.toml"
+
+      - name: Copy BV binary to package
+        shell: bash
+        run: |
+          PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
+          BIN_BASE="$PKG_DIR/feagi_bv_${{ matrix.platform }}"
+          
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            # Copy entire .app bundle for macOS
+            mkdir -p "$BIN_BASE/bin/macos"
+            cp -r downloads/${{ matrix.binary_name }} "$BIN_BASE/bin/macos/"
+            
+            # Strip debug symbols to reduce size
+            echo "Stripping debug symbols from macOS binary..."
+            find "$BIN_BASE/bin/macos" -type f \( -name "BrainVisualizer*" -o -name "*.dylib" \) | while read f; do
+              if file "$f" | grep -q "Mach-O"; then
+                strip "$f" 2>/dev/null || true
+              fi
+            done
+          elif [ "${{ runner.os }}" == "Windows" ]; then
+            # Copy .exe and .pck files for Windows
+            mkdir -p "$BIN_BASE/bin/windows"
+            cp downloads/${{ matrix.binary_name }} "$BIN_BASE/bin/windows/"
+            
+            # Copy .pck file if exists
+            if [ -f "downloads/BrainVisualizer-Remote.pck" ]; then
+              cp downloads/BrainVisualizer-Remote.pck "$BIN_BASE/bin/windows/"
+            fi
+            
+            # Copy DLL files
+            find downloads -name "*.dll" -exec cp {} "$BIN_BASE/bin/windows/" \;
+          else
+            # Copy Linux binary
+            mkdir -p "$BIN_BASE/bin/linux"
+            cp downloads/${{ matrix.binary_name }} "$BIN_BASE/bin/linux/BrainVisualizer"
+            chmod +x "$BIN_BASE/bin/linux/BrainVisualizer"
+            
+            # Strip debug symbols
+            echo "Stripping debug symbols from Linux binary..."
+            strip "$BIN_BASE/bin/linux/BrainVisualizer" 2>/dev/null || true
+          fi
+          
+          echo "Copied BV binary to package"
+          ls -lRh "$BIN_BASE/bin/"
+
+      - name: Build wheel
+        shell: bash
+        run: |
+          PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
+          cd "$PKG_DIR"
+          python -m build --wheel
+          
+          echo "Built wheel:"
+          ls -lh dist/
+
+      - name: Check wheel size
+        shell: bash
+        run: |
+          PKG_DIR="feagi-bv-platform/feagi-bv-${{ matrix.platform }}"
+          for wheel in "$PKG_DIR"/dist/*.whl; do
+            size=$(stat -f%z "$wheel" 2>/dev/null || stat -c%s "$wheel" 2>/dev/null)
+            size_mb=$((size / 1024 / 1024))
+            echo "$(basename $wheel): ${size_mb} MB"
+            if [ $size_mb -gt 100 ]; then
+              echo "WARNING: Wheel exceeds 100 MB limit!"
+            else
+              echo "Wheel size OK (under 100 MB limit)"
+            fi
+          done
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feagi-bv-${{ matrix.platform }}-wheel
+          path: feagi-bv-platform/feagi-bv-${{ matrix.platform }}/dist/*.whl
+          retention-days: 7
+
+  build-meta-package:
+    name: Build feagi-bv meta-package
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+
+      - name: Update meta-package version
+        run: |
+          BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          
+          echo "Updating feagi-bv meta-package version to ${BV_VERSION}"
+          
+          PKG_DIR="feagi-bv-platform/feagi-bv-meta"
+          
+          # Update line 7 which has: version = "1.0.0"
+          sed -i.bak '7s/version = ".*"/version = "'"${BV_VERSION}"'"/' "$PKG_DIR/pyproject.toml"
+          
+          rm -f "$PKG_DIR/pyproject.toml.bak"
+          
+          echo ""
+          echo "Updated pyproject.toml:"
+          sed -n '6,8p' "$PKG_DIR/pyproject.toml"
+          
+          echo ""
+          echo "Note: Platform-specific dependencies added via setup.py at install time"
+
+      - name: Build meta-package wheel
+        run: |
+          cd feagi-bv-platform/feagi-bv-meta
+          python -m build --wheel
+          
+          echo "Built wheel:"
+          ls -lh dist/
+
+      - name: Upload meta-package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feagi-bv-meta-wheel
+          path: feagi-bv-platform/feagi-bv-meta/dist/*.whl
+          retention-days: 7
+
+  publish-packages:
+    name: Publish to PyPI
+    needs: [validate-version, build-platform-packages, build-meta-package]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/feagi-bv/
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: feagi-bv-*-wheel
+          path: dist
+          merge-multiple: true
+
+      - name: Display wheels
+        run: |
+          echo "Wheels to publish:"
+          ls -lh dist/
+          echo ""
+          echo "Total packages: $(ls dist/*.whl | wc -l)"
+          echo "  - feagi-bv (meta-package)"
+          echo "  - feagi-bv-linux"
+          echo "  - feagi-bv-macos"
+          echo "  - feagi-bv-windows"
+
+      - name: Publish to PyPI
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_PASSWORD_TOKEN }}
+          packages-dir: dist/
+          verbose: true
+
+      - name: Summary
+        run: |
+          BV_VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
+          
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run completed for feagi-bv==${BV_VERSION}"
+            echo ""
+            echo "Built packages (NOT published):"
+            echo "  - feagi-bv==${BV_VERSION} (meta-package)"
+            echo "  - feagi-bv-linux==${BV_VERSION}"
+            echo "  - feagi-bv-macos==${BV_VERSION}"
+            echo "  - feagi-bv-windows==${BV_VERSION}"
+          else
+            echo "Successfully published feagi-bv==${BV_VERSION} packages to PyPI"
+            echo ""
+            echo "Published packages:"
+            echo "  - feagi-bv==${BV_VERSION} (meta-package)"
+            echo "  - feagi-bv-linux==${BV_VERSION}"
+            echo "  - feagi-bv-macos==${BV_VERSION}"
+            echo "  - feagi-bv-windows==${BV_VERSION}"
+            echo ""
+            
+            # Check if this is a pre-release
+            if [[ "$BV_VERSION" =~ (a|b|rc)[0-9]+ ]]; then
+              echo "Pre-release installation (explicit version required):"
+              echo "  pip install feagi-bv==${BV_VERSION}"
+              echo ""
+              echo "Or install latest pre-release:"
+              echo "  pip install --pre feagi-bv"
+            else
+              echo "Installation (stable release):"
+              echo "  pip install feagi-bv"
+              echo ""
+              echo "Or specific version:"
+              echo "  pip install feagi-bv==${BV_VERSION}"
+            fi
+          fi

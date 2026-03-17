@@ -12,7 +12,7 @@ size_flags_vertical = 0
 script = ExtResource("1_a7y6g")
 
 [node name="Label9" type="Label" parent="."]
-custom_minimum_size = Vector2(1300, 0)
+custom_minimum_size = Vector2(1400, 0)
 layout_mode = 2
 text = "Established Mappings"
 
@@ -61,6 +61,15 @@ custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Plasticity"
+horizontal_alignment = 1
+
+[node name="Label_Window" type="Label" parent="labels_box"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Plasticity Window"
+mouse_filter = 1
+text = "Plast. Win."
 horizontal_alignment = 1
 
 [node name="Label5" type="Label" parent="labels_box"]

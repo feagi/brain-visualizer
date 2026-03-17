@@ -47,6 +47,7 @@ const IO_ARROW_SIZE_MIN_SHAFT_H: float = 0.18
 const IO_ARROW_SIZE_MAX_SHAFT_H: float = 0.85
 const IO_ARROW_SIZE_MIN_HEAD_H: float = 0.12
 const IO_ARROW_SIZE_MAX_HEAD_H: float = 0.55
+const IO_ARROW_SHAFT_RADIUS_MULTIPLIER: float = 0.50
 const IO_ARROW_LABEL_Y_GAP_MULT: float = 0.65  # Extra spacing above arrow head(s), in head-height units
 
 # Distance-based scaling for pulse spheres (flow animation)
@@ -118,6 +119,11 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		if not defined_cortical_area.dimensions_3D_updated.is_connected(_directpoints_renderer.update_dimensions):
 			defined_cortical_area.dimensions_3D_updated.connect(_directpoints_renderer.update_dimensions)
 	
+	# Mirror SelectionSystem highlight state to 3D renderer selection outline/highlight.
+	if not defined_cortical_area.UI_highlighted_state_updated.is_connected(_on_ui_highlighted_state_updated):
+		defined_cortical_area.UI_highlighted_state_updated.connect(_on_ui_highlighted_state_updated)
+	_on_ui_highlighted_state_updated(defined_cortical_area.UI_is_highlighted)
+	
 	# Connect legacy SVO visualization data to DDA renderer (for translucent structure)
 	if _dda_renderer != null:
 		if not defined_cortical_area.recieved_new_neuron_activation_data.is_connected(_dda_renderer.update_visualization_data):
@@ -179,6 +185,18 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 			defined_cortical_area.dimensions_3D_updated.connect(_refresh_io_direction_indicator)
 	call_deferred("_refresh_io_direction_indicator")
 
+	# Cache-level update signals (lightweight refreshes).
+	if FeagiCore.feagi_local_cache:
+		var cache = FeagiCore.feagi_local_cache
+		if not cache.cache_reloaded.is_connected(_on_cache_reloaded):
+			cache.cache_reloaded.connect(_on_cache_reloaded)
+		if not cache.mappings_reloaded.is_connected(_on_cache_reloaded):
+			cache.mappings_reloaded.connect(_on_cache_reloaded)
+		if not cache.cortical_areas_reloaded.is_connected(_on_cache_reloaded):
+			cache.cortical_areas_reloaded.connect(_on_cache_reloaded)
+		if not cache.brain_regions_reloaded.is_connected(_on_cache_reloaded):
+			cache.brain_regions_reloaded.connect(_on_cache_reloaded)
+
 func _exit_tree() -> void:
 	# Unregister desktop WS fast-path references only on actual teardown.
 	#
@@ -190,7 +208,7 @@ func _exit_tree() -> void:
 	#
 	# `is_queued_for_deletion()` is true for real teardown (queue_free / scene shutdown), but false for re-parent.
 	if _representing_cortial_area != null and is_queued_for_deletion():
-		_representing_cortial_area.BV_unregister_directpoints_renderer()
+		_representing_cortial_area.BV_unregister_directpoints_renderer(_directpoints_renderer)
 
 func _process(_delta: float) -> void:
 	# Pulse the I/O indicator (if present) without relying on Tweens (robust to re-parenting).
@@ -238,6 +256,9 @@ func _retry_directpoints_fastpath_registration(defined_cortical_area: AbstractCo
 ## - Both: bidirectional (double-headed)
 ## Skips indicators for areas currently positioned on brain-region plates.
 func _refresh_io_direction_indicator(_unused = null) -> void:
+	if not _io_direction_indicators_allowed_by_scene():
+		_clear_io_direction_indicator()
+		return
 	# Skip indicators for plate-positioned areas (explicit user requirement).
 	if _is_on_brain_region_plate():
 		_clear_io_direction_indicator()
@@ -286,7 +307,7 @@ func _create_io_direction_indicator(mode: StringName) -> void:
 	var root := Node3D.new()
 	root.name = "IODirectionIndicator"
 
-	# Shared material for all pieces (magenta, unshaded, transparent, emissive).
+	# Shared material for unibody arrow (single mesh, unshaded, transparent, emissive).
 	var mat := StandardMaterial3D.new()
 	mat.flags_unshaded = true
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -296,52 +317,16 @@ func _create_io_direction_indicator(mode: StringName) -> void:
 	mat.emission = IO_ARROW_EMISSION_COLOR
 	mat.emission_energy = IO_ARROW_EMISSION_MIN
 
-	# Shaft
-	var shaft := MeshInstance3D.new()
-	shaft.name = "ArrowShaft"
-	var shaft_mesh := CylinderMesh.new()
-	shaft_mesh.height = IO_ARROW_SIZE_MIN_SHAFT_H
-	shaft_mesh.top_radius = IO_ARROW_SIZE_MIN_RADIUS
-	shaft_mesh.bottom_radius = IO_ARROW_SIZE_MIN_RADIUS
-	shaft_mesh.radial_segments = 10
-	shaft.mesh = shaft_mesh
-	shaft.material_override = mat
-	root.add_child(shaft)
-
-	# Head(s) (cone via CylinderMesh top_radius=0)
-	if mode == &"bidirectional":
-		var head_up := MeshInstance3D.new()
-		head_up.name = "ArrowHeadUp"
-		var head_mesh_up := CylinderMesh.new()
-		head_mesh_up.height = IO_ARROW_SIZE_MIN_HEAD_H
-		head_mesh_up.top_radius = 0.0
-		head_mesh_up.bottom_radius = IO_ARROW_SIZE_MIN_RADIUS * 1.35
-		head_mesh_up.radial_segments = 10
-		head_up.mesh = head_mesh_up
-		head_up.material_override = mat
-		head_up.position = Vector3.ZERO
-		root.add_child(head_up)
-
-		var head_down := MeshInstance3D.new()
-		head_down.name = "ArrowHeadDown"
-		var head_mesh_down := head_mesh_up.duplicate() as CylinderMesh
-		head_down.mesh = head_mesh_down
-		head_down.material_override = mat
-		head_down.position = Vector3.ZERO
-		head_down.rotation = Vector3(PI, 0.0, 0.0)
-		root.add_child(head_down)
-	else:
-		var head := MeshInstance3D.new()
-		head.name = "ArrowHead"
-		var head_mesh := CylinderMesh.new()
-		head_mesh.height = IO_ARROW_SIZE_MIN_HEAD_H
-		head_mesh.top_radius = 0.0
-		head_mesh.bottom_radius = IO_ARROW_SIZE_MIN_RADIUS * 1.35
-		head_mesh.radial_segments = 10
-		head.mesh = head_mesh
-		head.material_override = mat
-		head.position = Vector3.ZERO
-		root.add_child(head)
+	var body := MeshInstance3D.new()
+	body.name = "ArrowBody"
+	body.mesh = _build_unibody_arrow_mesh(
+		mode,
+		IO_ARROW_SIZE_MIN_RADIUS,
+		IO_ARROW_SIZE_MIN_SHAFT_H,
+		IO_ARROW_SIZE_MIN_HEAD_H
+	)
+	body.material_override = mat
+	root.add_child(body)
 
 	parent_body.add_child(root)
 	_io_direction_indicator = root
@@ -358,7 +343,10 @@ func _update_io_direction_indicator_transform(mode: StringName) -> void:
 		return
 
 	# Compute visual bounds in WORLD space (so sizing is not affected by parent scaling).
-	var bounds_world := _compute_world_visual_aabb(parent_body)
+	var bounds_world := _compute_world_visual_aabb(parent_body, _io_direction_indicator)
+	if bounds_world.size.length() < 0.001:
+		_clear_io_direction_indicator()
+		return
 	var top_y_world: float = bounds_world.position.y + bounds_world.size.y
 	# Sizing decision must ignore Z (explicit requirement). Use only X/Y dimensions.
 	var base_width_x: float = maxf(0.01, bounds_world.size.x)
@@ -413,7 +401,7 @@ func _update_io_direction_indicator_transform(mode: StringName) -> void:
 
 	# Prevent inherited non-uniform scaling (especially Z) from thickening the arrow.
 	var parent_scale: Vector3 = parent_body.global_transform.basis.get_scale()
-	if parent_scale.x == 0.0 or parent_scale.y == 0.0 or parent_scale.z == 0.0:
+	if absf(parent_scale.x) < 0.001 or absf(parent_scale.y) < 0.001 or absf(parent_scale.z) < 0.001:
 		_clear_io_direction_indicator()
 		return
 	_io_direction_indicator_base_scale = Vector3(
@@ -492,46 +480,89 @@ func _update_io_direction_indicator_label_visibility() -> void:
 	_io_direction_indicator_label.visible = _is_volume_moused_over and _io_direction_indicator_mode != &"none"
 
 func _update_io_direction_indicator_geometry(mode: StringName, radius: float, shaft_h: float, head_h: float) -> void:
-	var shaft := _io_direction_indicator.get_node_or_null("ArrowShaft") as MeshInstance3D
-	if shaft != null:
-		var shaft_mesh := CylinderMesh.new()
-		shaft_mesh.height = shaft_h
-		shaft_mesh.top_radius = radius
-		shaft_mesh.bottom_radius = radius
-		shaft_mesh.radial_segments = 10
-		shaft.mesh = shaft_mesh
-		shaft.position = Vector3.ZERO
+	var body := _io_direction_indicator.get_node_or_null("ArrowBody") as MeshInstance3D
+	if body == null:
+		return
+	body.mesh = _build_unibody_arrow_mesh(mode, radius, shaft_h, head_h)
 
+func _build_unibody_arrow_mesh(mode: StringName, base_radius: float, shaft_h: float, head_h: float) -> ArrayMesh:
+	var shaft_radius := base_radius * IO_ARROW_SHAFT_RADIUS_MULTIPLIER
+	var tip_radius := maxf(0.001, base_radius * 0.06)
+	var head_radius := base_radius * 1.35
+	var transition_h := maxf(0.01, head_h * 0.35)
+
+	var profile: Array[Vector2] = []
 	if mode == &"bidirectional":
-		var head_up := _io_direction_indicator.get_node_or_null("ArrowHeadUp") as MeshInstance3D
-		var head_down := _io_direction_indicator.get_node_or_null("ArrowHeadDown") as MeshInstance3D
-		if head_up != null:
-			var mesh_up := CylinderMesh.new()
-			mesh_up.height = head_h
-			mesh_up.top_radius = 0.0
-			mesh_up.bottom_radius = radius * 1.35
-			mesh_up.radial_segments = 10
-			head_up.mesh = mesh_up
-			head_up.position = Vector3(0.0, (shaft_h / 2.0) + (head_h / 2.0), 0.0)
-		if head_down != null:
-			var mesh_down := CylinderMesh.new()
-			mesh_down.height = head_h
-			mesh_down.top_radius = 0.0
-			mesh_down.bottom_radius = radius * 1.35
-			mesh_down.radial_segments = 10
-			head_down.mesh = mesh_down
-			head_down.position = Vector3(0.0, -((shaft_h / 2.0) + (head_h / 2.0)), 0.0)
-			head_down.rotation = Vector3(PI, 0.0, 0.0)
+		var total_h := shaft_h + (2.0 * head_h)
+		var bottom_tip_y := -total_h * 0.5
+		var bottom_head_base_y := bottom_tip_y + head_h
+		var shaft_top_y := bottom_head_base_y + shaft_h
+		var top_tip_y := total_h * 0.5
+		profile = [
+			Vector2(tip_radius, bottom_tip_y),
+			Vector2(head_radius * 0.22, bottom_tip_y + head_h * 0.22),
+			Vector2(head_radius * 0.52, bottom_tip_y + head_h * 0.52),
+			Vector2(head_radius, bottom_head_base_y),
+			Vector2(lerpf(head_radius, shaft_radius, 0.55), bottom_head_base_y + transition_h * 0.55),
+			Vector2(shaft_radius, bottom_head_base_y + transition_h),
+			Vector2(shaft_radius, shaft_top_y - transition_h),
+			Vector2(lerpf(head_radius, shaft_radius, 0.55), shaft_top_y - transition_h * 0.55),
+			Vector2(head_radius, shaft_top_y),
+			Vector2(head_radius * 0.52, shaft_top_y + head_h * 0.48),
+			Vector2(head_radius * 0.22, shaft_top_y + head_h * 0.78),
+			Vector2(tip_radius, top_tip_y),
+		]
 	else:
-		var head := _io_direction_indicator.get_node_or_null("ArrowHead") as MeshInstance3D
-		if head != null:
-			var head_mesh := CylinderMesh.new()
-			head_mesh.height = head_h
-			head_mesh.top_radius = 0.0
-			head_mesh.bottom_radius = radius * 1.35
-			head_mesh.radial_segments = 10
-			head.mesh = head_mesh
-			head.position = Vector3(0.0, (shaft_h / 2.0) + (head_h / 2.0), 0.0)
+		var total_h := shaft_h + head_h
+		var shaft_bottom_y := -total_h * 0.5
+		var shaft_top_y := shaft_bottom_y + shaft_h
+		var tip_y := total_h * 0.5
+		profile = [
+			Vector2(shaft_radius, shaft_bottom_y),
+			Vector2(shaft_radius, shaft_top_y - transition_h),
+			Vector2(lerpf(head_radius, shaft_radius, 0.55), shaft_top_y - transition_h * 0.55),
+			Vector2(head_radius, shaft_top_y),
+			Vector2(head_radius * 0.52, shaft_top_y + head_h * 0.48),
+			Vector2(head_radius * 0.22, shaft_top_y + head_h * 0.78),
+			Vector2(tip_radius, tip_y),
+		]
+	return _build_revolved_profile_mesh(profile, 14)
+
+func _build_revolved_profile_mesh(profile: Array[Vector2], radial_segments: int) -> ArrayMesh:
+	if profile.size() < 2:
+		return ArrayMesh.new()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+
+	for ring_idx in range(profile.size()):
+		var radius := maxf(0.0, profile[ring_idx].x)
+		var y := profile[ring_idx].y
+		for seg_idx in range(radial_segments):
+			var t := float(seg_idx) / float(radial_segments)
+			var angle := t * TAU
+			var x := cos(angle) * radius
+			var z := sin(angle) * radius
+			st.set_uv(Vector2(t, float(ring_idx) / float(profile.size() - 1)))
+			st.add_vertex(Vector3(x, y, z))
+
+	for ring_idx in range(profile.size() - 1):
+		var ring_start := ring_idx * radial_segments
+		var next_ring_start := (ring_idx + 1) * radial_segments
+		for seg_idx in range(radial_segments):
+			var next_seg := (seg_idx + 1) % radial_segments
+			var a := ring_start + seg_idx
+			var b := ring_start + next_seg
+			var c := next_ring_start + seg_idx
+			var d := next_ring_start + next_seg
+			st.add_index(a)
+			st.add_index(c)
+			st.add_index(b)
+			st.add_index(b)
+			st.add_index(c)
+			st.add_index(d)
+
+	st.generate_normals()
+	return st.commit()
 
 ## Computes a merged local-space AABB for all MeshInstance3D descendants under `root`.
 ## Falls back to a small default AABB if no meshes are found yet.
@@ -597,7 +628,7 @@ func _clear_io_direction_indicator() -> void:
 	set_process(false)
 
 ## Computes a merged WORLD-space AABB for all MeshInstance3D descendants under `root`.
-func _compute_world_visual_aabb(root: Node3D) -> AABB:
+func _compute_world_visual_aabb(root: Node3D, exclude_root: Node = null) -> AABB:
 	var merged := AABB()
 	var has_any := false
 	if root == null or not is_instance_valid(root):
@@ -606,6 +637,9 @@ func _compute_world_visual_aabb(root: Node3D) -> AABB:
 	var stack: Array[Node] = [root]
 	while not stack.is_empty():
 		var n := stack.pop_back()
+		if exclude_root != null:
+			if n == exclude_root or exclude_root.is_ancestor_of(n):
+				continue
 		for child in n.get_children():
 			stack.append(child)
 		if n is MeshInstance3D:
@@ -621,7 +655,7 @@ func _compute_world_visual_aabb(root: Node3D) -> AABB:
 				merged = merged.merge(world_aabb)
 
 	if not has_any:
-		return AABB(Vector3.ZERO, Vector3.ONE)
+		return AABB(Vector3.ZERO, Vector3.ZERO)
 	return merged
 
 func _get_best_static_body_for_indicator() -> StaticBody3D:
@@ -645,12 +679,23 @@ func _is_on_brain_region_plate() -> bool:
 		current_parent = current_parent.get_parent()
 	return false
 
+func _io_direction_indicators_allowed_by_scene() -> bool:
+	var current := get_parent()
+	while current != null:
+		if current is UI_BrainMonitor_3DScene:
+			var bm := current as UI_BrainMonitor_3DScene
+			if bm.has_method("are_io_direction_indicators_allowed"):
+				return bm.are_io_direction_indicators_allowed()
+			return true
+		current = current.get_parent()
+	return true
+
 func _get_containing_region_context() -> BrainRegion:
 	# Prefer the nearest brain-region frame (subregion context). Otherwise, use the main BM 3D scene's region.
 	var current := get_parent()
 	while current != null:
 		if current is UI_BrainMonitor_BrainRegion3D:
-			var viz := current as UI_BrainMonitor_BrainRegion3D
+			var viz: UI_BrainMonitor_BrainRegion3D = current
 			return viz.representing_region
 		if current is UI_BrainMonitor_3DScene:
 			var bm := current as UI_BrainMonitor_3DScene
@@ -762,6 +807,12 @@ func clear_all_neuron_selection_states() -> void:
 
 func get_neuron_selection_states() -> Array[Vector3i]:
 	return _selected_neuron_coordinates
+
+func _on_ui_highlighted_state_updated(is_highlighted: bool) -> void:
+	if _dda_renderer != null and _dda_renderer.has_method("set_cortical_area_selection"):
+		_dda_renderer.set_cortical_area_selection(is_highlighted)
+	if _directpoints_renderer != null and _directpoints_renderer.has_method("set_cortical_area_selection"):
+		_directpoints_renderer.set_cortical_area_selection(is_highlighted)
 
 func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_AbstractCorticalAreaRenderer:
 	# Special cases: Memory and Power cortical areas use DirectPoints rendering
@@ -916,6 +967,7 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 ## Create a 3D curve connecting two points
 func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
+	var is_bidirectional = _is_mapping_set_bidirectional_plastic(mapping_set)
 	
 	# If inhibitory and excitatory coexist between two areas, render two independent arcs.
 	# - Excitatory: green
@@ -933,14 +985,14 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		mixed_node.name = "MIXED_" + plastic_prefix + connection_id
 		
 		# Slightly different bend multipliers for separation
-		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, is_global_mode, 0.43)
-		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, is_global_mode, 0.37)
+		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, is_bidirectional, is_global_mode, 0.43)
+		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, is_bidirectional, is_global_mode, 0.37)
 		mixed_node.add_child(excitatory_curve)
 		mixed_node.add_child(inhibitory_curve)
 		return mixed_node
 	
 	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
-	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, is_global_mode, 0.4)
+	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, is_bidirectional, is_global_mode, 0.4)
 
 ## Internal helper that creates a single visual arc for a connection.
 ## arc_height_multiplier controls the curve bend height relative to distance (e.g. 0.4 = 40% of distance).
@@ -950,6 +1002,7 @@ func _create_connection_curve_variant(
 	connection_id: StringName,
 	is_inhibitory: bool,
 	is_plastic: bool,
+	is_bidirectional: bool,
 	is_global_mode: bool,
 	arc_height_multiplier: float
 ) -> Node3D:
@@ -974,6 +1027,21 @@ func _create_connection_curve_variant(
 	
 	# Store curve points for pulse animation
 	var curve_points: Array[Vector3] = []
+	
+	# For bidirectional plastic connections, render as electric arc
+	if is_plastic and is_bidirectional:
+		var arc_points = _create_electric_arc_segments(
+			connection_node,
+			start_pos,
+			control_point,
+			end_pos,
+			is_inhibitory,
+			is_global_mode,
+			connection_id
+		)
+		_add_electric_arc_animation(connection_node, start_pos, control_point, end_pos)
+		# Skip default pulse animation so arc stays visually distinct.
+		return connection_node
 	
 	# For plastic connections, create dashed lines
 	if is_plastic:
@@ -1257,6 +1325,166 @@ func _estimate_curve_length(start_pos: Vector3, control_pos: Vector3, end_pos: V
 		prev_point = current_point
 	
 	return total_length
+
+## Tangent of a quadratic Bezier curve at t
+func _quadratic_bezier_tangent(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
+	return 2.0 * (1.0 - t) * (p1 - p0) + 2.0 * t * (p2 - p1)
+
+## Create electric arc segments for bidirectional plastic connections
+func _create_electric_arc_segments(
+	connection_node: Node3D,
+	start_pos: Vector3,
+	control_point: Vector3,
+	end_pos: Vector3,
+	is_inhibitory: bool,
+	is_global_mode: bool,
+	connection_id: StringName
+) -> Array[Vector3]:
+	var arc_length = _estimate_curve_length(start_pos, control_point, end_pos)
+	var segment_count = max(8, int(arc_length * 1.5))
+	var t_values: Array[float] = []
+	for i in range(segment_count + 1):
+		t_values.append(float(i) / float(segment_count))
+	
+	var jitter_strength = max(0.35, arc_length * 0.03)
+	var seed_offset = float(hash(String(connection_id))) * 0.001
+	var points = _build_electric_arc_points(start_pos, control_point, end_pos, t_values, seed_offset, jitter_strength)
+	
+	var material = _create_electric_arc_material(is_inhibitory, is_global_mode)
+	var segments: Array = []
+	for i in range(segment_count):
+		var segment = _create_curve_segment(points[i], points[i + 1], i, material)
+		connection_node.add_child(segment)
+		segments.append(segment)
+	
+	connection_node.set_meta("electric_arc_segments", segments)
+	connection_node.set_meta("electric_arc_t_values", t_values)
+	connection_node.set_meta("electric_arc_seed", seed_offset)
+	return points
+
+## Build jittered arc points for electric arc animation
+func _build_electric_arc_points(
+	start_pos: Vector3,
+	control_point: Vector3,
+	end_pos: Vector3,
+	t_values: Array[float],
+	time_offset: float,
+	jitter_strength: float
+) -> Array[Vector3]:
+	var points: Array[Vector3] = []
+	for t in t_values:
+		var base = _quadratic_bezier(start_pos, control_point, end_pos, t)
+		var offset = _electric_arc_offset(start_pos, control_point, end_pos, t, time_offset, jitter_strength)
+		points.append(base + offset)
+	return points
+
+## Compute offset for electric arc jitter
+func _electric_arc_offset(
+	start_pos: Vector3,
+	control_point: Vector3,
+	end_pos: Vector3,
+	t: float,
+	time_offset: float,
+	jitter_strength: float
+) -> Vector3:
+	var tangent = _quadratic_bezier_tangent(start_pos, control_point, end_pos, t)
+	if tangent.length() < 0.001:
+		return Vector3.ZERO
+	var dir = tangent.normalized()
+	var up_vector = Vector3.UP
+	if abs(dir.dot(Vector3.UP)) > 0.9:
+		up_vector = Vector3.FORWARD
+	var right_vector = up_vector.cross(dir).normalized()
+	var corrected_up = dir.cross(right_vector).normalized()
+	
+	var time = Time.get_ticks_msec() / 1000.0
+	var phase = time_offset + time * 3.5 + t * TAU
+	var noise_x = sin(phase * 2.7 + t * 11.3)
+	var noise_y = cos(phase * 3.9 + t * 8.1)
+	var noise_z = sin(phase * 4.3 + t * 6.7)
+	
+	var lateral = (right_vector * noise_x + corrected_up * noise_y) * jitter_strength
+	var longitudinal = dir * noise_z * jitter_strength * 0.15
+	return lateral + longitudinal
+
+## Electric arc material for bidirectional plastic connections
+func _create_electric_arc_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
+	var material = StandardMaterial3D.new()
+	if is_global_mode:
+		material.albedo_color = Color(0.6, 0.7, 0.9, 0.85)
+		material.emission = Color(0.4, 0.6, 0.9)
+	elif is_inhibitory:
+		material.albedo_color = Color(0.9, 0.4, 1.0, 0.9)
+		material.emission = Color(0.8, 0.3, 1.0)
+	else:
+		material.albedo_color = Color(0.4, 0.9, 1.0, 0.9)
+		material.emission = Color(0.3, 0.8, 1.0)
+	
+	material.emission_enabled = true
+	material.emission_energy = 4.0
+	material.flags_unshaded = true
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
+
+## Update an existing curve segment with new endpoints
+func _update_curve_segment(segment: MeshInstance3D, start_pos: Vector3, end_pos: Vector3) -> void:
+	if segment == null or not is_instance_valid(segment):
+		return
+	var direction = (end_pos - start_pos)
+	var segment_length = direction.length()
+	var center_pos = (start_pos + end_pos) / 2.0
+	segment.position = center_pos
+	var cylinder_mesh = segment.mesh as CylinderMesh
+	if cylinder_mesh != null:
+		cylinder_mesh.height = segment_length
+	if direction.length() > 0.001:
+		var normalized_direction = direction.normalized()
+		var up_vector = Vector3.UP
+		if abs(normalized_direction.dot(Vector3.UP)) > 0.9:
+			up_vector = Vector3.FORWARD
+		var right_vector = up_vector.cross(normalized_direction).normalized()
+		var corrected_up = normalized_direction.cross(right_vector).normalized()
+		var basis = Basis(right_vector, normalized_direction, corrected_up)
+		segment.basis = basis
+
+## Add flicker + jitter animation to electric arc segments
+func _add_electric_arc_animation(connection_node: Node3D, start_pos: Vector3, control_point: Vector3, end_pos: Vector3) -> void:
+	if connection_node == null:
+		return
+	var segments = connection_node.get_meta("electric_arc_segments", []) as Array
+	var t_values = connection_node.get_meta("electric_arc_t_values", []) as Array
+	if segments.is_empty() or t_values.is_empty():
+		return
+	
+	var seed_offset = float(connection_node.get_meta("electric_arc_seed", 0.0))
+	var arc_tween = create_tween()
+	arc_tween.set_loops()
+	
+	var arc_callback = func(animation_time: float) -> void:
+		if connection_node == null or not is_instance_valid(connection_node):
+			arc_tween.kill()
+			return
+		var jitter_strength = max(0.35, _estimate_curve_length(start_pos, control_point, end_pos) * 0.03)
+		var points = _build_electric_arc_points(
+			start_pos,
+			control_point,
+			end_pos,
+			t_values,
+			seed_offset + animation_time * 1.3,
+			jitter_strength
+		)
+		for i in range(segments.size()):
+			var segment = segments[i] as MeshInstance3D
+			if segment == null or not is_instance_valid(segment):
+				continue
+			_update_curve_segment(segment, points[i], points[i + 1])
+			if segment.material_override is StandardMaterial3D:
+				var material = segment.material_override as StandardMaterial3D
+				var flicker = 0.7 + (sin(animation_time * 9.0 + float(i)) * 0.3)
+				material.emission_energy = 3.5 * flicker
+	arc_tween.tween_method(arc_callback, 0.0, 100.0, 0.35)
 
 ## Create a single segment of the curve
 func _create_curve_segment(start_pos: Vector3, end_pos: Vector3, segment_index: int, material: StandardMaterial3D) -> MeshInstance3D:
@@ -1669,10 +1897,30 @@ func _is_mapping_set_plastic(mapping_set: InterCorticalMappingSet) -> bool:
 	
 	# Check all mappings in the set
 	for mapping in mapping_set.mappings:
+		if mapping.morphology_used != null and mapping.morphology_used.name == &"associative_memory":
+			return true  # Bi-directional STDP is inherently plastic
 		if mapping.is_plastic:
 			return true  # At least one plastic connection found
 	
 	return false  # All connections are non-plastic
+
+## Helper function to determine if a mapping set is plastic and bidirectional (mixed sign)
+func _is_mapping_set_bidirectional_plastic(mapping_set: InterCorticalMappingSet) -> bool:
+	if mapping_set == null or mapping_set.mappings.is_empty():
+		return false
+	for mapping in mapping_set.mappings:
+		if mapping.morphology_used != null and mapping.morphology_used.name == &"associative_memory":
+			return true
+	var source_area: AbstractCorticalArea = mapping_set.source_cortical_area
+	var destination_area: AbstractCorticalArea = mapping_set.destination_cortical_area
+	if source_area == null or destination_area == null:
+		return false
+	if not _is_mapping_set_plastic(mapping_set):
+		return false
+	var reciprocal_set = destination_area.efferent_mappings.get(source_area, null)
+	if reciprocal_set == null:
+		return false
+	return _is_mapping_set_plastic(reciprocal_set)
 
 ## Helper function to determine if MAJORITY of mappings in a set are plastic (for connection-wide effects)
 func _is_mapping_set_majority_plastic(mapping_set: InterCorticalMappingSet) -> bool:
@@ -1804,8 +2052,16 @@ func _cleanup_cache_connections() -> void:
 	print("🧹 CLEANUP: Disconnecting cache signals for cortical area: ", _representing_cortial_area.cortical_ID if _representing_cortial_area else "unknown")
 	
 	# Disconnect cache reload signal
-	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.cache_reloaded.is_connected(_on_cache_reloaded):
-		FeagiCore.feagi_local_cache.cache_reloaded.disconnect(_on_cache_reloaded)
+	if FeagiCore.feagi_local_cache:
+		var cache = FeagiCore.feagi_local_cache
+		if cache.cache_reloaded.is_connected(_on_cache_reloaded):
+			cache.cache_reloaded.disconnect(_on_cache_reloaded)
+		if cache.mappings_reloaded.is_connected(_on_cache_reloaded):
+			cache.mappings_reloaded.disconnect(_on_cache_reloaded)
+		if cache.cortical_areas_reloaded.is_connected(_on_cache_reloaded):
+			cache.cortical_areas_reloaded.disconnect(_on_cache_reloaded)
+		if cache.brain_regions_reloaded.is_connected(_on_cache_reloaded):
+			cache.brain_regions_reloaded.disconnect(_on_cache_reloaded)
 	
 	# Disconnect mapping change signals if cortical area still exists
 	if _representing_cortial_area:

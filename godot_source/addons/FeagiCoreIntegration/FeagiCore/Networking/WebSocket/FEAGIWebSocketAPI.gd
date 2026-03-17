@@ -12,6 +12,7 @@ enum WEBSOCKET_HEALTH {
 const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 67108864 # 64 MiB
 const DEF_SOCKET_BUFFER_SIZE: int = 67108864 # 64 MiB
 const DEF_PING_INTERVAL_SECONDS: float = 2.0
+const DEF_CONNECT_TIMEOUT_SECONDS: float = 5.0
 const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string via websocket if genome is reloaded / changed
 const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
 
@@ -85,7 +86,12 @@ var _shm_debug_logs: bool = false
 
 # Rate-limited WS backlog diagnostics (logging only)
 var _ws_last_backlog_log_ms: int = 0
+# Rate-limited retry/reconnect logs (avoid spam when FEAGI is down)
+var _ws_last_retry_log_ms: int = 0
+const _WS_RETRY_LOG_INTERVAL_MS: int = 10000
 var _ws_disabled_by_shm_notice_printed: bool = false
+# One-time warning when Type 11 is skipped due to missing Rust deserializer (no silent drop)
+var _ws_deserializer_missing_warned: bool = false
 
 # WS receive diagnostics (rate-limited)
 var _ws_last_rx_log_ms: int = 0
@@ -131,6 +137,7 @@ func _ready():
 	# Reset missing area tracking when genome reloads
 	if FeagiCore.feagi_local_cache:
 		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_genome_reloaded)
+		FeagiCore.feagi_local_cache.cortical_areas_reloaded.connect(_on_genome_reloaded)
 
 func _init_rust_deserializer() -> void:
 	if _rust_deserializer != null:
@@ -223,8 +230,27 @@ func _process(_delta: float):
 	_socket.poll()
 	match(_socket.get_ready_state()):
 		WebSocketPeer.State.STATE_CONNECTING:
-			# Currently connecting to feagi, waiting for FEAGI to confirm
-			pass
+			# Currently connecting to FEAGI. Guard against indefinite CONNECTING stalls.
+			var connect_elapsed_ms: int = Time.get_ticks_msec() - _last_connect_time
+			if connect_elapsed_ms > int(DEF_CONNECT_TIMEOUT_SECONDS * 1000.0):
+				print("[%s] ⚠️ [WS] STATE_CONNECTING timed out after %dms - forcing reconnect path" % [_get_timestamp(), connect_elapsed_ms])
+				if _socket:
+					_socket.close()
+				if _retry_count < FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections:
+					if _socket_health != WEBSOCKET_HEALTH.RETRYING:
+						_set_socket_health(WEBSOCKET_HEALTH.RETRYING)
+					FEAGI_socket_retrying_connection.emit(_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections)
+					if not _retry_timer_active:
+						_retry_timer_active = true
+						get_tree().create_timer(2.0).timeout.connect(func():
+							_retry_timer_active = false
+							_reconnect_websocket()
+						)
+					_retry_count += 1
+				else:
+					print("[%s] ❌ [WS] Exhausted retries while stuck in CONNECTING" % _get_timestamp())
+					_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
+					set_process(false)
 		WebSocketPeer.State.STATE_OPEN:
 			# Connection active with FEAGI
 			if _socket_health != WEBSOCKET_HEALTH.CONNECTED:
@@ -298,7 +324,10 @@ func _process(_delta: float):
 
 			if newest_binary_len > 0:
 				if not _rust_deserializer:
-					push_error("❌ [WS] Rust deserializer not available!")
+					# Deserializer GDExtension not loaded: Type 11 WebSocket data is dropped; neural activity will not render until it is available.
+					if not _ws_deserializer_missing_warned:
+						_ws_deserializer_missing_warned = true
+						push_warning("[WS] Rust deserializer (FeagiDataDeserializer) not available. WebSocket Type 11 neural data is not being processed; build/enable rust_extensions/feagi_data_deserializer for neural activity.")
 				else:
 					if _USE_DESKTOP_TYPE11_FASTPATH and not OS.has_feature("web"):
 						_refresh_bv_fastpath_cache_if_needed()
@@ -321,8 +350,8 @@ func _process(_delta: float):
 								str(ok_apply), areas_applied, neurons_applied, err_apply
 							])
 						# Memory areas may not have a registered MultiMesh in the desktop fast-path cache.
-						# To ensure memory jelly animation still reacts to activity, route MEMORY areas through
-						# the standard bulk-array path (signals) using decoded Type11 data (no hardcoded IDs).
+						# Areas with multiple BV renderers cannot rely on the single-MultiMesh fast-path either.
+						# Route those areas through the standard bulk-array path using decoded Type11 data.
 						var decoded: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
 						var ok: bool = bool(decoded.get("success", false))
 						var areas_any: Variant = decoded.get("areas", null)
@@ -333,7 +362,9 @@ func _process(_delta: float):
 								var area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
 								if area_obj == null:
 									continue
-								if area_obj.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+								var requires_bulk := area_obj.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+								requires_bulk = requires_bulk or area_obj.BV_requires_bulk_directpoints_updates()
+								if not requires_bulk:
 									continue
 								var area_any: Variant = areas.get(cortical_id, null)
 								var area_data: Dictionary = area_any as Dictionary
@@ -412,56 +443,49 @@ func _process(_delta: float):
 				return
 			_last_disconnect_time = current_time
 			
-			print("[%s] 🔌 [WS] STATE_CLOSED detected - purposeful_disconnect: %s, retry_count: %d, duration: %dms, immediate_failure: %s" % 
-				[_get_timestamp(), _is_purposfully_disconnecting, _retry_count, connection_duration, is_immediate_failure])
-			
 			if  _socket.get_available_packet_count() > 0:
 				# There was some remenant data
 				_socket.get_packet().decompress(DEF_SOCKET_BUFFER_SIZE, 1)
 			#TODO FeagiEvents.retrieved_visualization_data.emit(str_to_var(_cache_websocket_data.get_string_from_ascii())) # Add to erase neurons
 			if _is_purposfully_disconnecting:
-				print("[%s] 🔌 [WS] Purposeful disconnect - stopping process" % _get_timestamp())
 				_is_purposfully_disconnecting = false
 				set_process(false)
 				return
 			
 			# If we've had too many immediate failures, give up faster
 			if is_immediate_failure and _retry_count > 10:
-				print("[%s] ❌ [WS] Too many immediate failures - FEAGI websocket likely not available" % _get_timestamp())
-				print("[%s] 🔌 [WS] Notifying network layer about websocket failure" % _get_timestamp())
-				push_error("FEAGI Websocket: Repeated immediate failures - websocket service may be down!")
+				push_warning(
+					"FEAGI Websocket: Repeated immediate failures while reconnecting. "
+					+ "This may occur during FEAGI restart; waiting for normal recovery."
+				)
 				_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
 				set_process(false)
 				return
 			
 			# Try to retry the WS connection to save it
 			if _retry_count < FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections:
-				print("[%s] 🔄 [WS] Attempting retry %d / %d" % [_get_timestamp(), _retry_count + 1, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections])
 				if _socket_health != WEBSOCKET_HEALTH.RETRYING:
-					print("[%s] 🔄 [WS] Transitioning to RETRYING state - notifying network layer" % _get_timestamp())
 					_set_socket_health(WEBSOCKET_HEALTH.RETRYING)
 				FEAGI_socket_retrying_connection.emit(_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections)
-				
+				# Rate-limited retry log (once per interval)
+				var now_retry := Time.get_ticks_msec()
+				if now_retry - _ws_last_retry_log_ms >= _WS_RETRY_LOG_INTERVAL_MS:
+					_ws_last_retry_log_ms = now_retry
+					push_warning("FEAGI Websocket: Retrying connection %d / %d" % [_retry_count + 1, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections])
 				# Don't create multiple timers
 				if _retry_timer_active:
-					print("[%s] ⚠️ [WS] Retry timer already active - not creating another one" % _get_timestamp())
 					return
-				
 				# Fixed 2-second retry interval
 				var retry_delay = 2.0
-				print("[%s] 🔄 [WS] Retrying in %.1f seconds..." % [_get_timestamp(), retry_delay])
 				_retry_timer_active = true
 				get_tree().create_timer(retry_delay).timeout.connect(func():
 					_retry_timer_active = false
 					_reconnect_websocket()
 				)
-				push_warning("FEAGI Websocket: Recovered from the retrying state! Retry %d / %d" % [_retry_count, FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections]) # using warning to make things easier to read
 				_retry_count += 1
 				return
 			else:
 				# Ran out of retries
-				print("[%s] ❌ [WS] Exhausted all retry attempts - giving up" % _get_timestamp())
-				print("[%s] 🔌 [WS] Notifying network layer about websocket failure (exhausted retries)" % _get_timestamp())
 				push_error("FEAGI Websocket: Websocket failed to recover!")
 				_set_socket_health(WEBSOCKET_HEALTH.NO_CONNECTION)
 				set_process(false)
@@ -483,7 +507,6 @@ func connect_websocket() -> void:
 		push_error("FEAGI WS: No address specified!")
 		return
 		
-	print("[%s] 🔌 [WS] connect_websocket() called - resetting state" % _get_timestamp())
 	_is_purposfully_disconnecting = false
 	_retry_count = 0
 	_retry_timer_active = false  # Reset timer flag
@@ -711,9 +734,11 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 					else:
 						_handle_missing_cortical_area(cortical_id)
 			else:
-				# Use Rust-based high-performance deserializer (REQUIRED on desktop)
+				# Use Rust-based high-performance deserializer (required on desktop; optional when GDExtension disabled)
 				if _rust_deserializer == null:
-					push_error("🦀 CRITICAL: Rust deserializer is null! Cannot process Type 11 data.")
+					if not _ws_deserializer_missing_warned:
+						_ws_deserializer_missing_warned = true
+						push_warning("[WS] Rust deserializer (FeagiDataDeserializer) not available. Type 11 neural data is not being processed; build/enable rust_extensions/feagi_data_deserializer for neural activity.")
 					return
 				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(bytes)
 				if !decoded_result.success:
@@ -770,20 +795,10 @@ func _reconnect_websocket() -> void:
 	# If SHM neuron visualization is active, do not attempt WS reconnects.
 	if _use_shared_mem:
 		return
-	# Debug call stack to see what's triggering multiple calls
-	var stack = get_stack()
-	var caller = "unknown"
-	if stack.size() > 1:
-		caller = stack[1].get("source", "unknown") + ":" + str(stack[1].get("line", 0))
-	
-	print("[%s] 🔌 [WS] _reconnect_websocket() called - retry_count: %d, health: %s, caller: %s" % [_get_timestamp(), _retry_count, WEBSOCKET_HEALTH.keys()[_socket_health], caller])
-	
 	# Don't reconnect if we're already connected, or if we've given up completely
 	if _socket_health == WEBSOCKET_HEALTH.CONNECTED:
-		print("[%s] ⚠️ [WS] Already connected - ignoring reconnect request" % _get_timestamp())
 		return
 	if _socket_health == WEBSOCKET_HEALTH.NO_CONNECTION and _retry_count > 10:
-		print("[%s] ⚠️ [WS] Already gave up after immediate failures - ignoring reconnect request (retry_count: %d)" % [_get_timestamp(), _retry_count])
 		return
 		
 	_socket = null # enforce dereference
@@ -791,7 +806,6 @@ func _reconnect_websocket() -> void:
 	_socket.inbound_buffer_size = DEF_SOCKET_INBOUND_BUFFER_SIZE
 	_last_connect_time = Time.get_ticks_msec()
 	_socket.connect_to_url(_socket_web_address)
-	print("[%s] [WS] connect_to_url(%s) inbound_buffer_size=%d" % [_get_timestamp(), _socket_web_address, DEF_SOCKET_INBOUND_BUFFER_SIZE])
 
 func _looks_like_feagi_ws_payload(bytes: PackedByteArray) -> bool:
 	# FEAGI payload types we handle: 1(JSON),8(img),9(multi),10(SVO),11(neurons)
@@ -1220,6 +1234,10 @@ func _on_genome_reloaded() -> void:
 	print("   🔄 Genome reloaded - resetting missing cortical area tracking")
 	_missing_cortical_areas.clear()
 	_case_mapping_cache.clear()  # Clear case mapping cache too
+	# Force immediate rebuild of desktop Type11 fast-path caches on next packet.
+	_bv_fast_multimeshes_by_id.clear()
+	_bv_fast_dimensions_by_id.clear()
+	_bv_fast_cache_last_refresh_ms = 0
 
 func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 	"""Convert byte array to hex string for debugging"""
@@ -1233,9 +1251,10 @@ func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 
 func _set_socket_health(new_health: WEBSOCKET_HEALTH) -> void:
 	var prev_health: WEBSOCKET_HEALTH = _socket_health
+	# Avoid no-op emissions to reduce downstream duplicate state handling.
+	if prev_health == new_health:
+		return
 	_socket_health = new_health
-	print("[%s] 🔌 [WS] _set_socket_health: %s → %s" % [_get_timestamp(), WEBSOCKET_HEALTH.keys()[prev_health], WEBSOCKET_HEALTH.keys()[new_health]])
-	print("[%s] 📡 [WS] Emitting FEAGI_socket_health_changed signal (connected listeners: %d)" % [_get_timestamp(), FEAGI_socket_health_changed.get_connections().size()])
 	FEAGI_socket_health_changed.emit(prev_health, new_health)
 
 # All deserialization is now handled by the Rust extension

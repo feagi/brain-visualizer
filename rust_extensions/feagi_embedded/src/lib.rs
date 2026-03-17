@@ -433,11 +433,13 @@ impl FeagiEmbedded {
         let mut config = FeagiConfig::default();
         
         // Override for embedded mode
-        config.api.host = "127.0.0.1".to_string();
+        config.api.bind_host = "127.0.0.1".to_string();
+        config.api.advertised_host = "127.0.0.1".to_string();
         config.api.port = 8000;
         
         config.websocket.enabled = true;
-        config.websocket.host = "127.0.0.1".to_string();
+        config.websocket.bind_host = "127.0.0.1".to_string();
+        config.websocket.advertised_host = "127.0.0.1".to_string();
         config.websocket.visualization_port = 9050;
         config.websocket.sensory_port = 9051;
         config.websocket.motor_port = 9052;

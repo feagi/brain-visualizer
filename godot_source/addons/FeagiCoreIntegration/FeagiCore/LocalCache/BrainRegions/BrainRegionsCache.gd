@@ -82,6 +82,84 @@ func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> voi
 			region.FEAGI_establish_partial_mappings_from_JSONs(arr_IO, false)
 			
 
+## Applies region summary updates without clearing the entire cache.
+## Returns a mapping of cortical_area_id -> parent_region_id for subsequent cortical area refresh.
+func FEAGI_apply_region_summary_diff(region_summary_data: Dictionary) -> Dictionary:
+	# During FEAGI restart windows, region summary may be transient/incomplete.
+	# Do not run destructive diff logic unless a root region is present in the payload.
+	if not _summary_has_root_region(region_summary_data):
+		push_warning("CORE CACHE: Region summary missing root region; skipping destructive region diff for this refresh cycle.")
+		return {}
+
+	# Remove regions no longer present.
+	var removed_count: int = 0
+	var added_count: int = 0
+	var updated_parent_count: int = 0
+	var existing_ids: Array = _available_brain_regions.keys()
+	for existing_id in existing_ids:
+		if not region_summary_data.has(existing_id):
+			var region_to_remove: BrainRegion = _available_brain_regions[existing_id]
+			FEAGI_remove_region_and_raise_internals(region_to_remove)
+			removed_count += 1
+
+	# Create new regions.
+	for region_ID: StringName in region_summary_data.keys():
+		if region_ID in _available_brain_regions:
+			continue
+		_available_brain_regions[region_ID] = BrainRegion.from_FEAGI_JSON_ignore_children(region_summary_data[region_ID], region_ID)
+		added_count += 1
+
+	# Cache root region ID for O(1) lookup (check API data directly).
+	_cache_root_region_id_from_api_data(region_summary_data)
+
+	var cortical_area_mapping: Dictionary = {}
+	# Update region properties and parent relations.
+	for region_ID: StringName in region_summary_data.keys():
+		var region_data: Dictionary = region_summary_data[region_ID]
+		var region: BrainRegion = _available_brain_regions[region_ID]
+		region.FEAGI_change_friendly_name(region_data.get("title", region.friendly_name))
+		if region_data.has("coordinate_2d"):
+			region.FEAGI_change_coordinates_2D(FEAGIUtils.array_to_vector2i(region_data["coordinate_2d"]))
+		if region_data.has("coordinate_3d"):
+			region.FEAGI_change_coordinates_3D(FEAGIUtils.array_to_vector3i(region_data["coordinate_3d"]))
+
+		var parent_id = region_data.get("parent_region_id")
+		if parent_id != null:
+			if parent_id in _available_brain_regions:
+				var parent_region: BrainRegion = _available_brain_regions[parent_id]
+				if region.current_parent_region == null:
+					region.FEAGI_init_parent_relation(parent_region)
+					updated_parent_count += 1
+				else:
+					var before_parent = region.current_parent_region
+					region.FEAGI_change_parent_brain_region(parent_region)
+					if before_parent != parent_region:
+						updated_parent_count += 1
+			else:
+				push_error("CORE CACHE: Parent region %s not found for region %s" % [parent_id, region_ID])
+
+		# Create cortical ID mapping (but don't add cortical areas yet).
+		var cortical_IDs: Array[StringName] = []
+		cortical_IDs.assign(region_data.get("areas", []))
+		for cortical_ID in cortical_IDs:
+			if cortical_ID in cortical_area_mapping.keys():
+				push_warning("CORE CACHE: Cortical Area %s previously reported in region %s is now reported in region %s. Keeping the original region." % [cortical_ID, cortical_area_mapping[cortical_ID], region_ID])
+				continue
+			cortical_area_mapping[cortical_ID] = region_ID
+
+	print("FEAGI CACHE: Region diff applied (added=%d, removed=%d, parent_updates=%d)" % [added_count, removed_count, updated_parent_count])
+	return cortical_area_mapping
+
+func _summary_has_root_region(region_summary_data: Dictionary) -> bool:
+	for region_id in region_summary_data.keys():
+		var region_data: Variant = region_summary_data.get(region_id, null)
+		if typeof(region_data) != TYPE_DICTIONARY:
+			continue
+		var parent_id: Variant = (region_data as Dictionary).get("parent_region_id", null)
+		if parent_id == null:
+			return true
+	return false
+
 ## Clears all regions from the cache - used during full genome reload
 func FEAGI_clear_all_regions() -> void:
 	_available_brain_regions.clear()
@@ -131,8 +209,16 @@ func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
 
 ## FEAGI states that a region is to be removed and internals raised
 func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
-	var contained_objects: Array[GenomeObject] = []
+	if region == null or not is_instance_valid(region):
+		push_warning("CORE CACHE: Cannot remove null/invalid region reference. Skipping.")
+		return
+	if region.is_root_region():
+		push_warning("CORE CACHE: Cannot remove root region via raise internals path. Skipping.")
+		return
 	var new_parent: BrainRegion = region.current_parent_region
+	if new_parent == null or not is_instance_valid(new_parent):
+		push_warning("CORE CACHE: Cannot remove region %s because parent region reference is missing. Skipping." % region.region_ID)
+		return
 	for object: GenomeObject in region.get_all_included_genome_objects():
 		object.FEAGI_change_parent_brain_region(new_parent)
 	region_about_to_be_removed.emit(region)

@@ -1,0 +1,1179 @@
+name: Build Distribution Packages (Remote Mode)
+
+on:
+  release:
+    types: [published]  # Auto-trigger when release is published
+  push:
+    branches: [ main, release/** ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (PEP440 format: x.x.x, x.x.xb1, x.x.xa1, x.x.xrc1)'
+        type: string
+        required: true
+      build_embedded:
+        description: 'Build Mode 1 (Desktop Embedded)'
+        type: boolean
+        default: true
+      build_remote:
+        description: 'Build Mode 2 (Desktop Remote)'
+        type: boolean
+        default: true
+      build_web:
+        description: 'Build Mode 3 (Web)'
+        type: boolean
+        default: true
+
+env:
+  CARGO_TERM_COLOR: always
+  GODOT_VERSION: 4.5.0
+  FEAGI_VERSION: 2.0.0
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.validate.outputs.tag_name }}
+      version: ${{ steps.validate.outputs.version }}
+      release_type: ${{ steps.validate.outputs.release_type }}
+      is_prerelease: ${{ steps.validate.outputs.is_prerelease }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history to check tags
+      
+      - name: Validate version and check tag conflicts
+        id: validate
+        shell: bash
+        run: |
+          # Determine version
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            # Extract version from release tag (e.g., v1.2.3, v1.2.3b1, v1.2.3a1, v1.2.3rc1)
+            TAG_NAME="${{ github.event.release.tag_name }}"
+            VERSION="${TAG_NAME#v}"
+            echo "Triggered by release: $TAG_NAME"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Extract version from tag (e.g., v1.2.3, v1.2.3b1, v1.2.3a1, v1.2.3rc1)
+            TAG_NAME="${{ github.ref_name }}"
+            VERSION="${TAG_NAME#v}"
+          else
+            # Branch push - no release, skip validation
+            echo "Branch push detected, skipping release validation"
+            echo "tag_name=" >> $GITHUB_OUTPUT
+            echo "version=" >> $GITHUB_OUTPUT
+            echo "release_type=" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Auto-detect release type from version string (PEP440)
+          if [[ "$VERSION" =~ b[0-9]+ ]]; then
+            RELEASE_TYPE="beta"
+          elif [[ "$VERSION" =~ a[0-9]+ ]]; then
+            RELEASE_TYPE="alpha"
+          elif [[ "$VERSION" =~ rc[0-9]+ ]]; then
+            RELEASE_TYPE="rc"
+          else
+            RELEASE_TYPE="production"
+          fi
+          
+          # Validate version format (PEP440: x.x.x or x.x.xb1 or x.x.xa1 or x.x.xrc1)
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(a|b|rc)?[0-9]*$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected PEP440 format: x.x.x (e.g., 1.2.3) or x.x.xb1 or x.x.xa1 or x.x.xrc1"
+            exit 1
+          fi
+          
+          # Determine tag name based on release type (PEP440 format)
+          # Extract base version (e.g., "1.2.3" from "1.2.3b1")
+          BASE_VERSION=$(echo "$VERSION" | sed -E 's/(a|b|rc)[0-9]+$//')
+          
+          if [ "$RELEASE_TYPE" == "production" ]; then
+            TAG_NAME="v${BASE_VERSION}"
+            IS_PRERELEASE="false"
+            
+            # Only validate tag doesn't exist for workflow_dispatch (not for release events where tag already exists)
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+              if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+                echo "❌ Production tag $TAG_NAME already exists!"
+                echo "Existing tag points to: $(git rev-parse $TAG_NAME)"
+                echo "Production releases cannot be auto-incremented. Use a different version."
+                exit 1
+              fi
+            fi
+          elif [ "$RELEASE_TYPE" == "beta" ]; then
+            # Extract beta number or default to 1 (PEP440: 1.2.3b1)
+            if [[ "$VERSION" =~ b([0-9]+) ]]; then
+              BETA_NUM="${BASH_REMATCH[1]}"
+            else
+              BETA_NUM="1"
+            fi
+            
+            TAG_NAME="v${BASE_VERSION}b${BETA_NUM}"
+            
+            # Only auto-increment for workflow_dispatch (not for release events where tag already exists)
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+              while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
+                echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
+                BETA_NUM=$((BETA_NUM + 1))
+                TAG_NAME="v${BASE_VERSION}b${BETA_NUM}"
+              done
+            fi
+            
+            IS_PRERELEASE="true"
+          elif [ "$RELEASE_TYPE" == "alpha" ]; then
+            # Extract alpha number or default to 1 (PEP440: 1.2.3a1)
+            if [[ "$VERSION" =~ a([0-9]+) ]]; then
+              ALPHA_NUM="${BASH_REMATCH[1]}"
+            else
+              ALPHA_NUM="1"
+            fi
+            
+            TAG_NAME="v${BASE_VERSION}a${ALPHA_NUM}"
+            
+            # Only auto-increment for workflow_dispatch (not for release events where tag already exists)
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+              while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
+                echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
+                ALPHA_NUM=$((ALPHA_NUM + 1))
+                TAG_NAME="v${BASE_VERSION}a${ALPHA_NUM}"
+              done
+            fi
+            
+            IS_PRERELEASE="true"
+          elif [ "$RELEASE_TYPE" == "rc" ]; then
+            # Extract rc number or default to 1 (PEP440: 1.2.3rc1)
+            if [[ "$VERSION" =~ rc([0-9]+) ]]; then
+              RC_NUM="${BASH_REMATCH[1]}"
+            else
+              RC_NUM="1"
+            fi
+            
+            TAG_NAME="v${BASE_VERSION}rc${RC_NUM}"
+            
+            # Only auto-increment for workflow_dispatch (not for release events where tag already exists)
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+              while git rev-parse "$TAG_NAME" >/dev/null 2>&1; do
+                echo "⚠️  Tag $TAG_NAME already exists, auto-incrementing..."
+                RC_NUM=$((RC_NUM + 1))
+                TAG_NAME="v${BASE_VERSION}rc${RC_NUM}"
+              done
+            fi
+            
+            IS_PRERELEASE="true"
+          fi
+          
+          echo "✅ Version format valid: $VERSION"
+          echo "✅ Release type: $RELEASE_TYPE"
+          echo "✅ Tag name: $TAG_NAME"
+          echo "✅ Tag $TAG_NAME is available"
+          
+          # Set outputs
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "release_type=${RELEASE_TYPE}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+
+  #
+  # ============ MODE 1: DESKTOP EMBEDDED (DISABLED) ============
+  # Embedded mode is under development
+  #
+  
+  build-feagi-embedded:
+    name: Build FEAGI Embedded for ${{ matrix.platform }}
+    needs: validate-release
+    if: false  # DISABLED - Only remote mode is currently working
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+            artifact_name: feagi-embedded-linux
+            lib_name: libfeagi_embedded.so
+          - os: macos-latest
+            platform: macOS
+            artifact_name: feagi-embedded-macos
+            lib_name: libfeagi_embedded.dylib
+          - os: windows-latest
+            platform: Windows
+            artifact_name: feagi-embedded-windows
+            lib_name: feagi_embedded.dll
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Add macOS universal targets
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/feagi_embedded/target
+            feagi/target
+          key: ${{ runner.os }}-feagi-embedded-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-feagi-embedded-
+
+      - name: Build FEAGI embedded (Linux/Windows)
+        if: runner.os != 'macOS'
+        shell: bash
+        run: |
+          cd rust_extensions/feagi_embedded
+          cargo build --release
+          ls -lh target/release/
+
+      - name: Build FEAGI embedded (macOS Universal)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd rust_extensions/feagi_embedded
+          
+          # Build for both architectures
+          cargo build --release --target aarch64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
+          
+          # Create universal binary
+          mkdir -p target/release
+          lipo -create \
+            target/aarch64-apple-darwin/release/${{ matrix.lib_name }} \
+            target/x86_64-apple-darwin/release/${{ matrix.lib_name }} \
+            -output target/release/${{ matrix.lib_name }}
+          
+          # Verify
+          lipo -info target/release/${{ matrix.lib_name }}
+          ls -lh target/release/${{ matrix.lib_name }}
+
+      - name: Upload FEAGI embedded library
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: rust_extensions/feagi_embedded/target/release/${{ matrix.lib_name }}
+          retention-days: 7
+
+  export-desktop-embedded:
+    name: Export Mode 1 - Desktop Embedded (${{ matrix.platform }})
+    needs: [validate-release, build-feagi-embedded]
+    if: false  # DISABLED - Only remote mode is currently working
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+            export_name: "Linux/X11"
+            output_name: BrainVisualizer-Embedded.x86_64
+            feagi_lib: feagi-embedded-linux
+          - os: macos-latest
+            platform: macOS
+            export_name: "macOS"
+            output_name: BrainVisualizer-Embedded.app
+            feagi_lib: feagi-embedded-macos
+          - os: windows-latest
+            platform: Windows
+            export_name: "Windows Desktop"
+            output_name: BrainVisualizer-Embedded.exe
+            feagi_lib: feagi-embedded-windows
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Godot (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          echo "📦 Downloading Godot 4.5..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
+          unzip -q Godot_v4.5-stable_macos.universal.zip
+          sudo mv Godot.app /Applications/
+          
+          echo "📦 Downloading export templates..."
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/Library/Application Support/Godot/export_templates/4.5.stable/"
+          
+          echo "GODOT=/Applications/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
+          echo "✅ Godot 4.5 + export templates installed"
+
+      - name: Cache Godot (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/bin/godot
+            $HOME/.local/share/godot/export_templates/4.5.stable
+          key: godot-4.5-linux-${{ hashFiles('.github/workflows/build-distribution-packages.yml') }}
+          restore-keys: |
+            godot-4.5-linux-
+
+      - name: Install Godot (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          if ! command -v godot &> /dev/null; then
+            echo "📦 Downloading Godot 4.5..."
+            wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
+            unzip -q Godot_v4.5-stable_linux.x86_64.zip
+            chmod +x Godot_v4.5-stable_linux.x86_64
+            sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          fi
+          
+          if [ ! -d "$HOME/.local/share/godot/export_templates/4.5.stable" ]; then
+            echo "📦 Downloading export templates..."
+            wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+            mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
+            unzip -q Godot_v4.5-stable_export_templates.tpz
+            mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          fi
+          
+          echo "GODOT=godot" >> $GITHUB_ENV
+          echo "✅ Godot 4.5 + export templates installed"
+
+      - name: Cache Godot (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: |
+            godot.exe
+            $env:APPDATA\Godot\export_templates\4.5.stable
+          key: godot-4.5-windows-${{ hashFiles('.github/workflows/build-distribution-packages.yml') }}
+          restore-keys: |
+            godot-4.5-windows-
+
+      - name: Install Godot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "godot.exe")) {
+            Write-Host "📦 Downloading Godot 4.5..."
+            Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
+            Expand-Archive -Path godot.zip -DestinationPath godot-install -Force
+            Move-Item godot-install/Godot*.exe godot.exe -Force
+          }
+          
+          $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
+          if (-not (Test-Path $templatesPath)) {
+            Write-Host "📦 Downloading export templates..."
+            Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
+            New-Item -ItemType Directory -Force -Path $templatesPath
+            Expand-Archive -Path templates.tpz -DestinationPath temp-templates -Force
+            Copy-Item temp-templates/templates/* $templatesPath -Force -Recurse
+          }
+          
+          echo "GODOT=$PWD\godot.exe" >> $env:GITHUB_ENV
+          Write-Host "✅ Godot 4.5 + export templates installed"
+
+      - name: Download FEAGI embedded library
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.feagi_lib }}
+          path: godot_source/addons/feagi_embedded/target/release/
+
+      - name: Build Rust data deserializer (existing extension)
+        shell: bash
+        run: |
+          cd rust_extensions
+          
+          # Build feagi_type_system (not included in build.py)
+          echo "🔨 Building feagi_type_system..."
+          cd feagi_type_system
+          cargo build --release
+          cd ..
+          
+          # Build feagi_data_deserializer and feagi_shared_video
+          python3 build.py --release
+          
+          echo "📂 Built libraries:"
+          find . -name "*.so" -o -name "*.dylib" -o -name "*.dll" | head -20
+
+      - name: Copy Rust extensions to Godot addons
+        shell: bash
+        run: |
+          echo "🔍 Finding built Rust extensions..."
+          
+          # Find all three required libraries
+          DESERIALIZER_LIB=$(find rust_extensions/feagi_data_deserializer -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
+          TYPE_SYSTEM_LIB=$(find rust_extensions/feagi_type_system -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" | grep -E "release|Release" | head -1)
+          SHARED_VIDEO_LIB=$(find rust_extensions/feagi_shared_video -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" | grep -E "release|Release" | head -1)
+          
+          echo "Found deserializer: $DESERIALIZER_LIB"
+          echo "Found type_system: $TYPE_SYSTEM_LIB"
+          echo "Found shared_video: $SHARED_VIDEO_LIB"
+          
+          # Determine platform-specific target directory for deserializer
+          case "${{ runner.os }}" in
+            Linux)
+              TARGET_SUBDIR="x86_64-unknown-linux-gnu/release"
+              ;;
+            macOS)
+              TARGET_SUBDIR="release"
+              ;;
+            Windows)
+              TARGET_SUBDIR="x86_64-pc-windows-msvc/release"
+              ;;
+          esac
+          
+          # Copy deserializer to platform-specific path
+          DESERIALIZER_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
+          mkdir -p "$DESERIALIZER_DIR"
+          cp "$DESERIALIZER_LIB" "$DESERIALIZER_DIR/"
+          echo "✅ Copied deserializer to $DESERIALIZER_DIR"
+          
+          # Copy type_system to root of FeagiCoreIntegration (expects it in same dir as .gdextension)
+          INTEGRATION_DIR="godot_source/addons/FeagiCoreIntegration"
+          cp "$TYPE_SYSTEM_LIB" "$INTEGRATION_DIR/"
+          echo "✅ Copied type_system to $INTEGRATION_DIR"
+          
+          # shared_video goes to target/release/ subdirectory (per .gdextension config)
+          SHARED_VIDEO_DIR="godot_source/addons/feagi_shared_video/target/release"
+          mkdir -p "$SHARED_VIDEO_DIR"
+          cp "$SHARED_VIDEO_LIB" "$SHARED_VIDEO_DIR/"
+          echo "✅ Copied shared_video to $SHARED_VIDEO_DIR"
+          
+          echo "📂 Final structure:"
+          ls -lh "$DESERIALIZER_DIR/" || true
+          ls -lh "$INTEGRATION_DIR/"libfeagi_* || true
+          ls -lh "$SHARED_VIDEO_DIR/" || true
+
+      - name: Verify all extensions present
+        shell: bash
+        run: |
+          echo "Checking for FEAGI embedded:"
+          ls -lh godot_source/addons/feagi_embedded/target/release/ || true
+          
+          echo "Checking for data deserializer:"
+          ls -lh godot_source/addons/feagi_rust_deserializer/target/release/ || true
+
+      - name: Export Godot project (Mode 1 - Embedded)
+        shell: bash
+        run: |
+          cd godot_source
+          mkdir -p ../exports
+          
+          # Check if preset exists before attempting export
+          if ! grep -q "name=\"${{ matrix.export_name }}\"" export_presets.cfg; then
+            echo "⚠️ Export preset '${{ matrix.export_name }}' not found in export_presets.cfg"
+            echo "Available presets:"
+            grep "^name=" export_presets.cfg || echo "None found"
+            exit 1
+          fi
+          
+          ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+
+      - name: Verify export
+        shell: bash
+        run: |
+          echo "📂 Contents of exports directory:"
+          ls -lh exports/ || true
+          
+          # On Windows, verify both .exe and .pck exist (since embed_pck=false)
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            if [ -f "exports/${{ matrix.output_name }}" ]; then
+              echo "✅ Found .exe: ${{ matrix.output_name }}"
+            else
+              echo "❌ Missing .exe: ${{ matrix.output_name }}"
+              exit 1
+            fi
+            
+            # Check for .pck file (should match .exe name)
+            PCK_NAME=$(echo "${{ matrix.output_name }}" | sed 's/\.exe$/.pck/')
+            if [ -f "exports/$PCK_NAME" ]; then
+              echo "✅ Found .pck: $PCK_NAME"
+            else
+              echo "⚠️  Missing .pck: $PCK_NAME (expected with embed_pck=false)"
+              echo "   This may cause runtime errors if not embedded"
+            fi
+          fi
+
+      - name: Verify GDExtension DLLs included in export (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "🔍 Verifying GDExtension DLLs were exported..."
+          echo ""
+          echo "📂 Full export directory contents:"
+          find exports -type f -name "*.dll" -o -name "*.exe" -o -name "*.pck" || true
+          echo ""
+          
+          # Check for required DLLs
+          MISSING_DLLS=0
+          
+          if [ -f "exports/feagi_data_deserializer.dll" ]; then
+            echo "✅ Found feagi_data_deserializer.dll"
+          else
+            echo "❌ MISSING: feagi_data_deserializer.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_type_system.dll" ]; then
+            echo "✅ Found feagi_type_system.dll"
+          else
+            echo "❌ MISSING: feagi_type_system.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_shared_video.dll" ]; then
+            echo "✅ Found feagi_shared_video.dll"
+          else
+            echo "❌ MISSING: feagi_shared_video.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_embedded.dll" ]; then
+            echo "✅ Found feagi_embedded.dll (Mode 1)"
+          else
+            echo "⚠️  feagi_embedded.dll not found (expected for Mode 1)"
+          fi
+          
+          if [ $MISSING_DLLS -eq 1 ]; then
+            echo ""
+            echo "❌ ERROR: Required GDExtension DLLs are missing from export!"
+            echo "This will cause Brain Visualizer to fail at runtime."
+            echo ""
+            echo "Possible causes:"
+            echo "  1. .gdextension files missing [dependencies] section"
+            echo "  2. DLLs not in expected location before export"
+            echo "  3. Godot export failed to include dependencies"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All required GDExtension DLLs present in export"
+
+      - name: Create distribution package (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd exports
+          zip -r BrainVisualizer-Embedded-macOS.zip BrainVisualizer-Embedded.app
+
+      - name: Create distribution package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd exports
+          # Godot exports with embed_pck=false create both .exe, .pck, and DLL files
+          # All files must be included in the distribution package
+          $files = @()
+          if (Test-Path "BrainVisualizer-Embedded.exe") {
+            $files += "BrainVisualizer-Embedded.exe"
+          }
+          if (Test-Path "BrainVisualizer-Embedded.pck") {
+            $files += "BrainVisualizer-Embedded.pck"
+          }
+          
+          # Include all GDExtension DLLs (required for runtime)
+          $dlls = Get-ChildItem -Path . -Filter "*.dll" -File
+          foreach ($dll in $dlls) {
+            $files += $dll.Name
+            Write-Host "  📦 Including DLL: $($dll.Name)"
+          }
+          
+          if ($files.Count -eq 0) {
+            Write-Host "❌ No files found in exports directory"
+            Get-ChildItem -Path . | Format-Table
+            exit 1
+          }
+          
+          Write-Host ""
+          Write-Host "📦 Creating Windows distribution package with:"
+          $files | ForEach-Object { Write-Host "  - $_" }
+          Write-Host ""
+          
+          Compress-Archive -Path $files -DestinationPath BrainVisualizer-Embedded-Windows.zip -Force
+          Write-Host "✅ Created BrainVisualizer-Embedded-Windows.zip"
+          
+          # Verify zip contents
+          Write-Host ""
+          Write-Host "📋 Zip file contents:"
+          Get-ChildItem -Path BrainVisualizer-Embedded-Windows.zip | Select-Object Name, Length | Format-Table
+
+      - name: Create distribution package (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cd exports
+          tar -czf BrainVisualizer-Embedded-Linux.tar.gz BrainVisualizer-Embedded.x86_64
+
+      - name: Upload distribution package
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrainVisualizer-Embedded-${{ matrix.platform }}
+          path: exports/BrainVisualizer-Embedded-*
+          retention-days: 30
+
+  #
+  # ============ MODE 2: DESKTOP REMOTE ============
+  #
+  
+  export-desktop-remote:
+    name: Export Mode 2 - Desktop Remote (${{ matrix.platform }})
+    needs: validate-release
+    if: always() && (needs.validate-release.result == 'success' || needs.validate-release.result == 'skipped') && (github.event_name != 'workflow_dispatch' || github.event.inputs.build_remote != 'false')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+            export_name: "Linux/X11"
+            output_name: BrainVisualizer-Remote.x86_64
+          - os: macos-latest
+            platform: macOS
+            export_name: "macOS"
+            output_name: BrainVisualizer-Remote.app
+          - os: windows-latest
+            platform: Windows
+            export_name: "Windows Desktop"
+            output_name: BrainVisualizer-Remote.exe
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Godot (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/cache@v4
+        with:
+          path: |
+            /Applications/Godot.app
+            $HOME/Library/Application Support/Godot/export_templates/4.5.stable
+          key: godot-4.5-macos-${{ hashFiles('.github/workflows/build-distribution-packages.yml') }}
+          restore-keys: |
+            godot-4.5-macos-
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/feagi_data_deserializer/target
+            rust_extensions/feagi_type_system/target
+            rust_extensions/feagi_shared_video/target
+          key: ${{ runner.os }}-rust-extensions-${{ hashFiles('rust_extensions/**/Cargo.toml', 'rust_extensions/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-extensions-
+
+      - name: Install Godot (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          if [ ! -d "/Applications/Godot.app" ]; then
+            echo "📦 Downloading Godot 4.5..."
+            wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
+            unzip -q Godot_v4.5-stable_macos.universal.zip
+            sudo mv Godot.app /Applications/
+          fi
+          
+          if [ ! -d "$HOME/Library/Application Support/Godot/export_templates/4.5.stable" ]; then
+            echo "📦 Downloading export templates..."
+            wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+            mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
+            unzip -q Godot_v4.5-stable_export_templates.tpz
+            mv templates/* "$HOME/Library/Application Support/Godot/export_templates/4.5.stable/"
+          fi
+          
+          echo "GODOT=/Applications/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
+          echo "✅ Godot 4.5 + export templates installed"
+
+      - name: Cache Godot (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/bin/godot
+            $HOME/.local/share/godot/export_templates/4.5.stable
+          key: godot-4.5-linux-${{ hashFiles('.github/workflows/build-distribution-packages.yml') }}
+          restore-keys: |
+            godot-4.5-linux-
+
+      - name: Install Godot (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          if ! command -v godot &> /dev/null; then
+            echo "📦 Downloading Godot 4.5..."
+            wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
+            unzip -q Godot_v4.5-stable_linux.x86_64.zip
+            chmod +x Godot_v4.5-stable_linux.x86_64
+            sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          fi
+          
+          if [ ! -d "$HOME/.local/share/godot/export_templates/4.5.stable" ]; then
+            echo "📦 Downloading export templates..."
+            wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+            mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
+            unzip -q Godot_v4.5-stable_export_templates.tpz
+            mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          fi
+          
+          echo "GODOT=godot" >> $GITHUB_ENV
+          echo "✅ Godot 4.5 + export templates installed"
+
+      - name: Cache Godot (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: |
+            godot.exe
+            $env:APPDATA\Godot\export_templates\4.5.stable
+          key: godot-4.5-windows-${{ hashFiles('.github/workflows/build-distribution-packages.yml') }}
+          restore-keys: |
+            godot-4.5-windows-
+
+      - name: Install Godot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "godot.exe")) {
+            Write-Host "📦 Downloading Godot 4.5..."
+            Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
+            Expand-Archive -Path godot.zip -DestinationPath godot-install -Force
+            Move-Item godot-install/Godot*.exe godot.exe -Force
+          }
+          
+          $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
+          if (-not (Test-Path $templatesPath)) {
+            Write-Host "📦 Downloading export templates..."
+            Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
+            New-Item -ItemType Directory -Force -Path $templatesPath
+            Expand-Archive -Path templates.tpz -DestinationPath temp-templates -Force
+            Copy-Item temp-templates/templates/* $templatesPath -Force -Recurse
+          }
+          
+          echo "GODOT=$PWD\godot.exe" >> $env:GITHUB_ENV
+          Write-Host "✅ Godot 4.5 + export templates installed"
+
+      - name: Build Rust data deserializer only (no FEAGI embedded)
+        shell: bash
+        run: |
+          cd rust_extensions
+          
+          # Build feagi_type_system (not included in build.py)
+          echo "🔨 Building feagi_type_system..."
+          cd feagi_type_system
+          cargo build --release
+          cd ..
+          
+          # Build feagi_data_deserializer and feagi_shared_video
+          python3 build.py --release
+          
+          echo "📂 Built libraries:"
+          find . -name "*.so" -o -name "*.dylib" -o -name "*.dll" | head -20
+
+      - name: Verify and copy Rust extensions to Godot addons
+        shell: bash
+        run: |
+          echo "🔍 Finding built Rust extensions..."
+          
+          # Find all three required libraries
+          DESERIALIZER_LIB=$(find rust_extensions/feagi_data_deserializer -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" | grep -E "release|Release" | head -1)
+          TYPE_SYSTEM_LIB=$(find rust_extensions/feagi_type_system -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" | grep -E "release|Release" | head -1)
+          SHARED_VIDEO_LIB=$(find rust_extensions/feagi_shared_video -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" | grep -E "release|Release" | head -1)
+          
+          echo "Found deserializer: $DESERIALIZER_LIB"
+          echo "Found type_system: $TYPE_SYSTEM_LIB"
+          echo "Found shared_video: $SHARED_VIDEO_LIB"
+          
+          # Determine platform-specific target directory for deserializer
+          case "${{ runner.os }}" in
+            Linux)
+              TARGET_SUBDIR="x86_64-unknown-linux-gnu/release"
+              ;;
+            macOS)
+              TARGET_SUBDIR="release"
+              ;;
+            Windows)
+              TARGET_SUBDIR="x86_64-pc-windows-msvc/release"
+              ;;
+          esac
+          
+          # Copy deserializer to platform-specific path
+          DESERIALIZER_DIR="godot_source/addons/FeagiCoreIntegration/target/$TARGET_SUBDIR"
+          mkdir -p "$DESERIALIZER_DIR"
+          cp "$DESERIALIZER_LIB" "$DESERIALIZER_DIR/"
+          echo "✅ Copied deserializer to $DESERIALIZER_DIR"
+          
+          # Copy type_system to root of FeagiCoreIntegration (expects it in same dir as .gdextension)
+          INTEGRATION_DIR="godot_source/addons/FeagiCoreIntegration"
+          cp "$TYPE_SYSTEM_LIB" "$INTEGRATION_DIR/"
+          echo "✅ Copied type_system to $INTEGRATION_DIR"
+          
+          # shared_video goes to target/release/ subdirectory (per .gdextension config)
+          SHARED_VIDEO_DIR="godot_source/addons/feagi_shared_video/target/release"
+          mkdir -p "$SHARED_VIDEO_DIR"
+          cp "$SHARED_VIDEO_LIB" "$SHARED_VIDEO_DIR/"
+          echo "✅ Copied shared_video to $SHARED_VIDEO_DIR"
+          
+          echo "📂 Final structure:"
+          ls -lh "$DESERIALIZER_DIR/" || true
+          ls -lh "$INTEGRATION_DIR/"libfeagi_* || true
+          ls -lh "$SHARED_VIDEO_DIR/" || true
+
+      - name: Remove FEAGI embedded (exclude from this build)
+        shell: bash
+        run: |
+          rm -rf godot_source/addons/feagi_embedded
+          echo "✅ FEAGI embedded excluded (lightweight build)"
+
+      - name: Export Godot project (Mode 2 - Remote)
+        shell: bash
+        run: |
+          cd godot_source
+          mkdir -p ../exports
+          
+          # Check if preset exists before attempting export
+          if ! grep -q "name=\"${{ matrix.export_name }}\"" export_presets.cfg; then
+            echo "⚠️ Export preset '${{ matrix.export_name }}' not found in export_presets.cfg"
+            echo "Available presets:"
+            grep "^name=" export_presets.cfg || echo "None found"
+            exit 1
+          fi
+          
+          ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+          
+          # Verify export succeeded
+          echo "📂 Contents of exports directory:"
+          ls -lh ../exports/
+          
+          if [ ! -e "../exports/${{ matrix.output_name }}" ]; then
+            echo "❌ Export failed - ${{ matrix.output_name }} not found"
+            exit 1
+          fi
+          
+          echo "✅ Export successful - .exe created"
+          
+          # On Windows, verify .pck file exists (since embed_pck=false)
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            PCK_NAME=$(echo "${{ matrix.output_name }}" | sed 's/\.exe$/.pck/')
+            if [ -f "../exports/$PCK_NAME" ]; then
+              echo "✅ .pck file created: $PCK_NAME"
+            else
+              echo "⚠️  .pck file not found: $PCK_NAME"
+              echo "   Expected with embed_pck=false in export_presets.cfg"
+              echo "   This may cause issues if not included in distribution package"
+            fi
+          fi
+
+      - name: Verify GDExtension DLLs included in export (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "🔍 Verifying GDExtension DLLs were exported (Mode 2 - Remote)..."
+          echo ""
+          echo "📂 Full export directory contents:"
+          find exports -type f -name "*.dll" -o -name "*.exe" -o -name "*.pck" || true
+          echo ""
+          
+          # Check for required DLLs (Mode 2 doesn't include feagi_embedded.dll)
+          MISSING_DLLS=0
+          
+          if [ -f "exports/feagi_data_deserializer.dll" ]; then
+            echo "✅ Found feagi_data_deserializer.dll"
+          else
+            echo "❌ MISSING: feagi_data_deserializer.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_type_system.dll" ]; then
+            echo "✅ Found feagi_type_system.dll"
+          else
+            echo "❌ MISSING: feagi_type_system.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_shared_video.dll" ]; then
+            echo "✅ Found feagi_shared_video.dll"
+          else
+            echo "❌ MISSING: feagi_shared_video.dll"
+            MISSING_DLLS=1
+          fi
+          
+          if [ -f "exports/feagi_embedded.dll" ]; then
+            echo "⚠️  Found feagi_embedded.dll (should NOT be in Mode 2)"
+          fi
+          
+          if [ $MISSING_DLLS -eq 1 ]; then
+            echo ""
+            echo "❌ ERROR: Required GDExtension DLLs are missing from export!"
+            echo "This will cause Brain Visualizer to fail at runtime."
+            echo ""
+            echo "Possible causes:"
+            echo "  1. .gdextension files missing [dependencies] section"
+            echo "  2. DLLs not in expected location before export"
+            echo "  3. Godot export failed to include dependencies"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All required GDExtension DLLs present in export (Mode 2)"
+
+      - name: Create distribution package (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd exports
+          zip -r BrainVisualizer-Remote-macOS.zip BrainVisualizer-Remote.app
+
+      - name: Create distribution package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd exports
+          # Godot exports with embed_pck=false create both .exe, .pck, and DLL files
+          # All files must be included in the distribution package
+          $files = @()
+          if (Test-Path "BrainVisualizer-Remote.exe") {
+            $files += "BrainVisualizer-Remote.exe"
+          }
+          if (Test-Path "BrainVisualizer-Remote.pck") {
+            $files += "BrainVisualizer-Remote.pck"
+          }
+          
+          # Include all GDExtension DLLs (required for runtime)
+          $dlls = Get-ChildItem -Path . -Filter "*.dll" -File
+          foreach ($dll in $dlls) {
+            $files += $dll.Name
+            Write-Host "  📦 Including DLL: $($dll.Name)"
+          }
+          
+          if ($files.Count -eq 0) {
+            Write-Host "❌ No files found in exports directory"
+            Get-ChildItem -Path . | Format-Table
+            exit 1
+          }
+          
+          Write-Host ""
+          Write-Host "📦 Creating Windows distribution package with:"
+          $files | ForEach-Object { Write-Host "  - $_" }
+          Write-Host ""
+          
+          Compress-Archive -Path $files -DestinationPath BrainVisualizer-Remote-Windows.zip -Force
+          Write-Host "✅ Created BrainVisualizer-Remote-Windows.zip"
+          
+          # Verify zip contents
+          Write-Host ""
+          Write-Host "📋 Zip file contents:"
+          Get-ChildItem -Path BrainVisualizer-Remote-Windows.zip | Select-Object Name, Length | Format-Table
+
+      - name: Create distribution package (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cd exports
+          tar -czf BrainVisualizer-Remote-Linux.tar.gz BrainVisualizer-Remote.x86_64
+
+      - name: Upload distribution package
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrainVisualizer-Remote-${{ matrix.platform }}
+          path: exports/BrainVisualizer-Remote-*
+          retention-days: 30
+
+  #
+  # ============ MODE 3: WEB (DISABLED) ============
+  # Web mode is under development
+  #
+  
+  export-web:
+    name: Export Mode 3 - Web (HTML5)
+    if: false  # DISABLED - Web mode under development
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust_extensions/feagi_data_deserializer/target
+            rust_extensions/feagi_type_system/target
+            rust_extensions/feagi_shared_video/target
+            rust_extensions/feagi_wasm_processing/target
+          key: ${{ runner.os }}-rust-extensions-${{ hashFiles('rust_extensions/**/Cargo.toml', 'rust_extensions/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-extensions-
+
+      - name: Cache Godot (Linux)
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/bin/godot
+            $HOME/.local/share/godot/export_templates/4.5.stable
+          key: godot-4.5-linux-${{ hashFiles('.github/workflows/build-distribution-packages.yml') }}
+          restore-keys: |
+            godot-4.5-linux-
+
+      - name: Install Godot
+        run: |
+          if ! command -v godot &> /dev/null; then
+            echo "📦 Downloading Godot 4.5..."
+            wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
+            unzip -q Godot_v4.5-stable_linux.x86_64.zip
+            chmod +x Godot_v4.5-stable_linux.x86_64
+            sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          fi
+          
+          if [ ! -d "$HOME/.local/share/godot/export_templates/4.5.stable" ]; then
+            echo "📦 Downloading export templates..."
+            wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+            mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
+            unzip -q Godot_v4.5-stable_export_templates.tpz
+            mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          fi
+          
+          echo "✅ Godot 4.5 + export templates installed"
+
+      - name: Build WASM deserializer (if exists)
+        continue-on-error: true
+        run: |
+          if [ -d "rust_extensions/feagi_wasm_processing" ]; then
+            cd rust_extensions/feagi_wasm_processing
+            # Build WASM version
+            cargo build --release --target wasm32-unknown-unknown
+            wasm-bindgen target/wasm32-unknown-unknown/release/feagi_wasm_processing.wasm \
+              --out-dir ../../godot_source/wasm/ --target web
+          fi
+
+      - name: Export Godot project (Web)
+        run: |
+          cd godot_source
+          mkdir -p ../exports/web
+          godot --headless --export-release "Web" ../exports/web/index.html
+
+      - name: Verify web export
+        run: |
+          ls -lh exports/web/
+          echo "✅ Web export complete"
+
+      - name: Create web distribution archive
+        run: |
+          cd exports
+          tar -czf BrainVisualizer-Web.tar.gz web/
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrainVisualizer-Web
+          path: exports/BrainVisualizer-Web.tar.gz
+          retention-days: 30
+
+  #
+  # ============ CREATE RELEASE ============
+  #
+  
+  create-release:
+    name: Create or Update GitHub Release
+    needs: [validate-release, export-desktop-remote]  # Only remote mode enabled
+    if: always() && (needs.validate-release.result == 'success' || needs.validate-release.result == 'skipped') && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.event_name == 'release')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Create tag (if workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          TAG_NAME="${{ needs.validate-release.outputs.tag_name }}"
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          
+          # Create annotated tag
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME: $VERSION"
+          git push origin "$TAG_NAME"
+          
+          echo "✅ Created and pushed tag: $TAG_NAME"
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          ls -lRh artifacts/
+
+      - name: Create or update release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.validate-release.outputs.tag_name || github.event.release.tag_name || github.ref_name }}
+          name: Brain Visualizer ${{ needs.validate-release.outputs.version || github.event.release.tag_name || github.ref_name }}
+          files: |
+            artifacts/BrainVisualizer-Remote-*/*
+          body: |
+            # Brain Visualizer ${{ needs.validate-release.outputs.version || github.ref_name }}
+            
+            ## Desktop Remote Mode (~50MB)
+            **Lightweight client for remote FEAGI**
+            - ✅ Small download
+            - ✅ Connect to shared FEAGI server
+            - ✅ Multiple clients can connect to one FEAGI
+            - ✅ High-performance real-time visualization
+            
+            ### Downloads:
+            - **macOS (Universal)**: `BrainVisualizer-Remote-macOS.zip`
+            - **Windows (x86_64)**: `BrainVisualizer-Remote-Windows.zip`
+            - **Linux (x86_64)**: `BrainVisualizer-Remote-Linux.tar.gz`
+            
+            ### Rust Binaries (for developers):
+            - `rust-binaries-linux-x86_64.tar.gz`
+            - `rust-binaries-macos-universal.tar.gz`
+            - `rust-binaries-windows-x86_64.zip`
+            
+            ### Requirements:
+            - Separate FEAGI server (Docker or binary)
+            - See installation guide at https://github.com/feagi/feagi
+            
+            ## What's New
+            
+            See [CHANGELOG.md](CHANGELOG.md) for details.
+            
+            ---
+            
+            **Note:** Embedded and Web modes are under development and not included in this release.
+          draft: false
+          prerelease: ${{ needs.validate-release.outputs.is_prerelease == 'true' }}
+

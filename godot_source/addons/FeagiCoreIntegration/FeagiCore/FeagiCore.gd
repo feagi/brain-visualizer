@@ -69,6 +69,7 @@ func _enter_tree():
 	feagi_local_cache = FEAGILocalCache.new()
 	feagi_local_cache.genome_refresh_needed.connect(_on_genome_refresh_needed)
 	feagi_local_cache.agent_reregistration_needed.connect(_on_agent_reregistration_needed)
+	feagi_local_cache.feagi_session_changed.connect(_on_feagi_session_changed)
 	requests = FEAGIRequests.new()
 	# At this point, the scripts are initialized, but no attempt to connect to FEAGI was made.
 
@@ -131,18 +132,6 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	var health_url: StringName = addr_list.GET_system_healthCheck
 	var health_check_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(health_url)
 	
-	var process_output_for_cache: Callable = func(polled_result: FeagiRequestOutput) :  # Functional Programming my beloved
-		if polled_result.has_timed_out:
-			print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️ Health check timed out")
-			return
-		if polled_result.has_errored:
-			print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Health check errored")
-			return
-		var health_data: Dictionary = polled_result.decode_response_as_dict()
-		print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check successful, updating cache...")
-		print("FEAGICORE: [3D_SCENE_DEBUG] Health check data received: ", health_data)
-		feagi_local_cache.update_health_from_FEAGI_dict(health_data)
-	
 	_polling_health_check_worker = FeagiCore.network.http_API.make_HTTP_call(health_check_request)
 
 	await _polling_health_check_worker.worker_done
@@ -159,7 +148,7 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 		return
 	
 	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check contains required keys")
-	process_output_for_cache.call(raw_output)
+	_process_health_check_output(raw_output)
 	
 	# Start periodic HTTP health check for simulation_timestep (websocket doesn't have it)
 	_start_periodic_simulation_timestep_check()
@@ -184,6 +173,18 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 		_change_genome_state(GENOME_LOAD_STATE.NO_GENOME_AVAILABLE)
 	
 	feagi_local_cache.genome_availability_or_brain_readiness_changed.connect(_if_brain_readiness_or_genome_availability_changes)
+
+func _process_health_check_output(polled_result: FeagiRequestOutput) -> void:
+	if polled_result.has_timed_out:
+		print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️ Health check timed out")
+		return
+	if polled_result.has_errored:
+		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Health check errored")
+		return
+	var health_data: Dictionary = polled_result.decode_response_as_dict()
+	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Health check successful, updating cache...")
+	print("FEAGICORE: [3D_SCENE_DEBUG] Health check data received: ", health_data)
+	feagi_local_cache.update_health_from_FEAGI_dict(health_data)
 
 func _start_periodic_simulation_timestep_check() -> void:
 	"""Start persistent HTTP health check - this should NEVER stop as long as BV is running"""
@@ -406,22 +407,13 @@ func reload_genome_await():
 					# Update health cache and transition directly to READY
 					feagi_local_cache.update_health_from_FEAGI_dict(health_data)
 					_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
-					# Proactively attempt websocket reconnect if it's down (only for WebSocket transport)
-					if network and _in_use_endpoint_details and network._transport_mode == network.TRANSPORT_MODE.WEBSOCKET:
-						var ws = network.get("websocket_API")
-						if ws and ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
-								ws.setup(_in_use_endpoint_details.full_websocket_address)
-								ws.process_mode = Node.PROCESS_MODE_INHERIT
-								var ws_callback := Callable(network, "_WS_health_changed")
-								if not ws.FEAGI_socket_health_changed.is_connected(ws_callback):
-									ws.FEAGI_socket_health_changed.connect(ws_callback)
-								ws.connect_websocket()
-						# Re-register the agent to refresh transport info after FEAGI restart
-						if network:
-							await network._call_register_agent_for_shm()
-						# Schedule a short watchdog to ensure WS stays connected after reload
-						_ensure_ws_connected_after_reload(30)
-						return
+					# Re-register first, then force a WS stream rebind to avoid registration/connect races.
+					if network:
+						await network._register_agent_via_transport()
+					await _force_ws_stream_rebind_after_registration()
+					# Schedule a short watchdog to ensure WS stays connected after reload.
+					_ensure_ws_connected_after_reload(30)
+					return
 				elif cached_session == current_session and cached_genome_num == current_genome_num:
 					print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️  Same session (%d) and genome (%d) but FEAGI not ready (available: %s, ready: %s) - waiting..." % [current_session, current_genome_num, genome_available, brain_ready])
 				else:
@@ -456,21 +448,10 @@ func reload_genome_await():
 		return  # Don't transition to GENOME_READY
 	
 	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ requests.reload_genome() completed successfully")
-	# As part of the genome reload workflow, proactively attempt a websocket reconnect
-	# if the socket is currently down (only for WebSocket transport). 
-	# This avoids requiring a full app restart after FEAGI restarts.
-	if network and _in_use_endpoint_details and network._transport_mode == network.TRANSPORT_MODE.WEBSOCKET:
-		var ws = network.get("websocket_API")
-		if ws and ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
-			ws.setup(_in_use_endpoint_details.full_websocket_address)
-			ws.process_mode = Node.PROCESS_MODE_INHERIT
-			var ws_callback := Callable(network, "_WS_health_changed")
-			if not ws.FEAGI_socket_health_changed.is_connected(ws_callback):
-				ws.FEAGI_socket_health_changed.connect(ws_callback)
-			ws.connect_websocket()
-	# Re-register the agent to refresh transport info after FEAGI restart
+	# Re-register first, then force a WS stream rebind to ensure FEAGI stream attachment.
 	if network:
-		await network._call_register_agent_for_shm()
+		await network._register_agent_via_transport()
+	await _force_ws_stream_rebind_after_registration()
 	# Schedule a short watchdog to ensure WS stays connected after reload
 	_ensure_ws_connected_after_reload(30)
 
@@ -523,6 +504,17 @@ func _recieve_genome_reset_request():
 		print("⚠️ FEAGICORE: Ignoring genome reset request - current state doesn't warrant reload: %s" % GENOME_LOAD_STATE.keys()[genome_load_state])
 		print("   💡 NOTE: Reset requests only trigger from GENOME_READY or GENOME_PROCESSING states")
 
+## Handles new FEAGI instance detection from healthcheck session ID.
+func _on_feagi_session_changed(previous_session: int, current_session: int) -> void:
+	print("FEAGICORE: FEAGI session changed (old: %d -> new: %d) - triggering full reload" % [previous_session, current_session])
+	if genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
+		print("FEAGICORE: Already reloading genome - skipping duplicate session reload")
+		return
+	if genome_load_state == GENOME_LOAD_STATE.UNKNOWN:
+		print("FEAGICORE: Session change detected while disconnected - connection flow will handle reload")
+		return
+	_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+
 func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: String):
 	# Allow force reloads to override stuck GENOME_RELOADING state
 	if genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
@@ -555,15 +547,9 @@ func _on_agent_reregistration_needed(reason: String):
 	# If we're already connected but FEAGI restarted, just re-register
 	if conn_state == network.CONNECTION_STATE.HEALTHY or conn_state == network.CONNECTION_STATE.RETRYING_HTTP or conn_state == network.CONNECTION_STATE.RETRYING_WS:
 		print("🔍 [AGENT-REG] Re-registering agent with FEAGI...")
-		await network._call_register_agent_for_shm()
+		await network._register_agent_via_transport()
 		print("🔍 [AGENT-REG] Agent re-registration completed")
-		
-		# If WebSocket was disconnected, reconnect it now
-		# Use get("websocket_API") to avoid Godot parser false-positive on external typed members.
-		var ws = network.get("websocket_API")
-		if ws and ws.socket_health != ws.WEBSOCKET_HEALTH.CONNECTED:
-			print("🔍 [AGENT-REG] WebSocket not connected after re-registration - reconnecting...")
-			ws.connect_websocket()
+		await _force_ws_stream_rebind_after_registration()
 	else:
 		print("🔍 [AGENT-REG] Skipping re-registration - connection state: %s" % network.CONNECTION_STATE.keys()[conn_state])
 
@@ -602,3 +588,24 @@ func _ensure_ws_connected_after_reload(attempts: int) -> void:
 	get_tree().create_timer(2.0).timeout.connect(func():
 		_ensure_ws_connected_after_reload(attempts - 1)
 	)
+
+## Force a post-registration WebSocket rebind to avoid "connected but not streaming" races.
+func _force_ws_stream_rebind_after_registration() -> void:
+	if not network:
+		return
+	if network._transport_mode != network.TRANSPORT_MODE.WEBSOCKET:
+		return
+	var ws = network.get("websocket_API")
+	if not ws:
+		return
+	if _in_use_endpoint_details:
+		ws.setup(_in_use_endpoint_details.full_websocket_address)
+	ws.process_mode = Node.PROCESS_MODE_INHERIT
+	var ws_callback := Callable(network, "_WS_health_changed")
+	if not ws.FEAGI_socket_health_changed.is_connected(ws_callback):
+		ws.FEAGI_socket_health_changed.connect(ws_callback)
+	# Always restart WS after transport registration so FEAGI binds stream to fresh registration.
+	ws.disconnect_websocket()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	ws.connect_websocket()

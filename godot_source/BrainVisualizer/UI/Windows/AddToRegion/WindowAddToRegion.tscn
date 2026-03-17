@@ -15,7 +15,7 @@ script = ExtResource("1_mvyuv")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_qajk0")]
 layout_mode = 2
-title = "Select Target Brain Region"
+title = "Select Target Neural Circuit"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -40,7 +40,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
-text = "No Region Selected"
+text = "No Circuit Selected"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -50,7 +50,7 @@ alignment = 2
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
-text = " Create Brain Region "
+text = " Create Neural Circuit "
 
 [node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 layout_mode = 2

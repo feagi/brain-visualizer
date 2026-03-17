@@ -159,6 +159,19 @@ static func vector3i_to_string(input: Vector3i) -> String:
 static func vector2i_to_string(input: Vector2i) -> String:
 	return "[%d,%d,%d]" % vector2i_to_array(input)
 
+## Format array as JSON with each top-level element on one line. Used for raw connectivity rule display.
+static func array_to_json_one_element_per_line(arr: Array) -> String:
+	if arr.is_empty():
+		return "[]"
+	var parts: Array[String] = []
+	parts.append("[")
+	for i in arr.size():
+		var elem_str: String = JSON.stringify(arr[i])
+		var suffix: String = "," if i < arr.size() - 1 else ""
+		parts.append("  " + elem_str + suffix)
+	parts.append("]")
+	return "\n".join(parts)
+
 # This is the best name
 static func array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(input: Array[PatternVector3Pairs]) -> Array[Array]:
 	var output: Array[Array] = []

@@ -3,6 +3,10 @@
 [ext_resource type="Script" uid="uid://lxclss3qbcnu" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.gd" id="1_2vxwp"]
 [ext_resource type="PackedScene" uid="uid://cmxa7e3wifiy2" path="res://BrainVisualizer/UI/GenericElements/Vectors/PatternVector3Field.tscn" id="2_mjcu5"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="3_bamig"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="4_eye_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="4_eye_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="4_eye_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_D.png" id="4_eye_d"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="5_34f6o"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="6_dnub2"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="7_dtmaw"]
@@ -27,6 +31,17 @@ expand_mode = 1
 [node name="PV2" parent="." instance=ExtResource("2_mjcu5")]
 layout_mode = 2
 
+[node name="VisualEditButton" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("4_eye_s")
+texture_pressed = ExtResource("4_eye_c")
+texture_hover = ExtResource("4_eye_h")
+texture_disabled = ExtResource("4_eye_d")
+ignore_texture_size = true
+stretch_mode = 5
+
 [node name="DeleteButton" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -37,4 +52,5 @@ texture_disabled = ExtResource("8_xd8ej")
 ignore_texture_size = true
 stretch_mode = 5
 
+[connection signal="pressed" from="VisualEditButton" to="." method="_on_visual_edit_button_pressed"]
 [connection signal="pressed" from="DeleteButton" to="." method="_on_delete_button_pressed"]

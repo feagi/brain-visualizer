@@ -7,6 +7,15 @@ var _brain_region: BrainRegion
 var _preview_container: Node3D
 var _region_name_label: Label3D
 
+const PREVIEW_PLATE_GAP: float = 1.0
+const PREVIEW_PLATE_HEIGHT: float = 1.0
+const PREVIEW_PLACEHOLDER_SIZE: Vector3 = Vector3(5.0, 1.0, 5.0)
+const PREVIEW_COLOR_INPUT: Color = Color(0.1, 0.6, 0.4, 0.2)
+const PREVIEW_COLOR_OUTPUT: Color = Color(0.1, 0.35, 0.65, 0.2)
+const PREVIEW_COLOR_CONFLICT: Color = Color(0.85, 0.35, 0.1, 0.25)
+const PREVIEW_BORDER_THICKNESS: float = 0.1
+const PREVIEW_BORDER_HEIGHT: float = 0.12
+
 signal user_moved_preview(new_FEAGI_space_position: Vector3i)
 
 ## Sets up the preview with translucent dual plates for the brain region
@@ -26,12 +35,12 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	# Calculate plate sizes
 	var input_plate_size = _calculate_plate_size_for_areas(input_areas, "INPUT")
 	var output_plate_size = _calculate_plate_size_for_areas(output_areas, "OUTPUT")
-	var plate_gap = 1.0  # Gap between plates (same as main brain region)
-	var plate_height = 1.0  # Plate height (same as main brain region)
+	var plate_gap = PREVIEW_PLATE_GAP  # Gap between plates (same as main brain region)
+	var plate_height = PREVIEW_PLATE_HEIGHT  # Plate height (same as main brain region)
 	
 	# Handle placeholder plates (5x1x5) for positioning calculations
-	var actual_input_width = input_plate_size.x if input_areas.size() > 0 else 5.0
-	var actual_output_width = output_plate_size.x if output_areas.size() > 0 else 5.0
+	var actual_input_width = input_plate_size.x if input_areas.size() > 0 else PREVIEW_PLACEHOLDER_SIZE.x
+	var actual_output_width = output_plate_size.x if output_areas.size() > 0 else PREVIEW_PLACEHOLDER_SIZE.x
 	
 	# Match main BrainRegion plate style/colors ("plate shadows")
 	# Detect conflict state (areas used as both input and output)
@@ -45,41 +54,43 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 			break
 
 	# Base colors (semi-transparent greens) or red-tinted on conflict to match main scene
-	var input_color = Color(0.0, 0.6, 0.0, 0.2)
-	var output_color = Color(0.0, 0.4, 0.0, 0.2)
+	var input_color = PREVIEW_COLOR_INPUT
+	var output_color = PREVIEW_COLOR_OUTPUT
 	if conflict:
-		input_color = Color(0.6, 0.0, 0.0, 0.25)
-		output_color = Color(0.6, 0.0, 0.0, 0.25)
+		input_color = PREVIEW_COLOR_CONFLICT
+		output_color = PREVIEW_COLOR_CONFLICT
 	var input_plate
 	if input_areas.size() > 0:
 		input_plate = _create_visible_preview_plate(input_plate_size, "InputPlatePreview", input_color)
 	else:
-		input_plate = _create_visible_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "InputPlatePreview", input_color)
+		input_plate = _create_visible_wireframe_placeholder_plate(PREVIEW_PLACEHOLDER_SIZE, "InputPlatePreview", input_color)
 	
 	# FRONT-LEFT CORNER positioning (matches main brain region)
 	# INPUT PLATE: Front-left corner at preview region coordinates (0,0,0 relative)
 	input_plate.position.x = actual_input_width / 2.0  # Half-width to align front-left corner at origin
 	input_plate.position.y = plate_height / 2.0  # Half-height to align bottom at origin 
 	# Center Z must be NEGATIVE half-depth so the front edge is at parent's Z
-	var input_depth = (input_plate_size.z if input_areas.size() > 0 else 5.0)
+	var input_depth = (input_plate_size.z if input_areas.size() > 0 else PREVIEW_PLACEHOLDER_SIZE.z)
 	input_plate.position.z = -input_depth / 2.0
 	_preview_container.add_child(input_plate)
+	_add_preview_plate_border(input_plate, Vector3(actual_input_width, PREVIEW_PLATE_HEIGHT, input_depth), input_color)
 	
 	# Create output plate with consistent style
 	var output_plate
 	if output_areas.size() > 0:
 		output_plate = _create_visible_preview_plate(output_plate_size, "OutputPlatePreview", output_color)
 	else:
-		output_plate = _create_visible_wireframe_placeholder_plate(Vector3(5.0, 1.0, 5.0), "OutputPlatePreview", output_color)
+		output_plate = _create_visible_wireframe_placeholder_plate(PREVIEW_PLACEHOLDER_SIZE, "OutputPlatePreview", output_color)
 	
 	# OUTPUT PLATE: Front-left corner at input_width + gap from preview region front-left corner
 	var output_front_left_x = actual_input_width + plate_gap
 	output_plate.position.x = output_front_left_x + actual_output_width / 2.0  # Front-left corner + half-width
 	output_plate.position.y = plate_height / 2.0  # Half-height to align bottom at origin
 	# Center Z must be NEGATIVE half-depth so the front edge is at parent's Z
-	var output_depth = (output_plate_size.z if output_areas.size() > 0 else 5.0)
+	var output_depth = (output_plate_size.z if output_areas.size() > 0 else PREVIEW_PLACEHOLDER_SIZE.z)
 	output_plate.position.z = -output_depth / 2.0
 	_preview_container.add_child(output_plate)
+	_add_preview_plate_border(output_plate, Vector3(actual_output_width, PREVIEW_PLATE_HEIGHT, output_depth), output_color)
 	
 	# Suppress preview label to avoid confusion with live region labels during editing
 	# (If needed later, we can enable via a debug flag.)
@@ -202,6 +213,9 @@ func _create_visible_preview_plate(plate_size: Vector3, plate_name: String, plat
 	var material = StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = plate_color
+	material.emission_enabled = true
+	material.emission = Color(plate_color.r * 0.25, plate_color.g * 0.25, plate_color.b * 0.25, plate_color.a)
+	material.emission_energy = 0.25
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.flags_unshaded = true
 	material.flags_transparent = true
@@ -235,10 +249,10 @@ func _create_visible_wireframe_placeholder_plate(plate_size: Vector3, plate_name
 	edge_material.flags_disable_ambient_light = true
 	edge_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	edge_material.emission_enabled = true
-	edge_material.emission = Color(plate_color.r * 0.6, plate_color.g * 0.6, plate_color.b * 0.6)
+	edge_material.emission = Color(plate_color.r * 0.4, plate_color.g * 0.4, plate_color.b * 0.4)
 	
 	# Thickness of edge rods
-	var edge_thickness: float = 0.25
+	var edge_thickness: float = 0.18
 	# 4 edges along X (front/back, top/bottom)
 	for y in [-half_y, half_y]:
 		for z in [-half_z, half_z]:
@@ -277,3 +291,68 @@ func _create_visible_wireframe_placeholder_plate(plate_size: Vector3, plate_name
 			plate_mesh_instance.add_child(rod_z)
 	
 	return plate_mesh_instance
+
+func _add_preview_plate_border(plate_node: MeshInstance3D, plate_size: Vector3, plate_color: Color) -> void:
+	var existing = plate_node.get_node_or_null("PreviewPlateBorder") as Node3D
+	if existing != null:
+		existing.queue_free()
+	var border_root = Node3D.new()
+	border_root.name = "PreviewPlateBorder"
+	plate_node.add_child(border_root)
+	var border_material = StandardMaterial3D.new()
+	border_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+	border_material.albedo_color = Color(0.85, 0.85, 0.9, 0.7)
+	border_material.metallic = 0.05
+	border_material.roughness = 0.35
+	border_material.specular = 0.5
+	border_material.emission_enabled = true
+	border_material.emission = Color(0.5, 0.5, 0.6, 0.7)
+	border_material.emission_energy = 0.4
+	border_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	border_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	border_material.flags_do_not_receive_shadows = true
+	border_material.flags_disable_ambient_light = true
+
+	var half_x = plate_size.x / 2.0
+	var half_z = plate_size.z / 2.0
+	var y = PREVIEW_PLATE_HEIGHT / 2.0 + PREVIEW_BORDER_HEIGHT / 2.0
+
+	var front = MeshInstance3D.new()
+	front.name = "BorderFront"
+	var front_mesh = BoxMesh.new()
+	front_mesh.size = Vector3(plate_size.x, PREVIEW_BORDER_HEIGHT, PREVIEW_BORDER_THICKNESS)
+	front.mesh = front_mesh
+	front.position = Vector3(0.0, y, -half_z + PREVIEW_BORDER_THICKNESS / 2.0)
+	front.material_override = border_material
+	front.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	border_root.add_child(front)
+
+	var back = MeshInstance3D.new()
+	back.name = "BorderBack"
+	var back_mesh = BoxMesh.new()
+	back_mesh.size = Vector3(plate_size.x, PREVIEW_BORDER_HEIGHT, PREVIEW_BORDER_THICKNESS)
+	back.mesh = back_mesh
+	back.position = Vector3(0.0, y, half_z - PREVIEW_BORDER_THICKNESS / 2.0)
+	back.material_override = border_material
+	back.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	border_root.add_child(back)
+
+	var left = MeshInstance3D.new()
+	left.name = "BorderLeft"
+	var left_mesh = BoxMesh.new()
+	left_mesh.size = Vector3(PREVIEW_BORDER_THICKNESS, PREVIEW_BORDER_HEIGHT, plate_size.z)
+	left.mesh = left_mesh
+	left.position = Vector3(-half_x + PREVIEW_BORDER_THICKNESS / 2.0, y, 0.0)
+	left.material_override = border_material
+	left.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	border_root.add_child(left)
+
+	var right = MeshInstance3D.new()
+	right.name = "BorderRight"
+	var right_mesh = BoxMesh.new()
+	right_mesh.size = Vector3(PREVIEW_BORDER_THICKNESS, PREVIEW_BORDER_HEIGHT, plate_size.z)
+	right.mesh = right_mesh
+	right.position = Vector3(half_x - PREVIEW_BORDER_THICKNESS / 2.0, y, 0.0)
+	right.material_override = border_material
+	right.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	border_root.add_child(right)

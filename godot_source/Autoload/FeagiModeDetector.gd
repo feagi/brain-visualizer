@@ -111,8 +111,19 @@ func _load_user_preference() -> String:
 	if not file:
 		return ""
 	
-	var json_text = file.get_as_text()
+	var raw_bytes = file.get_buffer(file.get_length())
 	file.close()
+	
+	# Avoid Godot Unicode parser spam when user settings are accidentally saved
+	# with UTF-16/binary content on Windows.
+	if raw_bytes.find(0) != -1:
+		push_warning("User settings file contains NUL bytes, ignoring: %s" % settings_path)
+		return ""
+	
+	var json_text = raw_bytes.get_string_from_utf8()
+	if json_text.is_empty() and raw_bytes.size() > 0:
+		push_warning("User settings file is not valid UTF-8, ignoring: %s" % settings_path)
+		return ""
 	
 	var json = JSON.new()
 	var parse_result = json.parse(json_text)

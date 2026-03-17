@@ -64,6 +64,11 @@ func _checkbox_toggled(is_on: bool) -> void:
 	checkbox_clicked.emit(_target, is_on)
 
 func _background_pressed() -> void:
+	if _target is AbstractCorticalArea and !_checkbox.disabled:
+		var new_state: bool = !_checkbox.button_pressed
+		_checkbox.set_pressed_no_signal(new_state)
+		checkbox_clicked.emit(_target, new_state)
+		return
 	background_clicked.emit(_target)
 
 func _updated_name(text: StringName) -> void:

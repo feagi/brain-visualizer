@@ -186,6 +186,7 @@ HBoxContainer_farther/constants/separation = 24
 HBoxContainer_fatherest/base_type = &"HBoxContainer"
 HBoxContainer_fatherest/constants/separation = 32
 Label/font_sizes/font_size = 20
+TooltipLabel/font_sizes/font_size = 22
 Label_Header/base_type = &"Label"
 Label_Header/font_sizes/font_size = 25
 Label_Title/base_type = &"Label"

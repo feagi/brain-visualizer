@@ -11,6 +11,9 @@ signal cortical_area_mass_updated(cortical_area: AbstractCorticalArea)
 var available_cortical_areas: Dictionary:
 	get: return _available_cortical_areas
 
+## When true, UI notifications for mass updates should be suppressed.
+var suppress_update_notifications: bool = false
+
 var _available_cortical_areas: Dictionary = {}
 
 #region Add, Remove, and Edit Single Cortical Areas
@@ -231,7 +234,7 @@ func FEAGI_update_cortical_area_from_dict(all_cortical_area_properties: Dictiona
 		return
 	
 	var changing_ID: StringName = all_cortical_area_properties["cortical_id"]
-	print("FEAGI CACHE: Updating cortical area %s" % changing_ID)
+	# print("FEAGI CACHE: Updating cortical area %s" % changing_ID)
 	
 	_available_cortical_areas[changing_ID].FEAGI_apply_full_dictionary(all_cortical_area_properties)
 	cortical_area_mass_updated.emit(_available_cortical_areas[changing_ID])

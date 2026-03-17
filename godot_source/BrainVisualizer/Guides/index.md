@@ -26,6 +26,7 @@ Brain Visualizer is an interactive tool that allows you to visualize, create, an
 ### Interface & Navigation
 - [Getting Started](getting_started.md) - First steps with Brain Visualizer
 - [Navigation Basics](navigation.md) - Moving around in 2D and 3D views
+- [Navigation Action Reference](navigation_actions_reference.md) - Action-to-input quick lookup table
 - [Camera Controls](camera_controls.md) - Advanced camera navigation
 - [Camera Animations](camera_animations.md) - Recording and playing camera paths
 - [Split View](split_view.md) - Working with side-by-side views

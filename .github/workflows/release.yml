@@ -1,0 +1,1497 @@
+name: Build and Publish Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (PEP440 format: x.x.x, x.x.xb1, x.x.xa1, x.x.xrc1)'
+        type: string
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+  GODOT_VERSION: 4.5.0
+  BV_MAJOR_VERSION: "2"
+
+jobs:
+  validate-version:
+    name: Validate Version
+    runs-on: ubuntu-latest
+    outputs:
+      bv_version: ${{ steps.validate.outputs.bv_version }}
+      tag_name: ${{ steps.validate.outputs.tag_name }}
+      tag_commit: ${{ steps.validate.outputs.tag_commit }}
+      is_prerelease: ${{ steps.validate.outputs.is_prerelease }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version
+        id: validate
+        shell: bash
+        run: |
+          # Determine version
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            TAG_NAME="v${VERSION}"
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            TAG_NAME="${{ github.event.release.tag_name }}"
+            VERSION="${TAG_NAME#v}"
+            echo "Triggered by release: $TAG_NAME"
+          else
+            echo "ERROR: Unexpected trigger"
+            exit 1
+          fi
+          
+          # Validate PEP440 format
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+|b[0-9]+|rc[0-9]+)?$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected PEP440 format: x.x.x, x.x.xb1, x.x.xa1, or x.x.xrc1"
+            exit 1
+          fi
+          
+          # Validate major version
+          BV_MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          if [ "$BV_MAJOR" != "${{ env.BV_MAJOR_VERSION }}" ]; then
+            echo "❌ Major version ${BV_MAJOR} does not match gate ${{ env.BV_MAJOR_VERSION }}"
+            exit 1
+          fi
+          
+          # Determine if prerelease
+          if [[ "$VERSION" =~ (a|b|rc)[0-9]+ ]]; then
+            IS_PRERELEASE="true"
+          else
+            IS_PRERELEASE="false"
+          fi
+          
+          echo "✅ Version: $VERSION"
+          echo "✅ Tag: $TAG_NAME"
+          echo "✅ Prerelease: $IS_PRERELEASE"
+          
+          # CRITICAL: Verify the tag exists - fail if it doesn't (no fallbacks!)
+          echo ""
+          echo "Verifying tag exists: $TAG_NAME"
+          if ! git rev-parse --verify "$TAG_NAME" >/dev/null 2>&1; then
+            echo "❌ ERROR: Tag $TAG_NAME does not exist!"
+            echo ""
+            echo "Available tags:"
+            git tag -l "v*" | tail -10 || echo "No tags found"
+            echo ""
+            echo "Current HEAD: $(git rev-parse HEAD)"
+            echo "Current branch: $(git branch --show-current 2>/dev/null || echo 'detached')"
+            echo ""
+            echo "The tag must exist before building. Create it with:"
+            echo "  git tag $TAG_NAME <commit-sha>"
+            echo "  git push origin $TAG_NAME"
+            exit 1
+          fi
+          
+          TAG_COMMIT=$(git rev-parse "$TAG_NAME")
+          HEAD_COMMIT=$(git rev-parse HEAD)
+          echo "✅ Tag $TAG_NAME exists at commit: $TAG_COMMIT"
+          
+          # Warn if tag doesn't point to current HEAD (but don't fail - tag might be intentional)
+          if [ "$TAG_COMMIT" != "$HEAD_COMMIT" ]; then
+            echo "⚠️  WARNING: Tag $TAG_NAME points to commit $TAG_COMMIT"
+            echo "   Current HEAD is at: $HEAD_COMMIT"
+            echo "   The build will use the code at the tag, not current HEAD"
+          fi
+          
+          # Get commit message for reference
+          COMMIT_MSG=$(git log -1 --pretty=format:"%s" "$TAG_COMMIT" 2>/dev/null || echo "N/A")
+          
+          echo "bv_version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "tag_commit=${TAG_COMMIT}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+          
+          echo ""
+          echo "📋 Build will use:"
+          echo "   Tag: $TAG_NAME"
+          echo "   Commit: $TAG_COMMIT"
+          echo "   Commit message: $COMMIT_MSG"
+
+  build-bv-remote:
+    name: Build BrainVisualizer Remote (${{ matrix.platform }})
+    needs: validate-version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+            export_name: "Linux/X11"
+            output_name: BrainVisualizer-Remote.x86_64
+            package_name: BrainVisualizer-Remote-Linux.tar.gz
+          - os: macos-15
+            platform: macOS-arm64
+            export_name: "macOS"
+            output_name: BrainVisualizer-Remote-arm64.app
+            package_name: BrainVisualizer-Remote-macOS-arm64.zip
+            arch: arm64
+          - os: macos-15-intel
+            platform: macOS-x86_64
+            export_name: "macOS"
+            output_name: BrainVisualizer-Remote-x86_64.app
+            package_name: BrainVisualizer-Remote-macOS-x86_64.zip
+            arch: x86_64
+          - os: windows-latest
+            platform: Windows
+            export_name: "Windows Desktop"
+            output_name: BrainVisualizer-Remote.exe
+            package_name: BrainVisualizer-Remote-Windows.zip
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-version.outputs.tag_name }}
+          fetch-depth: 0
+          fetch-tags: true
+          submodules: recursive
+
+      - name: Verify checkout
+        shell: bash
+        run: |
+          EXPECTED_TAG="${{ needs.validate-version.outputs.tag_name }}"
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          EXPECTED_COMMIT=$(git rev-parse "$EXPECTED_TAG" 2>/dev/null || echo "")
+          
+          if [ -z "$EXPECTED_COMMIT" ]; then
+            echo "❌ ERROR: Tag $EXPECTED_TAG does not exist after checkout!"
+            echo "Current commit: $CURRENT_COMMIT"
+            exit 1
+          fi
+          
+          if [ "$CURRENT_COMMIT" != "$EXPECTED_COMMIT" ]; then
+            echo "❌ ERROR: Checkout failed - wrong commit!"
+            echo "Expected commit (from tag $EXPECTED_TAG): $EXPECTED_COMMIT"
+            echo "Current commit: $CURRENT_COMMIT"
+            echo ""
+            echo "Current branch/tag:"
+            git describe --tags --exact-match HEAD 2>/dev/null || git branch --show-current || echo "detached"
+            exit 1
+          fi
+          
+          echo "✅ Verified: Checked out tag $EXPECTED_TAG at commit $CURRENT_COMMIT"
+          echo "Commit message:"
+          git log -1 --pretty=format:"%s" HEAD
+
+      - name: Update BVVersion timestamp
+        shell: bash
+        run: |
+          # Update timestamp in BVVersion.gd before building
+          TIMESTAMP=$(date +%s)
+          
+          # Update the correct BVVersion file (BrainVisualizer/BVVersion.gd)
+          if [ -f "godot_source/BrainVisualizer/BVVersion.gd" ]; then
+            # macOS sed needs backup extension, Linux doesn't care
+            if [[ "${{ runner.os }}" == "macOS" ]]; then
+              sed -i.bak "s/get: return [0-9]*/get: return $TIMESTAMP/" godot_source/BrainVisualizer/BVVersion.gd
+              rm -f godot_source/BrainVisualizer/BVVersion.gd.bak
+            else
+              sed -i "s/get: return [0-9]*/get: return $TIMESTAMP/" godot_source/BrainVisualizer/BVVersion.gd
+            fi
+            echo "✅ Updated BVVersion.brain_visualizer_timestamp to: $TIMESTAMP"
+            echo "File contents:"
+            cat godot_source/BrainVisualizer/BVVersion.gd
+          else
+            echo "❌ ERROR: BVVersion.gd not found!"
+            exit 1
+          fi
+          
+          # Verify the update worked
+          if grep -q "get: return $TIMESTAMP" godot_source/BrainVisualizer/BVVersion.gd; then
+            echo "✅ Timestamp update verified"
+          else
+            echo "❌ ERROR: Timestamp update failed!"
+            exit 1
+          fi
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain-file: rust_extensions/rust-toolchain.toml
+
+      - name: Cache Rust registry
+        uses: actions/cache@v4
+        id: rust-registry-cache
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-rust-registry-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-registry-
+            ${{ runner.os }}-rust-
+
+      - name: Cache Rust targets
+        uses: actions/cache@v4
+        id: rust-target-cache
+        with:
+          path: rust_extensions/*/target
+          key: ${{ runner.os }}-${{ matrix.platform }}-rust-target-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-rust-target-
+            ${{ runner.os }}-rust-target-
+
+      - name: Log Rust cache status
+        shell: bash
+        run: |
+          REGISTRY_HIT="${{ steps.rust-registry-cache.outputs.cache-hit }}"
+          TARGET_HIT="${{ steps.rust-target-cache.outputs.cache-hit }}"
+          echo "Rust registry cache hit: $REGISTRY_HIT"
+          echo "Rust target cache hit: $TARGET_HIT"
+          if [ "$TARGET_HIT" == "true" ]; then
+            echo "Rust cache HIT - using cached dependencies and target/"
+            echo ""
+            echo "Cache contents:"
+            echo "Cargo registry size:"
+            du -sh ~/.cargo/registry 2>/dev/null || echo "  Registry: N/A"
+            echo ""
+            echo "Target directories (should contain previous builds):"
+            for dir in rust_extensions/*/target; do
+              if [ -d "$dir" ]; then
+                size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+                echo "  $dir: $size"
+                # Check if release binaries exist
+                find "$dir" -name "*.dll" -o -name "*.so" -o -name "*.dylib" 2>/dev/null | head -3 | while read -r bin; do
+                  echo "    - $(basename "$bin")"
+                done
+              fi
+            done
+          else
+            echo "Rust cache MISS - will rebuild from scratch"
+            echo "This will take longer (~10-15 min for first build)"
+            echo ""
+            echo "Checking if target directories exist:"
+            ls -la rust_extensions/*/target 2>/dev/null || echo "  No target directories found (expected for cache miss)"
+          fi
+
+      - name: Install Godot (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
+          unzip -q Godot_v4.5-stable_macos.universal.zip
+          sudo mv Godot.app /Applications/
+          
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/Library/Application Support/Godot/export_templates/4.5.stable/"
+          
+          echo "GODOT=/Applications/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
+
+      - name: Install Godot (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5-stable_linux.x86_64.zip
+          chmod +x Godot_v4.5-stable_linux.x86_64
+          sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
+          unzip -q Godot_v4.5-stable_export_templates.tpz
+          mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          
+          echo "GODOT=godot" >> $GITHUB_ENV
+
+      - name: Install Godot (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
+          Expand-Archive -Path godot.zip -DestinationPath godot-install -Force
+          Move-Item godot-install/Godot*.exe godot.exe -Force
+          
+          $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
+          New-Item -ItemType Directory -Force -Path $templatesPath
+          Expand-Archive -Path templates.tpz -DestinationPath temp-templates -Force
+          Copy-Item temp-templates/templates/* $templatesPath -Force -Recurse
+          
+          echo "GODOT=$PWD\godot.exe" >> $env:GITHUB_ENV
+
+      - name: Build Rust extensions (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cd rust_extensions
+          BUILD_START=$(date +%s)
+          echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            python3 build.py --release --no-clean --local-arch
+          else
+            python3 build.py --release --no-clean
+          fi
+          BUILD_END=$(date +%s)
+          echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
+          
+          # Verify macOS binaries are single-arch
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            echo "Verifying macOS binaries..."
+            for lib in $(find godot_source/addons -name "*.dylib" -type f 2>/dev/null); do
+              ARCHS=$(file "$lib" 2>/dev/null | grep -oE 'arm64|x86_64' | tr '\n' ' ' || echo "unknown")
+              echo "  $lib architectures: $ARCHS"
+            done
+          fi
+
+      - name: Build Rust extensions (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd rust_extensions
+          BUILD_START=$(date +%s)
+          echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          python3 build.py --release --no-clean
+          BUILD_END=$(date +%s)
+          echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
+
+      - name: Verify Rust extensions are in place
+        shell: bash
+        run: |
+          ROOT="${{ github.workspace }}"
+          # Linux/Windows need explicit cd + absolute path; macOS left as-is (was already passing)
+          if [[ "${{ runner.os }}" == "Linux" ]] || [[ "${{ runner.os }}" == "Windows" ]]; then
+            cd "$ROOT"
+            TYPE_SYSTEM_DIR="${ROOT}/godot_source/addons/FeagiCoreIntegration"
+          else
+            TYPE_SYSTEM_DIR="godot_source/addons/FeagiCoreIntegration"
+          fi
+          echo "Checking for Rust extensions after build.py... (PWD=$PWD)"
+          
+          # build.py copies to platform-specific locations
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            TARGET_TRIPLE="x86_64-pc-windows-msvc"
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
+          elif [[ "${{ runner.os }}" == "Linux" ]]; then
+            TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
+          else
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
+          fi
+          
+          # Check what files exist
+          echo "Files in feagi_rust_deserializer:"
+          ls -la "$DESERIALIZER_SOURCE" 2>/dev/null || echo "Directory not found"
+          
+          echo "Files in FeagiCoreIntegration (legacy):"
+          ls -la "$DESERIALIZER_LEGACY" 2>/dev/null || echo "Directory not found"
+          
+          echo "Files in feagi_shared_video:"
+          ls -la "$SHARED_VIDEO_SOURCE" 2>/dev/null || echo "Directory not found"
+          
+          echo "Files in FeagiCoreIntegration (type_system):"
+          ls -la "$TYPE_SYSTEM_DIR"/*feagi_type_system* 2>/dev/null || echo "No type_system files found"
+          
+          # Verify required files exist (build.py should have copied them)
+          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1 || true)
+          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1 || true)
+          # macOS: keep original logic that was passing (relative path + find)
+          # Linux/Windows: explicit path test (absolute path set above)
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1 || true)
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            [ -f "$TYPE_SYSTEM_DIR/feagi_type_system.dll" ] && TYPE_SYSTEM_LIB="$TYPE_SYSTEM_DIR/feagi_type_system.dll"
+          else
+            [ -f "$TYPE_SYSTEM_DIR/libfeagi_type_system.so" ] && TYPE_SYSTEM_LIB="$TYPE_SYSTEM_DIR/libfeagi_type_system.so"
+          fi
+          
+          if [ -z "$DESERIALIZER_LIB" ]; then
+            echo "ERROR: feagi_data_deserializer library not found!"
+            echo "Expected in: $DESERIALIZER_SOURCE or $DESERIALIZER_LEGACY"
+            exit 1
+          fi
+          
+          if [ -z "$SHARED_VIDEO_LIB" ]; then
+            echo "feagi_shared_video not built (optional; commented out in build)"
+          fi
+          
+          if [ -z "$TYPE_SYSTEM_LIB" ]; then
+            echo "ERROR: feagi_type_system library not found!"
+            echo "TYPE_SYSTEM_DIR=$TYPE_SYSTEM_DIR"
+            echo "Directory exists: $([ -d "$TYPE_SYSTEM_DIR" ] && echo yes || echo no)"
+            ls -la "$TYPE_SYSTEM_DIR" 2>/dev/null || true
+            exit 1
+          fi
+          
+          echo "All Rust extensions verified in place"
+
+      - name: Stage rust libraries artifact
+        shell: bash
+        run: |
+          echo "Staging rust libraries for artifact..."
+          mkdir -p rust-libs
+          
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            LIB_PREFIX=""
+            LIB_EXT="dll"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            LIB_PREFIX="lib"
+            LIB_EXT="dylib"
+          else
+            LIB_PREFIX="lib"
+            LIB_EXT="so"
+          fi
+          
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            TARGET_TRIPLE="x86_64-pc-windows-msvc"
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
+          elif [[ "${{ runner.os }}" == "Linux" ]]; then
+            TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
+          else
+            DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/release"
+            DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration"
+            SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/release"
+          fi
+          TYPE_SYSTEM_DIR="godot_source/addons/FeagiCoreIntegration"
+          
+          DESERIALIZER_LIB=$(find "$DESERIALIZER_SOURCE" "$DESERIALIZER_LEGACY" \( -name "libfeagi_data_deserializer.*" -o -name "feagi_data_deserializer.dll" \) 2>/dev/null | head -1 || true)
+          SHARED_VIDEO_LIB=$(find "$SHARED_VIDEO_SOURCE" \( -name "libfeagi_shared_video.*" -o -name "feagi_shared_video.dll" \) 2>/dev/null | head -1 || true)
+          TYPE_SYSTEM_LIB=$(find "$TYPE_SYSTEM_DIR" -maxdepth 1 \( -name "libfeagi_type_system.*" -o -name "feagi_type_system.dll" \) 2>/dev/null | head -1 || true)
+          
+          if [ -z "$DESERIALIZER_LIB" ] || [ -z "$TYPE_SYSTEM_LIB" ]; then
+            echo "ERROR: Required Rust libraries missing; cannot stage artifact."
+            echo "DESERIALIZER_LIB: ${DESERIALIZER_LIB:-missing}"
+            echo "TYPE_SYSTEM_LIB: ${TYPE_SYSTEM_LIB:-missing}"
+            exit 1
+          fi
+          
+          cp -v "$DESERIALIZER_LIB" "rust-libs/${LIB_PREFIX}feagi_data_deserializer.${LIB_EXT}"
+          if [ -n "$SHARED_VIDEO_LIB" ]; then
+            cp -v "$SHARED_VIDEO_LIB" "rust-libs/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}"
+          else
+            echo "Skipping feagi_shared_video (not built)"
+          fi
+          cp -v "$TYPE_SYSTEM_LIB" "rust-libs/${LIB_PREFIX}feagi_type_system.${LIB_EXT}"
+          
+          echo "Rust libraries staged:"
+          ls -lh rust-libs/
+
+      - name: Upload rust libraries artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-libs-${{ matrix.platform }}
+          path: rust-libs/*
+          retention-days: 1
+
+      - name: Clean Godot cache (fresh import)
+        shell: bash
+        run: |
+          cd godot_source
+          echo "Cleaning .godot cache for fresh import..."
+          # Remove import cache but keep project settings
+          rm -rf .godot/imported 2>/dev/null || true
+          rm -rf .godot/uid_cache.bin 2>/dev/null || true
+          echo "✅ Cache cleaned"
+
+      - name: Import Godot resources
+        shell: bash
+        run: |
+          cd godot_source
+          echo "Importing Godot resources (fonts, SVGs, etc.)..."
+          # Godot 4.x headless bug: --quit exits before import completes (fonts, SVGs).
+          # Use --quit-after 2 to allow import to finish (see godotengine/godot#77508).
+          if ! ${GODOT} --headless --import --quit-after 2 2>&1 | tee /tmp/godot-import.log; then
+            echo "❌ ERROR: Godot import failed!"
+            echo ""
+            echo "Checking for script errors:"
+            grep -i "error\|parse error\|compile error" /tmp/godot-import.log || true
+            echo ""
+            echo "Full import log:"
+            cat /tmp/godot-import.log
+            exit 1
+          fi
+          echo "✅ Import completed successfully"
+
+      - name: Export Godot project
+        shell: bash
+        run: |
+          cd godot_source
+          mkdir -p ../exports
+          echo "Exporting to: ../exports/${{ matrix.output_name }}"
+          ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+
+      - name: Copy GDExtension DLLs to exports (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd exports
+          MISSING=0
+          for dll in feagi_type_system feagi_data_deserializer; do
+            src="../godot_source/addons/FeagiCoreIntegration/${dll}.dll"
+            [ "$dll" = "feagi_data_deserializer" ] && src="../godot_source/addons/FeagiCoreIntegration/target/x86_64-pc-windows-msvc/release/${dll}.dll"
+            if [ -f "$src" ]; then
+              cp -v "$src" .
+            else
+              echo "::warning::GDExtension DLL missing: ${dll}.dll (source: $src)"
+              MISSING=1
+            fi
+          done
+          SHARED_VIDEO="../godot_source/addons/feagi_shared_video/target/x86_64-pc-windows-msvc/release/feagi_shared_video.dll"
+          if [ -f "$SHARED_VIDEO" ]; then
+            cp -v "$SHARED_VIDEO" .
+          else
+            echo "::warning::Optional GDExtension DLL missing: feagi_shared_video.dll"
+          fi
+          echo "DLLs in exports:"
+          ls -la *.dll 2>/dev/null || echo "No DLLs found"
+          [ "$MISSING" -eq 1 ] && echo "::warning::Required GDExtension DLLs were missing; BV may have degraded functionality at runtime." || true
+
+      - name: Create distribution package (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd exports
+          if [ ! -d "${{ matrix.output_name }}" ]; then
+            echo "ERROR: Expected app bundle not found: ${{ matrix.output_name }}"
+            echo "Exports directory contents:"
+            ls -la
+            exit 1
+          fi
+          zip -r ${{ matrix.package_name }} ${{ matrix.output_name }}
+
+      - name: Create distribution package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd exports
+          $files = @()
+          if (Test-Path "BrainVisualizer-Remote.exe") { $files += "BrainVisualizer-Remote.exe" }
+          if (Test-Path "BrainVisualizer-Remote.pck") { $files += "BrainVisualizer-Remote.pck" }
+          $files += Get-ChildItem -Filter "*.dll" | Select-Object -ExpandProperty Name
+          Compress-Archive -Path $files -DestinationPath ${{ matrix.package_name }} -Force
+
+      - name: Create distribution package (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cd exports
+          tar -czf ${{ matrix.package_name }} BrainVisualizer-Remote.x86_64
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bv-${{ matrix.platform }}
+          path: exports/${{ matrix.package_name }}
+          retention-days: 1
+
+  build-rust-binaries:
+    name: Build Rust Binaries (${{ matrix.platform }})
+    needs: [validate-version, build-bv-remote]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: Linux
+          - os: macos-15
+            platform: macOS-arm64
+            arch: arm64
+          - os: macos-15-intel
+            platform: macOS-x86_64
+            arch: x86_64
+          - os: windows-latest
+            platform: Windows
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-version.outputs.tag_name }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Download rust libraries artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rust-libs-${{ matrix.platform }}
+          path: rust-libs
+
+      - name: Stage binaries from rust libraries artifact
+        shell: bash
+        run: |
+          echo "Staging Rust extension binaries..."
+          
+          # Create staging directory
+          mkdir -p binaries-staging
+          
+          # Determine library prefix and extension based on platform
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            LIB_PREFIX=""
+            LIB_EXT="dll"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            LIB_PREFIX="lib"
+            LIB_EXT="dylib"
+          else
+            LIB_PREFIX="lib"
+            LIB_EXT="so"
+          fi
+          
+          for ext in feagi_data_deserializer feagi_type_system; do
+            lib_file="rust-libs/${LIB_PREFIX}${ext}.${LIB_EXT}"
+            if [ ! -f "$lib_file" ]; then
+              echo "ERROR: Missing rust library: $lib_file"
+              exit 1
+            fi
+            cp -v "$lib_file" "binaries-staging/${LIB_PREFIX}${ext}.${LIB_EXT}"
+          done
+          if [ -f "rust-libs/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}" ]; then
+            cp -v "rust-libs/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}" "binaries-staging/${LIB_PREFIX}feagi_shared_video.${LIB_EXT}"
+          fi
+          
+          echo ""
+          echo "Binaries found in staging:"
+          ls -lh binaries-staging/ || echo "No binaries found"
+          
+          if [ -z "$(ls -A binaries-staging/ 2>/dev/null)" ]; then
+            echo ""
+            echo "❌ ERROR: No binaries found to upload!"
+            echo ""
+            echo "Expected files (feagi_shared_video optional):"
+            echo "  - binaries-staging/${LIB_PREFIX}feagi_data_deserializer.${LIB_EXT}"
+            echo "  - binaries-staging/${LIB_PREFIX}feagi_type_system.${LIB_EXT}"
+            echo ""
+            echo "Searching for target directories:"
+            find rust_extensions -type d -name "target" 2>/dev/null | head -10
+            echo ""
+            echo "Searching for extension libraries:"
+            find rust_extensions -type f -name "${LIB_PATTERN}" ! -path "*/deps/*" 2>/dev/null | head -20
+            exit 1
+          fi
+          
+          # Verify we have at least 2 required libraries (feagi_shared_video optional)
+          LIB_COUNT=$(ls -1 binaries-staging/*.${LIB_EXT} 2>/dev/null | wc -l || echo "0")
+          if [ "$LIB_COUNT" -lt 2 ]; then
+            echo ""
+            echo "ERROR: Expected at least 2 libraries (feagi_data_deserializer, feagi_type_system), found $LIB_COUNT"
+            echo "Files in staging:"
+            ls -lh binaries-staging/
+            exit 1
+          fi
+          if [ "$LIB_COUNT" -lt 3 ]; then
+            echo ""
+            echo "Note: feagi_shared_video not included (optional)"
+          fi
+
+      - name: Upload binaries artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-binaries-${{ matrix.platform }}
+          path: binaries-staging/*
+          if-no-files-found: error
+          retention-days: 1
+
+  package-rust-binaries:
+    name: Package Rust Binaries
+    needs: build-rust-binaries
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all rust binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: binaries
+          pattern: rust-binaries-*
+
+      - name: Display downloaded binaries
+        run: |
+          echo "Downloaded binaries:"
+          ls -lRh binaries/ || echo "No binaries directory found"
+          
+          # Check if we got all 3 platforms
+          PLATFORMS=$(ls -d binaries/rust-binaries-* 2>/dev/null | wc -l || echo "0")
+          echo "Found $PLATFORMS platform(s)"
+          
+          if [ "$PLATFORMS" -lt 4 ]; then
+            echo "WARNING: Expected 4 platforms (Linux, macOS-arm64, macOS-x86_64, Windows), found $PLATFORMS"
+            echo "Available artifacts:"
+            ls -la binaries/ || true
+          fi
+
+      - name: Package binaries for release
+        run: |
+          mkdir -p release-packages
+          
+          ERRORS=0
+          
+          # Package Linux binaries
+          if [ -d "binaries/rust-binaries-Linux" ] && [ -n "$(ls -A binaries/rust-binaries-Linux/*.so 2>/dev/null)" ]; then
+            cd binaries/rust-binaries-Linux
+            tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz *.so
+            cd ../..
+            echo "✅ Packaged Linux binaries"
+          else
+            echo "❌ ERROR: Linux binaries not found!"
+            ERRORS=$((ERRORS + 1))
+          fi
+          
+          # Package macOS arm64 binaries
+          if [ -d "binaries/rust-binaries-macOS-arm64" ] && [ -n "$(ls -A binaries/rust-binaries-macOS-arm64/*.dylib 2>/dev/null)" ]; then
+            cd binaries/rust-binaries-macOS-arm64
+            tar -czf ../../release-packages/rust-binaries-macos-arm64.tar.gz *.dylib
+            cd ../..
+            echo "Packaged macOS arm64 binaries"
+          else
+            echo "ERROR: macOS arm64 binaries not found!"
+            ERRORS=$((ERRORS + 1))
+          fi
+          
+          # Package macOS x86_64 binaries
+          if [ -d "binaries/rust-binaries-macOS-x86_64" ] && [ -n "$(ls -A binaries/rust-binaries-macOS-x86_64/*.dylib 2>/dev/null)" ]; then
+            cd binaries/rust-binaries-macOS-x86_64
+            tar -czf ../../release-packages/rust-binaries-macos-x86_64.tar.gz *.dylib
+            cd ../..
+            echo "Packaged macOS x86_64 binaries"
+          else
+            echo "ERROR: macOS x86_64 binaries not found!"
+            ERRORS=$((ERRORS + 1))
+          fi
+          
+          # Package Windows binaries
+          if [ -d "binaries/rust-binaries-Windows" ] && [ -n "$(ls -A binaries/rust-binaries-Windows/*.dll 2>/dev/null)" ]; then
+            cd binaries/rust-binaries-Windows
+            zip -r ../../release-packages/rust-binaries-windows-x86_64.zip *.dll
+            cd ../..
+            echo "✅ Packaged Windows binaries"
+          else
+            echo "❌ ERROR: Windows binaries not found!"
+            ERRORS=$((ERRORS + 1))
+          fi
+          
+          if [ $ERRORS -gt 0 ]; then
+            echo "❌ Failed to package $ERRORS platform(s)"
+            exit 1
+          fi
+          
+          echo "✅ All binaries packaged successfully"
+          ls -lh release-packages/
+
+      - name: Upload rust binaries artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-binaries
+          path: release-packages/*
+          retention-days: 1
+
+  upload-to-release:
+    name: Upload Assets to Release
+    needs: [validate-version, build-bv-remote, package-rust-binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          ls -lRh artifacts/
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${{ needs.validate-version.outputs.tag_name }}"
+          echo "Uploading assets to release: $TAG_NAME"
+          
+          # Find all files to upload
+          FILES=$(find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \))
+          
+          if [ -z "$FILES" ]; then
+            echo "❌ ERROR: No files found to upload!"
+            echo "Artifacts directory contents:"
+            ls -lRh artifacts/ || true
+            exit 1
+          fi
+          
+          echo "Files to upload:"
+          echo "$FILES"
+          
+          # Upload all files
+          echo "$FILES" | while read -r file; do
+            if [ -n "$file" ]; then
+              echo "Uploading: $file"
+              gh release upload "$TAG_NAME" "$file" --clobber || exit 1
+            fi
+          done
+          
+          echo "✅ Assets uploaded to release"
+          
+          # Verify upload succeeded
+          echo "Verifying uploaded assets..."
+          gh release view "$TAG_NAME" --json assets --jq '.assets[].name' || exit 1
+
+  build-pypi-packages:
+    name: Build PyPI Package (${{ matrix.platform }})
+    needs: [validate-version, upload-to-release]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            download_artifact: BrainVisualizer-Remote-Linux
+          - os: macos-15
+            platform: macos-arm64
+            download_artifact: BrainVisualizer-Remote-macOS-arm64
+            arch: arm64
+            macos_universal: "false"
+          - os: macos-15-intel
+            platform: macos-x86_64
+            download_artifact: BrainVisualizer-Remote-macOS-x86_64
+            arch: x86_64
+            macos_universal: "false"
+          - os: windows-latest
+            platform: windows
+            download_artifact: BrainVisualizer-Remote-Windows
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-version.outputs.tag_name }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+
+      - name: Download BV release artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG_NAME="${{ needs.validate-version.outputs.tag_name }}"
+          
+          # Wait for assets to be available (retry up to 5 times)
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES: Checking for assets..."
+            
+            # List available assets
+            gh release view "$TAG_NAME" --json assets --jq '.assets[].name' || true
+            
+            # Try to download
+            if gh release download "$TAG_NAME" --pattern "${{ matrix.download_artifact }}.*" --dir downloads/ 2>/dev/null; then
+              echo "✅ Assets downloaded successfully"
+              break
+            fi
+            
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "⏳ Assets not ready yet, waiting 10 seconds..."
+              sleep 10
+            fi
+          done
+          
+          # Verify files were downloaded
+          if [ ! -d "downloads" ] || [ -z "$(ls -A downloads/ 2>/dev/null)" ]; then
+            echo "❌ ERROR: No assets downloaded!"
+            echo "Available assets on release:"
+            gh release view "$TAG_NAME" --json assets --jq '.assets[].name' || true
+            exit 1
+          fi
+          
+          ls -lh downloads/
+
+      - name: Extract BV binary (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cd downloads
+          if ls *.tar.gz 1> /dev/null 2>&1; then
+            tar -xzf *.tar.gz
+          elif ls *.zip 1> /dev/null 2>&1; then
+            unzip -q *.zip
+          fi
+          
+          # For macOS, extract architecture-specific binary from universal app bundle
+          if [[ "${{ matrix.platform }}" == "macos-arm64" ]] || [[ "${{ matrix.platform }}" == "macos-x86_64" ]]; then
+            if [[ "${{ matrix.macos_universal }}" == "true" ]]; then
+              echo "Extracting ${{ matrix.arch }} architecture from universal app bundle..."
+            
+              # Find the app bundle
+              APP_BUNDLE=$(find . -name "*.app" -type d | head -1)
+              if [ -z "$APP_BUNDLE" ]; then
+                echo "ERROR: No .app bundle found!"
+                echo "Contents of downloads directory:"
+                ls -la
+                exit 1
+              fi
+              
+              echo "Found app bundle: $APP_BUNDLE"
+              echo "App bundle contents:"
+              ls -la "$APP_BUNDLE/Contents/" || true
+              echo "MacOS directory contents:"
+              ls -la "$APP_BUNDLE/Contents/MacOS/" || true
+              
+              # Find the actual executable (could be named differently)
+              MACOS_DIR="$APP_BUNDLE/Contents/MacOS"
+              EXECUTABLE=$(find "$MACOS_DIR" -type f -perm +111 | head -1)
+              
+              if [ -z "$EXECUTABLE" ]; then
+                echo "ERROR: No executable found in $MACOS_DIR"
+                echo "Looking for any files in MacOS directory:"
+                find "$MACOS_DIR" -type f || true
+                exit 1
+              fi
+              
+              EXECUTABLE_NAME=$(basename "$EXECUTABLE")
+              echo "Found executable: $EXECUTABLE"
+              echo "Executable name: $EXECUTABLE_NAME"
+              
+              # Get app bundle name (without .app extension)
+              APP_NAME=$(basename "$APP_BUNDLE" .app)
+              ARCH_APP_NAME="${APP_NAME}-${{ matrix.arch }}.app"
+              
+              echo "Creating architecture-specific app bundle: $ARCH_APP_NAME"
+              
+              # Create architecture-specific directory structure
+              mkdir -p "$ARCH_APP_NAME/Contents/MacOS"
+              
+              # Extract architecture-specific slice using lipo
+              if lipo "$EXECUTABLE" -extract "${{ matrix.arch }}" -output "$ARCH_APP_NAME/Contents/MacOS/$EXECUTABLE_NAME" 2>&1; then
+                echo "Extracted ${{ matrix.arch }} slice using lipo"
+                chmod +x "$ARCH_APP_NAME/Contents/MacOS/$EXECUTABLE_NAME"
+              else
+                echo "lipo extract failed, trying ditto..."
+                # Fallback: use ditto to copy and thin the entire app bundle
+                if ditto --arch "${{ matrix.arch }}" "$APP_BUNDLE" "$ARCH_APP_NAME" 2>&1; then
+                  echo "Extracted ${{ matrix.arch }} using ditto"
+                else
+                  echo "ERROR: Both lipo and ditto failed to extract architecture"
+                  exit 1
+                fi
+              fi
+              
+              # Copy other necessary files if not already copied by ditto
+              if [ ! -f "$ARCH_APP_NAME/Contents/Info.plist" ] && [ -f "$APP_BUNDLE/Contents/Info.plist" ]; then
+                mkdir -p "$ARCH_APP_NAME/Contents"
+                cp "$APP_BUNDLE/Contents/Info.plist" "$ARCH_APP_NAME/Contents/"
+              fi
+              
+              # Copy Resources if they exist and weren't copied by ditto
+              if [ ! -d "$ARCH_APP_NAME/Contents/Resources" ] && [ -d "$APP_BUNDLE/Contents/Resources" ]; then
+                cp -r "$APP_BUNDLE/Contents/Resources" "$ARCH_APP_NAME/Contents/"
+              fi
+              
+              # Remove the original universal bundle
+              rm -rf "$APP_BUNDLE"
+              
+              echo "Extracted ${{ matrix.arch }} architecture"
+              echo "Architecture-specific app bundle contents:"
+              ls -lh "$ARCH_APP_NAME/Contents/MacOS/" || true
+            else
+              echo "Per-arch macOS build detected; no thinning required."
+            fi
+          fi
+
+      - name: Extract BV binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd downloads
+          Expand-Archive -Path *.zip -DestinationPath . -Force
+
+      - name: Package platform binary
+        shell: bash
+        run: |
+          VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          
+          # Determine package directory name based on platform
+          if [[ "${{ matrix.platform }}" == "macos-arm64" ]]; then
+            PLATFORM_DIR="feagi-bv-macos-arm64"
+            PACKAGE_DIR="feagi_bv_macos_arm64"
+            PYPI_PROJECT="feagi-bv-macos-arm64"
+          elif [[ "${{ matrix.platform }}" == "macos-x86_64" ]]; then
+            PLATFORM_DIR="feagi-bv-macos-x86_64"
+            PACKAGE_DIR="feagi_bv_macos_x86_64"
+            PYPI_PROJECT="feagi-bv-macos-x86_64"
+          else
+            PLATFORM_DIR="feagi-bv-${{ matrix.platform }}"
+            PACKAGE_DIR="feagi_bv_${{ matrix.platform }}"
+            PYPI_PROJECT="feagi-bv-${{ matrix.platform }}"
+          fi
+          
+          cd "feagi-bv-platform/$PLATFORM_DIR"
+          
+          # Verify we're in the right directory
+          if [ ! -f "pyproject.toml" ]; then
+            echo "❌ ERROR: pyproject.toml not found in $PLATFORM_DIR"
+            echo "Current directory: $(pwd)"
+            echo "Contents:"
+            ls -la
+            exit 1
+          fi
+          
+          # Update version in pyproject.toml
+          sed -i.bak "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+          
+          # Verify downloads directory exists
+          if [ ! -d "../../downloads" ]; then
+            echo "❌ ERROR: downloads directory not found!"
+            echo "Expected at: $(pwd)/../../downloads"
+            echo "Current directory: $(pwd)"
+            exit 1
+          fi
+          
+          # Copy binary
+          mkdir -p "$PACKAGE_DIR/bin"
+          
+          # Check if there are files to copy
+          if [ -z "$(ls -A ../../downloads/ 2>/dev/null)" ]; then
+            echo "❌ ERROR: downloads directory is empty!"
+            echo "Contents of downloads:"
+            ls -la ../../downloads/ || true
+            exit 1
+          fi
+          
+          echo "Copying files from downloads to $PACKAGE_DIR/bin/"
+          cp -r ../../downloads/* "$PACKAGE_DIR/bin/" || {
+            echo "❌ ERROR: Failed to copy files from downloads"
+            exit 1
+          }
+          
+          # Verify files were copied
+          if [ -z "$(ls -A $PACKAGE_DIR/bin/ 2>/dev/null)" ]; then
+            echo "❌ ERROR: No files copied to $PACKAGE_DIR/bin/"
+            exit 1
+          fi
+          
+          echo "✅ Files copied successfully"
+          echo "Package contents:"
+          ls -lh "$PACKAGE_DIR/bin/" | head -10
+          
+          # Check package size before building
+          echo "Checking package contents size..."
+          du -sh "$PACKAGE_DIR/bin/" || echo "No bin directory yet"
+          
+          # Build wheel
+          python -m build
+          
+          if [ ! -d "dist" ] || [ -z "$(ls -A dist/*.whl 2>/dev/null)" ]; then
+            echo "❌ ERROR: Wheel was not built!"
+            echo "dist/ contents:"
+            ls -la dist/ || true
+            exit 1
+          fi
+          
+          echo "Built wheel size:"
+          ls -lh dist/
+          
+          # Check if wheel exceeds PyPI's 100MB limit
+          WHEEL_FILE=$(ls dist/*.whl | head -1)
+          if [ -z "$WHEEL_FILE" ]; then
+            echo "❌ ERROR: No wheel file found in dist/"
+            exit 1
+          fi
+          
+          # Get file size (macOS-compatible: use stat instead of du -b)
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            WHEEL_SIZE=$(stat -f%z "$WHEEL_FILE" 2>/dev/null || echo "0")
+          else
+            WHEEL_SIZE=$(stat -c%s "$WHEEL_FILE" 2>/dev/null || du -b "$WHEEL_FILE" | cut -f1)
+          fi
+          
+          if [ "$WHEEL_SIZE" -eq 0 ]; then
+            echo "⚠️  WARNING: Could not determine wheel size"
+          else
+            SIZE_MB=$((WHEEL_SIZE / 1024 / 1024))
+            echo "Wheel size: ${SIZE_MB} MB (${WHEEL_SIZE} bytes)"
+          fi
+          
+          if [ "$WHEEL_SIZE" -gt 0 ] && [ "$SIZE_MB" -gt 100 ]; then
+            echo ""
+            echo "⚠️  WARNING: Wheel size (${SIZE_MB} MB) exceeds PyPI's 100 MB limit!"
+            echo ""
+            echo "Options:"
+            echo "1. Request file size limit increase from PyPI:"
+            echo "   https://pypi.org/project/$PYPI_PROJECT/request-limit-increase/"
+            echo "   Or email: pypi-support@python.org"
+            echo ""
+            echo "2. Reduce package size by:"
+            echo "   - Compressing binaries more"
+            echo "   - Removing unnecessary files"
+            echo "   - Splitting into multiple packages"
+            echo ""
+            echo "The package will fail to upload to PyPI."
+          fi
+
+      - name: Stage wheel for upload
+        shell: bash
+        run: |
+          # Determine the correct platform directory (same logic as packaging step)
+          if [[ "${{ matrix.platform }}" == "macos-arm64" ]]; then
+            PLATFORM_DIR="feagi-bv-macos-arm64"
+          elif [[ "${{ matrix.platform }}" == "macos-x86_64" ]]; then
+            PLATFORM_DIR="feagi-bv-macos-x86_64"
+          else
+            PLATFORM_DIR="feagi-bv-${{ matrix.platform }}"
+          fi
+          
+          WHEEL_PATH="feagi-bv-platform/$PLATFORM_DIR/dist"
+          
+          if [ ! -d "$WHEEL_PATH" ]; then
+            echo "❌ ERROR: dist directory not found: $WHEEL_PATH"
+            echo "Current directory: $(pwd)"
+            echo "Looking for: $WHEEL_PATH"
+            exit 1
+          fi
+          
+          WHEEL_FILE=$(ls "$WHEEL_PATH"/*.whl 2>/dev/null | head -1)
+          if [ -z "$WHEEL_FILE" ]; then
+            echo "❌ ERROR: No wheel file found in $WHEEL_PATH"
+            echo "Contents:"
+            ls -la "$WHEEL_PATH" || true
+            exit 1
+          fi
+          
+          echo "✅ Wheel file found: $WHEEL_FILE"
+          ls -lh "$WHEEL_FILE"
+          
+          # Copy to staging directory preserving original PEP 440 filename
+          # PyPI requires proper wheel naming: {package}-{version}-{python_tag}-{abi_tag}-{platform_tag}.whl
+          STAGING_DIR="wheel-staging/wheel-${{ matrix.platform }}"
+          mkdir -p "$STAGING_DIR"
+          cp "$WHEEL_FILE" "$STAGING_DIR/"
+          echo "✅ Wheel staged for upload at: $STAGING_DIR/$(basename "$WHEEL_FILE")"
+          ls -lh "$STAGING_DIR/"
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.platform }}
+          path: wheel-staging/wheel-${{ matrix.platform }}/
+          if-no-files-found: error
+          retention-days: 1
+
+  build-meta-package:
+    name: Build Meta Package
+    needs: validate-version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-version.outputs.tag_name }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+
+      - name: Update meta-package version
+        run: |
+          VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          
+          cd feagi-bv-platform/feagi-bv-meta
+          sed -i.bak "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+          
+          # Update dependencies in setup.py.
+          # Use environment markers so ALL platform deps are in metadata regardless of
+          # build host. Otherwise building on Linux bakes only feagi-bv-linux, and
+          # pip install feagi-bv on Windows never pulls feagi-bv-windows.
+          cat > setup.py << 'EOFPY'
+          from setuptools import setup, find_packages
+          
+          def get_version():
+              """Extract version from pyproject.toml."""
+              try:
+                  with open('pyproject.toml', 'r') as f:
+                      for line in f:
+                          if line.startswith('version ='):
+                              return line.split('=')[1].strip().strip('"').strip("'")
+              except FileNotFoundError:
+                  pass
+              return "1.0.0"
+          
+          VERSION = get_version()
+
+          setup(
+              name="feagi-bv",
+              version=VERSION,
+              packages=find_packages(),
+              install_requires=[
+                  'feagi-core>=2.1.1',
+                  'toml>=0.10.2',
+                  f'feagi-bv-linux>={VERSION} ; sys_platform == "linux"',
+                  f'feagi-bv-windows>={VERSION} ; sys_platform == "win32"',
+                  f'feagi-bv-macos-arm64>={VERSION} ; sys_platform == "darwin" and platform_machine == "arm64"',
+                  f'feagi-bv-macos-x86_64>={VERSION} ; sys_platform == "darwin" and platform_machine == "x86_64"',
+              ],
+          )
+          EOFPY
+          
+          
+          python -m build
+          ls -lh dist/
+
+      - name: Upload meta wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-meta
+          path: feagi-bv-platform/feagi-bv-meta/dist/*.whl
+          retention-days: 1
+
+  publish-to-pypi:
+    name: Publish to PyPI
+    needs: [validate-version, build-pypi-packages, build-meta-package]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/feagi-bv/
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: wheels
+          pattern: wheel-*
+
+      - name: Display wheels
+        run: |
+          echo "Wheels to publish:"
+          find wheels -name "*.whl" -exec ls -lh {} \;
+          echo ""
+          echo "Directory structure:"
+          find wheels -type d | sort
+          echo ""
+          echo "Checking wheel sizes against PyPI's 100 MB limit:"
+          find wheels -name "*.whl" -exec sh -c 'SIZE=$(stat -c%s "$1" 2>/dev/null || du -b "$1" | cut -f1); SIZE_MB=$((SIZE / 1024 / 1024)); echo "  $1: ${SIZE_MB} MB"; if [ "$SIZE_MB" -gt 100 ]; then echo "    ⚠️  EXCEEDS 100 MB LIMIT!"; fi' _ {} \;
+
+      - name: Log package sizes vs PyPI limit
+        run: |
+          echo "Package sizes (limit: 100 MB):"
+          echo ""
+          for wheel in $(find wheels -name "*.whl" | sort); do
+            if [ -f "$wheel" ]; then
+              SIZE_BYTES=$(stat -c%s "$wheel" 2>/dev/null || du -b "$wheel" | cut -f1)
+              SIZE_MB=$((SIZE_BYTES / 1024 / 1024))
+              OVER_MB=$((SIZE_MB - 100))
+              if [ "$SIZE_MB" -gt 100 ]; then
+                echo "  $(basename "$wheel"): ${SIZE_MB} MB (${SIZE_BYTES} bytes) - OVER by ${OVER_MB} MB"
+              else
+                echo "  $(basename "$wheel"): ${SIZE_MB} MB (${SIZE_BYTES} bytes)"
+              fi
+            fi
+          done
+
+      - name: Extract package names from wheels
+        run: |
+          echo "📦 Package names in wheels (for trusted publisher configuration):"
+          echo ""
+          EXPECTED_VERSION="${{ needs.validate-version.outputs.bv_version }}"
+          echo "Expected version: $EXPECTED_VERSION"
+          echo ""
+          
+          WHEEL_COUNT=0
+          for wheel in $(find wheels -name "*.whl"); do
+            WHEEL_COUNT=$((WHEEL_COUNT + 1))
+            echo "  Wheel file: $(basename "$wheel")"
+            # Try to extract from METADATA file inside wheel (most accurate)
+            if command -v unzip >/dev/null 2>&1; then
+              # Extract METADATA to get actual package name and version
+              METADATA_NAME=$(unzip -p "$wheel" "*.dist-info/METADATA" 2>/dev/null | grep "^Name:" | cut -d: -f2 | xargs || echo "")
+              METADATA_VERSION=$(unzip -p "$wheel" "*.dist-info/METADATA" 2>/dev/null | grep "^Version:" | cut -d: -f2 | xargs || echo "")
+              if [ -n "$METADATA_NAME" ]; then
+                echo "  → PyPI project name (from METADATA): $METADATA_NAME"
+                if [ -n "$METADATA_VERSION" ]; then
+                  echo "  → Version (from METADATA): $METADATA_VERSION"
+                  if [ "$METADATA_VERSION" != "$EXPECTED_VERSION" ]; then
+                    echo "    ⚠️  WARNING: Version mismatch! Expected $EXPECTED_VERSION"
+                  else
+                    echo "    ✅ Version matches expected"
+                  fi
+                fi
+              else
+                # Fallback: extract from filename
+                PKG_NAME=$(basename "$wheel" | sed -E 's/-[0-9]+\..*\.whl$//' | sed 's/_/-/g')
+                echo "  → PyPI project name (from filename): $PKG_NAME"
+              fi
+            else
+              # Fallback: extract from filename
+              PKG_NAME=$(basename "$wheel" | sed -E 's/-[0-9]+\..*\.whl$//' | sed 's/_/-/g')
+              echo "  → PyPI project name (from filename): $PKG_NAME"
+            fi
+            echo ""
+          done
+          
+          if [ "$WHEEL_COUNT" -eq 0 ]; then
+            echo "❌ ERROR: No wheel files found!"
+            exit 1
+          fi
+          
+          echo "✅ Found $WHEEL_COUNT wheel file(s) ready for publishing"
+
+      - name: Verify PyPI configuration
+        run: |
+          echo "⚠️  IMPORTANT: PyPI configuration requirements"
+          echo ""
+          echo "1. TRUSTED PUBLISHERS: You need 6 trusted publishers configured"
+          echo "   This workflow publishes 6 packages, each needs its own trusted publisher."
+          echo ""
+          echo "   CRITICAL: The PyPI project name in the trusted publisher MUST match"
+          echo "   the package name in pyproject.toml exactly (with hyphens, not underscores)."
+          echo ""
+          echo "   Required trusted publishers:"
+          echo "   - feagi-bv (meta package)"
+          echo "   - feagi-bv-linux"
+          echo "   - feagi-bv-macos-arm64"
+          echo "   - feagi-bv-macos-x86_64"
+          echo "   - feagi-bv-windows"
+          echo ""
+          echo "   To configure: https://pypi.org/manage/account/publishing/"
+          echo "   For each project, use EXACTLY these settings:"
+          echo "     - Owner: feagi"
+          echo "     - Repository: brain-visualizer"
+          echo "     - Workflow file: .github/workflows/release.yml"
+          echo "     - Environment name: pypi"
+          echo "     - PyPI project name: (use the EXACT name from the list above)"
+          echo ""
+          echo "   NOTE: If projects don't exist on PyPI yet, trusted publishers CAN create them,"
+          echo "   but the project name in the publisher config must match the package name exactly."
+          echo ""
+          echo "2. FILE SIZE LIMIT: Architecture-specific packages should be under 100 MB"
+          echo "   If any package exceeds 100 MB, request limit increase:"
+          echo "   - Go to: https://pypi.org/project/<package-name>/request-limit-increase/"
+          echo "   - Or email: pypi-support@python.org"
+          echo ""
+          echo "3. TROUBLESHOOTING:"
+          echo "   If you see 'Non-user identities cannot create new projects':"
+          echo "   - Verify the PyPI project name in trusted publisher matches pyproject.toml"
+          echo "   - Check that hyphens match (feagi-bv-macos-arm64, not feagi_bv_macos_arm64)"
+          echo "   - Ensure the project exists on PyPI OR the trusted publisher is configured correctly"
+          echo ""
+          echo "See: https://docs.pypi.org/trusted-publishers/using-github-actions/"
+          echo "     https://docs.pypi.org/trusted-publishers/troubleshooting/"
+
+      - name: Check wheel sizes for PyPI upload (100 MB limit)
+        id: check
+        run: |
+          LIMIT=$((100 * 1024 * 1024))
+          for dir in wheel-linux wheel-macos-arm64 wheel-macos-x86_64 wheel-windows wheel-meta; do
+            key="upload_${dir#wheel-}"
+            key="${key//-/_}"
+            path="wheels/${dir}"
+            wheel=""
+            [ -d "$path" ] && wheel=$(find "$path" -name "*.whl" 2>/dev/null | head -1)
+            if [ -z "$wheel" ] || [ ! -f "$wheel" ]; then
+              echo "${key}=false" >> $GITHUB_OUTPUT
+              echo "  $dir: skip (no wheel)"
+              continue
+            fi
+            size=$(stat -c%s "$wheel" 2>/dev/null || echo 0)
+            size_mb=$((size / 1024 / 1024))
+            if [ "$size" -le "$LIMIT" ]; then
+              echo "${key}=true" >> $GITHUB_OUTPUT
+              echo "  $dir: ${size_mb} MB - will upload"
+            else
+              echo "${key}=false" >> $GITHUB_OUTPUT
+              echo "  $dir: ${size_mb} MB - SKIP (exceeds 100 MB PyPI limit)"
+            fi
+          done
+
+      - name: Publish platform packages to PyPI (Linux)
+        if: steps.check.outputs.upload_linux == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-linux/
+          skip-existing: true
+
+      - name: Publish platform packages to PyPI (macOS arm64)
+        if: steps.check.outputs.upload_macos_arm64 == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-macos-arm64/
+          skip-existing: true
+
+      - name: Publish platform packages to PyPI (macOS x86_64)
+        if: steps.check.outputs.upload_macos_x86_64 == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-macos-x86_64/
+          skip-existing: true
+
+      - name: Publish platform packages to PyPI (Windows)
+        if: steps.check.outputs.upload_windows == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-windows/
+          skip-existing: true
+
+      - name: Publish meta package to PyPI
+        if: steps.check.outputs.upload_meta == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-meta/
+          skip-existing: true
+
+      - name: Summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ RELEASE COMPLETE"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📦 Package: feagi-bv"
+          echo "   Version: ${{ needs.validate-version.outputs.bv_version }}"
+          echo ""
+          echo "🏷️  Git Tag: ${{ needs.validate-version.outputs.tag_name }}"
+          echo "   Commit: ${{ needs.validate-version.outputs.tag_commit }}"
+          echo ""
+          echo "📥 Install:"
+          echo "   pip install feagi-bv==${{ needs.validate-version.outputs.bv_version }}"
+          if [ "${{ needs.validate-version.outputs.is_prerelease }}" == "true" ]; then
+            echo "   (Note: Use --pre flag for prerelease versions)"
+          fi
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

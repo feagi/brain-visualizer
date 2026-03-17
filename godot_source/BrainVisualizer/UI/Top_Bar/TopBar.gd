@@ -1,7 +1,7 @@
 extends HBoxContainer
 class_name TopBar
 
-@export var starting_size_index: int = 4
+@export var starting_size_index: int = 3
 @export var theme_scalar_nodes_to_not_include_or_search: Array[Node] = []
 
 signal request_UI_mode(mode: TempSplit.STATES)
@@ -23,8 +23,6 @@ var _list_popup: FilterableListPopup
 func _ready():
 	# references
 	_refresh_rate_field = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer/RR_Float
-	var state_indicator: StateIndicator = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/StateIndicator
-	var details_section: MultiItemCollapsible = $DetailsPanel/MarginContainer/Details
 	_index_scale = starting_size_index
 	
 	_increase_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Bigger
@@ -50,8 +48,6 @@ func _ready():
 	FeagiCore.feagi_local_cache.neuron_count_current_changed.connect(_update_neuron_count_current)
 	FeagiCore.feagi_local_cache.synapse_count_current_changed.connect(_update_synapse_count_current)
 
-	#NOTE: State Indeicator handles updates from FEAGI independently, no need to do it here
-	
 	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme)
 	BV.UI.theme_changed.connect(_theme_updated)
 	_theme_updated(BV.UI.loaded_theme)
@@ -140,10 +136,8 @@ func _open_brain_regions() -> void:
 	)
 
 func _open_create_brain_region() -> void:
-	# Open create circuit window using main circuit as parent and no preselected objects
-	var parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	var empty_selection: Array[GenomeObject] = []
-	BV.WM.spawn_create_region(parent_region, empty_selection)
+	# Open circuit selection window (first tile opens Create Brain Region).
+	BV.WM.spawn_select_region_template()
 
 #VisConfig.UI_manager.window_manager.spawn_create_cortical()
 

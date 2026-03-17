@@ -10,14 +10,16 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Godot 4 bindings
-godot = { git = "https://github.com/godot-rust/gdext", branch = "master", features = ["serde"] }
+godot = { git = "https://github.com/godot-rust/gdext", rev = "3416265e2f894be3c1a916f8590524f7be94ed3f", features = ["serde", "api-4-5"] }
 
 # FEAGI core dependencies (crates.io)
-feagi-structures = { version = "0.0.1-beta.2" }
+feagi-structures = { version = "0.0.1-beta.19" }
+feagi-sensorimotor = { version = "0.0.1-beta.19" }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_path_to_error = "0.1"
 
 [profile.dev]
 opt-level = 1  # Faster dev builds

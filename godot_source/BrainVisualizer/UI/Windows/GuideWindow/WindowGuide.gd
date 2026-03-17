@@ -4,6 +4,7 @@ class_name WindowGuide
 const WINDOW_NAME: StringName = "guide_window"
 const MIN_WINDOW_WIDTH: int = 600
 const MIN_WINDOW_HEIGHT: int = 400
+const DEFAULT_WINDOW_VIEWPORT_RATIO: float = 0.8
 
 @export var guides_directory: String = "res://BrainVisualizer/Guides"
 
@@ -29,6 +30,8 @@ var _resize_mode: String = ""  # "corner" or "right"
 ## Initialize and setup the guide window.
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
+	_apply_default_window_size_to_viewport()
+	call_deferred("_apply_default_window_size_to_viewport")
 	
 	# Toolbar references
 	_search_bar = $WindowPanel/WindowMargin/WindowInternals/GuideToolbar/SearchBar
@@ -54,6 +57,20 @@ func setup() -> void:
 	_refresh_topics()
 	call_deferred("_update_sidebar_width")
 	resized.connect(_update_sidebar_width)
+
+## Size the guide window to a fraction of the active BV viewport.
+func _apply_default_window_size_to_viewport() -> void:
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var visible_size: Vector2 = viewport.get_visible_rect().size
+	if visible_size.x <= 0.0 or visible_size.y <= 0.0:
+		return
+	var target_size: Vector2 = visible_size * DEFAULT_WINDOW_VIEWPORT_RATIO
+	target_size.x = clamp(target_size.x, float(MIN_WINDOW_WIDTH), visible_size.x)
+	target_size.y = clamp(target_size.y, float(MIN_WINDOW_HEIGHT), visible_size.y)
+	custom_minimum_size = target_size
+	size = target_size
 
 ## Style the font size buttons with different A sizes (small and large).
 func _apply_font_size_button_styles() -> void:
@@ -286,36 +303,50 @@ func _load_guide_order(base_dir: String) -> Array[String]:
 	return ordered_filenames
 
 ## Collect all markdown files within the guides directory.
+## Uses ResourceLoader.list_directory() so guides are found in the exported app (.pck);
+## DirAccess.open(res://...) does not list files correctly in exported builds.
 func _collect_markdown_files(base_dir: String) -> Array[String]:
 	# Load the desired order from _guide_order.txt
 	var ordered_filenames := _load_guide_order(base_dir)
-	
+
 	var results: Array[String] = []
-	var dir := DirAccess.open(base_dir)
-	if dir == null:
-		push_error("WindowGuide: Unable to open guides directory at %s." % base_dir)
-		return results
-	dir.list_dir_begin()
-	var name := dir.get_next()
-	while name != "":
-		if name == "." or name == "..":
+	# ResourceLoader.list_directory() works in exported games (pck); DirAccess does not.
+	var names: PackedStringArray = ResourceLoader.list_directory(base_dir)
+	if names.is_empty():
+		# Fallback for editor or older engine: try DirAccess (editor only)
+		var dir := DirAccess.open(base_dir)
+		if dir == null:
+			push_error("WindowGuide: Unable to open guides directory at %s." % base_dir)
+			return results
+		dir.list_dir_begin()
+		var name := dir.get_next()
+		while name != "":
+			if name == "." or name == "..":
+				name = dir.get_next()
+				continue
+			var path := base_dir.path_join(name)
+			if dir.current_is_dir():
+				results.append_array(_collect_markdown_files(path))
+			elif _is_markdown_path(path):
+				results.append(path)
 			name = dir.get_next()
-			continue
-		var path := base_dir.path_join(name)
-		if dir.current_is_dir():
-			results.append_array(_collect_markdown_files(path))
-		elif _is_markdown_path(path):
-			results.append(path)
-		name = dir.get_next()
-	dir.list_dir_end()
-	
+		dir.list_dir_end()
+	else:
+		for name in names:
+			if name == "." or name == "..":
+				continue
+			var path := base_dir.path_join(name)
+			# list_directory returns both files and dirs; skip dirs (no extension or not .md)
+			if _is_markdown_path(path):
+				results.append(path)
+
 	# Sort by custom order, then alphabetically for any not in the list
 	results.sort_custom(func(a: String, b: String) -> bool:
 		var a_name := a.get_file()
 		var b_name := b.get_file()
 		var a_index := ordered_filenames.find(a_name)
 		var b_index := ordered_filenames.find(b_name)
-		
+
 		# If both are in the ordered list, sort by their position
 		if a_index >= 0 and b_index >= 0:
 			return a_index < b_index
@@ -328,7 +359,7 @@ func _collect_markdown_files(base_dir: String) -> Array[String]:
 		# If neither are in the ordered list, sort alphabetically
 		return a_name < b_name
 	)
-	
+
 	return results
 
 ## Extract the first heading title from a markdown file.

@@ -14,11 +14,16 @@ signal patternval_confirmed(new_patternval: PatternVal)
 
 ## due to godot limitations, can only use int here
 @export var intial_patternval: int
+## When value is int, enforce minimum. Used for voxel coordinates (e.g. patterns) where values must be >= 0.
+@export var min_int_value: int = -999999
 
 var current_patternval: PatternVal:
 	get: return PatternVal.new(previous_text)
 	set(v):
-		set_value_from_text(v.as_StringName)
+		var val_to_set: PatternVal = v
+		if val_to_set.isInt and int(val_to_set.data) < min_int_value:
+			val_to_set = PatternVal.new(min_int_value)
+		set_value_from_text(val_to_set.as_StringName)
 
 
 
@@ -36,4 +41,8 @@ func _set_input_text_valid(input_text: String) -> String:
 	return ""
 
 func _proxy_emit_confirmed_value(value_as_string: String) -> void:
-	patternval_confirmed.emit(PatternVal.new(value_as_string))
+	var pv: PatternVal = PatternVal.new(value_as_string)
+	if pv.isInt and int(pv.data) < min_int_value:
+		pv = PatternVal.new(min_int_value)
+		set_value_from_text(str(min_int_value))
+	patternval_confirmed.emit(pv)

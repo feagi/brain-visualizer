@@ -20,6 +20,8 @@ var options: Array:
 var _default_width: float
 
 func _ready():
+	_default_width = custom_minimum_size.x
+	_DropDownItems = []
 	options = initial_items
 	if not item_selected.is_connected(_user_selected_item):
 		item_selected.connect(_user_selected_item)
@@ -60,6 +62,8 @@ func _set_dropdown_via_array(input_array: Array) -> void:
 	
 	if keep_text != "":
 		selected = _DropDownItems.find(keep_text)
+	elif _DropDownItems.size() > 0 and selected == -1:
+		select(0)
 
 
 func _user_selected_item(index: int) -> void:

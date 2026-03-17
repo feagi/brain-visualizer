@@ -100,6 +100,70 @@ func save_genome(file_path: String = "") -> FeagiRequestOutput:
 	print("FEAGI REQUEST: ✅ Genome saved successfully")
 	return save_output
 
+## Upload a genome file to create a pending amalgamation.
+func request_amalgamation_by_upload(genome_path: String) -> FeagiRequestOutput:
+	print("FEAGI REQUEST: Uploading genome for amalgamation...")
+	
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	
+	if genome_path == "":
+		push_error("FEAGI REQUEST: Genome path is empty")
+		return FeagiRequestOutput.requirement_fail("GENOME_PATH_EMPTY")
+	if not FileAccess.file_exists(genome_path):
+		push_error("FEAGI REQUEST: Genome file not found at %s" % genome_path)
+		return FeagiRequestOutput.requirement_fail("GENOME_FILE_NOT_FOUND")
+	
+	var file := FileAccess.open(genome_path, FileAccess.READ)
+	if file == null:
+		push_error("FEAGI REQUEST: Unable to open genome file at %s" % genome_path)
+		return FeagiRequestOutput.requirement_fail("GENOME_FILE_OPEN_FAILED")
+	var file_bytes: PackedByteArray = file.get_buffer(file.get_length())
+	file.close()
+	
+	var boundary: String = "----FeagiBoundary" + str(Time.get_unix_time_from_system()) + str(randi())
+	var filename: String = genome_path.get_file()
+	
+	var header_text := "--%s\r\n" % boundary
+	header_text += "Content-Disposition: form-data; name=\"file\"; filename=\"%s\"\r\n" % filename
+	header_text += "Content-Type: application/json\r\n\r\n"
+	var footer_text := "\r\n--%s--\r\n" % boundary
+	
+	var body := PackedByteArray()
+	body.append_array(header_text.to_utf8_buffer())
+	body.append_array(file_bytes)
+	body.append_array(footer_text.to_utf8_buffer())
+	
+	var request := HTTPRequest.new()
+	FeagiCore.network.http_API.add_child(request)
+	
+	var headers := FeagiCore.network.http_API.get_headers()
+	var filtered_headers := PackedStringArray()
+	for header in headers:
+		if not String(header).to_lower().begins_with("content-type:"):
+			filtered_headers.append(header)
+	filtered_headers.append("Content-Type: multipart/form-data; boundary=%s" % boundary)
+	
+	var endpoint: StringName = FeagiCore.network.http_API.address_list.POST_genome_amalgamationByUpload
+	var err := request.request_raw(endpoint, filtered_headers, HTTPClient.METHOD_POST, body)
+	if err != OK:
+		request.queue_free()
+		push_error("FEAGI REQUEST: HTTPRequest failed to start (code %d)" % err)
+		return FeagiRequestOutput.requirement_fail("GENOME_UPLOAD_REQUEST_FAILED")
+	
+	var response = await request.request_completed
+	request.queue_free()
+	var response_code: int = response[1]
+	var response_body: PackedByteArray = response[3]
+	
+	if response_code == 0:
+		return FeagiRequestOutput.response_no_response(false)
+	if response_code != 200:
+		return FeagiRequestOutput.response_error_response(response_body, false, response_code)
+	
+	return FeagiRequestOutput.response_success(response_body, false, response_code)
+
 func reload_genome() -> FeagiRequestOutput:
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] reload_genome() called - starting genome data retrieval...")
 	
@@ -115,7 +179,6 @@ func reload_genome() -> FeagiRequestOutput:
 	# Use dedicated IPU/OPU type endpoints instead of generic cortical_types
 	var ipu_types_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalAreas_ipu_types)
 	var opu_types_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalAreas_opu_types)
-	var agent_list_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_list)
 	
 	# Get Cortical Area Data
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 1/7: Requesting cortical area data...")
@@ -229,31 +292,7 @@ func reload_genome() -> FeagiRequestOutput:
 	
 	# Get agent list
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 7/7: Processing agent data...")
-	FeagiCore.feagi_local_cache.clear_configuration_jsons()
-	var agent_list_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_list_request)
-	await agent_list_worker.worker_done
-	var agent_list_data: FeagiRequestOutput = agent_list_worker.retrieve_output_and_close()
-	if _return_if_HTTP_failed_and_automatically_handle(agent_list_data):
-		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 7: Agent list request failed!")
-		push_error("FEAGI Requests: Unable to grab FEAGI agent summary data!")
-		return agent_list_data
-	var agents: Array = agent_list_data.decode_response_as_array()
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Found ", agents.size(), " agents, processing individual agent data...")
-	for agent in agents:
-		if str(agent).begins_with("bv_"):
-			continue
-		print("FEAGI REQUEST: [3D_SCENE_DEBUG] Processing agent: ", agent)
-		var agent_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_agent_properties + "?agent_id=" + str(agent))
-		var agent_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_request)
-		await agent_worker.worker_done
-		var agent_data: FeagiRequestOutput = agent_worker.retrieve_output_and_close()
-		if _return_if_HTTP_failed_and_automatically_handle(agent_data):
-			print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ Failed to get data for agent: ", agent)
-			push_error("unable to return agent data for %s!" % str(agent))
-			return agent_data
-		var agent_dict: Dictionary = agent_data.decode_response_as_dict()
-		agent_dict["capabilities"]["agent_ID"] = str(agent)
-		FeagiCore.feagi_local_cache.append_configuration_json(agent_dict["capabilities"])
+	await refresh_agent_capabilities_cache(true)
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 7 complete: Agent data processed")
 	
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ ALL STEPS COMPLETE: Genome reload finished successfully!")
@@ -277,6 +316,75 @@ func get_burst_delay() -> FeagiRequestOutput:
 	var response: String = FEAGI_response_data.decode_response_as_string()
 	print("FEAGI REQUEST: Successfully retrieved delay between bursts as %f" % response.to_float())
 	FeagiCore.feagi_retrieved_burst_rate(response.to_float())
+	return FEAGI_response_data
+
+## Refreshes cached agent capabilities and device registrations using the bulk endpoint.
+func refresh_agent_capabilities_cache(include_device_registrations: bool = true) -> FeagiRequestOutput:
+	FeagiCore.feagi_local_cache.clear_configuration_jsons()
+	FeagiCore.feagi_local_cache.clear_agent_capabilities_map()
+	var query_suffix: StringName = "?include_device_registrations=true" if include_device_registrations else ""
+	var agent_caps_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
+		FeagiCore.network.http_API.address_list.GET_agent_capabilities_all + query_suffix
+	)
+	var agent_caps_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(agent_caps_request)
+	await agent_caps_worker.worker_done
+	var agent_caps_data: FeagiRequestOutput = agent_caps_worker.retrieve_output_and_close()
+	# Current FEAGI builds may not expose the legacy bulk capabilities endpoint.
+	# Treat 404 as "feature unavailable" and keep running with an empty cache.
+	if agent_caps_data.response_code == 404:
+		push_warning("FEAGI Requests: Agent capabilities endpoint unavailable (404); skipping cache refresh.")
+		FeagiCore.feagi_local_cache.set_agent_capabilities_raw_json("{}")
+		FeagiCore.feagi_local_cache.set_agent_capabilities_schema_errors({})
+		FeagiCore.feagi_local_cache.set_agent_capabilities_map({})
+		return FeagiRequestOutput.generic_success()
+	if _return_if_HTTP_failed_and_automatically_handle(agent_caps_data):
+		push_error("FEAGI Requests: Unable to grab FEAGI agent capability data!")
+		return agent_caps_data
+	var agent_caps_map: Dictionary = {}
+	var raw_json := agent_caps_data.decode_response_as_string()
+	FeagiCore.feagi_local_cache.set_agent_capabilities_raw_json(raw_json)
+	FeagiCore.feagi_local_cache.set_agent_capabilities_schema_errors({})
+	if ClassDB.class_exists("FeagiSensorimotorSchema"):
+		var schema := FeagiSensorimotorSchema.new()
+		var parsed = schema.parse_agent_capabilities(raw_json)
+		if parsed is Dictionary and not parsed.is_empty():
+			agent_caps_map = parsed
+		else:
+			agent_caps_map = agent_caps_data.decode_response_as_dict()
+		var schema_errors = schema.validate_agent_capabilities(raw_json)
+		if schema_errors is Dictionary:
+			FeagiCore.feagi_local_cache.set_agent_capabilities_schema_errors(schema_errors)
+	else:
+		agent_caps_map = agent_caps_data.decode_response_as_dict()
+	var filtered_caps_map: Dictionary = {}
+	print("FEAGI REQUEST: Found ", agent_caps_map.size(), " agents, processing capability data...")
+	for agent_id in agent_caps_map.keys():
+		if str(agent_id).begins_with("bv_"):
+			continue
+		var agent_entry = agent_caps_map[agent_id]
+		if agent_entry is Dictionary:
+			filtered_caps_map[agent_id] = agent_entry
+			if agent_entry.has("capabilities") and agent_entry["capabilities"] is Dictionary:
+				var capabilities: Dictionary = agent_entry["capabilities"]
+				capabilities["agent_ID"] = str(agent_id)
+				FeagiCore.feagi_local_cache.append_configuration_json(capabilities)
+	FeagiCore.feagi_local_cache.set_agent_capabilities_map(filtered_caps_map)
+	return agent_caps_data
+
+## Import device registrations for a specific agent.
+func import_device_registrations(agent_id: StringName, device_registrations: Dictionary) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var base_url: StringName = FeagiCore.network.http_API.address_list.POST_agent_device_registrations
+	var full_url: StringName = StringName(String(base_url).replace("{agent_id}", str(agent_id)))
+	var dict_to_send: Dictionary = { "device_registrations": device_registrations }
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(full_url, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to import device registrations for agent %s!" % agent_id)
 	return FEAGI_response_data
 
 
@@ -993,11 +1101,7 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	if response.has("cortical_id") and response["cortical_id"] != null:
 		response_cortical_id = response["cortical_id"]
 	
-	# Log visualization_voxel_granularity if present
-	if "visualization_voxel_granularity" in response:
-		print("🔵 FEAGI REQUEST: Found visualization_voxel_granularity in top-level for %s: %s (type: %s)" % [checking_cortical_ID, response["visualization_voxel_granularity"], typeof(response["visualization_voxel_granularity"])])
-	if "properties" in response and response["properties"] is Dictionary and "visualization_voxel_granularity" in response["properties"]:
-		print("🔵 FEAGI REQUEST: Found visualization_voxel_granularity in properties for %s: %s" % [checking_cortical_ID, response["properties"]["visualization_voxel_granularity"]])
+	# Log visualization_voxel_granularity if present (suppressed)
 	
 	# Handle nested properties structure - FEAGI returns {"properties": {...}}
 	# Also handle top-level fields (like visualization_voxel_granularity) that are outside properties
@@ -1010,21 +1114,15 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 			if key != "properties" and not key in properties_dict:
 				properties_dict[key] = response[key]
 				if key == "visualization_voxel_granularity":
-					print("🔵 FEAGI REQUEST: Passing visualization_voxel_granularity to cache for %s: %s (type: %s)" % [checking_cortical_ID, response[key], typeof(response[key])])
+					pass
 	if "coding_options" in properties_dict:
 		var coding_options = properties_dict["coding_options"]
 		if coding_options is Dictionary:
-			print("BV [NEURAL-CODING][API]: %s coding_options keys=%s signage=%s behavior=%s type=%s" % [
-				checking_cortical_ID,
-				coding_options.keys(),
-				coding_options.get("signage_options", "MISSING"),
-				coding_options.get("behavior_options", "MISSING"),
-				coding_options.get("coding_type_options", "MISSING")
-			])
+			pass
 		else:
-			print("BV [NEURAL-CODING][API]: %s coding_options unexpected type=%s" % [checking_cortical_ID, typeof(coding_options)])
+			pass
 	else:
-		print("BV [NEURAL-CODING][API]: %s coding_options missing" % checking_cortical_ID)
+		pass
 	properties_dict["cortical_id"] = response_cortical_id  # Add the authoritative ID to the properties dict
 	if response_cortical_id != checking_cortical_ID and checking_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
 		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(checking_cortical_ID, response_cortical_id)
@@ -1098,29 +1196,15 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 	
 	# Response is a dictionary with cortical_id as keys: {"cortical_id": {...properties...}}
 	var responses_dict: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(responses_dict.keys()))
+	# print("FEAGI REQUEST: Successfully retrieved details of %d cortical areas!" % len(responses_dict.keys()))
 	
 	for cortical_id in responses_dict.keys():
 		var area_data_raw: Dictionary = responses_dict[cortical_id]
-		# Log visualization_voxel_granularity if present
-		if "visualization_voxel_granularity" in area_data_raw:
-			print("🔵 FEAGI REQUEST: [MULTI] Found visualization_voxel_granularity in top-level for %s: %s" % [cortical_id, area_data_raw["visualization_voxel_granularity"]])
-		if "properties" in area_data_raw and area_data_raw["properties"] is Dictionary and "visualization_voxel_granularity" in area_data_raw["properties"]:
-			print("🔵 FEAGI REQUEST: [MULTI] Found visualization_voxel_granularity in properties for %s: %s" % [cortical_id, area_data_raw["properties"]["visualization_voxel_granularity"]])
+		# Log visualization_voxel_granularity if present (suppressed)
 		
-		# Handle both response formats:
-		# - { "cortical_id": { ...properties... } }
-		# - { "cortical_id": { "properties": { ...properties... } } }
-		var area_data: Dictionary = area_data_raw
-		if "properties" in area_data_raw and area_data_raw["properties"] is Dictionary:
-			# Merge top-level fields with properties (top-level takes precedence for fields like visualization_voxel_granularity)
-			area_data = area_data_raw["properties"].duplicate()
-			# Copy top-level fields - top-level takes precedence (overwrites properties version)
-			for key in area_data_raw.keys():
-				if key != "properties":
-					area_data[key] = area_data_raw[key]  # Top-level always wins
-					if key == "visualization_voxel_granularity":
-						print("🔵 FEAGI REQUEST: [MULTI] Passing visualization_voxel_granularity to cache for %s: %s" % [cortical_id, area_data_raw[key]])
+		# Only use top-level response fields; legacy properties are ignored.
+		var area_data: Dictionary = area_data_raw.duplicate()
+		area_data.erase("properties")
 		# Ensure cortical_id is in the dict (some responses omit it).
 		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:
@@ -1128,18 +1212,12 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 		if "coding_options" in area_data:
 			var coding_options = area_data["coding_options"]
 			if coding_options is Dictionary:
-				print("BV [NEURAL-CODING][API][MULTI]: %s coding_options keys=%s signage=%s behavior=%s type=%s" % [
-					cortical_id,
-					coding_options.keys(),
-					coding_options.get("signage_options", "MISSING"),
-					coding_options.get("behavior_options", "MISSING"),
-					coding_options.get("coding_type_options", "MISSING")
-				])
+				pass
 			else:
-				print("BV [NEURAL-CODING][API][MULTI]: %s coding_options unexpected type=%s" % [cortical_id, typeof(coding_options)])
+				pass
 		else:
-			print("BV [NEURAL-CODING][API][MULTI]: %s coding_options missing" % cortical_id)
-		print("🔵 FEAGI REQUEST: [MULTI] Updating cache for %s with visualization_voxel_granularity: %s" % [cortical_id, area_data.get("visualization_voxel_granularity", "NOT PRESENT")])
+			pass
+		# print("🔵 FEAGI REQUEST: [MULTI] Updating cache for %s with visualization_voxel_granularity: %s" % [cortical_id, area_data.get("visualization_voxel_granularity", "NOT PRESENT")])
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(area_data)
 	
 	return FEAGI_response_data
@@ -1199,7 +1277,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 			# Force-add if not present due to filter timing
 			var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(response["cortical_id"], null)
 			if new_area_obj != null:
-				bm._add_cortical_area(new_area_obj)
+				_call_add_cortical_area(bm, new_area_obj)
 	print("FEAGI REQUEST: Fetched detailed properties for newly created cortical area %s" % response["cortical_id"])
 	
 	return FEAGI_response_data
@@ -1253,7 +1331,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 		if bm != null:
 			var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(response["cortical_id"], null)
 			if new_area_obj != null:
-				bm._add_cortical_area(new_area_obj)
+				_call_add_cortical_area(bm, new_area_obj)
 	print("FEAGI REQUEST: Fetched detailed properties for newly created memory cortical area %s" % response["cortical_id"])
 	
 	return FEAGI_response_data
@@ -1373,11 +1451,19 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 			for cortical_id in created_cortical_ids:
 				var new_area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_id, null)
 				if new_area_obj != null:
-					bm._add_cortical_area(new_area_obj)
+					_call_add_cortical_area(bm, new_area_obj)
 	
 	print("FEAGI REQUEST: All newly created IOPU cortical areas for type %s, unit %d have been added to cache." % [IOPU_template.ID, unit_id])
 	
 	return FEAGI_response_data
+
+## Safely call add_cortical_area on a brain monitor without static member resolution.
+func _call_add_cortical_area(brain_monitor: Object, area: AbstractCorticalArea) -> Variant:
+	if brain_monitor == null or area == null:
+		return null
+	if brain_monitor.has_method("add_cortical_area"):
+		return brain_monitor.call("add_cortical_area", area)
+	return null
 
 
 ## Clone a given cortical area
@@ -1489,7 +1575,7 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 					continue
 				any_bm_found = true
 				print("FEAGI REQUEST: Manually injecting cloned area %s into BM for region %s" % [new_id, target_region_id])
-				bm._add_cortical_area(final_area_obj)
+				_call_add_cortical_area(bm, final_area_obj)
 			if !any_bm_found:
 				print("⚠️ FEAGI REQUEST: No Brain Monitor tab found for region %s to auto-add cloned area %s" % [target_region_id, new_id])
 		
@@ -1520,7 +1606,7 @@ func clone_cortical_area(cloning_area: AbstractCorticalArea, new_name: StringNam
 						if BV.UI:
 							var bm_target: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(target_region)
 							if bm_target != null:
-								bm_target._add_cortical_area(new_area_obj)
+								_call_add_cortical_area(bm_target, new_area_obj)
 		# Refresh mapping cache so UI components (3D scene, Circuit Builder) see new connections
 		var mapping_summary: FeagiRequestOutput = await get_mapping_summary()
 		if mapping_summary != null and mapping_summary.success:
@@ -1616,22 +1702,18 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 	if network_check != null:
 		return network_check
 	
-	# Log what we're sending
-	print("🔵 FEAGI REQUEST: update_cortical_area called for area: %s" % editing_ID)
-	print("🔵 FEAGI REQUEST: Properties being sent: %s" % properties)
-	if "visualization_voxel_granularity" in properties:
-		print("🔵 FEAGI REQUEST: visualization_voxel_granularity value: %s (type: %s)" % [properties["visualization_voxel_granularity"], typeof(properties["visualization_voxel_granularity"])])
+	# Log what we're sending (suppressed)
 	
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, properties)
-	print("🔵 FEAGI REQUEST: Making PUT request to %s for cortical area %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID])
-	print("🔵 FEAGI REQUEST: Full request body: %s" % properties)
+	# print("🔵 FEAGI REQUEST: Making PUT request to %s for cortical area %s" % [FeagiCore.network.http_API.address_list.PUT_genome_corticalArea, editing_ID])
+	# print("🔵 FEAGI REQUEST: Full request body: %s" % properties)
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	
-	print("🔵 FEAGI REQUEST: Response received - has_errored: %s, has_timed_out: %s" % [FEAGI_response_data.has_errored, FEAGI_response_data.has_timed_out])
+	# print("🔵 FEAGI REQUEST: Response received - has_errored: %s, has_timed_out: %s" % [FEAGI_response_data.has_errored, FEAGI_response_data.has_timed_out])
 	if FEAGI_response_data.has_errored:
 		var error_details = FEAGI_response_data.decode_response_as_generic_error_code()
 		var raw_response = FEAGI_response_data.decode_response_as_string()
@@ -2211,6 +2293,44 @@ func update_composite_morphology(morphology_name: StringName, source_seed: Vecto
 	return FEAGI_response_data
 
 
+## Rename a custom morphology. Core morphologies cannot be renamed.
+func rename_morphology(old_morphology_id: StringName, new_morphology_id: StringName) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !old_morphology_id in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
+		push_error("FEAGI Requests: Morphology %s doesn't exist to rename!" % old_morphology_id)
+		return FeagiRequestOutput.requirement_fail("MORPHOLOGY_MISSING")
+	var morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[old_morphology_id]
+	if morphology.internal_class == BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE:
+		push_error("FEAGI Requests: Cannot rename core morphology %s!" % old_morphology_id)
+		return FeagiRequestOutput.requirement_fail("CORE_MORPHOLOGY_NOT_RENAMEABLE")
+	var new_trimmed: String = String(new_morphology_id).strip_edges()
+	if new_trimmed.is_empty():
+		push_error("FEAGI Requests: New morphology name cannot be empty!")
+		return FeagiRequestOutput.requirement_fail("NEW_NAME_EMPTY")
+	if new_trimmed == String(old_morphology_id):
+		return FeagiRequestOutput.requirement_fail("SAME_NAME")
+	if new_trimmed in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
+		push_error("FEAGI Requests: Morphology with name %s already exists!" % new_trimmed)
+		return FeagiRequestOutput.requirement_fail("NAME_EXISTS")
+	var dict_to_send: Dictionary = {
+		"old_morphology_id": old_morphology_id,
+		"new_morphology_id": new_trimmed
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_morphology_rename, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to rename morphology from %s to %s!" % [old_morphology_id, new_trimmed])
+		return FEAGI_response_data
+	print("FEAGI REQUEST: Successfully renamed morphology from %s to %s" % [old_morphology_id, new_trimmed])
+	FeagiCore.feagi_local_cache.morphologies.rename_morphology_in_cache(old_morphology_id, new_trimmed)
+	await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
+	return FEAGI_response_data
+
+
 ## Delete a morphology
 func delete_morphology(morphology: BaseMorphology) -> FeagiRequestOutput:
 	# Requirement checking
@@ -2259,6 +2379,8 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	if !destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 		push_error("FEAGI Requests: Unable to get mappings toward uncached cortical area %s that is not found in cache!!" % destination_cortical_ID)
 		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
+	if source_cortical_ID == destination_cortical_ID:
+		return await _get_self_mappings_from_summary(source_cortical_ID)
 
 	# Define Request
 	var dict_to_send: Dictionary = {
@@ -2271,8 +2393,13 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if FEAGI_response_data.has_errored and FEAGI_response_data.response_code == 404:
+		print("FEAGI REQUEST: No mappings found for %s toward %s (404)" % [source_cortical_ID, destination_cortical_ID])
+		var source_area_404: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
+		var destination_area_404: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
+		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area_404, destination_area_404, [])
+		return FEAGI_response_data
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		push_error("FEAGI Requests: Unable to retrieve mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 		return FEAGI_response_data
 	# Unlikely not, but checking to make sure cortical areas still exist
 	if source_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys() or destination_cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
@@ -2295,12 +2422,30 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 		# Temporarily disable ALL competing refresh signals during update
 		_disable_region_refresh_signals()
 		_disable_local_cache_refresh_signals()
-		_process_brain_region_io_updates(regions_map)
+		_process_brain_region_io_updates(regions_map, true)
 		# Re-enable signals after update is complete
 		call_deferred("_enable_region_refresh_signals")
 		call_deferred("_enable_local_cache_refresh_signals")
 	
 	return FEAGI_response_data
+
+## Loads mappings for a cortical area mapped to itself from mapping summary.
+func _get_self_mappings_from_summary(cortical_id: StringName) -> FeagiRequestOutput:
+	var mapping_summary: FeagiRequestOutput = await get_mapping_summary()
+	if mapping_summary == null or not mapping_summary.success:
+		push_error("FEAGI Requests: Unable to retrieve mapping summary for self mapping of %s" % cortical_id)
+		return mapping_summary
+	var mapping_dict: Dictionary = mapping_summary.decode_response_as_dict()
+	if not mapping_dict.has(cortical_id):
+		print("FEAGI REQUEST: Mapping summary did not include %s; leaving cache unchanged" % cortical_id)
+		return mapping_summary
+	var targets: Dictionary = mapping_dict[cortical_id]
+	var mapping_dictionaries: Array[Dictionary] = []
+	if targets.has(cortical_id):
+		mapping_dictionaries.assign(targets[cortical_id])
+	var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_id]
+	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(area, area, mapping_dictionaries)
+	return mapping_summary
 
 
 ## Set (overwrite) the mappings between 2 areas
@@ -2320,10 +2465,23 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
 	
 	# Define Request
+	var mapping_payload: Array[Dictionary] = SingleMappingDefinition.to_FEAGI_JSON_array(mappings)
+	for mapping_entry: Dictionary in mapping_payload:
+		if mapping_entry.get("morphology_id", "") == "associative_memory":
+			mapping_entry["plasticity_flag"] = true
+			if !"plasticity_constant" in mapping_entry:
+				mapping_entry["plasticity_constant"] = SingleMappingDefinition.DEFAULT_PLASTICITY_CONSTANT
+			if !"ltp_multiplier" in mapping_entry:
+				mapping_entry["ltp_multiplier"] = SingleMappingDefinition.DEFAULT_LTP_MULTIPLIER
+			if !"ltd_multiplier" in mapping_entry:
+				mapping_entry["ltd_multiplier"] = SingleMappingDefinition.DEFAULT_LTD_MULTIPLIER
+			if !"plasticity_window" in mapping_entry:
+				mapping_entry["plasticity_window"] = SingleMappingDefinition.DEFAULT_PLASTICITY_WINDOW
+			mapping_entry["plasticity_window"] = int(mapping_entry["plasticity_window"])
 	var dict_to_send: Dictionary = {
 		"src_cortical_area": source_cortical_ID,
 		"dst_cortical_area": destination_cortical_ID,
-		"mapping_string": SingleMappingDefinition.to_FEAGI_JSON_array(mappings)
+		"mapping_string": mapping_payload
 		}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_mappingProperties, dict_to_send)
 	
@@ -2348,7 +2506,7 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 		# Temporarily disable ALL competing refresh signals during update
 		_disable_region_refresh_signals()
 		_disable_local_cache_refresh_signals()
-		_process_brain_region_io_updates(regions_map_put)
+		_process_brain_region_io_updates(regions_map_put, true)
 		# Update local cache AFTER processing brain region updates to prevent conflicts
 		FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping(source_area, destination_area, mappings)
 		# Re-enable signals after update is complete
@@ -2368,7 +2526,7 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	return FEAGI_response_data
 
 ## Processes brain region I/O updates from FEAGI API response and reconfigures plates
-func _process_brain_region_io_updates(brain_regions_data) -> void:
+func _process_brain_region_io_updates(brain_regions_data, allow_clear: bool = true) -> void:
 	print("🔄 BRAIN REGION I/O UPDATE: Processing %d region(s) from FEAGI response" % brain_regions_data.size())
 	
 	for region_id in brain_regions_data.keys():
@@ -2399,7 +2557,10 @@ func _process_brain_region_io_updates(brain_regions_data) -> void:
 				inputs.append(StringName(id))
 			print("    📥 Updating %d input areas: %s" % [inputs.size(), inputs])
 			# Update the brain region's partial mappings to reflect new I/O status
-			_update_brain_region_io_mappings(brain_region, inputs, true)  # true = input
+			if not allow_clear and inputs.is_empty() and _region_has_partial_mappings_of_type(brain_region, true):
+				print("    Skipping empty input update to preserve existing mappings")
+			else:
+				_update_brain_region_io_mappings(brain_region, inputs, true)  # true = input
 			
 		if region_data.has("outputs"):
 			var outputs_raw = region_data["outputs"]
@@ -2408,7 +2569,10 @@ func _process_brain_region_io_updates(brain_regions_data) -> void:
 				outputs.append(StringName(id2))
 			print("    📤 Updating %d output areas: %s" % [outputs.size(), outputs])
 			# Update the brain region's partial mappings to reflect new I/O status
-			_update_brain_region_io_mappings(brain_region, outputs, false)  # false = output
+			if not allow_clear and outputs.is_empty() and _region_has_partial_mappings_of_type(brain_region, false):
+				print("    Skipping empty output update to preserve existing mappings")
+			else:
+				_update_brain_region_io_mappings(brain_region, outputs, false)  # false = output
 		
 		# Log state after update
 		print("    📊 AFTER UPDATE:")
@@ -2552,7 +2716,14 @@ func _refresh_regions_containing_areas(areas: Array[AbstractCorticalArea]) -> vo
 		return
 
 	print("  🔄 Applying refreshed I/O membership for %d region(s)" % subset.size())
-	_process_brain_region_io_updates(subset)
+	_process_brain_region_io_updates(subset, false)
+
+func _region_has_partial_mappings_of_type(brain_region: BrainRegion, is_input: bool) -> bool:
+	"""Return true when the region already has input/output partial mappings."""
+	for mapping in brain_region.partial_mappings:
+		if mapping.is_region_input == is_input:
+			return true
+	return false
 	
 	# Note: _process_brain_region_io_updates() will trigger per-region visualization refresh.
 
@@ -2927,7 +3098,7 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 						# Check if visualization already exists
 						if not brain_monitor.has_cortical_area_visualization(area.cortical_ID):
 							print("FEAGI REQUEST: 🆕 Creating visualization for cortical area %s in region %s" % [area.cortical_ID, region_id])
-							var created_viz = brain_monitor._add_cortical_area(area)
+							var created_viz = _call_add_cortical_area(brain_monitor, area)
 							if created_viz:
 								areas_created += 1
 								print("FEAGI REQUEST: ✅ Successfully created visualization for %s" % area.cortical_ID)

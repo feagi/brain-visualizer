@@ -22,6 +22,11 @@ const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_
 const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/MemoryJelloMaterial.tres"
 const POWER_NEON_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonMaterial.tres"
 const TESLA_COIL_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilMaterial.tres"
+const FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE: int = 18
+const FRIENDLY_NAME_LABEL_SMOOTH_SPEED: float = 10.0
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN: float = 2.75
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX: float = 4.5
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE: float = 0.18
 
 # Visual scale for voxel meshes (world units). Matches existing individual-voxel sizing.
 const _VOXEL_VISUAL_SCALE: float = 0.8
@@ -48,6 +53,9 @@ var _is_hovered_over: bool = false
 var _is_selected: bool = false
 var _current_neuron_count: int = 0
 var _warning_threshold: int = 50000  # Warn if exceeding this many neurons
+var _last_label_outside_dir_xz: Vector2 = Vector2(0.0, 1.0)
+var _friendly_name_label_target_position: Vector3 = Vector3.ZERO
+var _has_friendly_name_label_target_position: bool = false
 
 # Rust processing (required - no fallback!)
 var _rust_processor: Object = null  # FeagiDataDeserializer instance
@@ -90,6 +98,8 @@ var _memory_inactive_emission: Color
 var _memory_inactive_emission_energy: float
 var _memory_inactive_rim_intensity: float
 var _memory_inactive_jello_strength: float
+var _memory_default_radius: float = 1.5
+var _memory_default_height: float = 3.0
 
 func setup(area: AbstractCorticalArea) -> void:
 	# Store cortical area properties for later use
@@ -109,12 +119,12 @@ func setup(area: AbstractCorticalArea) -> void:
 	else:
 		_visualization_settings = VisualizationSettings.new()
 	
-	# Initialize Rust processor - REQUIRED, no fallback!
-	if not ClassDB.class_exists("FeagiDataDeserializer"):
-		push_error("🦀 CRITICAL: Rust deserializer not found! Build with: cd rust_extensions/feagi_data_deserializer && ./build.sh")
-		return
-	
-	_rust_processor = ClassDB.instantiate("FeagiDataDeserializer")
+	# Initialize Rust processor when GDExtension is available (optional when extension is disabled)
+	if ClassDB.class_exists("FeagiDataDeserializer"):
+		_rust_processor = ClassDB.instantiate("FeagiDataDeserializer")
+	else:
+		push_warning("Rust deserializer (FeagiDataDeserializer) not loaded; direct neural points will not render. Build/enable: rust_extensions/feagi_data_deserializer")
+		_rust_processor = null
 	_warning_threshold = _visualization_settings.performance_warning_threshold
 
 	# Create static body for collision detection
@@ -203,12 +213,14 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Create outline mesh for cortical area hover/selection
 	_outline_mesh_instance = MeshInstance3D.new()
 	_outline_mesh_instance.name = "CorticalAreaOutline"
+	# Outline inherits scale from _static_body; avoid double-scaling here.
+	_outline_mesh_instance.scale = Vector3.ONE
 	
 	# Use different meshes based on cortical area type/ID
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		var sphere_mesh = SphereMesh.new()
-		sphere_mesh.radius = 1.5  # 3x larger: 0.5 * 3 = 1.5
-		sphere_mesh.height = 3.0  # 3x larger: 1.0 * 3 = 3.0
+		sphere_mesh.radius = _memory_default_radius  # 3x larger: 0.5 * 3 = 1.5
+		sphere_mesh.height = _memory_default_height  # 3x larger: 1.0 * 3 = 3.0
 		sphere_mesh.radial_segments = 16  # Good balance of quality vs performance
 		sphere_mesh.rings = 8
 		_outline_mesh_instance.mesh = sphere_mesh
@@ -265,8 +277,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	_static_body.add_child(_outline_mesh_instance)
 	
-	# Create individual plate if needed
-	_create_individual_plate_if_needed(area)
+	# Individual per-area plates are disabled; use region plates only.
 	
 	# Create friendly name label with high-quality MSDF rendering
 	_friendly_name_label = Label3D.new()
@@ -301,6 +312,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		_static_body.add_child(_friendly_name_label)
 	else:
 		add_child(_friendly_name_label)
+	set_process(true)
 
 	# Set initial properties
 	_position_FEAGI_space = area.coordinates_3D
@@ -348,7 +360,29 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 
 func update_friendly_name(new_name: String) -> void:
-	_friendly_name_label.text = new_name
+	_friendly_name_label.text = _wrap_friendly_name_text(new_name)
+
+func _wrap_friendly_name_text(label_text: String) -> String:
+	var normalized_text := label_text.strip_edges()
+	if normalized_text.is_empty():
+		return ""
+	var wrapped_lines := PackedStringArray()
+	for raw_line in normalized_text.split("\n"):
+		var words := raw_line.split(" ", false)
+		if words.is_empty():
+			wrapped_lines.append("")
+			continue
+		var current_line: String = words[0]
+		for i in range(1, words.size()):
+			var word: String = words[i]
+			var candidate_line := "%s %s" % [current_line, word]
+			if candidate_line.length() <= FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE:
+				current_line = candidate_line
+			else:
+				wrapped_lines.append(current_line)
+				current_line = word
+		wrapped_lines.append(current_line)
+	return "\n".join(wrapped_lines)
 
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Vector3i) -> void:
 	super(new_FEAGI_coordinate_position)
@@ -361,7 +395,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
+		# print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Memory areas are conceptually 1x1x1 (all activity maps to (0,0,0)).
@@ -391,12 +425,12 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 			(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 3.0, 1.0)  # Maintain PNG icon collision
 			# Keep collider centered with the icon (icon at y=2.0)
 			collision_shape.position = Vector3(0.0, 2.0, 0.0)
-			print("   📏 Maintained PNG icon collision size: ", (collision_shape.shape as BoxShape3D).size, " at offset ", collision_shape.position)
+			# print("   📏 Maintained PNG icon collision size: ", (collision_shape.shape as BoxShape3D).size, " at offset ", collision_shape.position)
 		else:
 			(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
 	
-	# Update outline mesh size
-	_outline_mesh_instance.scale = _dimensions
+	# Update outline mesh size (inherits scale from _static_body)
+	_outline_mesh_instance.scale = Vector3.ONE
 	
 	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
 	if not _should_use_png_icon_by_id(_cortical_area_id):
@@ -404,7 +438,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
+		# print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
 	
 	# Update outline material scaling (only for non-memory areas that use shader materials)
 	if _outline_mat != null:
@@ -412,27 +446,62 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	# print("DirectPoints voxel renderer dimensions updated: ", new_dimensions)  # Suppressed - called too frequently
 
-## Keeps the friendly-name label below the cortical area, but snaps its Z to the camera-facing edge
-## (avoids the label sitting at the center of the cortical depth).
+func _process(delta: float) -> void:
+	var had_target := _has_friendly_name_label_target_position
+	if not _update_friendly_name_label_target_position():
+		return
+	if not had_target:
+		_friendly_name_label.position = _friendly_name_label_target_position
+		return
+	var alpha: float = clampf(1.0 - exp(-FRIENDLY_NAME_LABEL_SMOOTH_SPEED * delta), 0.0, 1.0)
+	_friendly_name_label.position = _friendly_name_label.position.lerp(_friendly_name_label_target_position, alpha)
+
+## Keeps the friendly-name label below the cortical area and continuously outside the area footprint.
+## Target position tracks camera movement; final motion is time-smoothed in _process().
 func bv_update_friendly_name_label_position() -> void:
+	var had_target := _has_friendly_name_label_target_position
+	if not _update_friendly_name_label_target_position():
+		return
+	if not had_target:
+		_friendly_name_label.position = _friendly_name_label_target_position
+
+func _update_friendly_name_label_target_position() -> bool:
 	if _static_body == null or _friendly_name_label == null:
-		return
+		return false
 	if _should_use_png_icon_by_id(_cortical_area_id):
-		return
+		return false
 	var viewport := get_viewport()
 	if viewport == null:
-		return
+		return false
 	var cam := viewport.get_camera_3d()
 	if cam == null:
-		return
-	
-	var y_offset: float = -(_static_body.scale.y / 2.0 + 2.0)
-	# Renderer base class extends Node (not Node3D), so compute camera relation in the StaticBody3D's space.
+		return false
+	var half_y: float = absf(_static_body.scale.y) * 0.5
+	var bottom_gap: float = clampf(
+		half_y * FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX
+	)
+	var y_offset: float = -(half_y + bottom_gap)
+	var edge_margin: float = maxf(0.75, minf(_static_body.scale.x, _static_body.scale.z) * 0.15)
+	# Renderer base class extends Node (not Node3D), so compute camera relation in StaticBody3D space.
 	var cam_in_body_local: Vector3 = _static_body.to_local(cam.global_position)
-	var z_sign: float = -1.0 if cam_in_body_local.z < 0.0 else 1.0
-	var z_edge: float = _static_body.position.z + z_sign * (_static_body.scale.z / 2.0)
-	
-	_friendly_name_label.position = Vector3(_static_body.position.x, _static_body.position.y + y_offset, z_edge)
+	var cam_dir_xz := Vector2(cam_in_body_local.x, cam_in_body_local.z)
+	if cam_dir_xz.length_squared() > 0.0001:
+		_last_label_outside_dir_xz = cam_dir_xz.normalized()
+
+	var dir_xz: Vector2 = _last_label_outside_dir_xz
+	var half_x: float = absf(_static_body.scale.x) * 0.5
+	var half_z: float = absf(_static_body.scale.z) * 0.5
+	# Support distance to rectangle boundary along direction (continuous, no axis snapping).
+	var edge_distance: float = absf(dir_xz.x) * half_x + absf(dir_xz.y) * half_z
+	var center_x: float = _static_body.position.x
+	var center_z: float = _static_body.position.z
+	var label_x: float = center_x + dir_xz.x * (edge_distance + edge_margin)
+	var label_z: float = center_z + dir_xz.y * (edge_distance + edge_margin)
+	_friendly_name_label_target_position = Vector3(label_x, _static_body.position.y + y_offset, label_z)
+	_has_friendly_name_label_target_position = true
+	return true
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	# This method handles legacy SVO data for backward compatibility
@@ -631,7 +700,10 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 		if point_count % 100 == 0 or point_count <= 10:
 			print("   🔥 [%s] Processing %d aggregated rendering chunks" % [_cortical_area_id, point_count])
 	
-	# Call Rust to apply directly to MultiMesh - NO GDScript LOOP!
+	# Call Rust to apply directly to MultiMesh when deserializer is available
+	if _rust_processor == null:
+		_clear_all_neurons()
+		return
 	# NOTE: For aggregated rendering mode, coordinates are granularity centers, mesh size is granularity dimensions
 	# Rust processor will correctly position chunk boxes in Godot space
 	var result = _rust_processor.apply_arrays_to_multimesh(
@@ -1283,6 +1355,9 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 	"""Update memory sphere size based on neuron count"""
 	if _cortical_area_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		return
+	if neuron_count <= 0:
+		_apply_default_memory_sphere_size()
+		return
 	
 	# Size the memory sphere by treating its volume as proportional to neuron_count.
 	#
@@ -1291,6 +1366,11 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 	var volume := float(neuron_count)
 	var sphere_radius := pow((3.0 * volume) / (4.0 * PI), 1.0 / 3.0)
 	var sphere_height := sphere_radius * 2.0
+
+	# Guard against non-finite sizes to prevent invalid transforms.
+	if not is_finite(sphere_radius) or not is_finite(sphere_height) or sphere_radius < 0.0:
+		_apply_default_memory_sphere_size()
+		return
 	
 	
 	# Update the sphere mesh
@@ -1327,6 +1407,9 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 				# For a sphere, the center Y should be at: plate_top_y + AREA_ABOVE_PLATE_GAP + sphere_radius
 				var sphere_bottom_y = plate_top_y + AREA_ABOVE_PLATE_GAP
 				var sphere_center_y = sphere_bottom_y + sphere_radius
+				if not is_finite(sphere_center_y):
+					_apply_default_memory_sphere_size()
+					return
 				
 				# Update the static body's global Y position to keep sphere afloat
 				var current_pos = _static_body.global_position
@@ -1336,6 +1419,26 @@ func _update_memory_sphere_size(neuron_count: int) -> void:
 				if _friendly_name_label != null:
 					var label_y_offset = -(sphere_radius + 2.0)
 					_friendly_name_label.global_position = Vector3(current_pos.x, sphere_center_y + label_y_offset, current_pos.z)
+
+	if has_meta("_memory_size_invalid_logged"):
+		remove_meta("_memory_size_invalid_logged")
+
+func _apply_default_memory_sphere_size() -> void:
+	# Default size used when stats are invalid or unavailable.
+	if _cortical_area_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		return
+	if not has_meta("_memory_size_invalid_logged"):
+		set_meta("_memory_size_invalid_logged", true)
+		push_warning("Memory sphere size invalid; using default size for %s." % _cortical_area_id)
+	if _outline_mesh_instance and _outline_mesh_instance.mesh is SphereMesh:
+		var sphere_mesh = _outline_mesh_instance.mesh as SphereMesh
+		sphere_mesh.radius = _memory_default_radius
+		sphere_mesh.height = _memory_default_height
+	if _static_body:
+		var collision_shape = _static_body.get_child(0) as CollisionShape3D
+		if collision_shape and collision_shape.shape is SphereShape3D:
+			var sphere_shape = collision_shape.shape as SphereShape3D
+			sphere_shape.radius = _memory_default_radius
 
 ## Helper to find the parent brain region 3D visualization
 func _find_parent_brain_region() -> UI_BrainMonitor_BrainRegion3D:
@@ -1563,8 +1666,13 @@ func _memory_activity_step(
 
 ## Creates an individual plate under this cortical area if needed
 func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
+	# Individual per-area plates are disabled by design.
+	return
 	# 1) Skip if already on a brain region plate (avoid double plating)
 	if _is_on_brain_region_plate():
+		var existing_plate := _static_body.get_node_or_null("IndividualPlate")
+		if existing_plate != null:
+			existing_plate.queue_free()
 		return
 
 	# 2) Determine IO status from active brain regions in the scene
@@ -1591,7 +1699,7 @@ func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
 
 	match plate_type:
 		"input":
-			material.albedo_color = Color(0.0, 0.6, 0.0, 0.2)
+			material.albedo_color = Color(1.0, 0.5, 0.0, 0.2)
 		"output":
 			material.albedo_color = Color(0.0, 0.4, 0.0, 0.2)
 		"conflict":

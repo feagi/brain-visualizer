@@ -1,8 +1,9 @@
 extends BaseDraggableWindow
 class_name WindowConfigurablePopup
 
-var _message_box: Label
+var _message_box: RichTextLabel
 var _button_container: HBoxContainer
+var _enter_confirms_button_text: String = ""
 
 func _ready() -> void:
 	super()
@@ -26,3 +27,32 @@ func _generate_buttons(button_defs: Array[ConfigurablePopupButtonDefinition]) ->
 		_button_container.add_child(button)
 		_button_container.theme_type_variation = "Button_big"
 		button.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(button, "Button_big")
+
+func _input(event: InputEvent) -> void:
+	super(event)
+	if _enter_confirms_button_text == "":
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := event as InputEventKey
+		if key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER:
+			accept_event()
+			_press_button_with_text(_enter_confirms_button_text)
+
+func set_enter_confirms_button(button_text: String) -> void:
+	_enter_confirms_button_text = button_text
+
+func focus_button_with_text(button_text: String) -> bool:
+	for child in _button_container.get_children():
+		var button := child as Button
+		if button and button.text == button_text:
+			button.grab_focus()
+			return true
+	return false
+
+func _press_button_with_text(button_text: String) -> bool:
+	for child in _button_container.get_children():
+		var button := child as Button
+		if button and button.text == button_text:
+			button.emit_signal("pressed")
+			return true
+	return false

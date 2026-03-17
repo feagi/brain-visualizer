@@ -1,6 +1,6 @@
 [package]
 name = "feagi_embedded"
-version = "2.0.0"
+version = "2.1.4"
 edition = "2021"
 authors = ["Neuraville Inc. <feagi@neuraville.com>"]
 license = "Apache-2.0"
@@ -8,12 +8,12 @@ description = "FEAGI Embedded - GDExtension for running FEAGI in Godot applicati
 
 [dependencies]
 # Godot Rust bindings (desktop only - no WASM support for embedded FEAGI)
-godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
+godot = { git = "https://github.com/godot-rust/gdext", rev = "309881cab73255934a0c85853f4e52de278f114c", features = ["api-4-5"] }
 
-# FEAGI library (local path)
+# FEAGI library (FeagiInstance/FeagiConfig from feagi-rs; not published on crates.io)
 feagi = { path = "../../../feagi-rs", default-features = false, features = ["embedded"] }
-feagi-config = { version = "0.0.1-beta.2" }
-feagi-npu-burst-engine = { version = "0.0.1-beta.2" }
+feagi-config = { version = "0.0.1-beta.19" }
+feagi-npu-burst-engine = { version = "0.0.1-beta.19" }
 
 # Error handling
 anyhow = "1.0"

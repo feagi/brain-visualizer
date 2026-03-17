@@ -34,6 +34,9 @@ func setup_from_starting_region(settings: SelectGenomeObjectSettings) -> void:
 	scene.setup_first(_view_config.starting_region, _view_config, _selected_objects)
 	scene.region_expansion_attempted.connect(_user_expanding_region)
 	scene.genome_object_toggled.connect(_user_selected_object)
+	# Auto-expand the root region so children are visible by default.
+	if _view_config.starting_region != null and _view_config.starting_region.is_root_region():
+		_user_expanding_region(_view_config.starting_region, scene)
 
 #TODO improve
 func apply_name_filter(filter: StringName) -> void:

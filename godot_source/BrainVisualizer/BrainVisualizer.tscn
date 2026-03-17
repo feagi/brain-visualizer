@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://xy35ep21wxy"]
+[gd_scene load_steps=17 format=3 uid="uid://xy35ep21wxy"]
 
 [ext_resource type="Script" uid="uid://dkpx8psa1xbfm" path="res://BrainVisualizer/BrainVisualizer.gd" id="1_234dh"]
 [ext_resource type="PackedScene" uid="uid://fksp0qyuwqxy" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.tscn" id="1_rjw0f"]
@@ -9,7 +9,7 @@
 [ext_resource type="Script" uid="uid://xuo7sffioktt" path="res://BrainVisualizer/UI/CircuitBuilder/TempSplit.gd" id="6_r3y8u"]
 [ext_resource type="PackedScene" uid="uid://bpam2w7i6dg8w" path="res://BrainVisualizer/UI/UIView/UIView.tscn" id="7_ee4d5"]
 [ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://BrainVisualizer/UI/sky.tres" id="7_wiv4s"]
-[ext_resource type="PackedScene" uid="uid://c8scale_control" path="res://BrainVisualizer/UI/ScaleControl/ScaleControl.tscn" id="8_scale"]
+[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/ScaleControl/ScaleControl.tscn" id="8_scale"]
 [ext_resource type="Script" uid="uid://ceahb5atex4dj" path="res://BrainVisualizer/UI/Windows/WindowManager.gd" id="9_eg4r6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ouwte"]
@@ -17,9 +17,6 @@ shader = ExtResource("7_wiv4s")
 shader_parameter/HorizonColor = Color(0.08, 0.11, 0.15, 1)
 shader_parameter/SkyColor = Color(0.12, 0.16, 0.22, 1)
 shader_parameter/Clamp = Vector3(0.2, 0.1, 0.5)
-shader_parameter/NoiseScale = 2.0
-shader_parameter/NoiseIntensity = 0.15
-shader_parameter/PatternScale = 1.5
 
 [sub_resource type="Sky" id="Sky_btdg3"]
 sky_material = SubResource("ShaderMaterial_ouwte")
@@ -32,6 +29,10 @@ sky = SubResource("Sky_btdg3")
 bg_color = Color(0.117647, 0.14902, 0.203922, 0.780392)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_warning_panel"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
 bg_color = Color(0, 0, 0, 0.35)
 border_width_left = 2
 border_width_top = 2
@@ -42,10 +43,6 @@ corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
-content_margin_left = 18
-content_margin_top = 14
-content_margin_right = 18
-content_margin_bottom = 14
 
 [node name="BrainVisualizer" type="Node"]
 script = ExtResource("1_234dh")
@@ -63,7 +60,6 @@ offset_top = 103.0
 offset_right = 1280.0
 offset_bottom = 720.0
 mouse_filter = 2
-touch_dragger_enabled = false
 script = ExtResource("6_r3y8u")
 
 [node name="Control" type="Control" parent="UIManager/CB_Holder"]
@@ -82,6 +78,7 @@ mouse_filter = 2
 mouse_filter = 2
 
 [node name="ScaleControl" parent="UIManager" instance=ExtResource("8_scale")]
+layout_mode = 3
 
 [node name="WindowManager" type="Node" parent="UIManager"]
 script = ExtResource("9_eg4r6")
@@ -111,7 +108,6 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_rogx1")
 
-
 [node name="LoadingOverlay" type="BoxContainer" parent="UIManager/TempLoadingScreen"]
 layout_mode = 2
 alignment = 2
@@ -120,8 +116,8 @@ vertical = true
 [node name="VBoxContainer" type="VBoxContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay"]
 layout_mode = 2
 size_flags_vertical = 3
-alignment = 1
 theme_override_constants/separation = 18
+alignment = 1
 
 [node name="TitleLabel" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
@@ -158,12 +154,15 @@ text = "Warning: Flashing Lights"
 horizontal_alignment = 1
 
 [node name="WarningBody" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox"]
+custom_minimum_size = Vector2(900, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-custom_minimum_size = Vector2(900, 0)
-autowrap_mode = 3
-text = "This application may contain flashing lights and patterns.\n\nFlashing lights can trigger seizures for people with photosensitive epilepsy.\nIf you feel unwell, stop using the application immediately."
+text = "This application may contain flashing lights and patterns.
+
+Flashing lights can trigger seizures for people with photosensitive epilepsy.
+If you feel unwell, stop using the application immediately."
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Bottom_Row" type="BoxContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay"]
 layout_mode = 2
@@ -179,15 +178,11 @@ text = "Initializing..."
 
 [node name="BottomCenterOverlay" type="Control" parent="UIManager/TempLoadingScreen"]
 z_index = 101
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
 mouse_filter = 2
 
 [node name="CopyrightLabel" type="Label" parent="UIManager/TempLoadingScreen/BottomCenterOverlay"]
-anchors_preset = 8
+layout_mode = 0
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -198,8 +193,8 @@ offset_right = 140.0
 offset_bottom = -6.0
 grow_horizontal = 0
 grow_vertical = 0
-horizontal_alignment = 1
 theme_override_font_sizes/font_size = 24
 text = "© 2026 Neuraville Inc."
+horizontal_alignment = 1
 
 [connection signal="request_UI_mode" from="UIManager/TopBar" to="UIManager/CB_Holder" method="set_view"]

@@ -6,8 +6,9 @@
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_ypcw4"]
 
 [node name="SelectGenomeObject" type="VBoxContainer"]
-offset_right = 126.0
+offset_right = 252.0
 offset_bottom = 40.0
+custom_minimum_size = Vector2(1300, 0)
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
@@ -15,7 +16,7 @@ script = ExtResource("1_63jkm")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_1e0a2")]
 layout_mode = 2
-title = "Select Candidates"
+title = "Cortical Area Explorer"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -42,7 +43,7 @@ script = ExtResource("3_ypcw4")
 layout_mode = 2
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
-custom_minimum_size = Vector2(650, 0)
+custom_minimum_size = Vector2(1300, 0)
 layout_mode = 2
 text = "Please Select"
 autowrap_mode = 3

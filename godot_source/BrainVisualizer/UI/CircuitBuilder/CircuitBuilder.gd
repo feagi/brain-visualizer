@@ -111,7 +111,7 @@ func setup(region: BrainRegion) -> void:
 
 func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	if (area.cortical_ID in cortical_nodes.keys()):
-		push_error("UI CB: Unable to add cortical area %s node when a node of it already exists!!" % area.cortical_ID)
+		push_warning("UI CB: Cortical area %s node already exists; skipping duplicate add (can occur during FEAGI restart/cache resync)." % area.cortical_ID)
 		return
 	var cortical_node: CBNodeCorticalArea = PREFAB_NODE_CORTICALAREA.instantiate()
 	_cortical_nodes[area.cortical_ID] = cortical_node
@@ -124,7 +124,9 @@ func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
 		return
 	BV.UI.selection_system.clear_all_highlighted()
-	_cortical_nodes[area.cortical_ID].queue_free()
+	var node: CBNodeCorticalArea = _cortical_nodes[area.cortical_ID]
+	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
+		node.queue_free()
 	_cortical_nodes.erase(area.cortical_ID)
 	
 func _CACHE_add_subregion(subregion: BrainRegion) -> void:
@@ -151,7 +153,9 @@ func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 		return
 	BV.UI.selection_system.clear_all_highlighted()
 	#NOTE: We assume that all connections to / from this region have already been called to beremoved by the cache FIRST
-	subregion_nodes[subregion.region_ID].queue_free()
+	var node: CBNodeRegion = subregion_nodes[subregion.region_ID]
+	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
+		node.queue_free()
 	subregion_nodes.erase(subregion.region_ID)
 
 ## The name of the region this instance of CB has changed. Updating the Node name causes the tab name to update too
@@ -160,6 +164,8 @@ func _CACHE_this_region_name_update(new_name: StringName) -> void:
 
 func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	if link.parent_region != representing_region:
+		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
 		return
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
@@ -189,12 +195,16 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
 	move_child(line, 0)
-	line.setup(source_terminal.active_port, destination_terminal.active_port, link)
+	line.call_deferred("setup", source_terminal.active_port, destination_terminal.active_port, link)
 
 func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	if _representing_region != null and _representing_region.is_root_region():
 		return
 	if link.parent_region != representing_region:
+		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_established_mapping_set() and link.parent_chain.mapping_set != null and link.parent_chain.mapping_set.number_mappings == 0:
+		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
 		return
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
 	
@@ -219,12 +229,16 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
 	move_child(line, 0)
-	line.setup(source_endpoint, destination_terminal.active_port, link)
+	line.call_deferred("setup", source_endpoint, destination_terminal.active_port, link)
 
 func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	if _representing_region != null and _representing_region.is_root_region():
 		return
 	if link.parent_region != representing_region:
+		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_established_mapping_set() and link.parent_chain.mapping_set != null and link.parent_chain.mapping_set.number_mappings == 0:
+		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
 		return
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
 	
@@ -248,7 +262,7 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
 	add_child(line)
 	move_child(line, 0)
-	line.setup(source_terminal.active_port, destination_endpoint, link)
+	line.call_deferred("setup", source_terminal.active_port, destination_endpoint, link)
 
 # This is called from the Brain Region nodes directly
 func _CACHE_link_region_input_open_added(link: ConnectionChainLink) -> void:
@@ -260,6 +274,10 @@ func _CACHE_link_region_input_open_added(link: ConnectionChainLink) -> void:
 	
 	if target_region == null:
 		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set():
+		var partial_mapping := link.parent_chain.partial_mapping_set
+		if partial_mapping != null and partial_mapping.number_mappings == 0:
+			return
 	if !(target_region.region_ID in _subregion_nodes):
 		return
 	
@@ -280,6 +298,10 @@ func _CACHE_link_region_output_open_added(link: ConnectionChainLink) -> void:
 	
 	if target_region == null:
 		return
+	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set():
+		var partial_mapping := link.parent_chain.partial_mapping_set
+		if partial_mapping != null and partial_mapping.number_mappings == 0:
+			return
 	if !(target_region.region_ID in _subregion_nodes):
 		return
 	
@@ -1095,7 +1117,8 @@ func _get_visible_global_rect(base_rect: Rect2) -> Rect2:
 func _global_to_local(point: Vector2) -> Vector2:
 	return get_global_transform_with_canvas().affine_inverse() * point
 
-func _attempt_initial_fit() -> void:
+## Attempts initial layout fit, ignoring optional signal args.
+func _attempt_initial_fit(_node: Node = null) -> void:
 	if _initial_fit_done or _initial_fit_in_progress or !is_visible_in_tree():
 		return
 	_initial_fit_in_progress = true

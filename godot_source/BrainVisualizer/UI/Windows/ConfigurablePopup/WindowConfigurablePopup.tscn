@@ -30,9 +30,12 @@ layout_mode = 2
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 
-[node name="Message" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Message" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
-horizontal_alignment = 1
+horizontal_alignment = 0
+fit_content = true
+scroll_active = false
+selection_enabled = true
 
 [node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(32, 32)

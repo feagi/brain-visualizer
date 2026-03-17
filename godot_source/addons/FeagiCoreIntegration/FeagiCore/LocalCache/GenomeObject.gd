@@ -197,14 +197,19 @@ func FEAGI_change_dimensions_3D(new_dim_3D: Vector3i) -> void:
 	_dimensions_3D = new_dim_3D
 	dimensions_3D_updated.emit(new_dim_3D)
 
-## Change from one existing parent region to another
+## Change from one existing parent region to another.
+## Handles null for root region (e.g. when a region is removed and its children are reparented to root).
 func FEAGI_change_parent_brain_region(new_parent_region: BrainRegion) -> void:
-	if new_parent_region.region_ID == _parent_region.region_ID:
+	if new_parent_region == _parent_region:
 		return
-	var old_region_cache: BrainRegion = _parent_region # yes this method uses more memory but avoids potential shenanigans
+	if new_parent_region != null and _parent_region != null and new_parent_region.region_ID == _parent_region.region_ID:
+		return
+	var old_region_cache: BrainRegion = _parent_region
 	_parent_region = new_parent_region
-	old_region_cache.FEAGI_genome_object_deregister_as_child(self)
-	new_parent_region.FEAGI_genome_object_register_as_child(self)
+	if old_region_cache != null:
+		old_region_cache.FEAGI_genome_object_deregister_as_child(self)
+	if new_parent_region != null:
+		new_parent_region.FEAGI_genome_object_register_as_child(self)
 	parent_region_updated.emit(old_region_cache, new_parent_region)
 
 ## Called by [ConnectionChainLink] when it instantiates, adds a reference to that link to this region. 

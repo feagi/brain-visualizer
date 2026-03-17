@@ -1,0 +1,78 @@
+[gd_scene load_steps=4 format=3 uid="uid://cvv1sual3dit"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/VisualVectorEdit/WindowVisualVectorEdit.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+[ext_resource type="PackedScene" uid="uid://bvectgrid01" path="res://BrainVisualizer/UI/Windows/VisualVectorEdit/VectorEditGrid.tscn" id="3_grid"]
+
+[node name="WindowVisualVectorEdit" type="VBoxContainer"]
+custom_minimum_size = Vector2(420, 480)
+layout_mode = 3
+theme_override_constants/separation = 0
+script = ExtResource("1_script")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+layout_mode = 2
+title = "Visual Edit - Vectors"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ZRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+alignment = 1
+
+[node name="ZLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ZRow"]
+layout_mode = 2
+text = "Z ="
+
+[node name="ZPrev" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ZRow"]
+layout_mode = 2
+text = "<"
+
+[node name="ZSpin" type="SpinBox" parent="WindowPanel/WindowMargin/WindowInternals/ZRow"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+min_value = -10.0
+max_value = 10.0
+value = 0.0
+
+[node name="ZNext" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ZRow"]
+layout_mode = 2
+text = ">"
+
+[node name="GridContainer" type="CenterContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VectorEditGrid" parent="WindowPanel/WindowMargin/WindowInternals/GridContainer" instance=ExtResource("3_grid")]
+layout_mode = 2
+
+[node name="ButtonRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="Spacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+[node name="Save" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Save"

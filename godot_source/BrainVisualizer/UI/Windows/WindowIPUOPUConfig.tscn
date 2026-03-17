@@ -1,0 +1,164 @@
+[gd_scene load_steps=3 format=3 uid="uid://ipu_opu_config_window"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.gd" id="1_ipuopu"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+
+[node name="WindowIPUOPUConfig" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+script = ExtResource("1_ipuopu")
+window_spawn_location = Vector2i(140, 100)
+
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+layout_mode = 2
+title = "Sensorimotor Configuration"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HeaderMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="HeaderRow" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="AgentPanel" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="AgentLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
+layout_mode = 2
+text = "Agent"
+theme_override_font_sizes/font_size = 24
+
+[node name="AgentDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
+custom_minimum_size = Vector2(220, 36)
+layout_mode = 2
+
+[node name="InputsPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="InputsMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="InputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="InputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin/InputsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
+text = "Inputs"
+theme_override_font_sizes/font_size = 24
+
+[node name="InputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin/InputsRow"]
+layout_mode = 2
+columns = 4
+theme_override_constants/separation = 8
+
+[node name="OutputsPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="OutputsMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="OutputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="OutputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin/OutputsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 0)
+text = "Outputs"
+theme_override_font_sizes/font_size = 24
+
+[node name="OutputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin/OutputsRow"]
+layout_mode = 2
+columns = 4
+theme_override_constants/separation = 8
+
+[node name="SectionSeparator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="BodyPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BodyMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="BodyContent" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StatusLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent"]
+layout_mode = 2
+text = "Select a device to configure."
+
+[node name="ConfigScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ConfigContent" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ConfigScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="ButtonRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent"]
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 12
+
+[node name="IgnoreChangesButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Ignore changes"
+
+[node name="SaveButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Save"

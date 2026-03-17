@@ -80,8 +80,18 @@ func _load_window_state() -> void:
 		push_error("[WindowStateManager] Failed to open window state file: " + str(FileAccess.get_open_error()))
 		return
 	
-	var json_string = file.get_as_text()
+	var raw_bytes = file.get_buffer(file.get_length())
 	file.close()
+	
+	# Prevent Unicode parser errors when file contains UTF-16/binary data.
+	if raw_bytes.find(0) != -1:
+		push_warning("[WindowStateManager] window_state.json contains NUL bytes; ignoring corrupted state file")
+		return
+	
+	var json_string = raw_bytes.get_string_from_utf8()
+	if json_string.is_empty() and raw_bytes.size() > 0:
+		push_warning("[WindowStateManager] window_state.json is not valid UTF-8; ignoring corrupted state file")
+		return
 	
 	var json = JSON.new()
 	var parse_result = json.parse(json_string)

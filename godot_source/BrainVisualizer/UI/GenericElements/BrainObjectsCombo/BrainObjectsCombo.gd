@@ -153,8 +153,7 @@ func _open_brain_regions() -> void:
 func _add_brain_region() -> void:
 	if context_region == null:
 		return
-	var selected_objects: Array[GenomeObject] = []
-	BV.WM.spawn_create_region(context_region, selected_objects)
+	BV.WM.spawn_select_region_template(context_region)
 
 ## Open interconnect areas dropdown for the current region.
 func _open_interconnect_areas() -> void:
@@ -223,12 +222,12 @@ func _request_relayout() -> void:
 	if cb == null:
 		return
 	var popup_message: StringName = "This will rearrange all nodes in the Circuit Builder view and update their saved 2D positions.\n\nProceed?"
-	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+	var cancel_button := ConfigurablePopupDefinition.create_close_button("Cancel")
+	var rearrange_button := ConfigurablePopupDefinition.create_action_button(func(): cb.relayout_nodes(), "Rearrange")
+	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.new(
 		"Rearrange Circuit Builder",
 		popup_message,
-		func(): cb.relayout_nodes(),
-		"Rearrange",
-		"Cancel"
+		[cancel_button, rearrange_button]
 	)
 	BV.WM.spawn_popup(popup_definition)
 

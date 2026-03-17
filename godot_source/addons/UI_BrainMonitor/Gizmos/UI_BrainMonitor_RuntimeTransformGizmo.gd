@@ -16,6 +16,7 @@ const KIND_MOVE: StringName = &"move"
 const KIND_RESIZE: StringName = &"resize"
 const KIND_CLOSE: StringName = &"close"
 const CLOSE_LAYER: int = 1 << 20
+const GIZMO_AXIS_LAYER: int = 1 << 19
 
 var _mode: MODE = MODE.MOVE
 var _axis_length: float = 0.0
@@ -57,48 +58,32 @@ func _add_axis(axis: AXIS, color: Color, dir: Vector3, axis_length: float, shaft
 	axis_root.name = "Axis_%s" % AXIS.keys()[axis]
 	add_child(axis_root)
 
-	# Shaft
-	var shaft := MeshInstance3D.new()
-	var shaft_mesh := CylinderMesh.new()
-	shaft_mesh.height = axis_length - head_length
-	shaft_mesh.top_radius = shaft_radius
-	shaft_mesh.bottom_radius = shaft_radius
-	shaft_mesh.radial_segments = 10
-	shaft.mesh = shaft_mesh
+	var shaft_len := axis_length - head_length
+	var arrow_body := MeshInstance3D.new()
+	arrow_body.name = "ArrowBody"
+	arrow_body.mesh = _build_unibody_axis_arrow_mesh(shaft_len, shaft_radius, head_length, head_radius)
 
 	var shaft_mat := StandardMaterial3D.new()
 	shaft_mat.albedo_color = color
 	shaft_mat.emission_enabled = true
 	shaft_mat.emission = color
 	shaft_mat.emission_energy = 0.8
-	shaft.material_override = shaft_mat
+	shaft_mat.no_depth_test = true
+	arrow_body.material_override = shaft_mat
 
 	# Godot cylinder is oriented along Y. Align Y to axis dir.
-	shaft.transform.basis = _basis_from_y_axis(dir)
-	# Place shaft so it starts at origin and extends outward.
-	shaft.position = dir.normalized() * ((shaft_mesh.height * 0.5))
-	axis_root.add_child(shaft)
-
-	# Head (cone)
-	var head: MeshInstance3D = MeshInstance3D.new()
-	# Godot runtime doesn't always expose ConeMesh (depends on build/imports).
-	# Use a CylinderMesh with top_radius=0 as a cone substitute.
-	var cone_like: CylinderMesh = CylinderMesh.new()
-	cone_like.height = head_length
-	cone_like.top_radius = 0.0
-	cone_like.bottom_radius = head_radius
-	cone_like.radial_segments = 12
-	head.mesh = cone_like
-	head.material_override = shaft_mat
-	head.transform.basis = _basis_from_y_axis(dir)
-	head.position = dir.normalized() * (axis_length - head_length * 0.5)
-	axis_root.add_child(head)
+	arrow_body.transform.basis = _basis_from_y_axis(dir)
+	# Place unibody arrow so it starts at origin and extends outward.
+	arrow_body.position = dir.normalized() * (axis_length * 0.5)
+	axis_root.add_child(arrow_body)
 
 	# Collider (use a slightly fatter cylinder around the whole axis)
 	var body := StaticBody3D.new()
 	body.name = "Pick_%s" % AXIS.keys()[axis]
 	body.set_meta(META_AXIS, axis)
 	body.set_meta(META_KIND, KIND_MOVE if _mode == MODE.MOVE else KIND_RESIZE)
+	body.collision_layer = GIZMO_AXIS_LAYER
+	body.collision_mask = GIZMO_AXIS_LAYER
 
 	var shape := CollisionShape3D.new()
 	var pick_cyl := CylinderShape3D.new()
@@ -112,6 +97,61 @@ func _add_axis(axis: AXIS, color: Color, dir: Vector3, axis_length: float, shaft
 	body.position = dir.normalized() * (axis_length * 0.5)
 	axis_root.add_child(body)
 
+func _build_unibody_axis_arrow_mesh(shaft_len: float, shaft_radius: float, head_length: float, head_radius: float) -> ArrayMesh:
+	var tip_radius := maxf(0.001, head_radius * 0.06)
+	var total_len := shaft_len + head_length
+	var bottom_y := -total_len * 0.5
+	var shaft_top_y := bottom_y + shaft_len
+	var tip_y := total_len * 0.5
+	var transition_h := maxf(0.01, head_length * 0.35)
+
+	var profile: Array[Vector2] = [
+		Vector2(shaft_radius, bottom_y),
+		Vector2(shaft_radius, shaft_top_y - transition_h),
+		Vector2(lerpf(head_radius, shaft_radius, 0.55), shaft_top_y - transition_h * 0.55),
+		Vector2(head_radius, shaft_top_y),
+		Vector2(head_radius * 0.52, shaft_top_y + head_length * 0.48),
+		Vector2(head_radius * 0.22, shaft_top_y + head_length * 0.78),
+		Vector2(tip_radius, tip_y),
+	]
+	return _build_revolved_profile_mesh(profile, 14)
+
+func _build_revolved_profile_mesh(profile: Array[Vector2], radial_segments: int) -> ArrayMesh:
+	if profile.size() < 2:
+		return ArrayMesh.new()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+
+	for ring_idx in range(profile.size()):
+		var radius := maxf(0.0, profile[ring_idx].x)
+		var y := profile[ring_idx].y
+		for seg_idx in range(radial_segments):
+			var t := float(seg_idx) / float(radial_segments)
+			var angle := t * TAU
+			var x := cos(angle) * radius
+			var z := sin(angle) * radius
+			st.set_uv(Vector2(t, float(ring_idx) / float(profile.size() - 1)))
+			st.add_vertex(Vector3(x, y, z))
+
+	for ring_idx in range(profile.size() - 1):
+		var ring_start := ring_idx * radial_segments
+		var next_ring_start := (ring_idx + 1) * radial_segments
+		for seg_idx in range(radial_segments):
+			var next_seg := (seg_idx + 1) % radial_segments
+			var a := ring_start + seg_idx
+			var b := ring_start + next_seg
+			var c := next_ring_start + seg_idx
+			var d := next_ring_start + next_seg
+			st.add_index(a)
+			st.add_index(c)
+			st.add_index(b)
+			st.add_index(b)
+			st.add_index(c)
+			st.add_index(d)
+
+	st.generate_normals()
+	return st.commit()
+
 func _add_close_handle(axis_length: float) -> void:
 	## Close handle is a camera-facing sprite + collider for click.
 	var close_root := Node3D.new()
@@ -123,6 +163,7 @@ func _add_close_handle(axis_length: float) -> void:
 	sprite.texture = _create_close_icon_texture()
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sprite.pixel_size = 0.01
+	sprite.no_depth_test = true
 	close_root.add_child(sprite)
 	_close_sprite = sprite
 

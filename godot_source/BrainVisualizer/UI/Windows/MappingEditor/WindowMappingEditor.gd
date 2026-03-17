@@ -86,7 +86,9 @@ func set_ends(source: GenomeObject, destination: GenomeObject, partial_mapping: 
 	
 	var current_mappings: Array[SingleMappingDefinition] = source.get_mapping_array_toward_cortical_area(destination)
 	
-	if destination is MemoryCorticalArea:
+	var destination_is_memory: bool = destination is MemoryCorticalArea
+	var source_is_memory: bool = source is MemoryCorticalArea
+	if destination_is_memory and not source_is_memory:
 		_generic_mapping_settings.visible = false
 		_memory_mapping_setting.visible = true
 		_memory_mapping_setting.load_mappings(current_mappings)

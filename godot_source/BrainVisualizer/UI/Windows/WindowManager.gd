@@ -7,6 +7,7 @@ const _PREFAB_MAPPING_EDITOR: PackedScene = preload("res://BrainVisualizer/UI/Wi
 const _PREFAB_MORPHOLOGY_MANAGER: PackedScene = preload("res://BrainVisualizer/UI/Windows/MorphologyManager/WindowMorphologyManager.tscn")
 const _PREFAB_CREATE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateCorticalArea/WindowCreateCorticalArea.tscn")
 const _PREFAB_SELECT_CORTICAL_TEMPLATE: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectCorticalTemplate/WindowSelectCorticalTemplate.tscn")
+const _PREFAB_SELECT_REGION_TEMPLATE: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectRegionTemplate/WindowSelectRegionTemplate.tscn")
 const _PREFAB_QUICK_CONNECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.tscn")
 const _PREFAB_QUICK_CONNECT_NEURON: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnectNeuron/WindowQuickConnectNeuron.tscn")
 const _PREFAB_CORTICAL_VIEW: PackedScene = preload("res://BrainVisualizer/UI/Windows/View_Cortical_Areas/WindowViewCorticalArea.tscn")
@@ -15,6 +16,9 @@ const _PREFAB_QUICK_MENU: PackedScene = preload("res://BrainVisualizer/UI/Window
 const _PREFAB_CLONE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/Windows/CloneCorticalArea/WindowCloneCorticalArea.tscn")
 const _PREFAB_IMPORT_AMALGAMATION: PackedScene = preload("res://BrainVisualizer/UI/Windows/AmalgamationRequest/WindowAmalgamationRequest.tscn")
 const _PREFAB_CONFIGURABLE_POPUP: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfigurablePopup/WindowConfigurablePopup.tscn")
+const _PREFAB_RAW_CONNECTIVITY_EDIT: PackedScene = preload("res://BrainVisualizer/UI/Windows/RawConnectivityEdit/WindowRawConnectivityEdit.tscn")
+const _PREFAB_VISUAL_VECTOR_EDIT: PackedScene = preload("res://BrainVisualizer/UI/Windows/VisualVectorEdit/WindowVisualVectorEdit.tscn")
+const _PREFAB_PATTERN_VISUAL_EDIT: PackedScene = preload("res://BrainVisualizer/UI/Windows/PatternVisualEdit/WindowPatternVisualEdit.tscn")
 const _PREFAB_DEVELOPER_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowDeveloperOptions.tscn")
 const _PREFAB_SELECT_GENOME_OBJECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.tscn")
 const _PREFAB_CREATE_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateRegion/WindowCreateRegion.tscn")
@@ -26,6 +30,7 @@ const _PREFAB_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/O
 const _PREFAB_VIEW_PREVIEWS: PackedScene = preload("res://BrainVisualizer/UI/Windows/ViewPreviews/WindowViewPreviews.tscn")
 const _PREFAB_CAMERA_ANIMATIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.tscn")
 const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.tscn")
+const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.tscn")
 
 
 var loaded_windows: Dictionary
@@ -48,6 +53,11 @@ func spawn_guide() -> void:
 func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) -> void:
 	var cortical_window: AdvancedCorticalProperties = _default_spawn_window(_PREFAB_ADV_CORTICAL_PROPERTIES, AdvancedCorticalProperties.WINDOW_NAME) as AdvancedCorticalProperties
 	cortical_window.setup(cortical_areas)
+
+## Open the IPU/OPU configuration window with optional focus.
+func spawn_ipu_opu_config(focus_device_key: StringName = "", focus_section: StringName = WindowIPUOPUConfig.SECTION_OUTPUT) -> void:
+	var config_window: WindowIPUOPUConfig = _default_spawn_window(_PREFAB_IPU_OPU_CONFIG, WindowIPUOPUConfig.WINDOW_NAME) as WindowIPUOPUConfig
+	config_window.setup_with_focus(focus_device_key, focus_section)
 
 func spawn_create_morphology() -> void:
 	var create_morphology: WindowCreateMorphology = _default_spawn_window(_PREFAB_CREATE_MORPHOLOGY, WindowCreateMorphology.WINDOW_NAME) as WindowCreateMorphology
@@ -163,9 +173,29 @@ func spawn_popup(popup_definition: ConfigurablePopupDefinition) -> WindowConfigu
 	configurable_popup.setup(popup_definition)
 	return configurable_popup
 
+func spawn_raw_connectivity_edit(mode: WindowRawConnectivityEdit.MODE, initial_json: String, on_save: Callable) -> WindowRawConnectivityEdit:
+	var edit_window: WindowRawConnectivityEdit = _default_spawn_window(_PREFAB_RAW_CONNECTIVITY_EDIT, WindowRawConnectivityEdit.WINDOW_NAME) as WindowRawConnectivityEdit
+	edit_window.setup(mode, initial_json, on_save)
+	return edit_window
+
+func spawn_visual_vector_edit(initial_vectors: Array[Vector3i], on_save: Callable) -> WindowVisualVectorEdit:
+	var edit_window: WindowVisualVectorEdit = _default_spawn_window(_PREFAB_VISUAL_VECTOR_EDIT, WindowVisualVectorEdit.WINDOW_NAME) as WindowVisualVectorEdit
+	edit_window.setup(initial_vectors, on_save)
+	return edit_window
+
+func spawn_pattern_visual_edit(initial_pair: PatternVector3Pairs, on_save: Callable) -> WindowPatternVisualEdit:
+	var edit_window: WindowPatternVisualEdit = _default_spawn_window(_PREFAB_PATTERN_VISUAL_EDIT, WindowPatternVisualEdit.WINDOW_NAME) as WindowPatternVisualEdit
+	edit_window.setup(initial_pair, on_save)
+	return edit_window
+
 func spawn_create_region(parent_region: BrainRegion, selected_objects: Array[GenomeObject]) -> void:
 	var create_region: WindowCreateRegion = _default_spawn_window(_PREFAB_CREATE_REGION, WindowCreateRegion.WINDOW_NAME) as WindowCreateRegion
 	create_region.setup(parent_region, selected_objects)
+
+## Open the circuit selection window (first tile opens Create Brain Region).
+func spawn_select_region_template(parent_region: BrainRegion = null) -> void:
+	var selector: WindowSelectRegionTemplate = _default_spawn_window(_PREFAB_SELECT_REGION_TEMPLATE, WindowSelectRegionTemplate.WINDOW_NAME) as WindowSelectRegionTemplate
+	selector.setup(parent_region)
 
 func spawn_edit_region(editing_region: BrainRegion) -> void:
 	var edit_region: WindowEditRegion = _default_spawn_window(_PREFAB_EDIT_REGION, WindowEditRegion.WINDOW_NAME) as WindowEditRegion
@@ -218,6 +248,11 @@ func spawn_move_to_region(objects: Array[GenomeObject], starting_region: BrainRe
 	move_to_region.setup(objects, starting_region)
 
 func spawn_quick_cortical_menu(selected_objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.UNKNOWN) -> void:
+	if QuickCorticalMenu.WINDOW_NAME in loaded_windows:
+		var existing_menu: QuickCorticalMenu = loaded_windows[QuickCorticalMenu.WINDOW_NAME] as QuickCorticalMenu
+		if existing_menu != null and existing_menu.try_refresh_without_respawn(selected_objects, context):
+			bring_window_to_top(existing_menu)
+			return
 	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_PREFAB_QUICK_MENU, QuickCorticalMenu.WINDOW_NAME) as QuickCorticalMenu
 	quick_cortical_menu.setup(selected_objects, context)
 

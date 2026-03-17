@@ -291,8 +291,8 @@ func _establish() -> void:
 		var projector_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies["projector"]
 		FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, projector_morphology)
 	elif _destination is MemoryCorticalArea:
-		# emmory
-		var memory_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies["memory"]
+		# episodic memory
+		var memory_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies["episodic_memory"]
 		FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, memory_morphology)
 	else:
 		# create a new pattern morphology, then use it in a new mapping

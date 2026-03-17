@@ -60,31 +60,47 @@ func _ready() -> void:
 		# HTML5 or remote desktop mode
 		print("🌐 [BV] Remote mode - connecting to external FEAGI...")
 		
-		# Check if launched from FEAGI Desktop - use environment variables if available
-		var launched_from_desktop = OS.get_environment("LAUNCHED_FROM_FEAGI_DESKTOP").to_lower()
-		if launched_from_desktop == "true":
-			# Use environment variables set by feagi-desktop
-			var api_url = OS.get_environment("FEAGI_API_URL")
-			if api_url.is_empty():
-				api_url = "http://127.0.0.1:8000"
+		var env_api_url = OS.get_environment("FEAGI_API_URL")
+		var env_ws_host = OS.get_environment("FEAGI_WS_HOST")
+		var env_ws_port_str = OS.get_environment("FEAGI_WS_PORT")
+		var env_has_endpoint = !env_api_url.is_empty() and !env_ws_host.is_empty() and !env_ws_port_str.is_empty()
+		
+		if env_has_endpoint:
+			var env_ws_port = int(env_ws_port_str)
+			var env_ws_url = "ws://%s:%d" % [env_ws_host, env_ws_port]
 			
-			var ws_host = OS.get_environment("FEAGI_WS_HOST")
-			if ws_host.is_empty():
-				ws_host = "127.0.0.1"
+			print("   [BV] Using FEAGI environment overrides:")
+			print("   [BV]   API URL: %s" % env_api_url)
+			print("   [BV]   WebSocket: %s" % env_ws_url)
 			
-			var ws_port_str = OS.get_environment("FEAGI_WS_PORT")
-			var ws_port = int(ws_port_str) if ws_port_str else 9050
-			var ws_url = "ws://%s:%d" % [ws_host, ws_port]
-			
-			print("   [BV] Using FEAGI Desktop environment variables:")
-			print("   [BV]   API URL: %s" % api_url)
-			print("   [BV]   WebSocket: %s" % ws_url)
-			
-			var endpoint_details = FeagiEndpointDetails.create_from(api_url, ws_url)
-			FeagiCore.attempt_connection_to_FEAGI(endpoint_details)
+			var env_endpoint_details = FeagiEndpointDetails.create_from(env_api_url, env_ws_url)
+			FeagiCore.attempt_connection_to_FEAGI(env_endpoint_details)
 		else:
-			# Web build or manual launch - try JavaScript first, fallback to defaults
-			FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
+			# Check if launched from FEAGI Desktop - use environment variables if available
+			var launched_from_desktop = OS.get_environment("LAUNCHED_FROM_FEAGI_DESKTOP").to_lower()
+			if launched_from_desktop == "true":
+				# Use environment variables set by feagi-desktop
+				var api_url = OS.get_environment("FEAGI_API_URL")
+				if api_url.is_empty():
+					api_url = "http://127.0.0.1:8000"
+				
+				var ws_host = OS.get_environment("FEAGI_WS_HOST")
+				if ws_host.is_empty():
+					ws_host = "127.0.0.1"
+				
+				var ws_port_str = OS.get_environment("FEAGI_WS_PORT")
+				var ws_port = int(ws_port_str) if ws_port_str else 9050
+				var ws_url = "ws://%s:%d" % [ws_host, ws_port]
+				
+				print("   [BV] Using FEAGI Desktop environment variables:")
+				print("   [BV]   API URL: %s" % api_url)
+				print("   [BV]   WebSocket: %s" % ws_url)
+				
+				var endpoint_details = FeagiEndpointDetails.create_from(api_url, ws_url)
+				FeagiCore.attempt_connection_to_FEAGI(endpoint_details)
+			else:
+				# Web build or manual launch - try JavaScript first, fallback to defaults
+				FeagiCore.attempt_connection_to_FEAGI_via_javascript_details(default_FEAGI_network_settings)
 	
 	# Any other connections
 	FeagiCore.feagi_local_cache.amalgamation_pending.connect(_on_amalgamation_request)

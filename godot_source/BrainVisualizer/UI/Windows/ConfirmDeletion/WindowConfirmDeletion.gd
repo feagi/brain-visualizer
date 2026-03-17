@@ -9,9 +9,15 @@ var _is_deleting_internals: bool
 var _mode: GenomeObject.ARRAY_MAKEUP
 var _scroll: ScrollSectionGeneric
 
+## Configure confirmation dialog text and targets.
 func setup(selection: Array[GenomeObject], region_deleting_internals: bool = false) -> void:
 	_label = _window_internals.get_node("DeleteText")
 	_scroll = _window_internals.get_node("ScrollSectionGeneric")
+	var cancel_button: Button = _window_internals.get_node("HBoxContainer/No")
+	var confirm_button: Button = _window_internals.get_node("HBoxContainer/Yes")
+	# Keep button labels consistent with confirmation intent.
+	cancel_button.text = "Cancel"
+	confirm_button.text = "Confirm"
 	_deletion_targets = selection
 	_is_deleting_internals = region_deleting_internals
 	_mode = GenomeObject.get_makeup_of_array(selection)
@@ -22,18 +28,21 @@ func setup(selection: Array[GenomeObject], region_deleting_internals: bool = fal
 			_scroll.visible = false
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			var internals: Array[GenomeObject] = (selection[0] as BrainRegion).get_all_included_genome_objects()
-			_scroll_show_objects(internals)
+			if internals.is_empty():
+				_scroll.visible = false
+			else:
+				_scroll_show_objects(internals)
 			if region_deleting_internals:
-				_label.text = "Are you sure you wish to delete brain region %s with these %d internals?" % [selection[0].friendly_name, len(internals)]
+				_label.text = "Are you sure you wish to delete neural circuit %s with these %d internals?" % [selection[0].friendly_name, len(internals)]
 			else:
 				# raising internals instead
-				_label.text = "Are you sure you wish to delete brain region %s and raise its %d internals to the parent region %s?" % [selection[0].friendly_name, len(internals), selection[0].current_parent_region.friendly_name]
+				_label.text = "Are you sure you wish to delete neural circuit %s and raise its %d internals to the parent circuit %s?" % [selection[0].friendly_name, len(internals), selection[0].current_parent_region.friendly_name]
 				
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			_label.text = "Are you sure you wish to delete %d cortical areas?" % len(selection)
 			_scroll_show_objects(selection)
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
-			_label.text = "Are you sure you wish to delete %d brain regions and their internals?" % len(selection)
+			_label.text = "Are you sure you wish to delete %d neural circuits and their internals?" % len(selection)
 			_scroll_show_objects(selection)
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
 			_label.text = "Are you sure you wish to delete %d objects and their internals?" % len(selection)
@@ -41,6 +50,15 @@ func setup(selection: Array[GenomeObject], region_deleting_internals: bool = fal
 		_:
 			push_error("UI: Unknown deletion target for deletion confirmation window! Closing!")
 			close_window()
+	set_process_unhandled_key_input(true)
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := event as InputEventKey
+		if key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER:
+			_yes_pressed()
+		elif key.keycode == KEY_ESCAPE:
+			_no_pressed()
 
 func _scroll_show_objects(objects: Array[GenomeObject]) -> void:
 	for object in objects:
@@ -57,6 +75,19 @@ func _yes_pressed() -> void:
 				FeagiCore.requests.delete_regions_and_raise_internals(_deletion_targets[0] as BrainRegion)
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			FeagiCore.requests.mass_delete_cortical_areas(GenomeObject.filter_cortical_areas(_deletion_targets)) #idc
+		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
+			# Backend exposes single-region delete for "raise internals", so batch via iteration.
+			for region in GenomeObject.filter_brain_regions(_deletion_targets):
+				FeagiCore.requests.delete_regions_and_raise_internals(region)
+		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
+			# Mixed selections can include both cortical areas and regions.
+			var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(_deletion_targets)
+			if not cortical_areas.is_empty():
+				FeagiCore.requests.mass_delete_cortical_areas(cortical_areas)
+			for region in GenomeObject.filter_brain_regions(_deletion_targets):
+				FeagiCore.requests.delete_regions_and_raise_internals(region)
+		_:
+			push_warning("UI: ConfirmDeletion received unsupported mode %s." % _mode)
 	close_window()
 
 func _no_pressed() -> void:

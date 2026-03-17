@@ -25,6 +25,10 @@ func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector
 #region main
 signal cache_about_to_reload()
 signal cache_reloaded()
+signal mappings_reloaded()
+signal cortical_areas_reloaded()
+signal brain_regions_reloaded()
+signal morphologies_reloaded()
 signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called any time a new amalgamation is pending
 signal amalgamation_no_longer_pending(amalgamation_id: StringName) # may occur following confirmation OR deletion
 
@@ -329,6 +333,7 @@ var _simulation_timestep: float = 0.05  # Default 50ms
 # Memory area stats from health check
 var memory_area_stats: Dictionary = {}  # cortical_id -> {neuron_count, created_total, deleted_total, last_updated}
 signal memory_area_stats_updated(stats: Dictionary)
+signal feagi_session_changed(previous_session: int, current_session: int)
 
 # Genome change detection tracking
 var _previous_feagi_session: int = 0
@@ -336,6 +341,7 @@ var _previous_genome_num: int = 0
 var _had_valid_session: bool = false  # Track if we ever had a valid session (to detect FEAGI restart)
 var _last_genome_change_time: int = 0  # Time of last change detection
 var _genome_change_cooldown_ms: int = 10000  # 10 second cooldown
+var _last_seen_feagi_session: int = 0
 
 # Hash change detection tracking (event-driven hashes from health_check)
 var _previous_brain_regions_hash: int = 0
@@ -343,6 +349,7 @@ var _previous_cortical_areas_hash: int = 0
 var _previous_brain_geometry_hash: int = 0
 var _previous_morphologies_hash: int = 0
 var _previous_cortical_mappings_hash: int = 0
+var _previous_agent_data_hash: int = 0
 var _hash_refresh_in_flight: Dictionary = {}
 var _pending_hash_values: Dictionary = {}
 
@@ -350,6 +357,18 @@ var _pending_amalgamation: StringName = ""
 
 ## Given a dict form feagi of health info, update cached health values
 func update_health_from_FEAGI_dict(health: Dictionary) -> void:
+	
+	# FEAGI SESSION CHANGE: detect new FEAGI instances as early as possible
+	if "feagi_session" in health:
+		var feagi_session_value_only = health["feagi_session"]
+		if feagi_session_value_only != null and (typeof(feagi_session_value_only) == TYPE_INT or typeof(feagi_session_value_only) == TYPE_FLOAT):
+			var current_session_only = int(feagi_session_value_only)
+			if current_session_only > 0 and _last_seen_feagi_session != current_session_only:
+				var previous_session = _last_seen_feagi_session
+				_last_seen_feagi_session = current_session_only
+				if previous_session > 0:
+					print("FEAGI CACHE: Session changed (old: %d -> new: %d) - requesting full reload" % [previous_session, current_session_only])
+					feagi_session_changed.emit(previous_session, current_session_only)
 	
 	# GENOME CHANGE DETECTION: Check feagi_session and genome_num for changes
 	if "feagi_session" in health and "genome_num" in health:
@@ -378,7 +397,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 													conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_HTTP or
 													conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_WS)
 						if is_already_connected:
-							print("🔍 [AGENT-REG] FEAGI became ready (session: %d) while BV is connected - triggering re-registration" % current_session)
+							print("[AGENT-REG] FEAGI became ready (session: %d) while BV is connected - triggering re-registration" % current_session)
 							agent_reregistration_needed.emit("FEAGI became ready (session: %d)" % current_session)
 		
 		# Genome change detection requires BOTH feagi_session and genome_num to be non-null
@@ -398,7 +417,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 			
 			# If session changed and we previously had a valid session, trigger agent re-registration
 			if session_changed and _previous_feagi_session != 0:
-				print("🔍 [AGENT-REG] FEAGI session changed (old: %d → new: %d) - agent needs to re-register" % [_previous_feagi_session, current_feagi_session])
+				print("[AGENT-REG] FEAGI session changed (old: %d → new: %d) - agent needs to re-register" % [_previous_feagi_session, current_feagi_session])
 				agent_reregistration_needed.emit("FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_feagi_session])
 
 			# Genome changes: only detect actual changes (not initial from 0)
@@ -632,6 +651,7 @@ func set_health_dead() -> void:
 
 #region Other
 signal plasticity_queue_depth_changed(new_val: int)
+signal agent_capabilities_updated()
 
 
 
@@ -641,6 +661,15 @@ var plasticity_queue_depth: int:
 var configuration_jsons: Array[Dictionary]:
 	get: return _configuration_jsons
 
+var agent_capabilities_map: Dictionary:
+	get: return _agent_capabilities_map
+
+var agent_capabilities_raw_json: String:
+	get: return _agent_capabilities_raw_json
+
+var agent_capabilities_schema_errors: Dictionary:
+	get: return _agent_capabilities_schema_errors
+
 var IPU_cortical_ID_to_capability_key: Dictionary:
 	get: return _IPU_cortical_ID_to_capability_key
 
@@ -649,6 +678,9 @@ var OPU_cortical_ID_to_capability_key: Dictionary:
 
 var _plasticity_queue_depth: int = 3
 var _configuration_jsons: Array[Dictionary] = []
+var _agent_capabilities_map: Dictionary = {}
+var _agent_capabilities_raw_json: String = ""
+var _agent_capabilities_schema_errors: Dictionary = {}
 var _OPU_cortical_ID_to_capability_key: Dictionary = {}
 var _IPU_cortical_ID_to_capability_key: Dictionary = {}
 
@@ -660,6 +692,26 @@ func update_plasticity_queue_depth(new_depth: int) -> void:
 
 func clear_configuration_jsons() -> void:
 	_configuration_jsons = []
+
+## Overwrites cached agent capability data (capabilities + device registrations).
+func set_agent_capabilities_map(new_map: Dictionary) -> void:
+	_agent_capabilities_map = new_map
+	agent_capabilities_updated.emit()
+
+## Store raw agent capability JSON for schema validation.
+func set_agent_capabilities_raw_json(raw_json: String) -> void:
+	_agent_capabilities_raw_json = raw_json
+
+## Store schema validation errors for agent capabilities.
+func set_agent_capabilities_schema_errors(errors: Dictionary) -> void:
+	_agent_capabilities_schema_errors = errors
+
+## Clears cached agent capability data.
+func clear_agent_capabilities_map() -> void:
+	_agent_capabilities_map = {}
+	_agent_capabilities_raw_json = ""
+	_agent_capabilities_schema_errors = {}
+	agent_capabilities_updated.emit()
 
 ## Add a configuration json to the cache. Dictionary should be the dictionary holding inputs / output keys
 func append_configuration_json(configuration: Dictionary) -> void:
@@ -692,6 +744,9 @@ func FEAGI_remap_cortical_id(old_id: StringName, new_id: StringName) -> void:
 	if _OPU_cortical_ID_to_capability_key.has(old_id):
 		_OPU_cortical_ID_to_capability_key[new_id] = _OPU_cortical_ID_to_capability_key[old_id]
 		_OPU_cortical_ID_to_capability_key.erase(old_id)
+	# Notify BV listeners so any ID-keyed caches/visuals refresh immediately after remap.
+	cortical_areas_reloaded.emit()
+	mappings_reloaded.emit()
 	
 
 #endregion
@@ -813,6 +868,10 @@ func _process_hash_change_detection(health: Dictionary) -> void:
 		_previous_cortical_mappings_hash,
 		&"_refresh_mappings_from_feagi"
 	)
+	_previous_agent_data_hash = _check_agent_hash_and_queue(
+		health.get("agent_data_hash", null),
+		_previous_agent_data_hash
+	)
 
 ## Determines if hash-driven refreshes should run
 func _should_process_hash_refreshes() -> bool:
@@ -839,6 +898,21 @@ func _check_hash_and_queue(hash_key: StringName, current_value: Variant, previou
 		print("HASH CHANGE DETECTED: %s %d -> %d (refresh=%s)" % [hash_key, previous_value, current_hash, refresh_method])
 		_queue_hash_refresh(hash_key, current_hash, refresh_method)
 	
+	return previous_value
+
+## Evaluates agent hash changes and schedules refresh when needed
+func _check_agent_hash_and_queue(current_value: Variant, previous_value: int) -> int:
+	if current_value == null:
+		return previous_value
+	var current_hash: int = int(current_value)
+	if previous_value == 0:
+		if current_hash != 0 and agent_capabilities_map.is_empty():
+			print("HASH CHANGE DETECTED: agent_data_hash 0 -> %d (refresh=_refresh_agent_data_from_feagi)" % current_hash)
+			_queue_hash_refresh(&"agent_data_hash", current_hash, &"_refresh_agent_data_from_feagi")
+		return current_hash
+	if current_hash != previous_value:
+		print("HASH CHANGE DETECTED: agent_data_hash %d -> %d (refresh=_refresh_agent_data_from_feagi)" % [previous_value, current_hash])
+		_queue_hash_refresh(&"agent_data_hash", current_hash, &"_refresh_agent_data_from_feagi")
 	return previous_value
 
 ## Queue a hash refresh if one is not already running for the given key
@@ -882,6 +956,8 @@ func _set_previous_hash_value(hash_key: StringName, value: int) -> void:
 			_previous_morphologies_hash = value
 		&"cortical_mappings_hash":
 			_previous_cortical_mappings_hash = value
+		&"agent_data_hash":
+			_previous_agent_data_hash = value
 		_:
 			pass
 
@@ -892,9 +968,9 @@ func _refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
 		return regions_output
 	
 	var regions_summary: Dictionary = regions_output.decode_response_as_dict()
-	brain_regions.FEAGI_clear_all_regions()
-	var area_mapping: Dictionary = brain_regions.FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_mapping(regions_summary)
-	brain_regions.FEAGI_load_all_partial_mapping_sets(regions_summary)
+	var prior_region_ids: Array = brain_regions.available_brain_regions.keys()
+	var area_mapping: Dictionary = brain_regions.FEAGI_apply_region_summary_diff(regions_summary)
+	_refresh_partial_mappings_from_summary(regions_summary)
 	_connect_to_existing_brain_region_signals()
 	
 	var cortical_output: FeagiRequestOutput = await FeagiCore.requests.get_cortical_area_geometry()
@@ -902,8 +978,10 @@ func _refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
 		return cortical_output
 	
 	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), area_mapping)
-	print("HASH REFRESH: cache_reloaded emitted for brain_regions_hash")
-	cache_reloaded.emit()
+	print("HASH REFRESH: brain_regions_reloaded emitted for brain_regions_hash")
+	brain_regions_reloaded.emit()
+	cortical_areas_reloaded.emit()
+	_emit_new_region_added_signals(prior_region_ids)
 	return cortical_output
 
 ## Refresh cortical areas and properties from FEAGI
@@ -913,8 +991,8 @@ func _refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
 		return cortical_output
 	
 	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), {})
-	print("HASH REFRESH: cache_reloaded emitted for cortical_areas_hash")
-	cache_reloaded.emit()
+	print("HASH REFRESH: cortical_areas_reloaded emitted for cortical_areas_hash")
+	cortical_areas_reloaded.emit()
 	return cortical_output
 
 ## Refresh brain geometry (positions/dimensions) from FEAGI
@@ -928,9 +1006,13 @@ func _refresh_morphologies_from_feagi() -> FeagiRequestOutput:
 		return morphologies_output
 	
 	morphologies.update_morphology_cache_from_summary(morphologies_output.decode_response_as_dict())
-	print("HASH REFRESH: cache_reloaded emitted for morphologies_hash")
-	cache_reloaded.emit()
+	print("HASH REFRESH: morphologies_reloaded emitted for morphologies_hash")
+	morphologies_reloaded.emit()
 	return morphologies_output
+
+## Public method to refresh cortical mappings from FEAGI (e.g. after morphology rename).
+func refresh_mappings_from_feagi() -> FeagiRequestOutput:
+	return await _refresh_mappings_from_feagi()
 
 ## Refresh cortical mappings from FEAGI
 func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
@@ -938,14 +1020,23 @@ func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
 	if mappings_output.has_errored or not mappings_output.success:
 		return mappings_output
 	
-	mapping_data.FEAGI_delete_all_mappings()
-	mapping_data.FEAGI_load_all_mappings(mappings_output.decode_response_as_dict())
-	print("HASH REFRESH: cache_reloaded emitted for cortical_mappings_hash")
-	cache_reloaded.emit()
+	mapping_data.FEAGI_apply_mapping_summary_diff(mappings_output.decode_response_as_dict())
+	print("HASH REFRESH: mappings_reloaded emitted for cortical_mappings_hash")
+	mappings_reloaded.emit()
 	return mappings_output
+
+## Refresh agent capabilities from FEAGI
+func _refresh_agent_data_from_feagi() -> FeagiRequestOutput:
+	var agent_output: FeagiRequestOutput = await FeagiCore.requests.refresh_agent_capabilities_cache(true)
+	if agent_output.has_errored or not agent_output.success:
+		return agent_output
+	print("HASH REFRESH: agent_capabilities_reloaded emitted for agent_data_hash")
+	return agent_output
 
 ## Update cortical areas cache using summary data without wiping the entire genome
 func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_region_ID_mapping: Dictionary) -> void:
+	var previous_suppress_state = cortical_areas.suppress_update_notifications
+	cortical_areas.suppress_update_notifications = true
 	var existing_ids: Array = cortical_areas.available_cortical_areas.keys()
 	for existing_id in existing_ids:
 		if not area_summary_data.has(existing_id):
@@ -961,6 +1052,7 @@ func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_regi
 				push_error("CORE CACHE: Unable to resolve parent region for new cortical area %s" % cortical_area_ID)
 				continue
 			cortical_areas.FEAGI_add_cortical_area_from_dict(area_JSON_summary, parent_region, cortical_area_ID)
+	cortical_areas.suppress_update_notifications = previous_suppress_state
 
 ## Resolve parent region for a cortical area using API data or fallback mapping
 func _resolve_parent_region_for_area(area_JSON_summary: Dictionary, cortical_area_ID: StringName, area_ID_to_region_ID_mapping: Dictionary) -> BrainRegion:
@@ -974,7 +1066,7 @@ func _resolve_parent_region_for_area(area_JSON_summary: Dictionary, cortical_are
 		if root_region == null:
 			return null
 		parent_region_id = root_region.region_ID
-	
+
 	if not brain_regions.available_brain_regions.has(parent_region_id):
 		return null
 	return brain_regions.available_brain_regions[parent_region_id]
@@ -1073,10 +1165,10 @@ func _create_synthetic_partial_mapping(area: AbstractCorticalArea, region: Brain
 	# Create a minimal synthetic mapping based on the area's current state
 	var synthetic_mappings: Array[SingleMappingDefinition] = []
 	
-	# Try to get a suitable morphology, fallback to memory morphology, then to null
-	var morphology: BaseMorphology = morphologies.try_get_morphology_object(&"memory")
+	# Try to get a suitable morphology, fallback to episodic_memory morphology, then to null
+	var morphology: BaseMorphology = morphologies.try_get_morphology_object(&"episodic_memory")
 	if morphology == null:
-		# If memory morphology doesn't exist, try to get any available morphology
+		# If episodic_memory morphology doesn't exist, try to get any available morphology
 		if morphologies.available_morphologies.size() > 0:
 			var first_key = morphologies.available_morphologies.keys()[0]
 			morphology = morphologies.available_morphologies[first_key]
@@ -1099,6 +1191,38 @@ func _clear_region_partial_mappings(region: BrainRegion) -> void:
 	for mapping in mappings_to_remove:
 		# Trigger the removal signal and cleanup
 		mapping.mappings_about_to_be_deleted.emit(mapping)
+
+## Rebuild partial mappings from region summary data (clears existing mappings first).
+func _refresh_partial_mappings_from_summary(region_summary_data: Dictionary) -> void:
+	var region_count: int = 0
+	var input_count: int = 0
+	var output_count: int = 0
+	for region_id in region_summary_data.keys():
+		if not brain_regions.available_brain_regions.has(region_id):
+			continue
+		region_count += 1
+		var region: BrainRegion = brain_regions.available_brain_regions[region_id]
+		_clear_region_partial_mappings(region)
+		var region_dict: Dictionary = region_summary_data[region_id]
+		if region_dict.has("inputs"):
+			var inputs: Array = []
+			inputs.assign(region_dict["inputs"])
+			input_count += inputs.size()
+			region.FEAGI_establish_partial_mappings_from_JSONs(inputs, true)
+		if region_dict.has("outputs"):
+			var outputs: Array = []
+			outputs.assign(region_dict["outputs"])
+			output_count += outputs.size()
+			region.FEAGI_establish_partial_mappings_from_JSONs(outputs, false)
+	print("FEAGI CACHE: Partial mappings refreshed (regions=%d, inputs=%d, outputs=%d)" % [region_count, input_count, output_count])
+
+## Emit region_added for any regions that were introduced during refresh.
+func _emit_new_region_added_signals(previous_region_ids: Array) -> void:
+	for region_id in brain_regions.available_brain_regions.keys():
+		if region_id in previous_region_ids:
+			continue
+		var region: BrainRegion = brain_regions.available_brain_regions[region_id]
+		brain_regions.emit_region_added_signal(region)
 
 ## Connects to signals from all existing brain regions (called during genome load)
 func _connect_to_existing_brain_region_signals() -> void:

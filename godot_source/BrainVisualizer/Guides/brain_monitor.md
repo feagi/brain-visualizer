@@ -111,6 +111,12 @@ Regions organize cortical areas spatially:
 - **Ctrl + Click** to add to selection
 - Useful for comparing multiple areas
 - Some operations work on multiple objects
+- In 3D, **Ctrl + Click** now toggles cortical areas for shared multi-edit quick menu actions
+
+**Plane Focus Shortcuts:**
+- **Ctrl + 1 + Click**: Focus clicked cortical area on XY plane
+- **Ctrl + 2 + Click**: Focus clicked cortical area on XZ plane
+- **Ctrl + 3 + Click**: Focus clicked cortical area on YZ plane
 
 ### Quick Menu
 

@@ -21,6 +21,7 @@ var _outgoing_headers: PackedStringArray # headers to make requests with
 var _request_definition: APIRequestWorkerDefinition
 var _output_response: FeagiRequestOutput
 var _number_retries_done: int = 0
+var _was_killed: bool = false
 
 ## Setup and execute the worker as per the request definition
 func setup_and_run_from_definition(call_header: PackedStringArray, request_definition: APIRequestWorkerDefinition) -> void:
@@ -92,11 +93,14 @@ func retrieve_output_and_continue() -> FeagiRequestOutput:
 
 ## Kills the worker early
 func kill_worker() -> void:
+	_was_killed = true
 	cancel_request()
 	queue_free()
 
 ## Called when FEAGI returns data from call (or HTTP call timed out)
 func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_headers: PackedStringArray, body: PackedByteArray):
+	if _was_killed:
+		return
 	
 	# NOTE: Instances of this object are handled soley by [FEAGIHTTPAPI], so we will allow freeing of this object by that as well! 
 	
@@ -104,7 +108,11 @@ func _call_complete(_result: HTTPRequest.Result, response_code: int, _incoming_h
 	if response_code == 0:
 		_number_retries_done += 1
 		if _number_retries_done >= _request_definition.number_of_retries_allowed:
-			push_error("FEAGI NETWORK HTTP: FEAGI failed to respond more times than retries allowed! Signaling disconnection")
+			push_warning("FEAGI NETWORK HTTP: FEAGI failed to respond more times than retries allowed! Signaling disconnection")
+			if _request_definition.call_type == CALL_PROCESS_TYPE.POLLING and _timer != null:
+				_timer.stop()
+				_timer.paused = true
+			cancel_request()
 			_output_response = FeagiRequestOutput.response_no_response(_request_definition.call_type == CALL_PROCESS_TYPE.POLLING)
 			_output_response.response_code = 0  # Ensure response_code is set
 			worker_done.emit()

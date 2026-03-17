@@ -14,9 +14,9 @@ func _ready():
 		print("❌ FeagiDataDeserializer class NOT found!")
 		print("Available classes containing 'Feagi': ")
 		var all_classes = ClassDB.get_class_list()
-		for class_name in all_classes:
-			if "Feagi" in class_name or "feagi" in class_name:
-				print("  - ", class_name)
+		for cls_name in all_classes:
+			if "Feagi" in cls_name or "feagi" in cls_name:
+				print("  - ", cls_name)
 		return
 	
 	# Test 1: Initialize the deserializer (REQUIRED - no fallback)

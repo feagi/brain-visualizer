@@ -37,6 +37,7 @@ func _ready() -> void:
 		repopulate_from_cache()
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_respond_to_deleted_morphology)
 	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_respond_to_added_morphology)
+	FeagiCore.feagi_local_cache.morphologies.morphology_renamed.connect(_respond_to_renamed_morphology)
 
 ## Clears list, then loads morphology list from FeagiCache
 func repopulate_from_cache() -> void:
@@ -81,6 +82,16 @@ func _respond_to_deleted_morphology(morphology: BaseMorphology) -> void:
 
 func _respond_to_added_morphology(morphology: BaseMorphology) -> void:
 	_items.append({"label": morphology.name, "payload": morphology})
+	_apply_filter(_filter_line.text)
+
+func _respond_to_renamed_morphology(_old_name: StringName, morphology: BaseMorphology) -> void:
+	for i in range(_items.size()):
+		if _items[i].get("payload") == morphology:
+			_items[i]["label"] = String(morphology.name)
+			break
+	_items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return String(a.get("label", "")).to_lower() < String(b.get("label", "")).to_lower()
+	)
 	_apply_filter(_filter_line.text)
 
 func _apply_filter(filter_text: String) -> void:

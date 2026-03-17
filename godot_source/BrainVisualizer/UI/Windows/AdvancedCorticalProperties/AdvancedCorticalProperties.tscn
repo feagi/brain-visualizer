@@ -52,14 +52,14 @@ bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3nhm5"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 
-[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("controls_to_hide_in_simple_mode", "_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_unit_code", "_line_unit_id", "_line_subunit_id", "_line_cortical_type", "_device_count_section", "_device_count", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_dimensions_label", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_vector_visualization_voxel_granularity", "_button_summary_send", "_section_firing_parameters", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send", "_section_neuron_coding", "_dropdown_coding_signage", "_dropdown_coding_behavior", "_dropdown_coding_type", "_button_coding_send", "_section_memory", "_line_initial_neuron_lifespan", "_line_lifespan_growth_rate", "_line_longterm_memory_threshold", "_line_temporal_depth", "_button_memory_send", "_section_post_synaptic_potential_parameters", "_line_Post_Synaptic_Potential", "_line_PSP_Max", "_line_Degeneracy_Constant", "_button_PSP_Uniformity", "_button_MP_Driven_PSP", "_button_pspp_send", "_section_cortical_area_monitoring", "membrane_toggle", "post_synaptic_toggle", "render_activity_toggle", "_button_monitoring_send", "_section_connections", "_scroll_afferent", "_scroll_efferent", "_button_recursive", "_section_dangerzone")]
+[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("controls_to_hide_in_simple_mode", "_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_unit_code", "_line_unit_id", "_line_subunit_id", "_line_cortical_type", "_device_count_section", "_device_count", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_line_neuron_count", "_line_incoming_synapse_count", "_line_outgoing_synapse_count", "_dropdown_io_preset", "_dimensions_label", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_vector_visualization_voxel_granularity", "_button_summary_send", "_section_firing_parameters", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send", "_section_neuron_coding", "_dropdown_coding_signage", "_dropdown_coding_behavior", "_dropdown_coding_type", "_button_coding_send", "_section_memory", "_line_initial_neuron_lifespan", "_line_lifespan_growth_rate", "_line_longterm_memory_threshold", "_line_temporal_depth", "_button_memory_send", "_section_post_synaptic_potential_parameters", "_line_Post_Synaptic_Potential", "_line_PSP_Max", "_line_Degeneracy_Constant", "_button_PSP_Uniformity", "_button_MP_Driven_PSP", "_button_pspp_send", "_section_cortical_area_monitoring", "membrane_toggle", "post_synaptic_toggle", "render_activity_toggle", "_button_monitoring_send", "_section_connections", "_scroll_afferent", "_scroll_efferent", "_button_recursive", "_section_dangerzone")]
 offset_right = 360.0
 offset_bottom = 420.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_mwcmr")
-controls_to_hide_in_simple_mode = [NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Row_Cortical_ID"), NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Row_Unit_Code"), NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Unit_ID"), NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Row_Subunit_ID"), NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Voxel_Neuron_Density"), NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Synaptic_Attractivity"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Leak_Constant"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Leak_Variability"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Refactory_Period"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Consecutive_Fire_Count"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Snooze_Period"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Threshold_Limit"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Neuron_Excitability"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Fire_Threshold_Label"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Fire_Threshold_Increment"), NodePath("WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/PSP_Max"), NodePath("WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/Degeneracy_Constant"), NodePath("WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/MP_Driven_PSP")]
+controls_to_hide_in_simple_mode = [NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Row_Cortical_ID"), NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Row_Unit_Code"), NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Unit_ID"), NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Row_Subunit_ID"), NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Voxel_Neuron_Density"), NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Synaptic_Attractivity"), NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Neuron_Count"), NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Incoming_Synapse_Count"), NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Outgoing_Synapse_Count"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Leak_Constant"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Leak_Variability"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Refactory_Period"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Consecutive_Fire_Count"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Snooze_Period"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Threshold_Limit"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Neuron_Excitability"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Fire_Threshold_Label"), NodePath("WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Fire_Threshold_Increment"), NodePath("WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/PSP_Max"), NodePath("WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/Degeneracy_Constant"), NodePath("WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/MP_Driven_PSP")]
 _section_summary = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary")
 _line_cortical_name = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Cortical_Name/Cortical_Name")
 _region_button = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Region/Region")
@@ -72,6 +72,10 @@ _device_count_section = NodePath("WindowPanel/WindowMargin/WindowInternals/Summa
 _device_count = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Device Count/IntSpinBox")
 _line_voxel_neuron_density = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Voxel_Neuron_Density/Voxel_Neuron_Density")
 _line_synaptic_attractivity = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Synaptic_Attractivity/Synaptic_Attractivity")
+_line_neuron_count = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Neuron_Count/Neuron_Count")
+_line_incoming_synapse_count = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Incoming_Synapse_Count/Incoming_Synapse_Count")
+_line_outgoing_synapse_count = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Outgoing_Synapse_Count/Outgoing_Synapse_Count")
+_dropdown_io_preset = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_IO_Preset/IO_Preset")
 _dimensions_label = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Label_Dimensions")
 _vector_dimensions_spin = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Size")
 _vector_dimensions_nonspin = NodePath("WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Cortical_Size_ns")
@@ -188,7 +192,7 @@ mouse_filter = 1
 text = "Name"
 
 [node name="Cortical_Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Cortical_Name"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 script = ExtResource("8_2af2m")
 
@@ -203,7 +207,7 @@ mouse_filter = 1
 text = "Parent Region"
 
 [node name="Region" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Region"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 
 
@@ -233,12 +237,15 @@ tooltip_text = "Unit index = unit instance index (which device/unit instance of 
 mouse_filter = 1
 text = "Unit Index"
 
-[node name="Unit_ID" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Unit_ID"]
+[node name="Unit_ID" type="SpinBox" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Unit_ID"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-editable = false
 tooltip_text = "Unit index = unit instance index (which device/unit instance of a given type)."
-script = ExtResource("8_2af2m")
+min_value = 0.0
+step = 1.0
+allow_greater = true
+rounded = true
+script = ExtResource("9_w13r1")
 
 [node name="Row_Voxel_Neuron_Density" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
 layout_mode = 2
@@ -269,6 +276,51 @@ layout_mode = 2
 script = ExtResource("9_xe4wg")
 suffix = " %"
 
+[node name="Row_Neuron_Count" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
+layout_mode = 2
+tooltip_text = "Total neurons reported by FEAGI for this cortical area"
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Neuron_Count"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Neuron Count"
+
+[node name="Neuron_Count" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Neuron_Count"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("9_xe4wg")
+
+[node name="Row_Incoming_Synapse_Count" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
+layout_mode = 2
+tooltip_text = "Incoming synapses targeting neurons in this cortical area"
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Incoming_Synapse_Count"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Incoming Synapse Count"
+
+[node name="Incoming_Synapse_Count" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Incoming_Synapse_Count"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("9_xe4wg")
+
+[node name="Row_Outgoing_Synapse_Count" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
+layout_mode = 2
+tooltip_text = "Outgoing synapses originating from neurons in this cortical area"
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Outgoing_Synapse_Count"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Outgoing Synapse Count"
+
+[node name="Outgoing_Synapse_Count" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Outgoing_Synapse_Count"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("9_xe4wg")
+
 [node name="Row_Device Count" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
 visible = false
 layout_mode = 2
@@ -288,6 +340,22 @@ max_value = 10000.0
 value = 1.0
 alignment = 1
 script = ExtResource("9_w13r1")
+
+[node name="Row_IO_Preset" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_IO_Preset"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Resolved I/O role for this cortical area based on region I/O membership."
+mouse_filter = 1
+text = "IO Preset"
+
+[node name="IO_Preset" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_IO_Preset"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+tooltip_text = "Resolved I/O role for this cortical area based on region I/O membership."
+script = ExtResource("25_4f9l1")
 
 [node name="Label_Dimensions" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
 layout_mode = 2
@@ -337,6 +405,109 @@ custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
 [node name="Summary" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters"]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Apply Update"
+
+[node name="Neuron_Coding" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_x2gmv")
+script = ExtResource("3_roduu")
+start_open = false
+
+[node name="VerticalCollapsible" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding"]
+layout_mode = 2
+theme_type_variation = &"VBoxContainer_adjacent"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
+layout_mode = 2
+
+[node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Neural coding options for this unit type (signage, behavior, and type). Only supported options are shown."
+text = "Neural Coding"
+
+[node name="Collapsible_Toggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+texture_normal = ExtResource("4_2ff0f")
+texture_pressed = ExtResource("5_0w5gk")
+texture_hover = ExtResource("6_cyt0s")
+texture_disabled = ExtResource("7_8r6dk")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible"]
+layout_mode = 2
+
+[node name="PutThingsHere" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer"]
+layout_mode = 2
+
+[node name="CorticalPropertiesNeuronCoding" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere"]
+layout_mode = 2
+
+[node name="Coding_Signage" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
+layout_mode = 2
+tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Signage"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
+text = "Coding Format"
+
+[node name="Coding_Signage" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Signage"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
+script = ExtResource("25_4f9l1")
+
+[node name="Coding_Behavior" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
+layout_mode = 2
+tooltip_text = "Frame change handling mode (Absolute or Incremental)."
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Behavior"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Frame change handling mode (Absolute or Incremental)."
+text = "Coding Behavior"
+
+[node name="Coding_Behavior" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Behavior"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+tooltip_text = "Frame change handling mode (Absolute or Incremental)."
+script = ExtResource("25_4f9l1")
+
+[node name="Coding_Type" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
+layout_mode = 2
+tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Type"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
+text = "Coding Type"
+
+[node name="Coding_Type" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Type"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
+script = ExtResource("25_4f9l1")
+
+[node name="GAP" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="CorticalPropertyNeuronCoding" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
@@ -543,109 +714,6 @@ size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
 
-[node name="Neuron_Coding" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
-layout_mode = 2
-size_flags_vertical = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_x2gmv")
-script = ExtResource("3_roduu")
-start_open = false
-
-[node name="VerticalCollapsible" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding"]
-layout_mode = 2
-theme_type_variation = &"VBoxContainer_adjacent"
-
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible"]
-layout_mode = 2
-size_flags_vertical = 0
-
-[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
-layout_mode = 2
-
-[node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "Neural coding options for this unit type (signage, behavior, and type). Only supported options are shown."
-text = "Neural Coding"
-
-[node name="Collapsible_Toggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 2
-size_flags_horizontal = 8
-size_flags_vertical = 4
-texture_normal = ExtResource("4_2ff0f")
-texture_pressed = ExtResource("5_0w5gk")
-texture_hover = ExtResource("6_cyt0s")
-texture_disabled = ExtResource("7_8r6dk")
-ignore_texture_size = true
-stretch_mode = 0
-
-[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible"]
-layout_mode = 2
-
-[node name="PutThingsHere" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer"]
-layout_mode = 2
-
-[node name="CorticalPropertiesNeuronCoding" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere"]
-layout_mode = 2
-
-[node name="Coding_Signage" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
-layout_mode = 2
-tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
-
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Signage"]
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
-text = "Coding Signage"
-
-[node name="Coding_Signage" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Signage"]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-tooltip_text = "IO signage category for the unit encoding (e.g., Percentage Signed/Unsigned, Cartesian Plane, Misc, Boolean)."
-script = ExtResource("25_4f9l1")
-
-[node name="Coding_Behavior" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
-layout_mode = 2
-tooltip_text = "Frame change handling mode (Absolute or Incremental)."
-
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Behavior"]
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "Frame change handling mode (Absolute or Incremental)."
-text = "Coding Behavior"
-
-[node name="Coding_Behavior" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Behavior"]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-tooltip_text = "Frame change handling mode (Absolute or Incremental)."
-script = ExtResource("25_4f9l1")
-
-[node name="Coding_Type" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
-layout_mode = 2
-tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
-
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Type"]
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
-text = "Coding Type"
-
-[node name="Coding_Type" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding/Coding_Type"]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-tooltip_text = "Positioning type for percentage-based encodings (Linear or Fractional)."
-script = ExtResource("25_4f9l1")
-
-[node name="GAP" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
-custom_minimum_size = Vector2(0, 5)
-layout_mode = 2
-
-[node name="CorticalPropertyNeuronCoding" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronCoding"]
-layout_mode = 2
-size_flags_horizontal = 3
-disabled = true
-text = "Apply Update"
-
 [node name="Memory" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 size_flags_vertical = 0
@@ -692,7 +760,7 @@ layout_mode = 2
 
 [node name="initial_neuron_lifespan" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 layout_mode = 2
-tooltip_text = "Number of neurons within each voxel"
+tooltip_text = "Starting lifespan in bursts for newly created memory neurons."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/initial_neuron_lifespan"]
 layout_mode = 2
@@ -706,7 +774,7 @@ script = ExtResource("9_xe4wg")
 
 [node name="lifespan_growth_rate" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 layout_mode = 2
-tooltip_text = "The rate of success in accepting incoming synapses"
+tooltip_text = "Amount added to lifespan on each reactivation (non-LTM only)."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/lifespan_growth_rate"]
 layout_mode = 2
@@ -720,7 +788,7 @@ script = ExtResource("9_xe4wg")
 
 [node name="longterm_memory_threshold" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 layout_mode = 2
-tooltip_text = "The mount of membrane potential increase each neuron can have on downstream neurons"
+tooltip_text = "Lifespan threshold at which memory neurons become long-term."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/longterm_memory_threshold"]
 layout_mode = 2
@@ -734,7 +802,7 @@ script = ExtResource("9_xe4wg")
 
 [node name="temporal_depth" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters"]
 layout_mode = 2
-tooltip_text = "The mount of membrane potential increase each neuron can have on downstream neurons"
+tooltip_text = "Number of bursts to include when detecting upstream firing patterns."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesMemoryParameters/temporal_depth"]
 layout_mode = 2
@@ -1147,7 +1215,7 @@ mouse_filter = 1
 text = "Cortical ID"
 
 [node name="Cortical_ID" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Row_Cortical_ID"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(190, 0)
 layout_mode = 2
 editable = false
 tooltip_text = "The internal ID of this cortical area. It includes the unit code (3-letter designation), coding flag, unit ID, and subunit ID."

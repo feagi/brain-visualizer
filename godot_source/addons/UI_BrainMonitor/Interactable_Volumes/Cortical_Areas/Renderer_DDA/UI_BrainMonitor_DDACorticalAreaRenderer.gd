@@ -5,6 +5,11 @@ class_name UI_BrainMonitor_DDACorticalAreaRenderer
 const PREFAB: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/CorticalArea_DDA_Body.tscn")
 const WEBGL_DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/WebGL_RayMarch.tres"
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
+const FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE: int = 18
+const FRIENDLY_NAME_LABEL_SMOOTH_SPEED: float = 10.0
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN: float = 2.75
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX: float = 4.5
+const FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE: float = 0.18
 
 # TODO right now, particularly for selection, we recreate the SVO tree entirely every time a single node is added / removed. This is slow, and we should be adding / removing SVO nodes instead
 
@@ -24,6 +29,9 @@ var _selection_image: Image
 var _selection_image_texture: ImageTexture
 var _is_hovered_over: bool
 var _is_selected: bool
+var _last_label_outside_dir_xz: Vector2 = Vector2(0.0, 1.0)
+var _friendly_name_label_target_position: Vector3 = Vector3.ZERO
+var _has_friendly_name_label_target_position: bool = false
 
 func setup(area: AbstractCorticalArea) -> void:
 	_static_body = PREFAB.instantiate()
@@ -34,8 +42,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	add_child(_static_body)
 	
-	# Create individual plate if needed
-	_create_individual_plate_if_needed(area)
+	# Individual per-area plates are disabled; use region plates only.
 	
 	# Create friendly name label with high-quality MSDF rendering
 	_friendly_name_label = Label3D.new()
@@ -48,6 +55,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.no_depth_test = false  # Respect depth for proper occlusion
 	_friendly_name_label.render_priority = 1  # Render after most objects
 	add_child(_friendly_name_label)
+	set_process(true)
 
 	# Set initial properties
 	_activation_image_texture = ImageTexture.new()
@@ -57,10 +65,33 @@ func setup(area: AbstractCorticalArea) -> void:
 	_position_FEAGI_space = area.coordinates_3D # such that when calling Update dimensions, the location is correct
 	update_friendly_name(area.friendly_name)
 	update_dimensions(area.dimensions_3D)
-	# Dimensions updates position itself as well
+	# Initialize activation texture to empty so shader never samples unset texture (avoids out-of-region red)
+	_clear_activation_texture()
 
 func update_friendly_name(new_name: String) -> void:
-	_friendly_name_label.text = new_name
+	_friendly_name_label.text = _wrap_friendly_name_text(new_name)
+
+func _wrap_friendly_name_text(label_text: String) -> String:
+	var normalized_text := label_text.strip_edges()
+	if normalized_text.is_empty():
+		return ""
+	var wrapped_lines := PackedStringArray()
+	for raw_line in normalized_text.split("\n"):
+		var words := raw_line.split(" ", false)
+		if words.is_empty():
+			wrapped_lines.append("")
+			continue
+		var current_line: String = words[0]
+		for i in range(1, words.size()):
+			var word: String = words[i]
+			var candidate_line := "%s %s" % [current_line, word]
+			if candidate_line.length() <= FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE:
+				current_line = candidate_line
+			else:
+				wrapped_lines.append(current_line)
+				current_line = word
+		wrapped_lines.append(current_line)
+	return "\n".join(wrapped_lines)
 
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Vector3i) -> void:
 	super(new_FEAGI_coordinate_position)
@@ -104,41 +135,45 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
 
 func update_visualization_data(visualization_data: PackedByteArray) -> void:
-	# Validate data size - need at least 4 bytes for dimensions (2x uint16)
+	# Expected format: [width:u16][height:u16][FORMAT_RF image data]. Legacy Type 10 from WebSocket
+	# sends raw SVO bytes (bytes.slice(8)) with NO this header; treating those bytes as header+image
+	# produces wrong dimensions and garbage texture -> shader draws faint red noise (out of order/scale).
+	# Reject payloads that do not match exact size and sane dimensions.
 	if visualization_data.size() < 4:
-		print("⚠️ SVO RENDERER: Skipping invalid data (size too small: ", visualization_data.size(), " bytes)")
+		_clear_activation_texture()
 		return
-	
-	print("🔄 SVO RENDERER: Processing Type 10 (NEURON_FLAT/SVO) visualization data (", visualization_data.size(), " bytes)")
-	
+
 	var retrieved_image_dimensions: Vector2i = Vector2i(visualization_data.decode_u16(0), visualization_data.decode_u16(2))
-	
-	# Validate dimensions
+
+	# Validate dimensions (sanity: avoid garbage from raw SVO being interpreted as dimensions)
 	if retrieved_image_dimensions.x <= 0 or retrieved_image_dimensions.y <= 0:
-		print("⚠️ SVO RENDERER: Skipping invalid dimensions: ", retrieved_image_dimensions)
+		_clear_activation_texture()
 		return
-	
-	# Calculate expected data size: 4 bytes header + image data
-	var expected_image_data_size = retrieved_image_dimensions.x * retrieved_image_dimensions.y * 4  # FORMAT_RF = 4 bytes per pixel
-	var expected_total_size = 4 + expected_image_data_size
-	
-	if visualization_data.size() < expected_total_size:
-		print("⚠️ SVO RENDERER: Data size mismatch. Expected ", expected_total_size, " bytes, got ", visualization_data.size())
+	const MAX_SVO_TEXTURE_SIDE: int = 4096
+	if retrieved_image_dimensions.x > MAX_SVO_TEXTURE_SIDE or retrieved_image_dimensions.y > MAX_SVO_TEXTURE_SIDE:
+		_clear_activation_texture()
 		return
-	
+
+	# Exact size match: 4-byte header + FORMAT_RF image (4 bytes per pixel). Raw SVO payloads
+	# from legacy Type 10 will not match, so we avoid drawing garbage activation.
+	var expected_image_data_size: int = retrieved_image_dimensions.x * retrieved_image_dimensions.y * 4
+	var expected_total_size: int = 4 + expected_image_data_size
+	if visualization_data.size() != expected_total_size:
+		_clear_activation_texture()
+		return
+
 	# Always use create_from_data + set_image for atomic texture replacement to prevent flashing
-	# This avoids the non-atomic set_data() + update() path which can cause brief cleared states
 	_activation_image = Image.create_from_data(retrieved_image_dimensions.x, retrieved_image_dimensions.y, false, Image.Format.FORMAT_RF, visualization_data.slice(4))
 	_activation_image_texture.set_image(_activation_image)
-	
-	var dimensions_changed = retrieved_image_dimensions != _activation_image_dimensions
-	if dimensions_changed:
-		_activation_image_dimensions = retrieved_image_dimensions
-		print("   📊 Created new SVO texture: ", _activation_image_dimensions)
-	else:
-		print("   🔄 Updated existing SVO texture: ", _activation_image_dimensions)
-	
-	# Update shader parameter - texture reference is stable, so this should not cause flashing
+	_activation_image_dimensions = retrieved_image_dimensions
+	_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
+
+func _clear_activation_texture() -> void:
+	# Set activation to empty SVO (no nodes) so shader does not draw spurious red. Avoids faint
+	# out-of-order/out-of-scale red when legacy Type 10 sends raw SVO bytes instead of header+image.
+	var empty_img := Image.create_from_data(1, 1, false, Image.Format.FORMAT_RF, PackedByteArray([0, 0, 0, 0]))
+	_activation_image_texture.set_image(empty_img)
+	_activation_image_dimensions = Vector2i(1, 1)
 	_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
@@ -154,25 +189,60 @@ func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) ->
 		) # lots of floating point shenanigans here!
 	return world_godot_position_floored
 
-## Keeps the friendly-name label below the cortical area, but snaps its Z to the camera-facing edge
-## (avoids the label sitting at the center of the cortical depth).
-func bv_update_friendly_name_label_position() -> void:
-	if _static_body == null or _friendly_name_label == null:
+func _process(delta: float) -> void:
+	var had_target := _has_friendly_name_label_target_position
+	if not _update_friendly_name_label_target_position():
 		return
+	if not had_target:
+		_friendly_name_label.position = _friendly_name_label_target_position
+		return
+	var alpha: float = clampf(1.0 - exp(-FRIENDLY_NAME_LABEL_SMOOTH_SPEED * delta), 0.0, 1.0)
+	_friendly_name_label.position = _friendly_name_label.position.lerp(_friendly_name_label_target_position, alpha)
+
+## Keeps the friendly-name label below the cortical area and continuously outside the area footprint.
+## Target position tracks camera movement; final motion is time-smoothed in _process().
+func bv_update_friendly_name_label_position() -> void:
+	var had_target := _has_friendly_name_label_target_position
+	if not _update_friendly_name_label_target_position():
+		return
+	if not had_target:
+		_friendly_name_label.position = _friendly_name_label_target_position
+
+func _update_friendly_name_label_target_position() -> bool:
+	if _static_body == null or _friendly_name_label == null:
+		return false
 	var viewport := get_viewport()
 	if viewport == null:
-		return
+		return false
 	var cam := viewport.get_camera_3d()
 	if cam == null:
-		return
-	
-	var y_offset: float = -(_static_body.scale.y / 2.0 + 2.0)
-	# Renderer base class extends Node (not Node3D), so compute camera relation in the StaticBody3D's space.
+		return false
+	var half_y: float = absf(_static_body.scale.y) * 0.5
+	var bottom_gap: float = clampf(
+		half_y * FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX
+	)
+	var y_offset: float = -(half_y + bottom_gap)
+	var edge_margin: float = maxf(0.75, minf(_static_body.scale.x, _static_body.scale.z) * 0.15)
+	# Renderer base class extends Node (not Node3D), so compute camera relation in StaticBody3D space.
 	var cam_in_body_local: Vector3 = _static_body.to_local(cam.global_position)
-	var z_sign: float = -1.0 if cam_in_body_local.z < 0.0 else 1.0
-	var z_edge: float = _static_body.position.z + z_sign * (_static_body.scale.z / 2.0)
-	
-	_friendly_name_label.position = Vector3(_static_body.position.x, _static_body.position.y + y_offset, z_edge)
+	var cam_dir_xz := Vector2(cam_in_body_local.x, cam_in_body_local.z)
+	if cam_dir_xz.length_squared() > 0.0001:
+		_last_label_outside_dir_xz = cam_dir_xz.normalized()
+
+	var dir_xz: Vector2 = _last_label_outside_dir_xz
+	var half_x: float = absf(_static_body.scale.x) * 0.5
+	var half_z: float = absf(_static_body.scale.z) * 0.5
+	# Support distance to rectangle boundary along direction (continuous, no axis snapping).
+	var edge_distance: float = absf(dir_xz.x) * half_x + absf(dir_xz.y) * half_z
+	var center_x: float = _static_body.position.x
+	var center_z: float = _static_body.position.z
+	var label_x: float = center_x + dir_xz.x * (edge_distance + edge_margin)
+	var label_z: float = center_z + dir_xz.y * (edge_distance + edge_margin)
+	_friendly_name_label_target_position = Vector3(label_x, _static_body.position.y + y_offset, label_z)
+	_has_friendly_name_label_target_position = true
+	return true
 	
 func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
 	_is_hovered_over = is_highlighted
@@ -216,8 +286,13 @@ func _set_cortical_area_outline(mouse_over: bool, selected: bool) -> void:
 
 ## Creates an individual plate under this cortical area if needed
 func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
+	# Individual per-area plates are disabled by design.
+	return
 	# 1) Skip if already on a brain region plate (avoid double plating)
 	if _is_on_brain_region_plate():
+		var existing_plate := _static_body.get_node_or_null("IndividualPlate")
+		if existing_plate != null:
+			existing_plate.queue_free()
 		return
 
 	# 2) Determine IO status from active brain regions in the scene
@@ -244,7 +319,7 @@ func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
 
 	match plate_type:
 		"input":
-			material.albedo_color = Color(0.0, 0.6, 0.0, 0.2)
+			material.albedo_color = Color(1.0, 0.5, 0.0, 0.2)
 		"output":
 			material.albedo_color = Color(0.0, 0.4, 0.0, 0.2)
 		"conflict":

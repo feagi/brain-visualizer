@@ -1,0 +1,143 @@
+[gd_scene load_steps=6 format=3 uid="uid://bpatvisedit01"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/PatternVisualEdit/WindowPatternVisualEdit.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+[ext_resource type="PackedScene" uid="uid://cmxa7e3wifiy2" path="res://BrainVisualizer/UI/GenericElements/Vectors/PatternVector3Field.tscn" id="3_pvfield"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="4_arrow"]
+[ext_resource type="PackedScene" uid="uid://bpatprevgrid01" path="res://BrainVisualizer/UI/Windows/PatternVisualEdit/PatternPreviewGrid.tscn" id="5_grid"]
+
+[node name="WindowPatternVisualEdit" type="VBoxContainer"]
+custom_minimum_size = Vector2(780, 520)
+layout_mode = 3
+theme_override_constants/separation = 0
+script = ExtResource("1_script")
+
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+layout_mode = 2
+title = "Visual Edit - Pattern Pair"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+theme_type_variation = &"MarginContainer_WindowBorder"
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FormRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+alignment = 1
+
+[node name="SourceLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/FormRow"]
+layout_mode = 2
+text = "Source"
+
+[node name="SourceField" parent="WindowPanel/WindowMargin/WindowInternals/FormRow" instance=ExtResource("3_pvfield")]
+layout_mode = 2
+
+[node name="ArrowRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/FormRow"]
+custom_minimum_size = Vector2(48, 24)
+layout_mode = 2
+texture = ExtResource("4_arrow")
+expand_mode = 1
+
+[node name="DestLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/FormRow"]
+layout_mode = 2
+text = "Dest"
+
+[node name="DestField" parent="WindowPanel/WindowMargin/WindowInternals/FormRow" instance=ExtResource("3_pvfield")]
+layout_mode = 2
+
+[node name="GridsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="SourceSide" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow"]
+layout_mode = 2
+size_flags_horizontal = 1
+theme_override_constants/separation = 4
+
+[node name="SourceTitle" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/SourceSide"]
+layout_mode = 2
+text = "Source preview"
+
+[node name="ZRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/SourceSide"]
+layout_mode = 2
+alignment = 1
+
+[node name="ZPrev" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/SourceSide/ZRow"]
+layout_mode = 2
+text = "<"
+
+[node name="ZSpin" type="SpinBox" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/SourceSide/ZRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+min_value = 0.0
+max_value = 9999999999.0
+value = 0.0
+
+[node name="ZNext" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/SourceSide/ZRow"]
+layout_mode = 2
+text = ">"
+
+[node name="SourceGrid" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/SourceSide" instance=ExtResource("5_grid")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DestSide" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow"]
+layout_mode = 2
+size_flags_horizontal = 1
+theme_override_constants/separation = 4
+
+[node name="DestTitle" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/DestSide"]
+layout_mode = 2
+text = "Dest preview"
+
+[node name="ZRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/DestSide"]
+layout_mode = 2
+alignment = 1
+
+[node name="ZPrev" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/DestSide/ZRow"]
+layout_mode = 2
+text = "<"
+
+[node name="ZSpin" type="SpinBox" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/DestSide/ZRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+min_value = 0.0
+max_value = 9999999999.0
+value = 0.0
+
+[node name="ZNext" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/DestSide/ZRow"]
+layout_mode = 2
+text = ">"
+
+[node name="DestGrid" parent="WindowPanel/WindowMargin/WindowInternals/GridsRow/DestSide" instance=ExtResource("5_grid")]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="Spacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+[node name="Save" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Save"

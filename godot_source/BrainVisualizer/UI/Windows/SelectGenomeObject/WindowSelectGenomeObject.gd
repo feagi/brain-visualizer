@@ -24,6 +24,7 @@ func setup(config: SelectGenomeObjectSettings) -> void:
 	_scroll_genome_object.setup_from_starting_region(_selection_config)
 	_instructions.text = _selection_config.pick_instructions
 	_updated_selected_objects(config.preselected_objects)
+	_select.disabled = len(config.preselected_objects) == 0
 
 func _proxy_object_added_or_removed(_irrelevant) -> void:
 	_updated_selected_objects(_scroll_genome_object.selected_objects)
@@ -35,9 +36,12 @@ func _select_pressed() -> void:
 func _updated_selected_objects(selected: Array[GenomeObject]) -> void:
 	if len(selected) == 0:
 		_selection_label.text = "Nothing Selected!"
+		_select.disabled = true
+		return
 	
 	var text: String = "Selected: " 
 	for object: GenomeObject in _scroll_genome_object.selected_objects:
 		text += object.friendly_name + ", "
 	text = text.erase(len(text) - 2)
 	_selection_label.text = text
+	_select.disabled = false

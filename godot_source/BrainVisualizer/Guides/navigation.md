@@ -106,12 +106,14 @@ Navigate through region hierarchy:
 - **Click** on cortical volume
 - Selected object highlights
 - Both views sync
+- **Ctrl + Click** toggles cortical areas in multi-selection and opens one shared multi-edit quick menu
 
 ### Multi-Selection
 
 **Add to Selection:**
 - **Ctrl + Click** to add/remove objects
-- Works in both 2D and 3D
+- In 3D, applies to cortical areas (and uses the shared multi-edit quick menu)
+- In 3D camera focus mode, use **Ctrl + 1/2/3 + Click** for plane-based focus
 - Useful for bulk operations
 
 **Box Selection:**

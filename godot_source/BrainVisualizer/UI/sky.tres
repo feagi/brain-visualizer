@@ -30,39 +30,8 @@ code = "shader_type sky;
 uniform vec4 HorizonColor : source_color;
 uniform vec4 SkyColor : source_color;
 uniform vec3 Clamp;
-uniform float NoiseScale : hint_range(0.1, 10.0) = 2.0;
-uniform float NoiseIntensity : hint_range(0.0, 1.0) = 0.15;
-uniform float PatternScale : hint_range(0.5, 5.0) = 1.5;
 
-// Simple hash function for procedural noise
-float hash(vec3 p) {
-	p = fract(p * 0.3183099 + 0.1);
-	p *= 17.0;
-	return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
-}
 
-// 3D noise function
-float noise(vec3 p) {
-	vec3 i = floor(p);
-	vec3 f = fract(p);
-	f = f * f * (3.0 - 2.0 * f);
-	
-	float n = i.x + i.y * 57.0 + 113.0 * i.z;
-	return mix(
-		mix(mix(hash(vec3(n + 0.0)), hash(vec3(n + 1.0)), f.x),
-			mix(hash(vec3(n + 57.0)), hash(vec3(n + 58.0)), f.x), f.y),
-		mix(mix(hash(vec3(n + 113.0)), hash(vec3(n + 114.0)), f.x),
-			mix(hash(vec3(n + 170.0)), hash(vec3(n + 171.0)), f.x), f.y), f.z);
-}
-
-// Circuit board-like pattern using noise
-float circuit_pattern(vec3 pos) {
-	vec3 scaled_pos = pos * PatternScale;
-	float n1 = noise(scaled_pos);
-	float n2 = noise(scaled_pos * 2.5);
-	float n3 = noise(scaled_pos * 5.0);
-	return (n1 * 0.5 + n2 * 0.3 + n3 * 0.2);
-}
 
 void sky() {
 // ColorParameter:11
@@ -97,25 +66,12 @@ void sky() {
 	vec3 n_out7p0 = clamp(n_out8p0, n_in7p1, n_in7p2);
 
 
-// Mix:10 - Smooth vertical gradient from bottom (dark) to top (brighter)
-	// Use Y component directly for vertical gradient: -1 (looking down) = 0, +1 (looking up) = 1
-	float vertical_gradient = (n_out3p0.y + 1.0) * 0.5; // Map from [-1,1] to [0,1]
-	// Smooth the gradient for more consistent transition
-	vertical_gradient = smoothstep(0.0, 1.0, vertical_gradient);
-	// Full gradient strength for consistent bottom-to-top transition
-	vec3 n_out10p0 = mix(vec3(n_out11p0.xyz), vec3(n_out2p0.xyz), vertical_gradient);
-	
-	// Add procedural texture pattern
-	vec3 world_pos = EYEDIR * NoiseScale;
-	float pattern = circuit_pattern(world_pos);
-	float pattern_effect = (pattern - 0.5) * NoiseIntensity;
-	
-	// Apply subtle texture variation
-	n_out10p0 += vec3(pattern_effect * 0.08);
+// Mix:10
+	vec3 n_out10p0 = mix(vec3(n_out11p0.xyz), vec3(n_out2p0.xyz), n_out7p0);
 
 
 // Output:0
-	COLOR = vec4(n_out10p0, 1.0);
+	COLOR = n_out10p0;
 
 
 }

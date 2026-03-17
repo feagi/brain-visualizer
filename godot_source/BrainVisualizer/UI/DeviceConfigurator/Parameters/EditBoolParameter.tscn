@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://bv_device_bool"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditBoolParameter.gd" id="1_bool"]
+
+[node name="Bool" type="HBoxContainer"]
+script = ExtResource("1_bool")
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+horizontal_alignment = 0
+mouse_filter = 1
+text = "NAME: "
+
+[node name="Value" type="CheckBox" parent="."]
+layout_mode = 2

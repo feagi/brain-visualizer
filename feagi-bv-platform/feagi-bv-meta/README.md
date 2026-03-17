@@ -4,8 +4,18 @@ Python package that bundles **Brain Visualizer** binaries with a simple launcher
 
 ## Installation
 
+**Most users should install the full FEAGI package instead:**
+
 ```bash
-pip install feagi-bv
+pip install feagi  # Includes feagi-core + feagi-bv automatically
+```
+
+**Only install feagi-bv directly if:**
+- You already have `feagi-core` installed
+- You're building custom tooling
+
+```bash
+pip install feagi-bv  # Requires feagi-core separately
 ```
 
 This will automatically install the correct platform-specific package for your system:
@@ -47,7 +57,7 @@ Only the binaries for your platform are downloaded.
 
 ## Dependencies
 
-- `feagi>=2.0.0` - Main FEAGI SDK
+- `feagi-core>=2.1.0` - FEAGI SDK (core package)
 - `toml>=0.10.2` - Configuration parsing
 
 ## Links

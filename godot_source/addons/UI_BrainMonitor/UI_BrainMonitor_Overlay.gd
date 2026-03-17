@@ -3,7 +3,7 @@ class_name UI_BrainMonitor_Overlay
 ## UI overlay for Brain Monitor
 
 var _mouse_context_label: Label
-var _fdp_deserializer: FeagiDataDeserializer = null
+var _fdp_deserializer: Object = null  # FeagiDataDeserializer when extension loaded
 
 func _process(_delta: float) -> void:
 	# Keep overlay size synced to viewport size (hover label is now global).
@@ -40,7 +40,7 @@ func _ready() -> void:
 	
 	# Initialize FDP deserializer for decoding voxel values
 	if ClassDB.class_exists("FeagiDataDeserializer"):
-		_fdp_deserializer = FeagiDataDeserializer.new()
+		_fdp_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
 	else:
 		push_warning("FeagiDataDeserializer not available - FDP voxel decoding will be disabled")
 
@@ -162,11 +162,17 @@ func clear_plate_hover() -> void:
 	# For now, we clear unconditionally when plate hover ends
 	_clear_global_context()
 
-## Show manipulation position during 3D relocate/resize.
+## Show manipulation position during 3D relocate/resize (cortical area).
 func show_manipulation_position(cortical_area: AbstractCorticalArea, position_3d: Vector3i) -> void:
 	if cortical_area == null:
 		return
-	_set_global_context("Move - " + cortical_area.friendly_name + "  " + str(position_3d))
+	_set_global_context("Relocating " + cortical_area.friendly_name + " to " + str(position_3d))
+
+## Show manipulation position during 3D relocate (brain region).
+func show_manipulation_position_region(brain_region: BrainRegion, position_3d: Vector3i) -> void:
+	if brain_region == null:
+		return
+	_set_global_context("Relocating " + brain_region.friendly_name + " to " + str(position_3d))
 
 func clear_manipulation_position() -> void:
 	_clear_global_context()
@@ -175,3 +181,13 @@ func show_manipulation_dimensions(cortical_area: AbstractCorticalArea, dimension
 	if cortical_area == null:
 		return
 	_set_global_context("Resize - " + cortical_area.friendly_name + "  " + str(dimensions_3d))
+
+## Show gizmo axis hover (Move in X direction, Resize along Y, etc.)
+func show_gizmo_axis_hover(axis: int, is_move: bool) -> void:
+	var axis_name: String = ["X", "Y", "Z"][axis] if axis >= 0 and axis <= 2 else "?"
+	var action: String = "Move in %s direction" % axis_name if is_move else "Resize along %s" % axis_name
+	_set_global_context(action)
+
+## Show gizmo cancel button hover
+func show_gizmo_cancel_hover() -> void:
+	_set_global_context("Cancel relocation (X)")

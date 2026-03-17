@@ -48,21 +48,27 @@ func decode_response_as_string() -> String:
 ## Returns the byte array as a dictionary, with some error checking that causes an empty dict to return if something is wrong
 func decode_response_as_dict() -> Dictionary:
 	var string: String = response_body.get_string_from_utf8()
+	# Some endpoints may return trailing null bytes or extra whitespace.
+	# Normalize before parsing so callers can treat malformed payloads as empty dictionaries.
+	string = string.replace("\u0000", "").strip_edges()
 	if string == "":
 		return {}
-	var dict =  JSON.parse_string(string)
-	if dict is Dictionary:
-		return dict
+	var parser := JSON.new()
+	var parse_error: Error = parser.parse(string)
+	if parse_error == OK and parser.data is Dictionary:
+		return parser.data
 	return {}
 
 ## Returns the byte array as an Array, with some error checking that causes an empty array to return if something is wrong
 func decode_response_as_array() -> Array:
 	var string: String = response_body.get_string_from_utf8()
+	string = string.replace("\u0000", "").strip_edges()
 	if string == "":
 		return []
-	var arr =  JSON.parse_string(string)
-	if arr is Array:
-		return arr
+	var parser := JSON.new()
+	var parse_error: Error = parser.parse(string)
+	if parse_error == OK and parser.data is Array:
+		return parser.data
 	return []
 
 #TODO We need a standard for error handling.

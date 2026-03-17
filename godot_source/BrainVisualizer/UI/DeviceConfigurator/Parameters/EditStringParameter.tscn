@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://bv_device_string"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditStringParameter.gd" id="1_string"]
+
+[node name="String" type="HBoxContainer"]
+script = ExtResource("1_string")
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+mouse_filter = 1
+size_flags_horizontal = 0
+horizontal_alignment = 0
+text = "NAME: "
+
+[node name="Value" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_horizontal = 3

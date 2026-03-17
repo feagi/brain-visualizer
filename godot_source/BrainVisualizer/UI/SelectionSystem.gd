@@ -14,6 +14,8 @@ enum SOURCE_CONTEXT {
 	FROM_CIRCUIT_BUILDER_CLICK,
 	FROM_CIRCUIT_BUILDER_DRAG,
 	FROM_OBJECT_SELECTION_WINDOW,
+	FROM_3D_SCENE,
+	FROM_3D_SCENE_ON_PLATE,  ## Cortical area on another region's plate; relocate from within that region
 	UNKNOWN
 }
 
@@ -54,15 +56,19 @@ func remove_override_usecase(usecase: OVERRIDE_USECASE) -> void:
 		return
 	_override_use_cases.remove_at(index)
 
+func has_override_usecase(usecase: OVERRIDE_USECASE) -> bool:
+	return usecase in _override_use_cases
+
 func clear_all_highlighted() -> void:
-	for object in _highlighted_genome_objects:
+	var objects_to_clear: Array[GenomeObject] = _highlighted_genome_objects.duplicate()
+	_highlighted_genome_objects = []
+	for object in objects_to_clear:
 		object.UI_set_highlighted_state(false)
 		highlighted_object_removed.emit(object)
 		if object is AbstractCorticalArea:
 			highlighted_cortical_area_removed.emit(object as AbstractCorticalArea)
 		else:
 			highlighted_region_removed.emit(object as BrainRegion)
-	_highlighted_genome_objects = []
 	highlighted_objects_changed.emit(_highlighted_genome_objects)
 
 func add_to_highlighted(genome_object: GenomeObject) -> ERROR:

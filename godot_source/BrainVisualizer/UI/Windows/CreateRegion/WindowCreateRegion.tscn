@@ -13,7 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="10_d4k8w"]
 
 [node name="WindowCreateRegion" type="VBoxContainer"]
-offset_right = 520.0
+offset_right = 572.0
 offset_bottom = 330.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
@@ -22,7 +22,7 @@ script = ExtResource("1_bf8xt")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_xhweg")]
 layout_mode = 2
-title = "Create Brain Region"
+title = "Create New Circuit"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -43,7 +43,7 @@ size_flags_horizontal = 3
 text = "Circuit Name"
 
 [node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 script = ExtResource("3_yyqls")
 
@@ -84,6 +84,7 @@ text = "Define Internals"
 
 [node name="Add" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer"]
 layout_mode = 2
+custom_minimum_size = Vector2(24, 24)
 texture = ExtResource("5_l1778")
 expand_mode = 3
 script = ExtResource("6_jyl4e")
@@ -100,17 +101,33 @@ size_flags_vertical = 3
 [node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/PanelContainer" instance=ExtResource("10_d4k8w")]
 layout_mode = 2
 
-[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+theme_override_constants/separation = 4
 
-[node name="Label" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Back"
+
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = "Cancel"
+
+[node name="Create" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Create"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer/Add" to="." method="_add_button_pressed"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4/Button" to="." method="_create_region_button_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Back" to="." method="_back_pressed"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Cancel" to="." method="_user_requesting_exit"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Buttons/Create" to="." method="_create_region_button_pressed"]
