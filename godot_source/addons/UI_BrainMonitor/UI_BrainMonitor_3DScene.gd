@@ -1716,13 +1716,26 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 										BV.UI.selection_system.select_objects(ctx)
 									continue
 								
-								# Single left-click on cortical area - select it (only for MAIN button without Ctrl)
-								if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+								# Left-click or right-click on cortical area - select it and auto-expand to unit group
+								if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
 									var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
 									if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
 										ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
-									BV.UI.selection_system.select_objects(ctx, arr_test)
-									BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
+									var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(hit_parent_parent.cortical_area)
+									var to_select: Array[GenomeObject] = []
+									if unit_members.size() > 1:
+										var clicked_region = hit_parent_parent.cortical_area.current_parent_region
+										for m in unit_members:
+											if m.current_parent_region == clicked_region:
+												to_select.append(m)
+									if to_select.is_empty():
+										to_select = arr_test
+									BV.UI.selection_system.clear_all_highlighted()
+									for obj in to_select:
+										BV.UI.selection_system.add_to_highlighted(obj)
+									BV.UI.selection_system.select_objects(ctx, to_select)
+									if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+										BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
 									#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
 									#clicked_cortical_area.emit(hit_parent_parent.cortical_area)
 			
@@ -2377,74 +2390,12 @@ func _apply_region_move(new_pos: Vector3i) -> void:
 		_manipulation_region.FEAGI_change_coordinates_3D(new_pos)
 	_end_manipulation_session(true)
 
-## Collect all cortical areas that are part of the same unit (subtype + group).
+## Collect all cortical areas that are part of the same unit (uses shared AbstractCorticalArea logic).
 func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCorticalArea]:
 	if area == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
 		return []
-	area.ensure_unit_subunit_ids_from_cortical_id()
-	if area.unit_id < 0 or area.subunit_id < 0:
-		return []
-	var subtype_key := area.cortical_subtype.strip_edges()
-	var use_subtype := subtype_key != ""
-	var coding_signature := ""
-	if not use_subtype:
-		coding_signature = "%s|%s|%s|%s|%s" % [
-			String(area.encoding_type),
-			String(area.encoding_format),
-			String(area.coding_signage),
-			String(area.coding_behavior),
-			String(area.coding_type)
-		]
-	print("BV: Unit grouping source=%s unit_id=%d subunit_id=%d subtype='%s' signature='%s' type=%s" % [
-		area.cortical_ID,
-		area.unit_id,
-		area.subunit_id,
-		subtype_key,
-		coding_signature,
-		AbstractCorticalArea.cortical_type_to_str(area.cortical_type)
-	])
-	var members: Array[AbstractCorticalArea] = []
 	var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
-	for cortical_area in all_areas:
-		cortical_area.ensure_unit_subunit_ids_from_cortical_id()
-		if use_subtype:
-			if cortical_area.cortical_subtype != area.cortical_subtype:
-				continue
-		else:
-			if cortical_area.cortical_type != area.cortical_type:
-				continue
-			var other_signature := "%s|%s|%s|%s|%s" % [
-				String(cortical_area.encoding_type),
-				String(cortical_area.encoding_format),
-				String(cortical_area.coding_signage),
-				String(cortical_area.coding_behavior),
-				String(cortical_area.coding_type)
-			]
-			if other_signature != coding_signature:
-				continue
-		if cortical_area.unit_id != area.unit_id:
-			continue
-		if cortical_area.subunit_id < 0:
-			continue
-		members.append(cortical_area)
-	if members.size() <= 1 and area.cortical_type in [
-		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU,
-		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
-	]:
-		# Fallback: group by unit_id + cortical_type when subtype/coding is missing.
-		var loose_members: Array[AbstractCorticalArea] = []
-		for cortical_area in all_areas:
-			cortical_area.ensure_unit_subunit_ids_from_cortical_id()
-			if cortical_area.cortical_type != area.cortical_type:
-				continue
-			if cortical_area.unit_id != area.unit_id:
-				continue
-			if cortical_area.subunit_id < 0:
-				continue
-			loose_members.append(cortical_area)
-		if loose_members.size() > members.size():
-			members = loose_members
-	return members
+	return area.get_unit_group_members(all_areas)
 
 ## Apply a move to all subunits in the same unit.
 func _apply_group_move(members: Array[AbstractCorticalArea], new_pos: Vector3i) -> void:

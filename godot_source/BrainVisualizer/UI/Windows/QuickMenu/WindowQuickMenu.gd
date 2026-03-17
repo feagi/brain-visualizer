@@ -396,7 +396,7 @@ func _button_move_3d() -> void:
 			close_window()
 			return
 		bm.start_brain_region_manipulation(region)
-		close_window()
+		close_window(false)
 		return
 	if _mode == GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 		var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
@@ -420,7 +420,7 @@ func _button_move_3d() -> void:
 			close_window()
 			return
 		bm_multi.start_cortical_area_multi_manipulation(areas, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
-		close_window()
+		close_window(false)
 		return
 	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 		close_window()
@@ -442,7 +442,7 @@ func _button_move_3d() -> void:
 		close_window()
 		return
 	bm.start_cortical_area_manipulation(area, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
-	close_window()
+	close_window(false)
 
 func _button_resize_3d() -> void:
 	if _selection.size() == 0:
@@ -479,7 +479,7 @@ func _button_resize_3d() -> void:
 		close_window()
 		return
 	bm.start_cortical_area_manipulation(area, UI_BrainMonitor_3DScene.MANIPULATION_MODE.RESIZE)
-	close_window()
+	close_window(false)
 
 func _button_relocate_2d() -> void:
 	if _selection.size() == 0:
@@ -518,7 +518,7 @@ func _button_relocate_2d() -> void:
 			close_window()
 			return
 		bm.start_cortical_area_multi_manipulation(areas, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
-		close_window()
+		close_window(false)
 		return
 	var cb := _get_active_cb_from_ui()
 	if cb == null:
@@ -526,7 +526,7 @@ func _button_relocate_2d() -> void:
 		close_window()
 		return
 	cb.start_multi_relocate(_selection)
-	close_window()
+	close_window(false)
 
 func _get_active_cb_from_ui() -> CircuitBuilder:
 	return _search_for_active_cb_in_view(BV.UI.root_UI_view)
@@ -573,9 +573,10 @@ func _debug_selection_state(context: String) -> void:
 	pass
 
 # Override close_window to add safety debugging
-func close_window() -> void:
+# clear_selection: when true (Escape, X button, focus loss), clears selection. When false (Move 3D, etc.), keeps it.
+func close_window(clear_selection: bool = true) -> void:
 	_debug_selection_state("close_window")
-	if _mode == GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS and BV != null and BV.UI != null and BV.UI.selection_system != null:
+	if clear_selection and BV != null and BV.UI != null and BV.UI.selection_system != null:
 		BV.UI.selection_system.clear_all_highlighted()
 	if _selection.size() == 0:
 		pass

@@ -51,6 +51,15 @@ If you get an error about missing export templates:
 4. Wait for download to complete
 5. Run the export script again
 
+## UID Cache (CI / Release Workflow)
+
+The release workflow requires `godot_source/.godot/uid_cache.bin` to be committed. If CI fails with "invalid UID" or "Pure virtual function called":
+
+1. Open the project in Godot Editor: `godot godot_source/project.godot`
+2. Let the editor finish importing
+3. Close Godot
+4. Commit: `git add godot_source/.godot/uid_cache.bin && git commit -m "Add uid_cache.bin for CI"`
+
 ## Building Rust Extensions
 
 Before exporting, ensure all Rust extensions are built:
