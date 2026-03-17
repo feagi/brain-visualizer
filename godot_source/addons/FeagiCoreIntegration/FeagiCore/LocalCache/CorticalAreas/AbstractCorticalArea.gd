@@ -868,6 +868,76 @@ func return_property_by_name_and_section(composition_section_name: StringName, p
 			# Try get() for other properties
 			return get(property_name)
 
+## Returns cortical_subtype normalized for comparison: stripped, null bytes removed, lowercase.
+## Use this for all subtype equality checks to avoid flaky matching.
+func normalized_subtype() -> String:
+	var raw := String(_cortical_subtype).replace("\u0000", "").strip_edges()
+	return raw.to_lower()
+
+## Returns all cortical areas in the same unit as this area.
+## Uses normalized subtype comparison and ensures IDs before matching.
+## all_areas: Array of AbstractCorticalArea to search (e.g. from cortical_areas.available_cortical_areas.values()).
+func get_unit_group_members(all_areas: Array) -> Array[AbstractCorticalArea]:
+	var members: Array[AbstractCorticalArea] = []
+	ensure_unit_subunit_ids_from_cortical_id()
+	if _unit_id < 0 or _subunit_id < 0:
+		return members
+	var anchor_subtype := normalized_subtype()
+	var use_subtype := anchor_subtype != ""
+	var anchor_signature := ""
+	if not use_subtype:
+		anchor_signature = "%s|%s|%s|%s|%s" % [
+			String(_encoding_type),
+			String(_encoding_format),
+			String(_coding_signage),
+			String(_coding_behavior),
+			String(_coding_type)
+		]
+	for cortical_area in all_areas:
+		if cortical_area == null:
+			continue
+		cortical_area.ensure_unit_subunit_ids_from_cortical_id()
+		if cortical_area.unit_id != _unit_id:
+			continue
+		if cortical_area.subunit_id < 0:
+			continue
+		if cortical_area.cortical_type != cortical_type:
+			continue
+		if use_subtype:
+			if cortical_area.normalized_subtype() != anchor_subtype:
+				continue
+		else:
+			var other_signature := "%s|%s|%s|%s|%s" % [
+				String(cortical_area.encoding_type),
+				String(cortical_area.encoding_format),
+				String(cortical_area.coding_signage),
+				String(cortical_area.coding_behavior),
+				String(cortical_area.coding_type)
+			]
+			if other_signature != anchor_signature:
+				continue
+		members.append(cortical_area)
+	# Fallback only when anchor has NO subtype (subtype matching was skipped).
+	# Never broaden to other subtypes: simple vision must not pull in ISVI peripherals.
+	if not use_subtype and members.size() <= 1 and cortical_type in [CORTICAL_AREA_TYPE.IPU, CORTICAL_AREA_TYPE.OPU]:
+		var loose_members: Array[AbstractCorticalArea] = []
+		for cortical_area in all_areas:
+			if cortical_area == null:
+				continue
+			cortical_area.ensure_unit_subunit_ids_from_cortical_id()
+			if cortical_area.cortical_type != cortical_type:
+				continue
+			if cortical_area.unit_id != _unit_id:
+				continue
+			if cortical_area.subunit_id < 0:
+				continue
+			if cortical_area.normalized_subtype() != "":
+				continue
+			loose_members.append(cortical_area)
+		if loose_members.size() > members.size():
+			members = loose_members
+	return members
+
 ## Ensures unit_id and subunit_id are derived from cortical_id when missing.
 ## Uses byte layout: subunit_id = byte[6], unit_id = byte[7].
 func ensure_unit_subunit_ids_from_cortical_id() -> void:

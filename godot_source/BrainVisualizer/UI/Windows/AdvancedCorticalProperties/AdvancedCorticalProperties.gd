@@ -747,14 +747,7 @@ func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCortic
 	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
 		return []
 	var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
-	var members: Array[AbstractCorticalArea] = []
-	for cortical_area in all_areas:
-		if cortical_area.cortical_type != area.cortical_type:
-			continue
-		if cortical_area.unit_id != area.unit_id:
-			continue
-		members.append(cortical_area)
-	return members
+	return area.get_unit_group_members(all_areas)
 		
 
 func _enable_button(send_button: Button) -> void:
@@ -1783,37 +1776,29 @@ func _safe_delete_efferent_mapping(source_area: AbstractCorticalArea, dest_area:
 
 #region Segmented Vision (isvi) Layout Management
 
-## Detect if this is an isvi segment and gather all segments in the group
+## Detect if this is an isvi segment and gather all segments in the group.
+## Uses shared get_unit_group_members for reliable subunit discovery.
 func _detect_and_setup_isvi_segment() -> void:
 	_is_isvi_segment = false
 	_isvi_all_segments.clear()
 	_isvi_original_z_values.clear()
-	
+
 	if len(_cortical_area_refs) != 1:
 		return
-	
+
 	var area = _cortical_area_refs[0]
-	
-	# Check if this is an isvi segment
-	if area.cortical_subtype != "isvi":
+
+	if area.normalized_subtype() != "isvi":
 		return
-	
+
 	_is_isvi_segment = true
 	_isvi_unit_id = area.unit_id
-	
-	# Find all 9 segments in this group
+
 	var all_cortical_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
-	
-	# Search for isvi segments in our group
-	var isvi_count = 0
-	for cortical_area in all_cortical_areas:
-		if cortical_area.cortical_subtype == "isvi":
-			isvi_count += 1
-			if cortical_area.unit_id == _isvi_unit_id:
-				_isvi_all_segments.append(cortical_area)
-				# Capture original z value for this segment
-				_isvi_original_z_values[cortical_area.subunit_id] = cortical_area.coordinates_3D.z
-	
+	_isvi_all_segments = area.get_unit_group_members(all_cortical_areas)
+	for cortical_area in _isvi_all_segments:
+		_isvi_original_z_values[cortical_area.subunit_id] = cortical_area.coordinates_3D.z
+
 	print("UI: isvi segment detected - Subunit ", area.subunit_id, " in Unit ", area.unit_id, " (", len(_isvi_all_segments), " total segments)")
 
 ## Calculate layout positions (x, y only) for all segments in an isvi group

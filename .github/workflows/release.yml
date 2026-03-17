@@ -495,15 +495,16 @@ jobs:
           path: rust-libs/*
           retention-days: 1
 
-      - name: Clean Godot cache (fresh import)
+      - name: Clean Godot import cache (keep uid_cache.bin)
         shell: bash
         run: |
           cd godot_source
-          echo "Cleaning .godot cache for fresh import..."
-          # Remove import cache but keep project settings
+          echo "Cleaning .godot/imported for fresh asset import..."
+          # Remove import cache only. Keep uid_cache.bin - required for UID resolution.
+          # Deleting uid_cache.bin causes "invalid UID" warnings and can trigger
+          # "Pure virtual function called" crash on macOS (godotengine/godot#96126).
           rm -rf .godot/imported 2>/dev/null || true
-          rm -rf .godot/uid_cache.bin 2>/dev/null || true
-          echo "✅ Cache cleaned"
+          echo "✅ Import cache cleaned (uid_cache.bin preserved)"
 
       - name: Import Godot resources
         shell: bash
@@ -511,8 +512,8 @@ jobs:
           cd godot_source
           echo "Importing Godot resources (fonts, SVGs, etc.)..."
           # Godot 4.x headless bug: --quit exits before import completes (fonts, SVGs).
-          # Use --quit-after 2 to allow import to finish (see godotengine/godot#77508).
-          if ! ${GODOT} --headless --import --quit-after 2 2>&1 | tee /tmp/godot-import.log; then
+          # Use --quit-after 5 to allow import to finish (see godotengine/godot#77508).
+          if ! ${GODOT} --headless --import --quit-after 5 2>&1 | tee /tmp/godot-import.log; then
             echo "❌ ERROR: Godot import failed!"
             echo ""
             echo "Checking for script errors:"

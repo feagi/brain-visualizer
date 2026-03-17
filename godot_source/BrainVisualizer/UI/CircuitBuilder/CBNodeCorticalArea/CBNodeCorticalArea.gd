@@ -36,7 +36,21 @@ func _on_single_left_click() -> void:
 		if cb_parent is CircuitBuilder:
 			(cb_parent as CircuitBuilder)._select_single_graph_element(self)
 		BV.UI.selection_system.clear_all_highlighted()
-	BV.UI.selection_system.add_to_highlighted(_representing_cortical_area)
+		var to_select: Array[GenomeObject] = []
+		if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+			var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
+			var unit_members: Array = _representing_cortical_area.get_unit_group_members(all_areas)
+			if unit_members.size() > 1:
+				var clicked_region = _representing_cortical_area.current_parent_region
+				for m in unit_members:
+					if m.current_parent_region == clicked_region:
+						to_select.append(m)
+		if to_select.is_empty():
+			to_select = [_representing_cortical_area]
+		for obj in to_select:
+			BV.UI.selection_system.add_to_highlighted(obj)
+	else:
+		BV.UI.selection_system.add_to_highlighted(_representing_cortical_area)
 	BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK)
 
 # Responses to changes in cache directly. NOTE: Connection and creation / deletion we won't do here and instead allow CB to handle it, since they can involve interactions with connections
