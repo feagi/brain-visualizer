@@ -425,7 +425,7 @@ impl FeagiDataDeserializer {
         // Set instance count
         multi_mesh.set_instance_count(array_len as i32);
 
-        // Pre-calculate constants. Offset ZERO per NEURON_POSITION_SCALING_FIX.md (no 0.5 shift).
+        // Pre-calculate constants.
         let half_dimensions =
             Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
         let offset = Vector3::ZERO;

@@ -101,6 +101,20 @@ var _memory_inactive_jello_strength: float
 var _memory_default_radius: float = 1.5
 var _memory_default_height: float = 3.0
 
+## DirectPoints indices are cell-origin based; DDA highlights are cell-center based.
+## Apply +0.5 world correction via local offset, compensating for parent (_static_body) scale.
+func _get_multimesh_origin_offset() -> Vector3:
+	var dx: float = float(max(_dimensions.x, 1))
+	var dy: float = float(max(_dimensions.y, 1))
+	var dz: float = float(max(_dimensions.z, 1))
+	# Z uses opposite sign because FEAGI<->Godot mapping flips Z orientation.
+	return Vector3(0.5 / dx, 0.5 / dy, -0.5 / dz)
+
+func _update_multimesh_origin_offset() -> void:
+	if _multi_mesh_instance == null:
+		return
+	_multi_mesh_instance.position = _get_multimesh_origin_offset()
+
 func setup(area: AbstractCorticalArea) -> void:
 	# Store cortical area properties for later use
 	_cortical_area_type = area.cortical_type
@@ -162,6 +176,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	_multi_mesh_instance = MultiMeshInstance3D.new()
 	_multi_mesh_instance.name = "NeuronVoxels"
 	_static_body.add_child(_multi_mesh_instance)
+	_update_multimesh_origin_offset()
 	
 	# Setup MultiMesh for instanced rendering
 	_multi_mesh = MultiMesh.new()
@@ -411,6 +426,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Update static body scale and position
 	_static_body.scale = _dimensions
 	_static_body.position = _position_godot_space
+	_update_multimesh_origin_offset()
 	
 	# CRITICAL FIX: Ensure _static_body remains visible after dimension updates
 	# This prevents the area from disappearing when properties are updated
@@ -654,6 +670,7 @@ func _refresh_visualization_voxel_granularity_from_cache() -> void:
 	
 	_visualization_voxel_granularity = new_granularity
 	_is_aggregated_mode = _visualization_voxel_granularity != Vector3i(1, 1, 1)
+	_update_multimesh_origin_offset()
 	_apply_multimesh_mesh_for_current_granularity()
 
 func _apply_multimesh_mesh_for_current_granularity() -> void:
