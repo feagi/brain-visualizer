@@ -1014,7 +1014,8 @@ func _compute_frame_distance_for_aabb_from_orientation(
 func _resolve_up_for_plane(plane_name: StringName) -> Vector3:
 	match plane_name:
 		&"xz":
-			return Vector3(0, 0, 1)
+			# FEAGI +Z maps to Godot -Z; keep FEAGI +Z at the top of screen in top view.
+			return Vector3(0, 0, -1)
 		&"yz":
 			return Vector3.UP
 		_:

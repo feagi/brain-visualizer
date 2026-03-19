@@ -7,6 +7,7 @@
 #   ./build.sh --release           # Build release only
 #   ./build.sh --local-arch        # Build for local architecture only (faster)
 #   ./build.sh --release --local-arch  # Combine options
+#   ./build.sh --extension feagi_data_deserializer  # Build one extension only
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
