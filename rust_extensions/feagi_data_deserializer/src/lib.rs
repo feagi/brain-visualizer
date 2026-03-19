@@ -901,9 +901,17 @@ impl FeagiDataDeserializer {
             IOCorticalAreaConfigurationFlag::Misc(_) => "1d",
         };
 
+        let is_signed = matches!(
+            io_data_type,
+            IOCorticalAreaConfigurationFlag::SignedPercentage(_, _)
+                | IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _)
+                | IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _)
+                | IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _)
+        );
         result.set("success", true);
         result.set("encoding_type", encoding_type);
         result.set("encoding_format", encoding_format);
+        result.set("is_signed", is_signed);
         result.set("error", "");
 
         result
@@ -919,7 +927,8 @@ impl FeagiDataDeserializer {
     ///   - voxel_x, voxel_y, voxel_z: The voxel coordinates
     ///   - encoding_type: "linear" or "exponential"
     ///   - encoding_format: "1d", "2d", "3d", or "4d"
-    ///   - channel_dimensions_x, channel_dimensions_y, channel_dimensions_z: Dimensions per channel
+    ///   - channel_dimensions_x: For SignedPercentage 1D, caller must pass 2 (pos+neg columns)
+    ///   - channel_dimensions_y, channel_dimensions_z: Dimensions per channel
     ///   - num_channels: Total number of channels
     ///
     /// Returns: Dictionary with {success: bool, channel: i32, value: f32, fdp_version: String, error: String}
@@ -968,7 +977,6 @@ impl FeagiDataDeserializer {
         // Calculate channel number based on encoding format
         let channel: i32 = match encoding_format_str.as_str() {
             "1d" => {
-                // For 1D: each channel has channel_dimensions_x width
                 if channel_dimensions_x > 0 {
                     voxel_x / channel_dimensions_x
                 } else {
@@ -976,7 +984,6 @@ impl FeagiDataDeserializer {
                 }
             }
             "2d" | "3d" | "4d" => {
-                // For multi-dimensional: similar logic, but may vary by implementation
                 if channel_dimensions_x > 0 {
                     voxel_x / channel_dimensions_x
                 } else {

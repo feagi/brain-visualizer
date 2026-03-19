@@ -3,7 +3,10 @@ class_name UI_BrainMonitor_Overlay
 ## UI overlay for Brain Monitor
 
 var _mouse_context_label: Label
-var _fdp_deserializer: Object = null  # FeagiDataDeserializer when extension loaded
+var _fdp_deserializer: Object = null
+
+## Set true to log device_index resolution (coord, per, path, result) to Godot output.
+const DEBUG_DEVICE_INDEX: bool = false
 
 func _process(_delta: float) -> void:
 	# Keep overlay size synced to viewport size (hover label is now global).
@@ -37,16 +40,110 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	$Bottom_Row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_mouse_context_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	# Initialize FDP deserializer for decoding voxel values
+
 	if ClassDB.class_exists("FeagiDataDeserializer"):
 		_fdp_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
-	else:
-		push_warning("FeagiDataDeserializer not available - FDP voxel decoding will be disabled")
 
 ## Clear all text
 func clear() -> void:
 	_clear_global_context()
+
+## Resolve device index for IOPU. Uses per-device dimensions for channel/device mapping.
+## For SignedPercentage/Incremental: per.x columns per joint (pos/neg); device = floor(x / per.x).
+## For per.y >= 2: rows are pos/neg; device = x (each column is one joint).
+func _resolve_device_index(cortical_area: AbstractCorticalArea, coord: Vector3i) -> int:
+	var dc: int = cortical_area.device_count if cortical_area.device_count > 0 else 0
+	var total: Vector3i = cortical_area.dimensions_3D
+	var per: Vector3i = cortical_area.cortical_dimensions_per_device
+	var is_incremental: bool = (str(cortical_area.coding_behavior).to_lower() == "incremental"
+		or per.x >= 2
+		or (dc > 0 and (total.x == 2 * dc or (total.y == 2 and total.x == dc))))
+	var channels_per_joint: int = 2 if is_incremental else 1
+	var per_x: int = maxi(1, per.x)
+	var per_y: int = maxi(1, per.y)
+	if per.x == 1 and dc > 0 and total.x == 2 * dc:
+		per_x = 2
+	if per.x == 1 and dc > 0 and total.y == 2 and total.x == dc:
+		per_y = 2
+	var device_index: int = -1
+	var path: String = ""
+	if _fdp_deserializer != null and (cortical_area is OPUCorticalArea or cortical_area is IPUCorticalArea):
+		var id_str: String = String(cortical_area.cortical_ID)
+		var encoding_info: Dictionary = _fdp_deserializer.parse_cortical_id_encoding(id_str)
+		if encoding_info.get("success", false):
+			var fmt: String = str(encoding_info.get("encoding_format", "")).to_lower()
+			var ch_dim_x: int = per_x
+			if (encoding_info.get("is_signed", false) and fmt == "1d") or (dc > 0 and total.x == 2 * dc):
+				ch_dim_x = 2
+			var fdp_result: Dictionary = _fdp_deserializer.decode_fdp_value(
+				cortical_area.cortical_ID,
+				coord.x,
+				coord.y,
+				coord.z,
+				encoding_info.get("encoding_type", ""),
+				encoding_info.get("encoding_format", ""),
+				ch_dim_x,
+				per.y,
+				per.z,
+				cortical_area.device_count if cortical_area.device_count > 0 else 9999
+			)
+			if fdp_result.get("success", false):
+				var ch: int = fdp_result.get("channel", -1)
+				if ch >= 0:
+					device_index = ch / channels_per_joint
+					path = "fdp ch=%d ch_dim_x=%d" % [ch, ch_dim_x]
+	if device_index < 0:
+		if is_incremental:
+			if per_x >= 2:
+				device_index = coord.x / per_x
+				path = "inc_per_x"
+			elif per_y >= 2:
+				device_index = coord.x
+				path = "inc_per_y"
+			else:
+				device_index = coord.x / per_x
+				path = "inc_fallback"
+		else:
+			device_index = _neuron_coord_to_device_index(coord, cortical_area.dimensions_3D, per)
+			path = "block"
+	if DEBUG_DEVICE_INDEX and _fdp_deserializer != null and (cortical_area is OPUCorticalArea or cortical_area is IPUCorticalArea):
+		var enc: Dictionary = _fdp_deserializer.parse_cortical_id_encoding(String(cortical_area.cortical_ID))
+		print("[BV device_index] id=%s coord=%s total=%s per=%s dc=%d is_signed=%s fmt=%s is_inc=%s path=%s -> device=%d" % [
+			cortical_area.cortical_ID, coord, total, per, dc,
+			enc.get("is_signed", false), enc.get("encoding_format", ""), is_incremental, path, device_index])
+	return device_index
+
+## For Incremental/SignedPercentage areas: return " (+)" or " (-)" based on direction. Empty otherwise.
+func _incremental_direction_suffix(cortical_area: AbstractCorticalArea, coord: Vector3i) -> String:
+	var dc: int = cortical_area.device_count if cortical_area.device_count > 0 else 0
+	var total: Vector3i = cortical_area.dimensions_3D
+	var per_dims: Vector3i = cortical_area.cortical_dimensions_per_device
+	var is_inc: bool = (str(cortical_area.coding_behavior).to_lower() == "incremental"
+		or per_dims.x >= 2
+		or (dc > 0 and (total.x == 2 * dc or (total.y == 2 and total.x == dc))))
+	if _fdp_deserializer != null and (cortical_area is OPUCorticalArea or cortical_area is IPUCorticalArea):
+		var enc: Dictionary = _fdp_deserializer.parse_cortical_id_encoding(String(cortical_area.cortical_ID))
+		if enc.get("success", false) and enc.get("is_signed", false) and str(enc.get("encoding_format", "")).to_lower() == "1d":
+			is_inc = true
+	if not is_inc:
+		return ""
+	if per_dims.x >= 2:
+		return " (+)" if coord.x % 2 == 0 else " (-)"
+	if per_dims.y >= 2:
+		return " (+)" if coord.y == 0 else " (-)"
+	return " (+)" if coord.x % 2 == 0 else " (-)"
+
+## Map neuron (x,y,z) to device index for IOPU layouts. Uses row-major 3D block layout.
+func _neuron_coord_to_device_index(coord: Vector3i, total_dims: Vector3i, per_device: Vector3i) -> int:
+	var dx: int = maxi(1, per_device.x)
+	var dy: int = maxi(1, per_device.y)
+	var dz: int = maxi(1, per_device.z)
+	var blocks_x: int = maxi(1, total_dims.x / dx)
+	var blocks_y: int = maxi(1, total_dims.y / dy)
+	var bx: int = coord.x / dx
+	var by: int = coord.y / dy
+	var bz: int = coord.z / dz
+	return bx + by * blocks_x + bz * blocks_x * blocks_y
 
 ## Returns the owning brain monitor for this overlay.
 func _get_owning_bm() -> UI_BrainMonitor_3DScene:
@@ -74,6 +171,8 @@ func _clear_global_context() -> void:
 	BV.UI.clear_mouse_context(bm)
 
 func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron_coordinate: Vector3i) -> void:
+	if DEBUG_DEVICE_INDEX:
+		print("[BV mouse_over ENTRY] %s type=%s coord=%s" % [cortical_area.cortical_ID, cortical_area.cortical_type, neuron_coordinate])
 	if _mouse_context_label == null:
 		return
 	
@@ -81,16 +180,91 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 		_set_global_context("Area - " + cortical_area.friendly_name + "  " + str(neuron_coordinate))
 		return
 	var text: String = "Area - " + cortical_area.friendly_name + " " + str(neuron_coordinate) + " "
+	var device_index: int = 0
+	if cortical_area is IPUCorticalArea or cortical_area is OPUCorticalArea:
+		device_index = _resolve_device_index(cortical_area, neuron_coordinate)
+		if DEBUG_DEVICE_INDEX:
+			print("[BV mouse_over] %s coord=%s -> device=%d" % [cortical_area.cortical_ID, neuron_coordinate, device_index])
 	if cortical_area is IPUCorticalArea:
-		var device_index: int = floori((neuron_coordinate.x) / cortical_area.cortical_dimensions_per_device.x)
+		var dir_suffix: String = _incremental_direction_suffix(cortical_area, neuron_coordinate)
+		var dir_word: String = " forward" if dir_suffix == " (+)" else " backward" if dir_suffix == " (-)" else ""
 		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
 		for appending in appending_definitions:
-			text += "| " + appending
+			text += "| " + str(appending) + dir_word
+		var ipu_device_props: Dictionary = cortical_area.get_device_properties(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
+		if ipu_device_props.has("min_value") and ipu_device_props.has("max_value"):
+			text += " [%.0f-%.0f]" % [float(ipu_device_props["min_value"]), float(ipu_device_props["max_value"])]
+		if ipu_device_props.has("image_resolution") and ipu_device_props["image_resolution"] is Dictionary:
+			var res: Dictionary = ipu_device_props["image_resolution"]
+			var w: int = int(res.get("width", 0))
+			var h: int = int(res.get("height", 0))
+			if w > 0 and h > 0:
+				text += " %dx%d" % [w, h]
+		elif ipu_device_props.has("resolution") and ipu_device_props["resolution"] is Array:
+			var res_arr: Array = ipu_device_props["resolution"]
+			if res_arr.size() >= 2:
+				text += " res:%s" % str(res_arr)
 	elif cortical_area is OPUCorticalArea:
-		var device_index: int = floori((neuron_coordinate.x) / cortical_area.cortical_dimensions_per_device.x)
+		var dir_suffix: String = _incremental_direction_suffix(cortical_area, neuron_coordinate)
+		var dir_word: String = " forward" if dir_suffix == " (+)" else " backward" if dir_suffix == " (-)" else ""
 		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
 		for appending in appending_definitions:
-			text += "| " + appending
+			text += "| " + str(appending) + dir_word
+		var device_props: Dictionary = cortical_area.get_device_properties(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
+		if device_props.size() > 0:
+			if device_props.has("min_value") and device_props.has("max_value"):
+				text += " [%.0f-%.0f]" % [float(device_props["min_value"]), float(device_props["max_value"])]
+			elif device_props.has("max_power"):
+				text += " max:%.0f" % float(device_props["max_power"])
+			if device_props.has("image_resolution") and device_props["image_resolution"] is Dictionary:
+				var res: Dictionary = device_props["image_resolution"]
+				var w: int = int(res.get("width", 0))
+				var h: int = int(res.get("height", 0))
+				if w > 0 and h > 0:
+					text += " %dx%d" % [w, h]
+			elif device_props.has("resolution") and device_props["resolution"] is Array:
+				var res_arr: Array = device_props["resolution"]
+				if res_arr.size() >= 2:
+					text += " res:%s" % str(res_arr)
+		if _fdp_deserializer != null:
+			var id_str_display: String = String(cortical_area.cortical_ID)
+			var encoding_info = _fdp_deserializer.parse_cortical_id_encoding(id_str_display)
+			if encoding_info.get("success", false):
+				var encoding_type_val: String = encoding_info.get("encoding_type", "")
+				var encoding_format_val: String = str(encoding_info.get("encoding_format", "")).to_lower()
+				var num_channels: int = cortical_area.device_count if cortical_area.device_count > 0 else 9999
+				var per_x_display: int = cortical_area.cortical_dimensions_per_device.x
+				var total_x: int = cortical_area.dimensions_3D.x
+				var dc_display: int = cortical_area.device_count if cortical_area.device_count > 0 else 0
+				if (encoding_info.get("is_signed", false) and encoding_format_val == "1d") or (dc_display > 0 and total_x == 2 * dc_display):
+					per_x_display = 2
+				var ch_dim_x: int = per_x_display
+				var fdp_result: Dictionary = _fdp_deserializer.decode_fdp_value(
+					cortical_area.cortical_ID,
+					neuron_coordinate.x,
+					neuron_coordinate.y,
+					neuron_coordinate.z,
+					encoding_type_val,
+					encoding_format_val,
+					ch_dim_x,
+					cortical_area.cortical_dimensions_per_device.y,
+					cortical_area.cortical_dimensions_per_device.z,
+					num_channels
+				)
+				if fdp_result.get("success", false):
+					var value: float = fdp_result.get("value", 0.0)
+					var signage: String = str(cortical_area.coding_signage).to_lower()
+					var is_signed_coding: bool = encoding_info.get("is_signed", false)
+					if signage.contains("unsigned"):
+						is_signed_coding = false
+					elif signage.contains("signed") or signage.contains("both"):
+						is_signed_coding = true
+					var signed_val: String
+					if is_signed_coding and dir_suffix != "":
+						signed_val = "+%.1f%%" % value if dir_suffix == " (+)" else "-%.1f%%" % value
+					else:
+						signed_val = "%.1f%%" % value
+					text += " | value: " + signed_val
 	if cortical_area.cortical_ID == "o_mctl":
 		var device_local_coordinate: Vector3i = Vector3i(neuron_coordinate.x % 4, neuron_coordinate.y % 3, 0)
 		var direction: String
@@ -110,41 +284,6 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 			Vector3i(2,2,0): direction = " - Pitch Backward"
 			Vector3i(3,2,0): direction = " - Roll Right"
 		text += direction
-	
-	# NEW FEATURE: Add FDP-decoded value information for OPU areas only
-	# This shows what value FDP would produce for this voxel using the actual FDP decoding logic
-	# NOTE: This is currently implemented for OPU areas only. IPU areas will have a different variation.
-	
-	if _fdp_deserializer != null and cortical_area is OPUCorticalArea:
-		# Parse encoding info directly from binary cortical ID using FDP's binary format
-		var encoding_info = _fdp_deserializer.parse_cortical_id_encoding(cortical_area.cortical_ID)
-		
-		if encoding_info.get("success", false):
-			var encoding_type_val = encoding_info.get("encoding_type", "")
-			var encoding_format_val = encoding_info.get("encoding_format", "")
-			
-			# Use device_count if available, otherwise use large number to skip validation
-			var num_channels = cortical_area.device_count if cortical_area.device_count > 0 else 9999
-			
-			# Decode the FDP value using the binary-parsed encoding info
-			var fdp_result = _fdp_deserializer.decode_fdp_value(
-				cortical_area.cortical_ID,
-				neuron_coordinate.x,
-				neuron_coordinate.y,
-				neuron_coordinate.z,
-				encoding_type_val,
-				encoding_format_val,
-				cortical_area.cortical_dimensions_per_device.x,
-				cortical_area.cortical_dimensions_per_device.y,
-				cortical_area.cortical_dimensions_per_device.z,
-				num_channels
-			)
-			
-			if fdp_result.get("success", false):
-				var fdp_version = fdp_result.get("fdp_version", "unknown")
-				var channel = fdp_result.get("channel", -1)
-				var value = fdp_result.get("value", 0.0)
-				text += " | FDP:%s CH:%d Value:%.2f%%" % [fdp_version, channel, value]
 	
 	_set_global_context(text)
 

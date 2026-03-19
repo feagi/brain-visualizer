@@ -717,6 +717,75 @@ func clear_agent_capabilities_map() -> void:
 func append_configuration_json(configuration: Dictionary) -> void:
 	_configuration_jsons.append(configuration)
 
+## Build name_to_id_mapping from cortical areas in genome. Maps capability keys (motor, servo, etc.)
+## to cortical IDs so get_custom_names can resolve joint/limb names from agent capabilities.
+## Uses unit ref from cortical ID (bytes 1-3) and maps to keys agents use in capabilities JSON.
+func build_iopu_name_to_id_mapping_from_genome() -> Dictionary:
+	var result := {"IPU": {}, "OPU": {}}
+	var ipu_mapping: Dictionary = {}
+	var opu_mapping: Dictionary = {}
+	# OPU unit ref -> capability keys agents use (MuJoCo uses positional_servo/rotary_motor; others use motor/servo)
+	# Each cortical_id is added to all listed keys so get_custom_names finds a match regardless of agent format
+	const OPU_UNIT_REF_TO_CAPABILITY_KEYS: Dictionary = {
+		"mot": ["motor", "rotary_motor"],
+		"pse": ["servo", "positional_servo"],
+		"gaz": ["gaze"],
+		"mis": ["miscellaneous"],
+		"ten": ["text_english_output"],
+		"cnt": ["count_output"],
+		"seg": ["object_segmentation"],
+		"img": ["simple_vision_output"],
+		"ifs": ["dynamic_image_processing"],
+	}
+	# IPU unit ref -> capability key agents use in input
+	const IPU_UNIT_REF_TO_CAPABILITY_KEY: Dictionary = {
+		"mot": "servo_motion",
+		"pos": "servo_position",
+		"inf": "infrared",
+		"pro": "proximity",
+		"acc": "accelerometer",
+		"gyr": "gyro",
+		"bat": "battery",
+		"cam": "camera",
+		"mis": "miscellaneous",
+		"gpi": "gpio_digital",
+		"gpa": "gpio_analog",
+		"pre": "pressure",
+		"lid": "lidar",
+		"hea": "audio",
+	}
+	for cortical_id in cortical_areas.available_cortical_areas:
+		var area: AbstractCorticalArea = cortical_areas.available_cortical_areas[cortical_id]
+		if area == null:
+			continue
+		var unit_ref: String = _decode_unit_ref_from_cortical_id(cortical_id)
+		if unit_ref.is_empty():
+			continue
+		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+			var keys: Array = OPU_UNIT_REF_TO_CAPABILITY_KEYS.get(unit_ref, [unit_ref]) as Array
+			for key in keys:
+				if not opu_mapping.has(key):
+					opu_mapping[key] = []
+				opu_mapping[key].append(cortical_id)
+		elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
+			var key: String = IPU_UNIT_REF_TO_CAPABILITY_KEY.get(unit_ref, unit_ref)
+			if not ipu_mapping.has(key):
+				ipu_mapping[key] = []
+			ipu_mapping[key].append(cortical_id)
+	result["IPU"] = ipu_mapping
+	result["OPU"] = opu_mapping
+	return result
+
+## Decode cortical ID (base64) to extract 3-char unit ref from bytes 1-3.
+func _decode_unit_ref_from_cortical_id(cortical_id: StringName) -> String:
+	var id_str := str(cortical_id).strip_edges()
+	if id_str.is_empty():
+		return ""
+	var raw: PackedByteArray = Marshalls.base64_to_raw(id_str)
+	if raw.size() < 4:
+		return ""
+	return raw.slice(1, 4).get_string_from_ascii()
+
 ## given the name_to_ID_mapping for IPU/OPU from FEAGI, store it in cache for later use
 func _set_IPU_OPU_to_capability_key_mappings(IPU_mappings: Dictionary, OPU_mappings: Dictionary) -> void:
 	_IPU_cortical_ID_to_capability_key = {}

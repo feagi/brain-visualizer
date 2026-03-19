@@ -260,10 +260,11 @@ func reload_genome() -> FeagiRequestOutput:
 	var ipu_types_dict: Dictionary = ipu_types_data.decode_response_as_dict()
 	var opu_types_dict: Dictionary = opu_types_data.decode_response_as_dict()
 	
-	# name_to_id_mapping maps type_id -> [cortical_instance_ids] from current genome
-	# This will be built from genome data, not from templates (templates just define available types)
-	var ipu_name_mapping: Dictionary = {}
-	var opu_name_mapping: Dictionary = {}
+	# name_to_id_mapping maps capability_key -> [cortical_instance_ids] from current genome
+	# Built from cortical areas so get_custom_names can resolve joint/limb names from agent capabilities
+	var built_mappings: Dictionary = FeagiCore.feagi_local_cache.build_iopu_name_to_id_mapping_from_genome()
+	var ipu_name_mapping: Dictionary = built_mappings.get("IPU", {})
+	var opu_name_mapping: Dictionary = built_mappings.get("OPU", {})
 	
 	# Aggregate into expected structure
 	var aggregated_templates: Dictionary = {
@@ -318,6 +319,106 @@ func get_burst_delay() -> FeagiRequestOutput:
 	FeagiCore.feagi_retrieved_burst_rate(response.to_float())
 	return FEAGI_response_data
 
+## Helper to extract device entries from device_grouping, including device_properties (resolution, etc).
+func _extract_devices_from_device_grouping(device_grouping: Array) -> Dictionary:
+	var devices: Dictionary = {}
+	var feagi_index: int = 0
+	for channel in device_grouping:
+		if channel is not Dictionary:
+			continue
+		var custom_name: String = str(channel.get("friendly_name", "ch_%d" % feagi_index))
+		var device_entry: Dictionary = {"custom_name": custom_name, "feagi_index": feagi_index}
+		var channel_props = channel.get("device_properties", {})
+		if channel_props is Dictionary:
+			for prop_key in channel_props:
+				var prop_val = channel_props[prop_key]
+				if prop_val is Dictionary and prop_val.has("value"):
+					device_entry[prop_key] = prop_val["value"]
+				else:
+					device_entry[prop_key] = prop_val
+		devices[str(feagi_index)] = device_entry
+		feagi_index += 1
+	return devices
+
+## Convert device_registrations (output_units_and_decoder_properties, input_units_and_encoder_properties)
+## to capabilities-like format so get_custom_names and get_device_properties resolve names and device data.
+## Keys normalized to snake_case (positional_servo, rotary_motor, camera, etc).
+func _device_registrations_to_capabilities_format(device_registrations: Dictionary, agent_id: String, agent_name: String = "") -> Dictionary:
+	var result: Dictionary = {"agent_ID": agent_id}
+	if not agent_name.is_empty():
+		result["agent_name"] = agent_name
+	var output_units = device_registrations.get("output_units_and_decoder_properties", {})
+	if output_units is Dictionary and not output_units.is_empty():
+		var output: Dictionary = {}
+		for unit_key in output_units.keys():
+			var snake_key: String = str(unit_key).to_lower().replace(" ", "_")
+			if "positional" in snake_key and "servo" in snake_key:
+				snake_key = "positional_servo"
+			elif "rotary" in snake_key and "motor" in snake_key:
+				snake_key = "rotary_motor"
+			var entries = output_units[unit_key]
+			if entries is not Array:
+				continue
+			for entry in entries:
+				if entry is not Array or entry.is_empty():
+					continue
+				var unit_def = entry[0]
+				if unit_def is not Dictionary:
+					continue
+				var device_grouping = unit_def.get("device_grouping", [])
+				if device_grouping is not Array:
+					continue
+				var devices: Dictionary = _extract_devices_from_device_grouping(device_grouping)
+				if not devices.is_empty():
+					output[snake_key] = devices
+					break
+		if not output.is_empty():
+			result["output"] = output
+	var input_units = device_registrations.get("input_units_and_encoder_properties", {})
+	if input_units is Dictionary and not input_units.is_empty():
+		const INPUT_UNIT_TO_CAPABILITY_KEY: Dictionary = {
+			"vision": "camera",
+			"infrared": "infrared",
+			"proximity": "proximity",
+			"accelerometer": "accelerometer",
+			"gyro": "gyro",
+			"battery": "battery",
+			"camera": "camera",
+			"miscellaneous": "miscellaneous",
+			"gpio_digital": "gpio_digital",
+			"gpio_analog": "gpio_analog",
+			"pressure": "pressure",
+			"lidar": "lidar",
+			"audio": "audio",
+			"servo_motion": "servo_motion",
+			"servo_position": "servo_position",
+		}
+		var input_dict: Dictionary = {}
+		for unit_key in input_units.keys():
+			var snake_key: String = str(unit_key).to_lower().replace(" ", "_")
+			var capability_key: String = INPUT_UNIT_TO_CAPABILITY_KEY.get(snake_key, snake_key)
+			var entries = input_units[unit_key]
+			if entries is not Array:
+				continue
+			for entry in entries:
+				if entry is not Array or entry.is_empty():
+					continue
+				var unit_def = entry[0]
+				if unit_def is not Dictionary:
+					continue
+				var device_grouping = unit_def.get("device_grouping", [])
+				if device_grouping is not Array:
+					continue
+				var devices: Dictionary = _extract_devices_from_device_grouping(device_grouping)
+				if not devices.is_empty():
+					input_dict[capability_key] = devices
+					break
+		if not input_dict.is_empty():
+			result["input"] = input_dict
+	if not result.has("output") and not result.has("input"):
+		return {}
+	return result
+
 ## Refreshes cached agent capabilities and device registrations using the bulk endpoint.
 func refresh_agent_capabilities_cache(include_device_registrations: bool = true) -> FeagiRequestOutput:
 	FeagiCore.feagi_local_cache.clear_configuration_jsons()
@@ -367,7 +468,12 @@ func refresh_agent_capabilities_cache(include_device_registrations: bool = true)
 			if agent_entry.has("capabilities") and agent_entry["capabilities"] is Dictionary:
 				var capabilities: Dictionary = agent_entry["capabilities"]
 				capabilities["agent_ID"] = str(agent_id)
+				capabilities["agent_name"] = str(agent_entry.get("agent_name", agent_id))
 				FeagiCore.feagi_local_cache.append_configuration_json(capabilities)
+			if agent_entry.has("device_registrations") and agent_entry["device_registrations"] is Dictionary:
+				var converted := _device_registrations_to_capabilities_format(agent_entry["device_registrations"], str(agent_id), str(agent_entry.get("agent_name", agent_id)))
+				if not converted.is_empty():
+					FeagiCore.feagi_local_cache.append_configuration_json(converted)
 	FeagiCore.feagi_local_cache.set_agent_capabilities_map(filtered_caps_map)
 	return agent_caps_data
 
@@ -1886,18 +1992,16 @@ func get_cortical_templates() -> FeagiRequestOutput:
 	# Transform and aggregate responses
 	var ipu_types_dict: Dictionary = ipu_data.decode_response_as_dict()
 	var opu_types_dict: Dictionary = opu_data.decode_response_as_dict()
-	
-	# name_to_id_mapping should map type_id -> [cortical_instance_ids] from genome
-	# Leave empty for now - will be populated from genome data if needed
+	var built_mappings: Dictionary = FeagiCore.feagi_local_cache.build_iopu_name_to_id_mapping_from_genome()
 	var aggregated: Dictionary = {
 		"types": {
 			"IPU": {
 				"supported_devices": ipu_types_dict,
-				"name_to_id_mapping": {}  # Empty - populated from genome, not templates
+				"name_to_id_mapping": built_mappings.get("IPU", {})
 			},
 			"OPU": {
 				"supported_devices": opu_types_dict,
-				"name_to_id_mapping": {}  # Empty - populated from genome, not templates
+				"name_to_id_mapping": built_mappings.get("OPU", {})
 			}
 		}
 	}

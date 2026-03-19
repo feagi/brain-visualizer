@@ -230,7 +230,7 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	if _UI_layer_for_BM and _should_show_combo_buttons:
 		# Ensure Bottom_Row stays last so it sits at the bottom
 		if _UI_layer_for_BM.has_node("Bottom_Row"):
-			var bottom_row := _UI_layer_for_BM.get_node("Bottom_Row")
+			var bottom_row: Control = _UI_layer_for_BM.get_node("Bottom_Row") as Control
 			_UI_layer_for_BM.move_child(bottom_row, _UI_layer_for_BM.get_child_count() - 1)
 		# Use a dedicated overlay layer so the combo can be offset like Circuit Builder (8,8)
 		var top_row_layer: Control = null
@@ -244,7 +244,7 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 			$SubViewport.add_child(top_row_layer)
 		# If an old Top_Row exists, migrate the combo out of it
 		if _UI_layer_for_BM.has_node("Top_Row"):
-			var old_top_row := _UI_layer_for_BM.get_node("Top_Row")
+			var old_top_row: Control = _UI_layer_for_BM.get_node("Top_Row") as Control
 			if old_top_row.has_node("BrainObjectsCombo"):
 				_combo = old_top_row.get_node("BrainObjectsCombo") as BrainObjectsCombo
 				old_top_row.remove_child(_combo)
