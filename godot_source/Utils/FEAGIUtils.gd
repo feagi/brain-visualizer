@@ -299,30 +299,9 @@ static func _looks_like_base64(s: String) -> bool:
 			return false
 	return true
 
-## Expand common quadruped joint abbreviations to human-readable limb descriptions.
-## e.g. fr_hx -> "Front Right Hip (X-axis)", fl_kn -> "Front Left Knee".
-## Returns the input unchanged if no mapping applies.
+## Returns the joint/limb name as-is. Full display text must come from backend (display_name or custom_name).
 static func expand_joint_to_limb_description(joint_name: String) -> String:
-	var j := str(joint_name).strip_edges()
-	if j.is_empty():
-		return j
-	var parts: PackedStringArray = j.split("_")
-	if parts.size() < 2:
-		return j
-	var limb_map: Dictionary = {
-		"fl": "Front Left",
-		"fr": "Front Right",
-		"hl": "Hind Left",
-		"hr": "Hind Right",
-	}
-	var joint_map: Dictionary = {
-		"hx": "Hip (X-axis)",
-		"hy": "Hip (Y-axis)",
-		"kn": "Knee",
-	}
-	var limb: String = limb_map.get(parts[0].to_lower(), parts[0])
-	var joint: String = joint_map.get(parts[1].to_lower(), parts[1])
-	return limb + " " + joint
+	return str(joint_name).strip_edges()
 
 ## Turn StringName Array into CSV string
 static func string_name_array_to_CSV(arr: Array[StringName]) -> StringName:

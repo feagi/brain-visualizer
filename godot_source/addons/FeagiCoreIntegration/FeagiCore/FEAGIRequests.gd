@@ -320,13 +320,16 @@ func get_burst_delay() -> FeagiRequestOutput:
 	return FEAGI_response_data
 
 ## Helper to extract device entries from device_grouping, including device_properties (resolution, etc).
+## Uses channel_index_override when present so feagi_index matches FDP decode channel for hover lookup.
 func _extract_devices_from_device_grouping(device_grouping: Array) -> Dictionary:
 	var devices: Dictionary = {}
-	var feagi_index: int = 0
+	var loop_index: int = 0
 	for channel in device_grouping:
 		if channel is not Dictionary:
 			continue
-		var custom_name: String = str(channel.get("friendly_name", "ch_%d" % feagi_index))
+		var override_val: Variant = channel.get("channel_index_override")
+		var feagi_index: int = int(override_val) if override_val != null and (override_val is int or override_val is float) else loop_index
+		var custom_name: String = str(channel.get("friendly_name", "ch_%d" % loop_index))
 		var device_entry: Dictionary = {"custom_name": custom_name, "feagi_index": feagi_index}
 		var channel_props = channel.get("device_properties", {})
 		if channel_props is Dictionary:
@@ -337,19 +340,31 @@ func _extract_devices_from_device_grouping(device_grouping: Array) -> Dictionary
 				else:
 					device_entry[prop_key] = prop_val
 		devices[str(feagi_index)] = device_entry
-		feagi_index += 1
+		loop_index += 1
 	return devices
 
-## Convert device_registrations (output_units_and_decoder_properties, input_units_and_encoder_properties)
-## to capabilities-like format so get_custom_names and get_device_properties resolve names and device data.
-## Keys normalized to snake_case (positional_servo, rotary_motor, camera, etc).
-func _device_registrations_to_capabilities_format(device_registrations: Dictionary, agent_id: String, agent_name: String = "") -> Dictionary:
+func _make_unit_scoped_capability_config(
+	agent_id: String,
+	agent_name: String,
+	section_key: String,
+	capability_key: String,
+	unit_index: int,
+	devices: Dictionary
+) -> Dictionary:
 	var result: Dictionary = {"agent_ID": agent_id}
 	if not agent_name.is_empty():
 		result["agent_name"] = agent_name
+	result[section_key] = {capability_key: devices}
+	result[section_key + "_unit_indices"] = {capability_key: unit_index}
+	return result
+
+## Convert device_registrations (output_units_and_decoder_properties, input_units_and_encoder_properties)
+## into per-unit capabilities-like configs so multi-unit MuJoCo models retain all channel groups.
+## Keys normalized to snake_case (positional_servo, rotary_motor, camera, etc).
+func _device_registrations_to_capabilities_configs(device_registrations: Dictionary, agent_id: String, agent_name: String = "") -> Array[Dictionary]:
+	var configs: Array[Dictionary] = []
 	var output_units = device_registrations.get("output_units_and_decoder_properties", {})
 	if output_units is Dictionary and not output_units.is_empty():
-		var output: Dictionary = {}
 		for unit_key in output_units.keys():
 			var snake_key: String = str(unit_key).to_lower().replace(" ", "_")
 			if "positional" in snake_key and "servo" in snake_key:
@@ -369,11 +384,17 @@ func _device_registrations_to_capabilities_format(device_registrations: Dictiona
 				if device_grouping is not Array:
 					continue
 				var devices: Dictionary = _extract_devices_from_device_grouping(device_grouping)
-				if not devices.is_empty():
-					output[snake_key] = devices
-					break
-		if not output.is_empty():
-			result["output"] = output
+				if devices.is_empty():
+					continue
+				var unit_index: int = int(unit_def.get("cortical_unit_index", -1))
+				configs.append(_make_unit_scoped_capability_config(
+					agent_id,
+					agent_name,
+					"output",
+					snake_key,
+					unit_index,
+					devices
+				))
 	var input_units = device_registrations.get("input_units_and_encoder_properties", {})
 	if input_units is Dictionary and not input_units.is_empty():
 		const INPUT_UNIT_TO_CAPABILITY_KEY: Dictionary = {
@@ -393,7 +414,6 @@ func _device_registrations_to_capabilities_format(device_registrations: Dictiona
 			"servo_motion": "servo_motion",
 			"servo_position": "servo_position",
 		}
-		var input_dict: Dictionary = {}
 		for unit_key in input_units.keys():
 			var snake_key: String = str(unit_key).to_lower().replace(" ", "_")
 			var capability_key: String = INPUT_UNIT_TO_CAPABILITY_KEY.get(snake_key, snake_key)
@@ -410,14 +430,18 @@ func _device_registrations_to_capabilities_format(device_registrations: Dictiona
 				if device_grouping is not Array:
 					continue
 				var devices: Dictionary = _extract_devices_from_device_grouping(device_grouping)
-				if not devices.is_empty():
-					input_dict[capability_key] = devices
-					break
-		if not input_dict.is_empty():
-			result["input"] = input_dict
-	if not result.has("output") and not result.has("input"):
-		return {}
-	return result
+				if devices.is_empty():
+					continue
+				var unit_index: int = int(unit_def.get("cortical_unit_index", -1))
+				configs.append(_make_unit_scoped_capability_config(
+					agent_id,
+					agent_name,
+					"input",
+					capability_key,
+					unit_index,
+					devices
+				))
+	return configs
 
 ## Refreshes cached agent capabilities and device registrations using the bulk endpoint.
 func refresh_agent_capabilities_cache(include_device_registrations: bool = true) -> FeagiRequestOutput:
@@ -471,9 +495,14 @@ func refresh_agent_capabilities_cache(include_device_registrations: bool = true)
 				capabilities["agent_name"] = str(agent_entry.get("agent_name", agent_id))
 				FeagiCore.feagi_local_cache.append_configuration_json(capabilities)
 			if agent_entry.has("device_registrations") and agent_entry["device_registrations"] is Dictionary:
-				var converted := _device_registrations_to_capabilities_format(agent_entry["device_registrations"], str(agent_id), str(agent_entry.get("agent_name", agent_id)))
-				if not converted.is_empty():
-					FeagiCore.feagi_local_cache.append_configuration_json(converted)
+				var converted_configs := _device_registrations_to_capabilities_configs(
+					agent_entry["device_registrations"],
+					str(agent_id),
+					str(agent_entry.get("agent_name", agent_id))
+				)
+				for converted in converted_configs:
+					if not converted.is_empty():
+						FeagiCore.feagi_local_cache.append_configuration_json(converted)
 	FeagiCore.feagi_local_cache.set_agent_capabilities_map(filtered_caps_map)
 	return agent_caps_data
 

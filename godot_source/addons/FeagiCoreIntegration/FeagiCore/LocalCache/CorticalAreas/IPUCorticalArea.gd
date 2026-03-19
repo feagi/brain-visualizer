@@ -96,12 +96,24 @@ func FEAGI_set_cortical_dimensions_per_device(new_dimensions: Vector3i) -> void:
 	cortical_dimensions_per_device_updated.emit(new_dimensions, self)
 
 ## Given an array of configurator input capability dictionaries (recieved from agent properties), get all custom names of this cortical area
+func _matches_input_unit_index(configurator_capability: Dictionary) -> bool:
+	if unit_id < 0:
+		return true
+	var unit_indices: Variant = configurator_capability.get("input_unit_indices")
+	if unit_indices is not Dictionary:
+		return true
+	if !unit_indices.has(str(controller_ID)):
+		return true
+	return int(unit_indices[str(controller_ID)]) == unit_id
+
 func get_custom_names(configurator_capabilities: Array[Dictionary], feagi_index: int) -> Array[StringName]:
 	if !has_controller_ID:
 		return []
 	var output: Array[StringName] = []
 	for configurator_capability in configurator_capabilities:
 		if !configurator_capability.has("input"):
+			continue
+		if !_matches_input_unit_index(configurator_capability):
 			continue
 		var configurator_input: Dictionary = configurator_capability["input"]
 		if !configurator_input.has(str(controller_ID)):
@@ -116,8 +128,9 @@ func get_custom_names(configurator_capabilities: Array[Dictionary], feagi_index:
 				configurator_capability.get("agent_name", ""),
 				configurator_capability.get("agent_ID", "")
 			)
-			var raw_name: String = str(device.get("custom_name", ""))
-			var limb_desc: String = FEAGIUtils.expand_joint_to_limb_description(raw_name)
+			var limb_desc: String = str(device.get("display_name", device.get("custom_name", ""))).strip_edges()
+			if limb_desc.is_empty():
+				continue
 			output.append((display_name + ": " + limb_desc))
 	return output
 
@@ -127,6 +140,8 @@ func get_device_properties(configurator_capabilities: Array[Dictionary], feagi_i
 		return {}
 	for configurator_capability in configurator_capabilities:
 		if !configurator_capability.has("input") or configurator_capability["input"] is not Dictionary:
+			continue
+		if !_matches_input_unit_index(configurator_capability):
 			continue
 		var configurator_input: Dictionary = configurator_capability["input"]
 		if !configurator_input.has(str(controller_ID)):

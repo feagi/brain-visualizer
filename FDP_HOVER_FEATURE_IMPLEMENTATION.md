@@ -1,54 +1,42 @@
 # FDP Hover Feature Implementation Summary
 
 ## Overview
-Extended the brain visualizer's cortical area hover feature to display FDP-decoded information for OPU (Output Processing Unit) cortical areas using **FDP v0.0.50-beta.59**.
+Extended the brain visualizer's cortical area hover feature to display decoded information for IPU and OPU cortical areas. Uses **feagi-sensorimotor** single-voxel decode API so that what BV displays matches what a robot/controller would process.
 
 ## Implementation Details
 
-### 1. Rust GDExtension Functions (`feagi_data_deserializer`)
-**File**: `brain-visualizer/rust_extensions/feagi_data_deserializer/src/lib.rs`
+### 1. feagi-sensorimotor Single-Voxel Decode API
+**File**: `feagi-core/crates/feagi-sensorimotor/src/single_voxel_decode.rs`
 
-Added two functions:
+Public API that uses the same `coder_shared_functions` as feagi-sensorimotor's batch decoders:
+- `decode_single_voxel(cortical_id, voxel_x, voxel_y, voxel_z, channel_dims, device_count) -> SingleVoxelDecodeResult`
+- Supports: Percentage, SignedPercentage (1D-4D), CartesianPlane, Misc, Boolean
+- Linear: `value = 1.0 - (z/z_max)` (z=0 is max)
+- Exponential: `value = sum(0.5^z)` for active neurons
+
+### 2. Rust GDExtension Functions (`feagi_data_deserializer`)
+**File**: `brain-visualizer/rust_extensions/feagi_data_deserializer/src/lib.rs`
 
 #### A. `parse_cortical_id_encoding()` - Binary Cortical ID Parser
 - Decodes base64 cortical IDs to 8-byte binary format
-- Parses FDP's binary structure per `feagi-data-structures` specification:
-  ```
-  [0] = 'i' or 'o' (input/output marker)
-  [1-3] = 3-char unit identifier (e.g., "mot", "cam")
-  [4-5] = data_type_configuration (u16, little-endian):
-          bits 0-3: variant (0=Percentage, 4=SignedPercentage, etc.)
-          bit 4: frame handling (0=Absolute, 1=Incremental)
-          bit 5: positioning (0=Linear, 1=Fractional)
-  [6] = unit_index
-  [7] = group_index
-  ```
-- Extracts encoding_type and encoding_format from binary structure
-- Returns: `{success: bool, encoding_type: string, encoding_format: string, error: string}`
+- Returns encoding_type, encoding_format, is_signed for UI/legacy use
 
-#### B. `decode_fdp_value()` - FDP Value Decoder
-- Uses the **actual FDP decoding logic** from `feagi-sensorimotor` crate
-- Implements the exact same formulas used by FDP's internal decoders:
-  - **Linear encoding**: `value = (z_index / z_max_depth) * 100.0`
-  - **Exponential encoding**: `value = 0.5^z_index * 100.0`
-- Calculates channel number from voxel X coordinate
-- Returns: `{success: bool, channel: int, value: float, fdp_version: string, error: string}`
+#### B. `decode_fdp_value()` - Delegates to feagi-sensorimotor
+- Calls `feagi_sensorimotor::single_voxel_decode::decode_single_voxel`
+- Cortical ID carries encoding; no need to pass encoding_type/format
+- Returns: `{success: bool, channel: int, value: float, data_type: string, error: string}`
 
 **Key Features**:
-- No invented logic - uses FDP's actual binary format and decoding functions
-- Supports all encoding types: linear, exponential
-- Supports all encoding formats: 1d, 2d, 3d, 4d
-- Published crate dependency from crates.io (not local path)
-- **No FEAGI dependency** - works entirely from cortical ID and voxel coordinates
+- Uses feagi-sensorimotor's actual decoding logic (no duplicated formulas)
+- BV display matches robot processing
 
-### 2. GDScript Integration
+### 3. GDScript Integration
 **File**: `brain-visualizer/godot_source/addons/UI_BrainMonitor/UI_BrainMonitor_Overlay.gd`
 
 Modified `mouse_over_single_cortical_area()` to:
-- Initialize FDP deserializer on startup
-- Call `decode_fdp_value()` for OPU cortical areas only (IPU will have separate implementation)
-- Display result in format: `FDP:{version} CH:{channel} Value:{value}%`
-- Only shows FDP info when cortical area has decoded ID information (encoding type/format)
+- Call `_get_decoded_value_suffix()` for both IPU and OPU cortical areas
+- Uses `decode_fdp_value()` which delegates to feagi-sensorimotor
+- Display format: `| value: X.X% (DataType)`
 
 ### 3. Dependencies
 **Files**: 
@@ -76,8 +64,7 @@ Area - motor (0, 0, 5) | FDP:0.0.50-beta.59 CH:0 Value:62.50%
 ```
 
 ## Current Scope
-- **Implemented**: OPU cortical areas only
-- **Pending**: IPU cortical areas (different variation to be implemented)
+- **Implemented**: IPU and OPU cortical areas
 - **Additive**: All existing hover functionality preserved
 
 ## Testing
