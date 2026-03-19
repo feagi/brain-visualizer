@@ -12,7 +12,7 @@ const DEBUG_DEVICE_INDEX: bool = false
 const DEBUG_HOVER_TEXT: bool = false
 
 ## Set true to log joint/device details (device_index, custom_names, device_props) when hovering over IPU/OPU.
-const DEBUG_JOINT_DETAILS: bool = true
+const DEBUG_JOINT_DETAILS: bool = false
 
 func _process(_delta: float) -> void:
 	# Keep overlay size synced to viewport size (hover label is now global).
@@ -198,7 +198,7 @@ func _get_decoded_value_suffix(cortical_area: AbstractCorticalArea, neuron_coord
 	var data_type: String = fdp_result.get("data_type", "")
 	var suffix: String = " | value: %.1f%%" % value
 	if data_type != "":
-		suffix += " (" + data_type + ")"
+		suffix += " - " + data_type.replace("_", " ").to_lower()
 	return suffix
 
 ## Map neuron (x,y,z) to device index for IOPU layouts. Uses row-major 3D block layout.
@@ -269,6 +269,50 @@ func _get_area_action_mode_text(cortical_area: AbstractCorticalArea) -> String:
 				return "absolute positioning"
 	return ""
 
+func _get_area_frame_mode_token(cortical_area: AbstractCorticalArea) -> String:
+	var mode_text := _get_area_action_mode_text(cortical_area)
+	if mode_text == "absolute positioning":
+		return "absolute"
+	return mode_text
+
+func _get_area_percentage_token(cortical_area: AbstractCorticalArea) -> String:
+	var signage := str(cortical_area.coding_signage).strip_edges().to_lower()
+	if signage.find("percentage") >= 0:
+		if signage.find("signed") >= 0:
+			return "percentage signed"
+		if signage.find("unsigned") >= 0:
+			return "percentage unsigned"
+		return "percentage"
+	# Fallback: derive from cortical ID variant when signage metadata is absent.
+	var cid := str(cortical_area.cortical_ID).strip_edges()
+	if cid != "":
+		var raw: PackedByteArray = Marshalls.base64_to_raw(cid)
+		if raw.size() >= 6:
+			var cfg: int = int(raw[4]) | (int(raw[5]) << 8)
+			var variant: int = cfg & 0xFF
+			if variant == 5:
+				return "percentage signed"
+			if variant == 1:
+				return "percentage unsigned"
+	return ""
+
+func _get_area_encoding_summary_text(cortical_area: AbstractCorticalArea) -> String:
+	var parts: Array[String] = []
+	var positioning := str(cortical_area.coding_type).strip_edges().to_lower()
+	if positioning == "":
+		var enc_format := str(cortical_area.encoding_format).strip_edges().to_lower()
+		if enc_format in ["linear", "fractional", "exponential"]:
+			positioning = enc_format
+	if positioning != "":
+		parts.append(positioning)
+	var frame_mode := _get_area_frame_mode_token(cortical_area)
+	if frame_mode != "":
+		parts.append(frame_mode)
+	var percentage := _get_area_percentage_token(cortical_area)
+	if percentage != "":
+		parts.append(percentage)
+	return " - ".join(parts)
+
 func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron_coordinate: Vector3i) -> void:
 	if DEBUG_DEVICE_INDEX:
 		print("[BV mouse_over ENTRY] %s type=%s coord=%s" % [cortical_area.cortical_ID, cortical_area.cortical_type, neuron_coordinate])
@@ -279,9 +323,7 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 		_set_global_context("Area - " + cortical_area.friendly_name + "  " + str(neuron_coordinate))
 		return
 	var text: String = "Area - " + cortical_area.friendly_name + " " + str(neuron_coordinate) + " "
-	var action_mode_text := _get_area_action_mode_text(cortical_area)
-	if action_mode_text != "":
-		text += "| mode: " + action_mode_text + " "
+	var encoding_summary := _get_area_encoding_summary_text(cortical_area)
 	var device_index: int = 0
 	if cortical_area is IPUCorticalArea or cortical_area is OPUCorticalArea:
 		device_index = _resolve_device_index(cortical_area, neuron_coordinate)
@@ -290,9 +332,11 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 	if cortical_area is IPUCorticalArea:
 		var dir_suffix: String = _incremental_direction_suffix(cortical_area, neuron_coordinate)
 		var dir_word: String = " forward" if dir_suffix == " (+)" else " backward" if dir_suffix == " (-)" else ""
+		var ipu_ctrl_id: String = str(cortical_area.controller_ID) if cortical_area.has_controller_ID else ""
+		var ipu_is_motor_ctrl: bool = (ipu_ctrl_id == "positional_servo" or ipu_ctrl_id == "rotary_motor")
 		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
-		if DEBUG_JOINT_DETAILS:
-			var ctrl_id: String = str(cortical_area.controller_ID) if cortical_area.has_controller_ID else "(none)"
+		if DEBUG_JOINT_DETAILS and ipu_is_motor_ctrl:
+			var ctrl_id: String = ipu_ctrl_id if ipu_ctrl_id != "" else "(none)"
 			var input_keys_per_config: Array[String] = []
 			for cfg in FeagiCore.feagi_local_cache.configuration_jsons:
 				var inp: Variant = cfg.get("input")
@@ -326,9 +370,11 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 	elif cortical_area is OPUCorticalArea:
 		var dir_suffix: String = _incremental_direction_suffix(cortical_area, neuron_coordinate)
 		var dir_word: String = " forward" if dir_suffix == " (+)" else " backward" if dir_suffix == " (-)" else ""
+		var opu_ctrl_id: String = str(cortical_area.controller_ID) if cortical_area.has_controller_ID else ""
+		var opu_is_motor_ctrl: bool = (opu_ctrl_id == "positional_servo" or opu_ctrl_id == "rotary_motor")
 		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
-		if DEBUG_JOINT_DETAILS:
-			var ctrl_id: String = str(cortical_area.controller_ID) if cortical_area.has_controller_ID else "(none)"
+		if DEBUG_JOINT_DETAILS and opu_is_motor_ctrl:
+			var ctrl_id: String = opu_ctrl_id if opu_ctrl_id != "" else "(none)"
 			var feagi_indices_in_config: Array[String] = []
 			for cfg in FeagiCore.feagi_local_cache.configuration_jsons:
 				var out: Variant = cfg.get("output")
@@ -369,6 +415,8 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 		var decoded_suffix: String = _get_decoded_value_suffix(cortical_area, neuron_coordinate)
 		if decoded_suffix != "":
 			text += decoded_suffix
+	if encoding_summary != "":
+		text += " | " + encoding_summary
 	if cortical_area.cortical_ID == "o_mctl":
 		var device_local_coordinate: Vector3i = Vector3i(neuron_coordinate.x % 4, neuron_coordinate.y % 3, 0)
 		var direction: String
