@@ -52,11 +52,21 @@ func _init():
 	websocket_API.process_mode = Node.PROCESS_MODE_DISABLED
 	websocket_API.feagi_requesting_reset.connect(func(): 
 		print("🔗 NETWORKING: Received feagi_requesting_reset, forwarding to FeagiCore...")
+		_on_genome_reset_request()  # Handle registration cleanup before forwarding
 		genome_reset_request_recieved.emit()
 		print("✅ NETWORKING: genome_reset_request_recieved signal emitted")
 	)
 	add_child(websocket_API)
 	websocket_API.shm_visualization_enabled.connect(_on_shm_visualization_enabled)
+
+func _on_genome_reset_request() -> void:
+	# When FEAGI requests genome reset, it deregisters all agents
+	# Clear our registration metadata to force re-registration on next connection attempt
+	print("🔗 NETWORKING: Genome reset detected - clearing agent registration metadata")
+	if has_meta("_registered_agent_id_b64"):
+		remove_meta("_registered_agent_id_b64")
+	if has_meta("_registration_ws_url"):
+		remove_meta("_registration_ws_url")
 
 func _on_shm_visualization_enabled(_path: String) -> void:
 	# SHM is now active; BV no longer requires WebSocket connectivity for neuron visualization.
@@ -290,12 +300,16 @@ func _register_agent_via_transport() -> bool:
 	if not bool(registration_output.get("success", false)):
 		var reg_error: String = str(registration_output.get("error", "unknown registration error"))
 		if reg_error.contains("Client already registered"):
-			push_warning("𒓉 [TRANSPORT] Registration reported already-registered client; reusing existing visualization endpoint.")
-			if _feagi_endpoint_details.full_websocket_address.strip_edges() == "":
+			push_warning("𒓉 [TRANSPORT] Registration reported already-registered client; will attempt to use existing visualization endpoint.")
+			# If we have the visualization endpoint from previous registration or from advertised endpoint, we can continue
+			if _feagi_endpoint_details.full_websocket_address.strip_edges() != "":
+				print("𒓉 [TRANSPORT] Using existing visualization endpoint: ", _feagi_endpoint_details.full_websocket_address)
+				# Still return false to continue with WebSocket connection setup
+				return false
+			else:
 				_transport_registration_failed = true
 				push_error("𒓉 [TRANSPORT] Already-registered response received, but no visualization endpoint was available.")
 				return false
-			return false
 		_transport_registration_failed = true
 		push_error("𒓉 [TRANSPORT] Registration failed (%s)." % reg_error)
 		return false
@@ -314,7 +328,7 @@ func _register_agent_via_transport() -> bool:
 		set_meta("_registered_agent_id_b64", registered_agent_id)
 		print("𒓉 [TRANSPORT] Registered agent_id: ", registered_agent_id)
 
-	return false
+	return false  # Return false to continue with WebSocket connection (not using SHM)
 
 func _resolve_ws_endpoints() -> Dictionary:
 	# Resolve WebSocket registration and visualization endpoints from FEAGI network connection info.
@@ -529,9 +543,16 @@ func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, cu
 			if _http_is_connectable():
 				print("FEAGI NETWORK: WS NO_CONNECTION while HTTP is healthy → staying in RETRYING_WS")
 				_change_connection_state(CONNECTION_STATE.RETRYING_WS)
-				# Restart WS attempts directly; do not trigger full network reconnect loop.
-				if _auto_reconnect_enabled and websocket_API != null:
-					websocket_API.connect_websocket()
+				# Check if we still have registration metadata - if not, we need to re-register (FEAGI may have deregistered us)
+				if not has_meta("_registered_agent_id_b64") or not has_meta("_registration_ws_url"):
+					print("FEAGI NETWORK: ⚠️ Agent registration metadata missing - triggering full reconnect with re-registration")
+					_change_connection_state(CONNECTION_STATE.DISCONNECTED)
+					if _auto_reconnect_enabled:
+						_start_reconnect_loop()
+				else:
+					# Restart WS attempts directly; do not trigger full network reconnect loop.
+					if _auto_reconnect_enabled and websocket_API != null:
+						websocket_API.connect_websocket()
 			else:
 				print("FEAGI NETWORK: WS NO_CONNECTION and HTTP unavailable → Changing to DISCONNECTED")
 				# Only path to this is from WEBSOCKET_HEALTH.RETRYING (again, "confirm_connectivity" has this method disconnected)
@@ -621,12 +642,24 @@ func stop_heartbeat() -> void:
 	var registration_ws_url := ""
 	if has_meta("_registration_ws_url"):
 		registration_ws_url = str(get_meta("_registration_ws_url")).strip_edges()
+	
+	# Stop heartbeat and deregister (may fail if FEAGI already deregistered us during genome reload)
 	if registered_agent_id != "" and ClassDB.class_exists("FeagiAgentClient"):
 		var agent_client = ClassDB.instantiate("FeagiAgentClient")
 		if agent_client != null:
+			print("𒓉 [TRANSPORT] Stopping heartbeat for agent: ", registered_agent_id)
 			agent_client.stop_heartbeat_for_agent(registered_agent_id)
 			if registration_ws_url != "":
+				print("𒓉 [TRANSPORT] Attempting deregistration (may already be deregistered by FEAGI)")
+				# Deregistration may fail if FEAGI already deregistered us (genome reload) - that's okay
 				agent_client.deregister_via_websocket(registration_ws_url, registered_agent_id)
+	
+	# Always clear registration metadata to allow fresh registration
+	if has_meta("_registered_agent_id_b64"):
+		remove_meta("_registered_agent_id_b64")
+	if has_meta("_registration_ws_url"):
+		remove_meta("_registration_ws_url")
+	
 	if _heartbeat_timer != null:
 		_heartbeat_timer.stop()
 		if _heartbeat_timer.timeout.is_connected(_send_heartbeat):
