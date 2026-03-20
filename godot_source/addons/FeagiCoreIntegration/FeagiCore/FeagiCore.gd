@@ -288,6 +288,7 @@ func _fetch_simulation_timestep() -> void:
 # Disconnect from FEAGI
 func disconnect_from_FEAGI() -> void:
 	print("FEAGICORE: Disconnecting from FEAGI!")
+	network.disconnect_networking(true)
 	_change_genome_state(GENOME_LOAD_STATE.UNKNOWN)
 	
 func can_interact_with_feagi() -> bool:
@@ -305,7 +306,8 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 			# This will only occur if we are disconnecting from FEAGI (or connection lost), thus can come from any
 			print("FEAGICORE: [3D_SCENE_DEBUG] State UNKNOWN: Clearing genome and disconnecting")
 			feagi_local_cache.clear_whole_genome()
-			network.disconnect_networking()
+			if network.connection_state != FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
+				network.disconnect_networking()
 			if feagi_local_cache.genome_availability_or_brain_readiness_changed.is_connected(_if_brain_readiness_or_genome_availability_changes):
 				feagi_local_cache.genome_availability_or_brain_readiness_changed.disconnect(_if_brain_readiness_or_genome_availability_changes)
 			feagi_local_cache.set_health_dead()

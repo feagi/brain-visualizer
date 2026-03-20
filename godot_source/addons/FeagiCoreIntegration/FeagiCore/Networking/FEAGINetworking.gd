@@ -39,6 +39,8 @@ var _heartbeat_interval: float = 5.0  # Send heartbeat every 5 seconds to provid
 var _reconnect_timer: Timer = null
 var _reconnect_in_progress: bool = false
 var _transport_registration_failed: bool = false
+# Disable reconnect loop only for intentional/manual disconnect flows (e.g. app shutdown).
+var _auto_reconnect_enabled: bool = true
 
 func _init():
 	http_API = FEAGIHTTPAPI.new()
@@ -78,6 +80,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	
 	# Store endpoint details for use throughout the connection lifecycle
 	_feagi_endpoint_details = feagi_endpoint_details
+	_auto_reconnect_enabled = true
 	_transport_registration_failed = false
 	_stop_reconnect_loop()
 	
@@ -452,9 +455,13 @@ func _extract_ws_endpoints_from_raw_response(raw_response: String) -> Dictionary
 	}
 	
 ## Completely disconnect all networking systems from FEAGI
-func disconnect_networking() -> void:
+## manual_disconnect=true should be used only for user/app initiated shutdown.
+func disconnect_networking(manual_disconnect: bool = false) -> void:
 	# Stop heartbeat before disconnecting
 	stop_heartbeat()
+	_auto_reconnect_enabled = not manual_disconnect
+	if manual_disconnect:
+		_stop_reconnect_loop()
 	
 	# NOTE: Signals will NOT be firing for these for their changing states
 	_change_connection_state(CONNECTION_STATE.DISCONNECTED)
@@ -474,8 +481,16 @@ func _HTTP_health_changed(_prev_health: FEAGIHTTPAPI.HTTP_HEALTH, current_health
 		
 		FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE:
 			# Besides during "confirm_connectivity" (which is never connected to this), this only comes from a retrying worker recovering
-			# Only path to this is from HTTP_HEALTH.RETRYING
-			_change_connection_state(CONNECTION_STATE.HEALTHY)
+			# In WebSocket transport mode, do not promote to HEALTHY unless WS is truly CONNECTED.
+			if _transport_mode == TRANSPORT_MODE.WEBSOCKET:
+				if websocket_API == null:
+					_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+				elif websocket_API.socket_health == FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
+					_change_connection_state(CONNECTION_STATE.HEALTHY)
+				else:
+					_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+			else:
+				_change_connection_state(CONNECTION_STATE.HEALTHY)
 		
 		FEAGIHTTPAPI.HTTP_HEALTH.RETRYING:
 			# Only path to this is from HTTP_HEALTH.CONNECTABLE
@@ -526,16 +541,25 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 			# NOTE: These APIs will not emit disconnection signals from this
 			# http_API.disconnect_http()  # ← KEEP HTTP ALIVE for session monitoring
 			websocket_API.disconnect_websocket()
+			if _auto_reconnect_enabled:
+				_start_reconnect_loop()
 		CONNECTION_STATE.INITIAL_HTTP_PROBING: # not possible:
 			return
 		CONNECTION_STATE.INITIAL_WS_PROBING: # not possible:
 			return
 		CONNECTION_STATE.HEALTHY:
-			if prev_state == CONNECTION_STATE.RETRYING_HTTP_WS: # 2 things were broken, one got fixed
-				if http_API.http_health != FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE:
+			_stop_reconnect_loop()
+			# HEALTHY is valid only when all required transports are actually healthy.
+			var http_ok = http_API != null and http_API.http_health == FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE
+			var ws_required = _transport_mode == TRANSPORT_MODE.WEBSOCKET
+			var ws_ok = websocket_API != null and websocket_API.socket_health == FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED
+			if not http_ok:
+				if ws_required and not ws_ok:
+					new_state = CONNECTION_STATE.RETRYING_HTTP_WS
+				else:
 					new_state = CONNECTION_STATE.RETRYING_HTTP
-				elif websocket_API.socket_health != FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
-					new_state = CONNECTION_STATE.RETRYING_WS
+			elif ws_required and not ws_ok:
+				new_state = CONNECTION_STATE.RETRYING_WS
 		CONNECTION_STATE.RETRYING_HTTP:
 			if prev_state == CONNECTION_STATE.RETRYING_WS: # are both actually broken?
 				new_state = CONNECTION_STATE.RETRYING_HTTP_WS
@@ -585,12 +609,15 @@ func _send_heartbeat() -> void:
 
 ## Start auto-reconnect loop while disconnected.
 func _start_reconnect_loop() -> void:
+	if not _auto_reconnect_enabled:
+		return
 	if _reconnect_timer and _reconnect_timer.is_inside_tree() and not _reconnect_timer.is_stopped():
 		return
 	if FeagiCore.feagi_settings == null:
 		push_warning("FEAGI NETWORK: Cannot start reconnect loop - settings not loaded")
 		return
 	var interval_seconds: float = FeagiCore.feagi_settings.seconds_between_healthcheck_pings
+	print("FEAGI NETWORK: Starting reconnect loop (interval=%.2fs)" % interval_seconds)
 	if _reconnect_timer == null:
 		_reconnect_timer = Timer.new()
 		_reconnect_timer.name = "ReconnectTimer"
