@@ -512,19 +512,40 @@ func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, cu
 	
 	match current_health:
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.NO_CONNECTION:
-			print("FEAGI NETWORK: WS NO_CONNECTION → Changing to DISCONNECTED")
-			# Only path to this is from WEBSOCKET_HEALTH.RETRYING (again, "confirm_connectivity" has this method disconnected)
-			_change_connection_state(CONNECTION_STATE.DISCONNECTED)
+			# If HTTP is still alive, keep session in WS retry mode instead of dropping to global DISCONNECTED.
+			# This avoids reconnect storms where a transient WS failure tears down healthy HTTP/session state.
+			if _http_is_connectable():
+				print("FEAGI NETWORK: WS NO_CONNECTION while HTTP is healthy → staying in RETRYING_WS")
+				_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+				# Restart WS attempts directly; do not trigger full network reconnect loop.
+				if _auto_reconnect_enabled and websocket_API != null:
+					websocket_API.connect_websocket()
+			else:
+				print("FEAGI NETWORK: WS NO_CONNECTION and HTTP unavailable → Changing to DISCONNECTED")
+				# Only path to this is from WEBSOCKET_HEALTH.RETRYING (again, "confirm_connectivity" has this method disconnected)
+				_change_connection_state(CONNECTION_STATE.DISCONNECTED)
 		
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
-			print("FEAGI NETWORK: WS CONNECTED → Changing to HEALTHY")
-			# Only path to this is from WEBSOCKET_HEALTH.RETRYING (again, "confirm_connectivity" has this method disconnected)
-			_change_connection_state(CONNECTION_STATE.HEALTHY)
+			# Connected WS alone is not sufficient when HTTP is retrying/down.
+			if _http_is_connectable():
+				print("FEAGI NETWORK: WS CONNECTED → Changing to HEALTHY")
+				# Only path to this is from WEBSOCKET_HEALTH.RETRYING (again, "confirm_connectivity" has this method disconnected)
+				_change_connection_state(CONNECTION_STATE.HEALTHY)
+			else:
+				print("FEAGI NETWORK: WS CONNECTED but HTTP unavailable → RETRYING_HTTP")
+				_change_connection_state(CONNECTION_STATE.RETRYING_HTTP)
 		
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.RETRYING:
 			print("FEAGI NETWORK: WS RETRYING → Changing to RETRYING_WS")
-			 # Only path to this is from WEBSOCKET_HEALTH.CONNECTED
-			_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+			# Only path to this is from WEBSOCKET_HEALTH.CONNECTED
+			if _http_is_connectable():
+				_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+			else:
+				_change_connection_state(CONNECTION_STATE.RETRYING_HTTP_WS)
+
+
+func _http_is_connectable() -> bool:
+	return http_API != null and http_API.http_health == FEAGIHTTPAPI.HTTP_HEALTH.CONNECTABLE
 
 
 func _change_connection_state(new_state: CONNECTION_STATE) -> void:
