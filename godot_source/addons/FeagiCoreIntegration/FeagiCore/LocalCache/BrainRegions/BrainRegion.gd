@@ -202,7 +202,7 @@ func FEAGI_bridge_add_link(link: ConnectionChainLink) -> void:
 func FEAGI_bridge_remove_link(link: ConnectionChainLink) -> void:
 	var index: int = _bridge_chain_links.find(link)
 	if index == -1:
-		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % _genome_ID)
+		push_warning("CORE CACHE: Bridge link already absent for region %s; skipping duplicate removal." % _genome_ID)
 		return
 	_bridge_chain_links.remove_at(index)
 	bridge_link_removed.emit(link)
@@ -219,7 +219,7 @@ func FEAGI_input_open_add_link(link: ConnectionChainLink) -> void:
 func FEAGI_input_open_remove_link(link: ConnectionChainLink) -> void:
 	var index: int = _input_open_chain_links.find(link)
 	if index == -1:
-		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % _genome_ID)
+		push_warning("CORE CACHE: Input-open link already absent for region %s; skipping duplicate removal." % _genome_ID)
 		return
 	_input_open_chain_links.remove_at(index)
 	input_open_link_removed.emit(link)
@@ -236,7 +236,7 @@ func FEAGI_output_open_add_link(link: ConnectionChainLink) -> void:
 func FEAGI_output_open_remove_link(link: ConnectionChainLink) -> void:
 	var index: int = _output_open_chain_links.find(link)
 	if index == -1:
-		push_error("CORE CACHE: Unable to add remove link from region %s as it wasn't found!" % _genome_ID)
+		push_warning("CORE CACHE: Output-open link already absent for region %s; skipping duplicate removal." % _genome_ID)
 		return
 	_output_open_chain_links.remove_at(index)
 	output_open_link_removed.emit(link)

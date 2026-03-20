@@ -27,6 +27,7 @@ var _total_chain_path: Array[GenomeObject]
 var _is_both_ends_cortical_areas: bool
 var _mapping_set: InterCorticalMappingSet
 var _partial_mapping_set: PartialMappingSet
+var _connected_parent_watchers: Array[GenomeObject] = []
 
 ## Creates a connection chain from a established mapping between 2 cortical areas
 static func from_established_FEAGI_mapping(mapping: InterCorticalMappingSet) -> ConnectionChain:
@@ -67,10 +68,12 @@ func FEAGI_set_partial_mapping(partial_mapping: PartialMappingSet) -> void:
 	_partial_mapping_set = partial_mapping
 
 func FEAGI_prepare_to_delete() -> void:
-	for chain_link in _chain_links:
+	_disconnect_parent_watchers()
+	var old_links: Array[ConnectionChainLink] = _chain_links.duplicate()
+	_chain_links.clear()
+	for chain_link in old_links:
 		chain_link.FEAGI_prepare_to_delete()
 	about_to_be_deleted.emit(self)
-	_chain_links = []
 
 ## Called by [InterCorticalMappingSet] when it gets updated gets updated
 func FEAGI_updated_associated_mapping_set() -> void:
@@ -89,8 +92,10 @@ func is_registered_to_partial_mapping_set() -> bool:
 
 ## Wipes any existing series of [ConnectionChainLink]s and builds a new one given the complete chain path
 func _rebuild_connection_chain_links(complete_chain_path: Array[GenomeObject]) -> void:
-	
-	for link in _chain_links:
+	_disconnect_parent_watchers()
+	var old_links: Array[ConnectionChainLink] = _chain_links.duplicate()
+	_chain_links.clear()
+	for link in old_links:
 		link.FEAGI_prepare_to_delete()
 
 	for i in (len(complete_chain_path) - 1):
@@ -133,6 +138,7 @@ func _rebuild_connection_chain_links(complete_chain_path: Array[GenomeObject]) -
 		if involved_object.parent_region_updated.is_connected(_involved_object_changed_parent):
 			continue
 		involved_object.parent_region_updated.connect(_involved_object_changed_parent)
+		_connected_parent_watchers.append(involved_object)
 
 func _involved_object_changed_parent(_irrelevant1, _irrelevant2) -> void:
 	_total_chain_path = FeagiCore.feagi_local_cache.brain_regions.get_total_path_between_objects(_source, _destination)
@@ -140,3 +146,11 @@ func _involved_object_changed_parent(_irrelevant1, _irrelevant2) -> void:
 
 func _mappings_changed(_irrelevant) -> void:
 	FEAGI_prepare_to_delete()
+
+func _disconnect_parent_watchers() -> void:
+	for watched_object in _connected_parent_watchers:
+		if watched_object == null:
+			continue
+		if watched_object.parent_region_updated.is_connected(_involved_object_changed_parent):
+			watched_object.parent_region_updated.disconnect(_involved_object_changed_parent)
+	_connected_parent_watchers.clear()
