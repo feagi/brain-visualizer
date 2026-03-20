@@ -67,6 +67,7 @@ var _fps_label: Label
 var _loading_status_label: Label
 var _manual_stim_pending_workers: Dictionary = {}
 var _manual_stim_timeouts: Dictionary = {}
+var _genome_confirm_retry_in_flight: bool = false
 
 # Startup UI scaling thresholds based only on monitor DPI and resolution.
 const UI_STARTUP_DPI_XLARGE: int = 180
@@ -353,9 +354,19 @@ func FEAGI_confirmed_genome() -> void:
 	print("  - is_root_available(): ", FeagiCore.feagi_local_cache.brain_regions.is_root_available())
 	print("  - ROOT_REGION_ID constant: ", FeagiCore.feagi_local_cache.brain_regions._get_configured_root_id())
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
-		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: No Main circuit detected - 3D scene cannot initialize!")
-		push_error("UI: Unable to init Main circuit for CB and BM since none was detected!")
+		print("UIMANAGER: [3D_SCENE_DEBUG] ⚠️ Main circuit not available yet - deferring 3D scene initialization retry")
+		update_loading_status("Waiting for Main circuit data...")
+		if not _genome_confirm_retry_in_flight:
+			_genome_confirm_retry_in_flight = true
+			var retry_delay_seconds: float = 0.0
+			if FeagiCore.feagi_settings != null:
+				retry_delay_seconds = FeagiCore.feagi_settings.seconds_between_healthcheck_pings
+			if retry_delay_seconds > 0.0:
+				get_tree().create_timer(retry_delay_seconds).timeout.connect(_retry_confirmed_genome_init)
+			else:
+				call_deferred("_retry_confirmed_genome_init")
 		return
+	_genome_confirm_retry_in_flight = false
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Main circuit available - proceeding with initialization")
 	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
@@ -450,6 +461,12 @@ func FEAGI_confirmed_genome() -> void:
 	BV.UI.request_switch_to_theme(zoom_value, color_setting)
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE with theme applied")
+
+func _retry_confirmed_genome_init() -> void:
+	_genome_confirm_retry_in_flight = false
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
+		return
+	FEAGI_confirmed_genome()
 
 ## Returns the main brain monitor instance - alternative getter for external access
 func get_temp_root_bm() -> UI_BrainMonitor_3DScene:

@@ -183,11 +183,7 @@ func reload_genome() -> FeagiRequestOutput:
 	# Get Cortical Area Data
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 1/7: Requesting cortical area data...")
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 Making HTTP call to: %s" % FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
-	var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_area_request)
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call initiated, waiting for response...")
-	await cortical_worker.worker_done
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call completed, retrieving data...")
-	var cortical_data: FeagiRequestOutput = cortical_worker.retrieve_output_and_close()
+	var cortical_data: FeagiRequestOutput = await _request_with_retry_for_reload_step1(cortical_area_request)
 	if _return_if_HTTP_failed_and_automatically_handle(cortical_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 1: Cortical area data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI cortical summary data!")
@@ -239,18 +235,14 @@ func reload_genome() -> FeagiRequestOutput:
 	# Get Template Data from dedicated IPU/OPU endpoints
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 6/7: Requesting template data...")
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG]   6a: Requesting IPU types...")
-	var ipu_types_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(ipu_types_request)
-	await ipu_types_worker.worker_done
-	var ipu_types_data: FeagiRequestOutput = ipu_types_worker.retrieve_output_and_close()
+	var ipu_types_data: FeagiRequestOutput = await _request_with_retry_for_reload_stage(ipu_types_request, "Step 6a IPU types")
 	if _return_if_HTTP_failed_and_automatically_handle(ipu_types_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6a: IPU types request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI IPU types data!")
 		return ipu_types_data
 	
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG]   6b: Requesting OPU types...")
-	var opu_types_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(opu_types_request)
-	await opu_types_worker.worker_done
-	var opu_types_data: FeagiRequestOutput = opu_types_worker.retrieve_output_and_close()
+	var opu_types_data: FeagiRequestOutput = await _request_with_retry_for_reload_stage(opu_types_request, "Step 6b OPU types")
 	if _return_if_HTTP_failed_and_automatically_handle(opu_types_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6b: OPU types request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI OPU types data!")
@@ -3316,6 +3308,37 @@ func _make_safe_http_call(request_definition: APIRequestWorkerDefinition) -> API
 		return null
 	
 	return FeagiCore.network.http_API.make_HTTP_call(request_definition)
+
+## Bounded retry helper used only for reload_genome Step 1 cortical summary retrieval.
+## Uses FEAGI settings for deterministic timing and retry count.
+func _request_with_retry_for_reload_step1(request_definition: APIRequestWorkerDefinition) -> FeagiRequestOutput:
+	return await _request_with_retry_for_reload_stage(request_definition, "Step 1 cortical summary")
+
+## Bounded retry helper used for selected reload_genome stages that can race FEAGI readiness.
+## Uses FEAGI settings for deterministic timing and retry count.
+func _request_with_retry_for_reload_stage(request_definition: APIRequestWorkerDefinition, stage_label: String) -> FeagiRequestOutput:
+	var max_attempts: int = 1
+	var retry_spacing_seconds: float = 0.0
+	if FeagiCore.feagi_settings != null:
+		max_attempts = maxi(1, FeagiCore.feagi_settings.number_of_times_to_retry_HTTP_connections + 1)
+		retry_spacing_seconds = maxf(0.0, FeagiCore.feagi_settings.seconds_between_healthcheck_pings)
+	
+	var output: FeagiRequestOutput = FeagiRequestOutput.requirement_fail("REQUEST_NOT_EXECUTED")
+	for attempt_index in range(max_attempts):
+		var worker: APIRequestWorker = _make_safe_http_call(request_definition)
+		if worker == null:
+			return FeagiRequestOutput.requirement_fail("HTTP_WORKER_NULL")
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call initiated, waiting for response...")
+		await worker.worker_done
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call completed, retrieving data...")
+		output = worker.retrieve_output_and_close()
+		if not _return_if_HTTP_failed_and_automatically_handle(output):
+			return output
+		if attempt_index < max_attempts - 1:
+			print("FEAGI REQUEST: [3D_SCENE_DEBUG] Retrying %s (%d/%d)..." % [stage_label, attempt_index + 2, max_attempts])
+			if retry_spacing_seconds > 0.0:
+				await FeagiCore.get_tree().create_timer(retry_spacing_seconds).timeout
+	return output
 
 ## Used for error automated error handling of HTTP requests, outputs booleans to set up easy early returns
 func _return_if_HTTP_failed_and_automatically_handle(output: FeagiRequestOutput, optional_input_for_debugging: APIRequestWorkerDefinition = null) -> bool:

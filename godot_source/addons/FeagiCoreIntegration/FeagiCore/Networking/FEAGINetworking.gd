@@ -111,6 +111,8 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	
 	# REST registration is deprecated; transport setup is now resolved without REST calls.
 	print("FEAGI NETWORK: Preparing transport (REST registration disabled)...")
+	# Ensure a previous registration/session does not block reconnect registration.
+	stop_heartbeat()
 	var shm_enabled: bool = await _register_agent_via_transport()
 	
 	# Check if SHM was already enabled during registration (early return)
@@ -260,6 +262,9 @@ func _register_agent_via_transport() -> bool:
 		return false
 	print("𒓉 [TRANSPORT] Using WS registration endpoint: ", registration_ws_url)
 	set_meta("_registration_ws_url", registration_ws_url)
+	if advertised_viz_ws_url != "":
+		_feagi_endpoint_details.full_websocket_address = advertised_viz_ws_url
+		print("𒓉 [TRANSPORT] Using advertised visualization endpoint pre-registration: ", advertised_viz_ws_url)
 	var descriptor_b64 := ""
 	var auth_token_b64 := ""
 	if FeagiCore.feagi_settings != null:
@@ -284,6 +289,13 @@ func _register_agent_via_transport() -> bool:
 	print("𒓉 [TRANSPORT] registration_output: ", registration_output)
 	if not bool(registration_output.get("success", false)):
 		var reg_error: String = str(registration_output.get("error", "unknown registration error"))
+		if reg_error.contains("Client already registered"):
+			push_warning("𒓉 [TRANSPORT] Registration reported already-registered client; reusing existing visualization endpoint.")
+			if _feagi_endpoint_details.full_websocket_address.strip_edges() == "":
+				_transport_registration_failed = true
+				push_error("𒓉 [TRANSPORT] Already-registered response received, but no visualization endpoint was available.")
+				return false
+			return false
 		_transport_registration_failed = true
 		push_error("𒓉 [TRANSPORT] Registration failed (%s)." % reg_error)
 		return false
