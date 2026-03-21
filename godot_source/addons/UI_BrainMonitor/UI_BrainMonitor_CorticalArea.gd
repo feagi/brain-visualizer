@@ -2048,8 +2048,6 @@ func _notification(what: int) -> void:
 		_cleanup_cache_connections()
 
 func _cleanup_cache_connections() -> void:
-	print("🧹 CLEANUP: Disconnecting cache signals for cortical area: ", _representing_cortial_area.cortical_ID if _representing_cortial_area else "unknown")
-	
 	# Disconnect cache reload signal
 	if FeagiCore.feagi_local_cache:
 		var cache = FeagiCore.feagi_local_cache

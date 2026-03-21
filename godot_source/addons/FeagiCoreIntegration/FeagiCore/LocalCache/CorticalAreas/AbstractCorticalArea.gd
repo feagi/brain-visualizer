@@ -425,10 +425,8 @@ func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vecto
 ## Called from [CorticalAreasCache] when cortical area is being deleted
 func FEAGI_delete_cortical_area() -> void:
 	#NOTE: Assumption is made that connections were already removed firstZ!
-	print("🗑️ FEAGI_delete_cortical_area: About to emit about_to_be_deleted for %s" % cortical_ID)
 	_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	about_to_be_deleted.emit()
-	print("🗑️ FEAGI_delete_cortical_area: Emitted about_to_be_deleted for %s" % cortical_ID)
 	# [CorticalAreasCache] then deletes this object
 
 ## Helper function to safely convert dimensions data that might be Array or Dictionary
