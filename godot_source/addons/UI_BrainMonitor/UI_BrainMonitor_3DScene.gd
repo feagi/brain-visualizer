@@ -289,10 +289,7 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 
 
 	# Connect to region signals for dynamic updates
-	_representing_region.cortical_area_added_to_region.connect(_add_cortical_area)
-	_representing_region.cortical_area_removed_from_region.connect(_remove_cortical_area)
-	_representing_region.subregion_added_to_region.connect(_add_brain_region_frame)
-	_representing_region.subregion_removed_from_region.connect(_remove_brain_region_frame)
+	_connect_representing_region_dynamic_signals(_representing_region)
 
 	# Connect to cache reload events ONCE (guarded) to refresh cortical connections
 	if FeagiCore.feagi_local_cache:
@@ -1144,7 +1141,7 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 			var should_be_visible = (viz._dda_renderer == null or 
 				viz.cortical_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
 				AbstractCorticalArea.is_power_area(area_id) or 
-				AbstractCorticalArea.is_death_area(area_id))
+				AbstractCorticalArea.is_reserved_system_core_area(area_id))
 			add_label.call(label, area_id, should_be_visible)
 
 ## Updates label visibility to prevent overlaps when cortical areas are close together
@@ -2856,24 +2853,44 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	
 	# Show call stack to find who's calling this - SUPPRESSED DUE TO OUTPUT OVERFLOW
 	# print("🚨 CALL STACK for _add_cortical_area:")
-	# Return existing visualization if already registered (e.g., during clone's manual injection)
+	# Reuse visualization only if it is still bound to this exact cache instance. After FEAGI reconnect /
+	# cache refresh, AbstractCorticalArea objects are recreated with the same ID; returning the old viz
+	# skips setup() and BV neuron-activity registration.
 	if area.cortical_ID in _cortical_visualizations_by_ID:
-		return _cortical_visualizations_by_ID[area.cortical_ID]
+		var existing_viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[area.cortical_ID]
+		if existing_viz != null and is_instance_valid(existing_viz):
+			var bound: AbstractCorticalArea = existing_viz.cortical_area
+			if is_instance_valid(bound) and bound == area:
+				return existing_viz
+		# Drop stale visualization for this cortical ID, then create a fresh one below.
+		if existing_viz != null and is_instance_valid(existing_viz):
+			var old_area: AbstractCorticalArea = existing_viz.cortical_area
+			if is_instance_valid(old_area):
+				var rm := Callable(self, "_remove_cortical_area").bind(old_area)
+				if old_area.about_to_be_deleted.is_connected(rm):
+					old_area.about_to_be_deleted.disconnect(rm)
+			_previously_moused_over_volumes.erase(existing_viz)
+			_previously_moused_over_cortical_area_neurons.erase(existing_viz)
+			existing_viz.queue_free()
+		_cortical_visualizations_by_ID.erase(area.cortical_ID)
 	
 	# Check if this area should be created
-	var is_directly_in_root = _representing_region.is_cortical_area_in_region_directly(area)
+	var is_directly_in_region = _representing_region.is_cortical_area_in_region_directly(area)
+	# After autogen / agent attach, FEAGI often reparents IPU/OPU/custom areas under child regions. Root Brain Monitor must still show the full subtree.
+	var is_in_represented_subtree = _representing_region.is_cortical_area_in_region_recursive(area)
+	# Product rule: MEMORY areas stay out of the *root* brain monitor (they belong in Autogen / dedicated views).
+	var memory_excluded_at_root = _representing_region.is_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	var is_subtree_ok = is_in_represented_subtree and not memory_excluded_at_root
 	var is_io_of_child_region = _is_area_input_output_of_child_region(area)
 	var is_io_of_this_region = _is_area_input_output_of_region(area)
-	# Special CORE areas (power, death) always show in root view when in cache (API may omit them from root's "areas").
-	# MEMORY areas must NOT appear in root - they belong in Autogen Region only (root = CORE, IPU, OPU).
+	# Reserved system core areas (power, death, fatigue, ...) always show in root view when in cache (API may omit them from region "areas" lists).
 	var is_special_core_in_root = _representing_region.is_root_region() and (
-		AbstractCorticalArea.is_power_area(area.cortical_ID) or
-		AbstractCorticalArea.is_death_area(area.cortical_ID)
+		AbstractCorticalArea.is_reserved_system_core_area(area.cortical_ID)
 	)
 
-	# Only create if the area is directly in this region OR it's needed as I/O OR it's a special core area in root view
-	if not is_directly_in_root and not is_io_of_child_region and not is_io_of_this_region and not is_special_core_in_root:
-		print("  ❌ BM REJECTED %s: not in region %s (directly=%s, io_child=%s, io_self=%s)" % [area.cortical_ID, _representing_region.region_ID, is_directly_in_root, is_io_of_child_region, is_io_of_this_region])
+	# Create if: anywhere under this region's subtree (non-memory at root), direct member, I/O bridge, or reserved core at root.
+	if not is_subtree_ok and not is_io_of_child_region and not is_io_of_this_region and not is_special_core_in_root:
+		print("  ❌ BM REJECTED %s: not in region %s (direct=%s, subtree=%s, io_child=%s, io_self=%s)" % [area.cortical_ID, _representing_region.region_ID, is_directly_in_region, is_in_represented_subtree, is_io_of_child_region, is_io_of_this_region])
 		return null
 
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
@@ -2913,13 +2930,30 @@ func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_Cor
 func has_cortical_area_visualization(cortical_id: String) -> bool:
 	return cortical_id in _cortical_visualizations_by_ID
 
+
+## TypedArray.erase / Dictionary.erase validate object arguments; a freed UI_BrainMonitor_CorticalArea
+## reference must not be passed. Drops invalid keys/elements from hover-tracking structures.
+func _prune_invalid_cortical_refs_from_mouse_tracking() -> void:
+	_previously_moused_over_volumes = _previously_moused_over_volumes.filter(
+		func(v: UI_BrainMonitor_CorticalArea) -> bool: return is_instance_valid(v)
+	)
+	var rebuilt: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {}
+	for k in _previously_moused_over_cortical_area_neurons.keys():
+		if is_instance_valid(k):
+			rebuilt[k] = _previously_moused_over_cortical_area_neurons[k]
+	_previously_moused_over_cortical_area_neurons = rebuilt
+
+
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if area.cortical_ID not in _cortical_visualizations_by_ID:
 		push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)
 		return
 	var rendering_area: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[area.cortical_ID]
-	_previously_moused_over_volumes.erase(rendering_area)
-	_previously_moused_over_cortical_area_neurons.erase(rendering_area)
+	if is_instance_valid(rendering_area):
+		_previously_moused_over_volumes.erase(rendering_area)
+		_previously_moused_over_cortical_area_neurons.erase(rendering_area)
+	else:
+		_prune_invalid_cortical_refs_from_mouse_tracking()
 	if is_instance_valid(rendering_area):
 		rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
@@ -3017,9 +3051,70 @@ func _is_area_input_output_of_child_region(area: AbstractCorticalArea) -> bool:
 	# print("    ❌ Area %s is NOT I/O of any child region" % area.cortical_ID)  # Suppressed - too spammy
 	return false
 
+
+func _connect_representing_region_dynamic_signals(region: BrainRegion) -> void:
+	if region == null:
+		return
+	if not region.cortical_area_added_to_region.is_connected(_add_cortical_area):
+		region.cortical_area_added_to_region.connect(_add_cortical_area)
+	if not region.cortical_area_removed_from_region.is_connected(_remove_cortical_area):
+		region.cortical_area_removed_from_region.connect(_remove_cortical_area)
+	if not region.subregion_added_to_region.is_connected(_add_brain_region_frame):
+		region.subregion_added_to_region.connect(_add_brain_region_frame)
+	if not region.subregion_removed_from_region.is_connected(_remove_brain_region_frame):
+		region.subregion_removed_from_region.connect(_remove_brain_region_frame)
+
+
+func _disconnect_representing_region_dynamic_signals(region: BrainRegion) -> void:
+	if region == null or not is_instance_valid(region):
+		return
+	if region.cortical_area_added_to_region.is_connected(_add_cortical_area):
+		region.cortical_area_added_to_region.disconnect(_add_cortical_area)
+	if region.cortical_area_removed_from_region.is_connected(_remove_cortical_area):
+		region.cortical_area_removed_from_region.disconnect(_remove_cortical_area)
+	if region.subregion_added_to_region.is_connected(_add_brain_region_frame):
+		region.subregion_added_to_region.disconnect(_add_brain_region_frame)
+	if region.subregion_removed_from_region.is_connected(_remove_brain_region_frame):
+		region.subregion_removed_from_region.disconnect(_remove_brain_region_frame)
+
+
+## After FEAGI reconnect the cache replaces BrainRegion instances; keep this scene on the live object and signals.
+func _ensure_representing_region_from_cache() -> void:
+	if _representing_region == null:
+		return
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null or FeagiCore.feagi_local_cache.brain_regions == null:
+		return
+	var rid: StringName = _representing_region.region_ID
+	var fresh: Variant = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(rid)
+	if fresh == null or not (fresh is BrainRegion):
+		return
+	var new_region: BrainRegion = fresh as BrainRegion
+	if new_region == _representing_region:
+		return
+	_disconnect_representing_region_dynamic_signals(_representing_region)
+	_representing_region = new_region
+	_connect_representing_region_dynamic_signals(_representing_region)
+	if _combo != null and is_instance_valid(_combo):
+		_combo.set_3d_context(self, _representing_region)
+
+
+## Desktop WS Type 11 applies to MultiMeshes registered on AbstractCorticalArea; schedule rebuild after BM recreates nodes.
+func _schedule_ws_fastpath_resync_after_cortical_visuals_refresh() -> void:
+	call_deferred("_deferred_invoke_ws_fastpath_rebuild")
+
+
+func _deferred_invoke_ws_fastpath_rebuild() -> void:
+	if FeagiCore == null or FeagiCore.network == null:
+		return
+	var ws: FEAGIWebSocketAPI = FeagiCore.network.websocket_API
+	if ws != null:
+		ws.request_bv_fastpath_cache_rebuild()
+
+
 ## Cache reload event handler - refreshes all cortical area connections AND creates new brain regions
 func _on_cache_reloaded_refresh_all_connections() -> void:
 	print("BV CACHE: cache_reloaded received; refreshing 3D scene")
+	_ensure_representing_region_from_cache()
 	# CRITICAL: Check for new brain regions that need visualization after cloning
 	_create_missing_brain_region_visualizations()
 	# Rebuild cortical area visuals to guarantee sync with refreshed cache
@@ -3040,19 +3135,26 @@ func _on_cache_reloaded_refresh_all_connections() -> void:
 			if cortical_viz._is_volume_moused_over:
 				cortical_viz._hide_neural_connections()
 				cortical_viz._show_neural_connections()
+	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
 
 func _on_cortical_areas_reloaded() -> void:
+	_ensure_representing_region_from_cache()
 	# Lightweight refresh: rebind visuals if cache replaced area objects, then add any missing visuals.
 	_refresh_stale_cortical_area_visualizations_from_cache()
+	# Region summary often updates with cortical geometry; ensure child region plates exist after reconnect.
+	_create_missing_brain_region_visualizations()
 	_add_missing_cortical_area_visualizations()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
 
 func _on_brain_regions_reloaded() -> void:
+	_ensure_representing_region_from_cache()
 	# Lightweight refresh: ensure region frames exist and re-evaluate I/O area visibility.
 	_refresh_stale_cortical_area_visualizations_from_cache()
 	_create_missing_brain_region_visualizations()
 	_add_missing_cortical_area_visualizations()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
 
 ## Recreate cortical visualizations whose cache object changed under the same cortical ID.
 ## This keeps signal wiring valid after FEAGI/genome reloads where cache instances are rebuilt.
@@ -3071,7 +3173,10 @@ func _refresh_stale_cortical_area_visualizations_from_cache() -> void:
 			continue
 
 		var current_area: AbstractCorticalArea = viz.cortical_area
-		if current_area != null and current_area.cortical_ID != area_id:
+		if not is_instance_valid(current_area):
+			stale_ids.append(area_id)
+			continue
+		if current_area.cortical_ID != area_id:
 			remapped_ids[area_id] = current_area.cortical_ID
 			continue
 		var fresh_area: AbstractCorticalArea = cache_areas.get(area_id, null)
@@ -3092,7 +3197,7 @@ func _refresh_stale_cortical_area_visualizations_from_cache() -> void:
 		var stale_viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(area_id, null)
 		if stale_viz != null and is_instance_valid(stale_viz):
 			var stale_area: AbstractCorticalArea = stale_viz.cortical_area
-			if stale_area != null:
+			if is_instance_valid(stale_area):
 				var remove_callable := Callable(self, "_remove_cortical_area").bind(stale_area)
 				if stale_area.about_to_be_deleted.is_connected(remove_callable):
 					stale_area.about_to_be_deleted.disconnect(remove_callable)
@@ -3126,10 +3231,13 @@ func _add_missing_cortical_area_visualizations() -> void:
 		var area = viz.cortical_area
 		if area == null:
 			continue
-		var is_direct = _representing_region.is_cortical_area_in_region_directly(area)
+		var is_in_subtree = _representing_region.is_cortical_area_in_region_recursive(area)
+		var memory_hide_at_root = _representing_region.is_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+		var subtree_keeps_viz = is_in_subtree and not memory_hide_at_root
 		var is_io_child = _is_area_input_output_of_child_region(area)
 		var is_io_self = _is_area_input_output_of_region(area)
-		if not is_direct and not is_io_child and not is_io_self:
+		var is_reserved_core = _representing_region.is_root_region() and AbstractCorticalArea.is_reserved_system_core_area(area.cortical_ID)
+		if not subtree_keeps_viz and not is_io_child and not is_io_self and not is_reserved_core:
 			_remove_cortical_area(area)
 
 	# Add areas directly in this region
@@ -3170,13 +3278,24 @@ func _add_missing_cortical_area_visualizations() -> void:
 					added_any = true
 				_add_cortical_area(area)
 
-	# When viewing root, ensure special CORE areas (power, death) from cache are shown (API may omit them from root's "areas").
-	# MEMORY areas must NOT appear in root - they belong in Autogen Region only.
+	# Catch-all: any cache area under this region's subtree not yet visualized (handles reparenting + hash refresh ordering).
+	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.cortical_areas:
+		for area in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
+			if area.cortical_ID in _cortical_visualizations_by_ID:
+				continue
+			if not _representing_region.is_cortical_area_in_region_recursive(area):
+				continue
+			if _representing_region.is_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+				continue
+			added_any = true
+			_add_cortical_area(area)
+
+	# When viewing root, ensure reserved system core areas (power, death, fatigue, ...) from cache are shown (API may omit them from region lists).
 	if _representing_region.is_root_region() and FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.cortical_areas:
 		for area in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
 			if area.cortical_ID in _cortical_visualizations_by_ID:
 				continue
-			if AbstractCorticalArea.is_power_area(area.cortical_ID) or AbstractCorticalArea.is_death_area(area.cortical_ID):
+			if AbstractCorticalArea.is_reserved_system_core_area(area.cortical_ID):
 				added_any = true
 				_add_cortical_area(area)
 

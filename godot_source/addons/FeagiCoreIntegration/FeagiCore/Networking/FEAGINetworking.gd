@@ -41,6 +41,9 @@ var _reconnect_in_progress: bool = false
 var _transport_registration_failed: bool = false
 # Disable reconnect loop only for intentional/manual disconnect flows (e.g. app shutdown).
 var _auto_reconnect_enabled: bool = true
+var _ws_recovery_in_progress: bool = false
+var _ws_retry_watchdog_generation: int = 0
+const WS_RETRY_WATCHDOG_SECONDS: float = 6.0
 
 func _init():
 	http_API = FEAGIHTTPAPI.new()
@@ -528,6 +531,10 @@ func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, cu
 	# In SHM mode, WS connectivity is not required for neuron visualization.
 	if _transport_mode == TRANSPORT_MODE.SHARED_MEMORY:
 		return
+	# While globally disconnected, ignore WS retry/open noise.
+	# Reconnect loop owns recovery and will call attempt_connection deterministically.
+	if _connection_state == CONNECTION_STATE.DISCONNECTED:
+		return
 	print("FEAGI NETWORK: Current connection state before WS change: %s" % CONNECTION_STATE.keys()[_connection_state])
 	print("FEAGI NETWORK: Current transport mode: %s" % TRANSPORT_MODE.keys()[_transport_mode])
 	
@@ -538,27 +545,22 @@ func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, cu
 	
 	match current_health:
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.NO_CONNECTION:
+			_invalidate_ws_retry_watchdog()
 			# If HTTP is still alive, keep session in WS retry mode instead of dropping to global DISCONNECTED.
 			# This avoids reconnect storms where a transient WS failure tears down healthy HTTP/session state.
 			if _http_is_connectable():
 				print("FEAGI NETWORK: WS NO_CONNECTION while HTTP is healthy → staying in RETRYING_WS")
 				_change_connection_state(CONNECTION_STATE.RETRYING_WS)
-				# Check if we still have registration metadata - if not, we need to re-register (FEAGI may have deregistered us)
-				if not has_meta("_registered_agent_id_b64") or not has_meta("_registration_ws_url"):
-					print("FEAGI NETWORK: ⚠️ Agent registration metadata missing - triggering full reconnect with re-registration")
-					_change_connection_state(CONNECTION_STATE.DISCONNECTED)
-					if _auto_reconnect_enabled:
-						_start_reconnect_loop()
-				else:
-					# Restart WS attempts directly; do not trigger full network reconnect loop.
-					if _auto_reconnect_enabled and websocket_API != null:
-						websocket_API.connect_websocket()
+				if _auto_reconnect_enabled and not _ws_recovery_in_progress:
+					_ws_recovery_in_progress = true
+					call_deferred("_recover_ws_transport_after_disconnect")
 			else:
 				print("FEAGI NETWORK: WS NO_CONNECTION and HTTP unavailable → Changing to DISCONNECTED")
 				# Only path to this is from WEBSOCKET_HEALTH.RETRYING (again, "confirm_connectivity" has this method disconnected)
 				_change_connection_state(CONNECTION_STATE.DISCONNECTED)
 		
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
+			_invalidate_ws_retry_watchdog()
 			# Connected WS alone is not sufficient when HTTP is retrying/down.
 			if _http_is_connectable():
 				print("FEAGI NETWORK: WS CONNECTED → Changing to HEALTHY")
@@ -572,9 +574,92 @@ func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, cu
 			print("FEAGI NETWORK: WS RETRYING → Changing to RETRYING_WS")
 			# Only path to this is from WEBSOCKET_HEALTH.CONNECTED
 			if _http_is_connectable():
+				_schedule_ws_retry_recovery_watchdog()
 				_change_connection_state(CONNECTION_STATE.RETRYING_WS)
 			else:
+				_invalidate_ws_retry_watchdog()
 				_change_connection_state(CONNECTION_STATE.RETRYING_HTTP_WS)
+
+func _invalidate_ws_retry_watchdog() -> void:
+	_ws_retry_watchdog_generation += 1
+
+func _schedule_ws_retry_recovery_watchdog() -> void:
+	_ws_retry_watchdog_generation += 1
+	var generation: int = _ws_retry_watchdog_generation
+	call_deferred("_run_ws_retry_recovery_watchdog", generation)
+
+func _run_ws_retry_recovery_watchdog(generation: int) -> void:
+	await get_tree().create_timer(WS_RETRY_WATCHDOG_SECONDS).timeout
+	if generation != _ws_retry_watchdog_generation:
+		return
+	# Do not force transport recovery while genome reload is in flight.
+	# Genome reload already performs registration/WS rebind and an overlapping
+	# recovery can race with cache replacement and partial mapping refresh.
+	if FeagiCore and FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
+		return
+	if _transport_mode != TRANSPORT_MODE.WEBSOCKET:
+		return
+	if websocket_API == null:
+		return
+	if websocket_API.socket_health != FEAGIWebSocketAPI.WEBSOCKET_HEALTH.RETRYING:
+		return
+	if not _http_is_connectable() or not _auto_reconnect_enabled or _ws_recovery_in_progress:
+		return
+	print("FEAGI NETWORK: WS stuck in RETRYING for %.1fs - forcing transport recovery" % WS_RETRY_WATCHDOG_SECONDS)
+	_ws_recovery_in_progress = true
+	await _recover_ws_transport_after_disconnect()
+
+func _recover_ws_transport_after_disconnect() -> void:
+	if _transport_mode != TRANSPORT_MODE.WEBSOCKET:
+		_ws_recovery_in_progress = false
+		return
+	if websocket_API == null:
+		_ws_recovery_in_progress = false
+		return
+	if not _auto_reconnect_enabled:
+		_ws_recovery_in_progress = false
+		return
+	if not _http_is_connectable():
+		_ws_recovery_in_progress = false
+		return
+	
+	# If FEAGI dropped registration endpoint metadata, trigger full reconnect flow for a clean startup.
+	# NOTE: agent_id metadata can be absent on "already registered" responses; that must not force
+	# a reconnect loop because WS recovery can still proceed deterministically via registration URL.
+	if not has_meta("_registration_ws_url"):
+		print("FEAGI NETWORK: ⚠️ Registration endpoint metadata missing - triggering full reconnect with re-registration")
+		_change_connection_state(CONNECTION_STATE.DISCONNECTED)
+		if _auto_reconnect_enabled:
+			_start_reconnect_loop()
+		_ws_recovery_in_progress = false
+		return
+	
+	# WebSocket-only retry can get stuck after FEAGI-side agent deregistration.
+	# Force a transport re-registration and then reconnect WebSocket using the fresh endpoint.
+	print("FEAGI NETWORK: WS dropped while HTTP is healthy - forcing transport re-registration before reconnect")
+	stop_heartbeat()
+	_transport_registration_failed = false
+	var shm_enabled: bool = await _register_agent_via_transport()
+	
+	if _transport_registration_failed:
+		push_warning("FEAGI NETWORK: Transport re-registration failed during WS recovery; falling back to full reconnect loop")
+		_change_connection_state(CONNECTION_STATE.DISCONNECTED)
+		if _auto_reconnect_enabled:
+			_start_reconnect_loop()
+		_ws_recovery_in_progress = false
+		return
+	
+	if shm_enabled:
+		_transport_mode = TRANSPORT_MODE.SHARED_MEMORY
+		_change_connection_state(CONNECTION_STATE.HEALTHY)
+		_ws_recovery_in_progress = false
+		return
+	
+	if _feagi_endpoint_details != null and _feagi_endpoint_details.full_websocket_address.strip_edges() != "":
+		websocket_API.setup(_feagi_endpoint_details.full_websocket_address)
+	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
+	websocket_API.connect_websocket()
+	_ws_recovery_in_progress = false
 
 
 func _http_is_connectable() -> bool:

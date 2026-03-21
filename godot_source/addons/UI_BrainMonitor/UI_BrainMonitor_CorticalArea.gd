@@ -83,8 +83,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	
 	# Create renderers based on cortical area type
 	if (_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
-		AbstractCorticalArea.is_power_area(_representing_cortial_area.cortical_ID) or
-		AbstractCorticalArea.is_death_area(_representing_cortial_area.cortical_ID) or
+		AbstractCorticalArea.is_reserved_system_core_area(_representing_cortial_area.cortical_ID) or
 		_should_use_png_icon(_representing_cortial_area)):
 		# Memory, Power, Death, and PNG icon areas use only DirectPoints renderer (no DDA cube)
 		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()

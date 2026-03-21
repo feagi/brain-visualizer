@@ -323,7 +323,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Attach label to follow movement correctly:
 	# - For PNG icon areas (e.g., _death), parent to _static_body so it inherits movement
 	# - For others, keep as child of this renderer and use absolute positioning updates
-	if area.cortical_ID == "_death" or _should_use_png_icon(area):
+	if AbstractCorticalArea.is_death_area(area.cortical_ID) or AbstractCorticalArea.is_fatigue_area(area.cortical_ID) or _should_use_png_icon(area):
 		_static_body.add_child(_friendly_name_label)
 	else:
 		add_child(_friendly_name_label)
@@ -1160,7 +1160,7 @@ func _create_tesla_coil_spikes() -> void:
 ## Check if a cortical area should use PNG icon rendering
 func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
 	# Check for special core areas (supports both old and new formats)
-	if AbstractCorticalArea.is_death_area(area.cortical_ID):
+	if AbstractCorticalArea.is_death_area(area.cortical_ID) or AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
 		return true
 	
 	# Add more cortical area IDs here that should use PNG icons (using old format for now)
@@ -1170,7 +1170,7 @@ func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
 ## Check if a cortical area ID should use PNG icon rendering (helper for when we only have ID)
 func _should_use_png_icon_by_id(cortical_id: StringName) -> bool:
 	# Check for special core areas (supports both old and new formats)
-	if AbstractCorticalArea.is_death_area(cortical_id):
+	if AbstractCorticalArea.is_death_area(cortical_id) or AbstractCorticalArea.is_fatigue_area(cortical_id):
 		return true
 	
 	# Add more cortical area IDs here that should use PNG icons (using old format for now)
@@ -1211,6 +1211,10 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 		icon_material.emission_enabled = true
 		icon_material.emission = Color(1.0, 0.2, 0.2)  # Red glow for death
 		icon_material.emission_energy = 0.5
+	elif AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
+		icon_material.emission_enabled = true
+		icon_material.emission = Color(1.0, 0.75, 0.15)  # Amber glow for fatigue
+		icon_material.emission_energy = 0.45
 	
 	icon_mesh_instance.material_override = icon_material
 	icon_mesh_instance.visible = true  # Always visible
@@ -1303,6 +1307,8 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 	var placeholder_color: Color
 	if AbstractCorticalArea.is_death_area(cortical_id):
 		placeholder_color = Color(1.0, 0.0, 0.0, 1.0)  # Bright red for death
+	elif AbstractCorticalArea.is_fatigue_area(cortical_id):
+		placeholder_color = Color(1.0, 0.65, 0.1, 1.0)  # Amber for fatigue (no dedicated icon asset yet)
 	else:
 		match cortical_id:
 			"_health":
@@ -1323,7 +1329,7 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 			if x < 4 or x >= 124 or y < 4 or y >= 124:
 				image.set_pixel(x, y, Color.WHITE)
 	
-	# Add text indication (skull-like pattern for death, cross for others)
+	# Add text indication (skull-like pattern for death, cross for fatigue and others)
 	if AbstractCorticalArea.is_death_area(cortical_id):
 		# Create a simple skull pattern
 		# Eyes

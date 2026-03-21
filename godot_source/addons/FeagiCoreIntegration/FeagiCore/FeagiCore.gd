@@ -47,6 +47,10 @@ var _polling_health_check_worker: APIRequestWorker = null # Due to unique circum
 var _delay_between_bursts: float = 0
 var _skip_rate: int = 0
 var _supression_threshold: int = 0
+var _reload_in_progress: bool = false
+var _reload_requested_while_busy: bool = false
+var _reload_generation: int = 0
+var _pending_reload_when_ready: bool = false
 
 # Timer for periodic simulation_timestep checks
 var _simulation_timestep_timer: Timer
@@ -305,6 +309,7 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 		GENOME_LOAD_STATE.UNKNOWN:
 			# This will only occur if we are disconnecting from FEAGI (or connection lost), thus can come from any
 			print("FEAGICORE: [3D_SCENE_DEBUG] State UNKNOWN: Clearing genome and disconnecting")
+			_pending_reload_when_ready = false
 			feagi_local_cache.clear_whole_genome()
 			if network.connection_state != FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
 				network.disconnect_networking()
@@ -318,7 +323,7 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 		GENOME_LOAD_STATE.GENOME_RELOADING:
 			about_to_reload_genome.emit()
 			feagi_local_cache.clear_whole_genome()
-			reload_genome_await()
+			_start_genome_reload_if_needed()
 		GENOME_LOAD_STATE.GENOME_READY:
 			# Only path to here is from Genome_Reloading.
 			print("FEAGICORE: [3D_SCENE_DEBUG] State GENOME_READY: ✅ Genome loaded successfully - 3D scene should now initialize")
@@ -331,8 +336,23 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 	_genome_load_state = new_state
 	genome_load_state_changed.emit(new_state, prev_state)
 
+func _start_genome_reload_if_needed() -> void:
+	if _reload_in_progress:
+		_reload_requested_while_busy = true
+		print("FEAGICORE: [3D_SCENE_DEBUG] Genome reload request queued while another reload is in progress")
+		return
+	_reload_in_progress = true
+	_reload_requested_while_busy = false
+	_reload_generation += 1
+	var current_reload_generation: int = _reload_generation
+	await reload_genome_await(current_reload_generation)
+	_reload_in_progress = false
+	if _reload_requested_while_busy and _genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
+		_reload_requested_while_busy = false
+		call_deferred("_start_genome_reload_if_needed")
+
 # Hacky
-func reload_genome_await():
+func reload_genome_await(reload_generation: int):
 	print("FEAGICORE: [3D_SCENE_DEBUG] reload_genome_await() called - starting genome reload process...")
 	var start_time = Time.get_time_dict_from_system()
 	var timeout_seconds = 30.0  # 30 second timeout
@@ -347,6 +367,9 @@ func reload_genome_await():
 		var elapsed_ms = Time.get_ticks_msec() - start_ticks
 		var elapsed_seconds = elapsed_ms / 1000.0
 		print("FEAGICORE: [3D_SCENE_DEBUG] ⏳ Genome reload still in progress... (", int(elapsed_seconds), "s elapsed)")
+		if reload_generation != _reload_generation:
+			timer.stop()
+			return
 		
 		# CRITICAL: Check if FEAGI is still alive during reload
 		print("FEAGICORE: [3D_SCENE_DEBUG] 🩺 Checking FEAGI health during reload...")
@@ -380,60 +403,23 @@ func reload_genome_await():
 			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.NO_CONNECTION)
 			return
 		
-		print("FEAGICORE: [3D_SCENE_DEBUG] ✅ FEAGI still healthy - checking if reload is actually needed...")
-		
-		# SMART CHECK: Maybe we don't need to reload at all!
-		var health_data = health_response.decode_response_as_dict()
-		if "feagi_session" in health_data and "genome_num" in health_data:
-			var feagi_session_value = health_data["feagi_session"]
-			var genome_num_value = health_data["genome_num"]
-
-			# Skip if values are null (None)
-			if feagi_session_value != null and genome_num_value != null:
-				var current_session = int(feagi_session_value)
-				var current_genome_num = int(genome_num_value)
-				var cached_session = feagi_local_cache._previous_feagi_session
-				var cached_genome_num = feagi_local_cache._previous_genome_num
-
-				# Check if genome is actually available and brain is ready
-				var genome_available = health_data.get("genome_availability", false)
-				var brain_ready = health_data.get("brain_readiness", false)
-
-				# Only restore scene if: same session+genome AND genome is actually available AND brain is ready
-				if cached_session == current_session and cached_genome_num == current_genome_num and genome_available and brain_ready and current_genome_num > 0:
-					print("FEAGICORE: [3D_SCENE_DEBUG] 🎯 Same session (%d), genome (%d), and FEAGI is fully ready - no reload needed!" % [current_session, current_genome_num])
-					print("FEAGICORE: [3D_SCENE_DEBUG] 🚀 Skipping reload and directly restoring scene...")
-					reload_aborted[0] = true  # Stop the unnecessary reload
-					timer.stop()
-
-					# Update health cache and transition directly to READY
-					feagi_local_cache.update_health_from_FEAGI_dict(health_data)
-					_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
-					# Re-register first, then force a WS stream rebind to avoid registration/connect races.
-					if network:
-						await network._register_agent_via_transport()
-					await _force_ws_stream_rebind_after_registration()
-					# Schedule a short watchdog to ensure WS stays connected after reload.
-					_ensure_ws_connected_after_reload(30)
-					return
-				elif cached_session == current_session and cached_genome_num == current_genome_num:
-					print("FEAGICORE: [3D_SCENE_DEBUG] ⚠️  Same session (%d) and genome (%d) but FEAGI not ready (available: %s, ready: %s) - waiting..." % [current_session, current_genome_num, genome_available, brain_ready])
-				else:
-					print("FEAGICORE: [3D_SCENE_DEBUG] 🔄 Session or genome changed (session: %d→%d, genome: %d→%d) - reload needed" % [cached_session, current_session, cached_genome_num, current_genome_num])
-			
-			print("FEAGICORE: [3D_SCENE_DEBUG] ✅ Continuing with full genome reload...")
+		print("FEAGICORE: [3D_SCENE_DEBUG] ✅ FEAGI still healthy - continuing deterministic full genome reload...")
 	)
 	add_child(timer)
 	timer.start()
 	
 	print("FEAGICORE: [3D_SCENE_DEBUG] Calling requests.reload_genome()...")
 	var genome_result = await requests.reload_genome()
+	if reload_generation != _reload_generation:
+		if timer != null:
+			timer.queue_free()
+		return
 	
 	timer.queue_free()  # Clean up timer
 	
 	# Check if reload was aborted due to FEAGI failure during the process
 	if reload_aborted[0]:
-		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Genome reload was ABORTED due to FEAGI failure during process")
+		print("FEAGICORE: [3D_SCENE_DEBUG] ❌ Genome reload was ABORTED due to FEAGI health failure during process")
 		print("FEAGICORE: [3D_SCENE_DEBUG] 🔄 System will return to disconnected state and wait for FEAGI recovery")
 		return  # Don't transition to GENOME_READY - stay in current state for retry
 	
@@ -469,6 +455,14 @@ func reload_genome_await():
 
 func _if_brain_readiness_or_genome_availability_changes(available: bool, ready: bool) -> void:
 	print("FEAGICORE: [3D_SCENE_DEBUG] Genome/brain state changed - genome_availability: ", available, ", brain_readiness: ", ready)
+	if genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
+		print("FEAGICORE: [3D_SCENE_DEBUG] Ignoring health-driven genome state change while deterministic reload is in progress")
+		return
+	if _pending_reload_when_ready and available and ready:
+		print("FEAGICORE: [3D_SCENE_DEBUG] Deferred genome reload condition now ready - starting full reload")
+		_pending_reload_when_ready = false
+		_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+		return
 	
 	if !available:
 		print("FEAGICORE: [3D_SCENE_DEBUG] Genome no longer available - transitioning to NO_GENOME_AVAILABLE")
@@ -525,6 +519,11 @@ func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: Stri
 			pass
 		else:
 			return
+	# Deterministic gate: only start full genome reload when FEAGI explicitly reports ready.
+	if not feagi_local_cache.genome_availability or not feagi_local_cache.brain_readiness:
+		_pending_reload_when_ready = true
+		print("FEAGICORE: [3D_SCENE_DEBUG] Deferring genome reload until FEAGI reports genome_available && brain_ready (session=%d genome=%d reason=%s)" % [feagi_session, genome_num, reason])
+		return
 	
 	match genome_load_state:
 		GENOME_LOAD_STATE.NO_GENOME_AVAILABLE, GENOME_LOAD_STATE.GENOME_READY, GENOME_LOAD_STATE.GENOME_PROCESSING, GENOME_LOAD_STATE.GENOME_RELOADING:

@@ -87,7 +87,7 @@ func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> voi
 func FEAGI_apply_region_summary_diff(region_summary_data: Dictionary) -> Dictionary:
 	# During FEAGI restart windows, region summary may be transient/incomplete.
 	# Do not run destructive diff logic unless a root region is present in the payload.
-	if not _summary_has_root_region(region_summary_data):
+	if not summary_has_root_region(region_summary_data):
 		push_warning("CORE CACHE: Region summary missing root region; skipping destructive region diff for this refresh cycle.")
 		return {}
 
@@ -150,7 +150,8 @@ func FEAGI_apply_region_summary_diff(region_summary_data: Dictionary) -> Diction
 	print("FEAGI CACHE: Region diff applied (added=%d, removed=%d, parent_updates=%d)" % [added_count, removed_count, updated_parent_count])
 	return cortical_area_mapping
 
-func _summary_has_root_region(region_summary_data: Dictionary) -> bool:
+## True if the regions summary JSON includes a root entry (parent_region_id == null).
+func summary_has_root_region(region_summary_data: Dictionary) -> bool:
 	for region_id in region_summary_data.keys():
 		var region_data: Variant = region_summary_data.get(region_id, null)
 		if typeof(region_data) != TYPE_DICTIONARY:
@@ -284,60 +285,127 @@ func get_root_region() -> BrainRegion:
 	push_error("CORE CACHE: Available regions: %s" % str(_available_brain_regions.keys()))
 	return null
 
-## Gets the path of regions that holds the common demoninator path between 2 regions
+## Walk from [region] toward the root: [self, parent, grandparent, ... , root]. Cycle-safe.
+func _ancestor_chain_toward_root(region: BrainRegion) -> Array[BrainRegion]:
+	var out: Array[BrainRegion] = []
+	if region == null or not is_instance_valid(region):
+		return out
+	var seen: Dictionary = {}
+	var cur: BrainRegion = region
+	while cur != null and is_instance_valid(cur):
+		if seen.has(cur.region_ID):
+			push_warning("CORE CACHE: Cycle in region parent pointers near %s" % cur.region_ID)
+			break
+		seen[cur.region_ID] = true
+		out.append(cur)
+		if cur.is_root_region():
+			break
+		cur = cur.current_parent_region
+	return out
+
+
+func _chain_contains_region_id(chain: Array[BrainRegion], region_id: StringName) -> bool:
+	for n in chain:
+		if n != null and is_instance_valid(n) and n.region_ID == region_id:
+			return true
+	return false
+
+
+func _chain_index_of_region_id(chain: Array[BrainRegion], region_id: StringName) -> int:
+	for i in range(chain.size()):
+		var n: BrainRegion = chain[i]
+		if n != null and is_instance_valid(n) and n.region_ID == region_id:
+			return i
+	return -1
+
+
+## Lowest common ancestor of two regions using explicit parent walks (stable when get_path() prefixes disagree).
+## If walks share no node but both reach the cached root, returns [get_root_region()].
+func get_lowest_common_ancestor_region(a: BrainRegion, b: BrainRegion) -> BrainRegion:
+	if a == null or b == null:
+		return null
+	if a.region_ID == b.region_ID:
+		return a
+	var chain_a: Array[BrainRegion] = _ancestor_chain_toward_root(a)
+	var chain_b: Array[BrainRegion] = _ancestor_chain_toward_root(b)
+	var ids_from_a: Dictionary = {}
+	for r in chain_a:
+		ids_from_a[r.region_ID] = true
+	for r in chain_b:
+		if ids_from_a.has(r.region_ID):
+			return r
+	var root: BrainRegion = get_root_region()
+	if root != null:
+		var rid: StringName = root.region_ID
+		if _chain_contains_region_id(chain_a, rid) and _chain_contains_region_id(chain_b, rid):
+			return root
+	return null
+
+
+## Gets the path of regions from root down to the lowest common ancestor of A and B (inclusive).
 ## Example: if region e is in region path [a,b,e] and region d is in path [a,b,c,d], this will return [a,b]
 func get_common_path_containing_both_regions(A: BrainRegion, B: BrainRegion) -> Array[BrainRegion]:
-	# Null checks
 	if A == null or B == null:
 		push_error("CORE CACHE: Cannot calculate common path - A or B is null!")
 		return []
-	
-	var path_A: Array[BrainRegion] = A.get_path()
-	var path_B: Array[BrainRegion] = B.get_path()
-	
-	if len(path_A) == 0 or len(path_B) == 0:
-		push_error("CORE CACHE: Unable to calculate lowest similar region path between %s and %s!" % [A.region_ID, B.region_ID])
+	var lca: BrainRegion = get_lowest_common_ancestor_region(A, B)
+	if lca == null:
 		return []
-	
-	var search_depth: int
-	var path: Array[BrainRegion] = []
-	# Stop at shorter path distance
-	if len(path_A) > len(path_B):
-		search_depth = len(path_B)
-	else:
-		search_depth = len(path_A)
-	
-	for i in search_depth:
-		if path_A[i].region_ID != path_B[i].region_ID:
-			return path
-		path.append(path_A[i])
-	
-	# no further to go, return the path
-	return path
+	var chain: Array[BrainRegion] = _ancestor_chain_toward_root(lca)
+	chain.reverse()
+	return chain
 
 ## Defines the directional path with 2 arrays (upward then downward) of the regions to transverse to get from the source to the destination
 ## Example given region layout {R{a,b{c,d{e}},f{g{h}}}, going from d -> g will return [[d,b,R],[R,f,g]]
 func get_directional_path_between_regions(source: BrainRegion, destination: BrainRegion) -> Array[Array]:
-	# Null checks
 	if source == null or destination == null:
 		push_error("CORE CACHE: Cannot calculate path - source or destination is null!")
 		return [[], []]
-	
-	var common_path: Array[BrainRegion] = get_common_path_containing_both_regions(source, destination)
-	if len(common_path) == 0:
-		push_error("CORE CACHE: Unable to calculate directional path between %s toward %s!" % [source.region_ID, destination.region_ID])
-	var lowest_common_region: BrainRegion = common_path.back()
+	if source.region_ID == destination.region_ID:
+		return [[], []]
 
-	
-	var source_path_reversed: Array[BrainRegion] = source.get_path()
-	source_path_reversed.reverse()
-	var index: int = source_path_reversed.find(lowest_common_region)
-	var upward_path: Array[BrainRegion] = source_path_reversed.slice(0, index)
-	
-	var destination_path: Array[BrainRegion] = destination.get_path()
-	index = destination_path.find(lowest_common_region)
-	var downward_path: Array[BrainRegion]  = destination_path.slice(index + 1, len(destination_path))
-	
+	var chain_s: Array[BrainRegion] = _ancestor_chain_toward_root(source)
+	var chain_d: Array[BrainRegion] = _ancestor_chain_toward_root(destination)
+	if chain_s.is_empty() or chain_d.is_empty():
+		push_warning("CORE CACHE: Empty ancestor chain for directional path (%s -> %s)." % [source.region_ID, destination.region_ID])
+		return [[], []]
+
+	var ids_from_s: Dictionary = {}
+	for r in chain_s:
+		ids_from_s[r.region_ID] = true
+
+	var lca: BrainRegion = null
+	for r in chain_d:
+		if ids_from_s.has(r.region_ID):
+			lca = r
+			break
+
+	if lca == null:
+		var root_fallback: BrainRegion = get_root_region()
+		if root_fallback != null:
+			var rid: StringName = root_fallback.region_ID
+			if _chain_contains_region_id(chain_s, rid) and _chain_contains_region_id(chain_d, rid):
+				lca = root_fallback
+
+	if lca == null:
+		push_warning("CORE CACHE: No LCA between regions %s and %s; connection chain uses direct endpoint hop only." % [source.region_ID, destination.region_ID])
+		return [[], []]
+
+	var idx_s: int = _chain_index_of_region_id(chain_s, lca.region_ID)
+	var idx_d: int = _chain_index_of_region_id(chain_d, lca.region_ID)
+	if idx_s < 0 or idx_d < 0:
+		push_warning("CORE CACHE: LCA %s not found on ancestor chain for %s or %s." % [lca.region_ID, source.region_ID, destination.region_ID])
+		return [[], []]
+
+	var upward_path: Array[BrainRegion] = []
+	for i in range(idx_s):
+		upward_path.append(chain_s[i])
+
+	var downward_path: Array[BrainRegion] = []
+	for j in range(idx_d):
+		downward_path.append(chain_d[j])
+	downward_path.reverse()
+
 	return [upward_path, downward_path]
 
 ## Convert an array of region IDs to an array of [BrainRegion] from cache
@@ -374,14 +442,14 @@ func get_total_path_between_objects(starting_point: GenomeObject, stoppping_poin
 	
 	# Generate total path
 	var region_path: Array[Array] = FeagiCore.feagi_local_cache.brain_regions.get_directional_path_between_regions(start_region, end_region)
+	if region_path.size() < 2:
+		return [starting_point, stoppping_point]
+	var up_regions: Array = region_path[0]
+	var down_regions: Array = region_path[1]
 	var total_chain_path: Array[GenomeObject] = []
-	#if is_start_cortical_area:
-	#	total_chain_path.append(starting_point)
 	total_chain_path.append(starting_point)
-	total_chain_path.append_array(region_path[0])  # ascending
-	total_chain_path.append_array(region_path[1])  # decending
-	#if is_end_cortical_area:
-	#	total_chain_path.append(stoppping_point)
+	total_chain_path.append_array(up_regions)
+	total_chain_path.append_array(down_regions)
 	total_chain_path.append(stoppping_point)
 	return total_chain_path
 

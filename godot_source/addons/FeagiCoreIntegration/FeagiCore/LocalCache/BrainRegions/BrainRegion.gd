@@ -264,8 +264,13 @@ func is_root_region() -> bool:
 	return false
 
 ## Returns if a cortical area is a cortical area within this region (not nested in another region)
+## Uses cortical_ID equality so cache/global lookups match region lists even if the AbstractCorticalArea instance differs.
 func is_cortical_area_in_region_directly(cortical_area: AbstractCorticalArea) -> bool:
-	return cortical_area in _contained_cortical_areas
+	var target_id: StringName = cortical_area.cortical_ID
+	for a in _contained_cortical_areas:
+		if a != null and a.cortical_ID == target_id:
+			return true
+	return false
 
 func is_subregion_directly(region: BrainRegion) -> bool:
 	return region in _contained_regions
@@ -279,7 +284,7 @@ func is_genome_object_in_region_directly(object: GenomeObject) -> bool:
 
 ## Returns if a cortical area is within this region (including within another region inside here)
 func is_cortical_area_in_region_recursive(cortical_area: AbstractCorticalArea) -> bool:
-	if cortical_area in _contained_cortical_areas:
+	if is_cortical_area_in_region_directly(cortical_area):
 		return true
 	for region: BrainRegion in _contained_regions:
 		if region.is_cortical_area_in_region_recursive(cortical_area):

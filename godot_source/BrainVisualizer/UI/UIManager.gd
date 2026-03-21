@@ -376,13 +376,14 @@ func FEAGI_confirmed_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] Creating Circuit Builder...")
 	#TODO need a better function to add CB in general
 	var cb: CircuitBuilder = PREFAB_CB.instantiate()
-	cb.setup(root_region)
-	
 	initial_tabs = [cb]
 	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up Main circuit UI view...")
 	_root_UI_view.reset()
 	_root_UI_view.set_this_as_root_view()
+	# CircuitBuilder must be in the scene tree before setup(): GraphEdit only wires item_rect_changed to
+	# _connection_layer when that layer is in-tree at GraphElement add_child_notify time.
 	_root_UI_view.setup_as_single_tab(initial_tabs)
+	cb.setup(root_region)
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Circuit Builder setup complete")
 	
 	# temp BM

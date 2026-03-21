@@ -37,6 +37,7 @@ var _suppress_move_buffer: bool = false
 var _initial_fit_done: bool = false
 var _initial_fit_in_progress: bool = false
 const INITIAL_FIT_RETRY_MAX: int = 12
+const META_CB_GRAPH_TEARDOWN_SCHEDULED: StringName = &"_cb_graph_teardown_scheduled"
 
 var _mouse_clicked_background: bool = false
 var _mouse_clicked_prev_position: Vector2
@@ -66,6 +67,9 @@ func _notification(what: int) -> void:
 
 
 
+## Binds this GraphEdit to region and spawns graph nodes/lines. Call only after this node is in the
+## scene tree so GraphEdit internal _connection_layer is in-tree when GraphElements are added (Godot 4.5
+## skips item_rect_changed wiring otherwise, causing disconnect errors on removal).
 func setup(region: BrainRegion) -> void:
 	_representing_region = region
 	_initial_fit_done = false
@@ -125,9 +129,9 @@ func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 		return
 	BV.UI.selection_system.clear_all_highlighted()
 	var node: CBNodeCorticalArea = _cortical_nodes[area.cortical_ID]
-	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
-		node.queue_free()
 	_cortical_nodes.erase(area.cortical_ID)
+	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
+		_schedule_graph_node_removal(node)
 	
 func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	if (subregion.region_ID in subregion_nodes.keys()):
@@ -154,9 +158,9 @@ func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	BV.UI.selection_system.clear_all_highlighted()
 	#NOTE: We assume that all connections to / from this region have already been called to beremoved by the cache FIRST
 	var node: CBNodeRegion = subregion_nodes[subregion.region_ID]
-	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
-		node.queue_free()
 	subregion_nodes.erase(subregion.region_ID)
+	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
+		_schedule_graph_node_removal(node)
 
 ## The name of the region this instance of CB has changed. Updating the Node name causes the tab name to update too
 func _CACHE_this_region_name_update(new_name: StringName) -> void:
@@ -409,6 +413,32 @@ func _on_connection_request(from_node: StringName, _from_port: int, to_node: Str
 #endregion
 
 #region Internals
+
+## GraphEdit wires GraphElement/GraphNode internals (e.g. item_rect_changed -> connections_layer /
+## minimap queue_redraw). Use this for any direct GraphEdit child that is a [GraphElement].
+func schedule_graph_element_removal(node: Node) -> void:
+	_schedule_graph_node_removal(node)
+
+
+## GraphEdit wires GraphElement/GraphNode internals (e.g. item_rect_changed -> queue_redraw). Calling
+## remove_child on GraphEdit (Godot 4.5+) can trigger "disconnect nonexistent" in engine cleanup.
+## Deferred path: clear selection, ensure expected item_rect_changed hooks exist, then queue_free.
+func _schedule_graph_node_removal(node: Node) -> void:
+	if node == null or not is_instance_valid(node) or node.is_queued_for_deletion():
+		return
+	if node.get_meta(META_CB_GRAPH_TEARDOWN_SCHEDULED, false):
+		return
+	node.set_meta(META_CB_GRAPH_TEARDOWN_SCHEDULED, true)
+	call_deferred("_deferred_remove_graph_child", node)
+
+
+func _deferred_remove_graph_child(node: Node) -> void:
+	if node == null or not is_instance_valid(node) or node.is_queued_for_deletion():
+		return
+	if node is GraphElement:
+		(node as GraphElement).selected = false
+	node.queue_free()
+
 
 ## Every time a cortical node moves, store and send it when time is ready
 func _genome_object_moved(node: CBNodeConnectableBase, new_position: Vector2i) -> void:

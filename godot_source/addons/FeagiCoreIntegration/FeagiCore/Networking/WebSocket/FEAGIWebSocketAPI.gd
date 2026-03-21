@@ -832,7 +832,8 @@ func _refresh_bv_fastpath_cache_if_needed() -> void:
 	if OS.has_feature("web"):
 		return
 	var now_ms := Time.get_ticks_msec()
-	if now_ms - _bv_fast_cache_last_refresh_ms < _BV_FAST_CACHE_REFRESH_INTERVAL_MS:
+	# If the fast-path map is empty (e.g. after genome/cortical reload), always rebuild so Type 11 can target new MultiMeshes.
+	if _bv_fast_multimeshes_by_id.size() > 0 and (now_ms - _bv_fast_cache_last_refresh_ms < _BV_FAST_CACHE_REFRESH_INTERVAL_MS):
 		return
 	_bv_fast_cache_last_refresh_ms = now_ms
 	_bv_fast_multimeshes_by_id.clear()
@@ -1238,6 +1239,26 @@ func _on_genome_reloaded() -> void:
 	_bv_fast_multimeshes_by_id.clear()
 	_bv_fast_dimensions_by_id.clear()
 	_bv_fast_cache_last_refresh_ms = 0
+	# Brain Monitor may create DirectPoints MultiMeshes after this signal; rebuild fast-path map once the tree has settled.
+	call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
+
+## Re-scan cortical areas for MultiMesh registration after genome / incremental cortical refresh (desktop Type 11 fast path).
+func _deferred_rebuild_bv_fastpath_after_cache_touch() -> void:
+	if OS.has_feature("web"):
+		return
+	_bv_fast_cache_last_refresh_ms = 0
+	_refresh_bv_fastpath_cache_if_needed()
+
+
+## Public hook for Brain Monitor: after 3D cortical nodes re-register DirectPoints MultiMeshes on new cache
+## instances, rebuild the desktop Type 11 map so packets target the current MultiMeshes (reconnect safe).
+func request_bv_fastpath_cache_rebuild() -> void:
+	if OS.has_feature("web"):
+		return
+	_bv_fast_multimeshes_by_id.clear()
+	_bv_fast_dimensions_by_id.clear()
+	_bv_fast_cache_last_refresh_ms = 0
+	call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
 
 func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 	"""Convert byte array to hex string for debugging"""

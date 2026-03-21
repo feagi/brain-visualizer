@@ -333,6 +333,10 @@ static func get_special_core_area_name(cortical_id: String) -> String:
 		# Death area (NEW format from feagi-data-processing)
 		"___death": "death",
 		"X19fZGVhdGg=": "death",  # base64 of "___death" (NEW format)
+
+		# Fatigue area (feagi-structures CoreCorticalType::Fatigue -> CorticalID bytes "___fatig")
+		"___fatig": "fatigue",
+		"X19fZmF0aWc=": "fatigue",  # base64 of "___fatig"
 	}
 	
 	return SPECIAL_CORE_AREAS.get(cortical_id, "")
@@ -344,6 +348,15 @@ static func is_power_area(cortical_id: String) -> bool:
 ## Check if a cortical_ID is the death area (supports both old and new formats)
 static func is_death_area(cortical_id: String) -> bool:
 	return get_special_core_area_name(cortical_id) == "death"
+
+## Check if a cortical_ID is the fatigue core area (supports string and base64 cortical IDs)
+static func is_fatigue_area(cortical_id: String) -> bool:
+	return get_special_core_area_name(cortical_id) == "fatigue"
+
+## True for reserved system core IDs (power, death, fatigue, ...) used by FEAGI connectome APIs.
+## Root brain-geometry summaries may omit these while they still exist in the cortical cache; Brain Monitor uses this to show them at root.
+static func is_reserved_system_core_area(cortical_id: String) -> bool:
+	return not get_special_core_area_name(cortical_id).is_empty()
 
 static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
 	var output: Array[StringName] = []
