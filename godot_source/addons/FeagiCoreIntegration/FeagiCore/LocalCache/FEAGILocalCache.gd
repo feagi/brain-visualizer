@@ -1157,13 +1157,42 @@ func _refresh_agent_data_from_feagi() -> FeagiRequestOutput:
 	print("HASH REFRESH: agent_capabilities_reloaded emitted for agent_data_hash")
 	return agent_output
 
+## True if geometry summary includes this cortical id (HTTP JSON keys may be String vs Godot StringName).
+func _area_geometry_summary_contains_id(area_summary_data: Dictionary, cortical_id: Variant) -> bool:
+	if area_summary_data.is_empty():
+		return false
+	if area_summary_data.has(cortical_id):
+		return true
+	var token := String(cortical_id).strip_edges()
+	if token.is_empty():
+		return false
+	if area_summary_data.has(token):
+		return true
+	var as_name := StringName(token)
+	if area_summary_data.has(as_name):
+		return true
+	for k in area_summary_data.keys():
+		if String(k) == token:
+			return true
+	return false
+
+
 ## Update cortical areas cache using summary data without wiping the entire genome
 func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_region_ID_mapping: Dictionary) -> void:
 	var previous_suppress_state = cortical_areas.suppress_update_notifications
 	cortical_areas.suppress_update_notifications = true
 	var existing_ids: Array = cortical_areas.available_cortical_areas.keys()
+	var preserved_invariant_absent_from_summary: int = 0
 	for existing_id in existing_ids:
-		if area_summary_data.has(existing_id):
+		if _area_geometry_summary_contains_id(area_summary_data, existing_id):
+			_cortical_absence_streaks.erase(existing_id)
+			continue
+		# Invariant FEAGI core areas (power / death / fatigue, or cortical_type CORE) are often omitted
+		# from hash-driven cortical summaries while still existing in the runtime connectome. Do not apply
+		# absence-based removal or Brain Monitor / Type 11 lose stable IDs after refresh.
+		var cached_area: AbstractCorticalArea = cortical_areas.available_cortical_areas.get(existing_id)
+		if cached_area != null and AbstractCorticalArea.is_feagi_invariant_core_area(cached_area):
+			preserved_invariant_absent_from_summary += 1
 			_cortical_absence_streaks.erase(existing_id)
 			continue
 		var miss_count: int = int(_cortical_absence_streaks.get(existing_id, 0)) + 1
@@ -1172,13 +1201,26 @@ func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_regi
 		# Require repeated absence before deleting local areas to avoid dropping valid
 		# areas (e.g., auto-created IPU/OPU or core areas) on a transient snapshot.
 		if miss_count >= HASH_REFRESH_ABSENCE_REMOVAL_THRESHOLD:
+			var pre_rm: AbstractCorticalArea = cortical_areas.available_cortical_areas.get(existing_id)
+			if pre_rm != null and AbstractCorticalArea.is_feagi_invariant_core_area(pre_rm):
+				print("[FEAGI_CACHE_CORE] WARNING remove_cortical_area called for invariant core id=%s miss_count=%s" % [str(existing_id), str(miss_count)])
+			print("[FEAGI_CACHE_CORE] remove_cortical_area id=%s miss_count=%s summary_key_count=%s" % [str(existing_id), str(miss_count), str(area_summary_data.size())])
 			cortical_areas.remove_cortical_area(existing_id)
 			_cortical_absence_streaks.erase(existing_id)
 	
 	for cortical_area_ID in area_summary_data.keys():
 		var area_JSON_summary: Dictionary = area_summary_data[cortical_area_ID]
 		_cortical_absence_streaks.erase(cortical_area_ID)
-		if cortical_area_ID in cortical_areas.available_cortical_areas:
+		var resolved_id: Variant = cortical_area_ID
+		if not (cortical_area_ID in cortical_areas.available_cortical_areas):
+			var tid := String(cortical_area_ID).strip_edges()
+			for ck in cortical_areas.available_cortical_areas.keys():
+				if String(ck) == tid:
+					resolved_id = ck
+					break
+		if resolved_id in cortical_areas.available_cortical_areas:
+			# Ensure update targets the cache dictionary key (String vs StringName skew from HTTP).
+			area_JSON_summary["cortical_id"] = resolved_id
 			cortical_areas.FEAGI_update_cortical_area_from_dict(area_JSON_summary)
 		else:
 			var parent_region = _resolve_parent_region_for_area(area_JSON_summary, cortical_area_ID, area_ID_to_region_ID_mapping)
@@ -1186,6 +1228,16 @@ func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_regi
 				push_error("CORE CACHE: Unable to resolve parent region for new cortical area %s" % cortical_area_ID)
 				continue
 			cortical_areas.FEAGI_add_cortical_area_from_dict(area_JSON_summary, parent_region, cortical_area_ID)
+	var inv_remaining: PackedStringArray = PackedStringArray()
+	for a in cortical_areas.available_cortical_areas.values():
+		if AbstractCorticalArea.is_feagi_invariant_core_area(a):
+			inv_remaining.append(String(a.cortical_ID))
+	print("[FEAGI_CACHE_CORE] _apply_cortical_area_refresh done summary_keys=%s cache_area_count=%s preserved_invariant_not_in_summary=%s invariant_ids_still_in_cache=%s" % [
+		str(area_summary_data.size()),
+		str(cortical_areas.available_cortical_areas.size()),
+		str(preserved_invariant_absent_from_summary),
+		str(inv_remaining)
+	])
 	cortical_areas.suppress_update_notifications = previous_suppress_state
 
 ## Resolve parent region for a cortical area using API data or fallback mapping

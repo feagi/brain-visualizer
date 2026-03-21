@@ -310,9 +310,19 @@ static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringNam
 static func get_neuron_count(dimensions: Vector3i, density: float) -> int:
 	return int(float(dimensions.x * dimensions.y * dimensions.z) * density)
 
+## If [param token] is standard base64 for an 8-byte FEAGI cortical ID, returns the UTF-8 label; else "".
+static func _utf8_label_from_base64_cortical_token(token: String) -> String:
+	var trimmed := token.strip_edges()
+	if trimmed.is_empty():
+		return ""
+	var raw: PackedByteArray = Marshalls.base64_to_raw(trimmed)
+	if raw.size() != 8:
+		return ""
+	return raw.get_string_from_utf8()
+
 ## Check if a cortical_ID (in old 6-char or new base64 format) is a special core area
 ## Returns the core area name if it matches, or empty string if not
-static func get_special_core_area_name(cortical_id: String) -> String:
+static func get_special_core_area_name(cortical_id: Variant) -> String:
 	# Dictionary mapping both old and new formats to their canonical names
 	# CRITICAL: Uses feagi-data-processing format (3 prefix underscores: ___power, ___death)
 	const SPECIAL_CORE_AREAS = {
@@ -338,25 +348,43 @@ static func get_special_core_area_name(cortical_id: String) -> String:
 		"___fatig": "fatigue",
 		"X19fZmF0aWc=": "fatigue",  # base64 of "___fatig"
 	}
-	
-	return SPECIAL_CORE_AREAS.get(cortical_id, "")
+	var id_str := String(cortical_id).strip_edges()
+	var by_direct: String = SPECIAL_CORE_AREAS.get(id_str, "")
+	if not by_direct.is_empty():
+		return by_direct
+	var decoded_label := _utf8_label_from_base64_cortical_token(id_str)
+	if decoded_label.is_empty():
+		return ""
+	return SPECIAL_CORE_AREAS.get(decoded_label, "")
 
 ## Check if a cortical_ID is the power area (supports both old and new formats)
-static func is_power_area(cortical_id: String) -> bool:
+static func is_power_area(cortical_id: Variant) -> bool:
 	return get_special_core_area_name(cortical_id) == "power"
 
 ## Check if a cortical_ID is the death area (supports both old and new formats)
-static func is_death_area(cortical_id: String) -> bool:
+static func is_death_area(cortical_id: Variant) -> bool:
 	return get_special_core_area_name(cortical_id) == "death"
 
 ## Check if a cortical_ID is the fatigue core area (supports string and base64 cortical IDs)
-static func is_fatigue_area(cortical_id: String) -> bool:
+static func is_fatigue_area(cortical_id: Variant) -> bool:
 	return get_special_core_area_name(cortical_id) == "fatigue"
 
 ## True for reserved system core IDs (power, death, fatigue, ...) used by FEAGI connectome APIs.
 ## Root brain-geometry summaries may omit these while they still exist in the cortical cache; Brain Monitor uses this to show them at root.
-static func is_reserved_system_core_area(cortical_id: String) -> bool:
+static func is_reserved_system_core_area(cortical_id: Variant) -> bool:
 	return not get_special_core_area_name(cortical_id).is_empty()
+
+## True for FEAGI invariant core regions: explicit reserved IDs or [enum CORTICAL_AREA_TYPE.CORE] from the API/cache.
+## Covers ID encodings the name map does not list yet while still keeping the type contract from FEAGI.
+static func is_feagi_invariant_core_area(area: AbstractCorticalArea) -> bool:
+	if area == null:
+		return false
+	# Concrete core class from cache (power/death/fatigue) even if API mislabeled cortical_type as custom.
+	if area is CoreCorticalArea:
+		return true
+	if area.cortical_type == CORTICAL_AREA_TYPE.CORE:
+		return true
+	return is_reserved_system_core_area(area.cortical_ID)
 
 static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
 	var output: Array[StringName] = []
