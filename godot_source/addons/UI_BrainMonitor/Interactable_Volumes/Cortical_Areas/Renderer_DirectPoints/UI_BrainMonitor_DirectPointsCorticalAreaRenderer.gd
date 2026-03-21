@@ -101,6 +101,10 @@ var _memory_inactive_jello_strength: float
 var _memory_default_radius: float = 1.5
 var _memory_default_height: float = 3.0
 
+# Fatigue core: solid billboard (no icon texture); colors match direct-point voxel material, brighter red when firing
+var _fatigue_billboard_material: StandardMaterial3D = null
+var _fatigue_billboard_is_firing: bool = false
+
 ## DirectPoints indices are cell-origin based; DDA highlights are cell-center based.
 ## Apply +0.5 world correction via local offset, compensating for parent (_static_body) scale.
 func _get_multimesh_origin_offset() -> Vector3:
@@ -159,6 +163,13 @@ func setup(area: AbstractCorticalArea) -> void:
 		cylinder_shape.radius = 3.0  # 3x larger base radius
 		collision_shape.shape = cylinder_shape
 		print("   ⚡ Created 3x larger cylinder collision for power cortical area")
+	elif AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
+		# One pick volume: scaled cortical box (size 1 @ origin) + billboard quad above (quad ~3x3 @ y=2)
+		var box_shape = BoxShape3D.new()
+		box_shape.size = Vector3(3.0, 4.0, 3.0)
+		collision_shape.shape = box_shape
+		collision_shape.position = Vector3(0.0, 1.5, 0.0)
+		print("   🖼️ Fatigue: combined cortical + billboard collision for: ", area.cortical_ID)
 	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		var box_shape = BoxShape3D.new()
 		box_shape.size = Vector3(3.0, 3.0, 1.0)  # Match PNG quad size; depth generous for ray hits
@@ -194,6 +205,12 @@ func setup(area: AbstractCorticalArea) -> void:
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
 		_multi_mesh.mesh = invisible_mesh
+	elif AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
+		# Billboard only (like power custom visual); hide multimesh so desktop WS fast-path cannot show cubes
+		var invisible_mesh = BoxMesh.new()
+		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)
+		_multi_mesh.mesh = invisible_mesh
+		_multi_mesh_instance.visible = false
 	elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		# Use invisible mesh for memory areas (firing animation is on the sphere itself)
 		var invisible_mesh = BoxMesh.new()
@@ -436,12 +453,12 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Update collision shape size (but preserve custom sizes for special areas)
 	var collision_shape = _static_body.get_child(0) as CollisionShape3D
 	if collision_shape and collision_shape.shape is BoxShape3D:
-		# PNG icon areas keep their custom collision size
-		if _should_use_png_icon_by_id(_cortical_area_id):
+		if AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+			(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 4.0, 3.0)
+			collision_shape.position = Vector3(0.0, 1.5, 0.0)
+		elif _should_use_png_icon_by_id(_cortical_area_id):
 			(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 3.0, 1.0)  # Maintain PNG icon collision
-			# Keep collider centered with the icon (icon at y=2.0)
 			collision_shape.position = Vector3(0.0, 2.0, 0.0)
-			# print("   📏 Maintained PNG icon collision size: ", (collision_shape.shape as BoxShape3D).size, " at offset ", collision_shape.position)
 		else:
 			(collision_shape.shape as BoxShape3D).size = Vector3.ONE  # Will be scaled by static_body
 	
@@ -455,6 +472,11 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
 		# print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
+	
+	if _fatigue_billboard_material != null and AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+		_fatigue_billboard_refresh_for_activity_state()
+	if AbstractCorticalArea.is_fatigue_area(_cortical_area_id) and _multi_mesh_instance != null:
+		_multi_mesh_instance.visible = false
 	
 	# Update outline material scaling (only for non-memory areas that use shader materials)
 	if _outline_mat != null:
@@ -554,6 +576,7 @@ func bv_notify_activity(point_count: int) -> void:
 		_trigger_power_firing_animation()
 		set_meta("_last_fire_time", current_time)
 		_start_visibility_timer()
+		_fatigue_billboard_set_firing(true)
 		
 		# Make power cone use firing colors when neural activity occurs
 		if AbstractCorticalArea.is_power_area(_cortical_area_id) and _power_material:
@@ -598,6 +621,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		# This must be triggered on the bulk (signal) path as well as the desktop WS fast-path.
 		if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
 			_set_memory_activity_state(true)
+		_fatigue_billboard_set_firing(true)
 	
 	# Validate array sizes match
 	if point_count != y_array.size() or point_count != z_array.size() or point_count != p_array.size():
@@ -635,7 +659,8 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 			if has_meta("_last_had_origin") and get_meta("_last_had_origin"):
 				set_meta("_last_had_origin", false)
 		
-		_process_neurons_with_rust(x_array, y_array, z_array)
+		if not AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+			_process_neurons_with_rust(x_array, y_array, z_array)
 		# Keep neurons/chunks visible for the configured timestep window.
 		_start_visibility_timer()
 	else:
@@ -650,7 +675,9 @@ func _refresh_visualization_voxel_granularity_from_cache() -> void:
 	This must be fast and safe to call frequently (called during Type11 updates).
 	"""
 	# Special areas don't use voxel meshes for visualization.
-	if AbstractCorticalArea.is_power_area(_cortical_area_id) or _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+	if AbstractCorticalArea.is_power_area(_cortical_area_id) \
+			or AbstractCorticalArea.is_fatigue_area(_cortical_area_id) \
+			or _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		return
 	if _multi_mesh == null:
 		return
@@ -706,6 +733,8 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 	- Mesh size is set to granularity dimensions in setup()
 	- Rust processor converts chunk center coordinates to Godot space correctly
 	"""
+	if AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+		return
 	
 	var point_count = x_array.size()
 	
@@ -829,6 +858,42 @@ func _z_depth_to_color(z_coordinate: float, z_max: float) -> Color:
 	
 	return Color(red_intensity, 0.0, 0.0, 1.0)
 
+func _apply_fatigue_billboard_idle_state() -> void:
+	if _fatigue_billboard_material == null:
+		return
+	# No neuron activity: same cortical mesh look as inactive power cone (not firing-voxel red)
+	var cortical_idle := Color(0.172451, 0.315246, 0.861982, 0.8)
+	_fatigue_billboard_material.albedo_color = cortical_idle
+	_fatigue_billboard_material.emission_enabled = true
+	_fatigue_billboard_material.emission = Color(0.172451, 0.315246, 0.861982, 1.0)
+	_fatigue_billboard_material.emission_energy = 0.3
+
+func _apply_fatigue_billboard_firing_state() -> void:
+	if _fatigue_billboard_material == null:
+		return
+	_fatigue_billboard_material.albedo_color = Color(1.0, 0.05, 0.05, 1.0)
+	_fatigue_billboard_material.emission_enabled = true
+	_fatigue_billboard_material.emission = Color(1.0, 0.35, 0.35)
+	_fatigue_billboard_material.emission_energy = 2.85
+
+func _fatigue_billboard_set_firing(is_firing: bool) -> void:
+	if _fatigue_billboard_material == null:
+		return
+	if not AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+		return
+	_fatigue_billboard_is_firing = is_firing
+	if is_firing:
+		_apply_fatigue_billboard_firing_state()
+	else:
+		_apply_fatigue_billboard_idle_state()
+
+func _fatigue_billboard_refresh_for_activity_state() -> void:
+	if _fatigue_billboard_material == null:
+		return
+	if not AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+		return
+	_fatigue_billboard_set_firing(_fatigue_billboard_is_firing)
+
 func _clear_all_neurons() -> void:
 	"""Clear all neuron voxel instances"""
 	# TEMP DEBUG: Log when clearing happens
@@ -843,6 +908,8 @@ func _clear_all_neurons() -> void:
 	
 	_multi_mesh.instance_count = 0
 	_current_neuron_count = 0
+	
+	_fatigue_billboard_set_firing(false)
 	
 	# Fade memory sphere back to inactive state when neurons are cleared
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
@@ -1190,31 +1257,32 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 	quad_mesh.size = Vector2(3.0, 3.0)  # 3x3 units billboard
 	icon_mesh_instance.mesh = quad_mesh
 	
-	# Load PNG icon texture (with placeholder fallback)
-	var icon_texture = _load_png_icon_texture(area.cortical_ID)
-	
 	# Create material for the billboard
 	var icon_material = StandardMaterial3D.new()
-	icon_material.albedo_texture = icon_texture
-	icon_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	icon_material.flags_unshaded = true
 	icon_material.flags_do_not_use_vertex_lighting = true
 	icon_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	icon_material.no_depth_test = true  # Always visible
 	icon_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Visible from both sides
-	icon_material.albedo_color = Color.WHITE  # Ensure full color visibility
 	
-	print("   🎨 Created billboard material with transparency and billboard mode")
-	
-	# Add glow effect for special areas
-	if AbstractCorticalArea.is_death_area(area.cortical_ID):
-		icon_material.emission_enabled = true
-		icon_material.emission = Color(1.0, 0.2, 0.2)  # Red glow for death
-		icon_material.emission_energy = 0.5
-	elif AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
-		icon_material.emission_enabled = true
-		icon_material.emission = Color(1.0, 0.75, 0.15)  # Amber glow for fatigue
-		icon_material.emission_energy = 0.45
+	if AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
+		# Solid color only — no placeholder texture (avoids cross / grid look)
+		_fatigue_billboard_material = icon_material
+		_fatigue_billboard_is_firing = false
+		icon_material.albedo_texture = null
+		icon_material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+		_apply_fatigue_billboard_idle_state()
+		print("   🎨 Fatigue billboard: cortical idle blue; red only on Type-11 activity")
+	else:
+		var icon_texture = _load_png_icon_texture(area.cortical_ID)
+		icon_material.albedo_texture = icon_texture
+		icon_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		icon_material.albedo_color = Color.WHITE  # Full texture visibility
+		print("   🎨 Created billboard material with transparency and billboard mode")
+		if AbstractCorticalArea.is_death_area(area.cortical_ID):
+			icon_material.emission_enabled = true
+			icon_material.emission = Color(1.0, 0.2, 0.2)  # Red glow for death
+			icon_material.emission_energy = 0.5
 	
 	icon_mesh_instance.material_override = icon_material
 	icon_mesh_instance.visible = true  # Always visible
@@ -1227,7 +1295,11 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 	print("   ✅ PNG icon billboard created:")
 	print("     📍 Position: ", icon_mesh_instance.position)
 	print("     📏 Quad size: ", quad_mesh.size)
-	print("     🖼️ Texture: ", icon_texture.resource_path if icon_texture else "placeholder")
+	if AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
+		print("     🖼️ Texture: (none — solid fatigue billboard)")
+	else:
+		var tex: Texture2D = icon_material.albedo_texture as Texture2D
+		print("     🖼️ Texture: ", tex.resource_path if tex else "placeholder")
 	print("     👁️ Visible: ", icon_mesh_instance.visible)
 	print("     🎨 Material: ", icon_material != null)
 
@@ -1307,8 +1379,6 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 	var placeholder_color: Color
 	if AbstractCorticalArea.is_death_area(cortical_id):
 		placeholder_color = Color(1.0, 0.0, 0.0, 1.0)  # Bright red for death
-	elif AbstractCorticalArea.is_fatigue_area(cortical_id):
-		placeholder_color = Color(1.0, 0.65, 0.1, 1.0)  # Amber for fatigue (no dedicated icon asset yet)
 	else:
 		match cortical_id:
 			"_health":
@@ -1344,7 +1414,7 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 			for y in range(75, 85):
 				image.set_pixel(x, y, Color.BLACK)
 	else:
-		# Simple cross pattern for other types
+		# Simple cross pattern for non-death placeholders (health/energy/status, etc.)
 		for i in range(20, 108):
 			image.set_pixel(64, i, Color.WHITE)  # Vertical line
 			image.set_pixel(i, 64, Color.WHITE)  # Horizontal line
