@@ -1152,22 +1152,29 @@ func is_area_io_of_region(area: AbstractCorticalArea, region: BrainRegion) -> bo
 ## Find ALL brain monitors in the entire scene tree (comprehensive search)
 func _find_all_brain_monitors_in_scene_tree() -> Array[UI_BrainMonitor_3DScene]:
 	var all_brain_monitors: Array[UI_BrainMonitor_3DScene] = []
-	
-	# Start from the scene root and search recursively
+	var seen: Dictionary = {}
 	var scene_tree = get_tree()
-	if scene_tree and scene_tree.current_scene:
-		_recursive_find_brain_monitors(scene_tree.current_scene, all_brain_monitors)
-	
+	if scene_tree == null:
+		return all_brain_monitors
+	# Main scene subtree (typical export / editor run)
+	if scene_tree.current_scene != null:
+		_recursive_find_brain_monitors(scene_tree.current_scene, all_brain_monitors, seen)
+	# Explicit BrainVisualizer node (autoload siblings / non-current_scene layouts)
+	var bv_root: Node = scene_tree.root.get_node_or_null("BrainVisualizer")
+	if bv_root != null:
+		_recursive_find_brain_monitors(bv_root, all_brain_monitors, seen)
 	return all_brain_monitors
 
-func _recursive_find_brain_monitors(node: Node, brain_monitors: Array[UI_BrainMonitor_3DScene]) -> void:
-	# Check if current node is a brain monitor
+func _recursive_find_brain_monitors(node: Node, brain_monitors: Array[UI_BrainMonitor_3DScene], seen: Dictionary) -> void:
 	if node is UI_BrainMonitor_3DScene:
-		brain_monitors.append(node as UI_BrainMonitor_3DScene)
-	
-	# Search all children recursively
+		var bm: UI_BrainMonitor_3DScene = node as UI_BrainMonitor_3DScene
+		var iid: int = bm.get_instance_id()
+		if seen.has(iid):
+			return
+		seen[iid] = true
+		brain_monitors.append(bm)
 	for child in node.get_children():
-		_recursive_find_brain_monitors(child, brain_monitors)
+		_recursive_find_brain_monitors(child, brain_monitors, seen)
 
 ## Check if a brain monitor would accept this cortical area using the same logic as _add_cortical_area()
 func _would_brain_monitor_accept_cortical_area(brain_monitor: UI_BrainMonitor_3DScene, cortical_area: AbstractCorticalArea) -> bool:

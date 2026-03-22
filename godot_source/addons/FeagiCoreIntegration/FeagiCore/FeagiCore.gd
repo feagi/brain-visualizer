@@ -65,6 +65,8 @@ const MAX_HEALTH_FAILURES_BEFORE_DISCONNECT: int = 6
 var _viz_transport_resync_generation: int = 0
 ## Generation tied to the pending WS health listener (set when waiting for CONNECTED).
 var _viz_resync_wait_generation: int = 0
+## Transport resync arrived before GENOME_READY; run once when genome becomes ready.
+var _pending_visualization_resync_after_transport: bool = false
 
 
 # FEAGICore initialization starts here before any external action
@@ -313,6 +315,7 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 		GENOME_LOAD_STATE.UNKNOWN:
 			# This will only occur if we are disconnecting from FEAGI (or connection lost), thus can come from any
 			print("FEAGICORE: [3D_SCENE_DEBUG] State UNKNOWN: Clearing genome and disconnecting")
+			_pending_visualization_resync_after_transport = false
 			_pending_reload_when_ready = false
 			feagi_local_cache.clear_whole_genome()
 			if network.connection_state != FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
@@ -323,8 +326,10 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 		GENOME_LOAD_STATE.NO_GENOME_AVAILABLE:
 			# Can Only Come here from Unknown
 			print("FEAGICORE: [3D_SCENE_DEBUG] State NO_GENOME_AVAILABLE: No genome found - 3D scene cannot load")
+			_pending_visualization_resync_after_transport = false
 			feagi_local_cache.clear_whole_genome()
 		GENOME_LOAD_STATE.GENOME_RELOADING:
+			_pending_visualization_resync_after_transport = false
 			about_to_reload_genome.emit()
 			feagi_local_cache.clear_whole_genome()
 			_start_genome_reload_if_needed()
@@ -339,6 +344,9 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 	
 	_genome_load_state = new_state
 	genome_load_state_changed.emit(new_state, prev_state)
+	if new_state == GENOME_LOAD_STATE.GENOME_READY and _pending_visualization_resync_after_transport:
+		_pending_visualization_resync_after_transport = false
+		call_deferred("_perform_visualization_resync_after_transport")
 
 func _start_genome_reload_if_needed() -> void:
 	if _reload_in_progress:
@@ -661,16 +669,20 @@ func _deferred_viz_resync_if_generation_current(gen: int) -> void:
 
 func _perform_visualization_resync_after_transport() -> void:
 	if genome_load_state != GENOME_LOAD_STATE.GENOME_READY:
+		_pending_visualization_resync_after_transport = true
 		return
+	_pending_visualization_resync_after_transport = false
 	var rc := str(OS.get_environment("BV_TYPE11_ROOTCAUSE")).strip_edges().to_lower()
 	if rc == "1" or rc == "true" or rc == "yes":
 		print("[TYPE11-ROOTCAUSE] transport resync: request_bv_fastpath_cache_rebuild + resync_all_brain_monitors_after_transport_recovery")
 	if network and network.websocket_API:
 		network.websocket_API.request_bv_fastpath_cache_rebuild()
+	var ui: Variant = null
 	var bvn: Node = get_node_or_null("/root/BV")
-	if bvn == null:
-		return
-	var ui: Variant = bvn.get("UI")
+	if bvn != null:
+		ui = bvn.get("UI")
+	if ui == null:
+		ui = get_node_or_null("/root/BrainVisualizer/UIManager")
 	if ui == null or not ui.has_method("resync_all_brain_monitors_after_transport_recovery"):
 		return
 	ui.resync_all_brain_monitors_after_transport_recovery()

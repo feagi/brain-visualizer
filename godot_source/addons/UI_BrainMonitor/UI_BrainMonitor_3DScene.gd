@@ -3177,7 +3177,12 @@ func _rebuild_cortical_visualizations_after_cache_touch() -> void:
 func resync_visualization_after_transport_recovery() -> void:
 	_ensure_representing_region_from_cache()
 	_create_missing_brain_region_visualizations()
-	_rebuild_cortical_visualizations_after_cache_touch()
+	# Do NOT call [_rebuild_cortical_visualizations_after_cache_touch] here: it queue_frees every root cortical
+	# volume, unregisters DirectPoints on [AbstractCorticalArea], and races [method request_bv_fastpath_cache_rebuild]
+	# — the classic broken IPU / sensory state after embodiment. Full rebuild stays on hash-driven cache signals only.
+	call_deferred("_create_missing_brain_region_visualizations")
+	# FeagiCore already requests a fast-path rebuild; one more deferred pass after this frame so new region plates register.
+	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
 
 
 ## Cache reload event handler - refreshes all cortical area connections AND creates new brain regions
@@ -3309,37 +3314,40 @@ func _create_missing_brain_region_visualizations() -> void:
 	var all_regions = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions
 	if not FeagiCore.feagi_local_cache.brain_regions.is_root_available():
 		return
-	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	var new_regions_created = 0
-	
 	
 	for region_id in all_regions.keys():
 		var region = all_regions[region_id]
-		# Skip if visualization already exists
+		# Skip existing valid plates only; if the node was freed, drop the dict entry so we can recreate.
 		if region_id in _brain_region_visualizations_by_ID:
+			var existing_plate: Variant = _brain_region_visualizations_by_ID[region_id]
+			if existing_plate != null and is_instance_valid(existing_plate):
+				continue
+			_brain_region_visualizations_by_ID.erase(region_id)
+		
+		# Do not create a plate for the region this scene represents (match by id — instance may differ).
+		if _representing_region != null and region.region_ID == _representing_region.region_ID:
 			continue
 		
-		# Do not create a plate for the region this scene represents.
-		if _representing_region != null and region == _representing_region:
+		# Skip root — never a floating plate on the parent monitor.
+		if region.is_root_region():
 			continue
 		
-		# CRITICAL: Skip root region - it should NEVER have a plate visualization
-		if region == root_region:
-			continue
-		
-		# Skip if this region is not a child of our representing region
-		if _representing_region != null and region != _representing_region:
+		# Skip if this region is not a direct child of our representing region
+		if _representing_region != null:
 			var is_child = false
 			for child_region in _representing_region.contained_regions:
 				if child_region.region_ID == region_id:
 					is_child = true
 					break
 			if not is_child:
+				var par: BrainRegion = region.current_parent_region
+				if par != null and par.region_ID == _representing_region.region_ID:
+					is_child = true
+			if not is_child:
 				continue
 		
 		# Create visualization for this new region
 		_add_brain_region_frame(region)
-		new_regions_created += 1
 	
 
 ## Manual force refresh of all cortical area connections (for debugging/troubleshooting)

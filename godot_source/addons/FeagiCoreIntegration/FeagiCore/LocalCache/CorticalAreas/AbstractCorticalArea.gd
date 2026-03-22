@@ -798,12 +798,26 @@ func BV_unregister_directpoints_renderer(renderer: Object = null) -> void:
 func BV_get_directpoints_multimesh() -> MultiMesh:
 	_bv_prune_directpoints_renderers()
 	if _bv_directpoints_renderers_by_id.size() != 1:
+		_bv_directpoints_renderer = null
+		_bv_directpoints_multimesh = null
+		_bv_directpoints_dimensions = Vector3.ZERO
+		return null
+	# Prune can leave exactly one valid renderer while cached _bv_directpoints_multimesh stayed null from an
+	# earlier !=1 state; repopulate from the dict entry without full sync on unrelated hot paths.
+	_bv_refresh_primary_directpoints_from_sole_registration()
+	if _bv_directpoints_renderers_by_id.size() != 1:
 		return null
 	return _bv_directpoints_multimesh
 
 ## Brain Visualizer: retrieve registered dimensions for fast-path rendering.
 func BV_get_directpoints_dimensions() -> Vector3:
 	_bv_prune_directpoints_renderers()
+	if _bv_directpoints_renderers_by_id.size() != 1:
+		_bv_directpoints_renderer = null
+		_bv_directpoints_multimesh = null
+		_bv_directpoints_dimensions = Vector3.ZERO
+		return Vector3.ZERO
+	_bv_refresh_primary_directpoints_from_sole_registration()
 	if _bv_directpoints_renderers_by_id.size() != 1:
 		return Vector3.ZERO
 	return _bv_directpoints_dimensions
@@ -812,6 +826,10 @@ func BV_get_directpoints_dimensions() -> Vector3:
 func BV_requires_bulk_directpoints_updates() -> bool:
 	_bv_prune_directpoints_renderers()
 	return _bv_directpoints_renderers_by_id.size() > 1
+
+## Re-prune invalid DirectPoints refs and refresh primary MultiMesh cache. Call after WS transport resync if needed.
+func BV_resync_directpoints_fast_path_state() -> void:
+	_bv_sync_primary_directpoints_renderer()
 
 ## Brain Visualizer: lightweight activity notification for renderer side-effects (timers/animations).
 ## Note: fast-path rendering updates the MultiMesh directly; this is only for behavior parity.
@@ -847,6 +865,22 @@ func _bv_prune_directpoints_renderers() -> void:
 			to_remove.append(renderer_id)
 	for renderer_id in to_remove:
 		_bv_directpoints_renderers_by_id.erase(renderer_id)
+
+## When [method _bv_prune_directpoints_renderers] leaves exactly one registration, copy entry into primary fields.
+func _bv_refresh_primary_directpoints_from_sole_registration() -> void:
+	if _bv_directpoints_renderers_by_id.size() != 1:
+		return
+	var entry: Dictionary = _bv_directpoints_renderers_by_id.values()[0]
+	var renderer_value = entry.get("renderer", null)
+	if renderer_value == null or not (renderer_value is Object) or not is_instance_valid(renderer_value):
+		_bv_directpoints_renderers_by_id.clear()
+		_bv_directpoints_renderer = null
+		_bv_directpoints_multimesh = null
+		_bv_directpoints_dimensions = Vector3.ZERO
+		return
+	_bv_directpoints_renderer = renderer_value as Object
+	_bv_directpoints_multimesh = entry.get("multimesh", null)
+	_bv_directpoints_dimensions = entry.get("dimensions", Vector3.ZERO)
 
 ## Brain Visualizer: synchronize fast-path fields when renderer count changes.
 func _bv_sync_primary_directpoints_renderer() -> void:
