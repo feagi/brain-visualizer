@@ -14,6 +14,10 @@ const DEBUG_HOVER_TEXT: bool = false
 ## Set true to log joint/device details (device_index, custom_names, device_props) when hovering over IPU/OPU.
 const DEBUG_JOINT_DETAILS: bool = false
 
+## Set true to print hover mapping diagnostics (index resolution + config index coverage).
+## Temporary troubleshooting switch for IOPU channel mapping mismatches.
+const DEBUG_HOVER_MAPPING: bool = true
+
 func _process(_delta: float) -> void:
 	# Keep overlay size synced to viewport size (hover label is now global).
 	var viewport := get_parent().get_parent() as SubViewport # Overlay -> UI_Canvas -> SubViewport
@@ -66,9 +70,25 @@ func _resolve_device_index(cortical_area: AbstractCorticalArea, coord: Vector3i)
 	var is_incremental: bool = (str(cortical_area.coding_behavior).to_lower() == "incremental"
 		or per.x >= 2
 		or (dc > 0 and (total.x == 2 * dc or (total.y == 2 and total.x == dc))))
+	# If runtime area metadata reports 1x1x1 (or otherwise incomplete per-device dims),
+	# infer channel count/width from capability indices used by hover name resolution.
+	var matched_indices: Array[int] = _collect_matching_config_indices(cortical_area)
+	if matched_indices.size() > 0:
+		var inferred_channels: int = matched_indices[matched_indices.size() - 1] + 1
+		if inferred_channels > 0 and (dc <= 0 or inferred_channels < dc):
+			dc = inferred_channels
 	var per_x: int = maxi(1, per.x)
 	var per_y: int = maxi(1, per.y)
 	var per_z: int = maxi(1, per.z)
+	if is_incremental and dc > 0:
+		if per_x == 1 and total.y == 1 and total.x % dc == 0:
+			var inferred_lane_width_x: int = total.x / dc
+			if inferred_lane_width_x > 1:
+				per_x = inferred_lane_width_x
+		if per_y == 1 and total.x == dc and total.y % dc == 0:
+			var inferred_lane_width_y: int = total.y / dc
+			if inferred_lane_width_y > 1:
+				per_y = inferred_lane_width_y
 	if per.x == 1 and dc > 0 and total.x == 2 * dc:
 		per_x = 2
 	if per.x == 1 and dc > 0 and total.y == 2 and total.x == dc:
@@ -107,15 +127,11 @@ func _resolve_device_index(cortical_area: AbstractCorticalArea, coord: Vector3i)
 					path = "fdp ch=%d ch_dim_x=%d" % [ch, ch_dim_x]
 	if device_index < 0:
 		if is_incremental:
-			if per_x >= 2:
-				device_index = coord.x / per_x
-				path = "inc_per_x"
-			elif per_y >= 2:
-				device_index = coord.x
-				path = "inc_per_y"
-			else:
-				device_index = coord.x / per_x
-				path = "inc_fallback"
+			# Incremental/signed areas can encode forward/backward lanes across X or Y,
+			# but channel ownership still follows full per-device 3D block mapping.
+			# This keeps 2x1xZ (or 1x2xZ) lanes tied to one joint/channel across depth.
+			device_index = _neuron_coord_to_device_index(coord, total, Vector3i(per_x, per_y, per_z))
+			path = "inc_block"
 		else:
 			device_index = _neuron_coord_to_device_index(coord, cortical_area.dimensions_3D, per)
 			path = "block"
@@ -126,11 +142,36 @@ func _resolve_device_index(cortical_area: AbstractCorticalArea, coord: Vector3i)
 			enc.get("is_signed", false), enc.get("encoding_format", ""), is_incremental, path, device_index])
 	return device_index
 
+func _get_effective_incremental_lane_dims(cortical_area: AbstractCorticalArea) -> Vector3i:
+	var total: Vector3i = cortical_area.dimensions_3D
+	var per_dims: Vector3i = cortical_area.cortical_dimensions_per_device
+	var dc: int = cortical_area.device_count if cortical_area.device_count > 0 else 0
+	var matched_indices: Array[int] = _collect_matching_config_indices(cortical_area)
+	if matched_indices.size() > 0:
+		var inferred_channels: int = matched_indices[matched_indices.size() - 1] + 1
+		if inferred_channels > 0 and (dc <= 0 or inferred_channels < dc):
+			dc = inferred_channels
+	var lane_x: int = maxi(1, per_dims.x)
+	var lane_y: int = maxi(1, per_dims.y)
+	var lane_z: int = maxi(1, per_dims.z)
+	if lane_z <= 1 and total.z > 1:
+		lane_z = total.z
+	if dc > 0:
+		if lane_x == 1 and total.y == 1 and total.x % dc == 0:
+			var inferred_lane_width_x: int = total.x / dc
+			if inferred_lane_width_x > 1:
+				lane_x = inferred_lane_width_x
+		if lane_y == 1 and total.x == dc and total.y % dc == 0:
+			var inferred_lane_width_y: int = total.y / dc
+			if inferred_lane_width_y > 1:
+				lane_y = inferred_lane_width_y
+	return Vector3i(lane_x, lane_y, lane_z)
+
 ## For Incremental/SignedPercentage areas: return " (+)" or " (-)" based on direction. Empty otherwise.
 func _incremental_direction_suffix(cortical_area: AbstractCorticalArea, coord: Vector3i) -> String:
 	var dc: int = cortical_area.device_count if cortical_area.device_count > 0 else 0
 	var total: Vector3i = cortical_area.dimensions_3D
-	var per_dims: Vector3i = cortical_area.cortical_dimensions_per_device
+	var per_dims: Vector3i = _get_effective_incremental_lane_dims(cortical_area)
 	var is_inc: bool = (str(cortical_area.coding_behavior).to_lower() == "incremental"
 		or per_dims.x >= 2
 		or (dc > 0 and (total.x == 2 * dc or (total.y == 2 and total.x == dc))))
@@ -141,9 +182,11 @@ func _incremental_direction_suffix(cortical_area: AbstractCorticalArea, coord: V
 	if not is_inc:
 		return ""
 	if per_dims.x >= 2:
-		return " (+)" if coord.x % 2 == 0 else " (-)"
+		var lane_x_pos: int = coord.x % per_dims.x
+		return " (+)" if lane_x_pos < maxi(1, per_dims.x / 2) else " (-)"
 	if per_dims.y >= 2:
-		return " (+)" if coord.y == 0 else " (-)"
+		var lane_y_pos: int = coord.y % per_dims.y
+		return " (+)" if lane_y_pos < maxi(1, per_dims.y / 2) else " (-)"
 	return " (+)" if coord.x % 2 == 0 else " (-)"
 
 ## Returns decoded value suffix for footnote using feagi-sensorimotor (matches robot processing).
@@ -212,6 +255,94 @@ func _neuron_coord_to_device_index(coord: Vector3i, total_dims: Vector3i, per_de
 	var by: int = coord.y / dy
 	var bz: int = coord.z / dz
 	return bx + by * blocks_x + bz * blocks_x * blocks_y
+
+func _collect_matching_config_indices(cortical_area: AbstractCorticalArea) -> Array[int]:
+	var output: Array[int] = []
+	if cortical_area == null:
+		return output
+	if not (cortical_area is IPUCorticalArea or cortical_area is OPUCorticalArea):
+		return output
+	var section_key: String = "input" if cortical_area is IPUCorticalArea else "output"
+	var unit_key: String = section_key + "_unit_indices"
+	var ctrl_id: String = ""
+	if cortical_area is IPUCorticalArea:
+		var ipu_area: IPUCorticalArea = cortical_area
+		if ipu_area.has_controller_ID:
+			ctrl_id = str(ipu_area.controller_ID)
+	elif cortical_area is OPUCorticalArea:
+		var opu_area: OPUCorticalArea = cortical_area
+		if opu_area.has_controller_ID:
+			ctrl_id = str(opu_area.controller_ID)
+	if ctrl_id == "":
+		return output
+	var config_jsons: Array[Dictionary] = FeagiCore.feagi_local_cache.configuration_jsons
+	for cfg in config_jsons:
+		var unit_indices: Variant = cfg.get(unit_key)
+		if unit_indices is Dictionary and cortical_area.unit_id >= 0 and (unit_indices as Dictionary).has(ctrl_id):
+			if int((unit_indices as Dictionary)[ctrl_id]) != cortical_area.unit_id:
+				continue
+		var section: Variant = cfg.get(section_key)
+		if section is not Dictionary:
+			continue
+		var typed_section: Dictionary = section
+		if not typed_section.has(ctrl_id):
+			continue
+		var devices: Variant = typed_section[ctrl_id]
+		if devices is not Dictionary:
+			continue
+		for device in (devices as Dictionary).values():
+			if device is not Dictionary:
+				continue
+			var dev: Dictionary = device
+			if not dev.has("feagi_index"):
+				continue
+			var idx: int = int(dev["feagi_index"])
+			if idx not in output:
+				output.append(idx)
+	output.sort()
+	return output
+
+func _log_hover_mapping_diagnostics(
+	cortical_area: AbstractCorticalArea,
+	neuron_coordinate: Vector3i,
+	device_index: int,
+	label_matches: Array[StringName]
+) -> void:
+	if not DEBUG_HOVER_MAPPING:
+		return
+	if cortical_area == null:
+		return
+	var per: Vector3i = Vector3i.ONE
+	if cortical_area is IPUCorticalArea:
+		per = (cortical_area as IPUCorticalArea).cortical_dimensions_per_device
+	elif cortical_area is OPUCorticalArea:
+		per = (cortical_area as OPUCorticalArea).cortical_dimensions_per_device
+	var total: Vector3i = cortical_area.dimensions_3D
+	var ctrl_id: String = ""
+	if cortical_area is IPUCorticalArea:
+		var ipu_area: IPUCorticalArea = cortical_area
+		if ipu_area.has_controller_ID:
+			ctrl_id = str(ipu_area.controller_ID)
+	elif cortical_area is OPUCorticalArea:
+		var opu_area: OPUCorticalArea = cortical_area
+		if opu_area.has_controller_ID:
+			ctrl_id = str(opu_area.controller_ID)
+	var matched_indices: Array[int] = _collect_matching_config_indices(cortical_area)
+	var index_hit: bool = device_index in matched_indices
+	print("[BV hover-map] area=%s type=%s ctrl=%s unit=%d coord=%s total=%s per=%s idx=%d idx_hit=%s match_count=%d labels=%s matching_indices=%s" % [
+		cortical_area.cortical_ID,
+		cortical_area.cortical_type,
+		ctrl_id,
+		cortical_area.unit_id,
+		neuron_coordinate,
+		total,
+		per,
+		device_index,
+		index_hit,
+		label_matches.size(),
+		label_matches,
+		matched_indices
+	])
 
 ## Returns the owning brain monitor for this overlay.
 func _get_owning_bm() -> UI_BrainMonitor_3DScene:
@@ -331,7 +462,7 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 			print("[BV mouse_over] %s coord=%s -> device=%d" % [cortical_area.cortical_ID, neuron_coordinate, device_index])
 	if cortical_area is IPUCorticalArea:
 		var dir_suffix: String = _incremental_direction_suffix(cortical_area, neuron_coordinate)
-		var dir_word: String = " forward" if dir_suffix == " (+)" else " backward" if dir_suffix == " (-)" else ""
+		var dir_word: String = " (Forward)" if dir_suffix == " (+)" else " (Backward)" if dir_suffix == " (-)" else ""
 		var ipu_ctrl_id: String = str(cortical_area.controller_ID) if cortical_area.has_controller_ID else ""
 		var ipu_is_motor_ctrl: bool = (ipu_ctrl_id == "positional_servo" or ipu_ctrl_id == "rotary_motor")
 		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
@@ -349,6 +480,7 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 				FeagiCore.feagi_local_cache.configuration_jsons.size(), input_keys_per_config])
 		for appending in appending_definitions:
 			text += "| " + str(appending) + dir_word
+		_log_hover_mapping_diagnostics(cortical_area, neuron_coordinate, device_index, appending_definitions)
 		var ipu_device_props: Dictionary = cortical_area.get_device_properties(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
 		if DEBUG_JOINT_DETAILS:
 			print("[BV joint] IPU id=%s device_index=%d device_props=%s" % [cortical_area.cortical_ID, device_index, ipu_device_props])
@@ -369,7 +501,7 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 			text += decoded_suffix
 	elif cortical_area is OPUCorticalArea:
 		var dir_suffix: String = _incremental_direction_suffix(cortical_area, neuron_coordinate)
-		var dir_word: String = " forward" if dir_suffix == " (+)" else " backward" if dir_suffix == " (-)" else ""
+		var dir_word: String = " (Forward)" if dir_suffix == " (+)" else " (Backward)" if dir_suffix == " (-)" else ""
 		var opu_ctrl_id: String = str(cortical_area.controller_ID) if cortical_area.has_controller_ID else ""
 		var opu_is_motor_ctrl: bool = (opu_ctrl_id == "positional_servo" or opu_ctrl_id == "rotary_motor")
 		var appending_definitions: Array[StringName] = cortical_area.get_custom_names(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
@@ -394,6 +526,7 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 				cortical_area.cortical_ID, neuron_coordinate, device_index, ctrl_id, appending_definitions, feagi_indices_in_config])
 		for appending in appending_definitions:
 			text += "| " + str(appending) + dir_word
+		_log_hover_mapping_diagnostics(cortical_area, neuron_coordinate, device_index, appending_definitions)
 		var device_props: Dictionary = cortical_area.get_device_properties(FeagiCore.feagi_local_cache.configuration_jsons, device_index)
 		if DEBUG_JOINT_DETAILS:
 			print("[BV joint] OPU id=%s device_index=%d device_props=%s" % [cortical_area.cortical_ID, device_index, device_props])

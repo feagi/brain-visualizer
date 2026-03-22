@@ -313,6 +313,20 @@ func get_burst_delay() -> FeagiRequestOutput:
 
 ## Helper to extract device entries from device_grouping, including device_properties (resolution, etc).
 ## Uses channel_index_override when present so feagi_index matches FDP decode channel for hover lookup.
+func _resolve_channel_index_override(override_val: Variant, loop_index: int) -> int:
+	if override_val == null:
+		return loop_index
+	if override_val is int or override_val is float:
+		return int(override_val)
+	if override_val is String:
+		var parsed_override := str(override_val).strip_edges()
+		if parsed_override != "":
+			if parsed_override.is_valid_int():
+				return parsed_override.to_int()
+			if parsed_override.is_valid_float():
+				return int(parsed_override.to_float())
+	return loop_index
+
 func _extract_devices_from_device_grouping(device_grouping: Array) -> Dictionary:
 	var devices: Dictionary = {}
 	var loop_index: int = 0
@@ -320,7 +334,7 @@ func _extract_devices_from_device_grouping(device_grouping: Array) -> Dictionary
 		if channel is not Dictionary:
 			continue
 		var override_val: Variant = channel.get("channel_index_override")
-		var feagi_index: int = int(override_val) if override_val != null and (override_val is int or override_val is float) else loop_index
+		var feagi_index: int = _resolve_channel_index_override(override_val, loop_index)
 		var custom_name: String = str(channel.get("friendly_name", "ch_%d" % loop_index))
 		var device_entry: Dictionary = {"custom_name": custom_name, "feagi_index": feagi_index}
 		var channel_props = channel.get("device_properties", {})
