@@ -8,9 +8,9 @@ description = "FEAGI agent registration client GDExtension - uses feagi-agent SD
 godot = { git = "https://github.com/godot-rust/gdext", rev = "2862a25b222ee6e18dede2594617f4bf3e3d1027", features = ["experimental-wasm", "lazy-function-tables", "api-4-5"] }
 
 # FEAGI agent SDK (crates.io release)
-feagi-agent = { version = "0.0.1-beta.19", default-features = false, features = ["agent-client", "agent-transport-websocket-std"] }
-feagi-serialization = { version = "0.0.1-beta.19" }
-feagi-io = { version = "0.0.1-beta.19", default-features = false, features = ["feagi-client", "websocket-transport-std"] }
+feagi-agent = { version = "0.0.1", default-features = false, features = ["agent-client", "agent-transport-websocket-std"] }
+feagi-serialization = { version = "0.0.1" }
+feagi-io = { version = "0.0.1", default-features = false, features = ["feagi-client", "websocket-transport-std"] }
 base64 = "0.22"
 
 [lib]
