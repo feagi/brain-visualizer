@@ -653,13 +653,25 @@ func _recover_ws_transport_after_disconnect() -> void:
 		_transport_mode = TRANSPORT_MODE.SHARED_MEMORY
 		_change_connection_state(CONNECTION_STATE.HEALTHY)
 		_ws_recovery_in_progress = false
+		_notify_feagicore_schedule_visualization_resync()
 		return
 	
 	if _feagi_endpoint_details != null and _feagi_endpoint_details.full_websocket_address.strip_edges() != "":
 		websocket_API.setup(_feagi_endpoint_details.full_websocket_address)
 	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
+	# Match post-registration rebind: brief teardown so FEAGI can bind stream to fresh registration cleanly.
+	websocket_API.disconnect_websocket()
+	await get_tree().process_frame
+	await get_tree().process_frame
 	websocket_API.connect_websocket()
 	_ws_recovery_in_progress = false
+	_notify_feagicore_schedule_visualization_resync()
+
+
+func _notify_feagicore_schedule_visualization_resync() -> void:
+	var parent_fc: Node = get_parent()
+	if parent_fc != null and parent_fc.has_method("schedule_visualization_resync_after_transport"):
+		parent_fc.schedule_visualization_resync_after_transport()
 
 
 func _http_is_connectable() -> bool:

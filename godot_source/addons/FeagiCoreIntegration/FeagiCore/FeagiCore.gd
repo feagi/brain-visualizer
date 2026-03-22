@@ -61,6 +61,10 @@ var _consecutive_health_failures: int = 0
 # Large NIfTI frames (5M+ voxels) can take 5-10 seconds to inject, causing temporary API unresponsiveness
 const MAX_HEALTH_FAILURES_BEFORE_DISCONNECT: int = 6
 
+## Latest visualization resync request; stale WS connect callbacks compare against this.
+var _viz_transport_resync_generation: int = 0
+## Generation tied to the pending WS health listener (set when waiting for CONNECTED).
+var _viz_resync_wait_generation: int = 0
 
 
 # FEAGICore initialization starts here before any external action
@@ -610,3 +614,63 @@ func _force_ws_stream_rebind_after_registration() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	ws.connect_websocket()
+	schedule_visualization_resync_after_transport()
+
+
+## After visualization transport rebind or recovery, refresh Type 11 fast-path maps and Brain Monitor cortical bindings.
+## Use when connectome hashes are unchanged (e.g. embodiment attach) so hash-driven cache reload does not run.
+func schedule_visualization_resync_after_transport() -> void:
+	_viz_transport_resync_generation += 1
+	var gen: int = _viz_transport_resync_generation
+	if network and network.websocket_API:
+		var ws_node: FEAGIWebSocketAPI = network.websocket_API
+		if ws_node.FEAGI_socket_health_changed.is_connected(_on_ws_health_for_pending_viz_resync):
+			ws_node.FEAGI_socket_health_changed.disconnect(_on_ws_health_for_pending_viz_resync)
+	if not network:
+		return
+	if network._transport_mode == network.TRANSPORT_MODE.SHARED_MEMORY:
+		call_deferred("_deferred_viz_resync_if_generation_current", gen)
+		return
+	var ws_api: FEAGIWebSocketAPI = network.websocket_API
+	if ws_api == null or network._transport_mode != network.TRANSPORT_MODE.WEBSOCKET:
+		call_deferred("_deferred_viz_resync_if_generation_current", gen)
+		return
+	if ws_api.socket_health == ws_api.WEBSOCKET_HEALTH.CONNECTED:
+		call_deferred("_deferred_viz_resync_if_generation_current", gen)
+		return
+	_viz_resync_wait_generation = gen
+	ws_api.FEAGI_socket_health_changed.connect(_on_ws_health_for_pending_viz_resync)
+
+
+func _on_ws_health_for_pending_viz_resync(_prev: int, cur: int) -> void:
+	if not network or not network.websocket_API:
+		return
+	var ws_node: FEAGIWebSocketAPI = network.websocket_API
+	if cur != ws_node.WEBSOCKET_HEALTH.CONNECTED:
+		return
+	if ws_node.FEAGI_socket_health_changed.is_connected(_on_ws_health_for_pending_viz_resync):
+		ws_node.FEAGI_socket_health_changed.disconnect(_on_ws_health_for_pending_viz_resync)
+	call_deferred("_deferred_viz_resync_if_generation_current", _viz_resync_wait_generation)
+
+
+func _deferred_viz_resync_if_generation_current(gen: int) -> void:
+	if gen != _viz_transport_resync_generation:
+		return
+	_perform_visualization_resync_after_transport()
+
+
+func _perform_visualization_resync_after_transport() -> void:
+	if genome_load_state != GENOME_LOAD_STATE.GENOME_READY:
+		return
+	var rc := str(OS.get_environment("BV_TYPE11_ROOTCAUSE")).strip_edges().to_lower()
+	if rc == "1" or rc == "true" or rc == "yes":
+		print("[TYPE11-ROOTCAUSE] transport resync: request_bv_fastpath_cache_rebuild + resync_all_brain_monitors_after_transport_recovery")
+	if network and network.websocket_API:
+		network.websocket_API.request_bv_fastpath_cache_rebuild()
+	var bvn: Node = get_node_or_null("/root/BV")
+	if bvn == null:
+		return
+	var ui: Variant = bvn.get("UI")
+	if ui == null or not ui.has_method("resync_all_brain_monitors_after_transport_recovery"):
+		return
+	ui.resync_all_brain_monitors_after_transport_recovery()

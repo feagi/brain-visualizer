@@ -98,6 +98,13 @@ var _ws_last_rx_log_ms: int = 0
 const _WS_RX_LOG_INTERVAL_MS: int = 1000
 var _ws_last_apply_log_ms: int = 0
 const _WS_APPLY_LOG_INTERVAL_MS: int = 1000
+
+# Opt-in Type 11 root-cause: set env BV_TYPE11_ROOTCAUSE=1 (see RECONNECTION_FIX.md)
+const _TYPE11_ROOTCAUSE_LOG_INTERVAL_MS: int = 2000
+const _TYPE11_ROOTCAUSE_REBUILD_LOG_MS: int = 3000
+var _type11_rootcause_last_packet_log_ms: int = 0
+var _type11_rootcause_last_rebuild_log_ms: int = 0
+var _type11_rootcause_banner_printed: bool = false
 const _WS_DIAGNOSTICS_ENABLED: bool = false
 
 # SHM update rate tracking
@@ -355,8 +362,10 @@ func _process(_delta: float):
 						var decoded: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
 						var ok: bool = bool(decoded.get("success", false))
 						var areas_any: Variant = decoded.get("areas", null)
-						var areas: Dictionary = areas_any as Dictionary
-						if ok and areas is Dictionary:
+						var areas: Dictionary = {}
+						if areas_any is Dictionary:
+							areas = areas_any
+						if ok and areas_any is Dictionary:
 							for cortical_id in areas.keys():
 								var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
 								var area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
@@ -387,6 +396,7 @@ func _process(_delta: float):
 						# Extend existing diag with stage timings (rate-limited below).
 						if perf:
 							set_meta("_ws_last_perf", perf)
+						_type11_rootcause_log_packet_vs_fastpath(areas, perf)
 					else:
 						# Legacy desktop path (kept for parity/testing); web uses WASM decoder above.
 						var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
@@ -828,6 +838,96 @@ func _is_probably_text(bytes: PackedByteArray) -> bool:
 			return false
 	return true
 
+
+func _type11_rootcause_enabled() -> bool:
+	var v := str(OS.get_environment("BV_TYPE11_ROOTCAUSE")).strip_edges().to_lower()
+	return v == "1" or v == "true" or v == "yes"
+
+
+func _normalize_type11_cortical_key(key: Variant) -> String:
+	return String(key).strip_edges().replace("'", "").replace('"', "")
+
+
+func _type11_rootcause_sample_ids(ids: Array, max_n: int) -> String:
+	if ids.is_empty():
+		return "[]"
+	var out: PackedStringArray = []
+	var n: int = mini(ids.size(), max_n)
+	for i in range(n):
+		out.append(str(ids[i]))
+	var tail := ", ..." if ids.size() > max_n else ""
+	return "[%s]%s" % [", ".join(out), tail]
+
+
+## Logs fast-path MultiMesh registration count (throttled). Enable with BV_TYPE11_ROOTCAUSE=1.
+func _type11_rootcause_log_fastpath_rebuild(registered_multimesh: int) -> void:
+	if not _type11_rootcause_enabled():
+		return
+	var now_ms := Time.get_ticks_msec()
+	if now_ms - _type11_rootcause_last_rebuild_log_ms < _TYPE11_ROOTCAUSE_REBUILD_LOG_MS:
+		return
+	_type11_rootcause_last_rebuild_log_ms = now_ms
+	if not _type11_rootcause_banner_printed:
+		_type11_rootcause_banner_printed = true
+		print("[TYPE11-ROOTCAUSE] Diagnostics ON (BV_TYPE11_ROOTCAUSE=1). Packet detail every %d ms; rebuild summary every %d ms." % [_TYPE11_ROOTCAUSE_LOG_INTERVAL_MS, _TYPE11_ROOTCAUSE_REBUILD_LOG_MS])
+	print("[TYPE11-ROOTCAUSE] fast_path rebuild: cortical_ids_with_multimesh=%d" % registered_multimesh)
+
+
+## Compare Type 11 payload cortical ids to fast-path map and cache objects (throttled).
+func _type11_rootcause_log_packet_vs_fastpath(decoded_areas: Dictionary, perf: Dictionary) -> void:
+	if not _type11_rootcause_enabled():
+		return
+	var now_ms := Time.get_ticks_msec()
+	if now_ms - _type11_rootcause_last_packet_log_ms < _TYPE11_ROOTCAUSE_LOG_INTERVAL_MS:
+		return
+	_type11_rootcause_last_packet_log_ms = now_ms
+
+	var fast_norm: Dictionary = {}
+	for fk in _bv_fast_multimeshes_by_id.keys():
+		fast_norm[_normalize_type11_cortical_key(fk)] = true
+
+	var packet_norm: PackedStringArray = []
+	var seen: Dictionary = {}
+	for ck in decoded_areas.keys():
+		var cid := _normalize_type11_cortical_key(ck)
+		if cid.is_empty() or seen.has(cid):
+			continue
+		seen[cid] = true
+		packet_norm.append(cid)
+
+	var missing_cache: Array[String] = []
+	var no_mesh_ipu_like: Array[String] = []
+	var in_packet_not_in_fastmap: Array[String] = []
+
+	for cid in packet_norm:
+		var area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(cid)
+		if area_obj == null:
+			missing_cache.append(cid)
+			continue
+		var requires_bulk := area_obj.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+		requires_bulk = requires_bulk or area_obj.BV_requires_bulk_directpoints_updates()
+		var mm = area_obj.BV_get_directpoints_multimesh()
+		if mm == null and not requires_bulk:
+			no_mesh_ipu_like.append(cid)
+		if not fast_norm.has(cid):
+			in_packet_not_in_fastmap.append(cid)
+
+	var ok_apply := bool(perf.get("success", false))
+	var areas_applied := int(perf.get("areas_applied", 0))
+	var neurons_applied := int(perf.get("neurons_applied", 0))
+	var err_apply := str(perf.get("error", ""))
+
+	print("[TYPE11-ROOTCAUSE] frame: packet_cortical_ids=%d fast_path_keys=%d apply_ok=%s areas_applied=%d neurons_applied=%d err='%s'" % [
+		packet_norm.size(), fast_norm.size(), str(ok_apply), areas_applied, neurons_applied, err_apply
+	])
+	if not missing_cache.is_empty():
+		print("[TYPE11-ROOTCAUSE] ids in packet but NO AbstractCorticalArea in BV cache (sample): %s" % _type11_rootcause_sample_ids(missing_cache, 8))
+	if not no_mesh_ipu_like.is_empty():
+		print("[TYPE11-ROOTCAUSE] ids need fast-path MultiMesh but BV_get_directpoints_multimesh()==null (no bulk fallback; sample): %s" % _type11_rootcause_sample_ids(no_mesh_ipu_like, 8))
+	if not in_packet_not_in_fastmap.is_empty():
+		print("[TYPE11-ROOTCAUSE] ids in packet not present in _bv_fast_multimeshes_by_id after refresh (sample): %s" % _type11_rootcause_sample_ids(in_packet_not_in_fastmap, 8))
+
+
 func _refresh_bv_fastpath_cache_if_needed() -> void:
 	if OS.has_feature("web"):
 		return
@@ -841,6 +941,7 @@ func _refresh_bv_fastpath_cache_if_needed() -> void:
 	if not FeagiCore.feagi_local_cache:
 		return
 	var areas_dict: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
+	var registered_multimesh: int = 0
 	for cortical_id in areas_dict.keys():
 		var area: AbstractCorticalArea = areas_dict.get(cortical_id)
 		if area == null:
@@ -854,6 +955,8 @@ func _refresh_bv_fastpath_cache_if_needed() -> void:
 			area.BV_refresh_directpoints_renderer_visuals()
 			_bv_fast_multimeshes_by_id[key_str] = mm
 			_bv_fast_dimensions_by_id[key_str] = area.BV_get_directpoints_dimensions()
+			registered_multimesh += 1
+	_type11_rootcause_log_fastpath_rebuild(registered_multimesh)
 
 # 𒓉 -------- Shared Memory Visualization Support --------
 func _init_shm_visualization() -> void:

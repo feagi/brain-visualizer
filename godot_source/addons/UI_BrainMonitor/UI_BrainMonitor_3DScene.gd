@@ -2932,9 +2932,13 @@ func has_cortical_area_visualization(cortical_id: String) -> bool:
 ## TypedArray.erase / Dictionary.erase validate object arguments; a freed UI_BrainMonitor_CorticalArea
 ## reference must not be passed. Drops invalid keys/elements from hover-tracking structures.
 func _prune_invalid_cortical_refs_from_mouse_tracking() -> void:
-	_previously_moused_over_volumes = _previously_moused_over_volumes.filter(
-		func(v: UI_BrainMonitor_CorticalArea) -> bool: return is_instance_valid(v)
-	)
+	# Avoid Array.filter here: TypedArray + lambda can fail with "Cannot convert argument 1 from Object to Object"
+	# when entries are freed during cache refresh (Godot 4.5).
+	var pruned_volumes: Array[UI_BrainMonitor_CorticalArea] = []
+	for v in _previously_moused_over_volumes:
+		if v != null and is_instance_valid(v):
+			pruned_volumes.append(v)
+	_previously_moused_over_volumes = pruned_volumes
 	var rebuilt: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {}
 	for k in _previously_moused_over_cortical_area_neurons.keys():
 		if is_instance_valid(k):
@@ -3167,6 +3171,13 @@ func _rebuild_cortical_visualizations_after_cache_touch() -> void:
 	_teardown_all_cortical_area_visualizations()
 	_add_missing_cortical_area_visualizations()
 	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
+
+
+## Public entry for FeagiCore after transport rebind when connectome hashes did not change (e.g. embodiment / MuJoCo).
+func resync_visualization_after_transport_recovery() -> void:
+	_ensure_representing_region_from_cache()
+	_create_missing_brain_region_visualizations()
+	_rebuild_cortical_visualizations_after_cache_touch()
 
 
 ## Cache reload event handler - refreshes all cortical area connections AND creates new brain regions

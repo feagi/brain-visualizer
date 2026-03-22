@@ -473,6 +473,24 @@ func _retry_confirmed_genome_init() -> void:
 func get_temp_root_bm() -> UI_BrainMonitor_3DScene:
 	return temp_root_bm
 
+
+## Rebuilds cortical visualization and DirectPoints registration on every Brain Monitor after WS/SHM transport recovery.
+func resync_all_brain_monitors_after_transport_recovery() -> void:
+	var done: Dictionary = {}
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm == null:
+			continue
+		var bm_id: int = bm.get_instance_id()
+		if done.has(bm_id):
+			continue
+		done[bm_id] = true
+		if bm.has_method("resync_visualization_after_transport_recovery"):
+			bm.resync_visualization_after_transport_recovery()
+	if temp_root_bm != null and is_instance_valid(temp_root_bm):
+		var root_id: int = temp_root_bm.get_instance_id()
+		if not done.has(root_id) and temp_root_bm.has_method("resync_visualization_after_transport_recovery"):
+			temp_root_bm.resync_visualization_after_transport_recovery()
+
 # TEMP - > for sending activation firings to FEAGI
 func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
 	# Sending neuron activations to FEAGI via HTTP POST
