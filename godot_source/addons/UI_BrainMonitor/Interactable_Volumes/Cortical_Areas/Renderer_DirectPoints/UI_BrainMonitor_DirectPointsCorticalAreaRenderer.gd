@@ -129,7 +129,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	_visualization_voxel_granularity = area.visualization_voxel_granularity
 	_is_aggregated_mode = _visualization_voxel_granularity != Vector3i(1, 1, 1)
 	if _is_aggregated_mode:
-		print("   🔥 [%s] AGGREGATED RENDERING MODE enabled - granularity: %s" % [_cortical_area_id, _visualization_voxel_granularity])
+		print("   [hot]  [%s] AGGREGATED RENDERING MODE enabled - granularity: %s" % [_cortical_area_id, _visualization_voxel_granularity])
 	
 	# Load visualization settings (create default if not exists)
 	if ResourceLoader.exists("res://BrainVisualizer/Configs/visualization_settings.tres"):
@@ -156,28 +156,28 @@ func setup(area: AbstractCorticalArea) -> void:
 		var sphere_shape = SphereShape3D.new()
 		sphere_shape.radius = 1.5  # Match the 3x larger visual sphere
 		collision_shape.shape = sphere_shape
-		print("   🔮 Created 3x larger sphere collision for memory cortical area")
+		print("   [mem]  Created 3x larger sphere collision for memory cortical area")
 	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
 		var cylinder_shape = CylinderShape3D.new()
 		cylinder_shape.height = 6.0  # 3x larger cone height
 		cylinder_shape.radius = 3.0  # 3x larger base radius
 		collision_shape.shape = cylinder_shape
-		print("   ⚡ Created 3x larger cylinder collision for power cortical area")
+		print("   [pwr]  Created 3x larger cylinder collision for power cortical area")
 	elif AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
 		# One pick volume: scaled cortical box (size 1 @ origin) + billboard quad above (quad ~3x3 @ y=2)
 		var box_shape = BoxShape3D.new()
 		box_shape.size = Vector3(3.0, 4.0, 3.0)
 		collision_shape.shape = box_shape
 		collision_shape.position = Vector3(0.0, 1.5, 0.0)
-		print("   🖼️ Fatigue: combined cortical + billboard collision for: ", area.cortical_ID)
+		print("   [icon]  Fatigue: combined cortical + billboard collision for: ", area.cortical_ID)
 	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		var box_shape = BoxShape3D.new()
 		box_shape.size = Vector3(3.0, 3.0, 1.0)  # Match PNG quad size; depth generous for ray hits
 		collision_shape.shape = box_shape
 		# Align collider center with billboard icon center (icon_mesh_instance.position.y = 2.0)
 		collision_shape.position = Vector3(0.0, 2.0, 0.0)
-		print("   🖼️ Created billboard collision for PNG icon cortical area: ", area.cortical_ID)
-		print("   📏 Collision size: ", box_shape.size, " at offset ", collision_shape.position)
+		print("   [icon]  Created billboard collision for PNG icon cortical area: ", area.cortical_ID)
+		print("   [size]  Collision size: ", box_shape.size, " at offset ", collision_shape.position)
 	else:
 		var box_shape = BoxShape3D.new()
 		collision_shape.shape = box_shape
@@ -293,14 +293,14 @@ func setup(area: AbstractCorticalArea) -> void:
 		# Create tesla coil electrical spikes for hover effect
 		_create_tesla_coil_spikes()
 		
-		print("   ⚡ Power cone uses custom red material with firing animation and tesla coil spikes, always visible")
+		print("   [pwr]  Power cone uses custom red material with firing animation and tesla coil spikes, always visible")
 	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		# Create PNG icon billboard for special cortical areas
 		_create_png_icon_billboard(area)
 		# Still need outline mesh for PNG areas (invisible but needed for structure)
 		_outline_mesh_instance.mesh = BoxMesh.new()
 		_outline_mesh_instance.visible = false  # Hidden for PNG areas
-		print("   🖼️ PNG icon area setup complete for: ", area.cortical_ID)
+		print("   [icon]  PNG icon area setup complete for: ", area.cortical_ID)
 	else:
 		# Use standard outline material for other cortical areas
 		_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
@@ -325,16 +325,16 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Memory, power, and PNG icon areas should show their label since they're primary renderers
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		_friendly_name_label.visible = true  # Show label for memory areas
-		print("   🔮 Memory sphere label set to visible")
+		print("   [mem]  Memory sphere label set to visible")
 	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
 		_friendly_name_label.visible = true  # Show label for power areas
-		print("   ⚡ Power cone label set to visible")
+		print("   [pwr]  Power cone label set to visible")
 	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		_friendly_name_label.visible = true  # Show label for PNG icon areas
-		print("   🖼️ PNG icon area label set to visible for: ", area.cortical_ID)
+		print("   [icon]  PNG icon area label set to visible for: ", area.cortical_ID)
 		# Position label above the PNG icon (icon is at y=2.0, label should be at y=4.5 for proper separation)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		print("   📍 PNG icon label positioned at: ", _friendly_name_label.position)
+		print("   [pos]  PNG icon label positioned at: ", _friendly_name_label.position)
 	else:
 		_friendly_name_label.visible = false  # Hidden when used as secondary renderer
 	# Attach label to follow movement correctly:
@@ -358,14 +358,14 @@ func setup(area: AbstractCorticalArea) -> void:
 	# Connect to memory area stats updates for dynamic sizing
 	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		FeagiCore.feagi_local_cache.memory_area_stats_updated.connect(_on_memory_area_stats_updated)
-		print("   🔮 Connected to memory area stats updates for dynamic sizing")
+		print("   [mem]  Connected to memory area stats updates for dynamic sizing")
 		
 		# Apply initial sizing if stats are already available
 		if FeagiCore.feagi_local_cache.memory_area_stats.has(_cortical_area_id):
 			var area_stats = FeagiCore.feagi_local_cache.memory_area_stats[_cortical_area_id]
 			if area_stats.has("neuron_count"):
 				var neuron_count = int(area_stats["neuron_count"])
-				print("   🔮 Applying initial memory sphere size: ", neuron_count, " neurons")
+				print("   [mem]  Applying initial memory sphere size: ", neuron_count, " neurons")
 				_update_memory_sphere_size(neuron_count)
 	
 	# Connect to delay_between_bursts changes to update timer duration dynamically
@@ -427,7 +427,7 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		# print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
+		# print("   [pos]  Maintained PNG icon label position at: ", _friendly_name_label.position)
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Memory areas are conceptually 1x1x1 (all activity maps to (0,0,0)).
@@ -471,7 +471,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	else:
 		# PNG icon areas keep their custom label positioning (above the icon)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		# print("   📍 Maintained PNG icon label position at: ", _friendly_name_label.position)
+		# print("   [pos]  Maintained PNG icon label position at: ", _friendly_name_label.position)
 	
 	if _fatigue_billboard_material != null and AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
 		_fatigue_billboard_refresh_for_activity_state()
@@ -625,7 +625,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 	
 	# Validate array sizes match
 	if point_count != y_array.size() or point_count != z_array.size() or point_count != p_array.size():
-		print("🧠 ERROR: Mismatched array sizes - x:", x_array.size(), " y:", y_array.size(), " z:", z_array.size(), " p:", p_array.size())
+		print("[brain]  ERROR: Mismatched array sizes - x:", x_array.size(), " y:", y_array.size(), " z:", z_array.size(), " p:", p_array.size())
 		_clear_all_neurons()
 		return
 	
@@ -650,7 +650,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 			if has_meta("_last_origin_fire_ms"):
 				var last_fire_ms = get_meta("_last_origin_fire_ms")
 				var delta_ms = Time.get_ticks_msec() - last_fire_ms
-				interval_ms = " [Δ%dms]" % delta_ms
+				interval_ms = " [dt %dms]" % delta_ms
 			set_meta("_last_origin_fire_ms", Time.get_ticks_msec())
 			
 			set_meta("_last_had_origin", true)
@@ -740,11 +740,11 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 	
 	# Warn if exceeding threshold (but not for aggregated rendering mode - fewer chunks expected)
 	if point_count > _warning_threshold and not _is_aggregated_mode:
-		print("   ⚠️  [%s] Processing %d neurons (exceeds warning threshold of %d) - monitoring performance" % [_cortical_area_id, point_count, _warning_threshold])
+		print("   [warn]   [%s] Processing %d neurons (exceeds warning threshold of %d) - monitoring performance" % [_cortical_area_id, point_count, _warning_threshold])
 	elif _is_aggregated_mode and point_count > 0:
 		# Log aggregated rendering processing (chunks, not neurons)
 		if point_count % 100 == 0 or point_count <= 10:
-			print("   🔥 [%s] Processing %d aggregated rendering chunks" % [_cortical_area_id, point_count])
+			print("   [hot]  [%s] Processing %d aggregated rendering chunks" % [_cortical_area_id, point_count])
 	
 	# Call Rust to apply directly to MultiMesh when deserializer is available
 	if _rust_processor == null:
@@ -761,7 +761,7 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 	)
 	
 	if not result.success:
-		print("🦀 ERROR: Rust processing failed")
+		print("[rust]  ERROR: Rust processing failed")
 		_clear_all_neurons()
 		return
 	
@@ -784,7 +784,7 @@ func _on_received_direct_neural_points(points_data: PackedByteArray) -> void:
 	# Convert to bulk arrays for consistent processing
 	var point_count = points_data.size() / 16
 	if point_count * 16 != points_data.size():
-		print("🧠 ERROR: Invalid data size ", points_data.size(), " bytes - not divisible by 16")
+		print("[brain]  ERROR: Invalid data size ", points_data.size(), " bytes - not divisible by 16")
 		_clear_all_neurons()
 		return
 	
@@ -904,7 +904,7 @@ func _clear_all_neurons() -> void:
 		if has_meta("_last_fire_time"):
 			var current_time = Time.get_ticks_msec() / 1000.0
 			time_visible = (current_time - get_meta("_last_fire_time")) * 1000.0  # Convert to ms
-		# print("[%s] 🧹 [%s] CLEARING %d neurons (visible for %.0fms)" % [timestamp, area_id, _current_neuron_count, time_visible])  # Spam log - disabled
+		# print("[%s] [clr]  [%s] CLEARING %d neurons (visible for %.0fms)" % [timestamp, area_id, _current_neuron_count, time_visible])  # Spam log - disabled
 	
 	_multi_mesh.instance_count = 0
 	_current_neuron_count = 0
@@ -918,7 +918,7 @@ func _clear_all_neurons() -> void:
 func _start_visibility_timer() -> void:
 	"""Start the visibility timer with buffer for smooth updates"""
 	if not FeagiCore:
-		print("🔥 DirectPoints: Cannot start timer - FeagiCore not available")
+		print("[hot]  DirectPoints: Cannot start timer - FeagiCore not available")
 		return
 	
 	# Use delay_between_bursts from FeagiCore (authoritative source from FEAGI API)
@@ -929,10 +929,10 @@ func _start_visibility_timer() -> void:
 	if delay_between_bursts <= 0.0 and FeagiCore.feagi_local_cache:
 		delay_between_bursts = FeagiCore.feagi_local_cache.simulation_timestep
 		if delay_between_bursts > 0.0:
-			print("   ⚠️  Using fallback simulation_timestep from cache: %.3f seconds" % delay_between_bursts)
+			print("   [warn]   Using fallback simulation_timestep from cache: %.3f seconds" % delay_between_bursts)
 	
 	if delay_between_bursts <= 0.0:
-		print("🔥 DirectPoints: Cannot start timer - delay_between_bursts is 0 or invalid")
+		print("[hot]  DirectPoints: Cannot start timer - delay_between_bursts is 0 or invalid")
 		return
 	
 	# Stop existing timer if running
@@ -968,21 +968,21 @@ func _on_visibility_timeout() -> void:
 	if _current_neuron_count > 0:
 		var area_id = _cortical_area_id.substr(0, 6) if _cortical_area_id.length() >= 6 else _cortical_area_id
 		var timestamp = _get_timestamp_with_ms()
-		# print("[%s] ⏱️  [%s] Timer expired - clearing neurons" % [timestamp, area_id])  # Spam log - disabled
+		# print("[%s] [time]   [%s] Timer expired - clearing neurons" % [timestamp, area_id])  # Spam log - disabled
 	
 	# Visibility timer expired - clearing neurons via timeout
 	_clear_all_neurons()
 	
 	# Make power cone use default cortical mesh color when no neural activity
 	if AbstractCorticalArea.is_power_area(_cortical_area_id) and _power_material:
-		# print("   ⚡ Power cone becoming inactive - using default cortical mesh color")  # Suppressed to reduce log spam
+		# print("   [pwr]  Power cone becoming inactive - using default cortical mesh color")  # Suppressed to reduce log spam
 		_power_material.set_shader_parameter("albedo_color", Color(0.172451, 0.315246, 0.861982, 0.8))  # Light blue like cortical meshes
 		_power_material.set_shader_parameter("emission_color", Color(0.172451, 0.315246, 0.861982, 1.0))  # Light blue emission
 		_power_material.set_shader_parameter("emission_energy", 0.3)  # Subtle glow
 	
 	# Make memory sphere return to transparent state when no neural activity
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
-		# print("   🔮 Memory sphere becoming inactive - fading to inactive state")  # Suppressed to reduce log spam
+		# print("   [mem]  Memory sphere becoming inactive - fading to inactive state")  # Suppressed to reduce log spam
 		_set_memory_activity_state(false)
 
 func _get_timestamp_with_ms() -> String:
@@ -1098,7 +1098,7 @@ func _trigger_power_firing_animation() -> void:
 	
 	var simulation_timestep = delay_between_bursts
 	
-	# print("   ⚡ Triggering power cone firing animation!")  # Suppressed to reduce log spam
+	# print("   [pwr]  Triggering power cone firing animation!")  # Suppressed to reduce log spam
 	
 	# Make power cone use firing colors when firing animation starts
 	_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))  # Bright red for firing
@@ -1246,7 +1246,7 @@ func _should_use_png_icon_by_id(cortical_id: StringName) -> bool:
 
 ## Create PNG icon billboard for special cortical areas
 func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
-	print("   🖼️ Creating PNG icon billboard for: ", area.cortical_ID)
+	print("   [icon]  Creating PNG icon billboard for: ", area.cortical_ID)
 	
 	# Create a billboard mesh instance for the PNG icon
 	var icon_mesh_instance = MeshInstance3D.new()
@@ -1266,19 +1266,19 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 	icon_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Visible from both sides
 	
 	if AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
-		# Solid color only — no placeholder texture (avoids cross / grid look)
+		# Solid color only - no placeholder texture (avoids cross / grid look)
 		_fatigue_billboard_material = icon_material
 		_fatigue_billboard_is_firing = false
 		icon_material.albedo_texture = null
 		icon_material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 		_apply_fatigue_billboard_idle_state()
-		print("   🎨 Fatigue billboard: cortical idle blue; red only on Type-11 activity")
+		print("   [mat]  Fatigue billboard: cortical idle blue; red only on Type-11 activity")
 	else:
 		var icon_texture = _load_png_icon_texture(area.cortical_ID)
 		icon_material.albedo_texture = icon_texture
 		icon_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		icon_material.albedo_color = Color.WHITE  # Full texture visibility
-		print("   🎨 Created billboard material with transparency and billboard mode")
+		print("   [mat]  Created billboard material with transparency and billboard mode")
 		if AbstractCorticalArea.is_death_area(area.cortical_ID):
 			icon_material.emission_enabled = true
 			icon_material.emission = Color(1.0, 0.2, 0.2)  # Red glow for death
@@ -1292,51 +1292,51 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 	
 	_static_body.add_child(icon_mesh_instance)
 	
-	print("   ✅ PNG icon billboard created:")
-	print("     📍 Position: ", icon_mesh_instance.position)
-	print("     📏 Quad size: ", quad_mesh.size)
+	print("   [ok]  PNG icon billboard created:")
+	print("     [pos]  Position: ", icon_mesh_instance.position)
+	print("     [size]  Quad size: ", quad_mesh.size)
 	if AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
-		print("     🖼️ Texture: (none — solid fatigue billboard)")
+		print("     [icon]  Texture: (none - solid fatigue billboard)")
 	else:
 		var tex: Texture2D = icon_material.albedo_texture as Texture2D
-		print("     🖼️ Texture: ", tex.resource_path if tex else "placeholder")
-	print("     👁️ Visible: ", icon_mesh_instance.visible)
-	print("     🎨 Material: ", icon_material != null)
+		print("     [icon]  Texture: ", tex.resource_path if tex else "placeholder")
+	print("     [vis]  Visible: ", icon_mesh_instance.visible)
+	print("     [mat]  Material: ", icon_material != null)
 
 ## Load PNG icon texture for cortical area
 func _load_png_icon_texture(cortical_id: StringName) -> Texture2D:
-	print("   🔍 Loading PNG icon for: ", cortical_id)
+	print("   [find]  Loading PNG icon for: ", cortical_id)
 	
 	# Try different loading approaches for better compatibility
 	var texture: Texture2D = null
 	var icon_path = "res://godot_source/addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/Icons/" + cortical_id + ".png"
 	
-	print("   📂 Checking path: ", icon_path)
+	print("   [path]  Checking path: ", icon_path)
 	
 	# Method 1: Try ResourceLoader.load with full error checking
 	if ResourceLoader.exists(icon_path):
-		print("   ✅ File exists, attempting to load...")
+		print("   [ok]  File exists, attempting to load...")
 		var resource = ResourceLoader.load(icon_path)
 		if resource != null:
 			texture = resource as Texture2D
 			if texture != null:
-				print("   🎉 Successfully loaded PNG as Texture2D!")
-				print("   📏 Texture size: ", texture.get_size())
+				print("   [ok]  Successfully loaded PNG as Texture2D!")
+				print("   [size]  Texture size: ", texture.get_size())
 				return texture
 			else:
-				print("   ❌ Resource loaded but not a Texture2D: ", typeof(resource))
+				print("   [err]  Resource loaded but not a Texture2D: ", typeof(resource))
 		else:
-			print("   ❌ ResourceLoader.load returned null")
+			print("   [err]  ResourceLoader.load returned null")
 	else:
-		print("   ❌ File does not exist at path: ", icon_path)
+		print("   [err]  File does not exist at path: ", icon_path)
 	
 	# Method 2: Try alternative path format
 	var alt_path = "res://godot_source/addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/Icons/" + cortical_id + ".png"
-	print("   🔄 Trying alternative loading method...")
+	print("   [retry]  Trying alternative loading method...")
 	
 	# Method 3: For _death specifically, try multiple path variations
 	if AbstractCorticalArea.is_death_area(cortical_id):
-		print("   💀 Attempting _death icon load with multiple methods...")
+		print("   [death]  Attempting _death icon load with multiple methods...")
 		
 		# Try different path formats (including the path from import file)
 		var test_paths = [
@@ -1347,30 +1347,30 @@ func _load_png_icon_texture(cortical_id: StringName) -> Texture2D:
 		]
 		
 		for test_path in test_paths:
-			print("   🔍 Testing path: ", test_path)
+			print("   [find]  Testing path: ", test_path)
 			if ResourceLoader.exists(test_path):
-				print("   ✅ Path exists!")
+				print("   [ok]  Path exists!")
 				var test_resource = ResourceLoader.load(test_path)
 				if test_resource != null:
-					print("   📦 Resource loaded, type: ", test_resource.get_class())
+					print("   [box]  Resource loaded, type: ", test_resource.get_class())
 					if test_resource is Texture2D:
-						print("   🎉 Found working Texture2D!")
+						print("   [ok]  Found working Texture2D!")
 						return test_resource
 				else:
-					print("   ❌ Resource load returned null")
+					print("   [err]  Resource load returned null")
 			else:
-				print("   ❌ Path does not exist")
+				print("   [err]  Path does not exist")
 		
 		# Try using preload (compile-time loading)
-		print("   🔄 Attempting preload method...")
+		print("   [retry]  Attempting preload method...")
 		# Note: This might cause an error if file doesn't exist, but we'll catch it
 	
-	print("   ❌ All loading methods failed, creating placeholder")
+	print("   [err]  All loading methods failed, creating placeholder")
 	return _create_placeholder_icon_texture(cortical_id)
 
 ## Create placeholder texture for cortical areas without custom icons
 func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
-	print("   🎨 Creating placeholder texture for: ", cortical_id)
+	print("   [mat]  Creating placeholder texture for: ", cortical_id)
 	
 	# Create a simple colored image as placeholder
 	var image = Image.create(128, 128, false, Image.FORMAT_RGBA8)
@@ -1423,7 +1423,7 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 	var texture = ImageTexture.new()
 	texture.set_image(image)
 	
-	print("   ✅ Created placeholder texture with color: ", placeholder_color)
+	print("   [ok]  Created placeholder texture with color: ", placeholder_color)
 	return texture
 
 func _on_memory_area_stats_updated(stats: Dictionary) -> void:

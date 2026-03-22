@@ -471,9 +471,12 @@ func _if_brain_readiness_or_genome_availability_changes(available: bool, ready: 
 		print("FEAGICORE: [3D_SCENE_DEBUG] Ignoring health-driven genome state change while deterministic reload is in progress")
 		return
 	if _pending_reload_when_ready and available and ready:
-		print("FEAGICORE: [3D_SCENE_DEBUG] Deferred genome reload condition now ready - starting full reload")
-		_pending_reload_when_ready = false
-		_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+		if _is_ready_for_deterministic_genome_reload():
+			print("FEAGICORE: [3D_SCENE_DEBUG] Deferred genome reload condition now ready - starting full reload")
+			_pending_reload_when_ready = false
+			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+		else:
+			print("FEAGICORE: [3D_SCENE_DEBUG] Deferred genome reload still waiting for HEALTHY connection state")
 		return
 	
 	if !available:
@@ -531,15 +534,23 @@ func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: Stri
 			pass
 		else:
 			return
-	# Deterministic gate: only start full genome reload when FEAGI explicitly reports ready.
-	if not feagi_local_cache.genome_availability or not feagi_local_cache.brain_readiness:
+	# Deterministic gate: only start full genome reload when FEAGI explicitly reports ready
+	# and transport is fully healthy (prevents WS-retrying reload races).
+	if not _is_ready_for_deterministic_genome_reload():
 		_pending_reload_when_ready = true
-		print("FEAGICORE: [3D_SCENE_DEBUG] Deferring genome reload until FEAGI reports genome_available && brain_ready (session=%d genome=%d reason=%s)" % [feagi_session, genome_num, reason])
+		print("FEAGICORE: [3D_SCENE_DEBUG] Deferring genome reload until FEAGI reports genome_available && brain_ready and connection is HEALTHY (session=%d genome=%d reason=%s)" % [feagi_session, genome_num, reason])
 		return
 	
 	match genome_load_state:
 		GENOME_LOAD_STATE.NO_GENOME_AVAILABLE, GENOME_LOAD_STATE.GENOME_READY, GENOME_LOAD_STATE.GENOME_PROCESSING, GENOME_LOAD_STATE.GENOME_RELOADING:
 			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+
+func _is_ready_for_deterministic_genome_reload() -> bool:
+	if not feagi_local_cache.genome_availability or not feagi_local_cache.brain_readiness:
+		return false
+	if network == null:
+		return false
+	return network.connection_state == network.CONNECTION_STATE.HEALTHY
 
 func _on_agent_reregistration_needed(reason: String):
 	print("🔍 [AGENT-REG] Triggering agent re-registration: %s" % reason)

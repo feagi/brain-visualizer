@@ -51,6 +51,10 @@ func _init():
 	brain_regions.region_added.connect(_on_brain_region_added)
 	brain_regions.region_about_to_be_removed.connect(_on_brain_region_about_to_be_removed)
 
+func _region_reload_debug_enabled() -> bool:
+	var val := String(OS.get_environment("BV_REGION_RELOAD_DEBUG")).strip_edges().to_lower()
+	return val == "1" or val == "true" or val == "yes" or val == "on"
+
 ## Given several summary datas from FEAGI, we can build the entire cache at once
 func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summary: Dictionary, mapping_summary: Dictionary, regions_summary: Dictionary) -> void:
 
@@ -427,34 +431,25 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 			# Genome changes: only detect actual changes (not initial from 0)
 			var genome_changed = (_previous_genome_num != 0 and current_genome_num != _previous_genome_num)
 
-			# Full wipe+reload ONLY when:
+			# Full wipe+reload when:
 			# - FEAGI session/instance changed (new process or first attach), OR
+			# - genome_num changed, OR
 			# - Local cache is empty while FEAGI reports genome+brain ready (recovery / stuck reload).
-			#
-			# Same-session genome_num bumps (auto-created cortical areas, runtime saves, etc.) must NOT
-			# trigger full reload: they coincide with FEAGI transition windows and produce incomplete API
-			# snapshots while wiping the entire cache. Structural updates are reflected in health_check
-			# hashes; _process_hash_change_detection() performs incremental refresh without a wipe.
 			var force_reload_needed: bool = (
 				health_genome_available
 				and health_brain_ready
 				and cache_is_empty
 				and current_genome_num > 0
 			)
-			var trigger_full_reload: bool = session_changed or force_reload_needed
-
-			if genome_changed and not trigger_full_reload:
-				print(
-					"FEAGI CACHE: genome_num %d → %d (same feagi_session) — using incremental hash sync, not full reload"
-					% [_previous_genome_num, current_genome_num]
-				)
+			var trigger_full_reload: bool = session_changed or genome_changed or force_reload_needed
 
 			if trigger_full_reload:
 				# Never apply cooldown to initial startup (when _previous_feagi_session was 0)
 				var is_initial_startup: bool = (_previous_feagi_session == 0)
 				var skip_emit: bool = false
 
-				if not is_initial_startup:
+				# Do not cooldown-block genome_num-driven reloads.
+				if not is_initial_startup and not genome_changed:
 					var cooldown_now: int = Time.get_ticks_msec()
 					if cooldown_now - _last_genome_change_time < _genome_change_cooldown_ms:
 						var remaining_cooldown: float = (
@@ -485,6 +480,10 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 							reason += "STUCK RELOAD - cache empty despite GENOME_RELOADING state"
 						else:
 							reason += "cache empty despite genome ready"
+					if genome_changed:
+						if reason != "":
+							reason += " & "
+						reason += "genome_num changed (%d -> %d)" % [_previous_genome_num, current_genome_num]
 
 					var emit_time: int = Time.get_ticks_msec()
 					_last_genome_change_time = emit_time
@@ -1066,8 +1065,20 @@ func _refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
 		return regions_output
 	
 	var regions_summary: Dictionary = regions_output.decode_response_as_dict()
+	if _region_reload_debug_enabled():
+		print("[REGION-DBG][Cache] refresh_brain_regions summary_regions=%d root_present=%s before_cache_regions=%d" % [
+			regions_summary.size(),
+			str(brain_regions.summary_has_root_region(regions_summary)),
+			brain_regions.available_brain_regions.size(),
+		])
 	var prior_region_ids: Array = brain_regions.available_brain_regions.keys()
 	var area_mapping: Dictionary = brain_regions.FEAGI_apply_region_summary_diff(regions_summary)
+	if _region_reload_debug_enabled():
+		print("[REGION-DBG][Cache] refresh_brain_regions diff_done area_mapping=%d after_cache_regions=%d prior_regions=%d" % [
+			area_mapping.size(),
+			brain_regions.available_brain_regions.size(),
+			prior_region_ids.size(),
+		])
 	_connect_to_existing_brain_region_signals()
 	
 	var cortical_output: FeagiRequestOutput = await FeagiCore.requests.get_cortical_area_geometry()
@@ -1076,6 +1087,12 @@ func _refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
 	
 	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), area_mapping)
 	_refresh_partial_mappings_from_summary(regions_summary)
+	if _region_reload_debug_enabled():
+		print("[REGION-DBG][Cache] refresh_brain_regions emit brain_regions_reloaded root=%s regions=%d corticals=%d" % [
+			String(brain_regions.get_root_region().region_ID) if brain_regions.get_root_region() != null else "none",
+			brain_regions.available_brain_regions.size(),
+			cortical_areas.available_cortical_areas.size(),
+		])
 	print("HASH REFRESH: brain_regions_reloaded emitted for brain_regions_hash")
 	brain_regions_reloaded.emit()
 	cortical_areas_reloaded.emit()
@@ -1363,6 +1380,7 @@ func _refresh_partial_mappings_from_summary(region_summary_data: Dictionary) -> 
 	var region_count: int = 0
 	var input_count: int = 0
 	var output_count: int = 0
+	var debug_regions := _region_reload_debug_enabled()
 	for region_id in region_summary_data.keys():
 		if not brain_regions.available_brain_regions.has(region_id):
 			continue
@@ -1380,6 +1398,13 @@ func _refresh_partial_mappings_from_summary(region_summary_data: Dictionary) -> 
 			outputs.assign(region_dict["outputs"])
 			output_count += outputs.size()
 			region.FEAGI_establish_partial_mappings_from_JSONs(outputs, false)
+		if debug_regions:
+			print("[REGION-DBG][Cache] partials region_id=%s inputs=%d outputs=%d total_partials_now=%d" % [
+				String(region_id),
+				int((region_dict.get("inputs", []) as Array).size()),
+				int((region_dict.get("outputs", []) as Array).size()),
+				region.partial_mappings.size(),
+			])
 	print("FEAGI CACHE: Partial mappings refreshed (regions=%d, inputs=%d, outputs=%d)" % [region_count, input_count, output_count])
 
 ## Emit region_added for any regions that were introduced during refresh.

@@ -63,7 +63,7 @@ var _waiting_for_wasm: bool = false
 var _rust_init_attempts: int = 0
 const MAX_RUST_INIT_ATTEMPTS := 5
 
-# 𒓉 Shared memory neuron visualization (FEAGI → Brain Visualizer)
+# [FEAGI] Shared memory neuron visualization (FEAGI -> Brain Visualizer)
 var _use_shared_mem: bool = false
 var _shm_path: String = ""
 var _shm_file: FileAccess = null
@@ -136,7 +136,7 @@ func _ready():
 		# Initialize Rust-based high-performance deserializer (REQUIRED on desktop)
 		_init_rust_deserializer()
 
-	# 𒓉 Try to initialize shared memory visualization (env-provided path)
+	# [FEAGI] Try to initialize shared memory visualization (env-provided path)
 	_init_shm_visualization()
 	# Defer WS fallback notice to allow registration to provide SHM path
 	_ws_notice_deadline_ms = Time.get_ticks_msec() + 3000
@@ -166,7 +166,7 @@ func _init_rust_deserializer() -> void:
 	push_error("🦀 CRITICAL: FeagiDataDeserializer class not found after retries. Ensure addon is installed and library built (debug/release).")
 
 func _process(_delta: float):
-	# 𒓉 Poll SHM for neuron visualization bytes if enabled
+	# [FEAGI] Poll SHM for neuron visualization bytes if enabled
 	if _use_shared_mem:
 		# Throttle polling to negotiated rate (not every frame!)
 		var current_time = Time.get_ticks_msec() / 1000.0
@@ -178,11 +178,11 @@ func _process(_delta: float):
 			if feagi_networking and feagi_networking.has_meta("_negotiated_viz_hz"):
 				var negotiated_hz = feagi_networking.get_meta("_negotiated_viz_hz")
 				_shm_poll_interval = 1.0 / negotiated_hz
-				print("𒓉 [WS] SHM polling throttled to %.1f Hz (%.1f ms interval); path=%s" % [negotiated_hz, _shm_poll_interval * 1000.0, _shm_path])
+				print("[FEAGI] [WS] SHM polling throttled to %.1f Hz (%.1f ms interval); path=%s" % [negotiated_hz, _shm_poll_interval * 1000.0, _shm_path])
 			else:
 				# Fallback: use 60 Hz (backwards compat)
 				_shm_poll_interval = 1.0 / 60.0
-				print("𒓉 [WS] ⚠️ No negotiated rate found, defaulting to 60 Hz polling")
+				print("[FEAGI] [WS] WARN: No negotiated rate found, defaulting to 60 Hz polling")
 		
 		# Only poll if enough time has elapsed
 		if current_time - _shm_last_poll_time >= _shm_poll_interval:
@@ -191,16 +191,16 @@ func _process(_delta: float):
 			
 			if not _shm_notice_printed:
 				var rate_hz = 1.0 / _shm_poll_interval if _shm_poll_interval > 0.0 else 60.0
-				print("𒓉 [WS] SHM polling active at %.1f Hz (throttled); path=%s" % [rate_hz, _shm_path])
+				print("[FEAGI] [WS] SHM polling active at %.1f Hz (throttled); path=%s" % [rate_hz, _shm_path])
 				_shm_notice_printed = true
 	else:
 		# Print once to make it obvious we're on WS path, but only after a brief delay
 		# and not while we are actively trying to initialize SHM
 		if not _ws_notice_printed and _pending_shm_path == "" and not _shm_attempting and Time.get_ticks_msec() >= _ws_notice_deadline_ms:
 			if _shm_last_error != "":
-				print("𒓉 [WS] Neuron visualization using WebSocket (SHM disabled); last_shm_error=", _shm_last_error)
+				print("[FEAGI] [WS] Neuron visualization using WebSocket (SHM disabled); last_shm_error=", _shm_last_error)
 			else:
-				print("𒓉 [WS] Neuron visualization using WebSocket (SHM disabled)")
+				print("[FEAGI] [WS] Neuron visualization using WebSocket (SHM disabled)")
 			_ws_notice_printed = true
 	# On Web, flush queued Type 11 packets once WASM is ready
 	if OS.has_feature("web") and WASMDecoder.is_wasm_ready() and _pending_type11.size() > 0:
@@ -228,7 +228,7 @@ func _process(_delta: float):
 	if OS.has_feature("web") and WASMDecoder.is_wasm_ready():
 		_pending_type11.clear()
 
-	# 𒓉 Guard: If socket is null (e.g. never connected when using SHM), skip WebSocket polling but continue to SHM polling below
+	# [FEAGI] Guard: If socket is null (e.g. never connected when using SHM), skip WebSocket polling but continue to SHM polling below
 	if not _socket:
 		# SHM polling for neuron visualization happens at end of _process()
 		# But if we also use SHM for video, that's handled by WindowViewPreviews directly
@@ -566,7 +566,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 		print("🦀 [WS] RECEIVED TYPE %d: %d bytes, first 20 bytes: %s" % [structure_id, bytes.size(), bytes.slice(0, min(20, bytes.size())).hex_encode()])
 		set_meta("_type_log_count", type_count + 1)
 
-	# 𒓉 If SHM is active, ignore WS-delivered (but NOT SHM-delivered) Type 11 to avoid duplicates
+	# [FEAGI] If SHM is active, ignore WS-delivered (but NOT SHM-delivered) Type 11 to avoid duplicates
 	if _use_shared_mem and structure_id == 11 and not from_shm:
 		return
 	
@@ -656,7 +656,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 					else:
 						_handle_missing_cortical_area(cortical_id)
 				if _shm_debug_logs:
-					print("𒓉 [WS] Processed SHM JSON Type 11: areas=", areas.size(), " points=", total_points)
+					print("[FEAGI] [WS] Processed SHM JSON Type 11: areas=", areas.size(), " points=", total_points)
 				# Throttle logging but keep processing subsequent frames without suppression
 				_shm_notice_printed = true
 				return
@@ -958,7 +958,7 @@ func _refresh_bv_fastpath_cache_if_needed() -> void:
 			registered_multimesh += 1
 	_type11_rootcause_log_fastpath_rebuild(registered_multimesh)
 
-# 𒓉 -------- Shared Memory Visualization Support --------
+# [FEAGI] -------- Shared Memory Visualization Support --------
 func _init_shm_visualization() -> void:
 	# Prefer explicit neuron viz SHM; fallback to generic viz SHM
 	var p := OS.get_environment("FEAGI_VIZ_NEURONS_SHM")
@@ -973,7 +973,7 @@ func _init_shm_visualization() -> void:
 	# Start retry loop to wait for file/header to be ready without spamming WS fallback
 	_ws_notice_printed = false
 	_ws_notice_deadline_ms = Time.get_ticks_msec() + 2500
-	print("𒓉 [WS] Awaiting SHM neuron visualization path: ", p)
+	print("[FEAGI] [WS] Awaiting SHM neuron visualization path: ", p)
 	_try_open_shm_path()
 
 func _try_open_shm_path() -> void:
@@ -985,11 +985,11 @@ func _try_open_shm_path() -> void:
 		if _shm_init_attempts < _shm_init_max_attempts:
 			_shm_init_attempts += 1
 			_shm_last_error = "file not found"
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": waiting for file: ", p)
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": waiting for file: ", p)
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
-			print("𒓉 [WS] SHM activation failed: file never appeared: ", p)
+			print("[FEAGI] [WS] SHM activation failed: file never appeared: ", p)
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -1000,12 +1000,12 @@ func _try_open_shm_path() -> void:
 			_shm_init_attempts += 1
 			var err := FileAccess.get_open_error()
 			_shm_last_error = "open failed error=" + str(err)
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": open failed. error=", err)
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": open failed. error=", err)
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
 			var err2 := FileAccess.get_open_error()
-			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=open failed error=", err2)
+			print("[FEAGI] [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=open failed error=", err2)
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -1017,11 +1017,11 @@ func _try_open_shm_path() -> void:
 		if _shm_init_attempts < _shm_init_max_attempts:
 			_shm_init_attempts += 1
 			_shm_last_error = "header too small size=" + str(h.size())
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": header too small (", h.size(), ")")
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": header too small (", h.size(), ")")
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
-			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=header too small size=", h.size())
+			print("[FEAGI] [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=header too small size=", h.size())
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -1033,11 +1033,11 @@ func _try_open_shm_path() -> void:
 		if _shm_init_attempts < _shm_init_max_attempts:
 			_shm_init_attempts += 1
 			_shm_last_error = "invalid magic=" + magic
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid magic '", magic, "' (expect FEAGIVIS/FEAGIBIN/FEAGIMOT)")
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid magic '", magic, "' (expect FEAGIVIS/FEAGIBIN/FEAGIMOT)")
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
-			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid magic '", magic, "'")
+			print("[FEAGI] [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid magic '", magic, "'")
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -1049,11 +1049,11 @@ func _try_open_shm_path() -> void:
 		if _shm_init_attempts < _shm_init_max_attempts:
 			_shm_init_attempts += 1
 			_shm_last_error = "invalid header values slots=" + str(num_slots) + ", slot_size=" + str(slot_size)
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid header values slots=", num_slots, " slot_size=", slot_size)
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid header values slots=", num_slots, " slot_size=", slot_size)
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
-			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid header values slots=", num_slots, " slot_size=", slot_size)
+			print("[FEAGI] [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid header values slots=", num_slots, " slot_size=", slot_size)
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -1071,7 +1071,7 @@ func _try_open_shm_path() -> void:
 	_shm_updates_received = 0
 	_shm_last_rate_log_time = Time.get_ticks_msec() / 1000.0
 	
-	print("𒓉 [WS] Using SHM neuron visualization: ", p, " magic=", magic, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size, " first_seq=", first_seq)
+	print("[FEAGI] [WS] Using SHM neuron visualization: ", p, " magic=", magic, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size, " first_seq=", first_seq)
 	shm_visualization_enabled.emit(p)
 	# Reset path notices to show SHM active on next _process tick
 	_shm_notice_printed = false
@@ -1111,7 +1111,7 @@ func _poll_shm_once() -> void:
 		# Quiet repetitive logs; only print once per staleness streak
 		if _shm_debug_logs and not _shm_no_new_reported:
 			var wi := int(h.decode_u32(28))
-			print("𒓉 [WS] SHM no new frame: head=", frame_seq, " last=", _shm_last_seq, " write_index=", wi)
+			print("[FEAGI] [WS] SHM no new frame: head=", frame_seq, " last=", _shm_last_seq, " write_index=", wi)
 			_shm_no_new_reported = true
 		# If we miss enough cycles, reopen the file to avoid stale cache (quiet)
 		if _shm_missed_cycles >= _shm_reopen_threshold:
@@ -1185,14 +1185,14 @@ func _poll_shm_once() -> void:
 			avg_fps = sum_fps / _shm_frame_times.size()
 		
 		var timestamp = Time.get_datetime_string_from_system()
-		print("[%s] 𒓉 [BV-SHM] Receiving at %.1f Hz avg (%.1f Hz rolling, %d updates in %.1f sec) | Last frame: %.1f Hz (%.0f ms ago)" % [
+		print("[%s] [FEAGI] [BV-SHM] Receiving at %.1f Hz avg (%.1f Hz rolling, %d updates in %.1f sec) | Last frame: %.1f Hz (%.0f ms ago)" % [
 			timestamp, avg_rate, avg_fps, _shm_updates_received, elapsed, instant_fps, frame_delta * 1000.0
 		])
 		_shm_updates_received = 0
 		_shm_last_rate_log_time = current_time
 	
 	if _shm_debug_logs:
-		print("𒓉 [WS] SHM frame ", frame_seq, " idx=", idx, " bytes=", payload_len)
+		print("[FEAGI] [WS] SHM frame ", frame_seq, " idx=", idx, " bytes=", payload_len)
 	_process_wrapped_byte_structure(payload, true)  # from_shm=true
 
 func enable_shared_memory_visualization(p: String) -> void:
@@ -1210,7 +1210,7 @@ func enable_shared_memory_visualization(p: String) -> void:
 	# Give time for FEAGI to create and initialize the file header
 	_ws_notice_printed = false
 	_ws_notice_deadline_ms = Time.get_ticks_msec() + 2500
-	print("𒓉 [WS] Enabling SHM neuron visualization via register; will retry: ", p)
+	print("[FEAGI] [WS] Enabling SHM neuron visualization via register; will retry: ", p)
 	_try_open_shm_path()
 
 func _decode_u64_le(bytes: PackedByteArray, offset: int) -> int:

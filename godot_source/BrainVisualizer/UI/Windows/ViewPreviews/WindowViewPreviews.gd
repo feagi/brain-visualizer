@@ -208,7 +208,7 @@ func _ready():
 	
 	if _agent_dropdown:
 		_agent_dropdown.clear()
-		_agent_dropdown.add_item("Select agent…")
+		_agent_dropdown.add_item("Select agent...")
 		_agent_dropdown.disabled = true
 		_agent_dropdown.item_selected.connect(_on_agent_dropdown_selected)
 	
@@ -390,28 +390,28 @@ func _ready():
 	# Populate agents with video streams
 	_try_fetch_video_shm_from_api()
 	# Try core SHM path via environment (provided by FEAGI launcher)
-	print("𒓉 [Preview] _ready(): attempting FEAGI_VIZ_SHM shared-memory setup")
+	print("[FEAGI] [Preview] _ready(): attempting FEAGI_VIZ_SHM shared-memory setup")
 	_try_open_core_visualization_shm()
 
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
 	# If SHM already active from _ready() discovery, skip WS fallback
 	if _use_shared_mem:
-		print("𒓉 [Preview] setup(): SHM already active; skipping WS fallback")
+		print("[FEAGI] [Preview] setup(): SHM already active; skipping WS fallback")
 		return
 	# Prefer shared memory reader if explicitly configured via environment
 	var shm_path: String = OS.get_environment("FEAGI_VIDEO_SHM")
-	print("𒓉 [Preview] setup(): FEAGI_VIDEO_SHM=\"%s\"; SharedMemVideo available? %s" % [shm_path, str(ClassDB.class_exists("SharedMemVideo"))])
+	print("[FEAGI] [Preview] setup(): FEAGI_VIDEO_SHM=\"%s\"; SharedMemVideo available? %s" % [shm_path, str(ClassDB.class_exists("SharedMemVideo"))])
 	if shm_path != "":
 		var exists_env := FileAccess.file_exists(shm_path)
-		print("𒓉 [Preview] setup(): FEAGI_VIDEO_SHM exists? ", str(exists_env))
+		print("[FEAGI] [Preview] setup(): FEAGI_VIDEO_SHM exists? ", str(exists_env))
 	if shm_path != "" and ClassDB.class_exists("SharedMemVideo"):
 		var obj = ClassDB.instantiate("SharedMemVideo")
 		_shm_reader_feagi = obj
 		if _shm_reader_feagi and _shm_reader_feagi.open(shm_path):
 			var info: Dictionary = _shm_reader_feagi.get_header_info()
-			print("𒓉 [Preview] Using shared memory (FEAGI_VIDEO_SHM): ", shm_path)
-			print("𒓉 [Preview] SharedMemVideo header:", info)
+			print("[FEAGI] [Preview] Using shared memory (FEAGI_VIDEO_SHM): ", shm_path)
+			print("[FEAGI] [Preview] SharedMemVideo header:", info)
 			_shm_status.text = "SHM: opened"
 			_use_shared_mem = true
 			set_process(true)
@@ -422,9 +422,9 @@ func setup() -> void:
 				reason = "SharedMemVideo.instantiate() returned null"
 			elif not FileAccess.file_exists(shm_path):
 				reason = "file does not exist"
-			print("𒓉 [Preview] setup(): SHM selection failed for FEAGI_VIDEO_SHM (", shm_path, "): ", reason)
+			print("[FEAGI] [Preview] setup(): SHM selection failed for FEAGI_VIDEO_SHM (", shm_path, "): ", reason)
 	# Fallback to existing FEAGI visual data stream
-	print("𒓉 [Preview] setup(): falling back to WebSocket visualization stream")
+	print("[FEAGI] [Preview] setup(): falling back to WebSocket visualization stream")
 	_fallback_to_websocket()
 
 func _process(_dt: float) -> void:
@@ -444,7 +444,7 @@ func _process(_dt: float) -> void:
 		var frame_seq: int = int(info_raw.get("frame_seq", -1))
 		# Detect restart: frame_seq jumped backward (writer restarted)
 		if frame_seq >= 0 and frame_seq < _last_frame_seq_raw:
-			print("𒓉 [Preview] Raw video restart detected (seq %d -> %d), reopening SHM..." % [_last_frame_seq_raw, frame_seq])
+			print("[FEAGI] [Preview] Raw video restart detected (seq %d -> %d), reopening SHM..." % [_last_frame_seq_raw, frame_seq])
 			_last_frame_seq_raw = -1  # Reset to detect new frames
 			_frame_times_raw.clear()
 			_fps_raw = 0.0
@@ -456,7 +456,7 @@ func _process(_dt: float) -> void:
 				var new_reader = _try_open_video_once(_shm_path_raw)
 				if new_reader != null:
 					_shm_reader_raw = new_reader
-					print("𒓉 [Preview] Raw video SHM reopened successfully")
+					print("[FEAGI] [Preview] Raw video SHM reopened successfully")
 				else:
 					print("⚠️ [Preview] Failed to reopen raw video SHM: ", _video_last_error)
 		if frame_seq != _last_frame_seq_raw and frame_seq >= 0:
@@ -487,7 +487,7 @@ func _process(_dt: float) -> void:
 		var frame_seq: int = int(info_feagi.get("frame_seq", -1))
 		# Detect restart: frame_seq jumped backward (writer restarted)
 		if frame_seq >= 0 and frame_seq < _last_frame_seq_feagi:
-			print("𒓉 [Preview] FEAGI video restart detected (seq %d -> %d), reopening SHM..." % [_last_frame_seq_feagi, frame_seq])
+			print("[FEAGI] [Preview] FEAGI video restart detected (seq %d -> %d), reopening SHM..." % [_last_frame_seq_feagi, frame_seq])
 			_last_frame_seq_feagi = -1  # Reset to detect new frames
 			_frame_times_feagi.clear()
 			_fps_feagi = 0.0
@@ -499,7 +499,7 @@ func _process(_dt: float) -> void:
 				var new_reader = _try_open_video_once(_shm_path_feagi)
 				if new_reader != null:
 					_shm_reader_feagi = new_reader
-					print("𒓉 [Preview] FEAGI video SHM reopened successfully")
+					print("[FEAGI] [Preview] FEAGI video SHM reopened successfully")
 				else:
 					print("⚠️ [Preview] Failed to reopen FEAGI video SHM: ", _video_last_error)
 		if frame_seq != _last_frame_seq_feagi and frame_seq >= 0:
@@ -571,7 +571,7 @@ func _gcd(a: int, b: int) -> int:
 
 func _try_open_core_visualization_shm() -> void:
 	if not ClassDB.class_exists("SharedMemVideo"):
-		print("𒓉 [Preview] SharedMemVideo GDExtension not found; using WebSocket")
+		print("[FEAGI] [Preview] SharedMemVideo GDExtension not found; using WebSocket")
 		_shm_status.text = "SHM: extension missing - using websocket"
 		_fallback_to_websocket()
 		return
@@ -583,7 +583,7 @@ func _try_open_core_visualization_shm() -> void:
 			_shm_reader_feagi = obj_v
 			_use_shared_mem = true
 			_shm_status.text = "SHM: video preview"
-			print("𒓉 [Preview] Using shared memory (FEAGI_VIDEO_SHM): ", video_path)
+			print("[FEAGI] [Preview] Using shared memory (FEAGI_VIDEO_SHM): ", video_path)
 			set_process(true)
 			return
 	# Fallback to core visualization path
@@ -594,7 +594,7 @@ func _try_open_core_visualization_shm() -> void:
 			_shm_reader_feagi = obj
 			_use_shared_mem = true
 			_shm_status.text = "SHM: core visualization"
-			print("𒓉 [Preview] Using shared memory (FEAGI_VIZ_SHM): ", core_viz_path)
+			print("[FEAGI] [Preview] Using shared memory (FEAGI_VIZ_SHM): ", core_viz_path)
 			set_process(true)
 			return
 	# Attempt API discovery: GET /v1/agent/shared_mem
@@ -602,7 +602,7 @@ func _try_open_core_visualization_shm() -> void:
 	if _use_shared_mem:
 		return
 	# Final fallback: WebSocket
-	print("𒓉 [Preview] No SHM path available; using WebSocket")
+	print("[FEAGI] [Preview] No SHM path available; using WebSocket")
 	_shm_status.text = "SHM: not provided - using websocket"
 	_fallback_to_websocket()
 
@@ -612,7 +612,7 @@ func _try_fetch_video_shm_from_api() -> void:
 	var http_API = FeagiCore.network.http_API
 	var def = APIRequestWorkerDefinition.define_single_GET_call(http_API.address_list.GET_agent_shared_mem)
 	var worker = http_API.make_HTTP_call(def)
-	print("𒓉 [Preview] Querying /v1/agent/shared_mem for agents with video preview streams…")
+	print("[FEAGI] [Preview] Querying /v1/agent/shared_mem for agents with video preview streams...")
 	await worker.worker_done
 	var out = worker.retrieve_output_and_close()
 	if out.has_errored or out.has_timed_out:
@@ -626,7 +626,7 @@ func _try_fetch_video_shm_from_api() -> void:
 	if _agent_dropdown:
 		_agent_dropdown.disabled = true
 		_agent_dropdown.clear()
-		_agent_dropdown.add_item("Select agent…")
+		_agent_dropdown.add_item("Select agent...")
 	var count := 0
 	for aid in resp.keys():
 		var mapping = resp[aid]
@@ -658,7 +658,7 @@ func _try_fetch_video_shm_from_api() -> void:
 				count += 1
 	if _agent_dropdown:
 		_agent_dropdown.disabled = count == 0
-		print("𒓉 [Preview] Agents with video streams found: ", str(count))
+		print("[FEAGI] [Preview] Agents with video streams found: ", str(count))
 	# Auto-select the first agent (once) on initial window open to avoid blank view
 	if count > 0 and not _did_auto_select_on_open:
 		_did_auto_select_on_open = true
@@ -674,7 +674,7 @@ func _on_refresh_clicked() -> void:
 	if _agent_dropdown:
 		_agent_dropdown.disabled = true
 	if _shm_status:
-		_shm_status.text = "SHM: refreshing…"
+		_shm_status.text = "SHM: refreshing..."
 	await _try_fetch_video_shm_from_api()
 	if _agent_dropdown:
 		_agent_dropdown.disabled = false
@@ -693,7 +693,7 @@ func _on_agent_dropdown_selected(index: int) -> void:
 	if typeof(md) == TYPE_DICTIONARY:
 		raw_path = str(md.get("raw", ""))
 		feagi_path = str(md.get("feagi", ""))
-	print("𒓉 [Preview] Selected agent paths: raw='%s' feagi='%s'" % [raw_path, feagi_path])
+	print("[FEAGI] [Preview] Selected agent paths: raw='%s' feagi='%s'" % [raw_path, feagi_path])
 	if raw_path == "" and feagi_path == "":
 		return
 	_init_agent_video_shm_dual(raw_path, feagi_path)
@@ -724,7 +724,7 @@ func _try_open_video_once(path: String) -> Variant:
 	var obj = ClassDB.instantiate("SharedMemVideo")
 	if obj and obj.open(path):
 		var info: Dictionary = obj.get_header_info()
-		print("𒓉 [Preview] Opened SHM (agent): ", path, " header=", info)
+		print("[FEAGI] [Preview] Opened SHM (agent): ", path, " header=", info)
 		return obj
 	_video_last_error = "open() returned false"
 	return null
@@ -739,15 +739,15 @@ func _init_agent_video_shm_dual(raw_path: String, feagi_path: String) -> void:
 		if raw_path != "":
 			raw_obj = _try_open_video_once(raw_path)
 			if raw_obj != null:
-				print("𒓉 [Preview] Raw video SHM opened successfully")
+				print("[FEAGI] [Preview] Raw video SHM opened successfully")
 			else:
-				print("𒓉 [Preview] Raw video SHM failed: ", _video_last_error)
+				print("[FEAGI] [Preview] Raw video SHM failed: ", _video_last_error)
 		if feagi_path != "":
 			feagi_obj = _try_open_video_once(feagi_path)
 			if feagi_obj != null:
-				print("𒓉 [Preview] FEAGI video SHM opened successfully")
+				print("[FEAGI] [Preview] FEAGI video SHM opened successfully")
 			else:
-				print("𒓉 [Preview] FEAGI video SHM failed: ", _video_last_error)
+				print("[FEAGI] [Preview] FEAGI video SHM failed: ", _video_last_error)
 		
 		# Check if we have all required streams
 		var raw_ready: bool = (raw_path == "" or raw_obj != null)
@@ -761,11 +761,11 @@ func _init_agent_video_shm_dual(raw_path: String, feagi_path: String) -> void:
 			_use_shared_mem = true
 			_shm_status.text = "SHM: video preview (agent)"
 			set_process(true)
-			print("𒓉 [Preview] Both SHM streams ready (raw=%s, feagi=%s)" % [str(raw_obj != null), str(feagi_obj != null)])
+			print("[FEAGI] [Preview] Both SHM streams ready (raw=%s, feagi=%s)" % [str(raw_obj != null), str(feagi_obj != null)])
 			return
-		print("𒓉 [Preview] SHM try ", _video_init_attempts, "/", _video_init_max_attempts, ": waiting for both streams...")
+		print("[FEAGI] [Preview] SHM try ", _video_init_attempts, "/", _video_init_max_attempts, ": waiting for both streams...")
 		await get_tree().create_timer(0.25).timeout
-	print("𒓉 [Preview] SHM activation failed after ", _video_init_max_attempts, " attempts; last_error=", _video_last_error)
+	print("[FEAGI] [Preview] SHM activation failed after ", _video_init_max_attempts, " attempts; last_error=", _video_last_error)
 
 func _fallback_to_websocket() -> void:
 	print("[Preview] Using WebSocket visualization stream")
@@ -793,7 +793,7 @@ func _on_seg_value_changed(_val: float) -> void:
 		_seg_overlay.queue_redraw()
 
 func _on_apply_segmentation() -> void:
-	print("𒓉 [SegCtl] Apply eccentricity=(", str(_eccx_slider.value), ", ", str(_eccy_slider.value), ") modularity=(", str(_modx_slider.value), ", ", str(_mody_slider.value), ")")
+	print("[FEAGI] [SegCtl] Apply eccentricity=(", str(_eccx_slider.value), ", ", str(_eccy_slider.value), ") modularity=(", str(_modx_slider.value), ", ", str(_mody_slider.value), ")")
 	_send_segmentation_to_feagi()
 
 func _on_preproc_value_changed(_val: float) -> void:
@@ -813,7 +813,7 @@ func _on_motion_value_changed(_val: float) -> void:
 		_min_blob_val_label.text = "%d" % [int(_min_blob_slider.value)]
 
 func _on_apply_preproc() -> void:
-	print("𒓉 [PreProc] Apply brightness=", _brightness_slider.value, " contrast=", _contrast_slider.value, " grayscale=", _grayscale_check.button_pressed)
+	print("[FEAGI] [PreProc] Apply brightness=", _brightness_slider.value, " contrast=", _contrast_slider.value, " grayscale=", _grayscale_check.button_pressed)
 
 func _on_reset_preproc() -> void:
 	_brightness_slider.value = 0.0
@@ -822,7 +822,7 @@ func _on_reset_preproc() -> void:
 	_on_preproc_value_changed(0.0)
 
 func _on_apply_motion() -> void:
-	print("𒓉 [Motion] Apply pix_diff=", _pixdiff_slider.value, " receptive=", int(_receptive_slider.value), " intensity=", _motion_intensity_slider.value, " min_blob=", int(_min_blob_slider.value))
+	print("[FEAGI] [Motion] Apply pix_diff=", _pixdiff_slider.value, " receptive=", int(_receptive_slider.value), " intensity=", _motion_intensity_slider.value, " min_blob=", int(_min_blob_slider.value))
 
 func _on_reset_motion() -> void:
 	_pixdiff_slider.value = 0.15
@@ -852,7 +852,7 @@ func _send_segmentation_to_feagi() -> void:
 	stim["oecc00"] = [[0,0,0],[0,0,1]]
 	stim["omod00"] = [[0,0,0],[0,0,1]]
 	var payload: Dictionary = {"stimulation_payload": stim}
-	print("𒓉 [SegCtl] Sending control stimulation payload: ", payload)
+	print("[FEAGI] [SegCtl] Sending control stimulation payload: ", payload)
 	var def: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_agent_manualStimulation, payload)
 	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(def)
 	await worker.worker_done
@@ -860,7 +860,7 @@ func _send_segmentation_to_feagi() -> void:
 	if out.has_errored or out.has_timed_out:
 		push_warning("SegCtl: stimulation send failed")
 	else:
-		print("𒓉 [SegCtl] Stimulation sent OK")
+		print("[FEAGI] [SegCtl] Stimulation sent OK")
 
 func _on_raw_preview_rect_changed() -> void:
 	if is_instance_valid(_seg_overlay):

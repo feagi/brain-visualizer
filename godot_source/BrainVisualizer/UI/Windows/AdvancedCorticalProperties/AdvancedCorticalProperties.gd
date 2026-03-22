@@ -1421,15 +1421,10 @@ func _derive_io_preset_for_area(area: AbstractCorticalArea) -> Dictionary:
 
 
 func _core_preset_from_id(cortical_id: StringName) -> StringName:
-	var id_str := String(cortical_id)
-	var decoded := ""
-	var raw = Marshalls.base64_to_raw(id_str)
-	if raw.size() > 0:
-		decoded = raw.get_string_from_utf8()
-	var core_id = decoded if decoded != "" else id_str
-	if core_id == "___power":
+	var core_name := AbstractCorticalArea.get_special_core_area_name(cortical_id)
+	if core_name == "power":
 		return IO_PRESET_INPUT
-	if core_id == "___death" or core_id == "___fatig":
+	if core_name == "death" or core_name == "fatigue":
 		return IO_PRESET_OUTPUT
 	return ""
 

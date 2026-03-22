@@ -107,6 +107,10 @@ var _debug_large_mesh_scan_seconds: float = 0.0
 var _debug_large_mesh_scan_interval: float = 2.0
 var _debug_large_mesh_scan_threshold: Vector3 = Vector3(200.0, 50.0, 0.0)
 
+func _region_reload_debug_enabled() -> bool:
+	var val := String(OS.get_environment("BV_REGION_RELOAD_DEBUG")).strip_edges().to_lower()
+	return val == "1" or val == "true" or val == "yes" or val == "on"
+
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
 	return load(SCENE_BRAIN_MONITOR_PATH).instantiate()
@@ -2971,6 +2975,15 @@ func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_B
 	_node_3D_root.add_child(region_frame)
 	region_frame.setup(brain_region)
 	_brain_region_visualizations_by_ID[brain_region.region_ID] = region_frame
+	if _region_reload_debug_enabled():
+		print("[REGION-DBG][3DScene] Added plate region_id=%s parent=%s children=%d input_links=%d output_links=%d partials=%d" % [
+			String(brain_region.region_ID),
+			String(brain_region.current_parent_region.region_ID) if brain_region.current_parent_region != null else "none",
+			brain_region.contained_cortical_areas.size(),
+			brain_region.input_open_chain_links.size(),
+			brain_region.output_open_chain_links.size(),
+			brain_region.partial_mappings.size(),
+		])
 	
 	# Connect region frame signals
 	region_frame.region_double_clicked.connect(_on_brain_region_double_clicked)
@@ -3208,6 +3221,13 @@ func _on_cortical_areas_reloaded() -> void:
 
 func _on_brain_regions_reloaded() -> void:
 	_ensure_representing_region_from_cache()
+	if _region_reload_debug_enabled():
+		var br = FeagiCore.feagi_local_cache.brain_regions if FeagiCore != null and FeagiCore.feagi_local_cache != null else null
+		print("[REGION-DBG][3DScene] brain_regions_reloaded representing=%s available_regions=%d existing_plates=%d" % [
+			String(_representing_region.region_ID) if _representing_region != null else "none",
+			br.available_brain_regions.size() if br != null else -1,
+			_brain_region_visualizations_by_ID.size(),
+		])
 	_create_missing_brain_region_visualizations()
 	_rebuild_cortical_visualizations_after_cache_touch()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
@@ -3314,6 +3334,13 @@ func _create_missing_brain_region_visualizations() -> void:
 	var all_regions = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions
 	if not FeagiCore.feagi_local_cache.brain_regions.is_root_available():
 		return
+	var debug_regions := _region_reload_debug_enabled()
+	if debug_regions:
+		print("[REGION-DBG][3DScene] create_missing start representing=%s total_regions=%d existing_plates=%d" % [
+			String(_representing_region.region_ID) if _representing_region != null else "none",
+			all_regions.size(),
+			_brain_region_visualizations_by_ID.size(),
+		])
 	
 	for region_id in all_regions.keys():
 		var region = all_regions[region_id]
@@ -3321,15 +3348,21 @@ func _create_missing_brain_region_visualizations() -> void:
 		if region_id in _brain_region_visualizations_by_ID:
 			var existing_plate: Variant = _brain_region_visualizations_by_ID[region_id]
 			if existing_plate != null and is_instance_valid(existing_plate):
+				if debug_regions:
+					print("[REGION-DBG][3DScene] skip existing plate region_id=%s" % String(region_id))
 				continue
 			_brain_region_visualizations_by_ID.erase(region_id)
 		
 		# Do not create a plate for the region this scene represents (match by id — instance may differ).
 		if _representing_region != null and region.region_ID == _representing_region.region_ID:
+			if debug_regions:
+				print("[REGION-DBG][3DScene] skip self region_id=%s" % String(region_id))
 			continue
 		
 		# Skip root — never a floating plate on the parent monitor.
 		if region.is_root_region():
+			if debug_regions:
+				print("[REGION-DBG][3DScene] skip root region_id=%s" % String(region_id))
 			continue
 		
 		# Skip if this region is not a direct child of our representing region
@@ -3344,10 +3377,18 @@ func _create_missing_brain_region_visualizations() -> void:
 				if par != null and par.region_ID == _representing_region.region_ID:
 					is_child = true
 			if not is_child:
+				if debug_regions:
+					print("[REGION-DBG][3DScene] skip non-child region_id=%s parent=%s representing=%s" % [
+						String(region_id),
+						String(region.current_parent_region.region_ID) if region.current_parent_region != null else "none",
+						String(_representing_region.region_ID) if _representing_region != null else "none",
+					])
 				continue
 		
 		# Create visualization for this new region
 		_add_brain_region_frame(region)
+	if debug_regions:
+		print("[REGION-DBG][3DScene] create_missing done existing_plates=%d" % _brain_region_visualizations_by_ID.size())
 	
 
 ## Manual force refresh of all cortical area connections (for debugging/troubleshooting)

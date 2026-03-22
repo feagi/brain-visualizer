@@ -318,6 +318,11 @@ static func _utf8_label_from_base64_cortical_token(token: String) -> String:
 	var raw: PackedByteArray = Marshalls.base64_to_raw(trimmed)
 	if raw.size() != 8:
 		return ""
+	# Only decode known ASCII-safe labels (e.g., "___death", "___power", "___fatig").
+	# Avoid calling UTF-8 conversion on binary cortical IDs, which logs parser errors.
+	for byte_val in raw:
+		if byte_val < 32 or byte_val > 126:
+			return ""
 	return raw.get_string_from_utf8()
 
 ## Check if a cortical_ID (in old 6-char or new base64 format) is a special core area
