@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://dwk5m8n7pq2xa"]
+[gd_scene load_steps=12 format=3 uid="uid://dwk5m8n7pq2xa"]
 
 [ext_resource type="Script" uid="uid://bn88ws6po6f24" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.gd" id="1_sn8x3"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_m61t8"]
@@ -9,7 +9,6 @@
 [ext_resource type="Script" uid="uid://cvf0xeuwvsqiw" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu_Vision.gd" id="7_tri27"]
 [ext_resource type="PackedScene" uid="uid://cjyix5p3tp3nr" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn" id="8_dx5bi"]
 [ext_resource type="PackedScene" uid="uid://bua3t8kprcx3n" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.tscn" id="10_vgmew"]
-[ext_resource type="FontFile" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="11_l7ybt"]
 [ext_resource type="PackedScene" uid="uid://lavpe4aaitvu" path="res://BrainVisualizer/UI/GenericElements/Sliders/SliderPercentage.tscn" id="12_gaeu8"]
 
 [node name="WindowOptionsMenu" type="VBoxContainer"]
@@ -196,7 +195,6 @@ text = "Flicker Period
 
 [node name="flicker" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3"]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("11_l7ybt")
 alignment = 1
 script = ExtResource("4_u56br")
 

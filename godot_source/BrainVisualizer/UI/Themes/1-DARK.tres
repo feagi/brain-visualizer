@@ -1,6 +1,5 @@
-[gd_resource type="Theme" load_steps=30 format=3 uid="uid://6y65a2i8u51h"]
+[gd_resource type="Theme" load_steps=29 format=3 uid="uid://6y65a2i8u51h"]
 
-[ext_resource type="FontFile" uid="uid://bh64osym6xaul" path="res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf" id="1_4wxmk"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/SplitHandleBarsVertical.svg" id="2_split_handle_v"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/SplitHandleBarsHorizontal.svg" id="3_split_handle_h"]
 
@@ -193,7 +192,6 @@ Label_Title/base_type = &"Label"
 Label_Title/font_sizes/font_size = 20
 Label_UniformWidth/base_type = &"Label"
 Label_UniformWidth/font_sizes/font_size = 16
-Label_UniformWidth/fonts/font = ExtResource("1_4wxmk")
 LineEdit/constants/size_x = 0
 LineEdit/font_sizes/font_size = 16
 LineEdit/styles/normal = SubResource("StyleBoxFlat_uh7ct")

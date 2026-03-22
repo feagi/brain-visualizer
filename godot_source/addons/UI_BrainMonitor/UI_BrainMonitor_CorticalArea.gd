@@ -438,7 +438,6 @@ func _create_io_direction_indicator_label(mode: StringName) -> Label3D:
 	# Keep label independent of arrow rotation/scale so it always appears above in world space.
 	label.top_level = true
 	label.font_size = 256
-	label.font = load("res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf")
 	label.modulate = Color.WHITE
 	label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED

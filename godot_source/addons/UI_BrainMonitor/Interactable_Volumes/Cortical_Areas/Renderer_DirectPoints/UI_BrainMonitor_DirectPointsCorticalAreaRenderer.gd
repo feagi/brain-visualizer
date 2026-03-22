@@ -315,7 +315,6 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label = Label3D.new()
 	_friendly_name_label.name = "AreaNameLabel"
 	_friendly_name_label.font_size = 512  # High resolution for crisp text at distance
-	_friendly_name_label.font = load("res://BrainVisualizer/UI/GenericResources/RobotoCondensed-Bold.ttf")
 	_friendly_name_label.modulate = Color.WHITE
 	_friendly_name_label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_friendly_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
