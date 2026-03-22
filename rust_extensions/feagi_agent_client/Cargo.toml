@@ -1,6 +1,6 @@
 [package]
 name = "feagi_agent_client"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "FEAGI agent registration client GDExtension - uses feagi-agent SDK for standard registration and session/byte-container handling"
 
