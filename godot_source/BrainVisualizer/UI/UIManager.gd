@@ -67,6 +67,7 @@ var _fps_label: Label
 var _loading_status_label: Label
 var _manual_stim_pending_workers: Dictionary = {}
 var _manual_stim_timeouts: Dictionary = {}
+var _genome_confirm_retry_in_flight: bool = false
 
 # Startup UI scaling thresholds based only on monitor DPI and resolution.
 const UI_STARTUP_DPI_XLARGE: int = 180
@@ -353,9 +354,19 @@ func FEAGI_confirmed_genome() -> void:
 	print("  - is_root_available(): ", FeagiCore.feagi_local_cache.brain_regions.is_root_available())
 	print("  - ROOT_REGION_ID constant: ", FeagiCore.feagi_local_cache.brain_regions._get_configured_root_id())
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
-		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: No Main circuit detected - 3D scene cannot initialize!")
-		push_error("UI: Unable to init Main circuit for CB and BM since none was detected!")
+		print("UIMANAGER: [3D_SCENE_DEBUG] ⚠️ Main circuit not available yet - deferring 3D scene initialization retry")
+		update_loading_status("Waiting for Main circuit data...")
+		if not _genome_confirm_retry_in_flight:
+			_genome_confirm_retry_in_flight = true
+			var retry_delay_seconds: float = 0.0
+			if FeagiCore.feagi_settings != null:
+				retry_delay_seconds = FeagiCore.feagi_settings.seconds_between_healthcheck_pings
+			if retry_delay_seconds > 0.0:
+				get_tree().create_timer(retry_delay_seconds).timeout.connect(_retry_confirmed_genome_init)
+			else:
+				call_deferred("_retry_confirmed_genome_init")
 		return
+	_genome_confirm_retry_in_flight = false
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Main circuit available - proceeding with initialization")
 	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
@@ -365,13 +376,14 @@ func FEAGI_confirmed_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] Creating Circuit Builder...")
 	#TODO need a better function to add CB in general
 	var cb: CircuitBuilder = PREFAB_CB.instantiate()
-	cb.setup(root_region)
-	
 	initial_tabs = [cb]
 	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up Main circuit UI view...")
 	_root_UI_view.reset()
 	_root_UI_view.set_this_as_root_view()
+	# CircuitBuilder must be in the scene tree before setup(): GraphEdit only wires item_rect_changed to
+	# _connection_layer when that layer is in-tree at GraphElement add_child_notify time.
 	_root_UI_view.setup_as_single_tab(initial_tabs)
+	cb.setup(root_region)
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Circuit Builder setup complete")
 	
 	# temp BM
@@ -451,9 +463,33 @@ func FEAGI_confirmed_genome() -> void:
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE with theme applied")
 
+func _retry_confirmed_genome_init() -> void:
+	_genome_confirm_retry_in_flight = false
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
+		return
+	FEAGI_confirmed_genome()
+
 ## Returns the main brain monitor instance - alternative getter for external access
 func get_temp_root_bm() -> UI_BrainMonitor_3DScene:
 	return temp_root_bm
+
+
+## Rebuilds cortical visualization and DirectPoints registration on every Brain Monitor after WS/SHM transport recovery.
+func resync_all_brain_monitors_after_transport_recovery() -> void:
+	var done: Dictionary = {}
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm == null:
+			continue
+		var bm_id: int = bm.get_instance_id()
+		if done.has(bm_id):
+			continue
+		done[bm_id] = true
+		if bm.has_method("resync_visualization_after_transport_recovery"):
+			bm.resync_visualization_after_transport_recovery()
+	if temp_root_bm != null and is_instance_valid(temp_root_bm):
+		var root_id: int = temp_root_bm.get_instance_id()
+		if not done.has(root_id) and temp_root_bm.has_method("resync_visualization_after_transport_recovery"):
+			temp_root_bm.resync_visualization_after_transport_recovery()
 
 # TEMP - > for sending activation firings to FEAGI
 func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[StringName, Array]) -> void:
@@ -1116,22 +1152,29 @@ func is_area_io_of_region(area: AbstractCorticalArea, region: BrainRegion) -> bo
 ## Find ALL brain monitors in the entire scene tree (comprehensive search)
 func _find_all_brain_monitors_in_scene_tree() -> Array[UI_BrainMonitor_3DScene]:
 	var all_brain_monitors: Array[UI_BrainMonitor_3DScene] = []
-	
-	# Start from the scene root and search recursively
+	var seen: Dictionary = {}
 	var scene_tree = get_tree()
-	if scene_tree and scene_tree.current_scene:
-		_recursive_find_brain_monitors(scene_tree.current_scene, all_brain_monitors)
-	
+	if scene_tree == null:
+		return all_brain_monitors
+	# Main scene subtree (typical export / editor run)
+	if scene_tree.current_scene != null:
+		_recursive_find_brain_monitors(scene_tree.current_scene, all_brain_monitors, seen)
+	# Explicit BrainVisualizer node (autoload siblings / non-current_scene layouts)
+	var bv_root: Node = scene_tree.root.get_node_or_null("BrainVisualizer")
+	if bv_root != null:
+		_recursive_find_brain_monitors(bv_root, all_brain_monitors, seen)
 	return all_brain_monitors
 
-func _recursive_find_brain_monitors(node: Node, brain_monitors: Array[UI_BrainMonitor_3DScene]) -> void:
-	# Check if current node is a brain monitor
+func _recursive_find_brain_monitors(node: Node, brain_monitors: Array[UI_BrainMonitor_3DScene], seen: Dictionary) -> void:
 	if node is UI_BrainMonitor_3DScene:
-		brain_monitors.append(node as UI_BrainMonitor_3DScene)
-	
-	# Search all children recursively
+		var bm: UI_BrainMonitor_3DScene = node as UI_BrainMonitor_3DScene
+		var iid: int = bm.get_instance_id()
+		if seen.has(iid):
+			return
+		seen[iid] = true
+		brain_monitors.append(bm)
 	for child in node.get_children():
-		_recursive_find_brain_monitors(child, brain_monitors)
+		_recursive_find_brain_monitors(child, brain_monitors, seen)
 
 ## Check if a brain monitor would accept this cortical area using the same logic as _add_cortical_area()
 func _would_brain_monitor_accept_cortical_area(brain_monitor: UI_BrainMonitor_3DScene, cortical_area: AbstractCorticalArea) -> bool:

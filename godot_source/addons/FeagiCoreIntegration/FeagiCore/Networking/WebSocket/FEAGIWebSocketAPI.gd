@@ -63,7 +63,7 @@ var _waiting_for_wasm: bool = false
 var _rust_init_attempts: int = 0
 const MAX_RUST_INIT_ATTEMPTS := 5
 
-# 𒓉 Shared memory neuron visualization (FEAGI → Brain Visualizer)
+# [FEAGI] Shared memory neuron visualization (FEAGI -> Brain Visualizer)
 var _use_shared_mem: bool = false
 var _shm_path: String = ""
 var _shm_file: FileAccess = null
@@ -98,6 +98,13 @@ var _ws_last_rx_log_ms: int = 0
 const _WS_RX_LOG_INTERVAL_MS: int = 1000
 var _ws_last_apply_log_ms: int = 0
 const _WS_APPLY_LOG_INTERVAL_MS: int = 1000
+
+# Opt-in Type 11 root-cause: set env BV_TYPE11_ROOTCAUSE=1 (see RECONNECTION_FIX.md)
+const _TYPE11_ROOTCAUSE_LOG_INTERVAL_MS: int = 2000
+const _TYPE11_ROOTCAUSE_REBUILD_LOG_MS: int = 3000
+var _type11_rootcause_last_packet_log_ms: int = 0
+var _type11_rootcause_last_rebuild_log_ms: int = 0
+var _type11_rootcause_banner_printed: bool = false
 const _WS_DIAGNOSTICS_ENABLED: bool = false
 
 # SHM update rate tracking
@@ -129,7 +136,7 @@ func _ready():
 		# Initialize Rust-based high-performance deserializer (REQUIRED on desktop)
 		_init_rust_deserializer()
 
-	# 𒓉 Try to initialize shared memory visualization (env-provided path)
+	# [FEAGI] Try to initialize shared memory visualization (env-provided path)
 	_init_shm_visualization()
 	# Defer WS fallback notice to allow registration to provide SHM path
 	_ws_notice_deadline_ms = Time.get_ticks_msec() + 3000
@@ -159,7 +166,7 @@ func _init_rust_deserializer() -> void:
 	push_error("🦀 CRITICAL: FeagiDataDeserializer class not found after retries. Ensure addon is installed and library built (debug/release).")
 
 func _process(_delta: float):
-	# 𒓉 Poll SHM for neuron visualization bytes if enabled
+	# [FEAGI] Poll SHM for neuron visualization bytes if enabled
 	if _use_shared_mem:
 		# Throttle polling to negotiated rate (not every frame!)
 		var current_time = Time.get_ticks_msec() / 1000.0
@@ -171,11 +178,11 @@ func _process(_delta: float):
 			if feagi_networking and feagi_networking.has_meta("_negotiated_viz_hz"):
 				var negotiated_hz = feagi_networking.get_meta("_negotiated_viz_hz")
 				_shm_poll_interval = 1.0 / negotiated_hz
-				print("𒓉 [WS] SHM polling throttled to %.1f Hz (%.1f ms interval); path=%s" % [negotiated_hz, _shm_poll_interval * 1000.0, _shm_path])
+				print("[FEAGI] [WS] SHM polling throttled to %.1f Hz (%.1f ms interval); path=%s" % [negotiated_hz, _shm_poll_interval * 1000.0, _shm_path])
 			else:
 				# Fallback: use 60 Hz (backwards compat)
 				_shm_poll_interval = 1.0 / 60.0
-				print("𒓉 [WS] ⚠️ No negotiated rate found, defaulting to 60 Hz polling")
+				print("[FEAGI] [WS] WARN: No negotiated rate found, defaulting to 60 Hz polling")
 		
 		# Only poll if enough time has elapsed
 		if current_time - _shm_last_poll_time >= _shm_poll_interval:
@@ -184,16 +191,16 @@ func _process(_delta: float):
 			
 			if not _shm_notice_printed:
 				var rate_hz = 1.0 / _shm_poll_interval if _shm_poll_interval > 0.0 else 60.0
-				print("𒓉 [WS] SHM polling active at %.1f Hz (throttled); path=%s" % [rate_hz, _shm_path])
+				print("[FEAGI] [WS] SHM polling active at %.1f Hz (throttled); path=%s" % [rate_hz, _shm_path])
 				_shm_notice_printed = true
 	else:
 		# Print once to make it obvious we're on WS path, but only after a brief delay
 		# and not while we are actively trying to initialize SHM
 		if not _ws_notice_printed and _pending_shm_path == "" and not _shm_attempting and Time.get_ticks_msec() >= _ws_notice_deadline_ms:
 			if _shm_last_error != "":
-				print("𒓉 [WS] Neuron visualization using WebSocket (SHM disabled); last_shm_error=", _shm_last_error)
+				print("[FEAGI] [WS] Neuron visualization using WebSocket (SHM disabled); last_shm_error=", _shm_last_error)
 			else:
-				print("𒓉 [WS] Neuron visualization using WebSocket (SHM disabled)")
+				print("[FEAGI] [WS] Neuron visualization using WebSocket (SHM disabled)")
 			_ws_notice_printed = true
 	# On Web, flush queued Type 11 packets once WASM is ready
 	if OS.has_feature("web") and WASMDecoder.is_wasm_ready() and _pending_type11.size() > 0:
@@ -221,7 +228,7 @@ func _process(_delta: float):
 	if OS.has_feature("web") and WASMDecoder.is_wasm_ready():
 		_pending_type11.clear()
 
-	# 𒓉 Guard: If socket is null (e.g. never connected when using SHM), skip WebSocket polling but continue to SHM polling below
+	# [FEAGI] Guard: If socket is null (e.g. never connected when using SHM), skip WebSocket polling but continue to SHM polling below
 	if not _socket:
 		# SHM polling for neuron visualization happens at end of _process()
 		# But if we also use SHM for video, that's handled by WindowViewPreviews directly
@@ -355,8 +362,10 @@ func _process(_delta: float):
 						var decoded: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
 						var ok: bool = bool(decoded.get("success", false))
 						var areas_any: Variant = decoded.get("areas", null)
-						var areas: Dictionary = areas_any as Dictionary
-						if ok and areas is Dictionary:
+						var areas: Dictionary = {}
+						if areas_any is Dictionary:
+							areas = areas_any
+						if ok and areas_any is Dictionary:
 							for cortical_id in areas.keys():
 								var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
 								var area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
@@ -387,6 +396,7 @@ func _process(_delta: float):
 						# Extend existing diag with stage timings (rate-limited below).
 						if perf:
 							set_meta("_ws_last_perf", perf)
+						_type11_rootcause_log_packet_vs_fastpath(areas, perf)
 					else:
 						# Legacy desktop path (kept for parity/testing); web uses WASM decoder above.
 						var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
@@ -556,7 +566,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 		print("🦀 [WS] RECEIVED TYPE %d: %d bytes, first 20 bytes: %s" % [structure_id, bytes.size(), bytes.slice(0, min(20, bytes.size())).hex_encode()])
 		set_meta("_type_log_count", type_count + 1)
 
-	# 𒓉 If SHM is active, ignore WS-delivered (but NOT SHM-delivered) Type 11 to avoid duplicates
+	# [FEAGI] If SHM is active, ignore WS-delivered (but NOT SHM-delivered) Type 11 to avoid duplicates
 	if _use_shared_mem and structure_id == 11 and not from_shm:
 		return
 	
@@ -646,7 +656,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 					else:
 						_handle_missing_cortical_area(cortical_id)
 				if _shm_debug_logs:
-					print("𒓉 [WS] Processed SHM JSON Type 11: areas=", areas.size(), " points=", total_points)
+					print("[FEAGI] [WS] Processed SHM JSON Type 11: areas=", areas.size(), " points=", total_points)
 				# Throttle logging but keep processing subsequent frames without suppression
 				_shm_notice_printed = true
 				return
@@ -828,11 +838,102 @@ func _is_probably_text(bytes: PackedByteArray) -> bool:
 			return false
 	return true
 
+
+func _type11_rootcause_enabled() -> bool:
+	var v := str(OS.get_environment("BV_TYPE11_ROOTCAUSE")).strip_edges().to_lower()
+	return v == "1" or v == "true" or v == "yes"
+
+
+func _normalize_type11_cortical_key(key: Variant) -> String:
+	return String(key).strip_edges().replace("'", "").replace('"', "")
+
+
+func _type11_rootcause_sample_ids(ids: Array, max_n: int) -> String:
+	if ids.is_empty():
+		return "[]"
+	var out: PackedStringArray = []
+	var n: int = mini(ids.size(), max_n)
+	for i in range(n):
+		out.append(str(ids[i]))
+	var tail := ", ..." if ids.size() > max_n else ""
+	return "[%s]%s" % [", ".join(out), tail]
+
+
+## Logs fast-path MultiMesh registration count (throttled). Enable with BV_TYPE11_ROOTCAUSE=1.
+func _type11_rootcause_log_fastpath_rebuild(registered_multimesh: int) -> void:
+	if not _type11_rootcause_enabled():
+		return
+	var now_ms := Time.get_ticks_msec()
+	if now_ms - _type11_rootcause_last_rebuild_log_ms < _TYPE11_ROOTCAUSE_REBUILD_LOG_MS:
+		return
+	_type11_rootcause_last_rebuild_log_ms = now_ms
+	if not _type11_rootcause_banner_printed:
+		_type11_rootcause_banner_printed = true
+		print("[TYPE11-ROOTCAUSE] Diagnostics ON (BV_TYPE11_ROOTCAUSE=1). Packet detail every %d ms; rebuild summary every %d ms." % [_TYPE11_ROOTCAUSE_LOG_INTERVAL_MS, _TYPE11_ROOTCAUSE_REBUILD_LOG_MS])
+	print("[TYPE11-ROOTCAUSE] fast_path rebuild: cortical_ids_with_multimesh=%d" % registered_multimesh)
+
+
+## Compare Type 11 payload cortical ids to fast-path map and cache objects (throttled).
+func _type11_rootcause_log_packet_vs_fastpath(decoded_areas: Dictionary, perf: Dictionary) -> void:
+	if not _type11_rootcause_enabled():
+		return
+	var now_ms := Time.get_ticks_msec()
+	if now_ms - _type11_rootcause_last_packet_log_ms < _TYPE11_ROOTCAUSE_LOG_INTERVAL_MS:
+		return
+	_type11_rootcause_last_packet_log_ms = now_ms
+
+	var fast_norm: Dictionary = {}
+	for fk in _bv_fast_multimeshes_by_id.keys():
+		fast_norm[_normalize_type11_cortical_key(fk)] = true
+
+	var packet_norm: PackedStringArray = []
+	var seen: Dictionary = {}
+	for ck in decoded_areas.keys():
+		var cid := _normalize_type11_cortical_key(ck)
+		if cid.is_empty() or seen.has(cid):
+			continue
+		seen[cid] = true
+		packet_norm.append(cid)
+
+	var missing_cache: Array[String] = []
+	var no_mesh_ipu_like: Array[String] = []
+	var in_packet_not_in_fastmap: Array[String] = []
+
+	for cid in packet_norm:
+		var area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(cid)
+		if area_obj == null:
+			missing_cache.append(cid)
+			continue
+		var requires_bulk := area_obj.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+		requires_bulk = requires_bulk or area_obj.BV_requires_bulk_directpoints_updates()
+		var mm = area_obj.BV_get_directpoints_multimesh()
+		if mm == null and not requires_bulk:
+			no_mesh_ipu_like.append(cid)
+		if not fast_norm.has(cid):
+			in_packet_not_in_fastmap.append(cid)
+
+	var ok_apply := bool(perf.get("success", false))
+	var areas_applied := int(perf.get("areas_applied", 0))
+	var neurons_applied := int(perf.get("neurons_applied", 0))
+	var err_apply := str(perf.get("error", ""))
+
+	print("[TYPE11-ROOTCAUSE] frame: packet_cortical_ids=%d fast_path_keys=%d apply_ok=%s areas_applied=%d neurons_applied=%d err='%s'" % [
+		packet_norm.size(), fast_norm.size(), str(ok_apply), areas_applied, neurons_applied, err_apply
+	])
+	if not missing_cache.is_empty():
+		print("[TYPE11-ROOTCAUSE] ids in packet but NO AbstractCorticalArea in BV cache (sample): %s" % _type11_rootcause_sample_ids(missing_cache, 8))
+	if not no_mesh_ipu_like.is_empty():
+		print("[TYPE11-ROOTCAUSE] ids need fast-path MultiMesh but BV_get_directpoints_multimesh()==null (no bulk fallback; sample): %s" % _type11_rootcause_sample_ids(no_mesh_ipu_like, 8))
+	if not in_packet_not_in_fastmap.is_empty():
+		print("[TYPE11-ROOTCAUSE] ids in packet not present in _bv_fast_multimeshes_by_id after refresh (sample): %s" % _type11_rootcause_sample_ids(in_packet_not_in_fastmap, 8))
+
+
 func _refresh_bv_fastpath_cache_if_needed() -> void:
 	if OS.has_feature("web"):
 		return
 	var now_ms := Time.get_ticks_msec()
-	if now_ms - _bv_fast_cache_last_refresh_ms < _BV_FAST_CACHE_REFRESH_INTERVAL_MS:
+	# If the fast-path map is empty (e.g. after genome/cortical reload), always rebuild so Type 11 can target new MultiMeshes.
+	if _bv_fast_multimeshes_by_id.size() > 0 and (now_ms - _bv_fast_cache_last_refresh_ms < _BV_FAST_CACHE_REFRESH_INTERVAL_MS):
 		return
 	_bv_fast_cache_last_refresh_ms = now_ms
 	_bv_fast_multimeshes_by_id.clear()
@@ -840,6 +941,7 @@ func _refresh_bv_fastpath_cache_if_needed() -> void:
 	if not FeagiCore.feagi_local_cache:
 		return
 	var areas_dict: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
+	var registered_multimesh: int = 0
 	for cortical_id in areas_dict.keys():
 		var area: AbstractCorticalArea = areas_dict.get(cortical_id)
 		if area == null:
@@ -853,8 +955,10 @@ func _refresh_bv_fastpath_cache_if_needed() -> void:
 			area.BV_refresh_directpoints_renderer_visuals()
 			_bv_fast_multimeshes_by_id[key_str] = mm
 			_bv_fast_dimensions_by_id[key_str] = area.BV_get_directpoints_dimensions()
+			registered_multimesh += 1
+	_type11_rootcause_log_fastpath_rebuild(registered_multimesh)
 
-# 𒓉 -------- Shared Memory Visualization Support --------
+# [FEAGI] -------- Shared Memory Visualization Support --------
 func _init_shm_visualization() -> void:
 	# Prefer explicit neuron viz SHM; fallback to generic viz SHM
 	var p := OS.get_environment("FEAGI_VIZ_NEURONS_SHM")
@@ -869,7 +973,7 @@ func _init_shm_visualization() -> void:
 	# Start retry loop to wait for file/header to be ready without spamming WS fallback
 	_ws_notice_printed = false
 	_ws_notice_deadline_ms = Time.get_ticks_msec() + 2500
-	print("𒓉 [WS] Awaiting SHM neuron visualization path: ", p)
+	print("[FEAGI] [WS] Awaiting SHM neuron visualization path: ", p)
 	_try_open_shm_path()
 
 func _try_open_shm_path() -> void:
@@ -881,11 +985,11 @@ func _try_open_shm_path() -> void:
 		if _shm_init_attempts < _shm_init_max_attempts:
 			_shm_init_attempts += 1
 			_shm_last_error = "file not found"
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": waiting for file: ", p)
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": waiting for file: ", p)
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
-			print("𒓉 [WS] SHM activation failed: file never appeared: ", p)
+			print("[FEAGI] [WS] SHM activation failed: file never appeared: ", p)
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -896,12 +1000,12 @@ func _try_open_shm_path() -> void:
 			_shm_init_attempts += 1
 			var err := FileAccess.get_open_error()
 			_shm_last_error = "open failed error=" + str(err)
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": open failed. error=", err)
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": open failed. error=", err)
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
 			var err2 := FileAccess.get_open_error()
-			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=open failed error=", err2)
+			print("[FEAGI] [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=open failed error=", err2)
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -913,11 +1017,11 @@ func _try_open_shm_path() -> void:
 		if _shm_init_attempts < _shm_init_max_attempts:
 			_shm_init_attempts += 1
 			_shm_last_error = "header too small size=" + str(h.size())
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": header too small (", h.size(), ")")
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": header too small (", h.size(), ")")
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
-			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=header too small size=", h.size())
+			print("[FEAGI] [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=header too small size=", h.size())
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -929,11 +1033,11 @@ func _try_open_shm_path() -> void:
 		if _shm_init_attempts < _shm_init_max_attempts:
 			_shm_init_attempts += 1
 			_shm_last_error = "invalid magic=" + magic
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid magic '", magic, "' (expect FEAGIVIS/FEAGIBIN/FEAGIMOT)")
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid magic '", magic, "' (expect FEAGIVIS/FEAGIBIN/FEAGIMOT)")
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
-			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid magic '", magic, "'")
+			print("[FEAGI] [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid magic '", magic, "'")
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -945,11 +1049,11 @@ func _try_open_shm_path() -> void:
 		if _shm_init_attempts < _shm_init_max_attempts:
 			_shm_init_attempts += 1
 			_shm_last_error = "invalid header values slots=" + str(num_slots) + ", slot_size=" + str(slot_size)
-			print("𒓉 [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid header values slots=", num_slots, " slot_size=", slot_size)
+			print("[FEAGI] [WS] SHM try ", _shm_init_attempts, "/", _shm_init_max_attempts, ": invalid header values slots=", num_slots, " slot_size=", slot_size)
 			get_tree().create_timer(0.25).timeout.connect(_try_open_shm_path)
 			return
 		else:
-			print("𒓉 [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid header values slots=", num_slots, " slot_size=", slot_size)
+			print("[FEAGI] [WS] SHM activation failed after ", _shm_init_attempts, " attempts; last_error=invalid header values slots=", num_slots, " slot_size=", slot_size)
 			_shm_attempting = false
 			_pending_shm_path = ""
 			_ws_notice_deadline_ms = Time.get_ticks_msec() + 10
@@ -967,7 +1071,7 @@ func _try_open_shm_path() -> void:
 	_shm_updates_received = 0
 	_shm_last_rate_log_time = Time.get_ticks_msec() / 1000.0
 	
-	print("𒓉 [WS] Using SHM neuron visualization: ", p, " magic=", magic, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size, " first_seq=", first_seq)
+	print("[FEAGI] [WS] Using SHM neuron visualization: ", p, " magic=", magic, " slots=", _shm_num_slots, " slot_size=", _shm_slot_size, " first_seq=", first_seq)
 	shm_visualization_enabled.emit(p)
 	# Reset path notices to show SHM active on next _process tick
 	_shm_notice_printed = false
@@ -1007,7 +1111,7 @@ func _poll_shm_once() -> void:
 		# Quiet repetitive logs; only print once per staleness streak
 		if _shm_debug_logs and not _shm_no_new_reported:
 			var wi := int(h.decode_u32(28))
-			print("𒓉 [WS] SHM no new frame: head=", frame_seq, " last=", _shm_last_seq, " write_index=", wi)
+			print("[FEAGI] [WS] SHM no new frame: head=", frame_seq, " last=", _shm_last_seq, " write_index=", wi)
 			_shm_no_new_reported = true
 		# If we miss enough cycles, reopen the file to avoid stale cache (quiet)
 		if _shm_missed_cycles >= _shm_reopen_threshold:
@@ -1081,14 +1185,14 @@ func _poll_shm_once() -> void:
 			avg_fps = sum_fps / _shm_frame_times.size()
 		
 		var timestamp = Time.get_datetime_string_from_system()
-		print("[%s] 𒓉 [BV-SHM] Receiving at %.1f Hz avg (%.1f Hz rolling, %d updates in %.1f sec) | Last frame: %.1f Hz (%.0f ms ago)" % [
+		print("[%s] [FEAGI] [BV-SHM] Receiving at %.1f Hz avg (%.1f Hz rolling, %d updates in %.1f sec) | Last frame: %.1f Hz (%.0f ms ago)" % [
 			timestamp, avg_rate, avg_fps, _shm_updates_received, elapsed, instant_fps, frame_delta * 1000.0
 		])
 		_shm_updates_received = 0
 		_shm_last_rate_log_time = current_time
 	
 	if _shm_debug_logs:
-		print("𒓉 [WS] SHM frame ", frame_seq, " idx=", idx, " bytes=", payload_len)
+		print("[FEAGI] [WS] SHM frame ", frame_seq, " idx=", idx, " bytes=", payload_len)
 	_process_wrapped_byte_structure(payload, true)  # from_shm=true
 
 func enable_shared_memory_visualization(p: String) -> void:
@@ -1106,7 +1210,7 @@ func enable_shared_memory_visualization(p: String) -> void:
 	# Give time for FEAGI to create and initialize the file header
 	_ws_notice_printed = false
 	_ws_notice_deadline_ms = Time.get_ticks_msec() + 2500
-	print("𒓉 [WS] Enabling SHM neuron visualization via register; will retry: ", p)
+	print("[FEAGI] [WS] Enabling SHM neuron visualization via register; will retry: ", p)
 	_try_open_shm_path()
 
 func _decode_u64_le(bytes: PackedByteArray, offset: int) -> int:
@@ -1238,6 +1342,26 @@ func _on_genome_reloaded() -> void:
 	_bv_fast_multimeshes_by_id.clear()
 	_bv_fast_dimensions_by_id.clear()
 	_bv_fast_cache_last_refresh_ms = 0
+	# Brain Monitor may create DirectPoints MultiMeshes after this signal; rebuild fast-path map once the tree has settled.
+	call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
+
+## Re-scan cortical areas for MultiMesh registration after genome / incremental cortical refresh (desktop Type 11 fast path).
+func _deferred_rebuild_bv_fastpath_after_cache_touch() -> void:
+	if OS.has_feature("web"):
+		return
+	_bv_fast_cache_last_refresh_ms = 0
+	_refresh_bv_fastpath_cache_if_needed()
+
+
+## Public hook for Brain Monitor: after 3D cortical nodes re-register DirectPoints MultiMeshes on new cache
+## instances, rebuild the desktop Type 11 map so packets target the current MultiMeshes (reconnect safe).
+func request_bv_fastpath_cache_rebuild() -> void:
+	if OS.has_feature("web"):
+		return
+	_bv_fast_multimeshes_by_id.clear()
+	_bv_fast_dimensions_by_id.clear()
+	_bv_fast_cache_last_refresh_ms = 0
+	call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
 
 func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 	"""Convert byte array to hex string for debugging"""

@@ -1230,18 +1230,18 @@ func _get_active_agent_ids() -> Array[StringName]:
 		agent_ids = [_selected_agent_id]
 	return agent_ids
 
-## Resolve a human-friendly agent name for display.
+## Resolve a human-friendly agent name for display. Never returns base64.
 func _get_agent_display_name(agent_id: StringName) -> StringName:
 	var entry = _resolve_agent_entry(agent_id)
 	if not (entry is Dictionary):
-		return agent_id
+		return StringName(FEAGIUtils.resolve_agent_display_name("", agent_id))
 	var name := _extract_agent_display_name(entry)
 	if name != "" and not _is_unusable_agent_label(name, agent_id):
 		return name
 	var inferred_name := _infer_agent_display_name(entry)
 	if inferred_name != "":
 		return inferred_name
-	return agent_id
+	return StringName(FEAGIUtils.resolve_agent_display_name("", agent_id))
 
 ## Resolve agent entry for StringName/String key variants.
 func _resolve_agent_entry(agent_id: StringName) -> Variant:

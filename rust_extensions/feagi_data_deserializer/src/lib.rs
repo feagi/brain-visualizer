@@ -425,7 +425,7 @@ impl FeagiDataDeserializer {
         // Set instance count
         multi_mesh.set_instance_count(array_len as i32);
 
-        // Pre-calculate constants. Offset ZERO per NEURON_POSITION_SCALING_FIX.md (no 0.5 shift).
+        // Pre-calculate constants.
         let half_dimensions =
             Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
         let offset = Vector3::ZERO;
@@ -817,7 +817,7 @@ impl FeagiDataDeserializer {
         let mut result = Dictionary::new();
         let id_str = cortical_id.to_string();
 
-        // Use FDP's CorticalID parser
+        // Use FDP's CorticalID parser (base64 only - legacy IDs do not have binary config)
         let cortical_id_obj = match CorticalID::try_from_base_64(&id_str) {
             Ok(id) => id,
             Err(e) => {
@@ -901,157 +901,129 @@ impl FeagiDataDeserializer {
             IOCorticalAreaConfigurationFlag::Misc(_) => "1d",
         };
 
+        let is_signed = matches!(
+            io_data_type,
+            IOCorticalAreaConfigurationFlag::SignedPercentage(_, _)
+                | IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _)
+                | IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _)
+                | IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _)
+        );
         result.set("success", true);
         result.set("encoding_type", encoding_type);
         result.set("encoding_format", encoding_format);
+        result.set("is_signed", is_signed);
         result.set("error", "");
 
         result
     }
 
-    /// Decode FDP value from voxel coordinates using actual FDP decoding logic
+    /// Decode voxel coordinates using feagi-sensorimotor's single-voxel decode API.
     ///
-    /// This function uses the EXACT same decoding logic that FDP uses to translate
-    /// neuron voxel positions into application values. It does NOT invent its own logic.
+    /// Uses the exact same decoding logic as feagi-sensorimotor's batch decoders so that
+    /// Brain Visualizer display matches what a robot/controller would process.
+    ///
+    /// For base64 cortical IDs, encoding is read from the ID binary. For legacy ASCII IDs
+    /// (e.g. "o_mctl"), the caller must provide encoding_type, encoding_format, is_signed
+    /// from the cortical area (genome).
     ///
     /// Args:
-    ///   - cortical_id: The cortical area ID (for display purposes)
+    ///   - cortical_id: The cortical area ID (base64 or legacy ASCII)
     ///   - voxel_x, voxel_y, voxel_z: The voxel coordinates
-    ///   - encoding_type: "linear" or "exponential"
-    ///   - encoding_format: "1d", "2d", "3d", or "4d"
+    ///   - encoding_type, encoding_format, is_signed: From cortical area when ID has no binary config
     ///   - channel_dimensions_x, channel_dimensions_y, channel_dimensions_z: Dimensions per channel
-    ///   - num_channels: Total number of channels
+    ///   - num_channels: Total number of channels (0 = treat as 1)
     ///
-    /// Returns: Dictionary with {success: bool, channel: i32, value: f32, fdp_version: String, error: String}
+    /// Returns: Dictionary with {success: bool, channel: i32, value: f32, data_type: String, error: String}
     #[allow(clippy::too_many_arguments)]
     #[func]
     pub fn decode_fdp_value(
         &self,
-        _cortical_id: GString,
+        cortical_id: GString,
         voxel_x: i32,
         voxel_y: i32,
         voxel_z: i32,
         encoding_type: GString,
         encoding_format: GString,
+        is_signed: bool,
         channel_dimensions_x: i32,
-        _channel_dimensions_y: i32,
+        channel_dimensions_y: i32,
         channel_dimensions_z: i32,
         num_channels: i32,
     ) -> Dictionary {
+        use feagi_sensorimotor::single_voxel_decode::{
+            decode_single_voxel, decode_single_voxel_from_encoding, ChannelDimensions,
+        };
+
         let mut result = Dictionary::new();
 
-        // FDP version from the crate
-        const FDP_VERSION: &str = "0.0.50-beta.59";
-
-        // Validate inputs
         if voxel_x < 0 || voxel_y < 0 || voxel_z < 0 {
             result.set("success", false);
             result.set("error", "Invalid voxel coordinates (negative values)");
             result.set("channel", -1);
             result.set("value", 0.0);
-            result.set("fdp_version", FDP_VERSION);
+            result.set("data_type", "");
             return result;
         }
 
-        if channel_dimensions_z <= 0 {
-            result.set("success", false);
-            result.set("error", "Invalid channel dimensions (z must be > 0)");
-            result.set("channel", -1);
-            result.set("value", 0.0);
-            result.set("fdp_version", FDP_VERSION);
-            return result;
-        }
-
-        let encoding_type_str = encoding_type.to_string().to_lowercase();
-        let encoding_format_str = encoding_format.to_string().to_lowercase();
-
-        // Calculate channel number based on encoding format
-        let channel: i32 = match encoding_format_str.as_str() {
-            "1d" => {
-                // For 1D: each channel has channel_dimensions_x width
-                if channel_dimensions_x > 0 {
-                    voxel_x / channel_dimensions_x
+        let cortical_id_obj = match CorticalID::try_from_base_64(&cortical_id.to_string()) {
+            Ok(id) => id,
+            Err(_) => {
+                if let Ok(id) = CorticalID::try_from_legacy_ascii(&cortical_id.to_string()) {
+                    id
                 } else {
-                    voxel_x
+                    result.set("success", false);
+                    result.set("error", "Invalid cortical ID");
+                    result.set("channel", -1);
+                    result.set("value", 0.0);
+                    result.set("data_type", "");
+                    return result;
                 }
-            }
-            "2d" | "3d" | "4d" => {
-                // For multi-dimensional: similar logic, but may vary by implementation
-                if channel_dimensions_x > 0 {
-                    voxel_x / channel_dimensions_x
-                } else {
-                    voxel_x
-                }
-            }
-            _ => {
-                result.set("success", false);
-                result.set(
-                    "error",
-                    format!("Unsupported encoding format: {}", encoding_format_str),
-                );
-                result.set("channel", -1);
-                result.set("value", 0.0);
-                result.set("fdp_version", FDP_VERSION);
-                return result;
             }
         };
 
-        // Validate channel is within range
-        if channel < 0 || channel >= num_channels {
-            result.set("success", false);
-            result.set(
-                "error",
-                format!(
-                    "Calculated channel {} out of range [0, {})",
-                    channel, num_channels
-                ),
-            );
-            result.set("channel", channel);
-            result.set("value", 0.0);
-            result.set("fdp_version", FDP_VERSION);
-            return result;
-        }
-
-        // Decode value using ACTUAL FDP logic from feagi_connector_core
-        // This uses the same functions that FDP's decoders use internally
-        let value: f32 = match (encoding_type_str.as_str(), encoding_format_str.as_str()) {
-            ("linear", "1d") | ("linear", "2d") | ("linear", "3d") | ("linear", "4d") => {
-                // Use FDP's linear decoding formula
-                // For linear encoding: value = z_index / z_max_depth
-                // This matches decode_unsigned_percentage_from_linear_neurons logic
-                let z_max_depth = channel_dimensions_z as f32;
-                let z_index = voxel_z as f32;
-                (z_index / z_max_depth) * 100.0 // Convert to percentage (0-100)
-            }
-            ("exponential", "1d")
-            | ("exponential", "2d")
-            | ("exponential", "3d")
-            | ("exponential", "4d") => {
-                // Use FDP's exponential decoding formula
-                // For exponential: value = 0.5^z_index
-                // This matches decode_unsigned_percentage_from_fractional_exponential_neurons logic
-                let z_index = voxel_z as u32;
-                (0.5f32.powi(z_index as i32)) * 100.0 // Convert to percentage (0-100)
-            }
-            _ => {
-                result.set("success", false);
-                result.set(
-                    "error",
-                    format!("Unsupported encoding type: {}", encoding_type_str),
-                );
-                result.set("channel", channel);
-                result.set("value", 0.0);
-                result.set("fdp_version", FDP_VERSION);
-                return result;
-            }
+        let channel_dims = ChannelDimensions::new(
+            channel_dimensions_x.max(1) as u32,
+            channel_dimensions_y.max(1) as u32,
+            channel_dimensions_z.max(1) as u32,
+        );
+        let device_count = if num_channels > 0 {
+            num_channels as u32
+        } else {
+            1
         };
 
-        // Success!
-        result.set("success", true);
-        result.set("channel", channel);
-        result.set("value", value);
-        result.set("fdp_version", FDP_VERSION);
-        result.set("error", "");
+        let mut decode_result = decode_single_voxel(
+            &cortical_id_obj,
+            voxel_x as u32,
+            voxel_y as u32,
+            voxel_z as u32,
+            channel_dims,
+            device_count,
+        );
+
+        // When cortical ID has no binary config (legacy ASCII), use encoding from cortical area
+        if !decode_result.success {
+            let enc_type = encoding_type.to_string();
+            let enc_fmt = encoding_format.to_string();
+            if !enc_type.is_empty() && !enc_fmt.is_empty() {
+                decode_result = decode_single_voxel_from_encoding(
+                    &enc_type,
+                    &enc_fmt,
+                    is_signed,
+                    voxel_x as u32,
+                    voxel_y as u32,
+                    voxel_z as u32,
+                    channel_dims,
+                    device_count,
+                );
+            }
+        }
+
+        result.set("success", decode_result.success);
+        result.set("channel", decode_result.channel);
+        result.set("value", decode_result.value_percent);
+        result.set("data_type", decode_result.data_type);
+        result.set("error", decode_result.error);
 
         result
     }

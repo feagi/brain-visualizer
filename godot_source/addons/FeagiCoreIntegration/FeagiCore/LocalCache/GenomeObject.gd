@@ -232,7 +232,7 @@ func FEAGI_output_add_link(link: ConnectionChainLink) -> void:
 func FEAGI_input_remove_link(link: ConnectionChainLink) -> void:
 	var index: int = _input_chain_links.find(link)
 	if index == -1:
-		push_error("CORE CACHE: Unable to add remove link from object %s as it wasn't found!" % _genome_ID)
+		push_warning("CORE CACHE: Input link already absent for object %s; skipping duplicate removal." % _genome_ID)
 		return
 	_input_chain_links.remove_at(index)
 	input_link_removed.emit(link)
@@ -241,7 +241,7 @@ func FEAGI_input_remove_link(link: ConnectionChainLink) -> void:
 func FEAGI_output_remove_link(link: ConnectionChainLink) -> void:
 	var index: int = _output_chain_links.find(link)
 	if index == -1:
-		push_error("CORE CACHE: Unable to add remove link from object %s as it wasn't found!" % _genome_ID)
+		push_warning("CORE CACHE: Output link already absent for object %s; skipping duplicate removal." % _genome_ID)
 		return
 	_output_chain_links.remove_at(index)
 	output_link_removed.emit(link)

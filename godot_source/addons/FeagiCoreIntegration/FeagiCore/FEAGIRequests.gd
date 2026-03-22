@@ -183,11 +183,7 @@ func reload_genome() -> FeagiRequestOutput:
 	# Get Cortical Area Data
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 1/7: Requesting cortical area data...")
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 Making HTTP call to: %s" % FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
-	var cortical_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(cortical_area_request)
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call initiated, waiting for response...")
-	await cortical_worker.worker_done
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call completed, retrieving data...")
-	var cortical_data: FeagiRequestOutput = cortical_worker.retrieve_output_and_close()
+	var cortical_data: FeagiRequestOutput = await _request_with_retry_for_reload_step1(cortical_area_request)
 	if _return_if_HTTP_failed_and_automatically_handle(cortical_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 1: Cortical area data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI cortical summary data!")
@@ -239,18 +235,14 @@ func reload_genome() -> FeagiRequestOutput:
 	# Get Template Data from dedicated IPU/OPU endpoints
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 6/7: Requesting template data...")
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG]   6a: Requesting IPU types...")
-	var ipu_types_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(ipu_types_request)
-	await ipu_types_worker.worker_done
-	var ipu_types_data: FeagiRequestOutput = ipu_types_worker.retrieve_output_and_close()
+	var ipu_types_data: FeagiRequestOutput = await _request_with_retry_for_reload_stage(ipu_types_request, "Step 6a IPU types")
 	if _return_if_HTTP_failed_and_automatically_handle(ipu_types_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6a: IPU types request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI IPU types data!")
 		return ipu_types_data
 	
 	print("FEAGI REQUEST: [3D_SCENE_DEBUG]   6b: Requesting OPU types...")
-	var opu_types_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(opu_types_request)
-	await opu_types_worker.worker_done
-	var opu_types_data: FeagiRequestOutput = opu_types_worker.retrieve_output_and_close()
+	var opu_types_data: FeagiRequestOutput = await _request_with_retry_for_reload_stage(opu_types_request, "Step 6b OPU types")
 	if _return_if_HTTP_failed_and_automatically_handle(opu_types_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6b: OPU types request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI OPU types data!")
@@ -260,10 +252,11 @@ func reload_genome() -> FeagiRequestOutput:
 	var ipu_types_dict: Dictionary = ipu_types_data.decode_response_as_dict()
 	var opu_types_dict: Dictionary = opu_types_data.decode_response_as_dict()
 	
-	# name_to_id_mapping maps type_id -> [cortical_instance_ids] from current genome
-	# This will be built from genome data, not from templates (templates just define available types)
-	var ipu_name_mapping: Dictionary = {}
-	var opu_name_mapping: Dictionary = {}
+	# name_to_id_mapping maps capability_key -> [cortical_instance_ids] from current genome
+	# Built from cortical areas so get_custom_names can resolve joint/limb names from agent capabilities
+	var built_mappings: Dictionary = FeagiCore.feagi_local_cache.build_iopu_name_to_id_mapping_from_genome()
+	var ipu_name_mapping: Dictionary = built_mappings.get("IPU", {})
+	var opu_name_mapping: Dictionary = built_mappings.get("OPU", {})
 	
 	# Aggregate into expected structure
 	var aggregated_templates: Dictionary = {
@@ -318,6 +311,144 @@ func get_burst_delay() -> FeagiRequestOutput:
 	FeagiCore.feagi_retrieved_burst_rate(response.to_float())
 	return FEAGI_response_data
 
+## Helper to extract device entries from device_grouping, including device_properties (resolution, etc).
+## Uses channel_index_override when present so feagi_index matches FDP decode channel for hover lookup.
+func _resolve_channel_index_override(override_val: Variant, loop_index: int) -> int:
+	if override_val == null:
+		return loop_index
+	if override_val is int or override_val is float:
+		return int(override_val)
+	if override_val is String:
+		var parsed_override := str(override_val).strip_edges()
+		if parsed_override != "":
+			if parsed_override.is_valid_int():
+				return parsed_override.to_int()
+			if parsed_override.is_valid_float():
+				return int(parsed_override.to_float())
+	return loop_index
+
+func _extract_devices_from_device_grouping(device_grouping: Array) -> Dictionary:
+	var devices: Dictionary = {}
+	var loop_index: int = 0
+	for channel in device_grouping:
+		if channel is not Dictionary:
+			continue
+		var override_val: Variant = channel.get("channel_index_override")
+		var feagi_index: int = _resolve_channel_index_override(override_val, loop_index)
+		var custom_name: String = str(channel.get("friendly_name", "ch_%d" % loop_index))
+		var device_entry: Dictionary = {"custom_name": custom_name, "feagi_index": feagi_index}
+		var channel_props = channel.get("device_properties", {})
+		if channel_props is Dictionary:
+			for prop_key in channel_props:
+				var prop_val = channel_props[prop_key]
+				if prop_val is Dictionary and prop_val.has("value"):
+					device_entry[prop_key] = prop_val["value"]
+				else:
+					device_entry[prop_key] = prop_val
+		devices[str(feagi_index)] = device_entry
+		loop_index += 1
+	return devices
+
+func _make_unit_scoped_capability_config(
+	agent_id: String,
+	agent_name: String,
+	section_key: String,
+	capability_key: String,
+	unit_index: int,
+	devices: Dictionary
+) -> Dictionary:
+	var result: Dictionary = {"agent_ID": agent_id}
+	if not agent_name.is_empty():
+		result["agent_name"] = agent_name
+	result[section_key] = {capability_key: devices}
+	result[section_key + "_unit_indices"] = {capability_key: unit_index}
+	return result
+
+## Convert device_registrations (output_units_and_decoder_properties, input_units_and_encoder_properties)
+## into per-unit capabilities-like configs so multi-unit MuJoCo models retain all channel groups.
+## Keys normalized to snake_case (positional_servo, rotary_motor, camera, etc).
+func _device_registrations_to_capabilities_configs(device_registrations: Dictionary, agent_id: String, agent_name: String = "") -> Array[Dictionary]:
+	var configs: Array[Dictionary] = []
+	var output_units = device_registrations.get("output_units_and_decoder_properties", {})
+	if output_units is Dictionary and not output_units.is_empty():
+		for unit_key in output_units.keys():
+			var snake_key: String = str(unit_key).to_lower().replace(" ", "_")
+			if "positional" in snake_key and "servo" in snake_key:
+				snake_key = "positional_servo"
+			elif "rotary" in snake_key and "motor" in snake_key:
+				snake_key = "rotary_motor"
+			var entries = output_units[unit_key]
+			if entries is not Array:
+				continue
+			for entry in entries:
+				if entry is not Array or entry.is_empty():
+					continue
+				var unit_def = entry[0]
+				if unit_def is not Dictionary:
+					continue
+				var device_grouping = unit_def.get("device_grouping", [])
+				if device_grouping is not Array:
+					continue
+				var devices: Dictionary = _extract_devices_from_device_grouping(device_grouping)
+				if devices.is_empty():
+					continue
+				var unit_index: int = int(unit_def.get("cortical_unit_index", -1))
+				configs.append(_make_unit_scoped_capability_config(
+					agent_id,
+					agent_name,
+					"output",
+					snake_key,
+					unit_index,
+					devices
+				))
+	var input_units = device_registrations.get("input_units_and_encoder_properties", {})
+	if input_units is Dictionary and not input_units.is_empty():
+		const INPUT_UNIT_TO_CAPABILITY_KEY: Dictionary = {
+			"vision": "camera",
+			"infrared": "infrared",
+			"proximity": "proximity",
+			"accelerometer": "accelerometer",
+			"gyro": "gyro",
+			"battery": "battery",
+			"camera": "camera",
+			"miscellaneous": "miscellaneous",
+			"gpio_digital": "gpio_digital",
+			"gpio_analog": "gpio_analog",
+			"pressure": "pressure",
+			"lidar": "lidar",
+			"audio": "audio",
+			"servo_motion": "servo_motion",
+			"servo_position": "servo_position",
+		}
+		for unit_key in input_units.keys():
+			var snake_key: String = str(unit_key).to_lower().replace(" ", "_")
+			var capability_key: String = INPUT_UNIT_TO_CAPABILITY_KEY.get(snake_key, snake_key)
+			var entries = input_units[unit_key]
+			if entries is not Array:
+				continue
+			for entry in entries:
+				if entry is not Array or entry.is_empty():
+					continue
+				var unit_def = entry[0]
+				if unit_def is not Dictionary:
+					continue
+				var device_grouping = unit_def.get("device_grouping", [])
+				if device_grouping is not Array:
+					continue
+				var devices: Dictionary = _extract_devices_from_device_grouping(device_grouping)
+				if devices.is_empty():
+					continue
+				var unit_index: int = int(unit_def.get("cortical_unit_index", -1))
+				configs.append(_make_unit_scoped_capability_config(
+					agent_id,
+					agent_name,
+					"input",
+					capability_key,
+					unit_index,
+					devices
+				))
+	return configs
+
 ## Refreshes cached agent capabilities and device registrations using the bulk endpoint.
 func refresh_agent_capabilities_cache(include_device_registrations: bool = true) -> FeagiRequestOutput:
 	FeagiCore.feagi_local_cache.clear_configuration_jsons()
@@ -367,7 +498,17 @@ func refresh_agent_capabilities_cache(include_device_registrations: bool = true)
 			if agent_entry.has("capabilities") and agent_entry["capabilities"] is Dictionary:
 				var capabilities: Dictionary = agent_entry["capabilities"]
 				capabilities["agent_ID"] = str(agent_id)
+				capabilities["agent_name"] = str(agent_entry.get("agent_name", agent_id))
 				FeagiCore.feagi_local_cache.append_configuration_json(capabilities)
+			if agent_entry.has("device_registrations") and agent_entry["device_registrations"] is Dictionary:
+				var converted_configs := _device_registrations_to_capabilities_configs(
+					agent_entry["device_registrations"],
+					str(agent_id),
+					str(agent_entry.get("agent_name", agent_id))
+				)
+				for converted in converted_configs:
+					if not converted.is_empty():
+						FeagiCore.feagi_local_cache.append_configuration_json(converted)
 	FeagiCore.feagi_local_cache.set_agent_capabilities_map(filtered_caps_map)
 	return agent_caps_data
 
@@ -1886,18 +2027,16 @@ func get_cortical_templates() -> FeagiRequestOutput:
 	# Transform and aggregate responses
 	var ipu_types_dict: Dictionary = ipu_data.decode_response_as_dict()
 	var opu_types_dict: Dictionary = opu_data.decode_response_as_dict()
-	
-	# name_to_id_mapping should map type_id -> [cortical_instance_ids] from genome
-	# Leave empty for now - will be populated from genome data if needed
+	var built_mappings: Dictionary = FeagiCore.feagi_local_cache.build_iopu_name_to_id_mapping_from_genome()
 	var aggregated: Dictionary = {
 		"types": {
 			"IPU": {
 				"supported_devices": ipu_types_dict,
-				"name_to_id_mapping": {}  # Empty - populated from genome, not templates
+				"name_to_id_mapping": built_mappings.get("IPU", {})
 			},
 			"OPU": {
 				"supported_devices": opu_types_dict,
-				"name_to_id_mapping": {}  # Empty - populated from genome, not templates
+				"name_to_id_mapping": built_mappings.get("OPU", {})
 			}
 		}
 	}
@@ -3183,6 +3322,37 @@ func _make_safe_http_call(request_definition: APIRequestWorkerDefinition) -> API
 		return null
 	
 	return FeagiCore.network.http_API.make_HTTP_call(request_definition)
+
+## Bounded retry helper used only for reload_genome Step 1 cortical summary retrieval.
+## Uses FEAGI settings for deterministic timing and retry count.
+func _request_with_retry_for_reload_step1(request_definition: APIRequestWorkerDefinition) -> FeagiRequestOutput:
+	return await _request_with_retry_for_reload_stage(request_definition, "Step 1 cortical summary")
+
+## Bounded retry helper used for selected reload_genome stages that can race FEAGI readiness.
+## Uses FEAGI settings for deterministic timing and retry count.
+func _request_with_retry_for_reload_stage(request_definition: APIRequestWorkerDefinition, stage_label: String) -> FeagiRequestOutput:
+	var max_attempts: int = 1
+	var retry_spacing_seconds: float = 0.0
+	if FeagiCore.feagi_settings != null:
+		max_attempts = maxi(1, FeagiCore.feagi_settings.number_of_times_to_retry_HTTP_connections + 1)
+		retry_spacing_seconds = maxf(0.0, FeagiCore.feagi_settings.seconds_between_healthcheck_pings)
+	
+	var output: FeagiRequestOutput = FeagiRequestOutput.requirement_fail("REQUEST_NOT_EXECUTED")
+	for attempt_index in range(max_attempts):
+		var worker: APIRequestWorker = _make_safe_http_call(request_definition)
+		if worker == null:
+			return FeagiRequestOutput.requirement_fail("HTTP_WORKER_NULL")
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call initiated, waiting for response...")
+		await worker.worker_done
+		print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call completed, retrieving data...")
+		output = worker.retrieve_output_and_close()
+		if not _return_if_HTTP_failed_and_automatically_handle(output):
+			return output
+		if attempt_index < max_attempts - 1:
+			print("FEAGI REQUEST: [3D_SCENE_DEBUG] Retrying %s (%d/%d)..." % [stage_label, attempt_index + 2, max_attempts])
+			if retry_spacing_seconds > 0.0:
+				await FeagiCore.get_tree().create_timer(retry_spacing_seconds).timeout
+	return output
 
 ## Used for error automated error handling of HTTP requests, outputs booleans to set up easy early returns
 func _return_if_HTTP_failed_and_automatically_handle(output: FeagiRequestOutput, optional_input_for_debugging: APIRequestWorkerDefinition = null) -> bool:

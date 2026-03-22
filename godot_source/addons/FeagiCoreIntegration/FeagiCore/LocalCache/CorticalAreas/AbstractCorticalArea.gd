@@ -310,9 +310,24 @@ static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringNam
 static func get_neuron_count(dimensions: Vector3i, density: float) -> int:
 	return int(float(dimensions.x * dimensions.y * dimensions.z) * density)
 
+## If [param token] is standard base64 for an 8-byte FEAGI cortical ID, returns the UTF-8 label; else "".
+static func _utf8_label_from_base64_cortical_token(token: String) -> String:
+	var trimmed := token.strip_edges()
+	if trimmed.is_empty():
+		return ""
+	var raw: PackedByteArray = Marshalls.base64_to_raw(trimmed)
+	if raw.size() != 8:
+		return ""
+	# Only decode known ASCII-safe labels (e.g., "___death", "___power", "___fatig").
+	# Avoid calling UTF-8 conversion on binary cortical IDs, which logs parser errors.
+	for byte_val in raw:
+		if byte_val < 32 or byte_val > 126:
+			return ""
+	return raw.get_string_from_utf8()
+
 ## Check if a cortical_ID (in old 6-char or new base64 format) is a special core area
 ## Returns the core area name if it matches, or empty string if not
-static func get_special_core_area_name(cortical_id: String) -> String:
+static func get_special_core_area_name(cortical_id: Variant) -> String:
 	# Dictionary mapping both old and new formats to their canonical names
 	# CRITICAL: Uses feagi-data-processing format (3 prefix underscores: ___power, ___death)
 	const SPECIAL_CORE_AREAS = {
@@ -333,17 +348,48 @@ static func get_special_core_area_name(cortical_id: String) -> String:
 		# Death area (NEW format from feagi-data-processing)
 		"___death": "death",
 		"X19fZGVhdGg=": "death",  # base64 of "___death" (NEW format)
+
+		# Fatigue area (feagi-structures CoreCorticalType::Fatigue -> CorticalID bytes "___fatig")
+		"___fatig": "fatigue",
+		"X19fZmF0aWc=": "fatigue",  # base64 of "___fatig"
 	}
-	
-	return SPECIAL_CORE_AREAS.get(cortical_id, "")
+	var id_str := String(cortical_id).strip_edges()
+	var by_direct: String = SPECIAL_CORE_AREAS.get(id_str, "")
+	if not by_direct.is_empty():
+		return by_direct
+	var decoded_label := _utf8_label_from_base64_cortical_token(id_str)
+	if decoded_label.is_empty():
+		return ""
+	return SPECIAL_CORE_AREAS.get(decoded_label, "")
 
 ## Check if a cortical_ID is the power area (supports both old and new formats)
-static func is_power_area(cortical_id: String) -> bool:
+static func is_power_area(cortical_id: Variant) -> bool:
 	return get_special_core_area_name(cortical_id) == "power"
 
 ## Check if a cortical_ID is the death area (supports both old and new formats)
-static func is_death_area(cortical_id: String) -> bool:
+static func is_death_area(cortical_id: Variant) -> bool:
 	return get_special_core_area_name(cortical_id) == "death"
+
+## Check if a cortical_ID is the fatigue core area (supports string and base64 cortical IDs)
+static func is_fatigue_area(cortical_id: Variant) -> bool:
+	return get_special_core_area_name(cortical_id) == "fatigue"
+
+## True for reserved system core IDs (power, death, fatigue, ...) used by FEAGI connectome APIs.
+## Root brain-geometry summaries may omit these while they still exist in the cortical cache; Brain Monitor uses this to show them at root.
+static func is_reserved_system_core_area(cortical_id: Variant) -> bool:
+	return not get_special_core_area_name(cortical_id).is_empty()
+
+## True for FEAGI invariant core regions: explicit reserved IDs or [enum CORTICAL_AREA_TYPE.CORE] from the API/cache.
+## Covers ID encodings the name map does not list yet while still keeping the type contract from FEAGI.
+static func is_feagi_invariant_core_area(area: AbstractCorticalArea) -> bool:
+	if area == null:
+		return false
+	# Concrete core class from cache (power/death/fatigue) even if API mislabeled cortical_type as custom.
+	if area is CoreCorticalArea:
+		return true
+	if area.cortical_type == CORTICAL_AREA_TYPE.CORE:
+		return true
+	return is_reserved_system_core_area(area.cortical_ID)
 
 static func array_of_cortical_areas_to_array_of_cortical_IDs(arr: Array[AbstractCorticalArea]) -> Array[StringName]:
 	var output: Array[StringName] = []
@@ -384,10 +430,8 @@ func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vecto
 ## Called from [CorticalAreasCache] when cortical area is being deleted
 func FEAGI_delete_cortical_area() -> void:
 	#NOTE: Assumption is made that connections were already removed firstZ!
-	print("🗑️ FEAGI_delete_cortical_area: About to emit about_to_be_deleted for %s" % cortical_ID)
 	_parent_region.FEAGI_genome_object_deregister_as_child(self)
 	about_to_be_deleted.emit()
-	print("🗑️ FEAGI_delete_cortical_area: Emitted about_to_be_deleted for %s" % cortical_ID)
 	# [CorticalAreasCache] then deletes this object
 
 ## Helper function to safely convert dimensions data that might be Array or Dictionary
@@ -759,12 +803,26 @@ func BV_unregister_directpoints_renderer(renderer: Object = null) -> void:
 func BV_get_directpoints_multimesh() -> MultiMesh:
 	_bv_prune_directpoints_renderers()
 	if _bv_directpoints_renderers_by_id.size() != 1:
+		_bv_directpoints_renderer = null
+		_bv_directpoints_multimesh = null
+		_bv_directpoints_dimensions = Vector3.ZERO
+		return null
+	# Prune can leave exactly one valid renderer while cached _bv_directpoints_multimesh stayed null from an
+	# earlier !=1 state; repopulate from the dict entry without full sync on unrelated hot paths.
+	_bv_refresh_primary_directpoints_from_sole_registration()
+	if _bv_directpoints_renderers_by_id.size() != 1:
 		return null
 	return _bv_directpoints_multimesh
 
 ## Brain Visualizer: retrieve registered dimensions for fast-path rendering.
 func BV_get_directpoints_dimensions() -> Vector3:
 	_bv_prune_directpoints_renderers()
+	if _bv_directpoints_renderers_by_id.size() != 1:
+		_bv_directpoints_renderer = null
+		_bv_directpoints_multimesh = null
+		_bv_directpoints_dimensions = Vector3.ZERO
+		return Vector3.ZERO
+	_bv_refresh_primary_directpoints_from_sole_registration()
 	if _bv_directpoints_renderers_by_id.size() != 1:
 		return Vector3.ZERO
 	return _bv_directpoints_dimensions
@@ -773,6 +831,10 @@ func BV_get_directpoints_dimensions() -> Vector3:
 func BV_requires_bulk_directpoints_updates() -> bool:
 	_bv_prune_directpoints_renderers()
 	return _bv_directpoints_renderers_by_id.size() > 1
+
+## Re-prune invalid DirectPoints refs and refresh primary MultiMesh cache. Call after WS transport resync if needed.
+func BV_resync_directpoints_fast_path_state() -> void:
+	_bv_sync_primary_directpoints_renderer()
 
 ## Brain Visualizer: lightweight activity notification for renderer side-effects (timers/animations).
 ## Note: fast-path rendering updates the MultiMesh directly; this is only for behavior parity.
@@ -808,6 +870,22 @@ func _bv_prune_directpoints_renderers() -> void:
 			to_remove.append(renderer_id)
 	for renderer_id in to_remove:
 		_bv_directpoints_renderers_by_id.erase(renderer_id)
+
+## When [method _bv_prune_directpoints_renderers] leaves exactly one registration, copy entry into primary fields.
+func _bv_refresh_primary_directpoints_from_sole_registration() -> void:
+	if _bv_directpoints_renderers_by_id.size() != 1:
+		return
+	var entry: Dictionary = _bv_directpoints_renderers_by_id.values()[0]
+	var renderer_value = entry.get("renderer", null)
+	if renderer_value == null or not (renderer_value is Object) or not is_instance_valid(renderer_value):
+		_bv_directpoints_renderers_by_id.clear()
+		_bv_directpoints_renderer = null
+		_bv_directpoints_multimesh = null
+		_bv_directpoints_dimensions = Vector3.ZERO
+		return
+	_bv_directpoints_renderer = renderer_value as Object
+	_bv_directpoints_multimesh = entry.get("multimesh", null)
+	_bv_directpoints_dimensions = entry.get("dimensions", Vector3.ZERO)
 
 ## Brain Visualizer: synchronize fast-path fields when renderer count changes.
 func _bv_sync_primary_directpoints_renderer() -> void:

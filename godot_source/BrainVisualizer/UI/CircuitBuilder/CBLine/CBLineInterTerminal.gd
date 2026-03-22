@@ -93,6 +93,10 @@ func _finalize_dispose() -> void:
 		if _destination_port.node_moved.is_connected(_update_line_endpoint_positions):
 			_destination_port.node_moved.disconnect(_update_line_endpoint_positions)
 		_destination_port.request_deletion()
+	var p := get_parent()
+	if p is CircuitBuilder:
+		(p as CircuitBuilder).schedule_graph_element_removal(self)
+		return
 	call_deferred("queue_free")
 
 func _proxy_mapping_change_connection() -> void:

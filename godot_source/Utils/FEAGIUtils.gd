@@ -252,6 +252,57 @@ static func is_substring_in_array(arr: PackedStringArray, searching: String) -> 
 			return true
 	return false
 
+## Decode agent_name from base64 agent_id (48-byte AgentDescriptor format).
+## Format: instance_id(4) + manufacturer(20) + agent_name(20) + version(4).
+## Returns empty string if decode fails or agent_name is invalid.
+static func decode_agent_name_from_id(agent_id: String) -> String:
+	var id_str := str(agent_id).strip_edges()
+	if id_str.is_empty():
+		return ""
+	var raw: PackedByteArray
+	raw = Marshalls.base64_to_raw(id_str)
+	const AGENT_DESC_SIZE: int = 48
+	if raw.size() == 0:
+		return ""
+	const AGENT_NAME_OFFSET: int = 4 + 20
+	const AGENT_NAME_LEN: int = 20
+	if raw.size() != AGENT_DESC_SIZE:
+		return ""
+	var name_bytes: PackedByteArray = raw.slice(AGENT_NAME_OFFSET, AGENT_NAME_OFFSET + AGENT_NAME_LEN)
+	var name := name_bytes.get_string_from_ascii().replace(char(0), "").strip_edges()
+	if name.is_empty():
+		return ""
+	for c in name:
+		var code := ord(c)
+		if code < 32 or code >= 128:
+			return ""
+	return name
+
+## Resolve display name for an agent. Never returns base64 - uses decoded name or "Agent" fallback.
+static func resolve_agent_display_name(agent_name: Variant, agent_id: Variant) -> String:
+	var name_str := str(agent_name).strip_edges()
+	var id_str := str(agent_id).strip_edges()
+	if name_str != "" and name_str != id_str and not _looks_like_base64(name_str):
+		return name_str
+	var decoded := decode_agent_name_from_id(id_str)
+	if decoded != "":
+		return decoded
+	return "Agent"
+
+static func _looks_like_base64(s: String) -> bool:
+	if s.length() < 20:
+		return false
+	for c in s:
+		var code := ord(c)
+		var is_alnum := (code >= 48 and code <= 57) or (code >= 65 and code <= 90) or (code >= 97 and code <= 122)
+		if not (is_alnum or c == "+" or c == "/" or c == "="):
+			return false
+	return true
+
+## Returns the joint/limb name as-is. Full display text must come from backend (display_name or custom_name).
+static func expand_joint_to_limb_description(joint_name: String) -> String:
+	return str(joint_name).strip_edges()
+
 ## Turn StringName Array into CSV string
 static func string_name_array_to_CSV(arr: Array[StringName]) -> StringName:
 	var output: String = ""

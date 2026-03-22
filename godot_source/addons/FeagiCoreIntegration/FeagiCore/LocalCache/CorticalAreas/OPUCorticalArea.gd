@@ -59,13 +59,32 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "dev_count" in data.keys():
 		FEAGI_set_device_count(data["dev_count"])
 	
+	var total: Vector3i = _safe_convert_to_vector3i(data.get("cortical_dimensions", dimensions_3D), "cortical_dimensions")
+	var per: Vector3i
 	if "cortical_dimensions_per_device" in data.keys():
-		FEAGI_set_cortical_dimensions_per_device(_safe_convert_to_vector3i(data["cortical_dimensions_per_device"], "cortical_dimensions_per_device"))
-	elif "cortical_dimensions" in data.keys():
-		FEAGI_set_cortical_dimensions_per_device(_safe_convert_to_vector3i(data["cortical_dimensions"], "cortical_dimensions"))
+		per = _safe_convert_to_vector3i(data["cortical_dimensions_per_device"], "cortical_dimensions_per_device")
+		if total.x > 0 and total.y > 0 and total.z > 0 and _device_count > 0:
+			var dx: int = maxi(1, per.x)
+			var dy: int = maxi(1, per.y)
+			var dz: int = maxi(1, per.z)
+			var blocks: int = (total.x / dx) * (total.y / dy) * (total.z / dz)
+			if blocks != _device_count:
+				per = _infer_per_device_from_total(total)
+	elif total.x > 0 and total.y > 0 and total.z > 0 and _device_count > 0:
+		per = _infer_per_device_from_total(total)
+	else:
+		per = _cortical_dimensions_per_device
+	FEAGI_set_cortical_dimensions_per_device(per)
 
 	neuron_firing_parameters.FEAGI_apply_detail_dictionary(data)
 	return
+
+## Infer per-device dimensions from total so blocks == device_count. Handles devices along x, y, or z.
+func _infer_per_device_from_total(total: Vector3i) -> Vector3i:
+	var px: int = (total.x / _device_count) if _device_count > 0 and total.x % _device_count == 0 else total.x
+	var py: int = (total.y / _device_count) if _device_count > 0 and total.y % _device_count == 0 else total.y
+	var pz: int = (total.z / _device_count) if _device_count > 0 and total.z % _device_count == 0 else total.z
+	return Vector3i(maxi(1, px), maxi(1, py), maxi(1, pz))
 
 func FEAGI_set_device_count(new_count: int) -> void:
 	_device_count = new_count
@@ -76,6 +95,16 @@ func FEAGI_set_cortical_dimensions_per_device(new_dimensions: Vector3i) -> void:
 	cortical_dimensions_per_device_updated.emit(new_dimensions, self)
 
 ## Given an array of configurator capability dictionaries (recieved from agent properties), get all custom names of this cortical area
+func _matches_output_unit_index(configurator_capability: Dictionary) -> bool:
+	if unit_id < 0:
+		return true
+	var unit_indices: Variant = configurator_capability.get("output_unit_indices")
+	if unit_indices is not Dictionary:
+		return true
+	if !unit_indices.has(str(controller_ID)):
+		return true
+	return int(unit_indices[str(controller_ID)]) == unit_id
+
 func get_custom_names(configurator_capabilities: Array[Dictionary], feagi_index: int) -> Array[StringName]:
 	if !has_controller_ID:
 		return []
@@ -86,6 +115,8 @@ func get_custom_names(configurator_capabilities: Array[Dictionary], feagi_index:
 		# Check if output is actually a Dictionary (not a boolean)
 		if configurator_capability["output"] is not Dictionary:
 			continue
+		if !_matches_output_unit_index(configurator_capability):
+			continue
 		var configurator_output: Dictionary = configurator_capability["output"]
 		if !configurator_output.has(str(controller_ID)):
 			continue
@@ -95,8 +126,46 @@ func get_custom_names(configurator_capabilities: Array[Dictionary], feagi_index:
 				continue
 			if str(device["feagi_index"]).to_int() != feagi_index:
 				continue
-			output.append((str(configurator_capability["agent_ID"]) + ": " + str(device["custom_name"])))
+			var display_name: String = FEAGIUtils.resolve_agent_display_name(
+				configurator_capability.get("agent_name", ""),
+				configurator_capability.get("agent_ID", "")
+			)
+			var limb_desc: String = str(device.get("display_name", device.get("custom_name", ""))).strip_edges()
+			if limb_desc.is_empty():
+				continue
+			output.append((display_name + ": " + limb_desc))
 	return output
+
+## Returns device properties (max_value, min_value, max_power) for the device at feagi_index.
+## Used for hover display to show joint range (e.g. 0-180 deg).
+func get_device_properties(configurator_capabilities: Array[Dictionary], feagi_index: int) -> Dictionary:
+	if !has_controller_ID:
+		return {}
+	for configurator_capability in configurator_capabilities:
+		if !configurator_capability.has("output") or configurator_capability["output"] is not Dictionary:
+			continue
+		if !_matches_output_unit_index(configurator_capability):
+			continue
+		var configurator_output: Dictionary = configurator_capability["output"]
+		if !configurator_output.has(str(controller_ID)):
+			continue
+		var devices: Dictionary = configurator_output[controller_ID]
+		for device in devices.values():
+			if !device.has("feagi_index") or str(device["feagi_index"]).to_int() != feagi_index:
+				continue
+			var out: Dictionary = {}
+			if device.has("max_value"):
+				out["max_value"] = device["max_value"]
+			if device.has("min_value"):
+				out["min_value"] = device["min_value"]
+			if device.has("max_power"):
+				out["max_power"] = device["max_power"]
+			if device.has("resolution"):
+				out["resolution"] = device["resolution"]
+			if device.has("image_resolution"):
+				out["image_resolution"] = device["image_resolution"]
+			return out
+	return {}
 
 func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	return AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU

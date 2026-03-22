@@ -75,9 +75,9 @@ func spawn_CB_of_region(region: BrainRegion) -> void:
 		push_error("UI UITabCOntainer: This tab container already contains region ID %s!" % region.region_ID)
 		return
 	var new_cb: CircuitBuilder = PREFAB_CIRCUITBUILDER.instantiate()
-	new_cb.setup(region)
-	#CURSED
 	_add_control_view_as_tab(new_cb)
+	# setup() after add_child: GraphEdit requires in-tree _connection_layer when GraphElements are added.
+	new_cb.setup(region)
 	new_cb.request_initial_fit()
 
 ## If BM of given region exists, brings it to the top. Otherwise, instantiates it and brings it to the top

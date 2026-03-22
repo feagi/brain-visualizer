@@ -12,8 +12,8 @@ godot = { git = "https://github.com/godot-rust/gdext", rev = "309881cab73255934a
 
 # FEAGI library (FeagiInstance/FeagiConfig from feagi-rs; not published on crates.io)
 feagi = { path = "../../../feagi-rs", default-features = false, features = ["embedded"] }
-feagi-config = { version = "0.0.1-beta.19" }
-feagi-npu-burst-engine = { version = "0.0.1-beta.19" }
+feagi-config = { version = "0.0.1" }
+feagi-npu-burst-engine = { version = "0.0.1" }
 
 # Error handling
 anyhow = "1.0"

@@ -83,8 +83,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	
 	# Create renderers based on cortical area type
 	if (_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
-		AbstractCorticalArea.is_power_area(_representing_cortial_area.cortical_ID) or
-		AbstractCorticalArea.is_death_area(_representing_cortial_area.cortical_ID) or
+		AbstractCorticalArea.is_feagi_invariant_core_area(_representing_cortial_area) or
 		_should_use_png_icon(_representing_cortial_area)):
 		# Memory, Power, Death, and PNG icon areas use only DirectPoints renderer (no DDA cube)
 		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
@@ -2049,8 +2048,6 @@ func _notification(what: int) -> void:
 		_cleanup_cache_connections()
 
 func _cleanup_cache_connections() -> void:
-	print("🧹 CLEANUP: Disconnecting cache signals for cortical area: ", _representing_cortial_area.cortical_ID if _representing_cortial_area else "unknown")
-	
 	# Disconnect cache reload signal
 	if FeagiCore.feagi_local_cache:
 		var cache = FeagiCore.feagi_local_cache

@@ -53,6 +53,10 @@ var _mother_plate_click_area: StaticBody3D
 var _region_label_click_area: StaticBody3D
 var _stored_collision_state: Dictionary = {}  # int (instance_id) -> {layer: int, mask: int}
 
+func _region_reload_debug_enabled() -> bool:
+	var val := String(OS.get_environment("BV_REGION_RELOAD_DEBUG")).strip_edges().to_lower()
+	return val == "1" or val == "true" or val == "yes" or val == "on"
+
 ## Disable collision so gizmo raycasts can reach arrows when region is hidden during manipulation.
 func set_collision_enabled(enabled: bool) -> void:
 	if enabled:
@@ -318,6 +322,15 @@ func setup(brain_region: BrainRegion) -> void:
 	# 🚨 CRITICAL FIX: Set _representing_region BEFORE coordinate generation 
 	# because I/O detection functions depend on it!
 	_representing_region = brain_region
+	if _region_reload_debug_enabled():
+		print("[REGION-DBG][Plate] setup region_id=%s parent=%s contained=%d input_links=%d output_links=%d partials=%d" % [
+			String(brain_region.region_ID),
+			String(brain_region.current_parent_region.region_ID) if brain_region.current_parent_region != null else "none",
+			brain_region.contained_cortical_areas.size(),
+			brain_region.input_open_chain_links.size(),
+			brain_region.output_open_chain_links.size(),
+			brain_region.partial_mappings.size(),
+		])
 	
 	_generated_io_coordinates = generate_io_coordinates_for_brain_region(brain_region)
 	name = "BrainRegion3D_" + brain_region.region_ID
@@ -362,6 +375,14 @@ func _deferred_io_verification_and_hydration() -> void:
 	var output_areas = _get_output_cortical_areas()
 	var has_no_io_areas = (input_areas.size() == 0 and output_areas.size() == 0)
 	var has_missing_visualizations = false
+	if _region_reload_debug_enabled():
+		print("[REGION-DBG][Plate] hydrate start region_id=%s inputs=%d outputs=%d existing_plate_viz=%d has_no_io=%s" % [
+			String(_representing_region.region_ID),
+			input_areas.size(),
+			output_areas.size(),
+			_cortical_area_visualizations.size(),
+			str(has_no_io_areas),
+		])
 	
 	# Check if we have I/O areas but missing visualizations on plates
 	for area in input_areas:
@@ -377,6 +398,11 @@ func _deferred_io_verification_and_hydration() -> void:
 	
 	# Trigger hydration if no I/O areas found OR missing visualizations
 	if has_no_io_areas or has_missing_visualizations:
+		if _region_reload_debug_enabled():
+			print("[REGION-DBG][Plate] hydrate trigger region_id=%s missing_viz=%s -> refresh_single_brain_region_cache" % [
+				String(_representing_region.region_ID),
+				str(has_missing_visualizations),
+			])
 		# print("  🔄 HYDRATION: Region %s needs I/O refresh - no_io: %s, missing_viz: %s" % [_representing_region.region_ID, has_no_io_areas, has_missing_visualizations])
 		# print("    - Found %d inputs, %d outputs" % [input_areas.size(), output_areas.size()])
 		# print("    - Have %d visualizations on plates" % _cortical_area_visualizations.size())
@@ -390,6 +416,15 @@ func _deferred_io_verification_and_hydration() -> void:
 		# Get current I/O areas after cache refresh to determine what should be kept
 		var updated_input_areas = _get_input_cortical_areas()
 		var updated_output_areas = _get_output_cortical_areas()
+		if _region_reload_debug_enabled():
+			print("[REGION-DBG][Plate] hydrate refreshed region_id=%s inputs=%d outputs=%d partials=%d input_links=%d output_links=%d" % [
+				String(_representing_region.region_ID),
+				updated_input_areas.size(),
+				updated_output_areas.size(),
+				_representing_region.partial_mappings.size(),
+				_representing_region.input_open_chain_links.size(),
+				_representing_region.output_open_chain_links.size(),
+			])
 		var updated_io_ids: Array[String] = []
 		
 		for area in updated_input_areas:
@@ -416,6 +451,11 @@ func _deferred_io_verification_and_hydration() -> void:
 		
 		await get_tree().process_frame
 		_populate_cortical_areas()
+		if _region_reload_debug_enabled():
+			print("[REGION-DBG][Plate] hydrate populated region_id=%s plate_viz=%d" % [
+				String(_representing_region.region_ID),
+				_cortical_area_visualizations.size(),
+			])
 		
 		# Force a comprehensive update
 		_recalculate_plates_and_positioning_after_dimension_change()
@@ -1564,6 +1604,15 @@ func _populate_cortical_areas() -> void:
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
 	var conflict_areas = _get_conflict_cortical_areas()
+	var debug_regions := _region_reload_debug_enabled()
+	if debug_regions:
+		print("[REGION-DBG][Plate] populate region_id=%s inputs=%d outputs=%d conflicts=%d partials=%d" % [
+			String(_representing_region.region_ID) if _representing_region != null else "none",
+			input_areas.size(),
+			output_areas.size(),
+			conflict_areas.size(),
+			_representing_region.partial_mappings.size() if _representing_region != null else -1,
+		])
 	
 	
 	# Get reference to the 3D scene that manages all cortical area visualizations
@@ -1738,6 +1787,14 @@ func _populate_cortical_areas() -> void:
 		# Use a special flag to indicate this is a conflict area (neither purely input nor output)  
 		_position_cortical_area_on_plate(existing_viz, i, conflict_areas.size(), "conflict")  # "conflict" = special conflict type
 		_cortical_area_visualizations[area.cortical_ID] = existing_viz
+	if debug_regions:
+		print("[REGION-DBG][Plate] populate done region_id=%s input_nodes=%d output_nodes=%d conflict_nodes=%d total_plate_viz=%d" % [
+			String(_representing_region.region_ID) if _representing_region != null else "none",
+			_input_areas_container.get_child_count() if _input_areas_container != null else -1,
+			_output_areas_container.get_child_count() if _output_areas_container != null else -1,
+			_conflict_areas_container.get_child_count() if _conflict_areas_container != null else -1,
+			_cortical_area_visualizations.size(),
+		])
 	
 	# Adjust frame size based on content
 	_adjust_frame_size(input_areas.size(), output_areas.size())
