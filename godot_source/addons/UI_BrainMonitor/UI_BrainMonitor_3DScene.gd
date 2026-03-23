@@ -106,6 +106,7 @@ var _debug_large_mesh_scan_enabled: bool = false
 var _debug_large_mesh_scan_seconds: float = 0.0
 var _debug_large_mesh_scan_interval: float = 2.0
 var _debug_large_mesh_scan_threshold: Vector3 = Vector3(200.0, 50.0, 0.0)
+var _has_auto_framed_once: bool = false
 
 func _region_reload_debug_enabled() -> bool:
 	var val := String(OS.get_environment("BV_REGION_RELOAD_DEBUG")).strip_edges().to_lower()
@@ -793,6 +794,7 @@ func _auto_frame_camera_to_objects() -> void:
 			_pancake_cam.look_at(center_pos, Vector3.UP)
 			_pancake_cam.current = true
 			_pancake_cam.near = 0.05
+			_has_auto_framed_once = true
 			_log_objects_relative_to_camera("fallback_legacy")
 		return
 	var center := aabb.position + (aabb.size / 2.0)
@@ -821,6 +823,7 @@ func _auto_frame_camera_to_objects() -> void:
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
 	_pancake_cam.current = true
 	_pancake_cam.near = 0.05
+	_has_auto_framed_once = true
 	_log_objects_relative_to_camera("after_auto_frame")
 
 ## Computes AABB only over cortical and brain region visualizations for reliable framing
@@ -1676,7 +1679,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
 					if bm_input_event.button_pressed:
 						var quick_connect_override_active: bool = BV != null and BV.UI != null and BV.UI.selection_system != null and BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
-						if not quick_connect_override_active and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
+						var quick_connect_neuron_click_voxel_mode: bool = _should_disable_unit_group_auto_selection_for_click()
+						var selecting_quick_connect_neuron_voxel_with_click: bool = quick_connect_neuron_click_voxel_mode and bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN
+						if (not quick_connect_override_active and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held) or selecting_quick_connect_neuron_voxel_with_click:
 							# Additional safety check - object might have been freed between initial check and method calls
 							if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
 								continue
@@ -1725,19 +1730,28 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 									var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
 									if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
 										ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
-									var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(hit_parent_parent.cortical_area)
+									var disable_unit_group_auto_selection: bool = _should_disable_unit_group_auto_selection_for_click()
 									var to_select: Array[GenomeObject] = []
-									if unit_members.size() > 1:
-										var clicked_region = hit_parent_parent.cortical_area.current_parent_region
-										for m in unit_members:
-											if m.current_parent_region == clicked_region:
-												to_select.append(m)
-									if to_select.is_empty():
+									# Keep voxel destination picking deterministic during QuickConnectNeuron:
+									# selecting a cortical area should not fan out to its IO/unit siblings.
+									if disable_unit_group_auto_selection:
 										to_select = arr_test
+									else:
+										var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(hit_parent_parent.cortical_area)
+										if unit_members.size() > 1:
+											var clicked_region = hit_parent_parent.cortical_area.current_parent_region
+											for m in unit_members:
+												if m.current_parent_region == clicked_region:
+													to_select.append(m)
+										if to_select.is_empty():
+											to_select = arr_test
 									BV.UI.selection_system.clear_all_highlighted()
 									for obj in to_select:
 										BV.UI.selection_system.add_to_highlighted(obj)
 									BV.UI.selection_system.select_objects(ctx, to_select)
+									if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and _is_quick_connect_neuron_waiting_for_entire_area_selection():
+										# Whole-area QuickConnectNeuron steps still consume delta callbacks to progress source/destination.
+										cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, true)
 									if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
 										BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
 									#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
@@ -2400,6 +2414,32 @@ func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCortic
 		return []
 	var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
 	return area.get_unit_group_members(all_areas)
+
+## Returns true when QuickConnectNeuron expects voxel selection via main click.
+func _should_disable_unit_group_auto_selection_for_click() -> bool:
+	if BV == null or BV.WM == null:
+		return false
+	if WindowQuickConnectNeuron.WINDOW_NAME not in BV.WM.loaded_windows:
+		return false
+	var quick_connect_neuron_window: Variant = BV.WM.loaded_windows[WindowQuickConnectNeuron.WINDOW_NAME]
+	if quick_connect_neuron_window == null or not is_instance_valid(quick_connect_neuron_window):
+		return false
+	if quick_connect_neuron_window is WindowQuickConnectNeuron:
+		return (quick_connect_neuron_window as WindowQuickConnectNeuron).expects_voxel_selection_on_primary_click()
+	return false
+
+## Returns true when QuickConnectNeuron expects selecting a whole cortical area with primary click.
+func _is_quick_connect_neuron_waiting_for_entire_area_selection() -> bool:
+	if BV == null or BV.WM == null:
+		return false
+	if WindowQuickConnectNeuron.WINDOW_NAME not in BV.WM.loaded_windows:
+		return false
+	var quick_connect_neuron_window: Variant = BV.WM.loaded_windows[WindowQuickConnectNeuron.WINDOW_NAME]
+	if quick_connect_neuron_window == null or not is_instance_valid(quick_connect_neuron_window):
+		return false
+	if quick_connect_neuron_window is WindowQuickConnectNeuron:
+		return (quick_connect_neuron_window as WindowQuickConnectNeuron).expects_entire_area_selection_on_primary_click()
+	return false
 
 ## Apply a move to all subunits in the same unit.
 func _apply_group_move(members: Array[AbstractCorticalArea], new_pos: Vector3i) -> void:
@@ -3323,7 +3363,10 @@ func _add_missing_cortical_area_visualizations() -> void:
 				_add_cortical_area(area)
 
 	if added_any:
-		call_deferred("_auto_frame_camera_to_objects")
+		# Preserve user camera state during cache-driven add/remove updates.
+		# Only auto-frame if this monitor has never been framed yet.
+		if not _has_auto_framed_once:
+			call_deferred("_auto_frame_camera_to_objects")
 		call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 ## Creates visualizations for any new brain regions that don't have them yet (e.g., after cloning)

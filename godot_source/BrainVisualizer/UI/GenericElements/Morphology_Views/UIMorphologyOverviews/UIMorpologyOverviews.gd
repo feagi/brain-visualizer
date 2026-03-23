@@ -30,6 +30,8 @@ var _no_name_text: StringName
 var _loaded_morphology: BaseMorphology
 var _skip_next_focus_revert: bool = false
 
+const MORPHOLOGY_UPDATE_WARNING_POPUP_MIN_SIZE: Vector2i = Vector2i(640, 420)
+
 func _ready() -> void:
 	# Get references
 	_add_morphology_button = $Listings/AddMorphology
@@ -91,21 +93,86 @@ func _user_requested_update_morphology() -> void:
 	if is_name_change and is_custom:
 		_rename_then_update_parameters(name_trimmed)
 		return
-	BV.NOTIF.add_notification("Requesting FEAGI to update Connectivity rule %s" % _loaded_morphology.name)
-	_UI_morphology_definition.request_feagi_apply_morphology_settings(_loaded_morphology.name)
+	_request_morphology_update_with_warning(_loaded_morphology.name)
 
 func _rename_then_update_parameters(new_name: String) -> void:
 	var result: FeagiRequestOutput = await FeagiCore.requests.rename_morphology(_loaded_morphology.name, new_name)
-	if result.has_errored:
-		BV.NOTIF.add_notification("Failed to rename connectivity rule: %s" % result.failure_reason)
+	if !result.success:
+		var error_details: PackedStringArray = result.decode_response_as_generic_error_code()
+		BV.NOTIF.add_notification("Failed to rename connectivity rule: %s" % error_details[1])
 		_morphology_name_edit.text = _loaded_morphology.name
 		return
 	BV.NOTIF.add_notification("Renamed connectivity rule to %s" % new_name)
 	_loaded_morphology = FeagiCore.feagi_local_cache.morphologies.try_get_morphology_object(new_name)
 	if _loaded_morphology:
-		BV.NOTIF.add_notification("Requesting FEAGI to update Connectivity rule %s" % _loaded_morphology.name)
-		_UI_morphology_definition.request_feagi_apply_morphology_settings(_loaded_morphology.name)
+		_request_morphology_update_with_warning(_loaded_morphology.name)
 		load_morphology(_loaded_morphology, true)
+
+func _request_morphology_update_with_warning(morphology_name: StringName) -> void:
+	var usage_result: FeagiRequestOutput = await FeagiCore.requests.get_morphology_usage(morphology_name)
+	if !usage_result.success:
+		var error_details: PackedStringArray = usage_result.decode_response_as_generic_error_code()
+		BV.NOTIF.add_notification(
+			"Unable to validate impacted mappings for connectivity rule %s: %s"
+			% [morphology_name, error_details[1]]
+		)
+		return
+
+	if !_loaded_morphology or _loaded_morphology is NullMorphology:
+		return
+
+	var usage: Array[PackedStringArray] = _loaded_morphology.latest_known_usage_by_cortical_area
+	if usage.is_empty():
+		_confirm_apply_morphology_update(morphology_name)
+		return
+
+	var warning_message: String = _build_morphology_update_warning_message(morphology_name, usage)
+	var confirm_action: Callable = _confirm_apply_morphology_update.bind(morphology_name)
+	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Confirm Connectivity Rule Update",
+		warning_message,
+		confirm_action,
+		"Update All Mappings",
+		"Cancel",
+		MORPHOLOGY_UPDATE_WARNING_POPUP_MIN_SIZE
+	)
+	var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(popup_definition)
+	popup_window.set_enter_confirms_button("Update All Mappings")
+	popup_window.call_deferred("focus_button_with_text", "Update All Mappings")
+
+func _confirm_apply_morphology_update(morphology_name: StringName) -> void:
+	BV.NOTIF.add_notification("Requesting FEAGI to update Connectivity rule %s" % morphology_name)
+	_UI_morphology_definition.request_feagi_apply_morphology_settings(morphology_name)
+
+func _build_morphology_update_warning_message(
+	morphology_name: StringName,
+	usage: Array[PackedStringArray]
+) -> String:
+	var usage_lines: PackedStringArray = []
+	for single_mapping in usage:
+		usage_lines.append(_mapping_usage_to_text(single_mapping))
+	var usage_list: String = "- " + "\n- ".join(usage_lines)
+	return (
+		"Connectivity rule '%s' is used by %d cortical mapping(s).\n"
+		+ "Applying this update will regenerate all synapses for each mapping below.\n"
+		+ "This operation can be expensive for large brains.\n\n"
+		+ "Impacted mappings:\n%s"
+	) % [morphology_name, usage.size(), usage_list]
+
+func _mapping_usage_to_text(mapping: PackedStringArray) -> String:
+	if mapping.size() < 2:
+		return "UNKNOWN -> UNKNOWN"
+
+	var source_name: String = _friendly_cortical_name(mapping[0])
+	var destination_name: String = _friendly_cortical_name(mapping[1])
+	return "%s -> %s" % [source_name, destination_name]
+
+func _friendly_cortical_name(cortical_id: String) -> String:
+	var cache = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
+	if cortical_id in cache.keys():
+		return cache[cortical_id].friendly_name
+	push_error("Unable to locate cortical area of ID %s in cache!" % cortical_id)
+	return "UNKNOWN"
 
 func repopulate_morphology_list() -> void:
 	_morphology_scroll.repopulate_from_cache()
@@ -152,8 +219,9 @@ func _on_morphology_name_submitted(new_name: String) -> void:
 
 func _rename_morphology_async(new_name: String) -> void:
 	var result: FeagiRequestOutput = await FeagiCore.requests.rename_morphology(_loaded_morphology.name, new_name)
-	if result.has_errored:
-		BV.NOTIF.add_notification("Failed to rename connectivity rule: %s" % result.failure_reason)
+	if !result.success:
+		var error_details: PackedStringArray = result.decode_response_as_generic_error_code()
+		BV.NOTIF.add_notification("Failed to rename connectivity rule: %s" % error_details[1])
 		_morphology_name_edit.text = _loaded_morphology.name
 		return
 	BV.NOTIF.add_notification("Renamed connectivity rule to %s" % new_name)

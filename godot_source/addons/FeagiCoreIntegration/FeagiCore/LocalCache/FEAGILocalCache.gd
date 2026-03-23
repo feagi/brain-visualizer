@@ -1128,7 +1128,7 @@ func _refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
 	# (same order as _refresh_brain_regions_from_feagi).
 	if can_refresh_partials_from_summary:
 		_refresh_partial_mappings_from_summary(regions_summary_for_partials)
-	print("HASH REFRESH: cortical_areas_reloaded emitted for cortical_areas_hash")
+	# Debug log suppressed to reduce runtime console spam.
 	cortical_areas_reloaded.emit()
 	return cortical_output
 

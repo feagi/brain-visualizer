@@ -1335,7 +1335,7 @@ func _get_cortical_area_case_insensitive(cortical_id: StringName) -> AbstractCor
 func _on_genome_reloaded() -> void:
 	# Reset missing cortical area tracking when genome reloads
 	# This allows areas to be fetched again if they're still missing after reload
-	print("   🔄 Genome reloaded - resetting missing cortical area tracking")
+	# Debug log suppressed to reduce runtime console spam.
 	_missing_cortical_areas.clear()
 	_case_mapping_cache.clear()  # Clear case mapping cache too
 	# Force immediate rebuild of desktop Type11 fast-path caches on next packet.

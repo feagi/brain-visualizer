@@ -16,7 +16,7 @@ const DEBUG_JOINT_DETAILS: bool = false
 
 ## Set true to print hover mapping diagnostics (index resolution + config index coverage).
 ## Temporary troubleshooting switch for IOPU channel mapping mismatches.
-const DEBUG_HOVER_MAPPING: bool = true
+const DEBUG_HOVER_MAPPING: bool = false
 
 func _process(_delta: float) -> void:
 	# Keep overlay size synced to viewport size (hover label is now global).

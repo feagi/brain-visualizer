@@ -709,7 +709,9 @@ func update_shutdown_status(message: String) -> void:
 	await get_tree().process_frame
 
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
-	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
+	var quick_connect_active: bool = SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases
+	var quick_connect_neuron_active: bool = SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT_NEURON in override_usecases
+	if !quick_connect_active and !quick_connect_neuron_active:
 		if objects.is_empty():
 			_window_manager.force_close_window(QuickCorticalMenu.WINDOW_NAME)
 			return

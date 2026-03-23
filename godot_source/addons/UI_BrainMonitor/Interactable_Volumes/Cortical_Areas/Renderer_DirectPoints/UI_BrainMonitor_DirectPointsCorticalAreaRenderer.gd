@@ -162,22 +162,21 @@ func setup(area: AbstractCorticalArea) -> void:
 		cylinder_shape.height = 6.0  # 3x larger cone height
 		cylinder_shape.radius = 3.0  # 3x larger base radius
 		collision_shape.shape = cylinder_shape
-		print("   [pwr]  Created 3x larger cylinder collision for power cortical area")
+		# Debug log suppressed to reduce runtime console spam.
 	elif AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
 		# One pick volume: scaled cortical box (size 1 @ origin) + billboard quad above (quad ~3x3 @ y=2)
 		var box_shape = BoxShape3D.new()
 		box_shape.size = Vector3(3.0, 4.0, 3.0)
 		collision_shape.shape = box_shape
 		collision_shape.position = Vector3(0.0, 1.5, 0.0)
-		print("   [icon]  Fatigue: combined cortical + billboard collision for: ", area.cortical_ID)
+		# Debug log suppressed to reduce runtime console spam.
 	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		var box_shape = BoxShape3D.new()
 		box_shape.size = Vector3(3.0, 3.0, 1.0)  # Match PNG quad size; depth generous for ray hits
 		collision_shape.shape = box_shape
 		# Align collider center with billboard icon center (icon_mesh_instance.position.y = 2.0)
 		collision_shape.position = Vector3(0.0, 2.0, 0.0)
-		print("   [icon]  Created billboard collision for PNG icon cortical area: ", area.cortical_ID)
-		print("   [size]  Collision size: ", box_shape.size, " at offset ", collision_shape.position)
+		# Debug logs suppressed to reduce runtime console spam.
 	else:
 		var box_shape = BoxShape3D.new()
 		collision_shape.shape = box_shape
@@ -293,14 +292,14 @@ func setup(area: AbstractCorticalArea) -> void:
 		# Create tesla coil electrical spikes for hover effect
 		_create_tesla_coil_spikes()
 		
-		print("   [pwr]  Power cone uses custom red material with firing animation and tesla coil spikes, always visible")
+		# Debug log suppressed to reduce runtime console spam.
 	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		# Create PNG icon billboard for special cortical areas
 		_create_png_icon_billboard(area)
 		# Still need outline mesh for PNG areas (invisible but needed for structure)
 		_outline_mesh_instance.mesh = BoxMesh.new()
 		_outline_mesh_instance.visible = false  # Hidden for PNG areas
-		print("   [icon]  PNG icon area setup complete for: ", area.cortical_ID)
+		# Debug log suppressed to reduce runtime console spam.
 	else:
 		# Use standard outline material for other cortical areas
 		_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
@@ -327,13 +326,13 @@ func setup(area: AbstractCorticalArea) -> void:
 		print("   [mem]  Memory sphere label set to visible")
 	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
 		_friendly_name_label.visible = true  # Show label for power areas
-		print("   [pwr]  Power cone label set to visible")
+		# Debug log suppressed to reduce runtime console spam.
 	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		_friendly_name_label.visible = true  # Show label for PNG icon areas
-		print("   [icon]  PNG icon area label set to visible for: ", area.cortical_ID)
+		# Debug log suppressed to reduce runtime console spam.
 		# Position label above the PNG icon (icon is at y=2.0, label should be at y=4.5 for proper separation)
 		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		print("   [pos]  PNG icon label positioned at: ", _friendly_name_label.position)
+		# Debug log suppressed to reduce runtime console spam.
 	else:
 		_friendly_name_label.visible = false  # Hidden when used as secondary renderer
 	# Attach label to follow movement correctly:
@@ -1245,7 +1244,7 @@ func _should_use_png_icon_by_id(cortical_id: StringName) -> bool:
 
 ## Create PNG icon billboard for special cortical areas
 func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
-	print("   [icon]  Creating PNG icon billboard for: ", area.cortical_ID)
+	# Debug log suppressed to reduce runtime console spam.
 	
 	# Create a billboard mesh instance for the PNG icon
 	var icon_mesh_instance = MeshInstance3D.new()
@@ -1271,13 +1270,13 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 		icon_material.albedo_texture = null
 		icon_material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 		_apply_fatigue_billboard_idle_state()
-		print("   [mat]  Fatigue billboard: cortical idle blue; red only on Type-11 activity")
+		# Debug log suppressed to reduce runtime console spam.
 	else:
 		var icon_texture = _load_png_icon_texture(area.cortical_ID)
 		icon_material.albedo_texture = icon_texture
 		icon_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		icon_material.albedo_color = Color.WHITE  # Full texture visibility
-		print("   [mat]  Created billboard material with transparency and billboard mode")
+		# Debug log suppressed to reduce runtime console spam.
 		if AbstractCorticalArea.is_death_area(area.cortical_ID):
 			icon_material.emission_enabled = true
 			icon_material.emission = Color(1.0, 0.2, 0.2)  # Red glow for death
@@ -1291,51 +1290,44 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 	
 	_static_body.add_child(icon_mesh_instance)
 	
-	print("   [ok]  PNG icon billboard created:")
-	print("     [pos]  Position: ", icon_mesh_instance.position)
-	print("     [size]  Quad size: ", quad_mesh.size)
-	if AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
-		print("     [icon]  Texture: (none - solid fatigue billboard)")
-	else:
-		var tex: Texture2D = icon_material.albedo_texture as Texture2D
-		print("     [icon]  Texture: ", tex.resource_path if tex else "placeholder")
-	print("     [vis]  Visible: ", icon_mesh_instance.visible)
-	print("     [mat]  Material: ", icon_material != null)
+	# Debug logs suppressed to reduce runtime console spam.
 
 ## Load PNG icon texture for cortical area
 func _load_png_icon_texture(cortical_id: StringName) -> Texture2D:
-	print("   [find]  Loading PNG icon for: ", cortical_id)
+	# Debug log suppressed to reduce runtime console spam.
 	
 	# Try different loading approaches for better compatibility
 	var texture: Texture2D = null
 	var icon_path = "res://godot_source/addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/Icons/" + cortical_id + ".png"
 	
-	print("   [path]  Checking path: ", icon_path)
+	# Debug log suppressed to reduce runtime console spam.
 	
 	# Method 1: Try ResourceLoader.load with full error checking
 	if ResourceLoader.exists(icon_path):
-		print("   [ok]  File exists, attempting to load...")
+		# Debug log suppressed to reduce runtime console spam.
 		var resource = ResourceLoader.load(icon_path)
 		if resource != null:
 			texture = resource as Texture2D
 			if texture != null:
-				print("   [ok]  Successfully loaded PNG as Texture2D!")
-				print("   [size]  Texture size: ", texture.get_size())
+				# Debug logs suppressed to reduce runtime console spam.
 				return texture
 			else:
-				print("   [err]  Resource loaded but not a Texture2D: ", typeof(resource))
+				# Debug log suppressed to reduce runtime console spam.
+				pass
 		else:
-			print("   [err]  ResourceLoader.load returned null")
+			# Debug log suppressed to reduce runtime console spam.
+			pass
 	else:
-		print("   [err]  File does not exist at path: ", icon_path)
+		# Debug log suppressed to reduce runtime console spam.
+		pass
 	
 	# Method 2: Try alternative path format
 	var alt_path = "res://godot_source/addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/Icons/" + cortical_id + ".png"
-	print("   [retry]  Trying alternative loading method...")
+	# Debug log suppressed to reduce runtime console spam.
 	
 	# Method 3: For _death specifically, try multiple path variations
 	if AbstractCorticalArea.is_death_area(cortical_id):
-		print("   [death]  Attempting _death icon load with multiple methods...")
+		# Debug log suppressed to reduce runtime console spam.
 		
 		# Try different path formats (including the path from import file)
 		var test_paths = [
@@ -1346,30 +1338,32 @@ func _load_png_icon_texture(cortical_id: StringName) -> Texture2D:
 		]
 		
 		for test_path in test_paths:
-			print("   [find]  Testing path: ", test_path)
+			# Debug log suppressed to reduce runtime console spam.
 			if ResourceLoader.exists(test_path):
-				print("   [ok]  Path exists!")
+				# Debug log suppressed to reduce runtime console spam.
 				var test_resource = ResourceLoader.load(test_path)
 				if test_resource != null:
-					print("   [box]  Resource loaded, type: ", test_resource.get_class())
+					# Debug log suppressed to reduce runtime console spam.
 					if test_resource is Texture2D:
-						print("   [ok]  Found working Texture2D!")
+						# Debug log suppressed to reduce runtime console spam.
 						return test_resource
 				else:
-					print("   [err]  Resource load returned null")
+					# Debug log suppressed to reduce runtime console spam.
+					pass
 			else:
-				print("   [err]  Path does not exist")
+				# Debug log suppressed to reduce runtime console spam.
+				pass
 		
 		# Try using preload (compile-time loading)
-		print("   [retry]  Attempting preload method...")
+		# Debug log suppressed to reduce runtime console spam.
 		# Note: This might cause an error if file doesn't exist, but we'll catch it
 	
-	print("   [err]  All loading methods failed, creating placeholder")
+	# Debug log suppressed to reduce runtime console spam.
 	return _create_placeholder_icon_texture(cortical_id)
 
 ## Create placeholder texture for cortical areas without custom icons
 func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
-	print("   [mat]  Creating placeholder texture for: ", cortical_id)
+	# Debug log suppressed to reduce runtime console spam.
 	
 	# Create a simple colored image as placeholder
 	var image = Image.create(128, 128, false, Image.FORMAT_RGBA8)
@@ -1422,7 +1416,7 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 	var texture = ImageTexture.new()
 	texture.set_image(image)
 	
-	print("   [ok]  Created placeholder texture with color: ", placeholder_color)
+	# Debug log suppressed to reduce runtime console spam.
 	return texture
 
 func _on_memory_area_stats_updated(stats: Dictionary) -> void:
