@@ -604,20 +604,6 @@ alignment = 2
 script = ExtResource("14_3jdx4")
 string_representing_invalid = "mult."
 
-[node name="Refactory_Period" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
-layout_mode = 2
-tooltip_text = "The number of bursts where neuron cannot fire after it has already fired"
-
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Refactory_Period"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Refactory Period"
-
-[node name="Refactory_Period" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Refactory_Period"]
-layout_mode = 2
-alignment = 2
-script = ExtResource("9_xe4wg")
-
 [node name="Consecutive_Fire_Count" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
 layout_mode = 2
 tooltip_text = "The max number of consecutive firing a neuron can have at a time"
@@ -642,6 +628,20 @@ size_flags_horizontal = 3
 text = "Snooze Period"
 
 [node name="Snooze_Period" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Snooze_Period"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("9_xe4wg")
+
+[node name="Refactory_Period" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
+layout_mode = 2
+tooltip_text = "The number of bursts where neuron cannot fire after it has already fired"
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Refactory_Period"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Refactory Period"
+
+[node name="Refactory_Period" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Refactory_Period"]
 layout_mode = 2
 alignment = 2
 script = ExtResource("9_xe4wg")
