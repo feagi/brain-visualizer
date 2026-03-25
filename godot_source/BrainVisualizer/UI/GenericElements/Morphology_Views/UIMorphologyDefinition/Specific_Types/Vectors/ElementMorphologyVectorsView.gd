@@ -27,8 +27,8 @@ func get_as_vector_morphology(morphology_name: StringName, is_placeholder: bool 
 	# we can assume however, that any created morphology will always be of class Custom
 	return VectorMorphology.new(morphology_name, is_placeholder, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM, get_vector_array())
 
-func request_feag_to_set_morphology(morphology_name: StringName) -> void:
-	FeagiCore.requests.update_vector_morphology(morphology_name, get_vector_array())
+func request_feag_to_set_morphology(morphology_name: StringName) -> FeagiRequestOutput:
+	return await FeagiCore.requests.update_vector_morphology(morphology_name, get_vector_array())
 
 func request_feag_to_create_morphology(morphology_name: StringName) -> void:
 	FeagiCore.requests.add_vector_morphology(morphology_name, get_vector_array())

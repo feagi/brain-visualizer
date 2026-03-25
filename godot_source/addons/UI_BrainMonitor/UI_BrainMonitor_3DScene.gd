@@ -296,11 +296,11 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	# Connect to region signals for dynamic updates
 	_connect_representing_region_dynamic_signals(_representing_region)
 
-	# Connect to cache reload events ONCE (guarded) to refresh cortical connections
+	# Connect to completed cache replacement events ONCE (guarded) to refresh cortical connections
 	if FeagiCore.feagi_local_cache:
 		var cache = FeagiCore.feagi_local_cache
-		if not cache.cache_reloaded.is_connected(_on_cache_reloaded_refresh_all_connections):
-			cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
+		if not cache.genome_cache_replaced.is_connected(_on_cache_replaced_refresh_all_connections):
+			cache.genome_cache_replaced.connect(_on_cache_replaced_refresh_all_connections)
 		if not cache.mappings_reloaded.is_connected(_on_mappings_reloaded_refresh_connections):
 			cache.mappings_reloaded.connect(_on_mappings_reloaded_refresh_connections)
 		if not cache.cortical_areas_reloaded.is_connected(_on_cortical_areas_reloaded):
@@ -3219,7 +3219,7 @@ func _teardown_all_cortical_area_visualizations() -> void:
 	_cortical_visualizations_by_ID.clear()
 
 
-## Full cortical rebuild: same path as genome [signal cache_reloaded] — deterministic after hash refresh / reconnect.
+## Full cortical rebuild: same path as genome [signal genome_cache_replaced] — deterministic after hash refresh / reconnect.
 func _rebuild_cortical_visualizations_after_cache_touch() -> void:
 	_teardown_all_cortical_area_visualizations()
 	_add_missing_cortical_area_visualizations()
@@ -3238,8 +3238,8 @@ func resync_visualization_after_transport_recovery() -> void:
 	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
 
 
-## Cache reload event handler - refreshes all cortical area connections AND creates new brain regions
-func _on_cache_reloaded_refresh_all_connections() -> void:
+## Cache replacement event handler - refreshes all cortical area connections AND creates new brain regions
+func _on_cache_replaced_refresh_all_connections() -> void:
 	_ensure_representing_region_from_cache()
 	# CRITICAL: Check for new brain regions that need visualization after cloning
 	_create_missing_brain_region_visualizations()

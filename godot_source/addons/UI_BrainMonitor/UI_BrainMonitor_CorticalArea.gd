@@ -156,8 +156,8 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 
 	# Connect to cache reload events to refresh connection curves
 	if FeagiCore.feagi_local_cache:
-		if not FeagiCore.feagi_local_cache.cache_reloaded.is_connected(_on_cache_reloaded):
-			FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
+		if not FeagiCore.feagi_local_cache.genome_cache_replaced.is_connected(_on_cache_reloaded):
+			FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_cache_reloaded)
 			# print("🔗 CONNECTED: Cache reload signal for connection curve refresh")  # Suppressed - causes output overflow
 	
 	# Connect to mapping change signals for real-time updates
@@ -187,8 +187,8 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	# Cache-level update signals (lightweight refreshes).
 	if FeagiCore.feagi_local_cache:
 		var cache = FeagiCore.feagi_local_cache
-		if not cache.cache_reloaded.is_connected(_on_cache_reloaded):
-			cache.cache_reloaded.connect(_on_cache_reloaded)
+		if not cache.genome_cache_replaced.is_connected(_on_cache_reloaded):
+			cache.genome_cache_replaced.connect(_on_cache_reloaded)
 		if not cache.mappings_reloaded.is_connected(_on_cache_reloaded):
 			cache.mappings_reloaded.connect(_on_cache_reloaded)
 		if not cache.cortical_areas_reloaded.is_connected(_on_cache_reloaded):
@@ -2050,8 +2050,8 @@ func _cleanup_cache_connections() -> void:
 	# Disconnect cache reload signal
 	if FeagiCore.feagi_local_cache:
 		var cache = FeagiCore.feagi_local_cache
-		if cache.cache_reloaded.is_connected(_on_cache_reloaded):
-			cache.cache_reloaded.disconnect(_on_cache_reloaded)
+		if cache.genome_cache_replaced.is_connected(_on_cache_reloaded):
+			cache.genome_cache_replaced.disconnect(_on_cache_reloaded)
 		if cache.mappings_reloaded.is_connected(_on_cache_reloaded):
 			cache.mappings_reloaded.disconnect(_on_cache_reloaded)
 		if cache.cortical_areas_reloaded.is_connected(_on_cache_reloaded):

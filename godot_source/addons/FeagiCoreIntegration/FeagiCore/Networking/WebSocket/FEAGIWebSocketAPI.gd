@@ -143,7 +143,7 @@ func _ready():
 	
 	# Reset missing area tracking when genome reloads
 	if FeagiCore.feagi_local_cache:
-		FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_genome_reloaded)
+		FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_genome_reloaded)
 		FeagiCore.feagi_local_cache.cortical_areas_reloaded.connect(_on_genome_reloaded)
 
 func _init_rust_deserializer() -> void:

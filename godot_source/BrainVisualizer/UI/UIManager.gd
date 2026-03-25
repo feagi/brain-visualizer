@@ -160,7 +160,7 @@ func _ready():
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(_on_brain_readiness_changed)
 	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_on_genome_availability_changed)
-	FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
+	FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_genome_cache_replaced)
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
 	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(_on_websocket_health_changed)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_load_state_changed)
@@ -272,8 +272,8 @@ func _on_brain_readiness_changed(ready: bool) -> void:
 func _on_genome_availability_changed(available: bool) -> void:
 	_update_loading_screen_visibility()
 
-## Handle cache reload events
-func _on_cache_reloaded() -> void:
+## Handle completed genome cache replacement events
+func _on_genome_cache_replaced() -> void:
 	update_loading_status("Updating brain visualizer cache...")
 
 ## Handle genome load state changes to show/hide loading screen

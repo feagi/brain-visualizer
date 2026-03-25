@@ -142,7 +142,14 @@ func _request_morphology_update_with_warning(morphology_name: StringName) -> voi
 
 func _confirm_apply_morphology_update(morphology_name: StringName) -> void:
 	BV.NOTIF.add_notification("Requesting FEAGI to update Connectivity rule %s" % morphology_name)
-	_UI_morphology_definition.request_feagi_apply_morphology_settings(morphology_name)
+	var update_result: FeagiRequestOutput = await _UI_morphology_definition.request_feagi_apply_morphology_settings(morphology_name)
+	if !update_result.success:
+		var error_details: PackedStringArray = update_result.decode_response_as_generic_error_code()
+		BV.NOTIF.add_notification(
+			"Connectivity rule update failed for %s: %s" % [morphology_name, error_details[1]]
+		)
+		return
+	BV.NOTIF.add_notification("Connectivity rule update request accepted for %s" % morphology_name)
 
 func _build_morphology_update_warning_message(
 	morphology_name: StringName,
