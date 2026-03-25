@@ -50,7 +50,12 @@ var _supression_threshold: int = 0
 var _reload_in_progress: bool = false
 var _reload_requested_while_busy: bool = false
 var _reload_generation: int = 0
-var _pending_reload_when_ready: bool = false
+var _reload_target_feagi_session: int = 0
+var _reload_target_genome_num: int = 0
+var _desired_feagi_session: int = 0
+var _desired_genome_num: int = 0
+var _applied_feagi_session: int = 0
+var _applied_genome_num: int = 0
 
 # Timer for periodic simulation_timestep checks
 var _simulation_timestep_timer: Timer
@@ -75,6 +80,7 @@ func _enter_tree():
 		network = FEAGINetworking.new()
 		network.name = "FEAGINetworking"
 		network.genome_reset_request_recieved.connect(_recieve_genome_reset_request)
+		network.connection_state_changed.connect(_on_connection_state_changed_for_reload)
 		add_child(network)
 	feagi_local_cache = FEAGILocalCache.new()
 	feagi_local_cache.genome_refresh_needed.connect(_on_genome_refresh_needed)
@@ -316,7 +322,10 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 			# This will only occur if we are disconnecting from FEAGI (or connection lost), thus can come from any
 			print("FEAGICORE: [3D_SCENE_DEBUG] State UNKNOWN: Clearing genome and disconnecting")
 			_pending_visualization_resync_after_transport = false
-			_pending_reload_when_ready = false
+			_desired_feagi_session = 0
+			_desired_genome_num = 0
+			_applied_feagi_session = 0
+			_applied_genome_num = 0
 			feagi_local_cache.clear_whole_genome()
 			if network.connection_state != FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
 				network.disconnect_networking()
@@ -330,6 +339,8 @@ func _change_genome_state(new_state: GENOME_LOAD_STATE) -> void:
 			feagi_local_cache.clear_whole_genome()
 		GENOME_LOAD_STATE.GENOME_RELOADING:
 			_pending_visualization_resync_after_transport = false
+			_applied_feagi_session = 0
+			_applied_genome_num = 0
 			about_to_reload_genome.emit()
 			feagi_local_cache.clear_whole_genome()
 			_start_genome_reload_if_needed()
@@ -355,6 +366,12 @@ func _start_genome_reload_if_needed() -> void:
 		return
 	_reload_in_progress = true
 	_reload_requested_while_busy = false
+	_reload_target_feagi_session = _desired_feagi_session
+	_reload_target_genome_num = _desired_genome_num
+	if _reload_target_feagi_session <= 0:
+		_reload_target_feagi_session = feagi_local_cache.feagi_session
+	if _reload_target_genome_num <= 0:
+		_reload_target_genome_num = feagi_local_cache.genome_num
 	_reload_generation += 1
 	var current_reload_generation: int = _reload_generation
 	await reload_genome_await(current_reload_generation)
@@ -362,6 +379,7 @@ func _start_genome_reload_if_needed() -> void:
 	if _reload_requested_while_busy and _genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
 		_reload_requested_while_busy = false
 		call_deferred("_start_genome_reload_if_needed")
+	call_deferred("_evaluate_reload_coordinator", "reload-finished")
 
 # Hacky
 func reload_genome_await(reload_generation: int):
@@ -448,6 +466,8 @@ func reload_genome_await(reload_generation: int):
 		return  # Don't transition to GENOME_READY
 	
 	print("FEAGICORE: [3D_SCENE_DEBUG] ✅ requests.reload_genome() completed successfully")
+	_applied_feagi_session = _reload_target_feagi_session
+	_applied_genome_num = _reload_target_genome_num
 	# Re-register first, then force a WS stream rebind to ensure FEAGI stream attachment.
 	if network:
 		await network._register_agent_via_transport()
@@ -470,25 +490,16 @@ func _if_brain_readiness_or_genome_availability_changes(available: bool, ready: 
 	if genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
 		print("FEAGICORE: [3D_SCENE_DEBUG] Ignoring health-driven genome state change while deterministic reload is in progress")
 		return
-	if _pending_reload_when_ready and available and ready:
-		if _is_ready_for_deterministic_genome_reload():
-			print("FEAGICORE: [3D_SCENE_DEBUG] Deferred genome reload condition now ready - starting full reload")
-			_pending_reload_when_ready = false
-			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
-		else:
-			print("FEAGICORE: [3D_SCENE_DEBUG] Deferred genome reload still waiting for HEALTHY connection state")
-		return
 	
 	if !available:
 		print("FEAGICORE: [3D_SCENE_DEBUG] Genome no longer available - transitioning to NO_GENOME_AVAILABLE")
 		_change_genome_state(GENOME_LOAD_STATE.NO_GENOME_AVAILABLE)
 		return
-	if ready:
-		print("FEAGICORE: [3D_SCENE_DEBUG] Brain is ready - transitioning to GENOME_READY")
-		_change_genome_state(GENOME_LOAD_STATE.GENOME_READY)
-	else:
+	if !ready:
 		print("FEAGICORE: [3D_SCENE_DEBUG] Brain not ready - transitioning to GENOME_PROCESSING")
 		_change_genome_state(GENOME_LOAD_STATE.GENOME_PROCESSING)
+		return
+	_evaluate_reload_coordinator("health-ready")
 
 
 func feagi_retrieved_burst_rate(delay_bursts_apart: float) -> void:
@@ -506,44 +517,22 @@ func feagi_recieved_supression_threshold(new_supression_threshold: int) -> void:
 
 func _recieve_genome_reset_request():
 	print("🔄 FEAGICORE: _recieve_genome_reset_request() called - current state: ", GENOME_LOAD_STATE.keys()[genome_load_state])
-	
-	# Allow reload from READY or PROCESSING states (PROCESSING means we had a genome before)
-	if genome_load_state == GENOME_LOAD_STATE.GENOME_READY or genome_load_state == GENOME_LOAD_STATE.GENOME_PROCESSING:
-		print("✅ FEAGICORE: Triggering genome reload from %s state" % GENOME_LOAD_STATE.keys()[genome_load_state])
-		_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
-	else:
-		print("⚠️ FEAGICORE: Ignoring genome reset request - current state doesn't warrant reload: %s" % GENOME_LOAD_STATE.keys()[genome_load_state])
-		print("   💡 NOTE: Reset requests only trigger from GENOME_READY or GENOME_PROCESSING states")
+	_set_desired_genome_signature(
+		feagi_local_cache.feagi_session,
+		feagi_local_cache.genome_num,
+		"websocket genome reset request"
+	)
+	_evaluate_reload_coordinator("ws-reset")
 
 ## Handles new FEAGI instance detection from healthcheck session ID.
 func _on_feagi_session_changed(previous_session: int, current_session: int) -> void:
-	print("FEAGICORE: FEAGI session changed (old: %d -> new: %d) - triggering full reload" % [previous_session, current_session])
-	if genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
-		print("FEAGICORE: Already reloading genome - skipping duplicate session reload")
-		return
-	if genome_load_state == GENOME_LOAD_STATE.UNKNOWN:
-		print("FEAGICORE: Session change detected while disconnected - connection flow will handle reload")
-		return
-	_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+	print("FEAGICORE: FEAGI session changed (old: %d -> new: %d) - updating desired genome signature" % [previous_session, current_session])
+	_set_desired_genome_signature(current_session, feagi_local_cache.genome_num, "feagi session changed")
+	_evaluate_reload_coordinator("session-change")
 
 func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: String):
-	# Allow force reloads to override stuck GENOME_RELOADING state
-	if genome_load_state == GENOME_LOAD_STATE.GENOME_RELOADING:
-		if "cache empty" in reason or "STUCK RELOAD" in reason:
-			# Force reload to break stuck state
-			pass
-		else:
-			return
-	# Deterministic gate: only start full genome reload when FEAGI explicitly reports ready
-	# and transport is fully healthy (prevents WS-retrying reload races).
-	if not _is_ready_for_deterministic_genome_reload():
-		_pending_reload_when_ready = true
-		print("FEAGICORE: [3D_SCENE_DEBUG] Deferring genome reload until FEAGI reports genome_available && brain_ready and connection is HEALTHY (session=%d genome=%d reason=%s)" % [feagi_session, genome_num, reason])
-		return
-	
-	match genome_load_state:
-		GENOME_LOAD_STATE.NO_GENOME_AVAILABLE, GENOME_LOAD_STATE.GENOME_READY, GENOME_LOAD_STATE.GENOME_PROCESSING, GENOME_LOAD_STATE.GENOME_RELOADING:
-			_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+	_set_desired_genome_signature(feagi_session, genome_num, reason)
+	_evaluate_reload_coordinator("health-genome-refresh")
 
 func _is_ready_for_deterministic_genome_reload() -> bool:
 	if not feagi_local_cache.genome_availability or not feagi_local_cache.brain_readiness:
@@ -551,6 +540,46 @@ func _is_ready_for_deterministic_genome_reload() -> bool:
 	if network == null:
 		return false
 	return network.connection_state == network.CONNECTION_STATE.HEALTHY
+
+func _set_desired_genome_signature(feagi_session: int, genome_num: int, reason: String) -> void:
+	if feagi_session <= 0 or genome_num <= 0:
+		return
+	if _desired_feagi_session == feagi_session and _desired_genome_num == genome_num:
+		return
+	_desired_feagi_session = feagi_session
+	_desired_genome_num = genome_num
+	print(
+		"FEAGICORE: Desired genome signature updated to session=%d genome=%d (reason=%s)"
+		% [feagi_session, genome_num, reason]
+	)
+
+func _evaluate_reload_coordinator(trigger: String) -> void:
+	if _desired_feagi_session <= 0 or _desired_genome_num <= 0:
+		return
+	if _applied_feagi_session == _desired_feagi_session and _applied_genome_num == _desired_genome_num:
+		return
+	if _reload_in_progress:
+		_reload_requested_while_busy = true
+		return
+	if not _is_ready_for_deterministic_genome_reload():
+		var connection_state_label: String = "NO_NETWORK"
+		if network != null:
+			connection_state_label = network.CONNECTION_STATE.keys()[network.connection_state]
+		print(
+			"FEAGICORE: Reload deferred by coordinator (trigger=%s session=%d genome=%d state=%s)"
+			% [trigger, _desired_feagi_session, _desired_genome_num, connection_state_label]
+		)
+		return
+	if genome_load_state != GENOME_LOAD_STATE.GENOME_RELOADING:
+		print(
+			"FEAGICORE: Coordinator starting reload (trigger=%s session=%d genome=%d)"
+			% [trigger, _desired_feagi_session, _desired_genome_num]
+		)
+		_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+
+func _on_connection_state_changed_for_reload(_prev_state: FEAGINetworking.CONNECTION_STATE, current_state: FEAGINetworking.CONNECTION_STATE) -> void:
+	if current_state == FEAGINetworking.CONNECTION_STATE.HEALTHY:
+		_evaluate_reload_coordinator("connection-healthy")
 
 func _on_agent_reregistration_needed(reason: String):
 	print("🔍 [AGENT-REG] Triggering agent re-registration: %s" % reason)

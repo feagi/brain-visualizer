@@ -49,6 +49,8 @@ const IO_ARROW_SIZE_MIN_HEAD_H: float = 0.12
 const IO_ARROW_SIZE_MAX_HEAD_H: float = 0.55
 const IO_ARROW_SHAFT_RADIUS_MULTIPLIER: float = 0.50
 const IO_ARROW_LABEL_Y_GAP_MULT: float = 0.65  # Extra spacing above arrow head(s), in head-height units
+const IO_ARROW_MIN_PARENT_SCALE_FOR_COMPENSATION: float = 0.05
+const IO_ARROW_MAX_INVERSE_SCALE_COMPENSATION: float = 4.0
 
 # Distance-based scaling for pulse spheres (flow animation)
 const PULSE_DISTANCE_SCALE_ENABLED: bool = true
@@ -156,8 +158,8 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 
 	# Connect to cache reload events to refresh connection curves
 	if FeagiCore.feagi_local_cache:
-		if not FeagiCore.feagi_local_cache.cache_reloaded.is_connected(_on_cache_reloaded):
-			FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
+		if not FeagiCore.feagi_local_cache.genome_cache_replaced.is_connected(_on_cache_reloaded):
+			FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_cache_reloaded)
 			# print("🔗 CONNECTED: Cache reload signal for connection curve refresh")  # Suppressed - causes output overflow
 	
 	# Connect to mapping change signals for real-time updates
@@ -187,8 +189,8 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	# Cache-level update signals (lightweight refreshes).
 	if FeagiCore.feagi_local_cache:
 		var cache = FeagiCore.feagi_local_cache
-		if not cache.cache_reloaded.is_connected(_on_cache_reloaded):
-			cache.cache_reloaded.connect(_on_cache_reloaded)
+		if not cache.genome_cache_replaced.is_connected(_on_cache_reloaded):
+			cache.genome_cache_replaced.connect(_on_cache_reloaded)
 		if not cache.mappings_reloaded.is_connected(_on_cache_reloaded):
 			cache.mappings_reloaded.connect(_on_cache_reloaded)
 		if not cache.cortical_areas_reloaded.is_connected(_on_cache_reloaded):
@@ -225,8 +227,14 @@ func _process(_delta: float) -> void:
 	c.a = lerpf(IO_ARROW_ALPHA_MIN, IO_ARROW_ALPHA_MAX, s)
 	_io_direction_indicator_material.albedo_color = c
 	_io_direction_indicator_material.emission_energy = lerpf(IO_ARROW_EMISSION_MIN, IO_ARROW_EMISSION_MAX, s)
-	# Keep the arrow from inheriting the cortical area's Z-scale by applying an inverse base scale.
-	_io_direction_indicator.scale = _io_direction_indicator_base_scale * lerpf(0.95, 1.05, s)
+	# Keep the arrow from inheriting cortical-area scaling, but clamp compensation to avoid
+	# transient refresh/reparent frames producing oversized indicator flashes.
+	var stable_base := Vector3(
+		clampf(_io_direction_indicator_base_scale.x, 0.001, IO_ARROW_MAX_INVERSE_SCALE_COMPENSATION),
+		clampf(_io_direction_indicator_base_scale.y, 0.001, IO_ARROW_MAX_INVERSE_SCALE_COMPENSATION),
+		clampf(_io_direction_indicator_base_scale.z, 0.001, IO_ARROW_MAX_INVERSE_SCALE_COMPENSATION)
+	)
+	_io_direction_indicator.scale = stable_base * lerpf(0.95, 1.05, s)
 
 func _schedule_directpoints_fastpath_registration_retry(defined_cortical_area: AbstractCorticalArea) -> void:
 	# Keep retries bounded and quiet.
@@ -399,14 +407,20 @@ func _update_io_direction_indicator_transform(mode: StringName) -> void:
 	_io_direction_indicator.global_position = Vector3(edge_world.x, center_y_world, edge_world.z)
 
 	# Prevent inherited non-uniform scaling (especially Z) from thickening the arrow.
-	var parent_scale: Vector3 = parent_body.global_transform.basis.get_scale()
-	if absf(parent_scale.x) < 0.001 or absf(parent_scale.y) < 0.001 or absf(parent_scale.z) < 0.001:
-		_clear_io_direction_indicator()
+	# Use parent local scale (stable across refresh/reparent churn) instead of global scale.
+	var parent_scale: Vector3 = parent_body.scale
+	if (
+		absf(parent_scale.x) < IO_ARROW_MIN_PARENT_SCALE_FOR_COMPENSATION
+		or absf(parent_scale.y) < IO_ARROW_MIN_PARENT_SCALE_FOR_COMPENSATION
+		or absf(parent_scale.z) < IO_ARROW_MIN_PARENT_SCALE_FOR_COMPENSATION
+	):
+		# During cache refresh there can be transient tiny scales; keep previous stable value and retry.
+		call_deferred("_refresh_io_direction_indicator")
 		return
 	_io_direction_indicator_base_scale = Vector3(
-		1.0 / absf(parent_scale.x),
-		1.0 / absf(parent_scale.y),
-		1.0 / absf(parent_scale.z)
+		clampf(1.0 / absf(parent_scale.x), 0.001, IO_ARROW_MAX_INVERSE_SCALE_COMPENSATION),
+		clampf(1.0 / absf(parent_scale.y), 0.001, IO_ARROW_MAX_INVERSE_SCALE_COMPENSATION),
+		clampf(1.0 / absf(parent_scale.z), 0.001, IO_ARROW_MAX_INVERSE_SCALE_COMPENSATION)
 	)
 	_update_io_direction_indicator_label(mode, shaft_h, head_h)
 	_update_io_direction_indicator_label_visibility()
@@ -2050,8 +2064,8 @@ func _cleanup_cache_connections() -> void:
 	# Disconnect cache reload signal
 	if FeagiCore.feagi_local_cache:
 		var cache = FeagiCore.feagi_local_cache
-		if cache.cache_reloaded.is_connected(_on_cache_reloaded):
-			cache.cache_reloaded.disconnect(_on_cache_reloaded)
+		if cache.genome_cache_replaced.is_connected(_on_cache_reloaded):
+			cache.genome_cache_replaced.disconnect(_on_cache_reloaded)
 		if cache.mappings_reloaded.is_connected(_on_cache_reloaded):
 			cache.mappings_reloaded.disconnect(_on_cache_reloaded)
 		if cache.cortical_areas_reloaded.is_connected(_on_cache_reloaded):

@@ -68,19 +68,26 @@ var _loading_status_label: Label
 var _manual_stim_pending_workers: Dictionary = {}
 var _manual_stim_timeouts: Dictionary = {}
 var _genome_confirm_retry_in_flight: bool = false
+var _startup_scale_locked_by_endpoint: bool = false
 
 # Startup UI scaling thresholds based only on monitor DPI and resolution.
+# Goal: fit more content on low-resolution displays while preserving readability on high-DPI panels.
 const UI_STARTUP_DPI_XLARGE: int = 180
 const UI_STARTUP_DPI_LARGE: int = 150
 const UI_STARTUP_DPI_MEDIUM: int = 125
 const UI_STARTUP_DPI_STANDARD: int = 96
-const UI_STARTUP_LONG_SIDE_ULTRAWIDE: int = 3000
-const UI_STARTUP_LONG_SIDE_WIDE: int = 2500
+const UI_STARTUP_LONG_SIDE_COMPACT: int = 1600
+const UI_STARTUP_SHORT_SIDE_COMPACT: int = 900
+const UI_STARTUP_LONG_SIDE_STANDARD: int = 1920
+const UI_STARTUP_LONG_SIDE_LARGE: int = 2560
+const UI_STARTUP_FULLSCREEN_HIDPI_FALLBACK_SCALE: float = 2.0
 const UI_SCALE_SMALL: float = 0.75
 const UI_SCALE_STANDARD: float = 1.0
 const UI_SCALE_MEDIUM: float = 1.25
 const UI_SCALE_LARGE: float = 1.5
 const UI_SCALE_XLARGE: float = 2.0
+enum STARTUP_DPI_TIER { DPI_STANDARD, DPI_MEDIUM, DPI_LARGE, DPI_XLARGE }
+enum STARTUP_RES_TIER { RES_COMPACT, RES_STANDARD, RES_LARGE, RES_XLARGE }
 
 
 func _enter_tree():
@@ -88,7 +95,24 @@ func _enter_tree():
 	get_viewport().size_changed.connect(_update_screen_size)
 	_find_possible_scales()
 	# Select startup scale from monitor DPI + monitor resolution only.
-	request_switch_to_theme(_select_startup_scale_from_display_metrics(), UIManager.THEME_COLORS.DARK)
+	_apply_startup_scale_from_display_metrics()
+	# Multi-monitor note: window state restoration can move BV to a different screen
+	# one or more frames after startup. Re-evaluate once after the window settles.
+	call_deferred("_reapply_startup_scale_after_window_settle")
+
+func _apply_startup_scale_from_display_metrics() -> void:
+	var startup_scale: float = _select_startup_scale_from_display_metrics()
+	print("UIMANAGER: [SCALE_TRACE] Applying startup scale from display metrics: %s" % startup_scale)
+	request_switch_to_theme(startup_scale, UIManager.THEME_COLORS.DARK)
+
+func _reapply_startup_scale_after_window_settle() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if _startup_scale_locked_by_endpoint:
+		print("UIMANAGER: [SCALE_TRACE] Skipping settled startup reapply because endpoint theme is locked")
+		return
+	print("UIMANAGER: [SCALE_TRACE] Reapplying startup scale after window settle")
+	_apply_startup_scale_from_display_metrics()
 
 func _process(_delta: float):
 	if _fps_label:
@@ -136,7 +160,7 @@ func _ready():
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(_on_brain_readiness_changed)
 	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_on_genome_availability_changed)
-	FeagiCore.feagi_local_cache.cache_reloaded.connect(_on_cache_reloaded)
+	FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_genome_cache_replaced)
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
 	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(_on_websocket_health_changed)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_load_state_changed)
@@ -248,8 +272,8 @@ func _on_brain_readiness_changed(ready: bool) -> void:
 func _on_genome_availability_changed(available: bool) -> void:
 	_update_loading_screen_visibility()
 
-## Handle cache reload events
-func _on_cache_reloaded() -> void:
+## Handle completed genome cache replacement events
+func _on_genome_cache_replaced() -> void:
 	update_loading_status("Updating brain visualizer cache...")
 
 ## Handle genome load state changes to show/hide loading screen
@@ -451,14 +475,21 @@ func FEAGI_confirmed_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] Applying advanced mode and theme settings...")
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
 	var option_string: String = FeagiCore._in_use_endpoint_details.theme_string
+	print("UIMANAGER: [SCALE_TRACE] Endpoint theme_string received: '%s'" % option_string)
 	if option_string == "":
 		print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE - no theme to apply")
 		return
+	if _is_compact_effective_window():
+		print("UIMANAGER: [SCALE_TRACE] Ignoring endpoint theme override on compact effective window to preserve startup matrix scale")
+		print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE - compact window startup scale preserved")
+		return
+	_startup_scale_locked_by_endpoint = true
 	var split_strings: PackedStringArray = option_string.split(" ")
 	var color_setting: UIManager.THEME_COLORS
 	if split_strings[0] == "Dark":
 		color_setting = UIManager.THEME_COLORS.DARK
 	var zoom_value: float = split_strings[1].to_float()
+	print("UIMANAGER: [SCALE_TRACE] Applying endpoint theme override scale=%s color=%s" % [zoom_value, THEME_COLORS.keys()[color_setting]])
 	BV.UI.request_switch_to_theme(zoom_value, color_setting)
 	
 	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE with theme applied")
@@ -709,7 +740,9 @@ func update_shutdown_status(message: String) -> void:
 	await get_tree().process_frame
 
 func _selection_processing(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
-	if !(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases):
+	var quick_connect_active: bool = SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT in override_usecases
+	var quick_connect_neuron_active: bool = SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT_NEURON in override_usecases
+	if !quick_connect_active and !quick_connect_neuron_active:
 		if objects.is_empty():
 			_window_manager.force_close_window(QuickCorticalMenu.WINDOW_NAME)
 			return
@@ -824,6 +857,18 @@ func get_minimum_size_from_loaded_theme(element: StringName) -> Vector2i:
 
 ## Attempts to switch toa  theme file with the given scale and color. If it doesnt exist, will do nothing
 func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> void:
+	var stack_info: Array = get_stack()
+	var caller_info: Variant = "<unknown>"
+	if stack_info.size() > 1:
+		var frame: Variant = stack_info[1]
+		if frame is Dictionary and frame.has("function"):
+			caller_info = "%s (%s:%s)" % [
+				str(frame.get("function", "<fn>")),
+				str(frame.get("source", "<source>")),
+				str(frame.get("line", "?"))
+			]
+	print("UIMANAGER: [SCALE_TRACE] request_switch_to_theme called: requested_scale=%s color=%s caller=%s current_loaded_scale=%s" % [requested_scale, THEME_COLORS.keys()[color], caller_info, _loaded_theme_scale.x])
+
 	var file_list: PackedStringArray = DirAccess.get_files_at(THEME_FOLDER)
 	var color_suffix: StringName = "-" + THEME_COLORS.keys()[color] + ".tres"
 	var guessing_file: StringName = ""
@@ -890,6 +935,7 @@ func _load_new_theme(theme: Theme) -> void:
 		push_error("UI: Unable to find size_y under the generic_scale type of the newely loaded theme! There will be scaling issues!")
 	
 	_loaded_theme_scale = scalar
+	print("UIMANAGER: [SCALE_TRACE] Theme loaded, resulting UI scale=%s" % _loaded_theme_scale.x)
 
 	# IMPORTANT: Ensure the theme is actually applied to the active UI Control tree.
 	# Many BV widgets opt-in to theme_changed and set their own theme, but core containers
@@ -925,24 +971,193 @@ func _find_possible_scales() -> void:
 
 ## Chooses startup UI scale using monitor DPI and resolution only.
 func _select_startup_scale_from_display_metrics() -> float:
-	var current_screen: int = get_window().current_screen
+	var window: Window = get_window()
+	var current_screen: int = _resolve_screen_for_window(window)
 	var screen_size: Vector2i = DisplayServer.screen_get_size(current_screen)
 	var dpi: int = DisplayServer.screen_get_dpi(current_screen)
-	var long_side: int = maxi(screen_size.x, screen_size.y)
+	var window_size: Vector2i = window.size
+	var effective_sizes: Dictionary = _compute_effective_sizes(current_screen, screen_size, window_size, dpi)
+	var effective_screen_size: Vector2i = effective_sizes.get("effective_screen_size", screen_size)
+	var effective_window_size: Vector2i = effective_sizes.get("effective_window_size", window_size)
+	var screen_scale: float = effective_sizes.get("engine_scale", 1.0)
+	var content_scale_factor: float = effective_sizes.get("content_scale_factor", 1.0)
+	var inferred_scale: float = effective_sizes.get("inferred_scale", 1.0)
+	var normalization_scale: float = effective_sizes.get("normalization_scale", 1.0)
+	var fullscreen_hidpi_fallback_used: bool = effective_sizes.get("fullscreen_hidpi_fallback_used", false)
+	var dpi_tier: int = _classify_startup_dpi_tier(dpi)
+	var viewport_rect_size: Vector2 = get_viewport().get_visible_rect().size
+	var raw_viewport_size: Vector2i = Vector2i(
+		maxi(1, roundi(viewport_rect_size.x)),
+		maxi(1, roundi(viewport_rect_size.y))
+	)
+	var resolution_input_size: Vector2i = Vector2i(
+		maxi(1, roundi(float(raw_viewport_size.x) / normalization_scale)),
+		maxi(1, roundi(float(raw_viewport_size.y) / normalization_scale))
+	)
+	var resolution_tier: int = _classify_startup_resolution_tier(resolution_input_size)
+	var selected_scale: float = _select_scale_from_startup_matrix(dpi_tier, resolution_tier)
 	
-	print("UIMANAGER: Startup display metrics -> screen=%d size=%s dpi=%d" % [current_screen, screen_size, dpi])
-	
+	print("UIMANAGER: Startup display metrics -> screen=%d raw_size=%s effective_size=%s dpi=%d dpi_tier=%s engine_scale=%s content_scale_factor=%s inferred_scale=%s normalization_scale=%s fullscreen_hidpi_fallback_used=%s raw_window_size=%s effective_window_size=%s raw_viewport_size=%s resolution_input_size=%s resolution_tier=%s selected_scale=%s window_pos=%s" % [
+		current_screen,
+		screen_size,
+		effective_screen_size,
+		dpi,
+		STARTUP_DPI_TIER.keys()[dpi_tier],
+		screen_scale,
+		content_scale_factor,
+		inferred_scale,
+		normalization_scale,
+		fullscreen_hidpi_fallback_used,
+		window_size,
+		effective_window_size,
+		raw_viewport_size,
+		resolution_input_size,
+		STARTUP_RES_TIER.keys()[resolution_tier],
+		selected_scale,
+		window.position
+	])
+	return selected_scale
+
+## Classifies display DPI into startup scale tiers.
+func _classify_startup_dpi_tier(dpi: int) -> int:
 	if dpi >= UI_STARTUP_DPI_XLARGE:
-		return UI_SCALE_XLARGE
+		return STARTUP_DPI_TIER.DPI_XLARGE
 	if dpi >= UI_STARTUP_DPI_LARGE:
-		return UI_SCALE_LARGE
+		return STARTUP_DPI_TIER.DPI_LARGE
 	if dpi >= UI_STARTUP_DPI_MEDIUM:
-		return UI_SCALE_MEDIUM
-	if dpi <= UI_STARTUP_DPI_STANDARD and long_side >= UI_STARTUP_LONG_SIDE_ULTRAWIDE:
-		return UI_SCALE_SMALL
-	if dpi <= UI_STARTUP_DPI_STANDARD and long_side >= UI_STARTUP_LONG_SIDE_WIDE:
-		return UI_SCALE_STANDARD
-	return UI_SCALE_MEDIUM
+		return STARTUP_DPI_TIER.DPI_MEDIUM
+	return STARTUP_DPI_TIER.DPI_STANDARD
+
+## Classifies effective window resolution into startup scale tiers.
+func _classify_startup_resolution_tier(effective_window_size: Vector2i) -> int:
+	var long_side: int = maxi(effective_window_size.x, effective_window_size.y)
+	var short_side: int = mini(effective_window_size.x, effective_window_size.y)
+	if long_side <= UI_STARTUP_LONG_SIDE_COMPACT and short_side <= UI_STARTUP_SHORT_SIDE_COMPACT:
+		return STARTUP_RES_TIER.RES_COMPACT
+	if long_side <= UI_STARTUP_LONG_SIDE_STANDARD:
+		return STARTUP_RES_TIER.RES_STANDARD
+	if long_side <= UI_STARTUP_LONG_SIDE_LARGE:
+		return STARTUP_RES_TIER.RES_LARGE
+	return STARTUP_RES_TIER.RES_XLARGE
+
+## Explicit startup zoom matrix by (DPI tier x effective resolution tier).
+## Rows are DPI tiers; columns are resolution tiers:
+## - DPI_STANDARD: COMPACT=0.75, STANDARD=1.0, LARGE=1.25, XLARGE=1.5
+## - DPI_MEDIUM:   COMPACT=0.75, STANDARD=1.0, LARGE=1.25, XLARGE=1.5
+## - DPI_LARGE:    COMPACT=1.0,  STANDARD=1.25, LARGE=1.5,  XLARGE=2.0
+## - DPI_XLARGE:   COMPACT=1.25, STANDARD=1.5, LARGE=2.0,   XLARGE=2.0
+func _select_scale_from_startup_matrix(dpi_tier: int, resolution_tier: int) -> float:
+	match dpi_tier:
+		STARTUP_DPI_TIER.DPI_STANDARD:
+			match resolution_tier:
+				STARTUP_RES_TIER.RES_COMPACT: return UI_SCALE_SMALL
+				STARTUP_RES_TIER.RES_STANDARD: return UI_SCALE_STANDARD
+				STARTUP_RES_TIER.RES_LARGE: return UI_SCALE_MEDIUM
+				_: return UI_SCALE_LARGE
+		STARTUP_DPI_TIER.DPI_MEDIUM:
+			match resolution_tier:
+				STARTUP_RES_TIER.RES_COMPACT: return UI_SCALE_SMALL
+				STARTUP_RES_TIER.RES_STANDARD: return UI_SCALE_STANDARD
+				STARTUP_RES_TIER.RES_LARGE: return UI_SCALE_MEDIUM
+				_: return UI_SCALE_LARGE
+		STARTUP_DPI_TIER.DPI_LARGE:
+			match resolution_tier:
+				STARTUP_RES_TIER.RES_COMPACT: return UI_SCALE_STANDARD
+				STARTUP_RES_TIER.RES_STANDARD: return UI_SCALE_MEDIUM
+				STARTUP_RES_TIER.RES_LARGE: return UI_SCALE_LARGE
+				_: return UI_SCALE_XLARGE
+		_:
+			match resolution_tier:
+				STARTUP_RES_TIER.RES_COMPACT: return UI_SCALE_MEDIUM
+				STARTUP_RES_TIER.RES_STANDARD: return UI_SCALE_LARGE
+				_: return UI_SCALE_XLARGE
+
+## Resolves the display index using window geometry, which is more reliable than current_screen
+## during multi-monitor startup restores.
+func _resolve_screen_for_window(window: Window) -> int:
+	var fallback_screen: int = window.current_screen
+	var screen_count: int = DisplayServer.get_screen_count()
+	if screen_count <= 1:
+		return fallback_screen
+	var window_center: Vector2i = window.position + (window.size / 2)
+	for i in range(screen_count):
+		var usable_rect: Rect2i = DisplayServer.screen_get_usable_rect(i)
+		if usable_rect.has_point(window_center):
+			return i
+	return fallback_screen
+
+## Computes effective (logical) sizes from raw display metrics.
+## Uses usable rect when available and infers pixel ratio to normalize window size.
+func _compute_effective_sizes(current_screen: int, raw_screen_size: Vector2i, raw_window_size: Vector2i, dpi: int) -> Dictionary:
+	var usable_rect: Rect2i = DisplayServer.screen_get_usable_rect(current_screen)
+	var window: Window = get_window()
+	var engine_scale: float = DisplayServer.screen_get_scale(current_screen)
+	if engine_scale <= 0.0:
+		engine_scale = 1.0
+	var content_scale_factor: float = window.content_scale_factor
+	if content_scale_factor <= 0.0:
+		content_scale_factor = 1.0
+	var inferred_scale_x: float = float(raw_screen_size.x) / maxf(1.0, float(usable_rect.size.x))
+	var inferred_scale_y: float = float(raw_screen_size.y) / maxf(1.0, float(usable_rect.size.y))
+	var inferred_scale: float = maxf(1.0, maxf(inferred_scale_x, inferred_scale_y))
+	var normalization_scale: float = maxf(content_scale_factor, maxf(engine_scale, inferred_scale))
+	var fullscreen_hidpi_fallback_used: bool = false
+	var fullscreen_like: bool = window.mode != Window.MODE_WINDOWED
+	var long_side_raw: int = maxi(raw_screen_size.x, raw_screen_size.y)
+	var looks_like_backing_pixels: bool = (
+		fullscreen_like
+		and engine_scale <= 1.0001
+		and content_scale_factor <= 1.0001
+		and inferred_scale < 1.2
+		and dpi <= UI_STARTUP_DPI_STANDARD
+		and long_side_raw >= 3000
+	)
+	if looks_like_backing_pixels:
+		normalization_scale = maxf(normalization_scale, UI_STARTUP_FULLSCREEN_HIDPI_FALLBACK_SCALE)
+		fullscreen_hidpi_fallback_used = true
+	var effective_screen_size: Vector2i = raw_screen_size
+	if usable_rect.size.x > 0 and usable_rect.size.y > 0:
+		effective_screen_size = Vector2i(
+			roundi(float(usable_rect.size.x) / normalization_scale),
+			roundi(float(usable_rect.size.y) / normalization_scale)
+		)
+	else:
+		effective_screen_size = Vector2i(
+			roundi(float(raw_screen_size.x) / normalization_scale),
+			roundi(float(raw_screen_size.y) / normalization_scale)
+		)
+	var effective_window_size: Vector2i = Vector2i(
+		roundi(float(raw_window_size.x) / normalization_scale),
+		roundi(float(raw_window_size.y) / normalization_scale)
+	)
+	return {
+		"effective_screen_size": effective_screen_size,
+		"effective_window_size": effective_window_size,
+		"engine_scale": engine_scale,
+		"content_scale_factor": content_scale_factor,
+		"inferred_scale": inferred_scale,
+		"normalization_scale": normalization_scale,
+		"fullscreen_hidpi_fallback_used": fullscreen_hidpi_fallback_used
+	}
+
+## Returns true when the current effective (HiDPI-normalized) window size is compact.
+func _is_compact_effective_window() -> bool:
+	var window: Window = get_window()
+	var current_screen: int = _resolve_screen_for_window(window)
+	var screen_size: Vector2i = DisplayServer.screen_get_size(current_screen)
+	var dpi: int = DisplayServer.screen_get_dpi(current_screen)
+	var effective_sizes: Dictionary = _compute_effective_sizes(current_screen, screen_size, window.size, dpi)
+	var normalization_scale: float = effective_sizes.get("normalization_scale", 1.0)
+	var viewport_rect_size: Vector2 = get_viewport().get_visible_rect().size
+	var raw_viewport_size: Vector2i = Vector2i(
+		maxi(1, roundi(viewport_rect_size.x)),
+		maxi(1, roundi(viewport_rect_size.y))
+	)
+	var resolution_input_size: Vector2i = Vector2i(
+		maxi(1, roundi(float(raw_viewport_size.x) / normalization_scale)),
+		maxi(1, roundi(float(raw_viewport_size.y) / normalization_scale))
+	)
+	return _classify_startup_resolution_tier(resolution_input_size) == STARTUP_RES_TIER.RES_COMPACT
 
 #endregion
 

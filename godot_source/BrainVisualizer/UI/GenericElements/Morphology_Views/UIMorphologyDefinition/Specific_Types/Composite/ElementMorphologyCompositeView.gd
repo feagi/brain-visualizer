@@ -40,9 +40,14 @@ func _ready() -> void:
 func setup(allow_editing_if_morphology_editable: bool) -> void:
 	_is_UI_editable = allow_editing_if_morphology_editable
 
-func request_feag_to_set_morphology(morphology_name: StringName) -> void:
+func request_feag_to_set_morphology(morphology_name: StringName) -> FeagiRequestOutput:
 	var vector_field: Array[Vector2i] = [_patternX.current_vector, _patternY.current_vector, _patternZ.current_vector]
-	FeagiCore.requests.update_composite_morphology(morphology_name, _seed.current_vector, vector_field, _mapped_morphology.get_selected_morphology_name())
+	return await FeagiCore.requests.update_composite_morphology(
+		morphology_name,
+		_seed.current_vector,
+		vector_field,
+		_mapped_morphology.get_selected_morphology_name()
+	)
 
 func request_feag_to_create_morphology(morphology_name: StringName) -> void:
 	var vector_field: Array[Vector2i] = [_patternX.current_vector, _patternY.current_vector, _patternZ.current_vector]

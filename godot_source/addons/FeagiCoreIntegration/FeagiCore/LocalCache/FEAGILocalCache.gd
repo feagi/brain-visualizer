@@ -24,7 +24,8 @@ func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector
 
 #region main
 signal cache_about_to_reload()
-signal cache_reloaded()
+signal cache_cleared()
+signal genome_cache_replaced()
 signal mappings_reloaded()
 signal cortical_areas_reloaded()
 signal brain_regions_reloaded()
@@ -87,7 +88,7 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	# Load mapping restrictions from server (async call)
 	_load_mapping_restrictions_async()
 	
-	cache_reloaded.emit()
+	genome_cache_replaced.emit()
 
 # Helper function to load mapping restrictions asynchronously
 func _load_mapping_restrictions_async() -> void:
@@ -95,7 +96,7 @@ func _load_mapping_restrictions_async() -> void:
 	if not success:
 		push_warning("FEAGI CACHE: Failed to load mapping restrictions from server")
 
-## Deletes the genome from cache (safely). NOTE: this triggers the cache_reloaded signal too
+## Deletes the genome from cache (safely). Emits cache_cleared when done.
 func clear_whole_genome() -> void:
 	var _stack: Array = get_stack()
 	var _caller: String = "unknown"
@@ -114,7 +115,7 @@ func clear_whole_genome() -> void:
 	# Clear mapping restrictions cache
 	MappingRestrictionsAPI.clear_cache()
 	
-	cache_reloaded.emit()
+	cache_cleared.emit()
 	
 
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
@@ -315,6 +316,9 @@ var brain_readiness: bool:
 var genome_num: int:
 	get: return _genome_num
 
+var feagi_session: int:
+	get: return _last_seen_feagi_session
+
 var simulation_timestep: float:
 	get: return _simulation_timestep
 	set(v):
@@ -448,8 +452,9 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 				var is_initial_startup: bool = (_previous_feagi_session == 0)
 				var skip_emit: bool = false
 
-				# Do not cooldown-block genome_num-driven reloads.
-				if not is_initial_startup and not genome_changed:
+				# Do not cooldown-block true version changes (session/genome).
+				# Cooldown only applies to recovery-driven force reloads.
+				if not is_initial_startup and not genome_changed and not session_changed:
 					var cooldown_now: int = Time.get_ticks_msec()
 					if cooldown_now - _last_genome_change_time < _genome_change_cooldown_ms:
 						var remaining_cooldown: float = (
@@ -1128,7 +1133,7 @@ func _refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
 	# (same order as _refresh_brain_regions_from_feagi).
 	if can_refresh_partials_from_summary:
 		_refresh_partial_mappings_from_summary(regions_summary_for_partials)
-	print("HASH REFRESH: cortical_areas_reloaded emitted for cortical_areas_hash")
+	# Debug log suppressed to reduce runtime console spam.
 	cortical_areas_reloaded.emit()
 	return cortical_output
 

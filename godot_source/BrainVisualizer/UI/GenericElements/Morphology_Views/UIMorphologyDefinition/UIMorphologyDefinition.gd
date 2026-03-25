@@ -94,16 +94,17 @@ func load_blank_morphology(morphology_type: BaseMorphology.MORPHOLOGY_TYPE, morp
 		_:
 			load_morphology(NullMorphology.new())
 
-func request_feagi_apply_morphology_settings(morphology_name: StringName) -> void:
+func request_feagi_apply_morphology_settings(morphology_name: StringName) -> FeagiRequestOutput:
 	match _morphology_loaded.type:
 		BaseMorphology.MORPHOLOGY_TYPE.COMPOSITE:
-			return composite_view.request_feag_to_set_morphology(morphology_name)
+			return await composite_view.request_feag_to_set_morphology(morphology_name)
 		BaseMorphology.MORPHOLOGY_TYPE.VECTORS:
-			return vectors_view.request_feag_to_set_morphology(morphology_name)
+			return await vectors_view.request_feag_to_set_morphology(morphology_name)
 		BaseMorphology.MORPHOLOGY_TYPE.PATTERNS:
-			return patterns_view.request_feag_to_set_morphology(morphology_name)
+			return await patterns_view.request_feag_to_set_morphology(morphology_name)
 		_:
 			push_error("Unable to send null or unknown type morphology!")
+			return FeagiRequestOutput.requirement_fail("UNKNOWN_MORPHOLOGY_TYPE")
 
 
 func _morphology_updated(_self_morphology: BaseMorphology) -> void:

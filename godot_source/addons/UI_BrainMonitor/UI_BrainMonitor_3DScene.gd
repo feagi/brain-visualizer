@@ -96,6 +96,7 @@ var _intro_start_fov: float
 var _intro_final_fov: float
 var _intro_start_rot: Quaternion
 var _intro_target_rot: Quaternion
+var _io_indicator_suspend_depth: int = 0
 var _active_preview_indicators: Array[Node3D] = []
 var _last_scene_center: Vector3 = Vector3.ZERO
 var _is_mouse_hovering_viewport: bool = false
@@ -106,6 +107,7 @@ var _debug_large_mesh_scan_enabled: bool = false
 var _debug_large_mesh_scan_seconds: float = 0.0
 var _debug_large_mesh_scan_interval: float = 2.0
 var _debug_large_mesh_scan_threshold: Vector3 = Vector3(200.0, 50.0, 0.0)
+var _has_auto_framed_once: bool = false
 
 func _region_reload_debug_enabled() -> bool:
 	var val := String(OS.get_environment("BV_REGION_RELOAD_DEBUG")).strip_edges().to_lower()
@@ -295,11 +297,11 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	# Connect to region signals for dynamic updates
 	_connect_representing_region_dynamic_signals(_representing_region)
 
-	# Connect to cache reload events ONCE (guarded) to refresh cortical connections
+	# Connect to completed cache replacement events ONCE (guarded) to refresh cortical connections
 	if FeagiCore.feagi_local_cache:
 		var cache = FeagiCore.feagi_local_cache
-		if not cache.cache_reloaded.is_connected(_on_cache_reloaded_refresh_all_connections):
-			cache.cache_reloaded.connect(_on_cache_reloaded_refresh_all_connections)
+		if not cache.genome_cache_replaced.is_connected(_on_cache_replaced_refresh_all_connections):
+			cache.genome_cache_replaced.connect(_on_cache_replaced_refresh_all_connections)
 		if not cache.mappings_reloaded.is_connected(_on_mappings_reloaded_refresh_connections):
 			cache.mappings_reloaded.connect(_on_mappings_reloaded_refresh_connections)
 		if not cache.cortical_areas_reloaded.is_connected(_on_cortical_areas_reloaded):
@@ -398,7 +400,19 @@ func _play_startup_camera_intro() -> void:
 	)
 
 func are_io_direction_indicators_allowed() -> bool:
-	return not _startup_intro_animating
+	return (not _startup_intro_animating) and _io_indicator_suspend_depth == 0
+
+func _push_io_indicator_suspend() -> void:
+	_io_indicator_suspend_depth += 1
+	# Clear active arrows immediately while refresh/rebuild is in flight.
+	_refresh_all_io_direction_indicators()
+
+func _release_io_indicator_suspend_after_settle() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_io_indicator_suspend_depth = maxi(0, _io_indicator_suspend_depth - 1)
+	if _io_indicator_suspend_depth == 0:
+		_refresh_all_io_direction_indicators()
 
 func _refresh_all_io_direction_indicators() -> void:
 	for cortical_viz in _cortical_visualizations_by_ID.values():
@@ -793,6 +807,7 @@ func _auto_frame_camera_to_objects() -> void:
 			_pancake_cam.look_at(center_pos, Vector3.UP)
 			_pancake_cam.current = true
 			_pancake_cam.near = 0.05
+			_has_auto_framed_once = true
 			_log_objects_relative_to_camera("fallback_legacy")
 		return
 	var center := aabb.position + (aabb.size / 2.0)
@@ -821,6 +836,7 @@ func _auto_frame_camera_to_objects() -> void:
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
 	_pancake_cam.current = true
 	_pancake_cam.near = 0.05
+	_has_auto_framed_once = true
 	_log_objects_relative_to_camera("after_auto_frame")
 
 ## Computes AABB only over cortical and brain region visualizations for reliable framing
@@ -1676,7 +1692,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
 					if bm_input_event.button_pressed:
 						var quick_connect_override_active: bool = BV != null and BV.UI != null and BV.UI.selection_system != null and BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
-						if not quick_connect_override_active and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held:
+						var quick_connect_neuron_click_voxel_mode: bool = _should_disable_unit_group_auto_selection_for_click()
+						var selecting_quick_connect_neuron_voxel_with_click: bool = quick_connect_neuron_click_voxel_mode and bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN
+						if (not quick_connect_override_active and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held) or selecting_quick_connect_neuron_voxel_with_click:
 							# Additional safety check - object might have been freed between initial check and method calls
 							if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
 								continue
@@ -1725,19 +1743,28 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 									var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
 									if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
 										ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
-									var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(hit_parent_parent.cortical_area)
+									var disable_unit_group_auto_selection: bool = _should_disable_unit_group_auto_selection_for_click()
 									var to_select: Array[GenomeObject] = []
-									if unit_members.size() > 1:
-										var clicked_region = hit_parent_parent.cortical_area.current_parent_region
-										for m in unit_members:
-											if m.current_parent_region == clicked_region:
-												to_select.append(m)
-									if to_select.is_empty():
+									# Keep voxel destination picking deterministic during QuickConnectNeuron:
+									# selecting a cortical area should not fan out to its IO/unit siblings.
+									if disable_unit_group_auto_selection:
 										to_select = arr_test
+									else:
+										var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(hit_parent_parent.cortical_area)
+										if unit_members.size() > 1:
+											var clicked_region = hit_parent_parent.cortical_area.current_parent_region
+											for m in unit_members:
+												if m.current_parent_region == clicked_region:
+													to_select.append(m)
+										if to_select.is_empty():
+											to_select = arr_test
 									BV.UI.selection_system.clear_all_highlighted()
 									for obj in to_select:
 										BV.UI.selection_system.add_to_highlighted(obj)
 									BV.UI.selection_system.select_objects(ctx, to_select)
+									if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and _is_quick_connect_neuron_waiting_for_entire_area_selection():
+										# Whole-area QuickConnectNeuron steps still consume delta callbacks to progress source/destination.
+										cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, true)
 									if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
 										BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
 									#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
@@ -2401,6 +2428,32 @@ func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCortic
 	var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
 	return area.get_unit_group_members(all_areas)
 
+## Returns true when QuickConnectNeuron expects voxel selection via main click.
+func _should_disable_unit_group_auto_selection_for_click() -> bool:
+	if BV == null or BV.WM == null:
+		return false
+	if WindowQuickConnectNeuron.WINDOW_NAME not in BV.WM.loaded_windows:
+		return false
+	var quick_connect_neuron_window: Variant = BV.WM.loaded_windows[WindowQuickConnectNeuron.WINDOW_NAME]
+	if quick_connect_neuron_window == null or not is_instance_valid(quick_connect_neuron_window):
+		return false
+	if quick_connect_neuron_window is WindowQuickConnectNeuron:
+		return (quick_connect_neuron_window as WindowQuickConnectNeuron).expects_voxel_selection_on_primary_click()
+	return false
+
+## Returns true when QuickConnectNeuron expects selecting a whole cortical area with primary click.
+func _is_quick_connect_neuron_waiting_for_entire_area_selection() -> bool:
+	if BV == null or BV.WM == null:
+		return false
+	if WindowQuickConnectNeuron.WINDOW_NAME not in BV.WM.loaded_windows:
+		return false
+	var quick_connect_neuron_window: Variant = BV.WM.loaded_windows[WindowQuickConnectNeuron.WINDOW_NAME]
+	if quick_connect_neuron_window == null or not is_instance_valid(quick_connect_neuron_window):
+		return false
+	if quick_connect_neuron_window is WindowQuickConnectNeuron:
+		return (quick_connect_neuron_window as WindowQuickConnectNeuron).expects_entire_area_selection_on_primary_click()
+	return false
+
 ## Apply a move to all subunits in the same unit.
 func _apply_group_move(members: Array[AbstractCorticalArea], new_pos: Vector3i) -> void:
 	if members.is_empty():
@@ -2880,12 +2933,17 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 			existing_viz.queue_free()
 		_cortical_visualizations_by_ID.erase(area.cortical_ID)
 	
-	# Check if this area should be created
-	# After autogen / agent attach, FEAGI often reparents IPU/OPU/custom areas under child regions. Root Brain Monitor must still show the full subtree.
-	var is_in_represented_subtree = _representing_region.is_cortical_area_in_region_recursive(area)
+	# Check if this area should be created.
+	# Use parent-chain membership as source-of-truth to avoid stale region containment arrays
+	# after cache replacement/reload.
+	var is_in_represented_subtree = _is_area_in_representing_region_subtree_by_parent_chain(area)
+	var is_direct_member = _is_area_direct_child_of_representing_region(area)
 	# Product rule: MEMORY areas stay out of the *root* brain monitor (they belong in Autogen / dedicated views).
 	var memory_excluded_at_root = _brain_monitor_viewing_feagi_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
-	var is_subtree_ok = is_in_represented_subtree and not memory_excluded_at_root
+	# Root monitor should only show direct members (plus I/O/invariant-core logic below), while
+	# non-root monitors can include descendants in their subtree view.
+	var allow_subtree_members = not _brain_monitor_viewing_feagi_root_region()
+	var is_subtree_ok = (is_direct_member or (allow_subtree_members and is_in_represented_subtree)) and not memory_excluded_at_root
 	var is_io_of_child_region = _is_area_input_output_of_child_region(area)
 	var is_io_of_this_region = _is_area_input_output_of_region(area)
 	# Reserved system core areas (power, death, fatigue, ...) when parented under FEAGI root or monitor shows root plate.
@@ -3128,6 +3186,23 @@ func _brain_monitor_viewing_feagi_root_region() -> bool:
 	return String(_representing_region.region_ID) == String(root.region_ID)
 
 
+func _is_area_direct_child_of_representing_region(area: AbstractCorticalArea) -> bool:
+	if area == null or _representing_region == null or area.current_parent_region == null:
+		return false
+	return String(area.current_parent_region.region_ID) == String(_representing_region.region_ID)
+
+
+func _is_area_in_representing_region_subtree_by_parent_chain(area: AbstractCorticalArea) -> bool:
+	if area == null or _representing_region == null:
+		return false
+	var cursor: BrainRegion = area.current_parent_region
+	while cursor != null:
+		if String(cursor.region_ID) == String(_representing_region.region_ID):
+			return true
+		cursor = cursor.current_parent_region
+	return false
+
+
 ## True for power/death/fatigue (etc.) when they should get a volume on this monitor. After region diffs the
 ## Circuit Builder may still reference a child region UUID while FEAGI root is a different id; cores stay under
 ## the genome root, so use [method BrainRegion.is_cortical_area_in_region_recursive] from FEAGI root, not only
@@ -3179,7 +3254,7 @@ func _teardown_all_cortical_area_visualizations() -> void:
 	_cortical_visualizations_by_ID.clear()
 
 
-## Full cortical rebuild: same path as genome [signal cache_reloaded] — deterministic after hash refresh / reconnect.
+## Full cortical rebuild: same path as genome [signal genome_cache_replaced] — deterministic after hash refresh / reconnect.
 func _rebuild_cortical_visualizations_after_cache_touch() -> void:
 	_teardown_all_cortical_area_visualizations()
 	_add_missing_cortical_area_visualizations()
@@ -3198,8 +3273,9 @@ func resync_visualization_after_transport_recovery() -> void:
 	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
 
 
-## Cache reload event handler - refreshes all cortical area connections AND creates new brain regions
-func _on_cache_reloaded_refresh_all_connections() -> void:
+## Cache replacement event handler - refreshes all cortical area connections AND creates new brain regions
+func _on_cache_replaced_refresh_all_connections() -> void:
+	_push_io_indicator_suspend()
 	_ensure_representing_region_from_cache()
 	# CRITICAL: Check for new brain regions that need visualization after cloning
 	_create_missing_brain_region_visualizations()
@@ -3210,16 +3286,20 @@ func _on_cache_reloaded_refresh_all_connections() -> void:
 			if cortical_viz._is_volume_moused_over:
 				cortical_viz._hide_neural_connections()
 				cortical_viz._show_neural_connections()
+	call_deferred("_release_io_indicator_suspend_after_settle")
 
 
 func _on_cortical_areas_reloaded() -> void:
+	_push_io_indicator_suspend()
 	_ensure_representing_region_from_cache()
 	_create_missing_brain_region_visualizations()
 	_rebuild_cortical_visualizations_after_cache_touch()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+	call_deferred("_release_io_indicator_suspend_after_settle")
 
 
 func _on_brain_regions_reloaded() -> void:
+	_push_io_indicator_suspend()
 	_ensure_representing_region_from_cache()
 	if _region_reload_debug_enabled():
 		var br = FeagiCore.feagi_local_cache.brain_regions if FeagiCore != null and FeagiCore.feagi_local_cache != null else null
@@ -3231,6 +3311,7 @@ func _on_brain_regions_reloaded() -> void:
 	_create_missing_brain_region_visualizations()
 	_rebuild_cortical_visualizations_after_cache_touch()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+	call_deferred("_release_io_indicator_suspend_after_settle")
 
 ## Creates visualizations for any new cortical areas in this region after cache refresh
 func _add_missing_cortical_area_visualizations() -> void:
@@ -3254,9 +3335,11 @@ func _add_missing_cortical_area_visualizations() -> void:
 		# which would queue_free every cortical viz and break Type 11 / DirectPoints registration.
 		if area == null:
 			continue
-		var is_in_subtree = _representing_region.is_cortical_area_in_region_recursive(area)
+		var is_in_subtree = _is_area_in_representing_region_subtree_by_parent_chain(area)
+		var is_direct_member = _is_area_direct_child_of_representing_region(area)
 		var memory_hide_at_root = _brain_monitor_viewing_feagi_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
-		var subtree_keeps_viz = is_in_subtree and not memory_hide_at_root
+		var allow_subtree_members = not _brain_monitor_viewing_feagi_root_region()
+		var subtree_keeps_viz = (is_direct_member or (allow_subtree_members and is_in_subtree)) and not memory_hide_at_root
 		var is_io_child = _is_area_input_output_of_child_region(area)
 		var is_io_self = _is_area_input_output_of_region(area)
 		var is_reserved_core: bool = _should_show_feagi_invariant_core_in_this_monitor(area)
@@ -3306,7 +3389,7 @@ func _add_missing_cortical_area_visualizations() -> void:
 		for area in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
 			if area.cortical_ID in _cortical_visualizations_by_ID:
 				continue
-			if not _representing_region.is_cortical_area_in_region_recursive(area):
+			if not _is_area_in_representing_region_subtree_by_parent_chain(area):
 				continue
 			if _brain_monitor_viewing_feagi_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 				continue
@@ -3323,7 +3406,10 @@ func _add_missing_cortical_area_visualizations() -> void:
 				_add_cortical_area(area)
 
 	if added_any:
-		call_deferred("_auto_frame_camera_to_objects")
+		# Preserve user camera state during cache-driven add/remove updates.
+		# Only auto-frame if this monitor has never been framed yet.
+		if not _has_auto_framed_once:
+			call_deferred("_auto_frame_camera_to_objects")
 		call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 ## Creates visualizations for any new brain regions that don't have them yet (e.g., after cloning)
@@ -3341,6 +3427,7 @@ func _create_missing_brain_region_visualizations() -> void:
 			all_regions.size(),
 			_brain_region_visualizations_by_ID.size(),
 		])
+	_prune_stale_brain_region_visualizations(all_regions, debug_regions)
 	
 	for region_id in all_regions.keys():
 		var region = all_regions[region_id]
@@ -3348,48 +3435,70 @@ func _create_missing_brain_region_visualizations() -> void:
 		if region_id in _brain_region_visualizations_by_ID:
 			var existing_plate: Variant = _brain_region_visualizations_by_ID[region_id]
 			if existing_plate != null and is_instance_valid(existing_plate):
-				if debug_regions:
-					print("[REGION-DBG][3DScene] skip existing plate region_id=%s" % String(region_id))
-				continue
-			_brain_region_visualizations_by_ID.erase(region_id)
+				var existing_plate_region := (existing_plate as UI_BrainMonitor_BrainRegion3D).representing_region if existing_plate is UI_BrainMonitor_BrainRegion3D else null
+				if existing_plate_region != region:
+					# Cache replacement can reuse region IDs with new object instances; recreate plate
+					# so click bodies/signals are bound to the latest region object deterministically.
+					existing_plate.queue_free()
+					_brain_region_visualizations_by_ID.erase(region_id)
+				else:
+					if debug_regions:
+						print("[REGION-DBG][3DScene] skip existing plate region_id=%s" % String(region_id))
+					continue
+			else:
+				_brain_region_visualizations_by_ID.erase(region_id)
 		
-		# Do not create a plate for the region this scene represents (match by id — instance may differ).
-		if _representing_region != null and region.region_ID == _representing_region.region_ID:
+		if not _should_render_region_plate(region):
 			if debug_regions:
-				print("[REGION-DBG][3DScene] skip self region_id=%s" % String(region_id))
+				print("[REGION-DBG][3DScene] skip non-renderable region_id=%s parent=%s representing=%s" % [
+					String(region_id),
+					String(region.current_parent_region.region_ID) if region.current_parent_region != null else "none",
+					String(_representing_region.region_ID) if _representing_region != null else "none",
+				])
 			continue
-		
-		# Skip root — never a floating plate on the parent monitor.
-		if region.is_root_region():
-			if debug_regions:
-				print("[REGION-DBG][3DScene] skip root region_id=%s" % String(region_id))
-			continue
-		
-		# Skip if this region is not a direct child of our representing region
-		if _representing_region != null:
-			var is_child = false
-			for child_region in _representing_region.contained_regions:
-				if child_region.region_ID == region_id:
-					is_child = true
-					break
-			if not is_child:
-				var par: BrainRegion = region.current_parent_region
-				if par != null and par.region_ID == _representing_region.region_ID:
-					is_child = true
-			if not is_child:
-				if debug_regions:
-					print("[REGION-DBG][3DScene] skip non-child region_id=%s parent=%s representing=%s" % [
-						String(region_id),
-						String(region.current_parent_region.region_ID) if region.current_parent_region != null else "none",
-						String(_representing_region.region_ID) if _representing_region != null else "none",
-					])
-				continue
 		
 		# Create visualization for this new region
 		_add_brain_region_frame(region)
 	if debug_regions:
 		print("[REGION-DBG][3DScene] create_missing done existing_plates=%d" % _brain_region_visualizations_by_ID.size())
 	
+
+func _should_render_region_plate(region: BrainRegion) -> bool:
+	if region == null or _representing_region == null:
+		return false
+	# Never render a floating plate for this monitor's represented region.
+	if region.region_ID == _representing_region.region_ID:
+		return false
+	# Root is represented by the monitor itself, not a child plate.
+	if region.is_root_region():
+		return false
+	for child_region in _representing_region.contained_regions:
+		if child_region.region_ID == region.region_ID:
+			return true
+	var parent_region: BrainRegion = region.current_parent_region
+	return parent_region != null and parent_region.region_ID == _representing_region.region_ID
+
+
+func _prune_stale_brain_region_visualizations(all_regions: Dictionary, debug_regions: bool) -> void:
+	var existing_region_ids: Array = _brain_region_visualizations_by_ID.keys().duplicate()
+	for region_id in existing_region_ids:
+		var existing_plate: Variant = _brain_region_visualizations_by_ID.get(region_id, null)
+		if existing_plate == null or not is_instance_valid(existing_plate):
+			_brain_region_visualizations_by_ID.erase(region_id)
+			continue
+		if not all_regions.has(region_id):
+			if debug_regions:
+				print("[REGION-DBG][3DScene] prune missing region_id=%s" % String(region_id))
+			existing_plate.queue_free()
+			_brain_region_visualizations_by_ID.erase(region_id)
+			continue
+		var region: BrainRegion = all_regions[region_id]
+		if not _should_render_region_plate(region):
+			if debug_regions:
+				print("[REGION-DBG][3DScene] prune non-renderable region_id=%s" % String(region_id))
+			existing_plate.queue_free()
+			_brain_region_visualizations_by_ID.erase(region_id)
+
 
 ## Manual force refresh of all cortical area connections (for debugging/troubleshooting)
 func force_refresh_all_cortical_connections() -> void:

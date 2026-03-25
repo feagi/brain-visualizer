@@ -20,8 +20,8 @@ func _ready() -> void:
 func setup(allow_editing_if_morphology_editable: bool) -> void:
 	_allow_editing_if_morphology_editable = allow_editing_if_morphology_editable
 	
-func request_feag_to_set_morphology(morphology_name: StringName) -> void:
-	FeagiCore.requests.update_pattern_morphology(morphology_name, get_pattern_pair_array())
+func request_feag_to_set_morphology(morphology_name: StringName) -> FeagiRequestOutput:
+	return await FeagiCore.requests.update_pattern_morphology(morphology_name, get_pattern_pair_array())
 
 func request_feag_to_create_morphology(morphology_name: StringName) -> void:
 	FeagiCore.requests.add_pattern_morphology(morphology_name, get_pattern_pair_array())
