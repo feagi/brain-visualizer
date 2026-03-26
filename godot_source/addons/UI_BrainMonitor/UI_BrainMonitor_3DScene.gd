@@ -1960,9 +1960,7 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		_update_manipulation_capacity_warning()
 		_update_manipulation_gizmo_transform()
 	)
-	if mode == MANIPULATION_MODE.MOVE:
-		_setup_manipulation_group_previews(area)
-	elif mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area):
+	if mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area):
 		_setup_manipulation_group_previews(area)
 
 ## Starts a runtime manipulation session for multiple cortical areas selected by the user.
@@ -2081,7 +2079,7 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 	_manipulation_explicit_members.clear()
 
 func _setup_manipulation_group_previews(area: AbstractCorticalArea) -> void:
-	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
+	var members: Array[AbstractCorticalArea] = _get_unit_group_members_in_same_region(area)
 	if members.size() <= 1:
 		return
 	var is_peripheral_resize := _manipulation_mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area)
@@ -2369,10 +2367,6 @@ func _apply_move(new_pos: Vector3i) -> void:
 	if selected_members.size() > 1:
 		await _apply_group_move(selected_members, new_pos)
 		return
-	var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(_manipulation_area)
-	if unit_members.size() > 1:
-		await _apply_group_move(unit_members, new_pos)
-		return
 	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
 	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
 	if result.has_errored:
@@ -2433,6 +2427,17 @@ func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCortic
 		return []
 	var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
 	return area.get_unit_group_members(all_areas)
+
+func _get_unit_group_members_in_same_region(area: AbstractCorticalArea) -> Array[AbstractCorticalArea]:
+	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
+	if members.size() <= 1 or area == null:
+		return members
+	var filtered: Array[AbstractCorticalArea] = []
+	var anchor_region: BrainRegion = area.current_parent_region
+	for member in members:
+		if member != null and member.current_parent_region == anchor_region:
+			filtered.append(member)
+	return filtered
 
 ## Returns true when QuickConnectNeuron expects voxel selection via main click.
 func _should_disable_unit_group_auto_selection_for_click() -> bool:
@@ -2566,7 +2571,7 @@ func _is_isvi_peripheral(area: AbstractCorticalArea) -> bool:
 	return area.subunit_id in [0, 1, 2, 3, 5, 6, 7, 8]
 
 func _apply_isvi_peripheral_resize(area: AbstractCorticalArea, new_dims: Vector3i) -> void:
-	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
+	var members: Array[AbstractCorticalArea] = _get_unit_group_members_in_same_region(area)
 	if members.is_empty():
 		return
 	var resize_plan = _build_resize_plan(area, new_dims)
