@@ -1728,36 +1728,42 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 												_pancake_cam.teleport_to_look_at_without_changing_angle(hit_parent.global_position)
 												print("Focused camera on cortical area: %s (fallback)" % hit_parent_parent.cortical_area.cortical_ID)
 									else:
-										# Plain Ctrl+Click: toggle area in multi-selection and spawn/refresh one quick menu.
+										# Plain Ctrl+Click:
+										# - If clicked area is selected, toggle only that area off.
+										# - If clicked area is not selected and belongs to a unit collection,
+										#   add all sibling subunits in the same region.
+										# - If clicked area is not selected and has no unit collection,
+										#   add only the clicked area.
 										var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
 										if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
 											ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
-										var added_result: SelectionSystem.ERROR = BV.UI.selection_system.add_to_highlighted(hit_parent_parent.cortical_area)
-										if added_result == SelectionSystem.ERROR.ALREADY_HIGHLIGHTED:
-											BV.UI.selection_system.remove_from_highlighted(hit_parent_parent.cortical_area)
+										var clicked_area: AbstractCorticalArea = hit_parent_parent.cortical_area
+										var selection_system: SelectionSystem = BV.UI.selection_system
+										if selection_system.is_highlighted(clicked_area):
+											selection_system.remove_from_highlighted(clicked_area)
+										else:
+											var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(clicked_area)
+											var filtered_group: Array[AbstractCorticalArea] = []
+											if unit_members.size() > 1:
+												var clicked_region = clicked_area.current_parent_region
+												for m in unit_members:
+													if m.current_parent_region == clicked_region:
+														filtered_group.append(m)
+											if filtered_group.size() > 1:
+												for member in filtered_group:
+													if not selection_system.is_highlighted(member):
+														selection_system.add_to_highlighted(member)
+											else:
+												selection_system.add_to_highlighted(clicked_area)
 										BV.UI.selection_system.select_objects(ctx)
 									continue
 								
-								# Left-click or right-click on cortical area - select it and auto-expand to unit group
+								# Left-click or right-click on cortical area: always single-select clicked area.
 								if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
 									var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
 									if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
 										ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
-									var disable_unit_group_auto_selection: bool = _should_disable_unit_group_auto_selection_for_click()
-									var to_select: Array[GenomeObject] = []
-									# Keep voxel destination picking deterministic during QuickConnectNeuron:
-									# selecting a cortical area should not fan out to its IO/unit siblings.
-									if disable_unit_group_auto_selection:
-										to_select = arr_test
-									else:
-										var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(hit_parent_parent.cortical_area)
-										if unit_members.size() > 1:
-											var clicked_region = hit_parent_parent.cortical_area.current_parent_region
-											for m in unit_members:
-												if m.current_parent_region == clicked_region:
-													to_select.append(m)
-										if to_select.is_empty():
-											to_select = arr_test
+									var to_select: Array[GenomeObject] = arr_test
 									BV.UI.selection_system.clear_all_highlighted()
 									for obj in to_select:
 										BV.UI.selection_system.add_to_highlighted(obj)
