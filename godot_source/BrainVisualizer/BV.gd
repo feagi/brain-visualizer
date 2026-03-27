@@ -15,4 +15,4 @@ var NOTIF: NotificationSystem:
 	get: return get_node("/root/BrainVisualizer/UIManager/NotificationSystem") as NotificationSystem
 
 var WM:
-	get: return get_node("/root/BrainVisualizer/UIManager/WindowManager")
+	get: return get_node("/root/BrainVisualizer/UIManager/FloatingWindowsLayer/WindowManager")

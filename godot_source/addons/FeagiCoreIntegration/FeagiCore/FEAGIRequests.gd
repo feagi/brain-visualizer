@@ -975,7 +975,7 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		var main_loop := Engine.get_main_loop()
 		if main_loop != null and main_loop is SceneTree:
 			var root: SceneTree = main_loop as SceneTree
-			var wm_node = root.root.get_node_or_null("BrainVisualizer/UIManager/WindowManager")
+			var wm_node = root.root.get_node_or_null("BrainVisualizer/UIManager/FloatingWindowsLayer/WindowManager")
 			if wm_node != null and wm_node.has_method("spawn_3d_brain_monitor_tab"):
 				wm = wm_node
 		if wm != null:

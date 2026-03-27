@@ -122,7 +122,7 @@ func _process(_delta: float):
 func _ready():
 	_notification_system = $NotificationSystem
 	_top_bar = $TopBar
-	_window_manager = $WindowManager
+	_window_manager = $FloatingWindowsLayer/WindowManager
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
 	_selection_system = SelectionSystem.new()

@@ -80,7 +80,10 @@ mouse_filter = 2
 [node name="ScaleControl" parent="UIManager" instance=ExtResource("8_scale")]
 layout_mode = 3
 
-[node name="WindowManager" type="Node" parent="UIManager"]
+[node name="FloatingWindowsLayer" type="CanvasLayer" parent="UIManager"]
+layer = 1
+
+[node name="WindowManager" type="Node" parent="UIManager/FloatingWindowsLayer"]
 script = ExtResource("9_eg4r6")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="UIManager"]
