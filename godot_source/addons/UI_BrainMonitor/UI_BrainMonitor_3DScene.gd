@@ -113,6 +113,10 @@ func _region_reload_debug_enabled() -> bool:
 	var val := String(OS.get_environment("BV_REGION_RELOAD_DEBUG")).strip_edges().to_lower()
 	return val == "1" or val == "true" or val == "yes" or val == "on"
 
+func _invariant_core_debug_enabled() -> bool:
+	var val := String(OS.get_environment("BV_INVARIANT_CORE_DEBUG")).strip_edges().to_lower()
+	return val == "1" or val == "true" or val == "yes" or val == "on"
+
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
 	return load(SCENE_BRAIN_MONITOR_PATH).instantiate()
@@ -3222,14 +3226,29 @@ func _should_show_feagi_invariant_core_in_this_monitor(area: AbstractCorticalAre
 	if area == null or not AbstractCorticalArea.is_feagi_invariant_core_area(area):
 		return false
 	if _brain_monitor_viewing_feagi_root_region():
+		if _invariant_core_debug_enabled():
+			print("[INVARIANT-CORE][ALLOW] area=%s monitor_region=%s reason=explicit-root-monitor" % [
+				String(area.cortical_ID),
+				String(_representing_region.region_ID) if _representing_region != null else "none"
+			])
 		return true
-	var br = FeagiCore.feagi_local_cache.brain_regions if FeagiCore != null and FeagiCore.feagi_local_cache != null else null
-	if br == null or not br.is_root_available():
-		return false
-	var feagi_root: BrainRegion = br.get_root_region()
-	if feagi_root == null:
-		return false
-	return feagi_root.is_cortical_area_in_region_recursive(area)
+	# Root-tab resilience: after cache/hash refresh the root ID can transiently drift while this
+	# monitor still represents the top-level region. Allow invariant cores only for top-level tabs.
+	# Child brain-region tabs must never get FEAGI invariant cores.
+	if _representing_region != null and _representing_region.current_parent_region == null:
+		if _invariant_core_debug_enabled():
+			print("[INVARIANT-CORE][ALLOW] area=%s monitor_region=%s reason=top-level-region-parent-null" % [
+				String(area.cortical_ID),
+				String(_representing_region.region_ID)
+			])
+		return true
+	if _invariant_core_debug_enabled():
+		print("[INVARIANT-CORE][DENY] area=%s monitor_region=%s parent_region=%s reason=non-root-child-region-tab" % [
+			String(area.cortical_ID),
+			String(_representing_region.region_ID) if _representing_region != null else "none",
+			String(_representing_region.current_parent_region.region_ID) if _representing_region != null and _representing_region.current_parent_region != null else "none"
+		])
+	return false
 
 
 ## Desktop WS Type 11 applies to MultiMeshes registered on AbstractCorticalArea; schedule rebuild after BM recreates nodes.
