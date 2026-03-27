@@ -909,7 +909,7 @@ script = ExtResource("13_ypuy1")
 
 [node name="Post_Synaptic_Potential" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters"]
 layout_mode = 2
-tooltip_text = "The mount of membrane potential increase each neuron can have on downstream neurons"
+tooltip_text = "The amount of membrane potential increase each neuron can have on downstream neurons. Range: 0–255."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters/Post_Synaptic_Potential"]
 layout_mode = 2
@@ -920,6 +920,8 @@ text = "Post-Synaptic Potential (PSP)"
 layout_mode = 2
 alignment = 2
 script = ExtResource("14_3jdx4")
+min_value = 0.0
+max_value = 255.0
 
 [node name="PSP_Max" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesPostSynapticPotentialParameters"]
 layout_mode = 2
