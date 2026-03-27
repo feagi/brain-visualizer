@@ -998,13 +998,19 @@ func _get_timestamp_with_ms() -> String:
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
 	"""Convert world position to neuron coordinate"""
 	const EPSILON: float = 1e-6
-	world_godot_position -= _static_body.position
-	world_godot_position += _static_body.scale / 2
+	# Convert world position into the cortical volume's axis frame WITHOUT undoing scale.
+	# This preserves 1 world-unit == 1 voxel spacing used by the static body scale.
+	var d: Vector3 = world_godot_position - _static_body.global_position
+	var bx: Vector3 = _static_body.global_transform.basis.x.normalized()
+	var by: Vector3 = _static_body.global_transform.basis.y.normalized()
+	var bz: Vector3 = _static_body.global_transform.basis.z.normalized()
+	var along: Vector3 = Vector3(d.dot(bx), d.dot(by), d.dot(bz))
+	along += _static_body.scale / 2.0
 	
 	var neuron_coord = Vector3i(
-		floori(world_godot_position.x - EPSILON),
-		floori(world_godot_position.y - EPSILON), 
-		floori(world_godot_position.z - EPSILON)
+		floori(along.x - EPSILON),
+		floori(along.y - EPSILON), 
+		floori(along.z - EPSILON)
 	)
 	
 	# Flip Z axis and clamp to dimensions
@@ -1017,9 +1023,30 @@ func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) ->
 	
 	return neuron_coord
 
+## World-space center of the voxel at the given FEAGI neuron coordinate (matches world_godot_position_to_neuron_coordinate).
+func feagi_neuron_coordinate_to_world_center(feagi_coord: Vector3i) -> Vector3:
+	if _static_body == null:
+		return Vector3.ZERO
+	if _dimensions.x <= 0 or _dimensions.y <= 0 or _dimensions.z <= 0:
+		return Vector3.ZERO
+	var nx := clampi(int(feagi_coord.x), 0, max(0, _dimensions.x - 1))
+	var ny := clampi(int(feagi_coord.y), 0, max(0, _dimensions.y - 1))
+	var nz := clampi(int(feagi_coord.z), 0, max(0, _dimensions.z - 1))
+	var gz_internal := int(_dimensions.z) - nz - 1
+	gz_internal = clampi(gz_internal, 0, max(0, _dimensions.z - 1))
+	var local_scaled: Vector3 = Vector3(float(nx) + 0.5, float(ny) + 0.5, float(gz_internal) + 0.5) - (_static_body.scale * 0.5)
+	var bx: Vector3 = _static_body.global_transform.basis.x.normalized()
+	var by: Vector3 = _static_body.global_transform.basis.y.normalized()
+	var bz: Vector3 = _static_body.global_transform.basis.z.normalized()
+	return _static_body.global_position + (bx * local_scaled.x) + (by * local_scaled.y) + (bz * local_scaled.z)
+
 func does_world_position_map_to_neuron_coordinate(world_position: Vector3) -> bool:
 	"""Check if world position is within the cortical area bounds"""
-	var local_pos = world_position - _static_body.position
+	var d: Vector3 = world_position - _static_body.global_position
+	var bx: Vector3 = _static_body.global_transform.basis.x.normalized()
+	var by: Vector3 = _static_body.global_transform.basis.y.normalized()
+	var bz: Vector3 = _static_body.global_transform.basis.z.normalized()
+	var local_pos = Vector3(d.dot(bx), d.dot(by), d.dot(bz))
 	var half_scale = _static_body.scale / 2
 	
 	return (local_pos.x >= -half_scale.x and local_pos.x <= half_scale.x and

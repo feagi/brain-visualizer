@@ -266,10 +266,47 @@ func _voxel_inspector_query_async(cortical_id: StringName, coord: Vector3i, syna
 	if out.success:
 		var d: Dictionary = out.decode_response_as_dict()
 		win.set_json_content(_format_voxel_inspector_response(d))
+		win.set_last_successful_voxel_payload(d)
 		win.update_synapse_pagination_from_response(d)
+		if win.is_voxel_synapse_visualization_enabled():
+			_voxel_inspector_apply_synapse_visualization(d)
 	else:
 		win.set_error_line(out.decode_response_as_string())
 		win.restore_pagination_after_failed_fetch()
+
+
+## Rebuild 3D voxel synapse arcs from the last successful Inspect payload (toggle on).
+func request_voxel_synapse_visualization_rebuild() -> void:
+	var win := _voxel_inspector_window()
+	if win == null:
+		return
+	var d: Dictionary = win.get_last_successful_voxel_payload()
+	if d.is_empty():
+		return
+	_voxel_inspector_apply_synapse_visualization(d)
+
+
+func _voxel_inspector_apply_synapse_visualization(d: Dictionary) -> void:
+	var cid: String = str(d.get("cortical_id", ""))
+	if cid.is_empty() or FeagiCore.feagi_local_cache == null:
+		return
+	var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(
+		StringName(cid),
+		null
+	)
+	if area == null:
+		return
+	var bm: UI_BrainMonitor_3DScene = get_brain_monitor_for_cortical_area(area)
+	if bm == null:
+		return
+	clear_voxel_synapse_visualization_all_brain_monitors()
+	bm.rebuild_voxel_synapse_visualization_from_api_payload(d)
+
+
+func clear_voxel_synapse_visualization_all_brain_monitors() -> void:
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm != null and is_instance_valid(bm):
+			bm.clear_voxel_synapse_visualization()
 
 
 func _format_voxel_inspector_response(d: Dictionary) -> String:

@@ -75,6 +75,11 @@ var _qc_bridge_active: bool = false
 var _qc_bridge_node: Node3D = null
 var _qc_bridge_start: Vector3 = Vector3.ZERO
 
+## Voxel Inspector: arcs from inspected voxel to peer voxels (reuses cortical connection curve materials).
+var _voxel_synapse_curve_nodes: Array[Node3D] = []
+## Parent for voxel synapse curves only; excluded from _compute_world_aabb so framing stays on regions/cortical areas.
+var _voxel_synapse_overlay: Node3D = null
+
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
 
@@ -532,6 +537,9 @@ func _spawn_indicator_for_node_center(node: Node) -> void:
 
 ## Computes a world-space AABB for a Node3D by aggregating all MeshInstance3D children
 func _compute_world_aabb(node: Node) -> AABB:
+	# Voxel synapse cylinders are decorative; including them in root AABB breaks auto-frame (camera aims wrong).
+	if node.get_meta("bv_exclude_from_scene_aabb", false):
+		return AABB()
 	var have: bool = false
 	var aabb: AABB = AABB()
 	# If this node is a mesh, include its transformed bounds
@@ -2995,6 +3003,8 @@ func add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalAr
 ## Gets an existing cortical area visualization by ID (used by brain region frames)
 func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
 	var viz = _cortical_visualizations_by_ID.get(cortical_id, null)
+	if viz == null:
+		viz = _cortical_visualizations_by_ID.get(StringName(cortical_id), null)
 	if viz == null or not is_instance_valid(viz):
 		if _cortical_visualizations_by_ID.has(cortical_id):
 			_cortical_visualizations_by_ID.erase(cortical_id)
@@ -3564,5 +3574,184 @@ func force_create_missing_regions() -> void:
 				refreshed_count += 1
 	
 	print("BrainMonitor 3D Scene: ✅ Manual refresh completed for ", refreshed_count, " areas")
+
+
+func _ensure_voxel_synapse_overlay() -> Node3D:
+	if _voxel_synapse_overlay != null and is_instance_valid(_voxel_synapse_overlay):
+		return _voxel_synapse_overlay
+	if _node_3D_root == null:
+		return null
+	var overlay := Node3D.new()
+	overlay.name = "VoxelSynapseOverlay"
+	overlay.set_meta("bv_exclude_from_scene_aabb", true)
+	_node_3D_root.add_child(overlay)
+	_voxel_synapse_overlay = overlay
+	return overlay
+
+
+func clear_voxel_synapse_visualization() -> void:
+	for n in _voxel_synapse_curve_nodes:
+		if n != null and is_instance_valid(n):
+			n.queue_free()
+	_voxel_synapse_curve_nodes.clear()
+
+
+## JSON numbers are often float (e.g. 3.0); coerce so voxel indices match the genome volume.
+func _synapse_payload_coord_to_int(v: Variant) -> int:
+	if v == null:
+		return 0
+	if typeof(v) == TYPE_INT:
+		return v
+	if typeof(v) == TYPE_FLOAT:
+		return int(round(v))
+	if typeof(v) == TYPE_STRING:
+		return int(round(String(v).to_float()))
+	return int(round(float(v)))
+
+
+func _psp_byte_is_inhibitory(psp_value: Variant) -> bool:
+	var p: int = int(round(float(psp_value)))
+	p = p & 0xFF
+	if p >= 128:
+		p -= 256
+	return p < 0
+
+
+## Inhibitory/excitatory classification for voxel synapse visuals.
+## FEAGI payloads may encode inhibition via `synapse_type` (authoritative), while PSP can stay positive.
+func _synapse_is_inhibitory(syn: Dictionary) -> bool:
+	if syn.has("synapse_type"):
+		var st: int = _synapse_payload_coord_to_int(syn.get("synapse_type", 0))
+		# FEAGI convention: 0 = excitatory, 1 = inhibitory
+		if st == 1:
+			return true
+		if st == 0:
+			return false
+	return _psp_byte_is_inhibitory(syn.get("postsynaptic_potential", 0))
+
+
+func _voxel_synapses_array_from_payload(v: Variant) -> Array:
+	if v is Array:
+		return v
+	return []
+
+## Extract queried voxel coordinate from payload.
+## Prefer `voxel_coordinate` (canonical API response field), then fall back to top-level x/y/z.
+func _payload_query_voxel_coord(d: Dictionary) -> Vector3i:
+	var vc_raw: Variant = d.get("voxel_coordinate", null)
+	if vc_raw is Array:
+		var vc: Array = vc_raw
+		if vc.size() >= 3:
+			return Vector3i(
+				_synapse_payload_coord_to_int(vc[0]),
+				_synapse_payload_coord_to_int(vc[1]),
+				_synapse_payload_coord_to_int(vc[2])
+			)
+	return Vector3i(
+		_synapse_payload_coord_to_int(d.get("x", 0)),
+		_synapse_payload_coord_to_int(d.get("y", 0)),
+		_synapse_payload_coord_to_int(d.get("z", 0))
+	)
+
+## Extract a neuron coordinate from one entry in `neurons[]`; fallback to `default_coord` if fields are missing.
+func _payload_neuron_coord(nd: Dictionary, default_coord: Vector3i) -> Vector3i:
+	if nd.has("x") and nd.has("y") and nd.has("z"):
+		return Vector3i(
+			_synapse_payload_coord_to_int(nd.get("x", default_coord.x)),
+			_synapse_payload_coord_to_int(nd.get("y", default_coord.y)),
+			_synapse_payload_coord_to_int(nd.get("z", default_coord.z))
+		)
+	return default_coord
+
+
+## Builds arcs from `/v1/cortical_area/voxel_neurons` JSON: outgoing from query voxel to targets, incoming from sources to query voxel.
+func rebuild_voxel_synapse_visualization_from_api_payload(d: Dictionary) -> void:
+	clear_voxel_synapse_visualization()
+	var q_cid: String = str(d.get("cortical_id", ""))
+	if q_cid.is_empty():
+		return
+	var q_viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(q_cid)
+	if q_viz == null:
+		return
+	var q_coord: Vector3i = _payload_query_voxel_coord(d)
+	var qx: int = q_coord.x
+	var qy: int = q_coord.y
+	var qz: int = q_coord.z
+	var overlay := _ensure_voxel_synapse_overlay()
+	if overlay == null:
+		return
+	var line_idx: int = 0
+	var neurons_raw: Variant = d.get("neurons", [])
+	if not (neurons_raw is Array):
+		return
+	for neuron in neurons_raw:
+		if not (neuron is Dictionary):
+			continue
+		var nd: Dictionary = neuron
+		var neuron_coord: Vector3i = _payload_neuron_coord(nd, Vector3i(qx, qy, qz))
+		var neuron_world: Vector3 = q_viz.feagi_voxel_center_world_position(neuron_coord)
+		for syn in _voxel_synapses_array_from_payload(nd.get("outgoing_synapses")):
+			if syn is Dictionary:
+				_add_one_voxel_synapse_line(q_viz, neuron_world, syn as Dictionary, true, line_idx, overlay)
+				line_idx += 1
+		for syn in _voxel_synapses_array_from_payload(nd.get("incoming_synapses")):
+			if syn is Dictionary:
+				_add_one_voxel_synapse_line(q_viz, neuron_world, syn as Dictionary, false, line_idx, overlay)
+				line_idx += 1
+
+
+func _add_one_voxel_synapse_line(
+	query_viz: UI_BrainMonitor_CorticalArea,
+	query_world: Vector3,
+	syn: Dictionary,
+	is_outgoing: bool,
+	line_idx: int,
+	parent_3d: Node3D
+) -> void:
+	var peer_cid: String
+	var px: int
+	var py: int
+	var pz: int
+	if is_outgoing:
+		peer_cid = str(syn.get("target_cortical_id", "")).strip_edges()
+		px = _synapse_payload_coord_to_int(syn.get("target_x", 0))
+		py = _synapse_payload_coord_to_int(syn.get("target_y", 0))
+		pz = _synapse_payload_coord_to_int(syn.get("target_z", 0))
+	else:
+		peer_cid = str(syn.get("source_cortical_id", "")).strip_edges()
+		px = _synapse_payload_coord_to_int(syn.get("source_x", 0))
+		py = _synapse_payload_coord_to_int(syn.get("source_y", 0))
+		pz = _synapse_payload_coord_to_int(syn.get("source_z", 0))
+	if peer_cid.is_empty():
+		return
+	var query_cid: String = ""
+	if query_viz.cortical_area != null:
+		query_cid = String(query_viz.cortical_area.cortical_ID)
+	var peer_viz: UI_BrainMonitor_CorticalArea = query_viz if peer_cid == query_cid else get_cortical_area_visualization(peer_cid)
+	if peer_viz == null:
+		return
+	var peer_world: Vector3 = peer_viz.feagi_voxel_center_world_position(Vector3i(px, py, pz))
+	var start_w: Vector3
+	var end_w: Vector3
+	if is_outgoing:
+		start_w = query_world
+		end_w = peer_world
+	else:
+		start_w = peer_world
+		end_w = query_world
+	# Build voxel synapse curves in world-space (top_level) so parent transform changes cannot skew endpoints.
+	var start_p: Vector3 = start_w
+	var end_p: Vector3 = end_w
+	if start_p.distance_squared_to(end_p) < 1e-8:
+		# Same voxel (self-synapse): short vertical stub so the Bezier pipeline stays non-degenerate.
+		end_p = start_w + Vector3(0.0, 0.4, 0.0)
+	var is_inhibitory: bool = _synapse_is_inhibitory(syn)
+	var dir_tag: String = "out" if is_outgoing else "in"
+	var line_id: StringName = StringName("VS_%d_%s" % [line_idx, dir_tag])
+	# Same Bezier arc for intra-area (recursive) and inter-area: voxel center to voxel center.
+	var curve: Node3D = query_viz.create_voxel_level_synapse_visualization_curve(start_p, end_p, line_id, is_inhibitory, false, 0.0)
+	curve.top_level = true
+	parent_3d.add_child(curve)
+	_voxel_synapse_curve_nodes.append(curve)
 
 #endregion

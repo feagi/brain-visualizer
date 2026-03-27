@@ -60,7 +60,7 @@ const PULSE_DISTANCE_MAX_SCALE: float = 5.0
 
 ## Scale a pulse sphere based on distance to the active camera to keep visibility at range
 func _apply_distance_scale_to_pulse(pulse_sphere: MeshInstance3D) -> void:
-	if not PULSE_DISTANCE_SCALE_ENABLED or pulse_sphere == null:
+	if not PULSE_DISTANCE_SCALE_ENABLED or pulse_sphere == null or not is_instance_valid(pulse_sphere):
 		return
 	# Check if the node is in the scene tree before accessing global_position
 	if not pulse_sphere.is_inside_tree():
@@ -976,6 +976,38 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 	# Get position from the target's renderer  
 	return target_visualization._get_cortical_area_center_position()
 
+## World-space center of a voxel given FEAGI neuron coordinates (same convention as hover highlighting).
+func feagi_voxel_center_world_position(feagi_coord: Vector3i) -> Vector3:
+	if _dda_renderer != null:
+		return _dda_renderer.feagi_neuron_coordinate_to_world_center(feagi_coord)
+	if _directpoints_renderer != null:
+		return _directpoints_renderer.feagi_neuron_coordinate_to_world_center(feagi_coord)
+	return Vector3.ZERO
+
+## Single Bezier arc for voxel-level synapse preview (reuses cortical connection styling; no genome mapping set).
+## Includes directional pulse circles; tween callback self-terminates if nodes are freed by overlay clear.
+## `start_world` / `end_world` are positions in the **parent's local space** (Brain Monitor uses `_node_3D_root.to_local(global)`).
+func create_voxel_level_synapse_visualization_curve(
+	start_world: Vector3,
+	end_world: Vector3,
+	line_id: StringName,
+	is_inhibitory: bool,
+	is_global_mode: bool,
+	min_arc_height: float = 0.0
+) -> Node3D:
+	return _create_connection_curve_variant(
+		start_world,
+		end_world,
+		line_id,
+		is_inhibitory,
+		false,
+		false,
+		is_global_mode,
+		0.4,
+		true,
+		min_arc_height
+	)
+
 ## Create a 3D curve connecting two points
 func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
@@ -1016,7 +1048,9 @@ func _create_connection_curve_variant(
 	is_plastic: bool,
 	is_bidirectional: bool,
 	is_global_mode: bool,
-	arc_height_multiplier: float
+	arc_height_multiplier: float,
+	include_pulse_animation: bool = true,
+	min_arc_height: float = 0.0
 ) -> Node3D:
 	
 	# Create a container for the curve segments
@@ -1030,8 +1064,10 @@ func _create_connection_curve_variant(
 	var distance = direction.length()
 	var mid_point = (start_pos + end_pos) / 2.0
 	
-	# Create an upward arc - arc height based on distance
+	# Create an upward arc - arc height based on distance (floor for short intra-area synapses)
 	var arc_height = distance * arc_height_multiplier
+	if min_arc_height > 0.0:
+		arc_height = maxf(arc_height, min_arc_height)
 	var control_point = mid_point + Vector3(0, arc_height, 0)
 	
 	# For plastic connections, add wobble effect by modifying control point and segments
@@ -1136,8 +1172,10 @@ func _create_connection_curve_variant(
 			var segment = _create_curve_segment(point1, point2, i, segment_material)
 			connection_node.add_child(segment)
 	
-	# Create pulse animation along this curve
-	_create_pulse_animation(connection_node, curve_points, connection_id, is_inhibitory)
+	# Pulse tweens reference mesh nodes under this curve; skip when curves are reparented/freed independently
+	# (e.g. voxel synapse overlay under the 3D scene root) so tweens cannot outlive freed pulse spheres.
+	if include_pulse_animation:
+		_create_pulse_animation(connection_node, curve_points, connection_id, is_inhibitory)
 	
 	return connection_node
 
@@ -1560,6 +1598,8 @@ func _create_curve_material(is_inhibitory: bool = false, is_global_mode: bool = 
 
 ## Create pulse animation along the curve
 func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], connection_id: StringName, is_inhibitory: bool = false) -> void:
+	if curve_points.is_empty():
+		return
 	
 	# Create multiple pulse spheres for continuous animation
 	var num_pulses = 3  # Multiple pulses traveling at once
@@ -1612,6 +1652,13 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		# Animate the pulse along the curve points
 		pulse_tween.tween_method(
 			func(progress: float):
+				# Overlay clears queue_free curve nodes; stop this tween immediately when targets are gone.
+				if curve_node == null or not is_instance_valid(curve_node):
+					pulse_tween.kill()
+					return
+				if pulse_sphere == null or not is_instance_valid(pulse_sphere):
+					pulse_tween.kill()
+					return
 				var point_index = int(progress * (curve_points.size() - 1))
 				var local_progress = (progress * (curve_points.size() - 1)) - point_index
 				
@@ -1665,13 +1712,17 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 
 ## Internal helper that creates a single recursive loop visual.
 ## loop_height_offset vertically shifts the loop relative to its default loop height.
+## loop_radius_param / loop_height_base_param override defaults for voxel-level recursive synapses.
 func _create_recursive_loop_variant(
 	center_pos: Vector3,
 	area_id: StringName,
 	is_inhibitory: bool,
 	is_plastic: bool,
 	is_global_mode: bool,
-	loop_height_offset: float
+	loop_height_offset: float,
+	loop_radius_param: float = 3.0,
+	loop_height_base_param: float = 2.0,
+	include_pulse_animation: bool = true
 ) -> Node3D:
 	
 	# Create a container for the loop
@@ -1680,9 +1731,9 @@ func _create_recursive_loop_variant(
 	var plastic_prefix = "PLA_" if is_plastic else "STD_"
 	loop_node.name = type_prefix + plastic_prefix + area_id
 	
-	# Create a circular loop around the cortical area
-	var loop_radius = 3.0  # Radius of the loop around the area
-	var loop_height = 2.0 + loop_height_offset  # Height above the area center
+	# Create a circular loop around the cortical area (or voxel for intra-area synapse preview)
+	var loop_radius: float = loop_radius_param
+	var loop_height: float = loop_height_base_param + loop_height_offset
 	var num_segments = 16  # More segments for smooth circle
 	
 	# Calculate loop points in a circle
@@ -1767,8 +1818,8 @@ func _create_recursive_loop_variant(
 			loop_node.add_child(segment)
 		
 	
-	# Create recursive pulse animation
-	_create_recursive_pulse_animation(loop_node, loop_points, area_id, is_inhibitory)
+	if include_pulse_animation:
+		_create_recursive_pulse_animation(loop_node, loop_points, area_id, is_inhibitory)
 	
 	return loop_node
 
@@ -1800,6 +1851,8 @@ func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: boo
 
 ## Create pulse animation for recursive loops
 func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vector3], area_id: StringName, is_inhibitory: bool = false) -> void:
+	if loop_points.is_empty():
+		return
 	
 	# Create multiple pulses traveling around the loop
 	var num_pulses = 2  # Fewer pulses for cleaner loop animation

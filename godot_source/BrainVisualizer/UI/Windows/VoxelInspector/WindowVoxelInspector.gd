@@ -18,6 +18,10 @@ var _inspect_btn: Button
 var _page_prev_btn: Button
 var _page_next_btn: Button
 var _page_value_label: Label
+var _voxel_synapse_toggle: ToggleButton
+
+## Last decoded `voxel_neurons` response (for 3D synapse overlay when the toggle is on).
+var _last_successful_voxel_payload: Dictionary = {}
 
 ## Last successful Inspect query (used for Previous/Next without changing dropdown).
 var _last_query_cortical_id: StringName = &""
@@ -44,6 +48,7 @@ func setup() -> void:
 	_page_prev_btn = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/PaginationRow/PagePrevButton
 	_page_next_btn = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/PaginationRow/PageNextButton
 	_page_value_label = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/PaginationRow/PageValueLabel
+	_voxel_synapse_toggle = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow/VoxelSynapseToggle
 	_json_text.editable = false
 	custom_minimum_size = DEFAULT_WINDOW_SIZE
 	size = DEFAULT_WINDOW_SIZE
@@ -53,6 +58,8 @@ func setup() -> void:
 	_inspect_btn.pressed.connect(_on_inspect_pressed)
 	_page_prev_btn.pressed.connect(_on_page_prev_pressed)
 	_page_next_btn.pressed.connect(_on_page_next_pressed)
+	if _voxel_synapse_toggle != null:
+		_voxel_synapse_toggle.toggled.connect(_on_voxel_synapse_toggle_toggled)
 	set_empty_state()
 
 
@@ -151,6 +158,29 @@ func _on_page_next_pressed() -> void:
 	BV.UI.request_voxel_inspector_fetch(_last_query_cortical_id, _last_query_coord, _displayed_synapse_page + 1)
 
 
+func _on_voxel_synapse_toggle_toggled(enabled: bool) -> void:
+	if BV == null or BV.UI == null:
+		return
+	if enabled:
+		BV.UI.request_voxel_synapse_visualization_rebuild()
+	else:
+		BV.UI.clear_voxel_synapse_visualization_all_brain_monitors()
+
+
+## When the Inspect response arrives, UIManager stores the payload here for the 3D overlay.
+func set_last_successful_voxel_payload(d: Dictionary) -> void:
+	_last_successful_voxel_payload = d.duplicate(true)
+
+
+func get_last_successful_voxel_payload() -> Dictionary:
+	return _last_successful_voxel_payload.duplicate(true)
+
+
+## Whether the user enabled 3D voxel synapse arcs (default off).
+func is_voxel_synapse_visualization_enabled() -> bool:
+	return _voxel_synapse_toggle != null and _voxel_synapse_toggle.button_pressed
+
+
 ## Updates Previous/Next and page label from a successful `voxel_neurons` payload (synapse_page + per-neuron has_more flags).
 func update_synapse_pagination_from_response(d: Dictionary) -> void:
 	_displayed_synapse_page = int(d.get("synapse_page", 0))
@@ -186,6 +216,11 @@ func restore_pagination_after_failed_fetch() -> void:
 func set_empty_state() -> void:
 	_hint_label.visible = true
 	_json_text.clear()
+	_last_successful_voxel_payload.clear()
+	if _voxel_synapse_toggle != null:
+		_voxel_synapse_toggle.set_toggle_no_signal(false)
+	if BV != null and BV.UI != null:
+		BV.UI.clear_voxel_synapse_visualization_all_brain_monitors()
 	_last_query_cortical_id = &""
 	_last_query_coord = Vector3i.ZERO
 	_displayed_synapse_page = 0

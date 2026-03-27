@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://bvxvoxelinspector01"]
+[gd_scene load_steps=7 format=3 uid="uid://bvxvoxelinspector01"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.gd" id="1_voxel"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/CorticalDropDown.gd" id="3_cortical"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="4_v3"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="5_toggle_off"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="6_toggle_btn"]
 
 [node name="WindowVoxelInspector" type="VBoxContainer"]
 custom_minimum_size = Vector2(780, 760)
@@ -80,6 +82,24 @@ text = "0"
 layout_mode = 2
 disabled = true
 text = "Next"
+
+[node name="VoxelSynapseRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="VoxelSynapseLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+text = "Show voxel synapse connections (3D)"
+
+[node name="VoxelSynapseToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+texture_normal = ExtResource("5_toggle_off")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("6_toggle_btn")
 
 [node name="HintLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
