@@ -33,6 +33,12 @@ class_name VisualizationSettings
 ## Experimental: automatically reduce limit if FPS drops
 @export var auto_adjust_performance: bool = false
 
+## When the camera is farther than [camera_distance_far_threshold] (world units) from a cortical
+## area, and **x or y** (not z) of that area's dimensions is <= [small_cortical_dimension_threshold],
+## the DDA volume uses the same outline pass as mouse hover so tiny areas stay visible.
+@export var small_cortical_dimension_threshold: int = 2
+@export var camera_distance_far_threshold: float = 65
+
 func _init():
 	# Defaults are set via @export annotations above
 	pass
@@ -41,3 +47,13 @@ func _init():
 ## This just returns when to warn the user about potential performance impacts
 func get_warning_threshold() -> int:
 	return performance_warning_threshold
+
+## Returns true when [distance_to_cortical_center] is beyond the far threshold and **x or y**
+## (z excluded) of [dimensions_3d] is at or below [member small_cortical_dimension_threshold].
+func should_apply_far_distance_highlight_for_dimensions(
+	dimensions_3d: Vector3i,
+	distance_to_cortical_center: float
+) -> bool:
+	var t: int = small_cortical_dimension_threshold
+	var has_small_extent_xy: bool = dimensions_3d.x <= t or dimensions_3d.y <= t
+	return has_small_extent_xy and distance_to_cortical_center >= camera_distance_far_threshold
