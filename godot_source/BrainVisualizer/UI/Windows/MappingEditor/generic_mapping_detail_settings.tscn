@@ -110,8 +110,17 @@ texture_disabled = ExtResource("5_o7ap7")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="ScrollSectionGeneric" parent="." instance=ExtResource("6_nnmhp")]
+[node name="EstablishedScrollViewport" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ScrollSectionGeneric" parent="EstablishedScrollViewport" instance=ExtResource("6_nnmhp")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [connection signal="pressed" from="labels_box/add_button" to="." method="_add_mapping_row"]
