@@ -24,6 +24,7 @@ var POST_morphology_morphologyUsage: StringName = "/v1/morphology/morphology_usa
 var GET_corticalArea_corticalIDNameMapping: StringName = '/v1/cortical_area/cortical_id_name_mapping'
 var GET_corticalArea_corticalLocations2D: StringName = '/v1/cortical_area/cortical_locations_2d'
 var GET_corticalArea_corticalArea_geometry: StringName = '/v1/cortical_area/cortical_area/geometry'
+var GET_corticalArea_voxelNeurons: StringName = "/v1/cortical_area/voxel_neurons"
 var GET_corticalArea_corticalTypes: StringName = "/v1/cortical_area/cortical_types"
 var GET_genome_corticalTemplate: StringName = "/v1/genome/cortical_template"
 var GET_connectome_properties_dimensions: StringName = "/v1/connectome/properties/dimensions"

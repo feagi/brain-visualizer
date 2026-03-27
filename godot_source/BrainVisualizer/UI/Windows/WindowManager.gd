@@ -31,6 +31,7 @@ const _PREFAB_VIEW_PREVIEWS: PackedScene = preload("res://BrainVisualizer/UI/Win
 const _PREFAB_CAMERA_ANIMATIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.tscn")
 const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.tscn")
 const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.tscn")
+const _PREFAB_VOXEL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.tscn")
 
 
 var loaded_windows: Dictionary
@@ -58,6 +59,19 @@ func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) 
 func spawn_ipu_opu_config(focus_device_key: StringName = "", focus_section: StringName = WindowIPUOPUConfig.SECTION_OUTPUT) -> void:
 	var config_window: WindowIPUOPUConfig = _default_spawn_window(_PREFAB_IPU_OPU_CONFIG, WindowIPUOPUConfig.WINDOW_NAME) as WindowIPUOPUConfig
 	config_window.setup_with_focus(focus_device_key, focus_section)
+
+
+## Opens or focuses the voxel inspector panel (JSON from `/v1/cortical_area/voxel_neurons` on hover).
+func spawn_voxel_inspector() -> WindowVoxelInspector:
+	if WindowVoxelInspector.WINDOW_NAME in loaded_windows:
+		var existing: WindowVoxelInspector = loaded_windows[WindowVoxelInspector.WINDOW_NAME] as WindowVoxelInspector
+		if existing != null:
+			bring_window_to_top(existing)
+			return existing
+	var w: WindowVoxelInspector = _default_spawn_window(_PREFAB_VOXEL_INSPECTOR, WindowVoxelInspector.WINDOW_NAME) as WindowVoxelInspector
+	w.setup()
+	return w
+
 
 func spawn_create_morphology() -> void:
 	var create_morphology: WindowCreateMorphology = _default_spawn_window(_PREFAB_CREATE_MORPHOLOGY, WindowCreateMorphology.WINDOW_NAME) as WindowCreateMorphology

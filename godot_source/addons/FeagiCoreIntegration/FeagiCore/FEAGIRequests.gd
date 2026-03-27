@@ -1212,6 +1212,19 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 
 #NOTE: No way to request a core area, since we shouldn't be able to make those directly!
 
+## GET /v1/cortical_area/voxel_neurons — neurons and synapse details for a voxel (paginated).
+func get_voxel_neurons(cortical_id: String, x: int, y: int, z: int, synapse_page: int = 0) -> FeagiRequestOutput:
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	var cid_enc: String = String(cortical_id).uri_encode()
+	var q: String = "cortical_id=%s&x=%d&y=%d&z=%d&synapse_page=%d" % [cid_enc, x, y, z, synapse_page]
+	var full_path: StringName = StringName(str(FeagiCore.network.http_API.address_list.GET_corticalArea_voxelNeurons) + "?" + q)
+	var req: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(full_path)
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(req)
+	await worker.worker_done
+	return worker.retrieve_output_and_close()
+
 ## Requests an update of a cortical area's properties a single time
 func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	# Fetching cortical area details

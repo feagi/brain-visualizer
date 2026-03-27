@@ -89,6 +89,12 @@ const UI_SCALE_XLARGE: float = 2.0
 enum STARTUP_DPI_TIER { DPI_STANDARD, DPI_MEDIUM, DPI_LARGE, DPI_XLARGE }
 enum STARTUP_RES_TIER { RES_COMPACT, RES_STANDARD, RES_LARGE, RES_XLARGE }
 
+## Top bar "brain activity" tool: global connection curves vs voxel-level API inspector.
+enum BRAIN_MONITOR_ACTIVITY_MODE { GLOBAL_NEURAL_CONNECTIONS = 0, VOXEL_INSPECTOR = 1 }
+
+var brain_monitor_activity_mode: BRAIN_MONITOR_ACTIVITY_MODE = BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
+var _voxel_inspector_fetch_generation: int = 0
+
 
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
@@ -221,6 +227,85 @@ func clear_mouse_context(source_bm: UI_BrainMonitor_3DScene) -> void:
 	if _active_hover_bm != null and source_bm != _active_hover_bm:
 		return
 	_mouse_context_label.text = ""
+
+
+func _voxel_inspector_window() -> WindowVoxelInspector:
+	if _window_manager == null:
+		return null
+	return _window_manager.loaded_windows.get(WindowVoxelInspector.WINDOW_NAME) as WindowVoxelInspector
+
+
+## Called from the Voxel inspector window: fetch `/v1/cortical_area/voxel_neurons` for the chosen area and voxel.
+## `synapse_page` is 0-based; outgoing/incoming synapse lists are paged together (see FEAGI API).
+func request_voxel_inspector_fetch(cortical_id: StringName, coord: Vector3i, synapse_page: int = 0) -> void:
+	if brain_monitor_activity_mode != BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR:
+		return
+	var win := _voxel_inspector_window()
+	if win == null:
+		_window_manager.spawn_voxel_inspector()
+		win = _voxel_inspector_window()
+	if win == null:
+		return
+	if not FeagiCore.can_interact_with_feagi():
+		win.set_error_line("FEAGI is not ready.")
+		win.restore_pagination_after_failed_fetch()
+		return
+	_voxel_inspector_fetch_generation += 1
+	var gen: int = _voxel_inspector_fetch_generation
+	win.set_loading()
+	_voxel_inspector_query_async(cortical_id, coord, synapse_page, gen)
+
+
+func _voxel_inspector_query_async(cortical_id: StringName, coord: Vector3i, synapse_page: int, gen: int) -> void:
+	var out: FeagiRequestOutput = await FeagiCore.requests.get_voxel_neurons(str(cortical_id), coord.x, coord.y, coord.z, synapse_page)
+	if gen != _voxel_inspector_fetch_generation:
+		return
+	var win := _voxel_inspector_window()
+	if win == null:
+		return
+	if out.success:
+		var d: Dictionary = out.decode_response_as_dict()
+		win.set_json_content(_format_voxel_inspector_response(d))
+		win.update_synapse_pagination_from_response(d)
+	else:
+		win.set_error_line(out.decode_response_as_string())
+		win.restore_pagination_after_failed_fetch()
+
+
+func _format_voxel_inspector_response(d: Dictionary) -> String:
+	# JSON.parse() in Godot stores every number as float; stringify would show 1.0 for integers.
+	var normalized: Variant = _json_floats_whole_to_int_for_display(d)
+	var s: String = JSON.stringify(normalized, "\t")
+	if s.length() > 4000:
+		s = s.substr(0, 4000) + "\n...(truncated)"
+	return s
+
+
+## Recursively convert float variants that are mathematically integers to int so JSON.stringify prints 1 not 1.0.
+func _json_floats_whole_to_int_for_display(v: Variant) -> Variant:
+	var t: int = typeof(v)
+	if t == TYPE_FLOAT:
+		var f: float = v
+		if not is_finite(f):
+			return v
+		var r: float = roundf(f)
+		if is_equal_approx(f, r):
+			return int(r)
+		return v
+	if t == TYPE_DICTIONARY:
+		var d: Dictionary = v
+		var out: Dictionary = {}
+		for k in d.keys():
+			out[k] = _json_floats_whole_to_int_for_display(d[k])
+		return out
+	if t == TYPE_ARRAY:
+		var a: Array = v
+		var out: Array = []
+		out.resize(a.size())
+		for i in range(a.size()):
+			out[i] = _json_floats_whole_to_int_for_display(a[i])
+		return out
+	return v
 
 
 ## Interactions with FEAGICORE

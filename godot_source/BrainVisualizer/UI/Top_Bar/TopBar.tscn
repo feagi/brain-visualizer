@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=24 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" uid="uid://yg0uidt8aocq" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" uid="uid://dqxgqll112i2k" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_o4dth"]
@@ -32,11 +32,8 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_H.jpg" id="35_settings_h"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_C.jpg" id="36_settings_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_D.jpg" id="37_settings_d"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="22_eye_s"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="23_eye_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="24_eye_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_D.png" id="25_eye_d"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
+[ext_resource type="PackedScene" uid="uid://cm2activityvizdd1" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.tscn" id="38_activity_dd"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iimg.png" id="21_n6kq0"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="26_brain_regions_icon"]
@@ -286,20 +283,11 @@ layout_mode = 2
 layout_mode = 2
 theme_type_variation = &"MarginContainer_far"
 
-[node name="ActivityRenderingToggle" type="TextureButton" parent="ActivityRenderingPanel/MarginContainer"]
-custom_minimum_size = Vector2(64, 64)
+[node name="ActivityVisualizationDropDown" parent="ActivityRenderingPanel/MarginContainer" instance=ExtResource("38_activity_dd")]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-tooltip_text = "Toggle Global Neural Connections - Show/Hide neural connection curves for all cortical areas"
-theme_type_variation = &"TextureButton_TopBar"
-toggle_mode = true
-texture_normal = ExtResource("22_eye_s")
-texture_pressed = ExtResource("23_eye_c")
-texture_hover = ExtResource("24_eye_h")
-texture_disabled = ExtResource("25_eye_d")
-ignore_texture_size = true
-stretch_mode = 0
+tooltip_text = "Brain activity: global neural connections or Voxel Inspector"
 
 [node name="CameraAnimationsPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -444,7 +432,7 @@ script = ExtResource("7_g1qxj")
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 [connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
-[connection signal="toggled" from="ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle" to="." method="_placeholder_toggle_changed"]
+[connection signal="activity_mode_changed" from="ActivityRenderingPanel/MarginContainer/ActivityVisualizationDropDown" to="." method="_on_activity_visualization_mode_changed"]
 [connection signal="pressed" from="SettingsPanel/MarginContainer/SettingsButton" to="." method="_open_options"]
 [connection signal="pressed" from="CameraAnimationsPanel/MarginContainer/CameraAnimations" to="." method="_open_camera_animations"]
 [connection signal="pressed" from="GuidePanel/MarginContainer/GuideButton" to="." method="_open_guide"]

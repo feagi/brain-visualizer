@@ -15,7 +15,7 @@ var _synapse_count: TextInput
 
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
-var _activity_rendering_toggle: TextureButton
+var _activity_visualization_dropdown: ActivityVisualizationDropDown
 const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
 var _list_popup: FilterableListPopup
 
@@ -28,12 +28,8 @@ func _ready():
 	_increase_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Bigger
 	_decrease_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Smaller
 	
-	_activity_rendering_toggle = $ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle
-	print("🔍 DEBUG: Activity rendering toggle found: ", _activity_rendering_toggle != null)
-	if _activity_rendering_toggle:
-		print("🔍 DEBUG: Toggle visible: ", _activity_rendering_toggle.visible)
-		print("🔍 DEBUG: Toggle size: ", _activity_rendering_toggle.size)
-		print("🔍 DEBUG: Toggle position: ", _activity_rendering_toggle.position)
+	_activity_visualization_dropdown = $ActivityRenderingPanel/MarginContainer/ActivityVisualizationDropDown
+	BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
 	
 	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
@@ -177,13 +173,15 @@ func _bigger_scale() -> void:
 func _preview_button_pressed() -> void:
 	BV.WM.spawn_view_previews()
 
-func _placeholder_toggle_changed(button_pressed: bool) -> void:
-	print("🔗 Global Neural Connections toggle changed to: ", button_pressed)
-	_toggle_cortical_activity_rendering(button_pressed)
-
-func _toggle_cortical_activity_rendering(enabled: bool) -> void:
-	print("🔗 Setting global neural connections visibility to: ", enabled)
-	_toggle_global_neural_connections(enabled)
+func _on_activity_visualization_mode_changed(index: int) -> void:
+	if index == 0:
+		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
+		_toggle_global_neural_connections(true)
+		BV.WM.force_close_window(WindowVoxelInspector.WINDOW_NAME)
+	elif index == 1:
+		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR
+		_toggle_global_neural_connections(false)
+		BV.WM.spawn_voxel_inspector()
 
 func _toggle_global_neural_connections(enabled: bool) -> void:
 	print("🔗 Toggling global neural connections: ", enabled)
