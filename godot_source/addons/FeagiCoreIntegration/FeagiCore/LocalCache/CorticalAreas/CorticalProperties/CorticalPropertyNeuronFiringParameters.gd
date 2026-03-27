@@ -59,21 +59,29 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "neuron_leak_coefficient" in data.keys(): 
 		var value = data["neuron_leak_coefficient"]
 		if value != null:
-			neuron_leak_coefficient = int(value)
+			# Convert from 0-1 range to 0-100 percentage for UI display
+			var leak_coefficient_float = float(value)
+			neuron_leak_coefficient = int(round(leak_coefficient_float * 100.0))
 	elif "leak_coefficient" in data.keys():
 		var value = data["leak_coefficient"]
 		if value != null:
-			neuron_leak_coefficient = int(value)
+			# Convert from 0-1 range to 0-100 percentage for UI display
+			var leak_coefficient_float = float(value)
+			neuron_leak_coefficient = int(round(leak_coefficient_float * 100.0))
 	
 	# Leak Variability - check both formats
 	if "neuron_leak_variability" in data.keys(): 
 		var value = data["neuron_leak_variability"]
 		if value != null:
-			neuron_leak_variability = int(value)
+			# Convert from 0-1 range to 0-100 percentage for UI display
+			var leak_variability_float = float(value)
+			neuron_leak_variability = int(round(leak_variability_float * 100.0))
 	elif "leak_variability" in data.keys():
 		var value = data["leak_variability"]
 		if value != null:
-			neuron_leak_variability = int(value)
+			# Convert from 0-1 range to 0-100 percentage for UI display
+			var leak_variability_float = float(value)
+			neuron_leak_variability = int(round(leak_variability_float * 100.0))
 	
 	# Consecutive Fire Count - check both formats
 	if "neuron_consecutive_fire_count" in data.keys(): 
@@ -99,11 +107,11 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "neuron_mp_charge_accumulation" in data.keys(): 
 		var value = data["neuron_mp_charge_accumulation"]
 		if value != null:
-			neuron_mp_charge_accumulation = bool(value)
+			neuron_mp_charge_accumulation = _parse_bool_value(value)
 	elif "mp_charge_accumulation" in data.keys():
 		var value = data["mp_charge_accumulation"]
 		if value != null:
-			neuron_mp_charge_accumulation = bool(value)
+			neuron_mp_charge_accumulation = _parse_bool_value(value)
 	
 	# Excitability - check both formats
 	if "neuron_excitability" in data.keys():
@@ -113,6 +121,22 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 			var excitability_float = float(value)
 			neuron_excitability = int(round(excitability_float * 100.0))
 	return
+
+func _parse_bool_value(value: Variant) -> bool:
+	if value is bool:
+		return value
+	if value is int:
+		return value != 0
+	if value is float:
+		return value != 0.0
+	if value is String:
+		var normalized: String = value.strip_edges().to_lower()
+		if normalized in ["true", "1", "yes", "on"]:
+			return true
+		if normalized in ["false", "0", "no", "off", ""]:
+			return false
+		return false
+	return false
 
 var neuron_mp_charge_accumulation: bool:
 	get:

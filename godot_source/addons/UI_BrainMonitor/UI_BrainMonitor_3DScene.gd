@@ -113,6 +113,10 @@ func _region_reload_debug_enabled() -> bool:
 	var val := String(OS.get_environment("BV_REGION_RELOAD_DEBUG")).strip_edges().to_lower()
 	return val == "1" or val == "true" or val == "yes" or val == "on"
 
+func _invariant_core_debug_enabled() -> bool:
+	var val := String(OS.get_environment("BV_INVARIANT_CORE_DEBUG")).strip_edges().to_lower()
+	return val == "1" or val == "true" or val == "yes" or val == "on"
+
 ## Spawns an non-setup Brain Visualizer Scene. # WARNING be sure to add it to the scene tree before running setup on it!
 static func create_uninitialized_brain_monitor() -> UI_BrainMonitor_3DScene:
 	return load(SCENE_BRAIN_MONITOR_PATH).instantiate()
@@ -1728,36 +1732,42 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 												_pancake_cam.teleport_to_look_at_without_changing_angle(hit_parent.global_position)
 												print("Focused camera on cortical area: %s (fallback)" % hit_parent_parent.cortical_area.cortical_ID)
 									else:
-										# Plain Ctrl+Click: toggle area in multi-selection and spawn/refresh one quick menu.
+										# Plain Ctrl+Click:
+										# - If clicked area is selected, toggle only that area off.
+										# - If clicked area is not selected and belongs to a unit collection,
+										#   add all sibling subunits in the same region.
+										# - If clicked area is not selected and has no unit collection,
+										#   add only the clicked area.
 										var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
 										if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
 											ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
-										var added_result: SelectionSystem.ERROR = BV.UI.selection_system.add_to_highlighted(hit_parent_parent.cortical_area)
-										if added_result == SelectionSystem.ERROR.ALREADY_HIGHLIGHTED:
-											BV.UI.selection_system.remove_from_highlighted(hit_parent_parent.cortical_area)
+										var clicked_area: AbstractCorticalArea = hit_parent_parent.cortical_area
+										var selection_system: SelectionSystem = BV.UI.selection_system
+										if selection_system.is_highlighted(clicked_area):
+											selection_system.remove_from_highlighted(clicked_area)
+										else:
+											var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(clicked_area)
+											var filtered_group: Array[AbstractCorticalArea] = []
+											if unit_members.size() > 1:
+												var clicked_region = clicked_area.current_parent_region
+												for m in unit_members:
+													if m.current_parent_region == clicked_region:
+														filtered_group.append(m)
+											if filtered_group.size() > 1:
+												for member in filtered_group:
+													if not selection_system.is_highlighted(member):
+														selection_system.add_to_highlighted(member)
+											else:
+												selection_system.add_to_highlighted(clicked_area)
 										BV.UI.selection_system.select_objects(ctx)
 									continue
 								
-								# Left-click or right-click on cortical area - select it and auto-expand to unit group
+								# Left-click or right-click on cortical area: always single-select clicked area.
 								if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
 									var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
 									if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
 										ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
-									var disable_unit_group_auto_selection: bool = _should_disable_unit_group_auto_selection_for_click()
-									var to_select: Array[GenomeObject] = []
-									# Keep voxel destination picking deterministic during QuickConnectNeuron:
-									# selecting a cortical area should not fan out to its IO/unit siblings.
-									if disable_unit_group_auto_selection:
-										to_select = arr_test
-									else:
-										var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(hit_parent_parent.cortical_area)
-										if unit_members.size() > 1:
-											var clicked_region = hit_parent_parent.cortical_area.current_parent_region
-											for m in unit_members:
-												if m.current_parent_region == clicked_region:
-													to_select.append(m)
-										if to_select.is_empty():
-											to_select = arr_test
+									var to_select: Array[GenomeObject] = arr_test
 									BV.UI.selection_system.clear_all_highlighted()
 									for obj in to_select:
 										BV.UI.selection_system.add_to_highlighted(obj)
@@ -1954,9 +1964,7 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		_update_manipulation_capacity_warning()
 		_update_manipulation_gizmo_transform()
 	)
-	if mode == MANIPULATION_MODE.MOVE:
-		_setup_manipulation_group_previews(area)
-	elif mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area):
+	if mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area):
 		_setup_manipulation_group_previews(area)
 
 ## Starts a runtime manipulation session for multiple cortical areas selected by the user.
@@ -2075,7 +2083,7 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 	_manipulation_explicit_members.clear()
 
 func _setup_manipulation_group_previews(area: AbstractCorticalArea) -> void:
-	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
+	var members: Array[AbstractCorticalArea] = _get_unit_group_members_in_same_region(area)
 	if members.size() <= 1:
 		return
 	var is_peripheral_resize := _manipulation_mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area)
@@ -2363,10 +2371,6 @@ func _apply_move(new_pos: Vector3i) -> void:
 	if selected_members.size() > 1:
 		await _apply_group_move(selected_members, new_pos)
 		return
-	var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(_manipulation_area)
-	if unit_members.size() > 1:
-		await _apply_group_move(unit_members, new_pos)
-		return
 	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
 	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
 	if result.has_errored:
@@ -2427,6 +2431,17 @@ func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCortic
 		return []
 	var all_areas = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values()
 	return area.get_unit_group_members(all_areas)
+
+func _get_unit_group_members_in_same_region(area: AbstractCorticalArea) -> Array[AbstractCorticalArea]:
+	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
+	if members.size() <= 1 or area == null:
+		return members
+	var filtered: Array[AbstractCorticalArea] = []
+	var anchor_region: BrainRegion = area.current_parent_region
+	for member in members:
+		if member != null and member.current_parent_region == anchor_region:
+			filtered.append(member)
+	return filtered
 
 ## Returns true when QuickConnectNeuron expects voxel selection via main click.
 func _should_disable_unit_group_auto_selection_for_click() -> bool:
@@ -2560,7 +2575,7 @@ func _is_isvi_peripheral(area: AbstractCorticalArea) -> bool:
 	return area.subunit_id in [0, 1, 2, 3, 5, 6, 7, 8]
 
 func _apply_isvi_peripheral_resize(area: AbstractCorticalArea, new_dims: Vector3i) -> void:
-	var members: Array[AbstractCorticalArea] = _get_unit_group_members(area)
+	var members: Array[AbstractCorticalArea] = _get_unit_group_members_in_same_region(area)
 	if members.is_empty():
 		return
 	var resize_plan = _build_resize_plan(area, new_dims)
@@ -3211,14 +3226,29 @@ func _should_show_feagi_invariant_core_in_this_monitor(area: AbstractCorticalAre
 	if area == null or not AbstractCorticalArea.is_feagi_invariant_core_area(area):
 		return false
 	if _brain_monitor_viewing_feagi_root_region():
+		if _invariant_core_debug_enabled():
+			print("[INVARIANT-CORE][ALLOW] area=%s monitor_region=%s reason=explicit-root-monitor" % [
+				String(area.cortical_ID),
+				String(_representing_region.region_ID) if _representing_region != null else "none"
+			])
 		return true
-	var br = FeagiCore.feagi_local_cache.brain_regions if FeagiCore != null and FeagiCore.feagi_local_cache != null else null
-	if br == null or not br.is_root_available():
-		return false
-	var feagi_root: BrainRegion = br.get_root_region()
-	if feagi_root == null:
-		return false
-	return feagi_root.is_cortical_area_in_region_recursive(area)
+	# Root-tab resilience: after cache/hash refresh the root ID can transiently drift while this
+	# monitor still represents the top-level region. Allow invariant cores only for top-level tabs.
+	# Child brain-region tabs must never get FEAGI invariant cores.
+	if _representing_region != null and _representing_region.current_parent_region == null:
+		if _invariant_core_debug_enabled():
+			print("[INVARIANT-CORE][ALLOW] area=%s monitor_region=%s reason=top-level-region-parent-null" % [
+				String(area.cortical_ID),
+				String(_representing_region.region_ID)
+			])
+		return true
+	if _invariant_core_debug_enabled():
+		print("[INVARIANT-CORE][DENY] area=%s monitor_region=%s parent_region=%s reason=non-root-child-region-tab" % [
+			String(area.cortical_ID),
+			String(_representing_region.region_ID) if _representing_region != null else "none",
+			String(_representing_region.current_parent_region.region_ID) if _representing_region != null and _representing_region.current_parent_region != null else "none"
+		])
+	return false
 
 
 ## Desktop WS Type 11 applies to MultiMeshes registered on AbstractCorticalArea; schedule rebuild after BM recreates nodes.

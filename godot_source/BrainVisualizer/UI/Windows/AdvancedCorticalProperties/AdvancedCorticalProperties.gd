@@ -549,13 +549,22 @@ func _send_update(send_button: Button) -> void:
 				
 				# Send updates for all segments that have changes
 				for segment in _isvi_all_segments:
+					var segment_update_data: Dictionary = {}
+					# isvi layout edits are stored per-segment by cortical_ID.
+					# Regular control edits are stored by send button name.
 					if segment.cortical_ID in _growing_cortical_update:
-						var segment_update_data = _growing_cortical_update[segment.cortical_ID]
-						var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(segment.cortical_ID, segment_update_data)
-						if result.has_errored:
-							failed_areas.append(segment.cortical_ID)
-						else:
-							success_count += 1
+						segment_update_data = _growing_cortical_update[segment.cortical_ID].duplicate(true)
+					elif send_button.name in _growing_cortical_update:
+						segment_update_data = _growing_cortical_update[send_button.name].duplicate(true)
+					
+					if segment_update_data.is_empty():
+						continue
+					
+					var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(segment.cortical_ID, segment_update_data)
+					if result.has_errored:
+						failed_areas.append(segment.cortical_ID)
+					else:
+						success_count += 1
 				
 				if len(failed_areas) > 0:
 					var error_message = "Failed to update %d/%d isvi segments: %s" % [len(failed_areas), len(_isvi_all_segments), ", ".join(failed_areas)]
