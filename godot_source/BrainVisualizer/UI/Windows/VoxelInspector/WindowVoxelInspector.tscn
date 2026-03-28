@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://bvxvoxelinspector01"]
+[gd_scene load_steps=9 format=3 uid="uid://bvxvoxelinspector01"]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.gd" id="1_voxel"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
@@ -6,6 +6,8 @@
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="4_v3"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="5_toggle_off"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="6_toggle_btn"]
+[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="7_int_in"]
+[ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="8_float_in"]
 
 [node name="WindowVoxelInspector" type="VBoxContainer"]
 custom_minimum_size = Vector2(780, 760)
@@ -88,6 +90,79 @@ stretch_mode = 0
 script = ExtResource("6_toggle_btn")
 
 [node name="ControlsDivider" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals" index="1"]
+layout_mode = 2
+
+[node name="SummarySection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SummaryHeading" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Summary"
+
+[node name="NeuronCountRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/NeuronCountRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Neuron Count"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/NeuronCountRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("7_int_in")
+
+[node name="MembraneRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/MembraneRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Membrane Potential"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/MembraneRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("8_float_in")
+number_decimal_places = 4
+
+[node name="IncomingRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/IncomingRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Incoming Synapse Count"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/IncomingRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("7_int_in")
+
+[node name="OutgoingRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/OutgoingRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Outgoing Synapse Count"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/OutgoingRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("7_int_in")
+
+[node name="SummaryDivider" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 
 [node name="PaginationRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]

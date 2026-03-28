@@ -266,6 +266,7 @@ func _voxel_inspector_query_async(cortical_id: StringName, coord: Vector3i, syna
 	if out.success:
 		var d: Dictionary = out.decode_response_as_dict()
 		win.set_json_content(_format_voxel_inspector_response(d))
+		win.update_summary_from_response(d)
 		win.set_last_successful_voxel_payload(d)
 		win.update_synapse_pagination_from_response(d)
 		if win.is_voxel_synapse_visualization_enabled():

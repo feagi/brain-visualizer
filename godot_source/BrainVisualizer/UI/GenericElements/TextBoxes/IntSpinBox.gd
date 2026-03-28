@@ -10,4 +10,3 @@ func _ready():
 
 func _apply_theme(new_theme: Theme) -> void:
 	set_theme(new_theme)
-

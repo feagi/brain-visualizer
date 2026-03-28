@@ -11,6 +11,13 @@ const MIN_WINDOW_WIDTH: int = 400
 const MIN_WINDOW_HEIGHT: int = 280
 
 var _hint_label: Label
+var _summary_neuron_count_value: IntInput
+var _summary_membrane_name: Label
+var _summary_membrane_value: FloatInput
+var _summary_incoming_name: Label
+var _summary_incoming_value: IntInput
+var _summary_outgoing_name: Label
+var _summary_outgoing_value: IntInput
 var _json_text: TextEdit
 var _cortical_dropdown: CorticalDropDown
 var _coords: Vector3iSpinboxField
@@ -41,6 +48,14 @@ const _RESIZE_MARGIN: int = 16
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
 	_hint_label = $WindowPanel/WindowMargin/WindowInternals/HintLabel
+	var summary_root: Node = $WindowPanel/WindowMargin/WindowInternals/SummarySection
+	_summary_neuron_count_value = summary_root.get_node("NeuronCountRow/Value") as IntInput
+	_summary_membrane_name = summary_root.get_node("MembraneRow/Name") as Label
+	_summary_membrane_value = summary_root.get_node("MembraneRow/Value") as FloatInput
+	_summary_incoming_name = summary_root.get_node("IncomingRow/Name") as Label
+	_summary_incoming_value = summary_root.get_node("IncomingRow/Value") as IntInput
+	_summary_outgoing_name = summary_root.get_node("OutgoingRow/Name") as Label
+	_summary_outgoing_value = summary_root.get_node("OutgoingRow/Value") as IntInput
 	_json_text = $WindowPanel/WindowMargin/WindowInternals/JsonText
 	_cortical_dropdown = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/CorticalRow/CorticalAreaDropdown
 	_coords = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelCoords
@@ -61,6 +76,8 @@ func setup() -> void:
 	if _voxel_synapse_toggle != null:
 		_voxel_synapse_toggle.toggled.connect(_on_voxel_synapse_toggle_toggled)
 	set_empty_state()
+	# IntInput/FloatInput _ready() runs after setup and applies initial_int/initial_float; re-apply empty placeholders.
+	call_deferred("_clear_summary_display")
 
 
 func _refresh_cortical_list_and_selection() -> void:
@@ -216,6 +233,7 @@ func restore_pagination_after_failed_fetch() -> void:
 func set_empty_state() -> void:
 	_hint_label.visible = true
 	_json_text.clear()
+	_clear_summary_display()
 	_last_successful_voxel_payload.clear()
 	if _voxel_synapse_toggle != null:
 		_voxel_synapse_toggle.set_toggle_no_signal(false)
@@ -237,6 +255,7 @@ func set_empty_state() -> void:
 func set_loading() -> void:
 	_hint_label.visible = true
 	_json_text.text = "Loading…"
+	_clear_summary_display()
 	if _page_prev_btn != null:
 		_page_prev_btn.disabled = true
 	if _page_next_btn != null:
@@ -253,3 +272,103 @@ func set_json_content(text: String) -> void:
 func set_error_line(text: String) -> void:
 	_hint_label.visible = true
 	_json_text.text = text
+	_clear_summary_display()
+
+
+func _clear_summary_display() -> void:
+	if _summary_neuron_count_value != null:
+		_set_summary_lineedit_placeholder(_summary_neuron_count_value)
+	if _summary_membrane_value != null:
+		_set_summary_lineedit_placeholder(_summary_membrane_value)
+	if _summary_incoming_value != null:
+		_set_summary_lineedit_placeholder(_summary_incoming_value)
+	if _summary_outgoing_value != null:
+		_set_summary_lineedit_placeholder(_summary_outgoing_value)
+	_reset_summary_metric_names()
+
+
+## Read-only placeholder (em dash) without going through Int/Float validation (same LineEdit pattern as Cortical Area Details).
+func _set_summary_lineedit_placeholder(ctrl: LineEdit) -> void:
+	ctrl.text = "—"
+	if ctrl is AbstractLineInput:
+		(ctrl as AbstractLineInput).previous_text = "—"
+
+
+func _reset_summary_metric_names() -> void:
+	if _summary_membrane_name != null:
+		_summary_membrane_name.text = "Membrane Potential"
+	if _summary_incoming_name != null:
+		_summary_incoming_name.text = "Incoming Synapse Count"
+	if _summary_outgoing_name != null:
+		_summary_outgoing_name.text = "Outgoing Synapse Count"
+
+
+func _set_average_metric_names() -> void:
+	if _summary_membrane_name != null:
+		_summary_membrane_name.text = "Average Membrane Potential"
+	if _summary_incoming_name != null:
+		_summary_incoming_name.text = "Average Incoming Synapse Count"
+	if _summary_outgoing_name != null:
+		_summary_outgoing_name.text = "Average Outgoing Synapse Count"
+
+
+func _variant_to_float(v: Variant) -> float:
+	if v == null:
+		return 0.0
+	var t: int = typeof(v)
+	if t == TYPE_FLOAT:
+		return v as float
+	if t == TYPE_INT:
+		return float(v as int)
+	return 0.0
+
+
+func _format_membrane_for_display(v: float) -> String:
+	return String.num(v, 4)
+
+
+## Fills the Summary block from a successful `/v1/cortical_area/voxel_neurons` payload.
+func update_summary_from_response(d: Dictionary) -> void:
+	if _summary_neuron_count_value == null:
+		return
+	var neurons_raw: Variant = d.get("neurons", [])
+	var neurons: Array = []
+	if neurons_raw is Array:
+		neurons = neurons_raw
+	var n: int = neurons.size()
+	var reported: int = int(d.get("neuron_count", n))
+	_summary_neuron_count_value.set_value_from_text(str(reported))
+	if n == 0:
+		_reset_summary_metric_names()
+		_set_summary_lineedit_placeholder(_summary_membrane_value)
+		_set_summary_lineedit_placeholder(_summary_incoming_value)
+		_set_summary_lineedit_placeholder(_summary_outgoing_value)
+		return
+	if n == 1:
+		_reset_summary_metric_names()
+		var nd: Dictionary = {}
+		if neurons[0] is Dictionary:
+			nd = neurons[0]
+		var mp: float = _variant_to_float(nd.get("membrane_potential", 0.0))
+		var inc_n: float = _variant_to_float(nd.get("incoming_synapse_count", 0))
+		var out_n: float = _variant_to_float(nd.get("outgoing_synapse_count", 0))
+		_summary_membrane_value.set_value_from_text(_format_membrane_for_display(mp))
+		_summary_incoming_value.set_value_from_text(str(int(round(inc_n))))
+		_summary_outgoing_value.set_value_from_text(str(int(round(out_n))))
+		return
+	_set_average_metric_names()
+	var sum_mp: float = 0.0
+	var sum_in: float = 0.0
+	var sum_out: float = 0.0
+	for item in neurons:
+		if item is Dictionary:
+			var nd2: Dictionary = item
+			sum_mp += _variant_to_float(nd2.get("membrane_potential", 0.0))
+			sum_in += _variant_to_float(nd2.get("incoming_synapse_count", 0))
+			sum_out += _variant_to_float(nd2.get("outgoing_synapse_count", 0))
+	var nf: float = float(n)
+	_summary_membrane_value.set_value_from_text(_format_membrane_for_display(sum_mp / nf))
+	var avg_in: int = int(round(sum_in / nf))
+	var avg_out: int = int(round(sum_out / nf))
+	_summary_incoming_value.set_value_from_text(str(avg_in))
+	_summary_outgoing_value.set_value_from_text(str(avg_out))
