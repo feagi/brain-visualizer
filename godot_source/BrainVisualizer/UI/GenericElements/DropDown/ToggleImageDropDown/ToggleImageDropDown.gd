@@ -6,6 +6,8 @@ signal user_change_option(label: StringName, index: int)
 @export var is_vertical: bool = true
 @export var initial_index: int = -1
 @export var fade_out_selected_option: bool = true
+## When false, option presses act like menu actions (emit + close) without changing trigger icon/selection state.
+@export var select_on_press: bool = true
 
 var _panel: PanelContainer
 var _button_holder: BoxContainer
@@ -14,9 +16,14 @@ var _current_setting_index: int = -2 # start withs omething invalid that the ini
 func _ready() -> void:
 	_panel = $PanelContainer
 	_button_holder = $PanelContainer/BoxContainer
+	# Render dropdown content above sibling UI controls.
+	_panel.top_level = true
+	_panel.z_as_relative = false
+	_panel.z_index = 10000
 	_button_holder.vertical = is_vertical
 	_setup_all_buttons()
-	set_option(initial_index, false)
+	if select_on_press:
+		set_option(initial_index, false)
 	_toggle_menu(false)
 	focus_exited.connect(_toggle_menu.bind(false))
 
@@ -61,7 +68,8 @@ func _toggle_menu(show_menu: bool) -> void:
 	_panel.visible = show_menu
 	var child_button: TextureButton
 	if show_menu:
-		_panel.position = Vector2(0,size.y)
+		# When top_level=true, place panel in global UI coordinates under the trigger button.
+		_panel.global_position = global_position + Vector2(0, size.y)
 		for child in _button_holder.get_children():
 			if !(child is TextureButton):
 				push_error("Non-TextureButton found in ToggleImageDropDown! Skipping!")
@@ -96,8 +104,19 @@ func _setup_all_buttons() -> void:
 		# connect signals
 		if child_button.pressed.is_connected(set_option):
 			child_button.pressed.disconnect(set_option) # prevent duplicate connections
-		child_button.pressed.connect(set_option.bind(index)) # bind the index of the button to the signal such that when the call is made, we know which button made it
+		if child_button.pressed.is_connected(_emit_action_option):
+			child_button.pressed.disconnect(_emit_action_option)
+		if select_on_press:
+			# bind the index of the button to the signal such that when the call is made, we know which button made it
+			child_button.pressed.connect(set_option.bind(index))
+		else:
+			child_button.pressed.connect(_emit_action_option.bind(index))
 		index += 1
+
+func _emit_action_option(index: int) -> void:
+	var button := _get_texture_button(index)
+	user_change_option.emit(button.name, index)
+	_toggle_menu(false)
 
 func _set_empty() -> void:
 	texture_normal = null
