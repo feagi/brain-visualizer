@@ -229,7 +229,12 @@ func _request_relayout() -> void:
 		popup_message,
 		[cancel_button, rearrange_button]
 	)
-	BV.WM.spawn_popup(popup_definition)
+	var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(popup_definition)
+	if popup_window != null and _btn_rearrange_layout != null:
+		var button_rect: Rect2 = _btn_rearrange_layout.get_global_rect()
+		var popup_target_pos: Vector2 = button_rect.position + Vector2(0.0, button_rect.size.y + 8.0)
+		# Apply after setup/import so persisted window memory doesn't override this click anchor.
+		popup_window.call_deferred("set", "global_position", popup_target_pos)
 
 func _is_root_region() -> bool:
 	if context_region == null:
