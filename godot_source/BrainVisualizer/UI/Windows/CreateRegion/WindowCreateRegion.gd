@@ -20,6 +20,33 @@ func _ready():
 	_vector = _window_internals.get_node("HBoxContainer2/Vector3fField")
 	_add_button = _window_internals.get_node("ScrollSectionGenericTemplate/HBoxContainer/Add")
 	_scroll_section = _window_internals.get_node("ScrollSectionGenericTemplate/PanelContainer/ScrollSectionGeneric")
+	# BaseDraggableWindow's ScaleThemeApplier sets all TextureRects to the theme "TextureRect" min size (large).
+	# This "+" must stay compact next to "Define Internals".
+	var theme_cb := Callable(self, "_on_ui_theme_changed_reapply_add_button")
+	if not BV.UI.theme_changed.is_connected(theme_cb):
+		BV.UI.theme_changed.connect(theme_cb)
+	call_deferred("_apply_define_internals_add_button_size")
+
+
+func _on_ui_theme_changed_reapply_add_button(_new_theme: Theme) -> void:
+	call_deferred("_apply_define_internals_add_button_size")
+
+
+func _apply_define_internals_add_button_size() -> void:
+	if _add_button == null:
+		return
+	var dim: int = 24
+	var label: Label = _add_button.get_parent().get_node_or_null("Label") as Label
+	if label != null:
+		var line_h: float = label.get_line_height()
+		if line_h > 0.0:
+			dim = int(round(line_h))
+		else:
+			dim = int(round(float(label.get_theme_font_size("font_size"))))
+	dim = maxi(dim, 16)
+	_add_button.custom_minimum_size = Vector2(dim, dim)
+	_add_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_add_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 
 
 func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = []) -> void:

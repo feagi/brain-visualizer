@@ -143,8 +143,11 @@ func get_recursive_UITabContainer_children(appending_search: Array[UITabContaine
 	
 	var secondary_child = _get_secondary_child()
 	if secondary_child:
-		var nested_containers = secondary_child.get_recursive_UITabContainer_children()
-		output.append_array(nested_containers)
+		if secondary_child is UITabContainer:
+			output.append(secondary_child as UITabContainer)
+		elif secondary_child is UIView:
+			var nested_secondary = (secondary_child as UIView).get_recursive_UITabContainer_children()
+			output.append_array(nested_secondary)
 	
 	return output
 
@@ -155,7 +158,7 @@ func _get_primary_child() -> Control: # can be a [UITabContainer] or another [UI
 		return null
 	return _primary_container.get_child(0)
 
-func _get_secondary_child() -> UIView: # Can only ever be a [UIView]
+func _get_secondary_child() -> Control: # can be a [UITabContainer] or another [UIView]
 	if _secondary_container.get_child_count() == 0:
 		return null
-	return _secondary_container.get_child(0) as UIView
+	return _secondary_container.get_child(0)

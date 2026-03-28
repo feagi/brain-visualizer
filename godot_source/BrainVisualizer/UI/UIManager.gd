@@ -1568,6 +1568,14 @@ func _is_area_input_output_of_specific_child_region_for_brain_monitor(area: Abst
 func _find_active_tab_brain_monitor() -> UI_BrainMonitor_3DScene:
 	return _search_for_active_brain_monitor_in_view(_root_UI_view)
 
+## Brain monitor tab whose [TabContainer] current tab is a BM, or null if the active tab is not a BM.
+func get_brain_monitor_for_active_tab() -> UI_BrainMonitor_3DScene:
+	return _find_active_tab_brain_monitor()
+
+## Circuit Builder tab whose [TabContainer] current tab is a CB, or null if the active tab is not a CB.
+func get_circuit_builder_for_active_tab() -> CircuitBuilder:
+	return _find_active_tab_circuit_builder_in_view(_root_UI_view)
+
 ## Recursively searches a UIView for active brain monitor tabs
 func _search_for_active_brain_monitor_in_view(ui_view: UIView) -> UI_BrainMonitor_3DScene:
 	if ui_view == null:
@@ -1610,8 +1618,42 @@ func _search_for_active_brain_monitor_in_view(ui_view: UIView) -> UI_BrainMonito
 					return active_control as UI_BrainMonitor_3DScene
 	
 	return null
-	
-	
+
+
+## Recursively searches a UIView for active Circuit Builder tabs (same traversal as brain monitor search).
+func _find_active_tab_circuit_builder_in_view(ui_view: UIView) -> CircuitBuilder:
+	if ui_view == null:
+		return null
+	if ui_view.mode == UIView.MODE.TAB:
+		var tab_container = ui_view._get_primary_child() as UITabContainer
+		if tab_container != null and tab_container.get_tab_count() > 0:
+			var active_control = tab_container.get_tab_control(tab_container.current_tab)
+			if active_control is CircuitBuilder:
+				return active_control as CircuitBuilder
+	elif ui_view.mode == UIView.MODE.SPLIT:
+		var primary_child = ui_view._get_primary_child()
+		if primary_child is UIView:
+			var result = _find_active_tab_circuit_builder_in_view(primary_child as UIView)
+			if result != null:
+				return result
+		elif primary_child is UITabContainer:
+			var tab_container = primary_child as UITabContainer
+			if tab_container.get_tab_count() > 0:
+				var active_control = tab_container.get_tab_control(tab_container.current_tab)
+				if active_control is CircuitBuilder:
+					return active_control as CircuitBuilder
+		var secondary_child = ui_view._get_secondary_child()
+		if secondary_child is UIView:
+			var result2 = _find_active_tab_circuit_builder_in_view(secondary_child as UIView)
+			if result2 != null:
+				return result2
+		elif secondary_child is UITabContainer:
+			var tab_container2 = secondary_child as UITabContainer
+			if tab_container2.get_tab_count() > 0:
+				var active_control2 = tab_container2.get_tab_control(tab_container2.current_tab)
+				if active_control2 is CircuitBuilder:
+					return active_control2 as CircuitBuilder
+	return null
 
 
 #endregion

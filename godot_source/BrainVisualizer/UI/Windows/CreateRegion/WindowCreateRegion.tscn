@@ -84,9 +84,12 @@ text = "Define Internals"
 
 [node name="Add" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(24, 24)
+custom_minimum_size = Vector2(20, 20)
+size_flags_horizontal = 0
+size_flags_vertical = 4
 texture = ExtResource("5_l1778")
 expand_mode = 3
+stretch_mode = 5
 script = ExtResource("6_jyl4e")
 texture_normal = ExtResource("5_l1778")
 texture_pressed = ExtResource("7_2mkb4")
