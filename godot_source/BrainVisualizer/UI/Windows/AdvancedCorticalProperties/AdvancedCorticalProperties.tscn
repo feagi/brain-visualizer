@@ -157,8 +157,8 @@ layout_mode = 2
 [node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Summary
-"
+vertical_alignment = 1
+text = "Summary"
 
 [node name="Collapsible_Toggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
@@ -847,8 +847,8 @@ layout_mode = 2
 [node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Post Synaptic Potential parameters
-"
+vertical_alignment = 1
+text = "Post Synaptic Potential Parameters"
 
 [node name="Collapsible_Toggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/HBoxContainer"]
 custom_minimum_size = Vector2(40, 40)
@@ -963,6 +963,7 @@ disabled = true
 text = "Apply Update"
 
 [node name="Coritcal_Monitoring" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
 layout_mode = 2
 size_flags_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_axnct")

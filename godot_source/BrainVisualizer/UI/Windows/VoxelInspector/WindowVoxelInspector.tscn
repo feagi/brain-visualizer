@@ -94,6 +94,10 @@ layout_mode = 2
 layout_mode = 2
 theme_override_constants/separation = 10
 
+[node name="NeuronDetailsTitleInline" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+layout_mode = 2
+text = "Neuron details"
+
 [node name="PaginationSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -115,10 +119,6 @@ text = "0"
 layout_mode = 2
 disabled = true
 text = "Next"
-
-[node name="NeuronDetailsTitle" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
-layout_mode = 2
-text = "Neuron details"
 
 [node name="JsonText" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 400)

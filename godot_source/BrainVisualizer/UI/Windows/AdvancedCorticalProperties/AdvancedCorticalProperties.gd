@@ -372,7 +372,8 @@ func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool)
 		control.visible = is_advanced_options_visible
 	if _memory_section_enabled:
 		_section_memory.visible = is_advanced_options_visible
-	_section_cortical_area_monitoring.visible = is_advanced_options_visible
+	# Hidden by product/UI request.
+	_section_cortical_area_monitoring.visible = false
 
 func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
 	if control == null:
