@@ -37,7 +37,7 @@ texture_disabled = ExtResource("6_eye_d")
 [node name="VoxelInspector" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="1"]
 layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
-tooltip_text = "Inspect Voxels"
+tooltip_text = "Voxel inspector"
 texture_normal = ExtResource("7_voxel_s")
 texture_pressed = ExtResource("8_voxel_c")
 texture_hover = ExtResource("9_voxel_h")
@@ -46,7 +46,7 @@ texture_disabled = ExtResource("10_voxel_d")
 [node name="MemoryInspector" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="2"]
 layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
-tooltip_text = "Inspect memory neurons"
+tooltip_text = "Memory inspector"
 texture_normal = ExtResource("11_mem_s")
 texture_pressed = ExtResource("12_mem_c")
 texture_hover = ExtResource("13_mem_h")
