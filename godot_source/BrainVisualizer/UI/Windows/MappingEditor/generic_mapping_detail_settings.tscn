@@ -14,6 +14,7 @@ script = ExtResource("1_a7y6g")
 [node name="Label9" type="Label" parent="."]
 custom_minimum_size = Vector2(1400, 0)
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 text = "Established Mappings"
 
 [node name="HeaderRowWrapper" type="HBoxContainer" parent="."]
