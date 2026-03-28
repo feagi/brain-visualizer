@@ -52,7 +52,7 @@ bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3nhm5"]
 bg_color = Color(0.0627451, 0.101961, 0.156863, 1)
 
-[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("controls_to_hide_in_simple_mode", "_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_unit_code", "_line_unit_id", "_line_subunit_id", "_line_cortical_type", "_device_count_section", "_device_count", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_line_neuron_count", "_line_incoming_synapse_count", "_line_outgoing_synapse_count", "_dropdown_io_preset", "_dimensions_label", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_vector_visualization_voxel_granularity", "_button_summary_send", "_section_firing_parameters", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send", "_section_neuron_coding", "_dropdown_coding_signage", "_dropdown_coding_behavior", "_dropdown_coding_type", "_button_coding_send", "_section_memory", "_line_initial_neuron_lifespan", "_line_lifespan_growth_rate", "_line_longterm_memory_threshold", "_line_temporal_depth", "_button_memory_send", "_section_post_synaptic_potential_parameters", "_line_Post_Synaptic_Potential", "_line_PSP_Max", "_line_Degeneracy_Constant", "_button_PSP_Uniformity", "_button_MP_Driven_PSP", "_button_pspp_send", "_section_cortical_area_monitoring", "membrane_toggle", "post_synaptic_toggle", "render_activity_toggle", "_button_monitoring_send", "_section_connections", "_scroll_afferent", "_scroll_efferent", "_button_recursive", "_section_dangerzone")]
+[node name="AdvancedCorticalProperties" type="VBoxContainer" node_paths=PackedStringArray("controls_to_hide_in_simple_mode", "_section_summary", "_line_cortical_name", "_region_button", "_line_cortical_ID", "_line_unit_code", "_line_unit_id", "_line_subunit_id", "_line_cortical_type", "_device_count_section", "_device_count", "_line_voxel_neuron_density", "_line_synaptic_attractivity", "_line_neuron_count", "_line_incoming_synapse_count", "_line_outgoing_synapse_count", "_dropdown_io_preset", "_dimensions_label", "_vector_dimensions_spin", "_vector_dimensions_nonspin", "_vector_position", "_vector_visualization_voxel_granularity", "_button_summary_send", "_section_firing_parameters", "_line_Fire_Threshold", "_line_Threshold_Limit", "_line_neuron_excitability", "_line_Refactory_Period", "_line_Leak_Constant", "_line_Leak_Variability", "_line_Consecutive_Fire_Count", "_line_Snooze_Period", "_line_Threshold_Inc", "_button_MP_Accumulation", "_button_firing_send", "_section_neuron_coding", "_dropdown_coding_signage", "_dropdown_coding_behavior", "_dropdown_coding_type", "_button_coding_send", "_section_memory", "_line_initial_neuron_lifespan", "_line_lifespan_growth_rate", "_line_longterm_memory_threshold", "_line_temporal_depth", "_button_memory_send", "_section_post_synaptic_potential_parameters", "_line_Post_Synaptic_Potential", "_line_PSP_Max", "_line_Degeneracy_Constant", "_button_PSP_Uniformity", "_button_MP_Driven_PSP", "_button_pspp_send", "_section_cortical_area_monitoring", "membrane_toggle", "post_synaptic_toggle", "render_activity_toggle", "_button_monitoring_send", "_section_connections", "_scroll_afferent", "_scroll_efferent", "_scroll_recursive", "_section_dangerzone")]
 offset_right = 360.0
 offset_bottom = 420.0
 size_flags_horizontal = 0
@@ -120,7 +120,7 @@ _button_monitoring_send = NodePath("WindowPanel/WindowMargin/WindowInternals/Cor
 _section_connections = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections")
 _scroll_afferent = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/Afferents")
 _scroll_efferent = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/Efferents")
-_button_recursive = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/recursive")
+_scroll_recursive = NodePath("WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/Recursives")
 _section_dangerzone = NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZone")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_c4mg3")]
@@ -156,6 +156,7 @@ layout_mode = 2
 
 [node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
 vertical_alignment = 1
 text = "Summary"
@@ -204,7 +205,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "The user defined name of the cortical area"
 mouse_filter = 1
-text = "Parent Region"
+text = "Parent Circuit"
 
 [node name="Region" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Summary/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalParameters/Row_Region"]
 custom_minimum_size = Vector2(300, 0)
@@ -430,6 +431,7 @@ layout_mode = 2
 
 [node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Coding/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
 tooltip_text = "Neural coding options for this unit type (signage, behavior, and type). Only supported options are shown."
 text = "Neural Coding"
@@ -533,6 +535,7 @@ layout_mode = 2
 
 [node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
 text = "Neuron Firing Parameters"
 
@@ -734,6 +737,7 @@ layout_mode = 2
 
 [node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
 text = "Memory"
 
@@ -846,6 +850,7 @@ layout_mode = 2
 
 [node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Post_Synaptic_Potential/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
 vertical_alignment = 1
 text = "Post Synaptic Potential Parameters"
@@ -983,6 +988,7 @@ layout_mode = 2
 
 [node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
 text = "Cortical Area Monitoring"
 
@@ -1087,6 +1093,7 @@ layout_mode = 2
 
 [node name="Section_Title" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
 text = "Connections"
 
@@ -1111,9 +1118,27 @@ layout_mode = 2
 [node name="CorticalPropertiesConnections" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere"]
 layout_mode = 2
 
-[node name="recursive" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections"]
+[node name="L_R" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections"]
 layout_mode = 2
-text = "None Recursive"
+
+[node name="Label_Recursive" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_R"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Recursive"
+
+[node name="Add" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_R"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("16_is0mw")
+texture_pressed = ExtResource("17_0ofyd")
+texture_hover = ExtResource("18_53725")
+texture_disabled = ExtResource("19_8v30q")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Recursives" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections"]
+layout_mode = 2
 
 [node name="L_A" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections"]
 layout_mode = 2
@@ -1121,7 +1146,7 @@ layout_mode = 2
 [node name="Label_Afferent" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_A"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Incoming Connections"
+text = "Incoming"
 
 [node name="Add" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_A"]
 custom_minimum_size = Vector2(40, 40)
@@ -1134,10 +1159,8 @@ texture_disabled = ExtResource("19_8v30q")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Afferents" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections" instance=ExtResource("20_4gnc7")]
-custom_minimum_size = Vector2(0, 100)
+[node name="Afferents" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections"]
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="L_E" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections"]
 layout_mode = 2
@@ -1145,7 +1168,7 @@ layout_mode = 2
 [node name="Label_Efferent" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_E"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Outgoing Connections"
+text = "Outgoing"
 
 [node name="Add" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_E"]
 custom_minimum_size = Vector2(40, 40)
@@ -1158,10 +1181,8 @@ texture_disabled = ExtResource("19_8v30q")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Efferents" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections" instance=ExtResource("20_4gnc7")]
-custom_minimum_size = Vector2(0, 100)
+[node name="Efferents" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections"]
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="DangerZone" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -1183,6 +1204,7 @@ layout_mode = 2
 
 [node name="Danger Zone" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/HBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
 text = "Advanced"
 
@@ -1313,7 +1335,7 @@ stretch_mode = 0
 [connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer2/PostSynaptic" to="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring" method="_user_request_change_synaptic_monitoring_status"]
 [connection signal="toggled" from="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring/HBoxContainer3/ActivtyRender" to="WindowPanel/WindowMargin/WindowInternals/Coritcal_Monitoring/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesCorticalMonitoring" method="_user_request_change_membrane_monitoring_status"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/Connections" method="_toggle_button_pressed"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/recursive" to="." method="_user_pressed_recursive_button"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_R/Add" to="." method="_user_pressed_add_recursive_button"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_A/Add" to="." method="_user_pressed_add_afferent_button"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Connections/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesConnections/L_E/Add" to="." method="_user_pressed_add_efferent_button"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/HBoxContainer/Collapsible_Toggle" to="WindowPanel/WindowMargin/WindowInternals/DangerZone" method="_toggle_button_pressed"]

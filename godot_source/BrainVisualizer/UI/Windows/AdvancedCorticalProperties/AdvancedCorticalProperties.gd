@@ -1641,11 +1641,18 @@ func _montoring_update_button_pressed() -> void:
 #region Connections
 
 @export var _section_connections: VerticalCollapsibleHiding
-@export var _scroll_afferent: ScrollSectionGeneric
-@export var _scroll_efferent: ScrollSectionGeneric
-@export var _button_recursive: Button
+@export var _scroll_afferent: VBoxContainer
+@export var _scroll_efferent: VBoxContainer
+@export var _scroll_recursive: VBoxContainer
+const PREFAB_TEXT_BUTTON_WITH_DELETE: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButtonWithDelete.tscn")
+var _recursive_rows: Dictionary = {}
+var _afferent_rows: Dictionary = {}
+var _efferent_rows: Dictionary = {}
 
 func _setup_connection_info(cortical_reference: AbstractCorticalArea) -> void:
+	_clear_flat_rows(_scroll_recursive, _recursive_rows)
+	_clear_flat_rows(_scroll_afferent, _afferent_rows)
+	_clear_flat_rows(_scroll_efferent, _efferent_rows)
 	# Recursive
 	for recursive_area: AbstractCorticalArea in cortical_reference.recursive_mappings.keys():
 		_add_recursive_area(recursive_area)
@@ -1660,69 +1667,88 @@ func _setup_connection_info(cortical_reference: AbstractCorticalArea) -> void:
 		efferent_area.efferent_input_cortical_area_removed.connect(_remove_efferent_area)
 
 	cortical_reference.recursive_cortical_area_added.connect(_add_recursive_area)
-	cortical_reference.recursive_cortical_area_added.connect(_remove_recursive_area)
+	cortical_reference.recursive_cortical_area_removed.connect(_remove_recursive_area)
 	cortical_reference.afferent_input_cortical_area_added.connect(_add_afferent_area)
 	cortical_reference.efferent_input_cortical_area_added.connect(_add_efferent_area)
 	cortical_reference.afferent_input_cortical_area_removed.connect(_remove_afferent_area)
 	cortical_reference.efferent_input_cortical_area_removed.connect(_remove_efferent_area)
 
 func _add_recursive_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	_button_recursive.text = "Recursive Connection"
-
-func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(area, _cortical_area_refs[0])
-	var item: ScrollSectionGenericItem = _scroll_afferent.add_text_button_with_delete(
-		area,
-		" " + area.friendly_name + " ",
-		call_mapping_window,
-		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
-		false
-	)
-	var delete_request: Callable = _safe_delete_afferent_mapping.bind(area, _cortical_area_refs[0])
-	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
-		"Delete these mappings?",
-		"Are you sure you wish to delete the mappings from %s to this cortical area?" % area.friendly_name,
-		delete_request,
-		"Yes"
-		)
-	var popup_request: Callable = func() -> void:
-		var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
-		popup_window.set_enter_confirms_button("Yes")
-		popup_window.call_deferred("focus_button_with_text", "Yes")
-	item.get_delete_button().pressed.connect(popup_request)
-
-func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(_cortical_area_refs[0], area)
-	var item: ScrollSectionGenericItem = _scroll_efferent.add_text_button_with_delete(
-		area,
+	if _recursive_rows.has(area):
+		return
+	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(_cortical_area_refs[0], _cortical_area_refs[0])
+	var row: HBoxContainer = _spawn_text_button_with_delete_row(
+		_scroll_recursive,
 		area.friendly_name,
 		call_mapping_window,
-		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
-		false
+		func() -> void:
+			var delete_request: Callable = _safe_delete_recursive_mapping.bind(area)
+			var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+				"Delete recursive mappings?",
+				"Are you sure you wish to delete recursive mappings for %s?" % area.friendly_name,
+				delete_request,
+				"Yes"
+			)
+			var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+			popup_window.set_enter_confirms_button("Yes")
+			popup_window.call_deferred("focus_button_with_text", "Yes")
 	)
-	var delete_request: Callable = _safe_delete_efferent_mapping.bind(_cortical_area_refs[0], area)
-	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
-		"Delete these mappings?",
-		"Are you sure you wish to delete the mappings from this cortical area to %s?" % area.friendly_name,
-		delete_request,
-		"Yes"
-		)
-	var popup_request: Callable = func() -> void:
-		var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
-		popup_window.set_enter_confirms_button("Yes")
-		popup_window.call_deferred("focus_button_with_text", "Yes")
-	item.get_delete_button().pressed.connect(popup_request)
+	_recursive_rows[area] = row
+
+func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	if _afferent_rows.has(area):
+		return
+	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(area, _cortical_area_refs[0])
+	var row: HBoxContainer = _spawn_text_button_with_delete_row(
+		_scroll_afferent,
+		" " + area.friendly_name + " ",
+		call_mapping_window,
+		func() -> void:
+			var delete_request: Callable = _safe_delete_afferent_mapping.bind(area, _cortical_area_refs[0])
+			var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+				"Delete these mappings?",
+				"Are you sure you wish to delete the mappings from %s to this cortical area?" % area.friendly_name,
+				delete_request,
+				"Yes"
+			)
+			var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+			popup_window.set_enter_confirms_button("Yes")
+			popup_window.call_deferred("focus_button_with_text", "Yes")
+	)
+	_afferent_rows[area] = row
+
+func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	if _efferent_rows.has(area):
+		return
+	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(_cortical_area_refs[0], area)
+	var row: HBoxContainer = _spawn_text_button_with_delete_row(
+		_scroll_efferent,
+		area.friendly_name,
+		call_mapping_window,
+		func() -> void:
+			var delete_request: Callable = _safe_delete_efferent_mapping.bind(_cortical_area_refs[0], area)
+			var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+				"Delete these mappings?",
+				"Are you sure you wish to delete the mappings from this cortical area to %s?" % area.friendly_name,
+				delete_request,
+				"Yes"
+			)
+			var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+			popup_window.set_enter_confirms_button("Yes")
+			popup_window.call_deferred("focus_button_with_text", "Yes")
+	)
+	_efferent_rows[area] = row
 
 func _remove_recursive_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	_button_recursive.text = "None Recursive"
+	_remove_flat_row(_recursive_rows, area)
 
 func _remove_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	_scroll_afferent.attempt_remove_item(area)
+	_remove_flat_row(_afferent_rows, area)
 
 func _remove_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	_scroll_efferent.attempt_remove_item(area)
+	_remove_flat_row(_efferent_rows, area)
 
-func _user_pressed_recursive_button() -> void:
+func _user_pressed_add_recursive_button() -> void:
 	BV.WM.spawn_mapping_editor(_cortical_area_refs[0], _cortical_area_refs[0])
 
 func _user_pressed_add_afferent_button() -> void:
@@ -1731,6 +1757,38 @@ func _user_pressed_add_afferent_button() -> void:
 func _user_pressed_add_efferent_button() -> void:
 	BV.WM.spawn_mapping_editor(_cortical_area_refs[0], null)
 #endregion
+
+func _spawn_text_button_with_delete_row(parent_container: VBoxContainer, text: StringName, button_action: Callable, delete_action: Callable) -> HBoxContainer:
+	var row: HBoxContainer = PREFAB_TEXT_BUTTON_WITH_DELETE.instantiate()
+	var button: Button = row.get_node("Text")
+	var delete_button: TextureButton = row.get_node("Delete")
+	button.text = text
+	button.theme_type_variation = ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT
+	delete_button.theme_type_variation = &"TextureButton_icon"
+	# Keep delete icon visible in flat lists (no nested ScrollSection theme scaler here).
+	if BV and BV.UI:
+		delete_button.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(delete_button, &"TextureButton_icon")
+	else:
+		delete_button.custom_minimum_size = Vector2(40, 40)
+	if not button_action.is_null():
+		button.pressed.connect(button_action)
+	if not delete_action.is_null():
+		delete_button.pressed.connect(delete_action)
+	parent_container.add_child(row)
+	return row
+
+func _remove_flat_row(rows_lookup: Dictionary, key: Variant) -> void:
+	if not rows_lookup.has(key):
+		return
+	var row := rows_lookup[key] as HBoxContainer
+	if row != null and is_instance_valid(row):
+		row.queue_free()
+	rows_lookup.erase(key)
+
+func _clear_flat_rows(container: VBoxContainer, rows_lookup: Dictionary) -> void:
+	for child in container.get_children():
+		child.queue_free()
+	rows_lookup.clear()
 
 
 
@@ -1775,6 +1833,15 @@ func _safe_delete_efferent_mapping(source_area: AbstractCorticalArea, dest_area:
 	var result: FeagiRequestOutput = await FeagiCore.requests.delete_mappings_between_corticals(source_area, dest_area)
 	if result.has_errored:
 		push_error("UI: Failed to delete efferent mapping %s -> %s" % [source_area.cortical_ID, dest_area.cortical_ID])
+		return
+
+func _safe_delete_recursive_mapping(area: AbstractCorticalArea) -> void:
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot delete recursive mapping - FeagiCore or requests not available")
+		return
+	var result: FeagiRequestOutput = await FeagiCore.requests.delete_mappings_between_corticals(area, area)
+	if result.has_errored:
+		push_error("UI: Failed to delete recursive mapping %s -> %s" % [area.cortical_ID, area.cortical_ID])
 		return
 
 #endregion

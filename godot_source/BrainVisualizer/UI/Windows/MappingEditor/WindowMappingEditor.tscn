@@ -41,6 +41,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 expand_mode = 1
+stretch_mode = 5
 
 [node name="Destination" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
