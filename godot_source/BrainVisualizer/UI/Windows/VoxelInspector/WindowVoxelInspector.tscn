@@ -29,15 +29,17 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"MarginContainer_WindowBorder"
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 14
+theme_override_constants/separation = 18
 
 [node name="InspectorControls" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 14
 
 [node name="CorticalRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
 layout_mode = 2

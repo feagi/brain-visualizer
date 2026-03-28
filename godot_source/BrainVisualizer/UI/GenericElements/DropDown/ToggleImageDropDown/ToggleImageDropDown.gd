@@ -9,17 +9,15 @@ signal user_change_option(label: StringName, index: int)
 ## When false, option presses act like menu actions (emit + close) without changing trigger icon/selection state.
 @export var select_on_press: bool = true
 
-var _panel: PanelContainer
+var _panel: PopupPanel
 var _button_holder: BoxContainer
 var _current_setting_index: int = -2 # start withs omething invalid that the initial index overrides on start
 
 func _ready() -> void:
 	_panel = $PanelContainer
 	_button_holder = $PanelContainer/BoxContainer
-	# Render dropdown content above sibling UI controls.
-	_panel.top_level = true
-	_panel.z_as_relative = false
-	_panel.z_index = 10000
+	# Keep panel in-scene to preserve child-node paths used by parent controls.
+	# PopupPanel renders above normal controls when opened via popup().
 	_button_holder.vertical = is_vertical
 	_setup_all_buttons()
 	if select_on_press:
@@ -65,11 +63,11 @@ func get_number_of_buttons() -> int:
 	return _button_holder.get_child_count()
 
 func _toggle_menu(show_menu: bool) -> void:
-	_panel.visible = show_menu
+	if _panel == null:
+		return
 	var child_button: TextureButton
 	if show_menu:
-		# When top_level=true, place panel in global UI coordinates under the trigger button.
-		_panel.global_position = global_position + Vector2(0, size.y)
+		_panel.position = get_global_rect().position + Vector2(0, size.y)
 		for child in _button_holder.get_children():
 			if !(child is TextureButton):
 				push_error("Non-TextureButton found in ToggleImageDropDown! Skipping!")
@@ -77,8 +75,10 @@ func _toggle_menu(show_menu: bool) -> void:
 			child_button = (child as TextureButton)
 			child_button.size = Vector2(0,0)
 		_panel.size = Vector2(0,0)
+		_panel.popup()
 		grab_focus()
 	else:
+		_panel.hide()
 		release_focus()
 
 func _is_menu_shown() -> bool:
