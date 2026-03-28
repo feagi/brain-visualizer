@@ -246,7 +246,10 @@ func _add_brain_region() -> void:
 func _open_interconnect_areas() -> void:
 	if context_region == null and not _global_topbar_mode:
 		return
-	var items := _build_cortical_items_for_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
+	var items := _build_cortical_items_for_types([
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM,
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT,
+	])
 	_open_dropdown_for_items(_btn_interconnect_list, items, "Filter interconnect areas...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
 	)
@@ -255,7 +258,7 @@ func _open_interconnect_areas() -> void:
 func _open_memory_areas() -> void:
 	if context_region == null and not _global_topbar_mode:
 		return
-	var items := _build_cortical_items_for_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+	var items := _build_cortical_items_for_types([AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY])
 	_open_dropdown_for_items(_btn_memory_list, items, "Filter memory areas...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
 	)
@@ -264,7 +267,7 @@ func _open_memory_areas() -> void:
 func _open_inputs() -> void:
 	if context_region == null and not _global_topbar_mode:
 		return
-	var items := _build_cortical_items_for_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+	var items := _build_cortical_items_for_types([AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU])
 	_open_dropdown_for_items(_btn_inputs_list, items, "Filter inputs...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
 	)
@@ -273,7 +276,7 @@ func _open_inputs() -> void:
 func _open_outputs() -> void:
 	if context_region == null and not _global_topbar_mode:
 		return
-	var items := _build_cortical_items_for_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+	var items := _build_cortical_items_for_types([AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU])
 	_open_dropdown_for_items(_btn_outputs_list, items, "Filter outputs...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
 	)
@@ -435,24 +438,41 @@ func _build_region_items() -> Array[Dictionary]:
 	)
 	return items
 
-## Build dropdown items for cortical areas of the given type.
-func _build_cortical_items_for_type(area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> Array[Dictionary]:
+## Build dropdown items for cortical areas matching any of [param area_types] within scope.
+## When [member context_region] is set (Brain Monitor / Circuit Builder tab), only areas under that region tree are listed.
+## When it is null (global top bar), lists genome-wide by type.
+func _build_cortical_items_for_types(area_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE]) -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	var areas: Array[AbstractCorticalArea] = []
 	if context_region != null:
-		for area in context_region.contained_cortical_areas:
-			if area.cortical_type == area_type:
-				areas.append(area)
+		areas = _collect_cortical_areas_matching_types_in_region_tree(context_region, area_types)
 	else:
-		areas = FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(area_type)
-	if areas.is_empty():
-		areas = FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(area_type)
+		for t: AbstractCorticalArea.CORTICAL_AREA_TYPE in area_types:
+			for area in FeagiCore.feagi_local_cache.cortical_areas.search_for_available_cortical_areas_by_type(t):
+				if area not in areas:
+					areas.append(area)
 	areas.sort_custom(func(a: AbstractCorticalArea, b: AbstractCorticalArea) -> bool:
 		return String(a.friendly_name).to_lower() < String(b.friendly_name).to_lower()
 	)
 	for area in areas:
 		items.append({"label": area.friendly_name, "payload": area})
 	return items
+
+
+## Collects cortical areas of the given types from [param region] and all nested subregions (not genome-wide).
+func _collect_cortical_areas_matching_types_in_region_tree(
+	region: BrainRegion,
+	matching_types: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE]
+) -> Array[AbstractCorticalArea]:
+	var out: Array[AbstractCorticalArea] = []
+	if region == null:
+		return out
+	for area in region.contained_cortical_areas:
+		if area.cortical_type in matching_types:
+			out.append(area)
+	for subregion in region.contained_regions:
+		out.append_array(_collect_cortical_areas_matching_types_in_region_tree(subregion, matching_types))
+	return out
 
 func _draw() -> void:
 	# Draw a stable, neutral back plate behind combo groups.
