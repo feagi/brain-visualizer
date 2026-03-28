@@ -15,12 +15,54 @@ var current_state: STATES:
 	get: return _current_state
 var initial_y_offset: int
 
+## Upper bound on how many icon tabs we size for when opening side-by-side split (see UITabContainer tab metrics).
+const _ESTIMATE_MAX_VISIBLE_TABS: int = 10
+
 func _ready() -> void:
 	initial_y_offset = position.y
-	# Default left offset at 75% so right pane is 25%
+	# Initial value; CB_HORIZONTAL/CB_VERTICAL apply layout-aware offsets in set_view().
 	split_offset = int(BV.UI.screen_size.x * 0.75)
 	BV.UI.screen_size_changed.connect(_screen_size_change)
 	_screen_size_change(BV.UI.screen_size)
+
+
+## Minimum width for the UIView (second child) so TabBar icon tabs stay visible in side-by-side split.
+## Kept in sync with UITabContainer TAB_*_BASE_PX constants.
+func _min_secondary_width_for_tab_bar() -> int:
+	var scale: float = BV.UI.loaded_theme_scale.x if BV.UI != null else 1.0
+	var per_tab: float = (
+		float(
+			UITabContainer.TAB_ICON_MAX_WIDTH_BASE_PX
+			+ UITabContainer.TAB_H_SEPARATION_BASE_PX
+			+ UITabContainer.TAB_LEFT_PADDING_BASE_PX
+		) + 8.0
+	) * scale
+	return int(round(per_tab * float(_ESTIMATE_MAX_VISIBLE_TABS) + 40.0))
+
+
+## Side-by-side split: cap first-child width so the main UIView keeps enough width for the tab icon row.
+func _apply_horizontal_split_offset() -> void:
+	var w: int = int(size.x)
+	if w <= 0:
+		w = int(BV.UI.screen_size.x) if BV.UI != null else 1280
+	var sep: int = 20
+	if theme != null:
+		sep = int(get_theme_constant("separation", "SplitContainer"))
+	var min_right: int = _min_secondary_width_for_tab_bar()
+	var max_first: int = maxi(0, w - sep - min_right)
+	var desired: int = int(round(float(w) * 0.45))
+	split_offset = clampi(desired, 0, max_first)
+
+
+func _apply_vertical_split_offset() -> void:
+	call_deferred("_deferred_apply_vertical_split_offset")
+
+
+func _deferred_apply_vertical_split_offset() -> void:
+	var h: int = int(size.y)
+	if h <= 0:
+		h = int(maxf(1.0, BV.UI.screen_size.y - float(initial_y_offset))) if BV.UI != null else 600
+	split_offset = maxi(1, int(round(float(h) * 0.5)))
 
 
 func set_view(state: STATES) -> void:
@@ -37,14 +79,13 @@ func set_view(state: STATES) -> void:
 			visible = true
 			dragger_visibility =SplitContainer.DRAGGER_VISIBLE
 			vertical = false
-			# Ensure left offset = 75% when opening horizontally
-			split_offset = int(BV.UI.screen_size.x * 0.75)
+			_apply_horizontal_split_offset()
 			collapsed = false
 		STATES.CB_VERTICAL:
 			visible = true
 			dragger_visibility =SplitContainer.DRAGGER_VISIBLE
 			vertical = true
-			#split_offset = int(BV.UI.screen_size.x / 2.0)
+			_apply_vertical_split_offset()
 			collapsed = false
 
 ## Close the split view and return to single screen.
@@ -57,8 +98,7 @@ func _screen_size_change(new_screen_size: Vector2) -> void:
 	size = new_screen_size - Vector2(0,initial_y_offset)
 	match(_current_state):
 		STATES.CB_HORIZONTAL:
-			# Maintain left offset = 75% so right pane ~25%
-			split_offset = int(size.x * 0.75)
+			_apply_horizontal_split_offset()
 		STATES.CB_VERTICAL:
 			ratio = float(split_offset) / old_size.y
 			split_offset = int(ratio * size.y)
