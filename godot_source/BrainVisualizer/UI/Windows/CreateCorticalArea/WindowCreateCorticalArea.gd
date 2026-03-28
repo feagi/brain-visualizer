@@ -11,6 +11,10 @@ var _custom_definition
 var _memory_definition
 var _buttons: HBoxContainer
 var _add_button: Button
+var _validation_message_row: MarginContainer
+var _validation_message_label: Label
+## Inline validation text (name missing / duplicate); avoids separate error popups for these cases.
+const _VALIDATION_ERROR_COLOR: Color = Color(0.95, 0.42, 0.38)
 var _type_selected: AbstractCorticalArea.CORTICAL_AREA_TYPE
 var _BM_preview: UI_BrainMonitor_InteractivePreview
 var _context_region: BrainRegion = null
@@ -26,6 +30,8 @@ func _ready() -> void:
 	_memory_definition = _window_internals.get_node("Definition_Memory")
 	_buttons = _window_internals.get_node("Buttons")
 	_add_button = _window_internals.get_node("Buttons/Add")
+	_validation_message_row = _window_internals.get_node("ValidationMessageRow")
+	_validation_message_label = _window_internals.get_node("ValidationMessageRow/ValidationMessageLabel")
 	
 	_selection_options.cortical_type_selected.connect(_step_2_set_details)
 	_IOPU_definition.unit_id_validation_changed.connect(_on_unit_id_validation_changed)
@@ -52,6 +58,9 @@ func _step_1_pick_type() -> void:
 	_custom_definition.visible = false
 	_memory_definition.visible = false
 	_buttons.visible = false
+	if _validation_message_row != null:
+		_validation_message_row.visible = false
+	_clear_validation_message()
 	_selection.visible = true
 	_set_header(AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN)
 
@@ -77,6 +86,9 @@ func _step_2_set_details(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE)
 	_custom_definition.visible = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 	_memory_definition.visible = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	_buttons.visible = true
+	if _validation_message_row != null:
+		_validation_message_row.visible = true
+	_clear_validation_message()
 	
 	# Prefill location BEFORE creating preview so arrow/preview spawn at the right spot
 	var last_pos: Vector3i = BV.UI.last_created_cortical_location
@@ -141,6 +153,26 @@ func _focus_and_hook_name_field(le: LineEdit) -> void:
 	# Guard against multiple connections
 	if not le.text_submitted.is_connected(_on_name_enter_submit):
 		le.text_submitted.connect(_on_name_enter_submit)
+	if le is AbstractLineInput and not le.user_interacted.is_connected(_on_name_field_user_interacted):
+		le.user_interacted.connect(_on_name_field_user_interacted)
+
+
+func _on_name_field_user_interacted() -> void:
+	_clear_validation_message()
+
+
+func _clear_validation_message() -> void:
+	if _validation_message_label == null:
+		return
+	_validation_message_label.text = ""
+	_validation_message_label.remove_theme_color_override("font_color")
+
+
+func _show_inline_validation_error(message: String) -> void:
+	if _validation_message_label == null:
+		return
+	_validation_message_label.text = message
+	_validation_message_label.add_theme_color_override("font_color", _VALIDATION_ERROR_COLOR)
 
 func _on_name_enter_submit(_text: String) -> void:
 	_user_requesing_creation()
@@ -285,8 +317,7 @@ func _user_requesing_creation() -> void:
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
 			# Checks...
 			if _custom_definition.cortical_name.text == "":
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "Please define a name for your cortical area", "OK")
-				BV.WM.spawn_popup(popup_definition)
+				_show_inline_validation_error("Please define a name for your cortical area")
 				return
 			
 			if AbstractCorticalArea.get_neuron_count(_custom_definition.dimensions.current_vector, 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
@@ -295,8 +326,7 @@ func _user_requesing_creation() -> void:
 				return
 			
 			if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_of_name(_custom_definition.cortical_name.text):
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "This name is already taken!", "OK")
-				BV.WM.spawn_popup(popup_definition)
+				_show_inline_validation_error("This name is already taken!")
 				return
 			
 			#Create
@@ -316,13 +346,11 @@ func _user_requesing_creation() -> void:
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			# Checks...
 			if _memory_definition.cortical_name.text == "":
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "Please define a name for your cortical area", "OK")
-				BV.WM.spawn_popup(popup_definition)
+				_show_inline_validation_error("Please define a name for your cortical area")
 				return
 			
 			if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_of_name(_memory_definition.cortical_name.text):
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "This name is already taken!", "OK")
-				BV.WM.spawn_popup(popup_definition)
+				_show_inline_validation_error("This name is already taken!")
 				return
 			if AbstractCorticalArea.get_neuron_count(_custom_definition.dimensions.current_vector, 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
 				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
