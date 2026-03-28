@@ -28,6 +28,11 @@ const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN: float = 2.75
 const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX: float = 4.5
 const FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE: float = 0.18
 
+## Vertical offset of the power cone mesh from the cortical volume center (matches billboard icon center in [_create_png_icon_billboard] at y=2).
+const POWER_CONE_MESH_LOCAL_Y_OFFSET: float = 2.0
+## Matches `QuadMesh` size (3x3) in `_create_png_icon_billboard` — half-extent for label XZ vs billboard areas.
+const BILLBOARD_QUAD_MESH_HALF_EXTENT: float = 1.5
+
 # Visual scale for voxel meshes (world units). Matches existing individual-voxel sizing.
 const _VOXEL_VISUAL_SCALE: float = 0.8
 
@@ -162,6 +167,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		cylinder_shape.height = 6.0  # 3x larger cone height
 		cylinder_shape.radius = 3.0  # 3x larger base radius
 		collision_shape.shape = cylinder_shape
+		collision_shape.position = Vector3(0.0, POWER_CONE_MESH_LOCAL_Y_OFFSET, 0.0)
 		# Debug log suppressed to reduce runtime console spam.
 	elif AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
 		# One pick volume: scaled cortical box (size 1 @ origin) + billboard quad above (quad ~3x3 @ y=2)
@@ -329,19 +335,11 @@ func setup(area: AbstractCorticalArea) -> void:
 		# Debug log suppressed to reduce runtime console spam.
 	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
 		_friendly_name_label.visible = true  # Show label for PNG icon areas
-		# Debug log suppressed to reduce runtime console spam.
-		# Position label above the PNG icon (icon is at y=2.0, label should be at y=4.5 for proper separation)
-		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		# Debug log suppressed to reduce runtime console spam.
 	else:
 		_friendly_name_label.visible = false  # Hidden when used as secondary renderer
-	# Attach label to follow movement correctly:
-	# - For PNG icon areas (e.g., _death), parent to _static_body so it inherits movement
-	# - For others, keep as child of this renderer and use absolute positioning updates
-	if AbstractCorticalArea.is_death_area(area.cortical_ID) or AbstractCorticalArea.is_fatigue_area(area.cortical_ID) or _should_use_png_icon(area):
-		_static_body.add_child(_friendly_name_label)
-	else:
-		add_child(_friendly_name_label)
+	# Parent to this renderer (same as power/memory) so bv_update_friendly_name_label_position()
+	# uses one coordinate space for all special areas (label below footprint, camera-aware XZ).
+	add_child(_friendly_name_label)
 	set_process(true)
 
 	# Set initial properties
@@ -414,18 +412,20 @@ func _wrap_friendly_name_text(label_text: String) -> String:
 		wrapped_lines.append(current_line)
 	return "\n".join(wrapped_lines)
 
+func _apply_power_cone_outline_local_offset() -> void:
+	if _outline_mesh_instance == null:
+		return
+	if AbstractCorticalArea.is_power_area(_cortical_area_id):
+		_outline_mesh_instance.position = Vector3(0.0, POWER_CONE_MESH_LOCAL_Y_OFFSET, 0.0)
+	else:
+		_outline_mesh_instance.position = Vector3.ZERO
+
 func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Vector3i) -> void:
 	super(new_FEAGI_coordinate_position)
 	_static_body.position = _position_godot_space
-	_outline_mesh_instance.position = Vector3.ZERO  # Relative to static body
+	_apply_power_cone_outline_local_offset()
 	
-	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
-	if not _should_use_png_icon_by_id(_cortical_area_id):
-		bv_update_friendly_name_label_position()
-	else:
-		# PNG icon areas keep their custom label positioning (above the icon)
-		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		# print("   [pos]  Maintained PNG icon label position at: ", _friendly_name_label.position)
+	bv_update_friendly_name_label_position()
 
 func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Memory areas are conceptually 1x1x1 (all activity maps to (0,0,0)).
@@ -462,14 +462,9 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	# Update outline mesh size (inherits scale from _static_body)
 	_outline_mesh_instance.scale = Vector3.ONE
+	_apply_power_cone_outline_local_offset()
 	
-	# Update friendly name position (but not for PNG icon areas - they have custom positioning)
-	if not _should_use_png_icon_by_id(_cortical_area_id):
-		bv_update_friendly_name_label_position()
-	else:
-		# PNG icon areas keep their custom label positioning (above the icon)
-		_friendly_name_label.position = Vector3(0.0, 4.5, 0.0)
-		# print("   [pos]  Maintained PNG icon label position at: ", _friendly_name_label.position)
+	bv_update_friendly_name_label_position()
 	
 	if _fatigue_billboard_material != null and AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
 		_fatigue_billboard_refresh_for_activity_state()
@@ -504,8 +499,6 @@ func bv_update_friendly_name_label_position() -> void:
 func _update_friendly_name_label_target_position() -> bool:
 	if _static_body == null or _friendly_name_label == null:
 		return false
-	if _should_use_png_icon_by_id(_cortical_area_id):
-		return false
 	var viewport := get_viewport()
 	if viewport == null:
 		return false
@@ -513,6 +506,18 @@ func _update_friendly_name_label_target_position() -> bool:
 	if cam == null:
 		return false
 	var half_y: float = absf(_static_body.scale.y) * 0.5
+	var half_x: float = absf(_static_body.scale.x) * 0.5
+	var half_z: float = absf(_static_body.scale.z) * 0.5
+	# Power: same vertical label placement as PNG billboard cores (dim half-extent only); cone is visual-only and must not push the name lower.
+	# Horizontal: match 3x3 quad footprint like other billboards.
+	if AbstractCorticalArea.is_power_area(_cortical_area_id):
+		var sx := absf(_static_body.scale.x)
+		var sz := absf(_static_body.scale.z)
+		half_x = maxf(half_x, BILLBOARD_QUAD_MESH_HALF_EXTENT * sx)
+		half_z = maxf(half_z, BILLBOARD_QUAD_MESH_HALF_EXTENT * sz)
+	elif _should_use_png_icon_by_id(_cortical_area_id):
+		half_x = maxf(half_x, BILLBOARD_QUAD_MESH_HALF_EXTENT * absf(_static_body.scale.x))
+		half_z = maxf(half_z, BILLBOARD_QUAD_MESH_HALF_EXTENT * absf(_static_body.scale.z))
 	var bottom_gap: float = clampf(
 		half_y * FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE,
 		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN,
@@ -527,8 +532,6 @@ func _update_friendly_name_label_target_position() -> bool:
 		_last_label_outside_dir_xz = cam_dir_xz.normalized()
 
 	var dir_xz: Vector2 = _last_label_outside_dir_xz
-	var half_x: float = absf(_static_body.scale.x) * 0.5
-	var half_z: float = absf(_static_body.scale.z) * 0.5
 	# Support distance to rectangle boundary along direction (continuous, no axis snapping).
 	var edge_distance: float = absf(dir_xz.x) * half_x + absf(dir_xz.y) * half_z
 	var center_x: float = _static_body.position.x
@@ -1174,7 +1177,7 @@ func _create_tesla_coil_spikes() -> void:
 	# Create multiple electrical spikes around the cone tip
 	var spike_count = 8  # Number of electrical spikes
 	var cone_height = 6.0  # Match the cone height
-	var tip_position = Vector3(0, cone_height * 0.45, 0)  # Much closer to actual tip (90% up the cone)
+	var tip_position = Vector3(0, POWER_CONE_MESH_LOCAL_Y_OFFSET + cone_height * 0.45, 0)
 	
 	for i in range(spike_count):
 		var spike = MeshInstance3D.new()
@@ -1596,7 +1599,7 @@ func _set_tesla_coil_active(active: bool) -> void:
 		
 		# Calculate tip position (same as in _create_tesla_coil_spikes)
 		var cone_height = 6.0  # Same as the cone height
-		var tip_position = Vector3(0, cone_height * 0.45, 0)  # Much closer to actual tip (90% up the cone)
+		var tip_position = Vector3(0, POWER_CONE_MESH_LOCAL_Y_OFFSET + cone_height * 0.45, 0)
 		
 		# Show all spikes with electrical flickering animation
 		for i in range(_tesla_coil_spikes.size()):

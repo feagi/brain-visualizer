@@ -921,6 +921,10 @@ func _hide_neural_connections() -> void:
 	_connection_curves.clear()
 	_are_connections_visible = false
 
+## World-space center of this cortical volume (renderer [StaticBody3D]). [UI_BrainMonitor_CorticalArea] is a [Node], not [Node3D], so use this instead of [member Node3D.global_position].
+func get_volume_world_center() -> Vector3:
+	return _get_cortical_area_center_position()
+
 ## Get the center position of this cortical area in world space
 func _get_cortical_area_center_position() -> Vector3:
 	# print("     🔍 Getting position for: ", _representing_cortial_area.cortical_ID)  # Suppressed - too frequent

@@ -379,6 +379,27 @@ static func is_fatigue_area(cortical_id: Variant) -> bool:
 static func is_reserved_system_core_area(cortical_id: Variant) -> bool:
 	return not get_special_core_area_name(cortical_id).is_empty()
 
+## Left-to-right row order for Brain Monitor root core-cluster layout (FEAGI X axis). Extend when new reserved cores are added to [method get_special_core_area_name].
+const CORE_CLUSTER_ROW_ORDER: Array[String] = ["death", "power", "fatigue"]
+## FEAGI voxel-grid spacing between adjacent core centers along X (death / power / fatigue).
+const CORE_CLUSTER_FEAGI_SPACING_X: int = 20
+
+## Non-power reserved cores use a fixed offset from the power anchor; only power coordinates are persisted to FEAGI.
+static func is_core_cluster_slaved_to_power_layout(cortical_id: Variant) -> bool:
+	return is_reserved_system_core_area(cortical_id) and not is_power_area(cortical_id)
+
+## FEAGI-space position for a core area given the power anchor (from backend). Slaved cores ignore their own stored coordinates for visualization.
+static func core_cluster_computed_feagi_position(cortical_id: Variant, power_anchor_feagi: Vector3i) -> Vector3i:
+	var name := get_special_core_area_name(cortical_id)
+	if name.is_empty() or name == "power":
+		return power_anchor_feagi
+	var p_idx: int = CORE_CLUSTER_ROW_ORDER.find("power")
+	var my_idx: int = CORE_CLUSTER_ROW_ORDER.find(name)
+	if p_idx < 0 or my_idx < 0:
+		return power_anchor_feagi
+	var offset_x: int = (my_idx - p_idx) * CORE_CLUSTER_FEAGI_SPACING_X
+	return power_anchor_feagi + Vector3i(offset_x, 0, 0)
+
 ## True for FEAGI invariant core regions: explicit reserved IDs or [enum CORTICAL_AREA_TYPE.CORE] from the API/cache.
 ## Covers ID encodings the name map does not list yet while still keeping the type contract from FEAGI.
 static func is_feagi_invariant_core_area(area: AbstractCorticalArea) -> bool:

@@ -441,7 +441,10 @@ func _button_move_3d() -> void:
 		))
 		close_window()
 		return
-	bm.start_cortical_area_manipulation(area, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
+	if AbstractCorticalArea.is_reserved_system_core_area(area.cortical_ID):
+		bm.start_core_cluster_cortical_manipulation(area)
+	else:
+		bm.start_cortical_area_manipulation(area, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
 	close_window(false)
 
 func _button_resize_3d() -> void:
