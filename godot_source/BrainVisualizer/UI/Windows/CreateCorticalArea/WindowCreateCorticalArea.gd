@@ -35,6 +35,28 @@ func _ready() -> void:
 	
 	_selection_options.cortical_type_selected.connect(_step_2_set_details)
 	_IOPU_definition.unit_id_validation_changed.connect(_on_unit_id_validation_changed)
+	_run_center_when_laid_out()
+
+
+## Place the dialog in the viewport center after theme shrink and layout (avoids top-left / stale memory).
+func _run_center_when_laid_out() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_center_window_in_viewport()
+
+
+func _center_window_in_viewport() -> void:
+	var rect: Rect2 = get_viewport().get_visible_rect()
+	var window_size: Vector2i = size
+	if window_size.x < 2 or window_size.y < 2:
+		window_size = get_combined_minimum_size()
+	if window_size.x < 2 or window_size.y < 2:
+		return
+	var pos := Vector2i(
+		int(floor(rect.position.x + (rect.size.x - float(window_size.x)) * 0.5)),
+		int(floor(rect.position.y + (rect.size.y - float(window_size.y)) * 0.5))
+	)
+	position = pos
 
 
 func setup() -> void:
@@ -352,23 +374,45 @@ func _user_requesing_creation() -> void:
 			if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_of_name(_memory_definition.cortical_name.text):
 				_show_inline_validation_error("This name is already taken!")
 				return
-			if AbstractCorticalArea.get_neuron_count(_custom_definition.dimensions.current_vector, 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
-				BV.WM.spawn_popup(popup_definition)
+			var memory_dims: Vector3i = Vector3i(1, 1, 1)
+			if AbstractCorticalArea.get_neuron_count(memory_dims, 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
+				var popup_definition_mem: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
+				BV.WM.spawn_popup(popup_definition_mem)
 				return
 			
-			#Create
 			var parent_region_mem: BrainRegion = _context_region if _context_region != null else FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-			FeagiCore.requests.add_custom_memory_cortical_area(
+			var create_result: FeagiRequestOutput = await FeagiCore.requests.add_custom_memory_cortical_area(
 				_memory_definition.cortical_name.text,
 				_memory_definition.location.current_vector,
-				Vector3i(1,1,1),
+				memory_dims,
 				parent_region_mem,
 				true,
 				pos_2d
 			)
-			# Update session last-created position and size
+			if create_result.has_errored:
+				var err_details = create_result.decode_response_as_generic_error_code()
+				var popup_create_fail: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup(
+					"ERROR",
+					"Failed to create memory cortical area:\n%s\n\n%s" % [err_details[0], err_details[1]],
+					"OK"
+				)
+				BV.WM.spawn_popup(popup_create_fail)
+				return
+			var response_dict: Dictionary = create_result.decode_response_as_dict()
+			var new_cortical_id: StringName = StringName(str(response_dict.get("cortical_id", "")))
+			if new_cortical_id != &"":
+				var mem_props: Dictionary = _memory_definition.get_memory_parameters_for_api()
+				var update_result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(new_cortical_id, mem_props)
+				if update_result.has_errored:
+					var upd_err = update_result.decode_response_as_generic_error_code()
+					var popup_upd_fail: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup(
+						"ERROR",
+						"Memory area was created but applying memory settings failed:\n%s\n\n%s" % [upd_err[0], upd_err[1]],
+						"OK"
+					)
+					BV.WM.spawn_popup(popup_upd_fail)
+					return
 			BV.UI.last_created_cortical_location = _memory_definition.location.current_vector
-			BV.UI.last_created_cortical_size = Vector3i(1,1,1)
+			BV.UI.last_created_cortical_size = memory_dims
 	
 	close_window()
