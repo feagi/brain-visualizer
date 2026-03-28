@@ -321,21 +321,14 @@ func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], 
 	_list_popup.open_with_items(anchor_button, items, selection_handler, placeholder_text)
 
 
-## Build dropdown items: direct child circuits of the region for the active tab (BM tab if that tab is selected, else CB tab).
+## Build dropdown items: all sub-circuits under the genome root (matches global top-bar Circuits combo).
 func _build_topbar_region_items() -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	var scope_region: BrainRegion = null
-	var bm := BV.UI.get_brain_monitor_for_active_tab()
-	if bm != null:
-		scope_region = bm.representing_region
-	else:
-		var cb := BV.UI.get_circuit_builder_for_active_tab()
-		if cb != null:
-			scope_region = cb.representing_region
-	if scope_region == null and FeagiCore != null and FeagiCore.feagi_local_cache != null and FeagiCore.feagi_local_cache.brain_regions != null:
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null and FeagiCore.feagi_local_cache.brain_regions != null:
 		scope_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	if scope_region != null:
-		for region in scope_region.contained_regions:
+		for region in scope_region.get_all_subregions_recursive():
 			items.append({"label": region.friendly_name, "payload": region})
 	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return String(a.get("label", "")).to_lower() < String(b.get("label", "")).to_lower()

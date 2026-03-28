@@ -73,10 +73,11 @@ size_flags_horizontal = 0
 tooltip_text = "Post-Synaptic Potential
 "
 alignment = 1
-script = ExtResource("15_8f0j2")
-initial_int = 1
-min_value = 0
-max_value = 255
+script = ExtResource("8_wad2m")
+initial_float = 1.0
+min_value = 0.0
+max_value = 9999999999.0
+number_decimal_places = 4
 
 [node name="Spacer_BetweenPSPAndInhibitory" type="Control" parent="."]
 custom_minimum_size = Vector2(12, 0)
@@ -174,6 +175,6 @@ ignore_texture_size = true
 stretch_mode = 0
 
 [connection signal="pressed" from="MappingDefinitionGroup/edit" to="." method="_on_edit_pressed"]
-[connection signal="int_confirmed" from="PSP" to="." method="_on_user_PSP"]
+[connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
 [connection signal="pressed" from="confirm" to="." method="_pressed_add"]

@@ -416,20 +416,14 @@ func _build_region_items() -> Array[Dictionary]:
 		for region in context_region.contained_regions:
 			items.append({"label": region.friendly_name, "payload": region})
 	else:
-		# Global top bar (context_region cleared): same scope as embedded BM/CB — direct children of the active tab's region.
+		# Global top bar (context_region cleared): list every sub-circuit under the genome root.
+		# Do not scope to the active BM/CB tab — that hid root-level circuits when the Brain Monitor was
+		# open on a sub-region, or when split view resolved a different pane first.
 		var scope_region: BrainRegion = null
-		var bm := BV.UI.get_brain_monitor_for_active_tab()
-		if bm != null:
-			scope_region = bm.representing_region
-		else:
-			var cb := BV.UI.get_circuit_builder_for_active_tab()
-			if cb != null:
-				scope_region = cb.representing_region
-		# When no tab resolves (e.g. unfocused layout), list direct children of the genome root region.
-		if scope_region == null and FeagiCore != null and FeagiCore.feagi_local_cache != null and FeagiCore.feagi_local_cache.brain_regions != null:
+		if FeagiCore != null and FeagiCore.feagi_local_cache != null and FeagiCore.feagi_local_cache.brain_regions != null:
 			scope_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 		if scope_region != null:
-			for region in scope_region.contained_regions:
+			for region in scope_region.get_all_subregions_recursive():
 				items.append({"label": region.friendly_name, "payload": region})
 	# When context_region is set (BM 3D / Circuit Builder), list only direct child regions.
 	# Do not fall back to the full brain when there are no sub-circuits (that hid the intended scope).
