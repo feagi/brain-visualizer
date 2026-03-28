@@ -38,6 +38,7 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iimg.png" id="21_n6kq0"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="26_brain_regions_icon"]
 
+
 [node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
 offset_left = 10.0
 offset_top = 10.0

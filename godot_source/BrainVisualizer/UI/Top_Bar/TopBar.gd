@@ -287,6 +287,24 @@ func _recursive_find_cortical_areas(node: Node, cortical_areas: Array) -> void:
 
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
+	_sync_refresh_rate_background_style()
+
+
+## Keep refresh-rate input background visually aligned with neurons/synapses fields.
+func _sync_refresh_rate_background_style() -> void:
+	if _refresh_rate_field == null or _neuron_count == null:
+		return
+	var unified_style: StyleBox = null
+	if _neuron_count.has_theme_stylebox(&"read_only"):
+		unified_style = _neuron_count.get_theme_stylebox(&"read_only")
+	elif _neuron_count.has_theme_stylebox(&"normal"):
+		unified_style = _neuron_count.get_theme_stylebox(&"normal")
+	if unified_style == null:
+		return
+	for style_name in [&"normal", &"focus", &"read_only"]:
+		_refresh_rate_field.add_theme_stylebox_override(style_name, unified_style.duplicate())
+
+
 
 
 ## Create and attach the reusable list popup if needed.
