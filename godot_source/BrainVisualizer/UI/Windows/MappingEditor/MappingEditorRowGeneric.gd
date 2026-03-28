@@ -16,7 +16,7 @@ var _LTD_multiplier: FloatInput
 var _edit: TextureButton
 
 func _ready() -> void:
-	_morphologies = $Morphology_List
+	_morphologies = $MappingDefinitionGroup/Morphology_List
 	_scalar = $Scalar
 	_PSP = $PSP
 	_inhibitory = $Inhibitory
@@ -25,7 +25,7 @@ func _ready() -> void:
 	_plasticity_constant = $Plasticity_Constant
 	_LTP_multiplier = $LTP_Multiplier
 	_LTD_multiplier = $LTD_Multiplier
-	_edit = $edit
+	_edit = $MappingDefinitionGroup/edit
 	_morphologies.user_selected_morphology.connect(_on_morphology_selected)
 
 func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults: MappingRestrictionDefault) -> void:

@@ -46,6 +46,10 @@ func _ready():
 	$HBoxContainer/LabelX.text = label_x_text
 	$HBoxContainer2/LabelY.text = label_y_text
 	$HBoxContainer3/LabelZ.text = label_z_text
+	# Hide label slots when empty so line edits align with the column left edge (mapping editor, etc.).
+	$HBoxContainer/LabelX.visible = not label_x_text.is_empty()
+	$HBoxContainer2/LabelY.visible = not label_y_text.is_empty()
+	$HBoxContainer3/LabelZ.visible = not label_z_text.is_empty()
 
 	_field_x = $HBoxContainer/IntX
 	_field_y = $HBoxContainer2/IntY

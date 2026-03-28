@@ -17,7 +17,7 @@ script = ExtResource("1_cwaox")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_y8w4n")]
 layout_mode = 2
-title = "Mapping Editor"
+title = "Cortical Mapping Editor"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
