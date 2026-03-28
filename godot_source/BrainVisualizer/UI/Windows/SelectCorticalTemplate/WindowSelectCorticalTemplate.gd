@@ -9,6 +9,12 @@ var _cancel_button: Button
 var _icon_grid: GridContainer
 var _is_ipu: bool = true
 var _context_region: BrainRegion = null
+## When set (before add_child), this window opens just below the + Inputs / + Outputs control.
+var _placement_anchor: Control = null
+
+## Called by WindowManager before add_child when spawning from the top bar add buttons.
+func set_placement_anchor(anchor: Control) -> void:
+	_placement_anchor = anchor
 
 func _ready() -> void:
 	super()
@@ -27,7 +33,22 @@ func setup_for_type(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, cont
 			tb.set("title", "Add Input Cortical Area")
 		else:
 			tb.set("title", "Add Output Cortical Area")
-	_populate_grid(cortical_type)
+	await _populate_grid(cortical_type)
+	if _placement_anchor != null and is_instance_valid(_placement_anchor):
+		await _apply_placement_below_anchor()
+
+
+func _apply_placement_below_anchor() -> void:
+	# One layout frame while hidden (WindowManager); then show at final position only.
+	await get_tree().process_frame
+	var window_size: Vector2i = size
+	if window_size.x < 2 or window_size.y < 2:
+		window_size = get_combined_minimum_size()
+	if window_size.x < 2 or window_size.y < 2:
+		visible = true
+		return
+	position = BV.WM.position_window_below_anchor(self, _placement_anchor, window_size)
+	visible = true
 
 func _on_cancel() -> void:
 	close_window()

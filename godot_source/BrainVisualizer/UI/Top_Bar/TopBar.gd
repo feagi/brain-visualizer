@@ -160,6 +160,9 @@ func _open_inputs() -> void:
 	)
 
 func _open_create_input() -> void:
+	if _shared_combo != null:
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, _shared_combo.get_inputs_add_button())
+		return
 	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
 
 func _open_brain_regions() -> void:
@@ -181,6 +184,9 @@ func _open_outputs() -> void:
 	)
 
 func _open_create_output() -> void:
+	if _shared_combo != null:
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU, _shared_combo.get_outputs_add_button())
+		return
 	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
 
 func _open_neuron_morphologies() -> void:

@@ -301,21 +301,31 @@ func _add_memory_area() -> void:
 
 func _add_input_area() -> void:
 	if _global_topbar_mode:
-		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, _btn_inputs_add)
 		return
 	if context_region == null:
 		return
 	print("BrainObjectsCombo: Opening create input window for region:", context_region.region_ID)
-	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, _btn_inputs_add)
 
 func _add_output_area() -> void:
 	if _global_topbar_mode:
-		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU, _btn_outputs_add)
 		return
 	if context_region == null:
 		return
 	print("BrainObjectsCombo: Opening create output window for region:", context_region.region_ID)
-	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU, _btn_outputs_add)
+
+
+## Top bar / host wiring: anchor for spawning create I/O dialogs to the right of the + button.
+func get_inputs_add_button() -> TextureButton:
+	return _btn_inputs_add
+
+
+func get_outputs_add_button() -> TextureButton:
+	return _btn_outputs_add
+
 
 func _request_relayout() -> void:
 	if _is_3d_context:

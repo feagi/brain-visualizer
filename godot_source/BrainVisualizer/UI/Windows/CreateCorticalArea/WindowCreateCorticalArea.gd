@@ -18,6 +18,12 @@ const _VALIDATION_ERROR_COLOR: Color = Color(0.95, 0.42, 0.38)
 var _type_selected: AbstractCorticalArea.CORTICAL_AREA_TYPE
 var _BM_preview: UI_BrainMonitor_InteractivePreview
 var _context_region: BrainRegion = null
+## When set (before add_child), the dialog opens to the right of this control instead of centered.
+var _placement_anchor: Control = null
+## Snapshot used when the anchor control may be freed before layout (e.g. template picker closed).
+var _placement_anchor_rect: Rect2 = Rect2()
+## When true, [member _placement_anchor_rect] is the prior window's top-left (replace flow); else place to the right of it.
+var _placement_anchor_rect_exact_top_left: bool = false
 
 
 func _ready() -> void:
@@ -38,11 +44,75 @@ func _ready() -> void:
 	_run_center_when_laid_out()
 
 
-## Place the dialog in the viewport center after theme shrink and layout (avoids top-left / stale memory).
+## Called by WindowManager before add_child when opening next to a toolbar button or template window.
+func set_placement_anchor(anchor: Control) -> void:
+	_placement_anchor = anchor
+
+
+## Rect in root viewport space; used when [member _placement_anchor] is invalid after layout.
+func set_placement_anchor_rect(anchor_rect: Rect2, exact_top_left: bool = false) -> void:
+	_placement_anchor_rect = anchor_rect
+	_placement_anchor_rect_exact_top_left = exact_top_left
+
+
+## Place the dialog after theme shrink and layout: anchored to the right, or centered.
 func _run_center_when_laid_out() -> void:
-	await get_tree().process_frame
-	await get_tree().process_frame
-	_center_window_in_viewport()
+	if _placement_anchor_rect.has_area() or (_placement_anchor != null and is_instance_valid(_placement_anchor)):
+		# WindowManager keeps us hidden and skips saved position; one layout frame then show at target.
+		await get_tree().process_frame
+		if _placement_anchor_rect.has_area():
+			if _placement_anchor_rect_exact_top_left:
+				_position_at_anchor_rect_top_left(_placement_anchor_rect)
+			else:
+				_position_to_right_of_anchor_rect(_placement_anchor_rect)
+		elif _placement_anchor != null and is_instance_valid(_placement_anchor):
+			_position_to_right_of_anchor(_placement_anchor)
+		else:
+			_center_window_in_viewport()
+		visible = true
+	else:
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_center_window_in_viewport()
+
+
+func _position_to_right_of_anchor(anchor: Control) -> void:
+	var window_size: Vector2i = size
+	if window_size.x < 2 or window_size.y < 2:
+		window_size = get_combined_minimum_size()
+	if window_size.x < 2 or window_size.y < 2:
+		return
+	var pos: Vector2i = BV.WM.position_window_to_right_of_anchor(self, anchor, window_size)
+	if pos != Vector2i.ZERO:
+		position = pos
+	else:
+		_center_window_in_viewport()
+
+
+func _position_to_right_of_anchor_rect(anchor_rect: Rect2) -> void:
+	var window_size: Vector2i = size
+	if window_size.x < 2 or window_size.y < 2:
+		window_size = get_combined_minimum_size()
+	if window_size.x < 2 or window_size.y < 2:
+		return
+	var pos: Vector2i = BV.WM.position_window_to_right_of_anchor_rect(self, anchor_rect, window_size)
+	if pos != Vector2i.ZERO:
+		position = pos
+	else:
+		_center_window_in_viewport()
+
+
+func _position_at_anchor_rect_top_left(anchor_rect: Rect2) -> void:
+	var window_size: Vector2i = size
+	if window_size.x < 2 or window_size.y < 2:
+		window_size = get_combined_minimum_size()
+	if window_size.x < 2 or window_size.y < 2:
+		return
+	var pos: Vector2i = BV.WM.position_window_at_top_left_of_rect(self, anchor_rect, window_size)
+	if pos != Vector2i.ZERO:
+		position = pos
+	else:
+		_center_window_in_viewport()
 
 
 func _center_window_in_viewport() -> void:
@@ -97,12 +167,22 @@ func _step_2_set_details(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE)
 		close_window_requesed_no_arg
 	]
 	
-	# Determine the brain monitor to host previews: prefer region's BM if provided
+	# Determine the brain monitor to host previews.
+	# IPU/OPU areas belong on the genome root only — never show their preview on a sub-region Brain Monitor tab.
 	var host_bm: UI_BrainMonitor_3DScene = null
-	if _context_region != null:
-		host_bm = BV.UI.get_brain_monitor_for_region(_context_region)
-	if host_bm == null:
-		host_bm = BV.UI.get_active_brain_monitor()
+	if cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+		var root_region: BrainRegion = null
+		if FeagiCore != null and FeagiCore.feagi_local_cache != null and FeagiCore.feagi_local_cache.brain_regions != null:
+			root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+		if root_region != null:
+			host_bm = BV.UI.get_brain_monitor_for_region(root_region)
+		if host_bm == null:
+			host_bm = BV.UI.get_temp_root_bm()
+	else:
+		if _context_region != null:
+			host_bm = BV.UI.get_brain_monitor_for_region(_context_region)
+		if host_bm == null:
+			host_bm = BV.UI.get_active_brain_monitor()
 	
 	_IOPU_definition.visible = cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]
 	_custom_definition.visible = cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM

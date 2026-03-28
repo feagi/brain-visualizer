@@ -60,8 +60,12 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 	if _device_name_label != null:
 		_device_name_label.text = ""
 	
-	# Store brain monitor and close signals for later use
-	_active_brain_monitor = host_bm if host_bm != null else BV.UI.get_active_brain_monitor()
+	# Store brain monitor and close signals for later use (prefer root BM; never a sub-region tab by mistake).
+	_active_brain_monitor = host_bm
+	if _active_brain_monitor == null:
+		_active_brain_monitor = BV.UI.get_temp_root_bm()
+	if _active_brain_monitor == null:
+		_active_brain_monitor = BV.UI.get_active_brain_monitor()
 	_preview_close_signals = preview_close_signals
 	
 	if _active_brain_monitor == null:
