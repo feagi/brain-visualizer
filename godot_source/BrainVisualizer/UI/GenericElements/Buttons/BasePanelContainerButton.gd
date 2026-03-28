@@ -3,8 +3,8 @@ class_name BasePanelContainerButton
 
 signal pressed()
 
-const PLATE_COLOR: Color = Color("252525")
-const PLATE_PADDING: int = 10
+const DEFAULT_PLATE_COLOR: Color = Color("252525")
+const PLATE_PADDING: int = 5
 const HOVER_SCALE: float = 1.03
 const HOVER_TWEEN_SECONDS: float = 0.08
 
@@ -44,13 +44,14 @@ func _ready() -> void:
 	_apply_plate_color()
 
 
-## Ensure the back plate color is visible against dark scenes.
+## Ensure the button plate color remains consistent across themes.
 func _apply_plate_color() -> void:
+	var plate_color: Color = _resolve_plate_color()
 	_plate_styleboxes.clear()
-	_plate_styleboxes["panel"] = _build_plate_stylebox("panel")
-	_plate_styleboxes["panel_hover"] = _build_plate_stylebox("panel_hover")
-	_plate_styleboxes["panel_pressed"] = _build_plate_stylebox("panel_pressed")
-	_plate_styleboxes["panel_disabled"] = _build_plate_stylebox("panel_disabled")
+	_plate_styleboxes["panel"] = _build_plate_stylebox("panel", plate_color)
+	_plate_styleboxes["panel_hover"] = _build_plate_stylebox("panel_hover", plate_color)
+	_plate_styleboxes["panel_pressed"] = _build_plate_stylebox("panel_pressed", plate_color)
+	_plate_styleboxes["panel_disabled"] = _build_plate_stylebox("panel_disabled", plate_color)
 	for key in _plate_styleboxes.keys():
 		var style: StyleBox = _plate_styleboxes[key]
 		if style != null:
@@ -66,13 +67,13 @@ func _on_theme_changed(_new_theme: Theme) -> void:
 
 
 ## Build a plate style based on the theme stylebox.
-func _build_plate_stylebox(style_name: StringName) -> StyleBox:
+func _build_plate_stylebox(style_name: StringName, plate_color: Color) -> StyleBox:
 	var base_style: StyleBox = null
 	if has_theme_stylebox(style_name, "BasePanelContainerButton"):
 		base_style = get_theme_stylebox(style_name, "BasePanelContainerButton")
 	if base_style is StyleBoxFlat:
 		var plate_style := base_style.duplicate() as StyleBoxFlat
-		plate_style.bg_color = PLATE_COLOR
+		plate_style.bg_color = plate_color
 		plate_style.content_margin_left = PLATE_PADDING
 		plate_style.content_margin_top = PLATE_PADDING
 		plate_style.content_margin_right = PLATE_PADDING
@@ -80,13 +81,18 @@ func _build_plate_stylebox(style_name: StringName) -> StyleBox:
 		return plate_style
 	if base_style != null:
 		var fallback_style := StyleBoxFlat.new()
-		fallback_style.bg_color = PLATE_COLOR
+		fallback_style.bg_color = plate_color
 		fallback_style.content_margin_left = PLATE_PADDING
 		fallback_style.content_margin_top = PLATE_PADDING
 		fallback_style.content_margin_right = PLATE_PADDING
 		fallback_style.content_margin_bottom = PLATE_PADDING
 		return fallback_style
 	return null
+
+
+## Keep icon-button plates independent from top-bar panel/background styling.
+func _resolve_plate_color() -> Color:
+	return DEFAULT_PLATE_COLOR
 
 
 ## Return the current plate stylebox for a given state.

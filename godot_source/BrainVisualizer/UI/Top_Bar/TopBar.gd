@@ -12,6 +12,9 @@ var _index_scale: int
 
 var _neuron_count: TextInput
 var _synapse_count: TextInput
+const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
+const PREFAB_BRAIN_OBJECTS_COMBO: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
+var _shared_combo: BrainObjectsCombo = null
 
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
@@ -33,6 +36,8 @@ func _ready():
 	
 	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
+	_mount_shared_combo_strip()
+	_apply_shared_combo_spacing_tokens()
 	
 	# FEAGI data
 	# Burst rate
@@ -51,6 +56,36 @@ func _ready():
 	toggle_buttons_interactability(false)
 
 
+## Apply shared spacing tokens to keep top bar combo strips consistent with Circuit Builder.
+func _apply_shared_combo_spacing_tokens() -> void:
+	COMBO_STYLER.apply_list_hbox_spacing(self, [
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer")
+	])
+	COMBO_STYLER.apply_spacer_width(self, [
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddCircuits"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddInputs"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddOutputs"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/Spacer_AfterAddBrainAreas")
+	])
+
+
+## Mount the shared combo implementation used across Circuit Builder and Brain Monitor.
+func _mount_shared_combo_strip() -> void:
+	var root_row := $Buttons/MarginContainer/HBoxContainer
+	var legacy_strip := $Buttons/MarginContainer/HBoxContainer/HBoxContainer
+	legacy_strip.visible = false
+	legacy_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _shared_combo == null:
+		_shared_combo = PREFAB_BRAIN_OBJECTS_COMBO.instantiate() as BrainObjectsCombo
+		_shared_combo.name = "SharedBrainObjectsCombo"
+		root_row.add_child(_shared_combo)
+		root_row.move_child(_shared_combo, 0)
+	_shared_combo.set_global_topbar_mode()
+
+
 ## Toggle button interactability of top bar (ignoring those that are not relevant to FEAGI directly)
 func toggle_buttons_interactability(pressable: bool) -> void:
 	if _refresh_rate_field == null:
@@ -64,6 +99,8 @@ func toggle_buttons_interactability(pressable: bool) -> void:
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Inputs.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Outputs.disabled = !pressable
+	if _shared_combo != null:
+		_shared_combo.set_force_disabled(!pressable)
 	
 	
 
