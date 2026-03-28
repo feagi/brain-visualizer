@@ -84,7 +84,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Inhibitory" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(168, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_type_variation = &"ToggleButton"
@@ -100,7 +100,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Plasticity" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(168, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_type_variation = &"ToggleButton"
@@ -124,6 +124,11 @@ alignment = 1
 script = ExtResource("15_8f0j2")
 initial_int = 3
 
+[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
 [node name="Plasticity_Constant" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
@@ -144,11 +149,15 @@ size_flags_horizontal = 0
 alignment = 1
 script = ExtResource("8_wad2m")
 
+[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
 [node name="LTD_Multiplier" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "LTD Multiplier"
 alignment = 1
 script = ExtResource("8_wad2m")
 
