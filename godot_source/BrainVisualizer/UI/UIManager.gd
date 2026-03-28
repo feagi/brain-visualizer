@@ -90,10 +90,12 @@ enum STARTUP_DPI_TIER { DPI_STANDARD, DPI_MEDIUM, DPI_LARGE, DPI_XLARGE }
 enum STARTUP_RES_TIER { RES_COMPACT, RES_STANDARD, RES_LARGE, RES_XLARGE }
 
 ## Top bar "brain activity" tool: global connection curves vs voxel-level API inspector.
-enum BRAIN_MONITOR_ACTIVITY_MODE { GLOBAL_NEURAL_CONNECTIONS = 0, VOXEL_INSPECTOR = 1 }
+enum BRAIN_MONITOR_ACTIVITY_MODE { GLOBAL_NEURAL_CONNECTIONS = 0, VOXEL_INSPECTOR = 1, MEMORY_INSPECTOR = 2 }
 
 var brain_monitor_activity_mode: BRAIN_MONITOR_ACTIVITY_MODE = BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
 var _voxel_inspector_fetch_generation: int = 0
+var _memory_inspector_fetch_generation: int = 0
+var _memory_neuron_fetch_generation: int = 0
 
 
 func _enter_tree():
@@ -344,6 +346,79 @@ func _json_floats_whole_to_int_for_display(v: Variant) -> Variant:
 			out[i] = _json_floats_whole_to_int_for_display(a[i])
 		return out
 	return v
+
+
+func _memory_inspector_window() -> WindowMemoryInspector:
+	if _window_manager == null:
+		return null
+	return _window_manager.loaded_windows.get(WindowMemoryInspector.WINDOW_NAME) as WindowMemoryInspector
+
+
+## Fetch `/v1/cortical_area/memory` for the selected memory cortical area (paginated neuron id list in JSON).
+func request_memory_inspector_fetch(cortical_id: StringName, page: int = 0, page_size: int = 50) -> void:
+	if brain_monitor_activity_mode != BRAIN_MONITOR_ACTIVITY_MODE.MEMORY_INSPECTOR:
+		return
+	var win := _memory_inspector_window()
+	if win == null:
+		_window_manager.spawn_memory_inspector()
+		win = _memory_inspector_window()
+	if win == null:
+		return
+	if not FeagiCore.can_interact_with_feagi():
+		win.set_error_line("FEAGI is not ready.")
+		win.restore_pagination_after_failed_fetch()
+		return
+	_memory_inspector_fetch_generation += 1
+	var gen: int = _memory_inspector_fetch_generation
+	win.set_loading()
+	_memory_inspector_query_async(cortical_id, page, page_size, gen)
+
+
+func _memory_inspector_query_async(cortical_id: StringName, page: int, page_size: int, gen: int) -> void:
+	var out: FeagiRequestOutput = await FeagiCore.requests.get_memory_cortical_area(str(cortical_id), page, page_size)
+	if gen != _memory_inspector_fetch_generation:
+		return
+	var win := _memory_inspector_window()
+	if win == null:
+		return
+	if out.success:
+		var d: Dictionary = out.decode_response_as_dict()
+		win.set_area_json_content(_format_voxel_inspector_response(d))
+		win.update_summary_from_response(d)
+		win.update_area_pagination_from_response(d)
+	else:
+		win.set_error_line(out.decode_response_as_string())
+		win.restore_pagination_after_failed_fetch()
+
+
+## Fetch `/v1/connectome/memory_neuron` for a single memory neuron id (detail JSON).
+func request_memory_neuron_detail_fetch(neuron_id: int) -> void:
+	if brain_monitor_activity_mode != BRAIN_MONITOR_ACTIVITY_MODE.MEMORY_INSPECTOR:
+		return
+	var win := _memory_inspector_window()
+	if win == null:
+		return
+	if not FeagiCore.can_interact_with_feagi():
+		win.set_neuron_error_line("FEAGI is not ready.")
+		return
+	_memory_neuron_fetch_generation += 1
+	var gen: int = _memory_neuron_fetch_generation
+	win.set_neuron_loading()
+	_memory_neuron_query_async(neuron_id, gen)
+
+
+func _memory_neuron_query_async(neuron_id: int, gen: int) -> void:
+	var out: FeagiRequestOutput = await FeagiCore.requests.get_memory_neuron(neuron_id)
+	if gen != _memory_neuron_fetch_generation:
+		return
+	var win := _memory_inspector_window()
+	if win == null:
+		return
+	if out.success:
+		var d: Dictionary = out.decode_response_as_dict()
+		win.set_neuron_json_content(_format_voxel_inspector_response(d))
+	else:
+		win.set_neuron_error_line(out.decode_response_as_string())
 
 
 ## Interactions with FEAGICORE

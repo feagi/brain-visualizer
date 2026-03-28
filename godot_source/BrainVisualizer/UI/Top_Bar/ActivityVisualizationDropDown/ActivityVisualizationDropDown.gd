@@ -8,6 +8,7 @@ signal activity_mode_changed(action: StringName, enabled: bool)
 
 const ACTION_GLOBAL_NEURAL_CONNECTIONS: StringName = &"global_neural_connections"
 const ACTION_VOXEL_INSPECTOR: StringName = &"voxel_inspector"
+const ACTION_MEMORY_INSPECTOR: StringName = &"memory_inspector"
 
 @onready var _dropdown: ToggleImageDropDown = $ToggleImageDropDown
 @onready var _global_button: TextureButton = $ToggleImageDropDown/PanelContainer/BoxContainer/GlobalNeuralConnections
@@ -33,6 +34,9 @@ func _user_request_activity(_view_name: StringName, index: int) -> void:
 		return
 	if index == 1:
 		activity_mode_changed.emit(ACTION_VOXEL_INSPECTOR, true)
+		return
+	if index == 2:
+		activity_mode_changed.emit(ACTION_MEMORY_INSPECTOR, true)
 
 
 func _refresh_global_button_visual_state() -> void:

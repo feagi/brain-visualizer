@@ -1225,6 +1225,31 @@ func get_voxel_neurons(cortical_id: String, x: int, y: int, z: int, synapse_page
 	await worker.worker_done
 	return worker.retrieve_output_and_close()
 
+## GET /v1/cortical_area/memory — memory area runtime stats and paginated memory neuron ids.
+func get_memory_cortical_area(cortical_id: String, page: int = 0, page_size: int = 50) -> FeagiRequestOutput:
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	var cid_enc: String = String(cortical_id).uri_encode()
+	var q: String = "cortical_id=%s&page=%d&page_size=%d" % [cid_enc, page, page_size]
+	var full_path: StringName = StringName(str(FeagiCore.network.http_API.address_list.GET_corticalArea_memory) + "?" + q)
+	var req: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(full_path)
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(req)
+	await worker.worker_done
+	return worker.retrieve_output_and_close()
+
+## GET /v1/connectome/memory_neuron — plasticity + synapse detail for one memory neuron id.
+func get_memory_neuron(neuron_id: int) -> FeagiRequestOutput:
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	var q: String = "neuron_id=%d" % neuron_id
+	var full_path: StringName = StringName(str(FeagiCore.network.http_API.address_list.GET_connectome_memoryNeuron) + "?" + q)
+	var req: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(full_path)
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(req)
+	await worker.worker_done
+	return worker.retrieve_output_and_close()
+
 ## Requests an update of a cortical area's properties a single time
 func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	# Fetching cortical area details

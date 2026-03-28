@@ -222,6 +222,9 @@ func _on_activity_visualization_mode_changed(action: StringName, enabled: bool) 
 	elif action == ActivityVisualizationDropDown.ACTION_VOXEL_INSPECTOR:
 		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR
 		BV.WM.spawn_voxel_inspector()
+	elif action == ActivityVisualizationDropDown.ACTION_MEMORY_INSPECTOR:
+		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.MEMORY_INSPECTOR
+		BV.WM.spawn_memory_inspector()
 
 func _toggle_global_neural_connections(enabled: bool) -> void:
 	print("🔗 Toggling global neural connections: ", enabled)

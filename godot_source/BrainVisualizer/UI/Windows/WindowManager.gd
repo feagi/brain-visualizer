@@ -32,6 +32,7 @@ const _PREFAB_CAMERA_ANIMATIONS: PackedScene = preload("res://BrainVisualizer/UI
 const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.tscn")
 const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.tscn")
 const _PREFAB_VOXEL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.tscn")
+const _PREFAB_MEMORY_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MemoryInspector/WindowMemoryInspector.tscn")
 
 
 var loaded_windows: Dictionary
@@ -69,6 +70,18 @@ func spawn_voxel_inspector() -> WindowVoxelInspector:
 			bring_window_to_top(existing)
 			return existing
 	var w: WindowVoxelInspector = _default_spawn_window(_PREFAB_VOXEL_INSPECTOR, WindowVoxelInspector.WINDOW_NAME) as WindowVoxelInspector
+	w.setup()
+	return w
+
+
+## Opens or focuses the memory inspector panel (JSON from `/v1/cortical_area/memory` and `/v1/connectome/memory_neuron`).
+func spawn_memory_inspector() -> WindowMemoryInspector:
+	if WindowMemoryInspector.WINDOW_NAME in loaded_windows:
+		var existing: WindowMemoryInspector = loaded_windows[WindowMemoryInspector.WINDOW_NAME] as WindowMemoryInspector
+		if existing != null:
+			bring_window_to_top(existing)
+			return existing
+	var w: WindowMemoryInspector = _default_spawn_window(_PREFAB_MEMORY_INSPECTOR, WindowMemoryInspector.WINDOW_NAME) as WindowMemoryInspector
 	w.setup()
 	return w
 
