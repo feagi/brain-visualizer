@@ -45,9 +45,9 @@ func setup() -> void:
 	_cortical_dropdown = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/CorticalRow/CorticalAreaDropdown
 	_coords = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelCoords
 	_inspect_btn = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/InspectButton
-	_page_prev_btn = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/PaginationRow/PagePrevButton
-	_page_next_btn = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/PaginationRow/PageNextButton
-	_page_value_label = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/PaginationRow/PageValueLabel
+	_page_prev_btn = $WindowPanel/WindowMargin/WindowInternals/PaginationRow/PagePrevButton
+	_page_next_btn = $WindowPanel/WindowMargin/WindowInternals/PaginationRow/PageNextButton
+	_page_value_label = $WindowPanel/WindowMargin/WindowInternals/PaginationRow/PageValueLabel
 	_voxel_synapse_toggle = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow/VoxelSynapseToggle
 	_json_text.editable = false
 	custom_minimum_size = DEFAULT_WINDOW_SIZE
