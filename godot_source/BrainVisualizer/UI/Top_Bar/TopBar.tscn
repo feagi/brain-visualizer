@@ -266,40 +266,31 @@ texture_disabled = ExtResource("16_48dar")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="DropDownPanel" type="PanelContainer" parent="."]
+[node name="TopBarControlsPanel" type="PanelContainer" parent="."]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="DropDownPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="TopBarControlsPanel"]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_far"
 
-[node name="SplitViewDropDown" parent="DropDownPanel/MarginContainer" instance=ExtResource("20_ugrg0")]
+[node name="HBoxContainer" type="HBoxContainer" parent="TopBarControlsPanel/MarginContainer"]
+layout_mode = 2
+theme_type_variation = &"HBoxContainer_farther"
+theme_override_constants/separation = 0
+
+[node name="SplitViewDropDown" parent="TopBarControlsPanel/MarginContainer/HBoxContainer" instance=ExtResource("20_ugrg0")]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Split view options (Circuit Builder / Brain Monitor / Split View)"
 
-[node name="ActivityRenderingPanel" type="PanelContainer" parent="."]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="ActivityRenderingPanel"]
-layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
-
-[node name="ActivityVisualizationDropDown" parent="ActivityRenderingPanel/MarginContainer" instance=ExtResource("38_activity_dd")]
+[node name="ActivityVisualizationDropDown" parent="TopBarControlsPanel/MarginContainer/HBoxContainer" instance=ExtResource("38_activity_dd")]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Brain activity: global neural connections or Voxel Inspector"
 
-[node name="CameraAnimationsPanel" type="PanelContainer" parent="."]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="CameraAnimationsPanel"]
-layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
-
-[node name="CameraAnimations" type="TextureRect" parent="CameraAnimationsPanel/MarginContainer"]
+[node name="CameraAnimations" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -313,14 +304,7 @@ texture_pressed = ExtResource("29_cam_anim_c")
 texture_hover = ExtResource("28_cam_anim_h")
 texture_disabled = ExtResource("30_cam_anim_d")
 
-[node name="GuidePanel" type="PanelContainer" parent="."]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="GuidePanel"]
-layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
-
-[node name="GuideButton" type="TextureRect" parent="GuidePanel/MarginContainer"]
+[node name="GuideButton" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -334,14 +318,7 @@ texture_pressed = ExtResource("33_guide_c")
 texture_hover = ExtResource("32_guide_h")
 texture_disabled = ExtResource("34_guide_d")
 
-[node name="SettingsPanel" type="PanelContainer" parent="."]
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="SettingsPanel"]
-layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
-
-[node name="SettingsButton" type="TextureRect" parent="SettingsPanel/MarginContainer"]
+[node name="SettingsButton" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -434,10 +411,10 @@ script = ExtResource("7_g1qxj")
 [connection signal="pressed" from="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer/TextureButton" to="." method="_open_create_morpology"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Smaller" to="." method="_smaller_scale"]
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
-[connection signal="requesting_view_change" from="DropDownPanel/MarginContainer/SplitViewDropDown" to="." method="_view_selected"]
-[connection signal="activity_mode_changed" from="ActivityRenderingPanel/MarginContainer/ActivityVisualizationDropDown" to="." method="_on_activity_visualization_mode_changed"]
-[connection signal="pressed" from="SettingsPanel/MarginContainer/SettingsButton" to="." method="_open_options"]
-[connection signal="pressed" from="CameraAnimationsPanel/MarginContainer/CameraAnimations" to="." method="_open_camera_animations"]
-[connection signal="pressed" from="GuidePanel/MarginContainer/GuideButton" to="." method="_open_guide"]
+[connection signal="requesting_view_change" from="TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown" to="." method="_view_selected"]
+[connection signal="activity_mode_changed" from="TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown" to="." method="_on_activity_visualization_mode_changed"]
+[connection signal="pressed" from="TopBarControlsPanel/MarginContainer/HBoxContainer/SettingsButton" to="." method="_open_options"]
+[connection signal="pressed" from="TopBarControlsPanel/MarginContainer/HBoxContainer/CameraAnimations" to="." method="_open_camera_animations"]
+[connection signal="pressed" from="TopBarControlsPanel/MarginContainer/HBoxContainer/GuideButton" to="." method="_open_guide"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

@@ -31,7 +31,7 @@ func _ready():
 	_increase_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Bigger
 	_decrease_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Smaller
 	
-	_activity_visualization_dropdown = $ActivityRenderingPanel/MarginContainer/ActivityVisualizationDropDown
+	_activity_visualization_dropdown = $TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown
 	BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
 	
 	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron
