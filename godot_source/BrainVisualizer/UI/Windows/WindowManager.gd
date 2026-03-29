@@ -31,6 +31,8 @@ const _PREFAB_VIEW_PREVIEWS: PackedScene = preload("res://BrainVisualizer/UI/Win
 const _PREFAB_CAMERA_ANIMATIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.tscn")
 const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.tscn")
 const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.tscn")
+const _PREFAB_VOXEL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.tscn")
+const _PREFAB_MEMORY_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MemoryInspector/WindowMemoryInspector.tscn")
 
 
 var loaded_windows: Dictionary
@@ -42,9 +44,9 @@ func spawn_options() -> void:
 	var options_window: WindowOptionsMenu = _default_spawn_window(_PREFAB_OPTIONS, WindowOptionsMenu.WINDOW_NAME) as WindowOptionsMenu
 	options_window.setup()
 
-func spawn_camera_animations() -> void:
+func spawn_camera_animations(host_brain_monitor: UI_BrainMonitor_3DScene = null) -> void:
 	var cam_window: WindowCameraAnimations = _default_spawn_window(_PREFAB_CAMERA_ANIMATIONS, WindowCameraAnimations.WINDOW_NAME) as WindowCameraAnimations
-	cam_window.setup()
+	cam_window.setup(host_brain_monitor)
 
 func spawn_guide() -> void:
 	var guide_window: WindowGuide = _default_spawn_window(_PREFAB_GUIDE, WindowGuide.WINDOW_NAME) as WindowGuide
@@ -58,6 +60,31 @@ func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) 
 func spawn_ipu_opu_config(focus_device_key: StringName = "", focus_section: StringName = WindowIPUOPUConfig.SECTION_OUTPUT) -> void:
 	var config_window: WindowIPUOPUConfig = _default_spawn_window(_PREFAB_IPU_OPU_CONFIG, WindowIPUOPUConfig.WINDOW_NAME) as WindowIPUOPUConfig
 	config_window.setup_with_focus(focus_device_key, focus_section)
+
+
+## Opens or focuses the voxel inspector panel (JSON from `/v1/cortical_area/voxel_neurons` on hover).
+func spawn_voxel_inspector() -> WindowVoxelInspector:
+	if WindowVoxelInspector.WINDOW_NAME in loaded_windows:
+		var existing: WindowVoxelInspector = loaded_windows[WindowVoxelInspector.WINDOW_NAME] as WindowVoxelInspector
+		if existing != null:
+			bring_window_to_top(existing)
+			return existing
+	var w: WindowVoxelInspector = _default_spawn_window(_PREFAB_VOXEL_INSPECTOR, WindowVoxelInspector.WINDOW_NAME) as WindowVoxelInspector
+	w.setup()
+	return w
+
+
+## Opens or focuses the memory inspector panel (JSON from `/v1/cortical_area/memory` and `/v1/connectome/memory_neuron`).
+func spawn_memory_inspector() -> WindowMemoryInspector:
+	if WindowMemoryInspector.WINDOW_NAME in loaded_windows:
+		var existing: WindowMemoryInspector = loaded_windows[WindowMemoryInspector.WINDOW_NAME] as WindowMemoryInspector
+		if existing != null:
+			bring_window_to_top(existing)
+			return existing
+	var w: WindowMemoryInspector = _default_spawn_window(_PREFAB_MEMORY_INSPECTOR, WindowMemoryInspector.WINDOW_NAME) as WindowMemoryInspector
+	w.setup()
+	return w
+
 
 func spawn_create_morphology() -> void:
 	var create_morphology: WindowCreateMorphology = _default_spawn_window(_PREFAB_CREATE_MORPHOLOGY, WindowCreateMorphology.WINDOW_NAME) as WindowCreateMorphology
@@ -80,18 +107,19 @@ func spawn_create_cortical() -> void:
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
 	create_cortical.setup()
 
-func spawn_create_cortical_with_type(cortical_type: int) -> void:
+func spawn_create_cortical_with_type(cortical_type: int, placement_anchor: Control = null) -> void:
 	# For IPU/OPU, open the template selector; for CUSTOM/MEMORY (and others), open the direct create window
 	if cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-		var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME) as WindowSelectCorticalTemplate
-		selector.setup_for_type(cortical_type)
+		var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME, true, placement_anchor) as WindowSelectCorticalTemplate
 		selector.template_chosen.connect(func(template: CorticalTemplate):
-			var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
+			var anchor_rect := get_anchor_rect_for_placement(selector)
+			var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME, true, null, anchor_rect, true) as WindowCreateCorticalArea
 			create_cortical.setup_with_type(cortical_type)
 			create_cortical._IOPU_definition.apply_preselected_template(template)
 		)
+		selector.setup_for_type(cortical_type)
 		return
-	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
+	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME, true, placement_anchor) as WindowCreateCorticalArea
 	create_cortical.setup_with_type(cortical_type)
 	bring_window_to_top(create_cortical)
 
@@ -100,18 +128,19 @@ func spawn_create_cortical_for_region(context_region: BrainRegion) -> void:
 	create_cortical.setup_for_region(context_region)
 	bring_window_to_top(create_cortical)
 
-func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cortical_type: int) -> void:
+func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cortical_type: int, placement_anchor: Control = null) -> void:
 	# For IPU/OPU, open the template selector; for CUSTOM/MEMORY (and others), open the direct create window
 	if cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-		var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME) as WindowSelectCorticalTemplate
-		selector.setup_for_type(cortical_type, context_region)
+		var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME, true, placement_anchor) as WindowSelectCorticalTemplate
 		selector.template_chosen.connect(func(template: CorticalTemplate):
-			var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
+			var anchor_rect := get_anchor_rect_for_placement(selector)
+			var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME, true, null, anchor_rect, true) as WindowCreateCorticalArea
 			create_cortical.setup_with_type_for_region(context_region, cortical_type)
 			create_cortical._IOPU_definition.apply_preselected_template(template)
 		)
+		selector.setup_for_type(cortical_type, context_region)
 		return
-	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
+	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME, true, placement_anchor) as WindowCreateCorticalArea
 	create_cortical.setup_with_type_for_region(context_region, cortical_type)
 	bring_window_to_top(create_cortical)
 
@@ -276,24 +305,116 @@ func bring_window_to_top(window: Control) -> void:
 		print("UI: WINDOW: Changing window order...")
 		move_child(window, -1)
 
+## Gap between anchor and window when placing dialogs to the right of toolbar buttons.
+const ANCHOR_PLACEMENT_MARGIN_PX: int = 8
+
+## Screen-space rect of [param anchor] in root viewport coordinates (handles SubViewport brain monitor).
+func get_anchor_rect_for_placement(anchor: Control) -> Rect2:
+	return _get_anchor_rect_in_root_viewport(anchor)
+
+func _get_anchor_rect_in_root_viewport(anchor: Control) -> Rect2:
+	if anchor == null or not is_instance_valid(anchor):
+		return Rect2()
+	var global_rect := anchor.get_global_rect()
+	var anchor_pos := global_rect.position
+	var anchor_viewport := anchor.get_viewport()
+	if anchor_viewport is SubViewport:
+		var container := anchor_viewport.get_parent()
+		if container is SubViewportContainer:
+			anchor_pos += (container as SubViewportContainer).get_global_position()
+	return Rect2(anchor_pos, global_rect.size)
+
+## Bottom edge Y of the main [TopBar] in root viewport space (0 if unavailable). Keeps dialogs below the bar.
+func _get_top_bar_bottom_y_in_root_viewport() -> int:
+	if BV.UI == null or BV.UI.top_bar == null:
+		return 0
+	var r := _get_anchor_rect_in_root_viewport(BV.UI.top_bar)
+	if not r.has_area():
+		return 0
+	return int(r.position.y + r.size.y)
+
+## Top-left position for [param window] with size [param window_size], placed to the right of [param anchor].
+func position_window_to_right_of_anchor(window: Control, anchor: Control, window_size: Vector2i) -> Vector2i:
+	if anchor == null or not is_instance_valid(anchor):
+		return Vector2i.ZERO
+	return position_window_to_right_of_anchor_rect(window, _get_anchor_rect_in_root_viewport(anchor), window_size)
+
+## Top-left of [param window] is just below [param anchor] (left edges aligned), e.g. + Inputs / + Outputs on the top bar.
+func position_window_below_anchor(window: Control, anchor: Control, window_size: Vector2i) -> Vector2i:
+	if anchor == null or not is_instance_valid(anchor):
+		return Vector2i.ZERO
+	return position_window_below_anchor_rect(window, _get_anchor_rect_in_root_viewport(anchor), window_size)
+
+
+func position_window_below_anchor_rect(window: Control, anchor_rect: Rect2, window_size: Vector2i) -> Vector2i:
+	if not anchor_rect.has_area():
+		return Vector2i.ZERO
+	var popup_pos := Vector2i(
+		int(anchor_rect.position.x),
+		int(anchor_rect.position.y + anchor_rect.size.y + ANCHOR_PLACEMENT_MARGIN_PX)
+	)
+	return _clamp_window_top_left_to_viewport(window, popup_pos, window_size)
+
+## Same as [method position_window_to_right_of_anchor] but using a precomputed anchor rect (e.g. template window).
+func position_window_to_right_of_anchor_rect(window: Control, anchor_rect: Rect2, window_size: Vector2i) -> Vector2i:
+	if not anchor_rect.has_area():
+		return Vector2i.ZERO
+	var popup_pos := Vector2i(
+		int(anchor_rect.position.x + anchor_rect.size.x + ANCHOR_PLACEMENT_MARGIN_PX),
+		int(anchor_rect.position.y)
+	)
+	return _clamp_window_top_left_to_viewport(window, popup_pos, window_size)
+
+
+## Top-left of [param window] matches the top-left of [param rect] (e.g. replacing the template picker window).
+func position_window_at_top_left_of_rect(window: Control, rect: Rect2, window_size: Vector2i) -> Vector2i:
+	if not rect.has_area():
+		return Vector2i.ZERO
+	var popup_pos := Vector2i(int(rect.position.x), int(rect.position.y))
+	return _clamp_window_top_left_to_viewport(window, popup_pos, window_size)
+
+
+func _clamp_window_top_left_to_viewport(window: Control, popup_pos: Vector2i, window_size: Vector2i) -> Vector2i:
+	var viewport_rect := window.get_viewport().get_visible_rect()
+	var top_bar_bottom_y := _get_top_bar_bottom_y_in_root_viewport()
+	if top_bar_bottom_y > 0:
+		popup_pos.y = maxi(popup_pos.y, top_bar_bottom_y + ANCHOR_PLACEMENT_MARGIN_PX)
+	if popup_pos.x + window_size.x > viewport_rect.end.x:
+		popup_pos.x = int(viewport_rect.end.x) - window_size.x
+	if popup_pos.y + window_size.y > viewport_rect.end.y:
+		popup_pos.y = int(viewport_rect.end.y) - window_size.y
+	popup_pos.x = maxi(int(viewport_rect.position.x), popup_pos.x)
+	popup_pos.y = maxi(int(viewport_rect.position.y), popup_pos.y)
+	return popup_pos
+
 func force_close_all_windows() -> void:
 	print("UI: All windows being forced closed")
 	for window in loaded_windows.keys():
 		force_close_window(window)
 
-func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_close_if_open: bool = true) -> BaseDraggableWindow:
+func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_close_if_open: bool = true, placement_anchor: Control = null, placement_anchor_rect: Rect2 = Rect2(), placement_anchor_rect_exact_top_left: bool = false) -> BaseDraggableWindow:
 	if (window_name in loaded_windows.keys()) && force_close_if_open:
 		loaded_windows[window_name].close_window()
 	var new_window: BaseDraggableWindow = prefab.instantiate()
+	if placement_anchor != null and new_window.has_method("set_placement_anchor"):
+		new_window.call("set_placement_anchor", placement_anchor)
+	if placement_anchor_rect.has_area() and new_window.has_method("set_placement_anchor_rect"):
+		new_window.call("set_placement_anchor_rect", placement_anchor_rect, placement_anchor_rect_exact_top_left)
+	var use_placement: bool = placement_anchor != null or placement_anchor_rect.has_area()
+	if use_placement:
+		new_window.visible = false
 	add_child(new_window)
 	loaded_windows[window_name] = new_window
 	new_window.close_window_requested.connect(force_close_window)
 	# if we have no memopry of the window, load the defaults from the window itself
 	if window_name not in _window_memory_states:
 		_window_memory_states[window_name] = new_window.export_default_window_details()
-	else:
+	if not use_placement:
 		new_window.import_window_details(_window_memory_states[window_name])
-	new_window.position = _window_memory_states[window_name]["position"]
+		new_window.position = _window_memory_states[window_name]["position"]
+	else:
+		# Anchored placement: start hidden at origin; window sets final position before showing.
+		new_window.position = Vector2i.ZERO
 	bring_window_to_top(new_window)
 	new_window.bring_window_to_top_request.connect(_bring_window_to_top_str)
 	return new_window

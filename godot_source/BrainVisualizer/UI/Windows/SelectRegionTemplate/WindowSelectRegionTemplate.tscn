@@ -50,7 +50,7 @@ theme_override_constants/v_separation = 13
 [node name="FooterNote" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 theme_type_variation = &"Label_Small"
-text = "For more visit BrainsForRobots.com/hub"
+text = "More at BrainsForRobots.com/hub"
 horizontal_alignment = 1
 
 [node name="FooterSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]

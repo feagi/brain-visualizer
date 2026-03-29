@@ -14,93 +14,194 @@ script = ExtResource("1_a7y6g")
 [node name="Label9" type="Label" parent="."]
 custom_minimum_size = Vector2(1400, 0)
 layout_mode = 2
+theme_type_variation = &"Label_Header"
 text = "Established Mappings"
 
-[node name="labels_box" type="HBoxContainer" parent="."]
+[node name="EmptyState" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
+alignment = 1
+
+[node name="EmptyMessage" type="Label" parent="EmptyState"]
+layout_mode = 2
+text = "No mapping currently defined for this connection"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Spacer" type="Control" parent="EmptyState"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="AddFirstButton" type="Button" parent="EmptyState"]
+custom_minimum_size = Vector2(200, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"Button_big"
+text = " Add First Mapping "
+
+[node name="HeaderRowWrapper" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_type_variation = &"HBoxContainer_adjacent"
+
+[node name="HeaderAlignLead" type="Control" parent="HeaderRowWrapper"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 0)
 size_flags_horizontal = 0
+size_flags_vertical = 0
+
+[node name="labels_box" type="HBoxContainer" parent="HeaderRowWrapper"]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_type_variation = &"HBoxContainer_farther"
 
-[node name="Label" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(150, 0)
+[node name="MappingDefinitionHeaderGroup" type="HBoxContainer" parent="HeaderRowWrapper/labels_box"]
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Mapping Definition"
+theme_type_variation = &"HBoxContainer_adjacent"
+size_flags_horizontal = 0
 
-[node name="edit_placeholder" type="Control" parent="labels_box"]
+[node name="Label" type="Label" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
+custom_minimum_size = Vector2(150, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Mapping Definition"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="edit_placeholder" type="Control" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 0
 
-[node name="Label2" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(270, 0)
+[node name="Spacer_AfterMappingDefinition" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
 size_flags_horizontal = 0
-text = "Overwrite Scalar [X, Y, Z]"
-horizontal_alignment = 1
 
-[node name="Label3" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(100, 0)
+[node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(210, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "Plasticity Multiplier"
+text = "Overwrite Scalar"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_AfterScalar" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(170, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Post-Synaptic Potential Multiplier"
 mouse_filter = 1
-text = "PSP Multi."
-horizontal_alignment = 1
+text = "PSP Multiplier"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
-[node name="Label8" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(100, 0)
+[node name="Spacer_BetweenPSPAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label8" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(168, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Inhibitory"
-horizontal_alignment = 1
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
-[node name="Label4" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(100, 0)
+[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label4" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(168, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Plasticity"
-horizontal_alignment = 1
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
-[node name="Label_Window" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(100, 0)
+[node name="Spacer_AfterPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
 mouse_filter = 1
-text = "Plast. Win."
-horizontal_alignment = 1
+text = "Plasticity Window"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
-[node name="Label5" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(100, 0)
+[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Constant"
 mouse_filter = 1
-text = "Plast. Const."
-horizontal_alignment = 1
+text = "Plasticity Constant"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
-[node name="Label6" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(100, 0)
+[node name="Spacer_AfterPlasticityConst" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "LTP Multiplier"
+
+[node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(170, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Long-Term Potentiation Multiplier"
 mouse_filter = 1
-text = "LTP Multi."
-horizontal_alignment = 1
+text = "LTP Multiplier"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
-[node name="Label7" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(100, 0)
+[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
-text = "LTD Multi."
-horizontal_alignment = 1
 
-[node name="add_button" type="TextureButton" parent="labels_box"]
+[node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(170, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Long-Term Depression Multiplier"
+mouse_filter = 1
+text = "LTD Multiplier"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="add_button" type="TextureButton" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 0
+size_flags_vertical = 4
 tooltip_text = "Add Mapping"
 theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("2_na2v5")
@@ -110,8 +211,18 @@ texture_disabled = ExtResource("5_o7ap7")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="ScrollSectionGeneric" parent="." instance=ExtResource("6_nnmhp")]
+[node name="EstablishedScrollViewport" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
+size_flags_horizontal = 3
 
-[connection signal="pressed" from="labels_box/add_button" to="." method="_add_mapping_row"]
+[node name="ScrollSectionGeneric" parent="EstablishedScrollViewport" instance=ExtResource("6_nnmhp")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[connection signal="pressed" from="HeaderRowWrapper/labels_box/add_button" to="." method="_add_mapping_row"]
+[connection signal="pressed" from="EmptyState/AddFirstButton" to="." method="_add_mapping_row"]

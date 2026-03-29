@@ -2,6 +2,9 @@ extends BaseDraggableWindow
 class_name WindowSelectCorticalTemplate
 
 const WINDOW_NAME: StringName = "select_cortical_template"
+## Label column width: long single words stay one line (AUTOWRAP_WORD); only phrases wrap at spaces.
+const _TILE_CELL_WIDTH_PX: int = 180
+const _ICON_BUTTON_SIZE_PX: int = 128
 
 signal template_chosen(template: CorticalTemplate)
 
@@ -9,6 +12,12 @@ var _cancel_button: Button
 var _icon_grid: GridContainer
 var _is_ipu: bool = true
 var _context_region: BrainRegion = null
+## When set (before add_child), this window opens just below the + Inputs / + Outputs control.
+var _placement_anchor: Control = null
+
+## Called by WindowManager before add_child when spawning from the top bar add buttons.
+func set_placement_anchor(anchor: Control) -> void:
+	_placement_anchor = anchor
 
 func _ready() -> void:
 	super()
@@ -27,7 +36,22 @@ func setup_for_type(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, cont
 			tb.set("title", "Add Input Cortical Area")
 		else:
 			tb.set("title", "Add Output Cortical Area")
-	_populate_grid(cortical_type)
+	await _populate_grid(cortical_type)
+	if _placement_anchor != null and is_instance_valid(_placement_anchor):
+		await _apply_placement_below_anchor()
+
+
+func _apply_placement_below_anchor() -> void:
+	# One layout frame while hidden (WindowManager); then show at final position only.
+	await get_tree().process_frame
+	var window_size: Vector2i = size
+	if window_size.x < 2 or window_size.y < 2:
+		window_size = get_combined_minimum_size()
+	if window_size.x < 2 or window_size.y < 2:
+		visible = true
+		return
+	position = BV.WM.position_window_below_anchor(self, _placement_anchor, window_size)
+	visible = true
 
 func _on_cancel() -> void:
 	close_window()
@@ -36,7 +60,7 @@ func _populate_grid(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> v
 	for child in _icon_grid.get_children():
 		child.queue_free()
 	# Ensure vertical gap between rows (icons are 128px)
-	_icon_grid.add_theme_constant_override("v_separation", 40)
+	_icon_grid.add_theme_constant_override("v_separation", 64)
 	# Increase scroll height to keep 4 rows visible (approx 4 * 128 + gaps)
 	var scroll: ScrollContainer = _window_internals.get_node("Scroll")
 	if scroll:
@@ -52,8 +76,8 @@ func _populate_grid(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> v
 			push_error("WindowSelectCorticalTemplate: Unknown cortical type")
 			return
 	
-	# Ensure window is wide enough for 4 tiles (128 each) plus 10% gaps between tiles
-	var min_width = 640
+	# 4 * cell width + 3 * h_separation + ContentMargin + WindowMargin (see .tscn)
+	var min_width: int = 980
 	if size.x < min_width:
 		custom_minimum_size.x = float(min_width)
 
@@ -94,14 +118,15 @@ func _add_tile_from_api_data(type_key: String, metadata: Dictionary) -> void:
 	var tile := VBoxContainer.new()
 	tile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	tile.custom_minimum_size.x = 128
-	tile.alignment = BoxContainer.ALIGNMENT_BEGIN
-	
+	tile.custom_minimum_size.x = float(_TILE_CELL_WIDTH_PX)
+	tile.alignment = BoxContainer.ALIGNMENT_CENTER
+	tile.add_theme_constant_override("separation", 14)
+
 	var btn := TextureButton.new()
-	btn.custom_minimum_size = Vector2(128, 128)
+	btn.custom_minimum_size = Vector2(_ICON_BUTTON_SIZE_PX, _ICON_BUTTON_SIZE_PX)
 	btn.ignore_texture_size = true
 	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	
+
 	# Load icon using the type_key (e.g., "iinf", "omot")
 	btn.texture_normal = UIManager.get_icon_texture_by_ID(type_key, _is_ipu)
 	btn.texture_hover = btn.texture_normal
@@ -115,14 +140,13 @@ func _add_tile_from_api_data(type_key: String, metadata: Dictionary) -> void:
 	var name_label := Label.new()
 	name_label.text = metadata.get("description", type_key)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Wrap only at spaces; never break a single word. Cell width fits typical one-line titles.
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	name_label.custom_minimum_size.x = 128
-	# Reserve space for two lines to keep icon tops aligned across the row
-	name_label.custom_minimum_size.y = 40
+	name_label.custom_minimum_size.x = float(_TILE_CELL_WIDTH_PX)
+	name_label.custom_minimum_size.y = 44.0
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	name_label.max_lines_visible = 2
-	
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
 	tile.add_child(btn)
 	tile.add_child(name_label)
 	_icon_grid.add_child(tile)
@@ -131,10 +155,11 @@ func _add_tile(template: CorticalTemplate) -> void:
 	var tile := VBoxContainer.new()
 	tile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	tile.custom_minimum_size.x = 128
-	tile.alignment = BoxContainer.ALIGNMENT_BEGIN
+	tile.custom_minimum_size.x = float(_TILE_CELL_WIDTH_PX)
+	tile.alignment = BoxContainer.ALIGNMENT_CENTER
+	tile.add_theme_constant_override("separation", 14)
 	var btn := TextureButton.new()
-	btn.custom_minimum_size = Vector2(128, 128)
+	btn.custom_minimum_size = Vector2(_ICON_BUTTON_SIZE_PX, _ICON_BUTTON_SIZE_PX)
 	btn.ignore_texture_size = true
 	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn.texture_normal = UIManager.get_icon_texture_by_ID(template.ID, _is_ipu)
@@ -145,12 +170,10 @@ func _add_tile(template: CorticalTemplate) -> void:
 	name_label.text = template.cortical_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	name_label.custom_minimum_size.x = 128
-	# Reserve space for two lines to keep icon tops aligned across the row
-	name_label.custom_minimum_size.y = 40
+	name_label.custom_minimum_size.x = float(_TILE_CELL_WIDTH_PX)
+	name_label.custom_minimum_size.y = 44.0
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	name_label.max_lines_visible = 2
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tile.add_child(btn)
 	tile.add_child(name_label)
 	_icon_grid.add_child(tile)

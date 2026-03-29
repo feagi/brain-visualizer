@@ -6,7 +6,7 @@ var _defaults: MappingRestrictionDefault
 
 var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
-var _PSP: IntInput
+var _PSP: FloatInput
 var _inhibitory: ToggleButton
 var _plasticity: ToggleButton
 var _plasticity_window: IntInput
@@ -16,7 +16,7 @@ var _LTD_multiplier: FloatInput
 var _edit: TextureButton
 
 func _ready() -> void:
-	_morphologies = $Morphology_List
+	_morphologies = $MappingDefinitionGroup/Morphology_List
 	_scalar = $Scalar
 	_PSP = $PSP
 	_inhibitory = $Inhibitory
@@ -25,7 +25,7 @@ func _ready() -> void:
 	_plasticity_constant = $Plasticity_Constant
 	_LTP_multiplier = $LTP_Multiplier
 	_LTD_multiplier = $LTD_Multiplier
-	_edit = $edit
+	_edit = $MappingDefinitionGroup/edit
 	_morphologies.user_selected_morphology.connect(_on_morphology_selected)
 
 func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults: MappingRestrictionDefault) -> void:
@@ -62,7 +62,7 @@ func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults:
 func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_morphologies.set_selected_morphology(mapping.morphology_used)
 	_scalar.current_vector = mapping.scalar
-	_PSP.current_int = abs(mapping.post_synaptic_current_multiplier)
+	_PSP.current_float = absf(mapping.post_synaptic_current_multiplier)
 	_inhibitory.set_toggle_no_signal(mapping.post_synaptic_current_multiplier < 0)
 	_plasticity.set_toggle_no_signal(mapping.is_plastic)
 	_plasticity_window.current_int = mapping.plasticity_window
@@ -83,7 +83,7 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 func export_mapping() -> SingleMappingDefinition:
 	var morphology_used: BaseMorphology = _morphologies.get_selected_morphology()
 	var scalar: Vector3i = _scalar.current_vector
-	var PSP: int = _PSP.current_int
+	var PSP: float = _PSP.current_float
 	if _inhibitory.button_pressed:
 		PSP = -PSP
 	var is_plastic: bool = _plasticity.button_pressed
@@ -104,8 +104,8 @@ func export_mapping() -> SingleMappingDefinition:
 		plasticity_window
 	)
 
-func _on_user_PSP(_value: Variant) -> void:
-	# IntInput updates its internal value on validation; no extra handling needed.
+func _on_user_PSP(_value: float) -> void:
+	# FloatInput updates its internal value on validation; no extra handling needed.
 	# This exists to satisfy the connected signal in the scene.
 	pass
 

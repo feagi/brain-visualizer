@@ -13,7 +13,7 @@ var _item_list: ItemList
 var _items: Array[Dictionary] = []
 var _filtered_item_indices: Array[int] = []
 var _selection_handler: Callable
-var _base_filter_font_size: int = 0
+## List ItemList base size from theme; filter uses the same scale so the bar matches the list body.
 var _base_list_font_size: int = 0
 
 ## Wire UI and bind theme updates for consistent scaling.
@@ -24,7 +24,6 @@ func _ready() -> void:
 	_item_list.item_selected.connect(_on_item_selected)
 	_item_list.item_clicked.connect(_on_item_clicked)
 	_item_list.item_activated.connect(_on_item_activated)
-	_base_filter_font_size = _get_theme_font_size_safe(_filter_line)
 	_base_list_font_size = _get_theme_font_size_safe(_item_list)
 	BV.UI.theme_changed.connect(_on_theme_changed)
 	_on_theme_changed(BV.UI.loaded_theme)
@@ -135,14 +134,13 @@ func _on_theme_changed(_new_theme: Theme) -> void:
 	_apply_scaled_fonts()
 
 
-## Apply font sizes based on the current UI scale.
+## Apply font sizes based on the current UI scale (filter matches list; LineEdit theme base is often oversized).
 func _apply_scaled_fonts() -> void:
 	var scale := 1.0
 	if BV.UI and BV.UI.loaded_theme_scale:
 		scale = BV.UI.loaded_theme_scale.x
-	var filter_size := _scale_font_size(_base_filter_font_size, scale) + 2
-	var list_size := _scale_font_size(_base_list_font_size, scale) + 2
-	_filter_line.add_theme_font_size_override("font_size", filter_size)
+	var list_size := _scale_font_size(_base_list_font_size, scale) + 1
+	_filter_line.add_theme_font_size_override("font_size", list_size)
 	_item_list.add_theme_font_size_override("font_size", list_size)
 
 

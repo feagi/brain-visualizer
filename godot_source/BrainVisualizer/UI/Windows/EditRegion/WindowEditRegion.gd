@@ -96,10 +96,24 @@ func close_window() -> void:
 func _on_press_cancel():
 	close_window()
 
-func _on_press_open_circuit_builder(): #TODO change the spawn region to the last active one
-	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	var root_region_tab: UITabContainer = BV.UI.root_UI_view.return_UITabContainer_holding_CB_of_given_region(root_region)
-	BV.UI.root_UI_view.show_or_create_CB_of_region(_editing_region, root_region_tab)
+## Opens split view (Circuit Builder + Brain Monitor) and shows or creates both tabs for this circuit.
+func _on_press_open_circuit() -> void:
+	var root_UI_view: UIView = BV.UI.root_UI_view
+	if root_UI_view == null:
+		push_error("WindowEditRegion: No root UI view.")
+		return
+	if root_UI_view.mode != UIView.MODE.SPLIT:
+		root_UI_view.setup_as_split()
+	var temp_split: TempSplit = BV.UI.get_node("CB_Holder") as TempSplit
+	if temp_split != null and temp_split.current_state == TempSplit.STATES.CB_CLOSED:
+		temp_split.set_view(TempSplit.STATES.CB_HORIZONTAL)
+	var primary_tab_container: UITabContainer = root_UI_view._get_primary_child() as UITabContainer
+	var secondary_tab_container: UITabContainer = root_UI_view.get_secondary_tab_container()
+	if primary_tab_container == null or secondary_tab_container == null:
+		push_error("WindowEditRegion: Tab containers not found after split setup.")
+		return
+	root_UI_view.show_or_create_CB_of_region(_editing_region, primary_tab_container)
+	root_UI_view.show_or_create_BM_of_region(_editing_region, secondary_tab_container)
 
 
 func _on_press_update():

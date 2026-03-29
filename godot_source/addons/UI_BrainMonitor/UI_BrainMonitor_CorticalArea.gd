@@ -24,6 +24,11 @@ var _selected_neuron_coordinates: Array[Vector3i] = [] #TODO we should clear thi
 var _connection_curves: Array[Node3D] = []  # Store all connection curve nodes
 var _are_connections_visible: bool = false
 var _pulse_tweens: Array[Tween] = []  # Store pulse animation tweens
+## associative_memory electric arc: run motion at half frequency (slower) vs other electric-arc mappings
+const ASSOCIATIVE_ELECTRIC_ARC_ANIM_FREQ_SCALE: float = 0.5
+## Directional traveling pulses on associative arcs (distinct from E/I line color — red pulses only)
+const ASSOCIATIVE_DIRECTION_PULSE_ALBEDO: Color = Color(1.0, 0.18, 0.18, 0.88)
+const ASSOCIATIVE_DIRECTION_PULSE_EMISSION: Color = Color(1.0, 0.22, 0.22)
 
 # I/O direction indicator (magenta pulsing arrow above boundary areas)
 var _io_direction_indicator: Node3D = null
@@ -60,7 +65,7 @@ const PULSE_DISTANCE_MAX_SCALE: float = 5.0
 
 ## Scale a pulse sphere based on distance to the active camera to keep visibility at range
 func _apply_distance_scale_to_pulse(pulse_sphere: MeshInstance3D) -> void:
-	if not PULSE_DISTANCE_SCALE_ENABLED or pulse_sphere == null:
+	if not PULSE_DISTANCE_SCALE_ENABLED or pulse_sphere == null or not is_instance_valid(pulse_sphere):
 		return
 	# Check if the node is in the scene tree before accessing global_position
 	if not pulse_sphere.is_inside_tree():
@@ -115,8 +120,12 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 			defined_cortical_area.dimensions_3D_updated.connect(_dda_renderer.update_dimensions)
 	
 	if _directpoints_renderer != null:
-		if not defined_cortical_area.coordinates_3D_updated.is_connected(_directpoints_renderer.update_position_with_new_FEAGI_coordinate):
-			defined_cortical_area.coordinates_3D_updated.connect(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+		# Death / fatigue (slaved to power row): cache may carry non-layout FEAGI coords from API; visual position is
+		# owned by [_refresh_core_cluster_layout] via [method UI_BrainMonitor_3DScene.get_cortical_area_visualization]
+		# + [method set_new_position]. Do not move the mesh on every coordinates_3D_updated or selection refetch.
+		if not AbstractCorticalArea.is_core_cluster_slaved_to_power_layout(defined_cortical_area.cortical_ID):
+			if not defined_cortical_area.coordinates_3D_updated.is_connected(_directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+				defined_cortical_area.coordinates_3D_updated.connect(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 		if not defined_cortical_area.dimensions_3D_updated.is_connected(_directpoints_renderer.update_dimensions):
 			defined_cortical_area.dimensions_3D_updated.connect(_directpoints_renderer.update_dimensions)
 	
@@ -921,6 +930,10 @@ func _hide_neural_connections() -> void:
 	_connection_curves.clear()
 	_are_connections_visible = false
 
+## World-space center of this cortical volume (renderer [StaticBody3D]). [UI_BrainMonitor_CorticalArea] is a [Node], not [Node3D], so use this instead of [member Node3D.global_position].
+func get_volume_world_center() -> Vector3:
+	return _get_cortical_area_center_position()
+
 ## Get the center position of this cortical area in world space
 func _get_cortical_area_center_position() -> Vector3:
 	# print("     🔍 Getting position for: ", _representing_cortial_area.cortical_ID)  # Suppressed - too frequent
@@ -976,10 +989,48 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 	# Get position from the target's renderer  
 	return target_visualization._get_cortical_area_center_position()
 
+## World-space center of a voxel given FEAGI neuron coordinates (same convention as hover highlighting).
+func feagi_voxel_center_world_position(feagi_coord: Vector3i) -> Vector3:
+	if _dda_renderer != null:
+		return _dda_renderer.feagi_neuron_coordinate_to_world_center(feagi_coord)
+	if _directpoints_renderer != null:
+		return _directpoints_renderer.feagi_neuron_coordinate_to_world_center(feagi_coord)
+	return Vector3.ZERO
+
+## Single Bezier arc for voxel-level synapse preview (reuses cortical connection styling; no genome mapping set).
+## Includes directional pulse circles; tween callback self-terminates if nodes are freed by overlay clear.
+## `start_world` / `end_world` are positions in the **parent's local space** (Brain Monitor uses `_node_3D_root.to_local(global)`).
+func create_voxel_level_synapse_visualization_curve(
+	start_world: Vector3,
+	end_world: Vector3,
+	line_id: StringName,
+	is_inhibitory: bool,
+	is_global_mode: bool,
+	min_arc_height: float = 0.0
+) -> Node3D:
+	return _create_connection_curve_variant(
+		start_world,
+		end_world,
+		line_id,
+		is_inhibitory,
+		false,
+		false,
+		false,
+		false,
+		is_global_mode,
+		0.4,
+		true,
+		min_arc_height
+	)
+
 ## Create a 3D curve connecting two points
 func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
-	var is_bidirectional = _is_mapping_set_bidirectional_plastic(mapping_set)
+	var is_reciprocal_plastic: bool = _mapping_has_reciprocal_plastic_pair(mapping_set)
+	var has_associative: bool = _mapping_set_has_associative_memory(mapping_set)
+	# One-way associative: single electric arc. Reciprocal plastic pair: two arcs (offset so they do not overlap).
+	var use_electric_arc: bool = is_plastic and (has_associative or is_reciprocal_plastic)
+	var apply_reciprocal_offset: bool = is_reciprocal_plastic
 	
 	# If inhibitory and excitatory coexist between two areas, render two independent arcs.
 	# - Excitatory: green
@@ -997,14 +1048,14 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		mixed_node.name = "MIXED_" + plastic_prefix + connection_id
 		
 		# Slightly different bend multipliers for separation
-		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, is_bidirectional, is_global_mode, 0.43)
-		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, is_bidirectional, is_global_mode, 0.37)
+		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, is_global_mode, 0.43)
+		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, is_global_mode, 0.37)
 		mixed_node.add_child(excitatory_curve)
 		mixed_node.add_child(inhibitory_curve)
 		return mixed_node
 	
 	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
-	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, is_bidirectional, is_global_mode, 0.4)
+	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, is_global_mode, 0.4)
 
 ## Internal helper that creates a single visual arc for a connection.
 ## arc_height_multiplier controls the curve bend height relative to distance (e.g. 0.4 = 40% of distance).
@@ -1014,10 +1065,29 @@ func _create_connection_curve_variant(
 	connection_id: StringName,
 	is_inhibitory: bool,
 	is_plastic: bool,
-	is_bidirectional: bool,
+	use_electric_arc: bool,
+	apply_reciprocal_offset: bool,
+	has_associative_memory_mapping: bool,
 	is_global_mode: bool,
-	arc_height_multiplier: float
+	arc_height_multiplier: float,
+	include_pulse_animation: bool = true,
+	min_arc_height: float = 0.0
 ) -> Node3D:
+	# Separate reciprocal A<->B arcs sideways so direction is readable (reverse edge gets opposite offset).
+	var sp: Vector3 = start_pos
+	var ep: Vector3 = end_pos
+	if apply_reciprocal_offset:
+		var chord: Vector3 = ep - sp
+		var chord_len: float = chord.length()
+		if chord_len > 0.0001:
+			var perp: Vector3 = chord.cross(Vector3.UP)
+			if perp.length() < 0.0001:
+				perp = chord.cross(Vector3.FORWARD)
+			perp = perp.normalized()
+			var offset_amt: float = clampf(0.12 * chord_len, 0.2, 4.0)
+			var off: Vector3 = perp * offset_amt
+			sp += off
+			ep += off
 	
 	# Create a container for the curve segments
 	var connection_node = Node3D.new()
@@ -1026,12 +1096,14 @@ func _create_connection_curve_variant(
 	connection_node.name = type_prefix + plastic_prefix + connection_id
 	
 	# Calculate curve parameters
-	var direction = (end_pos - start_pos)
+	var direction = (ep - sp)
 	var distance = direction.length()
-	var mid_point = (start_pos + end_pos) / 2.0
+	var mid_point = (sp + ep) / 2.0
 	
-	# Create an upward arc - arc height based on distance
+	# Create an upward arc - arc height based on distance (floor for short intra-area synapses)
 	var arc_height = distance * arc_height_multiplier
+	if min_arc_height > 0.0:
+		arc_height = maxf(arc_height, min_arc_height)
 	var control_point = mid_point + Vector3(0, arc_height, 0)
 	
 	# For plastic connections, add wobble effect by modifying control point and segments
@@ -1040,25 +1112,42 @@ func _create_connection_curve_variant(
 	# Store curve points for pulse animation
 	var curve_points: Array[Vector3] = []
 	
-	# For bidirectional plastic connections, render as electric arc
-	if is_plastic and is_bidirectional:
+	# Associative / reciprocal plastic: electric arc (one strand per directed edge; reciprocal pair uses offset above)
+	if use_electric_arc:
+		var arc_anim_freq_scale: float = ASSOCIATIVE_ELECTRIC_ARC_ANIM_FREQ_SCALE if has_associative_memory_mapping else 1.0
 		var arc_points = _create_electric_arc_segments(
 			connection_node,
-			start_pos,
+			sp,
 			control_point,
-			end_pos,
+			ep,
 			is_inhibitory,
 			is_global_mode,
-			connection_id
+			connection_id,
+			arc_anim_freq_scale
 		)
-		_add_electric_arc_animation(connection_node, start_pos, control_point, end_pos)
-		# Skip default pulse animation so arc stays visually distinct.
+		_add_electric_arc_animation(connection_node, sp, control_point, ep, arc_anim_freq_scale)
+		# Associative only: red traveling pulses along source→dest (same motion as regular connections).
+		if has_associative_memory_mapping:
+			var pulse_points: Array[Vector3] = []
+			var num_pulse_samples: int = 22
+			for i in range(num_pulse_samples + 1):
+				var t: float = float(i) / float(num_pulse_samples)
+				pulse_points.append(_quadratic_bezier(sp, control_point, ep, t))
+			_create_pulse_animation(
+				connection_node,
+				pulse_points,
+				connection_id,
+				is_inhibitory,
+				ASSOCIATIVE_DIRECTION_PULSE_ALBEDO,
+				ASSOCIATIVE_DIRECTION_PULSE_EMISSION,
+				2.0 / ASSOCIATIVE_ELECTRIC_ARC_ANIM_FREQ_SCALE
+			)
 		return connection_node
 	
 	# For plastic connections, create dashed lines
 	if is_plastic:
 		# Calculate number of dashes based on curve length for consistent spacing
-		var curve_length = _estimate_curve_length(start_pos, control_point, end_pos)
+		var curve_length = _estimate_curve_length(sp, control_point, ep)
 		var desired_dash_spacing = 2.5  # Units between dashes
 		var num_dashes = max(4, int(curve_length / desired_dash_spacing))  # Minimum 4 dashes
 		
@@ -1068,11 +1157,11 @@ func _create_connection_curve_variant(
 			var t = float(i) / float(num_dashes - 1)  # 0 to 1 along curve
 			
 			# Calculate position on quadratic Bezier curve
-			var dash_position = _quadratic_bezier(start_pos, control_point, end_pos, t)
+			var dash_position = _quadratic_bezier(sp, control_point, ep, t)
 			
 			# Calculate direction for orientation
 			var t_next = min(t + 0.1, 1.0)  # Small step ahead for direction
-			var next_position = _quadratic_bezier(start_pos, control_point, end_pos, t_next)
+			var next_position = _quadratic_bezier(sp, control_point, ep, t_next)
 			var dash_direction = (next_position - dash_position).normalized()
 			
 			# Create a small cylinder for each dash
@@ -1113,7 +1202,7 @@ func _create_connection_curve_variant(
 		
 		# Store dashes for animation
 		connection_node.set_meta("plastic_dashes", connection_node.get_children())
-		_add_dash_wave_animation(connection_node, start_pos, control_point, end_pos)
+		_add_dash_wave_animation(connection_node, sp, control_point, ep)
 	else:
 		# For non-plastic connections, use continuous segments
 		var num_segments = 12
@@ -1124,8 +1213,8 @@ func _create_connection_curve_variant(
 			var t2 = float(i + 1) / float(num_segments)
 			
 			# Calculate points on quadratic Bezier curve
-			var point1 = _quadratic_bezier(start_pos, control_point, end_pos, t1)
-			var point2 = _quadratic_bezier(start_pos, control_point, end_pos, t2)
+			var point1 = _quadratic_bezier(sp, control_point, ep, t1)
+			var point2 = _quadratic_bezier(sp, control_point, ep, t2)
 			
 			# Store points for animation
 			if i == 0:
@@ -1136,8 +1225,10 @@ func _create_connection_curve_variant(
 			var segment = _create_curve_segment(point1, point2, i, segment_material)
 			connection_node.add_child(segment)
 	
-	# Create pulse animation along this curve
-	_create_pulse_animation(connection_node, curve_points, connection_id, is_inhibitory)
+	# Pulse tweens reference mesh nodes under this curve; skip when curves are reparented/freed independently
+	# (e.g. voxel synapse overlay under the 3D scene root) so tweens cannot outlive freed pulse spheres.
+	if include_pulse_animation:
+		_create_pulse_animation(connection_node, curve_points, connection_id, is_inhibitory)
 	
 	return connection_node
 
@@ -1166,69 +1257,66 @@ func _add_dash_wave_animation(connection_node: Node3D, curve_start: Vector3, cur
 	var wave_tween = create_tween()
 	wave_tween.set_loops()  # Infinite animation
 	
-	wave_tween.tween_method(
-		func(animation_time: float):
-			# Safety check
-			if not connection_node or not is_instance_valid(connection_node):
-				wave_tween.kill()
-				return
+	var wave_cb = func(animation_time: float):
+		# Safety check
+		if not connection_node or not is_instance_valid(connection_node):
+			wave_tween.kill()
+			return
+		
+		# Traveling wave parameters
+		var wave_speed = 1.0  # Speed of traveling effect
+		var pulse_width = 2.5  # How many dashes are bright at once
+		var brightness_variation = 0.8  # How much dashes pulse
+		var length_variation = 0.5  # How much dashes extend in length
+		
+		# Create traveling wave effect along the dashes
+		var time_phase = animation_time * wave_speed
+		
+		# Animate each dash
+		for i in range(num_dashes):
+			var dash = dashes[i] as MeshInstance3D
+			if not is_instance_valid(dash):
+				continue
 			
-			# Traveling wave parameters
-			var wave_speed = 1.0  # Speed of traveling effect
-			var pulse_width = 2.5  # How many dashes are bright at once
-			var brightness_variation = 0.8  # How much dashes pulse
-			var length_variation = 0.5  # How much dashes extend in length
+			# Calculate position along curve (0 to 1)
+			var curve_position = float(i) / float(num_dashes - 1)
 			
-			# Create traveling wave effect along the dashes
-			var time_phase = animation_time * wave_speed
+			# Create traveling wave with smooth falloff
+			var wave_center = fmod(time_phase, TAU) / TAU  # Traveling center (0 to 1)
+			var distance_from_wave = abs(curve_position - wave_center)
 			
-			# Animate each dash
-			for i in range(num_dashes):
-				var dash = dashes[i] as MeshInstance3D
-				if not is_instance_valid(dash):
-					continue
+			# Handle wrap-around
+			if distance_from_wave > 0.5:
+				distance_from_wave = 1.0 - distance_from_wave
+			
+			# Create smooth pulse using cosine for smooth falloff
+			var pulse_intensity = cos(distance_from_wave * PI / pulse_width) if distance_from_wave < pulse_width else 0.0
+			pulse_intensity = max(0.0, pulse_intensity)  # Only positive values
+			
+			# Apply scale animation (dashes grow in length and thickness)
+			var original_scale = original_scales[i] if i < original_scales.size() else Vector3.ONE
+			var thickness_multiplier = 1.0 + (pulse_intensity * brightness_variation * 0.5)  # Thickness
+			var length_multiplier = 1.0 + (pulse_intensity * length_variation)  # Length
+			
+			dash.scale = Vector3(
+				original_scale.x * thickness_multiplier,  # X radius
+				original_scale.y * length_multiplier,     # Y height (length)
+				original_scale.z * thickness_multiplier  # Z radius
+			)
+			
+			# Apply brightness animation to material
+			if dash.material_override is StandardMaterial3D:
+				var material = dash.material_override as StandardMaterial3D
+				var base_emission = 0.2  # Base emission energy
+				var emission_boost = pulse_intensity * 0.7  # Bright pulse
+				material.emission_energy = base_emission + emission_boost
 				
-				# Calculate position along curve (0 to 1)
-				var curve_position = float(i) / float(num_dashes - 1)
-				
-				# Create traveling wave with smooth falloff
-				var wave_center = fmod(time_phase, TAU) / TAU  # Traveling center (0 to 1)
-				var distance_from_wave = abs(curve_position - wave_center)
-				
-				# Handle wrap-around
-				if distance_from_wave > 0.5:
-					distance_from_wave = 1.0 - distance_from_wave
-				
-				# Create smooth pulse using cosine for smooth falloff
-				var pulse_intensity = cos(distance_from_wave * PI / pulse_width) if distance_from_wave < pulse_width else 0.0
-				pulse_intensity = max(0.0, pulse_intensity)  # Only positive values
-				
-				# Apply scale animation (dashes grow in length and thickness)
-				var original_scale = original_scales[i] if i < original_scales.size() else Vector3.ONE
-				var thickness_multiplier = 1.0 + (pulse_intensity * brightness_variation * 0.5)  # Thickness
-				var length_multiplier = 1.0 + (pulse_intensity * length_variation)  # Length
-				
-				dash.scale = Vector3(
-					original_scale.x * thickness_multiplier,  # X radius
-					original_scale.y * length_multiplier,     # Y height (length)
-					original_scale.z * thickness_multiplier  # Z radius
-				)
-				
-				# Apply brightness animation to material
-				if dash.material_override is StandardMaterial3D:
-					var material = dash.material_override as StandardMaterial3D
-					var base_emission = 0.2  # Base emission energy
-					var emission_boost = pulse_intensity * 0.7  # Bright pulse
-					material.emission_energy = base_emission + emission_boost
-					
-					# Also modify transparency for additional effect
-					var base_transparency = 0.8
-					var transparency_boost = pulse_intensity * 0.2
-					material.albedo_color.a = base_transparency + transparency_boost,
-		0.0,
-		100.0,  # Long animation time
-		4.0     # 4 second wave cycle
-	)
+				# Also modify transparency for additional effect
+				var base_transparency = 0.8
+				var transparency_boost = pulse_intensity * 0.2
+				material.albedo_color.a = base_transparency + transparency_boost
+	
+	wave_tween.tween_method(wave_cb, 0.0, 100.0, 4.0)
 
 ## Add circular rotating wave animation to dashed recursive loops
 func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, loop_radius: float) -> void:
@@ -1255,69 +1343,66 @@ func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, 
 	var circular_tween = create_tween()
 	circular_tween.set_loops()  # Infinite animation
 	
-	circular_tween.tween_method(
-		func(animation_time: float):
-			# Safety check
-			if not loop_node or not is_instance_valid(loop_node):
-				circular_tween.kill()
-				return
+	var circular_cb = func(animation_time: float):
+		# Safety check
+		if not loop_node or not is_instance_valid(loop_node):
+			circular_tween.kill()
+			return
+		
+		# Circular wave parameters
+		var rotation_speed = 0.8  # Speed of rotating wave
+		var pulse_width = 3.0  # How many dashes are bright at once
+		var brightness_variation = 1.0  # How much dashes pulse
+		var length_variation = 0.6  # How much dashes extend in length
+		
+		# Create rotating wave effect around the circle
+		var time_phase = animation_time * rotation_speed
+		
+		# Animate each dash around the circle
+		for i in range(num_dashes):
+			var dash = dashes[i] as MeshInstance3D
+			if not is_instance_valid(dash):
+				continue
 			
-			# Circular wave parameters
-			var rotation_speed = 0.8  # Speed of rotating wave
-			var pulse_width = 3.0  # How many dashes are bright at once
-			var brightness_variation = 1.0  # How much dashes pulse
-			var length_variation = 0.6  # How much dashes extend in length
+			# Calculate angular position around circle (0 to TAU)
+			var angular_position = (float(i) / float(num_dashes)) * TAU
 			
-			# Create rotating wave effect around the circle
-			var time_phase = animation_time * rotation_speed
+			# Create rotating wave
+			var wave_angle = angular_position - time_phase  # Subtract for clockwise rotation
 			
-			# Animate each dash around the circle
-			for i in range(num_dashes):
-				var dash = dashes[i] as MeshInstance3D
-				if not is_instance_valid(dash):
-					continue
+			# Normalize wave angle to 0-TAU range
+			wave_angle = fmod(wave_angle, TAU)
+			if wave_angle < 0:
+				wave_angle += TAU
+			
+			# Create smooth pulse using cosine
+			var pulse_intensity = cos(wave_angle * pulse_width / TAU)
+			pulse_intensity = max(0.0, pulse_intensity)  # Only positive values
+			
+			# Apply scale animation (dashes grow in length and thickness)
+			var original_scale = original_scales[i] if i < original_scales.size() else Vector3.ONE
+			var thickness_multiplier = 1.0 + (pulse_intensity * brightness_variation * 0.4)  # Thickness
+			var length_multiplier = 1.0 + (pulse_intensity * length_variation)  # Length
+			
+			dash.scale = Vector3(
+				original_scale.x * thickness_multiplier,  # X radius
+				original_scale.y * length_multiplier,     # Y height (length)
+				original_scale.z * thickness_multiplier  # Z radius
+			)
+			
+			# Apply brightness animation to material
+			if dash.material_override is StandardMaterial3D:
+				var material = dash.material_override as StandardMaterial3D
+				var base_emission = 0.25  # Base emission energy
+				var emission_boost = pulse_intensity * 0.8  # Strong bright rotating pulse
+				material.emission_energy = base_emission + emission_boost
 				
-				# Calculate angular position around circle (0 to TAU)
-				var angular_position = (float(i) / float(num_dashes)) * TAU
-				
-				# Create rotating wave
-				var wave_angle = angular_position - time_phase  # Subtract for clockwise rotation
-				
-				# Normalize wave angle to 0-TAU range
-				wave_angle = fmod(wave_angle, TAU)
-				if wave_angle < 0:
-					wave_angle += TAU
-				
-				# Create smooth pulse using cosine
-				var pulse_intensity = cos(wave_angle * pulse_width / TAU)
-				pulse_intensity = max(0.0, pulse_intensity)  # Only positive values
-				
-				# Apply scale animation (dashes grow in length and thickness)
-				var original_scale = original_scales[i] if i < original_scales.size() else Vector3.ONE
-				var thickness_multiplier = 1.0 + (pulse_intensity * brightness_variation * 0.4)  # Thickness
-				var length_multiplier = 1.0 + (pulse_intensity * length_variation)  # Length
-				
-				dash.scale = Vector3(
-					original_scale.x * thickness_multiplier,  # X radius
-					original_scale.y * length_multiplier,     # Y height (length)
-					original_scale.z * thickness_multiplier  # Z radius
-				)
-				
-				# Apply brightness animation to material
-				if dash.material_override is StandardMaterial3D:
-					var material = dash.material_override as StandardMaterial3D
-					var base_emission = 0.25  # Base emission energy
-					var emission_boost = pulse_intensity * 0.8  # Strong bright rotating pulse
-					material.emission_energy = base_emission + emission_boost
-					
-					# Also modify transparency for additional effect
-					var base_transparency = 0.75
-					var transparency_boost = pulse_intensity * 0.25
-					material.albedo_color.a = base_transparency + transparency_boost,
-		0.0,
-		100.0,  # Long animation time
-		5.0     # 5 second rotation cycle
-	)
+				# Also modify transparency for additional effect
+				var base_transparency = 0.75
+				var transparency_boost = pulse_intensity * 0.25
+				material.albedo_color.a = base_transparency + transparency_boost
+	
+	circular_tween.tween_method(circular_cb, 0.0, 100.0, 5.0)
 
 ## Calculate point on quadratic Bezier curve
 func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
@@ -1342,7 +1427,7 @@ func _estimate_curve_length(start_pos: Vector3, control_pos: Vector3, end_pos: V
 func _quadratic_bezier_tangent(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
 	return 2.0 * (1.0 - t) * (p1 - p0) + 2.0 * t * (p2 - p1)
 
-## Create electric arc segments for bidirectional plastic connections
+## Create electric arc segments for associative / reciprocal-plastic connections
 func _create_electric_arc_segments(
 	connection_node: Node3D,
 	start_pos: Vector3,
@@ -1350,7 +1435,8 @@ func _create_electric_arc_segments(
 	end_pos: Vector3,
 	is_inhibitory: bool,
 	is_global_mode: bool,
-	connection_id: StringName
+	connection_id: StringName,
+	anim_freq_scale: float = 1.0
 ) -> Array[Vector3]:
 	var arc_length = _estimate_curve_length(start_pos, control_point, end_pos)
 	var segment_count = max(8, int(arc_length * 1.5))
@@ -1360,7 +1446,7 @@ func _create_electric_arc_segments(
 	
 	var jitter_strength = max(0.35, arc_length * 0.03)
 	var seed_offset = float(hash(String(connection_id))) * 0.001
-	var points = _build_electric_arc_points(start_pos, control_point, end_pos, t_values, seed_offset, jitter_strength)
+	var points = _build_electric_arc_points(start_pos, control_point, end_pos, t_values, seed_offset, jitter_strength, anim_freq_scale)
 	
 	var material = _create_electric_arc_material(is_inhibitory, is_global_mode)
 	var segments: Array = []
@@ -1381,12 +1467,13 @@ func _build_electric_arc_points(
 	end_pos: Vector3,
 	t_values: Array[float],
 	time_offset: float,
-	jitter_strength: float
+	jitter_strength: float,
+	wall_time_phase_scale: float = 1.0
 ) -> Array[Vector3]:
 	var points: Array[Vector3] = []
 	for t in t_values:
 		var base = _quadratic_bezier(start_pos, control_point, end_pos, t)
-		var offset = _electric_arc_offset(start_pos, control_point, end_pos, t, time_offset, jitter_strength)
+		var offset = _electric_arc_offset(start_pos, control_point, end_pos, t, time_offset, jitter_strength, wall_time_phase_scale)
 		points.append(base + offset)
 	return points
 
@@ -1397,7 +1484,8 @@ func _electric_arc_offset(
 	end_pos: Vector3,
 	t: float,
 	time_offset: float,
-	jitter_strength: float
+	jitter_strength: float,
+	wall_time_phase_scale: float = 1.0
 ) -> Vector3:
 	var tangent = _quadratic_bezier_tangent(start_pos, control_point, end_pos, t)
 	if tangent.length() < 0.001:
@@ -1410,7 +1498,7 @@ func _electric_arc_offset(
 	var corrected_up = dir.cross(right_vector).normalized()
 	
 	var time = Time.get_ticks_msec() / 1000.0
-	var phase = time_offset + time * 3.5 + t * TAU
+	var phase = time_offset + time * 3.5 * wall_time_phase_scale + t * TAU
 	var noise_x = sin(phase * 2.7 + t * 11.3)
 	var noise_y = cos(phase * 3.9 + t * 8.1)
 	var noise_z = sin(phase * 4.3 + t * 6.7)
@@ -1419,7 +1507,7 @@ func _electric_arc_offset(
 	var longitudinal = dir * noise_z * jitter_strength * 0.15
 	return lateral + longitudinal
 
-## Electric arc material for bidirectional plastic connections
+## Electric arc material for associative / reciprocal-plastic connections
 func _create_electric_arc_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
 	if is_global_mode:
@@ -1462,7 +1550,8 @@ func _update_curve_segment(segment: MeshInstance3D, start_pos: Vector3, end_pos:
 		segment.basis = basis
 
 ## Add flicker + jitter animation to electric arc segments
-func _add_electric_arc_animation(connection_node: Node3D, start_pos: Vector3, control_point: Vector3, end_pos: Vector3) -> void:
+## [param anim_freq_scale] 1.0 = default speed; 0.5 = half animation frequency (slower, used for associative_memory)
+func _add_electric_arc_animation(connection_node: Node3D, start_pos: Vector3, control_point: Vector3, end_pos: Vector3, anim_freq_scale: float = 1.0) -> void:
 	if connection_node == null:
 		return
 	var segments = connection_node.get_meta("electric_arc_segments", []) as Array
@@ -1473,6 +1562,7 @@ func _add_electric_arc_animation(connection_node: Node3D, start_pos: Vector3, co
 	var seed_offset = float(connection_node.get_meta("electric_arc_seed", 0.0))
 	var arc_tween = create_tween()
 	arc_tween.set_loops()
+	var tween_step_sec: float = 0.35 / anim_freq_scale
 	
 	var arc_callback = func(animation_time: float) -> void:
 		if connection_node == null or not is_instance_valid(connection_node):
@@ -1485,7 +1575,8 @@ func _add_electric_arc_animation(connection_node: Node3D, start_pos: Vector3, co
 			end_pos,
 			t_values,
 			seed_offset + animation_time * 1.3,
-			jitter_strength
+			jitter_strength,
+			anim_freq_scale
 		)
 		for i in range(segments.size()):
 			var segment = segments[i] as MeshInstance3D
@@ -1496,7 +1587,7 @@ func _add_electric_arc_animation(connection_node: Node3D, start_pos: Vector3, co
 				var material = segment.material_override as StandardMaterial3D
 				var flicker = 0.7 + (sin(animation_time * 9.0 + float(i)) * 0.3)
 				material.emission_energy = 3.5 * flicker
-	arc_tween.tween_method(arc_callback, 0.0, 100.0, 0.35)
+	arc_tween.tween_method(arc_callback, 0.0, 100.0, tween_step_sec)
 
 ## Create a single segment of the curve
 func _create_curve_segment(start_pos: Vector3, end_pos: Vector3, segment_index: int, material: StandardMaterial3D) -> MeshInstance3D:
@@ -1559,7 +1650,18 @@ func _create_curve_material(is_inhibitory: bool = false, is_global_mode: bool = 
 	return material
 
 ## Create pulse animation along the curve
-func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], connection_id: StringName, is_inhibitory: bool = false) -> void:
+## [param pulse_albedo] / [param pulse_emission] default to white (regular synapse connections); associative arcs pass red.
+func _create_pulse_animation(
+	curve_node: Node3D,
+	curve_points: Array[Vector3],
+	connection_id: StringName,
+	is_inhibitory: bool = false,
+	pulse_albedo: Color = Color(1.0, 1.0, 1.0, 0.8),
+	pulse_emission: Color = Color(1.0, 1.0, 1.0),
+	pulse_travel_time_sec: float = 2.0
+) -> void:
+	if curve_points.is_empty():
+		return
 	
 	# Create multiple pulse spheres for continuous animation
 	var num_pulses = 3  # Multiple pulses traveling at once
@@ -1577,11 +1679,10 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		sphere_mesh.rings = 4
 		pulse_sphere.mesh = sphere_mesh
 		
-		# Create bright pulsing material with different colors based on connection type
+		# Create bright pulsing material (white by default; red for associative direction pulses)
 		var pulse_material = StandardMaterial3D.new()
-		# Both inhibitory and excitatory pulses - Bright white for better visibility
-		pulse_material.albedo_color = Color(1.0, 1.0, 1.0, 0.8)  # Bright white
-		pulse_material.emission = Color(1.0, 1.0, 1.0)
+		pulse_material.albedo_color = pulse_albedo
+		pulse_material.emission = pulse_emission
 		
 		pulse_material.emission_enabled = true
 		pulse_material.emission_energy = 4.0
@@ -1603,35 +1704,39 @@ func _create_pulse_animation(curve_node: Node3D, curve_points: Array[Vector3], c
 		
 		# Stagger the pulses so they don't all start together
 		var delay = pulse_index * 0.5  # 0.5 second delay between pulses
-		var travel_time = 2.0  # Time to travel the full curve
+		var travel_time: float = pulse_travel_time_sec
 		
 		# Add initial delay for staggering
 		if delay > 0:
 			pulse_tween.tween_interval(delay)
 		
-		# Animate the pulse along the curve points
-		pulse_tween.tween_method(
-			func(progress: float):
-				var point_index = int(progress * (curve_points.size() - 1))
-				var local_progress = (progress * (curve_points.size() - 1)) - point_index
-				
-				# Interpolate between current and next point
-				if point_index < curve_points.size() - 1:
-					var current_point = curve_points[point_index]
-					var next_point = curve_points[point_index + 1]
-					pulse_sphere.position = current_point.lerp(next_point, local_progress)
-				else:
-					pulse_sphere.position = curve_points[-1]  # End point
-				# Update size relative to camera distance while moving
-				_apply_distance_scale_to_pulse(pulse_sphere)
-				
-				# Pulse the glow intensity
-				var glow_intensity = 3.0 + sin(Time.get_ticks_msec() / 100.0) * 1.5
-				pulse_material.emission_energy = glow_intensity,
-			0.0,
-			1.0,
-			travel_time
-		)
+		# Animate the pulse along the curve points (callable variable avoids multiline-lambda + comma parse issues)
+		var pulse_cb = func(progress: float):
+			# Overlay clears queue_free curve nodes; stop this tween immediately when targets are gone.
+			if curve_node == null or not is_instance_valid(curve_node):
+				pulse_tween.kill()
+				return
+			if pulse_sphere == null or not is_instance_valid(pulse_sphere):
+				pulse_tween.kill()
+				return
+			var point_index = int(progress * (curve_points.size() - 1))
+			var local_progress = (progress * (curve_points.size() - 1)) - point_index
+			
+			# Interpolate between current and next point
+			if point_index < curve_points.size() - 1:
+				var current_point = curve_points[point_index]
+				var next_point = curve_points[point_index + 1]
+				pulse_sphere.position = current_point.lerp(next_point, local_progress)
+			else:
+				pulse_sphere.position = curve_points[-1]  # End point
+			# Update size relative to camera distance while moving
+			_apply_distance_scale_to_pulse(pulse_sphere)
+			
+			# Pulse the glow intensity
+			var glow_intensity = 3.0 + sin(Time.get_ticks_msec() / 100.0) * 1.5
+			pulse_material.emission_energy = glow_intensity
+		
+		pulse_tween.tween_method(pulse_cb, 0.0, 1.0, travel_time)
 		
 		# Add a brief pause at the end before restarting
 		pulse_tween.tween_interval(0.3)
@@ -1665,13 +1770,17 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 
 ## Internal helper that creates a single recursive loop visual.
 ## loop_height_offset vertically shifts the loop relative to its default loop height.
+## loop_radius_param / loop_height_base_param override defaults for voxel-level recursive synapses.
 func _create_recursive_loop_variant(
 	center_pos: Vector3,
 	area_id: StringName,
 	is_inhibitory: bool,
 	is_plastic: bool,
 	is_global_mode: bool,
-	loop_height_offset: float
+	loop_height_offset: float,
+	loop_radius_param: float = 3.0,
+	loop_height_base_param: float = 2.0,
+	include_pulse_animation: bool = true
 ) -> Node3D:
 	
 	# Create a container for the loop
@@ -1680,9 +1789,9 @@ func _create_recursive_loop_variant(
 	var plastic_prefix = "PLA_" if is_plastic else "STD_"
 	loop_node.name = type_prefix + plastic_prefix + area_id
 	
-	# Create a circular loop around the cortical area
-	var loop_radius = 3.0  # Radius of the loop around the area
-	var loop_height = 2.0 + loop_height_offset  # Height above the area center
+	# Create a circular loop around the cortical area (or voxel for intra-area synapse preview)
+	var loop_radius: float = loop_radius_param
+	var loop_height: float = loop_height_base_param + loop_height_offset
 	var num_segments = 16  # More segments for smooth circle
 	
 	# Calculate loop points in a circle
@@ -1767,8 +1876,8 @@ func _create_recursive_loop_variant(
 			loop_node.add_child(segment)
 		
 	
-	# Create recursive pulse animation
-	_create_recursive_pulse_animation(loop_node, loop_points, area_id, is_inhibitory)
+	if include_pulse_animation:
+		_create_recursive_pulse_animation(loop_node, loop_points, area_id, is_inhibitory)
 	
 	return loop_node
 
@@ -1800,6 +1909,8 @@ func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: boo
 
 ## Create pulse animation for recursive loops
 func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vector3], area_id: StringName, is_inhibitory: bool = false) -> void:
+	if loop_points.is_empty():
+		return
 	
 	# Create multiple pulses traveling around the loop
 	var num_pulses = 2  # Fewer pulses for cleaner loop animation
@@ -1851,28 +1962,25 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 			pulse_tween.tween_interval(delay)
 		
 		# Animate the pulse around the loop
-		pulse_tween.tween_method(
-			func(progress: float):
-				var point_index = int(progress * (loop_points.size() - 2))  # -2 because last point = first point
-				var local_progress = (progress * (loop_points.size() - 2)) - point_index
-				
-				# Interpolate between current and next point
-				if point_index < loop_points.size() - 1:
-					var current_point = loop_points[point_index]
-					var next_point = loop_points[point_index + 1]
-					pulse_sphere.position = current_point.lerp(next_point, local_progress)
-				else:
-					pulse_sphere.position = loop_points[0]  # Back to start
-				# Update size relative to camera distance while moving
-				_apply_distance_scale_to_pulse(pulse_sphere)
-				
-				# Pulse the glow intensity
-				var glow_intensity = 3.0 + sin(Time.get_ticks_msec() / 80.0) * 1.5
-				pulse_material.emission_energy = glow_intensity,
-			0.0,
-			1.0,
-			travel_time
-		)
+		var recursive_pulse_cb = func(progress: float):
+			var point_index = int(progress * (loop_points.size() - 2))  # -2 because last point = first point
+			var local_progress = (progress * (loop_points.size() - 2)) - point_index
+			
+			# Interpolate between current and next point
+			if point_index < loop_points.size() - 1:
+				var current_point = loop_points[point_index]
+				var next_point = loop_points[point_index + 1]
+				pulse_sphere.position = current_point.lerp(next_point, local_progress)
+			else:
+				pulse_sphere.position = loop_points[0]  # Back to start
+			# Update size relative to camera distance while moving
+			_apply_distance_scale_to_pulse(pulse_sphere)
+			
+			# Pulse the glow intensity
+			var glow_intensity = 3.0 + sin(Time.get_ticks_msec() / 80.0) * 1.5
+			pulse_material.emission_energy = glow_intensity
+		
+		pulse_tween.tween_method(recursive_pulse_cb, 0.0, 1.0, travel_time)
 		
 		# Brief pause before restarting
 		pulse_tween.tween_interval(0.2)
@@ -1916,13 +2024,19 @@ func _is_mapping_set_plastic(mapping_set: InterCorticalMappingSet) -> bool:
 	
 	return false  # All connections are non-plastic
 
-## Helper function to determine if a mapping set is plastic and bidirectional (mixed sign)
-func _is_mapping_set_bidirectional_plastic(mapping_set: InterCorticalMappingSet) -> bool:
+## True if any mapping in the set uses associative_memory morphology (directed edge; not inherently reciprocal).
+func _mapping_set_has_associative_memory(mapping_set: InterCorticalMappingSet) -> bool:
 	if mapping_set == null or mapping_set.mappings.is_empty():
 		return false
 	for mapping in mapping_set.mappings:
 		if mapping.morphology_used != null and mapping.morphology_used.name == &"associative_memory":
 			return true
+	return false
+
+## True when destination also has a plastic efferent mapping back to source (actual reciprocal pair in the graph).
+func _mapping_has_reciprocal_plastic_pair(mapping_set: InterCorticalMappingSet) -> bool:
+	if mapping_set == null or mapping_set.mappings.is_empty():
+		return false
 	var source_area: AbstractCorticalArea = mapping_set.source_cortical_area
 	var destination_area: AbstractCorticalArea = mapping_set.destination_cortical_area
 	if source_area == null or destination_area == null:
@@ -2025,35 +2139,32 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 	var breathing_speed = 2.5 + (t_position * 0.5)  # Speed varies along curve
 	
 	# Animate thickness with breathing effect
-	thickness_tween.tween_method(
-		func(scale_factor: float):
-			# Safety checks - ensure objects still exist
-			if not segment or not is_instance_valid(segment):
-				thickness_tween.kill()  # Stop animation if segment is destroyed
-				return
-			
-			if not cylinder_mesh or not is_instance_valid(cylinder_mesh):
-				thickness_tween.kill()  # Stop animation if mesh is destroyed
-				return
-			
-			var time_offset = t_position * PI * 2  # Phase shift based on position
-			var breathing = sin(Time.get_ticks_msec() / 1000.0 * breathing_speed + time_offset) * thickness_variation
-			var new_radius = base_radius * (1.0 + breathing)
-			
-			# Apply thickness changes safely
-			cylinder_mesh.top_radius = new_radius
-			cylinder_mesh.bottom_radius = new_radius
-			
-			# Also pulse the material emission energy with null safety
-			if segment.material_override != null:
-				var material = segment.material_override as StandardMaterial3D
-				if material != null:
-					var emission_pulse = 1.0 + (sin(Time.get_ticks_msec() / 1000.0 * breathing_speed * 1.5 + time_offset) * 0.2)  # More subtle pulse - reduced from 0.4 to 0.2
-					material.emission_energy = 3.0 * emission_pulse,
-		0.0,
-		1.0,
-		breathing_speed
-	)
+	var thickness_cb = func(scale_factor: float):
+		# Safety checks - ensure objects still exist
+		if not segment or not is_instance_valid(segment):
+			thickness_tween.kill()  # Stop animation if segment is destroyed
+			return
+		
+		if not cylinder_mesh or not is_instance_valid(cylinder_mesh):
+			thickness_tween.kill()  # Stop animation if mesh is destroyed
+			return
+		
+		var time_offset = t_position * PI * 2  # Phase shift based on position
+		var breathing = sin(Time.get_ticks_msec() / 1000.0 * breathing_speed + time_offset) * thickness_variation
+		var new_radius = base_radius * (1.0 + breathing)
+		
+		# Apply thickness changes safely
+		cylinder_mesh.top_radius = new_radius
+		cylinder_mesh.bottom_radius = new_radius
+		
+		# Also pulse the material emission energy with null safety
+		if segment.material_override != null:
+			var material = segment.material_override as StandardMaterial3D
+			if material != null:
+				var emission_pulse = 1.0 + (sin(Time.get_ticks_msec() / 1000.0 * breathing_speed * 1.5 + time_offset) * 0.2)  # More subtle pulse - reduced from 0.4 to 0.2
+				material.emission_energy = 3.0 * emission_pulse
+	
+	thickness_tween.tween_method(thickness_cb, 0.0, 1.0, breathing_speed)
 
 ## Cleanup method to disconnect signals and prevent memory leaks
 func _notification(what: int) -> void:

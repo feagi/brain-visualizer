@@ -1,0 +1,234 @@
+[gd_scene load_steps=8 format=3 uid="uid://bvmemoryinspector01"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/MemoryInspector/WindowMemoryInspector.gd" id="1_mem"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/CorticalDropDown.gd" id="3_cortical"]
+[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="4_int_in"]
+
+[node name="WindowMemoryInspector" type="VBoxContainer"]
+custom_minimum_size = Vector2(780, 760)
+offset_right = 780.0
+offset_bottom = 760.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_mem")
+window_spawn_location = Vector2i(180, 120)
+
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+layout_mode = 2
+title = "Memory Inspector"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"MarginContainer_WindowBorder"
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="HintLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Select a memory cortical area, then Inspect. Use Previous/Next for memory neuron id pages. Enter a memory neuron id to fetch single-neuron detail (no 3D view)."
+autowrap_mode = 3
+
+[node name="InspectorControls" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="CorticalRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CorticalLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/CorticalRow"]
+layout_mode = 2
+text = "Memory area"
+
+[node name="CorticalAreaDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/CorticalRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("3_cortical")
+
+[node name="InspectButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+layout_mode = 2
+text = "Inspect"
+
+[node name="SummarySection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SummaryHeading" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Summary"
+
+[node name="ShortTermRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/ShortTermRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Short-term neurons"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/ShortTermRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("4_int_in")
+
+[node name="LongTermRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/LongTermRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Long-term neurons"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/LongTermRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("4_int_in")
+
+[node name="PatternCacheRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/PatternCacheRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Upstream pattern cache"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/PatternCacheRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("4_int_in")
+
+[node name="UpstreamCountRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/UpstreamCountRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Upstream cortical areas"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/UpstreamCountRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("4_int_in")
+
+[node name="IncSynRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/IncSynRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Incoming synapses (area)"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/IncSynRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("4_int_in")
+
+[node name="OutSynRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/OutSynRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Outgoing synapses (area)"
+
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/OutSynRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+editable = false
+script = ExtResource("4_int_in")
+
+[node name="SummaryDivider" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+
+[node name="PaginationRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NeuronDetailsTitleInline" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+layout_mode = 2
+text = "Memory area JSON"
+
+[node name="PaginationSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NeuronIdPageLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+layout_mode = 2
+text = "Neuron id page:"
+
+[node name="PagePrevButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+layout_mode = 2
+disabled = true
+text = "Previous"
+
+[node name="PageValueLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+layout_mode = 2
+text = "0"
+
+[node name="PageNextButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+layout_mode = 2
+disabled = true
+text = "Next"
+
+[node name="AreaJsonText" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 260)
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+wrap_mode = 1
+placeholder_text = "Paginated memory area response (GET /v1/cortical_area/memory)."
+
+[node name="NeuronSectionLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Single memory neuron"
+
+[node name="NeuronQueryRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NeuronIdLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/NeuronQueryRow"]
+layout_mode = 2
+text = "Neuron id"
+
+[node name="NeuronIdField" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/NeuronQueryRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "e.g. 50000000"
+
+[node name="FetchNeuronButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/NeuronQueryRow"]
+layout_mode = 2
+text = "Fetch neuron"
+
+[node name="NeuronJsonText" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+wrap_mode = 1
+placeholder_text = "GET /v1/connectome/memory_neuron response for one id."

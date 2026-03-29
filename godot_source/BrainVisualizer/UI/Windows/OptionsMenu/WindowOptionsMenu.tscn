@@ -12,11 +12,11 @@
 [ext_resource type="PackedScene" uid="uid://lavpe4aaitvu" path="res://BrainVisualizer/UI/GenericElements/Sliders/SliderPercentage.tscn" id="12_gaeu8"]
 
 [node name="WindowOptionsMenu" type="VBoxContainer"]
-offset_right = 424.0
-offset_bottom = 316.0
+offset_right = 760.0
+offset_bottom = 520.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
-theme_override_constants/separation = 0
+theme_override_constants/separation = 8
 script = ExtResource("1_sn8x3")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_m61t8")]
@@ -29,26 +29,40 @@ layout_mode = 2
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_far"
+theme_override_constants/separation = 10
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
+theme_override_constants/separation = 18
 
 [node name="SettingSelector" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
-custom_minimum_size = Vector2(128, 256)
+custom_minimum_size = Vector2(170, 320)
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
 [node name="General" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection"]
+custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 text = "General
 "
+
+[node name="Network" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Network"
 
 [node name="Vision" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection"]
 visible = false
@@ -56,37 +70,46 @@ layout_mode = 2
 text = "Vision"
 
 [node name="SpecificSettings" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
-custom_minimum_size = Vector2(256, 0)
+custom_minimum_size = Vector2(520, 0)
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 14
 
 [node name="General" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
 script = ExtResource("3_g33ho")
 
 [node name="VBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
+theme_override_constants/separation = 14
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer"]
-custom_minimum_size = Vector2(160, 0)
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
-text = "Version:"
+text = "Version"
 
 [node name="Version" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 editable = false
 
 [node name="VBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
+theme_override_constants/separation = 14
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer2"]
-custom_minimum_size = Vector2(160, 0)
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
-text = "UI Magnification:"
+text = "UI Magnification"
 
 [node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer2"]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 fit_to_longest_item = false
 item_count = 6
 popup/item_0/text = "0.5 Scale"
@@ -103,12 +126,13 @@ popup/item_5/id = 5
 
 [node name="VBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
+theme_override_constants/separation = 14
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer3"]
-custom_minimum_size = Vector2(160, 0)
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Advanced Mode:"
+text = "Advanced Mode"
 
 [node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer3"]
 custom_minimum_size = Vector2(60, 0)
@@ -119,12 +143,13 @@ script = ExtResource("3_y5jb7")
 
 [node name="VBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
 layout_mode = 2
+theme_override_constants/separation = 14
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer4"]
-custom_minimum_size = Vector2(160, 0)
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Auto-create Inputs / Outputs:"
+text = "Auto-create Inputs / Outputs"
 
 [node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer4"]
 custom_minimum_size = Vector2(60, 0)
@@ -134,8 +159,118 @@ stretch_mode = 0
 script = ExtResource("3_y5jb7")
 
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
-custom_minimum_size = Vector2(0, 8)
+custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
+
+[node name="Network" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="VBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer5"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "FEAGI API URL"
+
+[node name="APIURL" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer5"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+
+[node name="VBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer6"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "FEAGI API IP / Host"
+
+[node name="APIHost" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer6"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+
+[node name="VBoxContainer7" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer7"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "FEAGI API Port"
+
+[node name="APIPort" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer7"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+
+[node name="VBoxContainer8" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer8"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "WebSocket URL"
+
+[node name="WebSocketURL" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer8"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+
+[node name="VBoxContainer9" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer9"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "WebSocket IP / Host"
+
+[node name="WebSocketHost" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer9"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+
+[node name="VBoxContainer10" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer10"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "WebSocket Port"
+
+[node name="WebSocketPort" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer10"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+
+[node name="VBoxContainer11" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer11"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "WebSocket Health"
+
+[node name="WebSocketHealth" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer11"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
 
 [node name="Vision" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
 visible = false
@@ -278,25 +413,26 @@ initial_label_text = &"Pixel Change"
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 10
 
 [node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons"]
-custom_minimum_size = Vector2(128, 64)
+custom_minimum_size = Vector2(140, 52)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
 [node name="Accept" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons"]
-custom_minimum_size = Vector2(128, 64)
+custom_minimum_size = Vector2(140, 52)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Accept"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection/General" to="." method="_select_section" binds= ["General"]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection/Network" to="." method="_select_section" binds= ["Network"]]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection/Vision" to="." method="_select_section" binds= ["Vision"]]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons/Cancel" to="." method="close_window"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons/Accept" to="." method="_apply_pressed"]

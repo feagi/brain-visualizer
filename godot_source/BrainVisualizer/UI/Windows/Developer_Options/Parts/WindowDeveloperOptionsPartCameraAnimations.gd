@@ -14,18 +14,28 @@ var _play_button: Button
 var _export_button: Button
 
 func _ready() -> void:
-	# Attempt to acquire the active Brain Monitor camera
-	var bm: UI_BrainMonitor_3DScene = BV.UI.get_active_brain_monitor()
-	if bm != null and bm.has_node("SubViewport/Center/PancakeCam"):
-		_camera = bm.get_node("SubViewport/Center/PancakeCam") as Camera3D
-	else:
-		_camera = null
-	
 	_animation_save = $AnimationSave
 	_play_button = $Play
 	_export_button = $Export
 	if _animation_save != null and not _animation_save.text_changed.is_connected(_on_animation_save_text_changed):
 		_animation_save.text_changed.connect(_on_animation_save_text_changed)
+	# [method WindowCameraAnimations.setup] may set the camera after this; only fall back to the active monitor if unset.
+	call_deferred("_ensure_default_camera_if_unset")
+	_sync_action_button_states()
+
+
+func _ensure_default_camera_if_unset() -> void:
+	if _camera != null:
+		return
+	configure_from_brain_monitor(BV.UI.get_active_brain_monitor())
+
+
+## Use the PancakeCam under this brain monitor (or clear if the path is missing).
+func configure_from_brain_monitor(bm: UI_BrainMonitor_3DScene) -> void:
+	if bm != null and bm.has_node("SubViewport/Center/PancakeCam"):
+		_camera = bm.get_node("SubViewport/Center/PancakeCam") as Camera3D
+	else:
+		_camera = null
 	_sync_action_button_states()
 
 func _on_animation_save_text_changed() -> void:

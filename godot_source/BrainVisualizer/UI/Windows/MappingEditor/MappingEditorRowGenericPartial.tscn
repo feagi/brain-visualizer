@@ -23,7 +23,12 @@ size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
 script = ExtResource("1_2kgmf")
 
-[node name="Morphology_List" type="OptionButton" parent="."]
+[node name="MappingDefinitionGroup" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_type_variation = &"HBoxContainer_adjacent"
+size_flags_horizontal = 0
+
+[node name="Morphology_List" type="OptionButton" parent="MappingDefinitionGroup"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -31,7 +36,7 @@ clip_text = true
 fit_to_longest_item = false
 script = ExtResource("2_e5y5p")
 
-[node name="edit" type="TextureButton" parent="."]
+[node name="edit" type="TextureButton" parent="MappingDefinitionGroup"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 theme_type_variation = &"TextureButton_icon"
@@ -42,28 +47,47 @@ texture_disabled = ExtResource("6_p1hfv")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="Spacer_AfterMappingDefinition" type="Control" parent="."]
+custom_minimum_size = Vector2(4, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
 [node name="Scalar" parent="." instance=ExtResource("7_jxrt1")]
 custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 alignment = 1
 label_x_text = &""
 label_y_text = &""
 label_z_text = &""
 
+[node name="Spacer_AfterScalar" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
 [node name="PSP" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 tooltip_text = "Post-Synaptic Potential
 "
 alignment = 1
-script = ExtResource("15_8f0j2")
-initial_int = 1
-min_value = 0
-max_value = 255
+script = ExtResource("8_wad2m")
+initial_float = 1.0
+min_value = 0.0
+max_value = 9999999999.0
+number_decimal_places = 4
+
+[node name="Spacer_BetweenPSPAndInhibitory" type="Control" parent="."]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
 
 [node name="Inhibitory" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(168, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 theme_type_variation = &"ToggleButton"
 texture_normal = ExtResource("9_5xiw6")
 ignore_texture_size = true
@@ -71,46 +95,77 @@ stretch_mode = 0
 script = ExtResource("10_mpnb3")
 enable_autoscaling_with_theme = false
 
-[node name="Plasticity" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(100, 0)
+[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="."]
+custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Plasticity" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(168, 0)
+layout_mode = 2
+size_flags_horizontal = 0
 theme_type_variation = &"ToggleButton"
 texture_normal = ExtResource("9_5xiw6")
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("10_mpnb3")
 enable_autoscaling_with_theme = false
+
+[node name="Spacer_AfterPlasticity" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
 
 [node name="Plasticity_Window" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
 alignment = 1
 script = ExtResource("15_8f0j2")
 initial_int = 3
 
+[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
 [node name="Plasticity_Constant" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 tooltip_text = "Plasticity"
 alignment = 1
 script = ExtResource("8_wad2m")
 
+[node name="Spacer_AfterPlasticityConst" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
 [node name="LTP_Multiplier" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 alignment = 1
 script = ExtResource("8_wad2m")
+
+[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
 
 [node name="LTD_Multiplier" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+size_flags_horizontal = 0
 alignment = 1
 script = ExtResource("8_wad2m")
 
 [node name="confirm" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_horizontal = 0
 theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("11_cn40i")
 texture_pressed = ExtResource("12_4yo2a")
@@ -119,7 +174,7 @@ texture_disabled = ExtResource("14_naw4t")
 ignore_texture_size = true
 stretch_mode = 0
 
-[connection signal="pressed" from="edit" to="." method="_on_edit_pressed"]
-[connection signal="int_confirmed" from="PSP" to="." method="_on_user_PSP"]
+[connection signal="pressed" from="MappingDefinitionGroup/edit" to="." method="_on_edit_pressed"]
+[connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
 [connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
 [connection signal="pressed" from="confirm" to="." method="_pressed_add"]

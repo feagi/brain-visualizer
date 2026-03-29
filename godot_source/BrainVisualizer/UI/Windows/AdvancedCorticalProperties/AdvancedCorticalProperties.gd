@@ -104,7 +104,53 @@ func _are_all_io_areas() -> bool:
 			return false
 	return true
 
-	
+
+## True when every selected area is a memory cortical area (for memory-specific neuron firing UI).
+func _are_all_selected_memory_areas() -> bool:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return false
+	for area in _cortical_area_refs:
+		if area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			return false
+	return true
+
+
+## Keys that dense LIF exposes in BV but that do not apply to memory associative sparse LIF (see feagi-npu design §10).
+const _MEMORY_INAPPLICABLE_FIRING_KEYS: Array[StringName] = [
+	&"neuron_mp_charge_accumulation",
+	&"neuron_leak_coefficient",
+	&"neuron_leak_variability",
+	&"neuron_fire_threshold_increment",
+]
+
+
+func _strip_memory_inapplicable_firing_keys(update_data: Dictionary) -> void:
+	if not _are_all_selected_memory_areas():
+		return
+	for k in _MEMORY_INAPPLICABLE_FIRING_KEYS:
+		update_data.erase(k)
+
+
+func _apply_memory_firing_parameter_rows_visibility() -> void:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return
+	var advanced := true
+	if BV != null and BV.UI != null:
+		advanced = BV.UI.is_in_advanced_mode
+	var hide_dense_only := _are_all_selected_memory_areas()
+	# MP accumulation is shown in simple mode for dense areas; memory LIF does not use it — hide for memory-only.
+	if _firing_row_mp_accumulation != null:
+		_firing_row_mp_accumulation.visible = not hide_dense_only
+	# Leak / threshold increment rows are also hidden in simple mode via controls_to_hide_in_simple_mode.
+	if _firing_row_leak_constant != null:
+		_firing_row_leak_constant.visible = advanced and not hide_dense_only
+	if _firing_row_leak_variability != null:
+		_firing_row_leak_variability.visible = advanced and not hide_dense_only
+	if _firing_threshold_increment_label != null:
+		_firing_threshold_increment_label.visible = advanced and not hide_dense_only
+	if _line_Threshold_Inc != null:
+		_line_Threshold_Inc.visible = advanced and not hide_dense_only
+
 
 ## Load in initial values of the cortical area from Cache
 func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
@@ -156,6 +202,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	
 	_refresh_all_relevant()
 	_apply_type_based_ui_restrictions()
+	_apply_memory_firing_parameter_rows_visibility()
 	
 	# Request the newest state from feagi, and dont continue until then
 	# Only if FeagiCore is ready and network components are initialized
@@ -167,15 +214,15 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	else:
 		print("UI: Advanced Cortical Properties - Skipping FEAGI update request as network is not ready")
 	
-	# refresh all relevant sections again
-	_refresh_all_relevant()
-	_apply_type_based_ui_restrictions()
-	
-	# Re-detect isvi segments now that we have fresh data from FEAGI
+	# refresh all relevant sections again (detect ISVI before refresh so segment vs per-device UI is correct)
 	if len(_cortical_area_refs) == 1:
 		_detect_and_setup_isvi_segment()
-		
-		# If it's now detected as isvi, we need to fetch details for all other vision segments
+	_refresh_all_relevant()
+	_apply_type_based_ui_restrictions()
+	_apply_memory_firing_parameter_rows_visibility()
+	
+	# If it's isvi, fetch details for all other vision segments
+	if len(_cortical_area_refs) == 1:
 		if _is_isvi_segment:
 			
 			# Collect all vision segment IDs (those starting with "aXN2aQ")
@@ -254,6 +301,16 @@ func _is_core_type_context() -> bool:
 	return AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs) == AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE
 
 
+## True when every selected area is the reserved power core (same ID family as [method AbstractCorticalArea.is_power_area]).
+func _selection_is_only_power_core_areas() -> bool:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return false
+	for area in _cortical_area_refs:
+		if not AbstractCorticalArea.is_power_area(area.cortical_ID):
+			return false
+	return true
+
+
 func _apply_type_based_ui_restrictions() -> void:
 	# Currently only CORE has strict UI restrictions.
 	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
@@ -304,6 +361,8 @@ func _apply_core_type_restrictions() -> void:
 		_line_Threshold_Limit.editable = false
 	if _line_neuron_excitability != null:
 		_line_neuron_excitability.editable = false
+	if _line_Degeneracy_Constant != null and not _selection_is_only_power_core_areas():
+		_line_Degeneracy_Constant.editable = false
 	if _line_Refactory_Period != null:
 		_line_Refactory_Period.editable = false
 	if _line_Leak_Constant != null:
@@ -331,19 +390,27 @@ func _apply_core_type_restrictions() -> void:
 	if _button_memory_send != null:
 		_button_memory_send.disabled = true
 	
-	# Post Synaptic Potential Parameters
-	if _line_Post_Synaptic_Potential != null:
-		_line_Post_Synaptic_Potential.editable = false
-	if _line_PSP_Max != null:
-		_line_PSP_Max.editable = false
-	if _line_Degeneracy_Constant != null:
-		_line_Degeneracy_Constant.editable = false
-	if _button_PSP_Uniformity != null:
-		_button_PSP_Uniformity.disabled = true
-	if _button_MP_Driven_PSP != null:
-		_button_MP_Driven_PSP.disabled = true
-	if _button_pspp_send != null:
-		_button_pspp_send.disabled = true
+	# Post Synaptic Potential Parameters — power core: only PSP value + uniformity editable.
+	if _selection_is_only_power_core_areas():
+		if _line_PSP_Max != null:
+			_line_PSP_Max.editable = false
+		if _button_MP_Driven_PSP != null:
+			_button_MP_Driven_PSP.disabled = true
+		if _line_Post_Synaptic_Potential != null:
+			_line_Post_Synaptic_Potential.editable = true
+		if _button_PSP_Uniformity != null:
+			_button_PSP_Uniformity.disabled = false
+	else:
+		if _line_Post_Synaptic_Potential != null:
+			_line_Post_Synaptic_Potential.editable = false
+		if _line_PSP_Max != null:
+			_line_PSP_Max.editable = false
+		if _button_PSP_Uniformity != null:
+			_button_PSP_Uniformity.disabled = true
+		if _button_MP_Driven_PSP != null:
+			_button_MP_Driven_PSP.disabled = true
+		if _button_pspp_send != null:
+			_button_pspp_send.disabled = true
 	
 	# Monitoring
 	if membrane_toggle != null:
@@ -372,7 +439,9 @@ func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool)
 		control.visible = is_advanced_options_visible
 	if _memory_section_enabled:
 		_section_memory.visible = is_advanced_options_visible
-	_section_cortical_area_monitoring.visible = is_advanced_options_visible
+	# Hidden by product/UI request.
+	_section_cortical_area_monitoring.visible = false
+	_apply_memory_firing_parameter_rows_visibility()
 
 func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
 	if control == null:
@@ -502,7 +571,13 @@ func _send_update(send_button: Button) -> void:
 		return
 	
 	if send_button.name in _growing_cortical_update:
-		var update_data: Dictionary = _growing_cortical_update[send_button.name]
+		var update_data: Dictionary = _growing_cortical_update[send_button.name].duplicate(true)
+		if send_button == _button_firing_send:
+			_strip_memory_inapplicable_firing_keys(update_data)
+		if update_data.is_empty():
+			send_button.disabled = true
+			_growing_cortical_update.erase(send_button.name)
+			return
 		if _should_confirm_unit_id_update(update_data):
 			_show_unit_id_update_confirmation(update_data, send_button)
 			return
@@ -1168,8 +1243,13 @@ func _init_summary() -> void:
 
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
-			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
-			_dimensions_label.text = "Dimensions Per Device"
+			# isvi: one cortical area per segment; per-area voxel size is dimensions_3D, not unit-level per-device dims.
+			if _is_isvi_segment:
+				_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
+				_dimensions_label.text = "Segment dimensions"
+			else:
+				_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
+				_dimensions_label.text = "Dimensions Per Device"
 		else:
 			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
 		
@@ -1219,6 +1299,8 @@ func _init_ipu_opu_decoded_info() -> void:
 	# Create all label rows (avoid duplicating coding info shown in Neuron Coding)
 
 func _refresh_from_cache_summary() -> void:
+	if len(_cortical_area_refs) == 1:
+		_detect_and_setup_isvi_segment()
 	var is_all_io = _are_all_io_areas()
 	if _line_voxel_neuron_density != null:
 		var voxel_row = _line_voxel_neuron_density.get_parent()
@@ -1281,10 +1363,17 @@ func _refresh_from_cache_summary() -> void:
 			var granularity_value = _cortical_area_refs[0].visualization_voxel_granularity
 			print("🔵 UI: Setting visualization_voxel_granularity in UI to: %s (from cache)" % granularity_value)
 			_vector_visualization_voxel_granularity.current_vector = granularity_value
-		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
+		if is_all_io:
 			_device_count_section.visible = true
 			_update_control_with_value_from_areas(_device_count, "", "device_count")
-			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "cortical_dimensions_per_device")
+			if _is_isvi_segment:
+				_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
+				if _dimensions_label != null:
+					_dimensions_label.text = "Segment dimensions"
+			else:
+				_update_control_with_value_from_areas(_vector_dimensions_spin, "", "cortical_dimensions_per_device")
+				if _dimensions_label != null:
+					_dimensions_label.text = "Dimensions Per Device"
 		else:
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
 		# NOTE: 3D preview is intentionally NOT created on window open.
@@ -1496,9 +1585,15 @@ func _enable_3D_preview(): #NOTE only currently works with single
 #region firing parameters
 
 @export var _section_firing_parameters: VerticalCollapsibleHiding
+## Whole rows hidden for memory-only selection (dense LIF parameters N/A for associative memory neurons).
+@export var _firing_row_mp_accumulation: Control
+@export var _firing_row_leak_constant: Control
+@export var _firing_row_leak_variability: Control
+@export var _firing_threshold_increment_label: Control
 @export var _line_Fire_Threshold: FloatInput
 @export var _line_Threshold_Limit: IntInput
 @export var _line_neuron_excitability: IntInput
+@export var _line_Degeneracy_Constant: FloatInput
 @export var _line_Refactory_Period: IntInput
 @export var _line_Leak_Constant: IntInput
 @export var _line_Leak_Variability: FloatInput
@@ -1526,8 +1621,10 @@ func _init_firing_parameters() -> void:
 	_connect_control_to_update_button(_line_Consecutive_Fire_Count, "neuron_consecutive_fire_count", _button_firing_send)
 	_connect_control_to_update_button(_line_Snooze_Period, "neuron_snooze_period", _button_firing_send)
 	_connect_control_to_update_button(_line_Threshold_Inc, "neuron_fire_threshold_increment", _button_firing_send)
+	_connect_control_to_update_button(_line_Degeneracy_Constant, "neuron_degeneracy_coefficient", _button_firing_send)
 	
 	_button_firing_send.pressed.connect(_send_update.bind(_button_firing_send))
+	_apply_memory_firing_parameter_rows_visibility()
 
 func _refresh_from_cache_firing_parameters() -> void:
 	_update_control_with_value_from_areas(_button_MP_Accumulation, "neuron_firing_parameters", "neuron_mp_charge_accumulation")
@@ -1540,6 +1637,8 @@ func _refresh_from_cache_firing_parameters() -> void:
 	_update_control_with_value_from_areas(_line_Consecutive_Fire_Count, "neuron_firing_parameters", "neuron_consecutive_fire_count")
 	_update_control_with_value_from_areas(_line_Snooze_Period, "neuron_firing_parameters", "neuron_snooze_period")
 	_update_control_with_value_from_areas(_line_Threshold_Inc, "neuron_firing_parameters", "neuron_fire_threshold_increment")
+	_update_control_with_value_from_areas(_line_Degeneracy_Constant, "post_synaptic_potential_paramamters", "neuron_degeneracy_coefficient")
+	_apply_memory_firing_parameter_rows_visibility()
 
 #endregion
 
@@ -1573,7 +1672,6 @@ func _refresh_from_cache_memory() -> void:
 @export var _section_post_synaptic_potential_parameters: VerticalCollapsibleHiding
 @export var _line_Post_Synaptic_Potential: FloatInput
 @export var _line_PSP_Max: FloatInput
-@export var _line_Degeneracy_Constant: FloatInput
 @export var _button_PSP_Uniformity: ToggleButton
 @export var _button_MP_Driven_PSP: ToggleButton
 @export var _button_pspp_send: Button
@@ -1581,7 +1679,6 @@ func _refresh_from_cache_memory() -> void:
 func _init_psp() -> void:
 	_connect_control_to_update_button(_line_Post_Synaptic_Potential, "neuron_post_synaptic_potential", _button_pspp_send)
 	_connect_control_to_update_button(_line_PSP_Max, "neuron_post_synaptic_potential_max", _button_pspp_send)
-	_connect_control_to_update_button(_line_Degeneracy_Constant, "neuron_degeneracy_coefficient", _button_pspp_send)
 	_connect_control_to_update_button(_button_PSP_Uniformity, "neuron_psp_uniform_distribution", _button_pspp_send)
 	_connect_control_to_update_button(_button_MP_Driven_PSP, "neuron_mp_driven_psp", _button_pspp_send)
 	
@@ -1590,7 +1687,6 @@ func _init_psp() -> void:
 func _refresh_from_cache_psp() -> void:
 	_update_control_with_value_from_areas(_line_Post_Synaptic_Potential, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential")
 	_update_control_with_value_from_areas(_line_PSP_Max, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential_max")
-	_update_control_with_value_from_areas(_line_Degeneracy_Constant, "post_synaptic_potential_paramamters", "neuron_degeneracy_coefficient")
 	_update_control_with_value_from_areas(_button_PSP_Uniformity, "post_synaptic_potential_paramamters", "neuron_psp_uniform_distribution")
 	_update_control_with_value_from_areas(_button_MP_Driven_PSP, "post_synaptic_potential_paramamters", "neuron_mp_driven_psp")
 	_line_Post_Synaptic_Potential.editable = !_button_MP_Driven_PSP.button_pressed
@@ -1640,11 +1736,18 @@ func _montoring_update_button_pressed() -> void:
 #region Connections
 
 @export var _section_connections: VerticalCollapsibleHiding
-@export var _scroll_afferent: ScrollSectionGeneric
-@export var _scroll_efferent: ScrollSectionGeneric
-@export var _button_recursive: Button
+@export var _scroll_afferent: VBoxContainer
+@export var _scroll_efferent: VBoxContainer
+@export var _scroll_recursive: VBoxContainer
+const PREFAB_TEXT_BUTTON_WITH_DELETE: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButtonWithDelete.tscn")
+var _recursive_rows: Dictionary = {}
+var _afferent_rows: Dictionary = {}
+var _efferent_rows: Dictionary = {}
 
 func _setup_connection_info(cortical_reference: AbstractCorticalArea) -> void:
+	_clear_flat_rows(_scroll_recursive, _recursive_rows)
+	_clear_flat_rows(_scroll_afferent, _afferent_rows)
+	_clear_flat_rows(_scroll_efferent, _efferent_rows)
 	# Recursive
 	for recursive_area: AbstractCorticalArea in cortical_reference.recursive_mappings.keys():
 		_add_recursive_area(recursive_area)
@@ -1659,69 +1762,88 @@ func _setup_connection_info(cortical_reference: AbstractCorticalArea) -> void:
 		efferent_area.efferent_input_cortical_area_removed.connect(_remove_efferent_area)
 
 	cortical_reference.recursive_cortical_area_added.connect(_add_recursive_area)
-	cortical_reference.recursive_cortical_area_added.connect(_remove_recursive_area)
+	cortical_reference.recursive_cortical_area_removed.connect(_remove_recursive_area)
 	cortical_reference.afferent_input_cortical_area_added.connect(_add_afferent_area)
 	cortical_reference.efferent_input_cortical_area_added.connect(_add_efferent_area)
 	cortical_reference.afferent_input_cortical_area_removed.connect(_remove_afferent_area)
 	cortical_reference.efferent_input_cortical_area_removed.connect(_remove_efferent_area)
 
 func _add_recursive_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	_button_recursive.text = "Recursive Connection"
-
-func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(area, _cortical_area_refs[0])
-	var item: ScrollSectionGenericItem = _scroll_afferent.add_text_button_with_delete(
-		area,
-		" " + area.friendly_name + " ",
-		call_mapping_window,
-		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
-		false
-	)
-	var delete_request: Callable = _safe_delete_afferent_mapping.bind(area, _cortical_area_refs[0])
-	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
-		"Delete these mappings?",
-		"Are you sure you wish to delete the mappings from %s to this cortical area?" % area.friendly_name,
-		delete_request,
-		"Yes"
-		)
-	var popup_request: Callable = func() -> void:
-		var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
-		popup_window.set_enter_confirms_button("Yes")
-		popup_window.call_deferred("focus_button_with_text", "Yes")
-	item.get_delete_button().pressed.connect(popup_request)
-
-func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(_cortical_area_refs[0], area)
-	var item: ScrollSectionGenericItem = _scroll_efferent.add_text_button_with_delete(
-		area,
+	if _recursive_rows.has(area):
+		return
+	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(_cortical_area_refs[0], _cortical_area_refs[0])
+	var row: HBoxContainer = _spawn_text_button_with_delete_row(
+		_scroll_recursive,
 		area.friendly_name,
 		call_mapping_window,
-		ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT,
-		false
+		func() -> void:
+			var delete_request: Callable = _safe_delete_recursive_mapping.bind(area)
+			var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+				"Delete recursive mappings?",
+				"Are you sure you wish to delete recursive mappings for %s?" % area.friendly_name,
+				delete_request,
+				"Yes"
+			)
+			var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+			popup_window.set_enter_confirms_button("Yes")
+			popup_window.call_deferred("focus_button_with_text", "Yes")
 	)
-	var delete_request: Callable = _safe_delete_efferent_mapping.bind(_cortical_area_refs[0], area)
-	var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
-		"Delete these mappings?",
-		"Are you sure you wish to delete the mappings from this cortical area to %s?" % area.friendly_name,
-		delete_request,
-		"Yes"
-		)
-	var popup_request: Callable = func() -> void:
-		var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
-		popup_window.set_enter_confirms_button("Yes")
-		popup_window.call_deferred("focus_button_with_text", "Yes")
-	item.get_delete_button().pressed.connect(popup_request)
+	_recursive_rows[area] = row
+
+func _add_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	if _afferent_rows.has(area):
+		return
+	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(area, _cortical_area_refs[0])
+	var row: HBoxContainer = _spawn_text_button_with_delete_row(
+		_scroll_afferent,
+		" " + area.friendly_name + " ",
+		call_mapping_window,
+		func() -> void:
+			var delete_request: Callable = _safe_delete_afferent_mapping.bind(area, _cortical_area_refs[0])
+			var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+				"Delete these mappings?",
+				"Are you sure you wish to delete the mappings from %s to this cortical area?" % area.friendly_name,
+				delete_request,
+				"Yes"
+			)
+			var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+			popup_window.set_enter_confirms_button("Yes")
+			popup_window.call_deferred("focus_button_with_text", "Yes")
+	)
+	_afferent_rows[area] = row
+
+func _add_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
+	if _efferent_rows.has(area):
+		return
+	var call_mapping_window: Callable = BV.WM.spawn_mapping_editor.bind(_cortical_area_refs[0], area)
+	var row: HBoxContainer = _spawn_text_button_with_delete_row(
+		_scroll_efferent,
+		area.friendly_name,
+		call_mapping_window,
+		func() -> void:
+			var delete_request: Callable = _safe_delete_efferent_mapping.bind(_cortical_area_refs[0], area)
+			var delete_popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+				"Delete these mappings?",
+				"Are you sure you wish to delete the mappings from this cortical area to %s?" % area.friendly_name,
+				delete_request,
+				"Yes"
+			)
+			var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(delete_popup)
+			popup_window.set_enter_confirms_button("Yes")
+			popup_window.call_deferred("focus_button_with_text", "Yes")
+	)
+	_efferent_rows[area] = row
 
 func _remove_recursive_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	_button_recursive.text = "None Recursive"
+	_remove_flat_row(_recursive_rows, area)
 
 func _remove_afferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	_scroll_afferent.attempt_remove_item(area)
+	_remove_flat_row(_afferent_rows, area)
 
 func _remove_efferent_area(area: AbstractCorticalArea, _irrelevant_mapping = null) -> void:
-	_scroll_efferent.attempt_remove_item(area)
+	_remove_flat_row(_efferent_rows, area)
 
-func _user_pressed_recursive_button() -> void:
+func _user_pressed_add_recursive_button() -> void:
 	BV.WM.spawn_mapping_editor(_cortical_area_refs[0], _cortical_area_refs[0])
 
 func _user_pressed_add_afferent_button() -> void:
@@ -1730,6 +1852,38 @@ func _user_pressed_add_afferent_button() -> void:
 func _user_pressed_add_efferent_button() -> void:
 	BV.WM.spawn_mapping_editor(_cortical_area_refs[0], null)
 #endregion
+
+func _spawn_text_button_with_delete_row(parent_container: VBoxContainer, text: StringName, button_action: Callable, delete_action: Callable) -> HBoxContainer:
+	var row: HBoxContainer = PREFAB_TEXT_BUTTON_WITH_DELETE.instantiate()
+	var button: Button = row.get_node("Text")
+	var delete_button: TextureButton = row.get_node("Delete")
+	button.text = text
+	button.theme_type_variation = ScrollSectionGeneric.DEFAULT_BUTTON_THEME_VARIANT
+	delete_button.theme_type_variation = &"TextureButton_icon"
+	# Keep delete icon visible in flat lists (no nested ScrollSection theme scaler here).
+	if BV and BV.UI:
+		delete_button.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(delete_button, &"TextureButton_icon")
+	else:
+		delete_button.custom_minimum_size = Vector2(40, 40)
+	if not button_action.is_null():
+		button.pressed.connect(button_action)
+	if not delete_action.is_null():
+		delete_button.pressed.connect(delete_action)
+	parent_container.add_child(row)
+	return row
+
+func _remove_flat_row(rows_lookup: Dictionary, key: Variant) -> void:
+	if not rows_lookup.has(key):
+		return
+	var row := rows_lookup[key] as HBoxContainer
+	if row != null and is_instance_valid(row):
+		row.queue_free()
+	rows_lookup.erase(key)
+
+func _clear_flat_rows(container: VBoxContainer, rows_lookup: Dictionary) -> void:
+	for child in container.get_children():
+		child.queue_free()
+	rows_lookup.clear()
 
 
 
@@ -1749,9 +1903,12 @@ func _user_pressed_reset_button() -> void:
 	if not FeagiCore or not FeagiCore.requests:
 		print("UI: Cannot reset cortical areas - FeagiCore or requests not available")
 		return
-	
-	FeagiCore.requests.mass_reset_cortical_areas(_cortical_area_refs)
-	BV.NOTIF.add_notification("Reseting cortical areas...")
+	BV.NOTIF.add_notification("Resetting cortical areas...")
+	var result = await FeagiCore.requests.mass_reset_cortical_areas(_cortical_area_refs)
+	if result.has_errored:
+		BV.NOTIF.add_notification("Cortical reset failed")
+	else:
+		BV.NOTIF.add_notification("Cortical areas reset")
 	close_window()
 
 #endregion
@@ -1776,6 +1933,15 @@ func _safe_delete_efferent_mapping(source_area: AbstractCorticalArea, dest_area:
 		push_error("UI: Failed to delete efferent mapping %s -> %s" % [source_area.cortical_ID, dest_area.cortical_ID])
 		return
 
+func _safe_delete_recursive_mapping(area: AbstractCorticalArea) -> void:
+	if not FeagiCore or not FeagiCore.requests:
+		print("UI: Cannot delete recursive mapping - FeagiCore or requests not available")
+		return
+	var result: FeagiRequestOutput = await FeagiCore.requests.delete_mappings_between_corticals(area, area)
+	if result.has_errored:
+		push_error("UI: Failed to delete recursive mapping %s -> %s" % [area.cortical_ID, area.cortical_ID])
+		return
+
 #endregion
 
 #region Segmented Vision (isvi) Layout Management
@@ -1791,6 +1957,7 @@ func _detect_and_setup_isvi_segment() -> void:
 		return
 
 	var area = _cortical_area_refs[0]
+	area.ensure_unit_subunit_ids_from_cortical_id()
 
 	if area.normalized_subtype() != "isvi":
 		return

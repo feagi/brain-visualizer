@@ -42,6 +42,8 @@ const META_CB_GRAPH_TEARDOWN_SCHEDULED: StringName = &"_cb_graph_teardown_schedu
 var _mouse_clicked_background: bool = false
 var _mouse_clicked_prev_position: Vector2
 var _combo: BrainObjectsCombo = null
+## Prevents duplicate CBLine / terminals for the same ConnectionChainLink (phantom overlapping connections).
+var _active_connection_link_render_ids: Dictionary = {}
 
 func _ready():
 	_move_timer = $Timer
@@ -98,18 +100,41 @@ func setup(region: BrainRegion) -> void:
 	
 	name = region.friendly_name
 	
-	region.friendly_name_updated.connect(_CACHE_this_region_name_update)
-	region.cortical_area_added_to_region.connect(_CACHE_add_cortical_area)
-	region.cortical_area_removed_from_region.connect(_CACHE_remove_cortical_area)
-	region.subregion_added_to_region.connect(_CACHE_add_subregion)
-	region.subregion_removed_from_region.connect(_CACHE_remove_subregion)
-	region.bridge_link_added.connect(_CACHE_link_bridge_added)
-	region.input_link_added.connect(_CACHE_link_parent_input_added)
-	region.output_link_added.connect(_CACHE_link_parent_output_added)
-	region.input_open_link_added.connect(_CACHE_link_region_input_open_added)
-	region.output_open_link_added.connect(_CACHE_link_region_output_open_added)
+	if not region.friendly_name_updated.is_connected(_CACHE_this_region_name_update):
+		region.friendly_name_updated.connect(_CACHE_this_region_name_update)
+	if not region.cortical_area_added_to_region.is_connected(_CACHE_add_cortical_area):
+		region.cortical_area_added_to_region.connect(_CACHE_add_cortical_area)
+	if not region.cortical_area_removed_from_region.is_connected(_CACHE_remove_cortical_area):
+		region.cortical_area_removed_from_region.connect(_CACHE_remove_cortical_area)
+	if not region.subregion_added_to_region.is_connected(_CACHE_add_subregion):
+		region.subregion_added_to_region.connect(_CACHE_add_subregion)
+	if not region.subregion_removed_from_region.is_connected(_CACHE_remove_subregion):
+		region.subregion_removed_from_region.connect(_CACHE_remove_subregion)
+	if not region.bridge_link_added.is_connected(_CACHE_link_bridge_added):
+		region.bridge_link_added.connect(_CACHE_link_bridge_added)
+	if not region.input_link_added.is_connected(_CACHE_link_parent_input_added):
+		region.input_link_added.connect(_CACHE_link_parent_input_added)
+	if not region.output_link_added.is_connected(_CACHE_link_parent_output_added):
+		region.output_link_added.connect(_CACHE_link_parent_output_added)
+	if not region.input_open_link_added.is_connected(_CACHE_link_region_input_open_added):
+		region.input_open_link_added.connect(_CACHE_link_region_input_open_added)
+	if not region.output_open_link_added.is_connected(_CACHE_link_region_output_open_added):
+		region.output_open_link_added.connect(_CACHE_link_region_output_open_added)
 	call_deferred("_attempt_initial_fit")
 	
+
+## Registers a single graph representation per [ConnectionChainLink]. Without this, duplicate handler
+## invocations (e.g. signal connected twice) spawn overlapping lines and extra ports ("phantom" connections).
+func _try_begin_connection_link_visual(link: ConnectionChainLink) -> bool:
+	var link_id: int = link.get_instance_id()
+	if _active_connection_link_render_ids.has(link_id):
+		return false
+	_active_connection_link_render_ids[link_id] = true
+	link.about_to_be_removed.connect(_on_connection_chain_link_visual_cleared.bind(link_id))
+	return true
+
+func _on_connection_chain_link_visual_cleared(link_id: int) -> void:
+	_active_connection_link_render_ids.erase(link_id)
 
 #region Responses to Cache Signals
 
@@ -178,6 +203,10 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
 		return
 
+	if not _try_begin_connection_link_visual(link):
+		push_warning("UI CB: Skipping duplicate graph render for same ConnectionChainLink (bridge).")
+		return
+
 	if source_node == destination_node:
 		#This is a recursive connection
 		source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.RECURSIVE, source_node.title, PREFAB_NODE_TERMINAL)
@@ -215,6 +244,10 @@ func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	if destination_node == null:
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
 		return
+
+	if not _try_begin_connection_link_visual(link):
+		push_warning("UI CB: Skipping duplicate graph render for same ConnectionChainLink (parent input).")
+		return
 	
 	var source_node: CBRegionIONode = _spawn_and_position_region_IO_node(true, destination_node, destination_node.get_number_inputs())
 	source_node.setup(link.parent_chain.source, link.parent_chain.destination, true)
@@ -248,6 +281,10 @@ func _CACHE_link_parent_output_added(link: ConnectionChainLink) -> void:
 	
 	if source_node == null:
 		push_error("UI CB: Failed to add link in CB of region %s" % _representing_region.region_ID)
+		return
+
+	if not _try_begin_connection_link_visual(link):
+		push_warning("UI CB: Skipping duplicate graph render for same ConnectionChainLink (parent output).")
 		return
 	
 	var destination_node: CBRegionIONode = _spawn_and_position_region_IO_node(false, source_node, source_node.get_number_outputs())
@@ -1105,7 +1142,7 @@ func _fit_circuit_to_viewport() -> void:
 	var padded_size: Vector2 = bounds_size + initial_fit_padding
 	var fit_zoom_x: float = viewport_px.x / max(padded_size.x, 1.0)
 	var fit_zoom_y: float = viewport_px.y / max(padded_size.y, 1.0)
-	var target_zoom: float = min(fit_zoom_x, fit_zoom_y)
+	var target_zoom: float = min(fit_zoom_x, fit_zoom_y) * 0.5
 	var min_z: float = 0.2
 	var max_z: float = 2.0
 	if "min_zoom" in self:

@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://csvjqt8dbo5ec"]
+[gd_scene load_steps=5 format=3 uid="uid://csvjqt8dbo5ec"]
 
 [ext_resource type="Script" uid="uid://bjgbpc5y6tnmd" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaMemory.gd" id="1_se87m"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="3_dcueh"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_af2cq"]
+[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="5_int"]
 
 [node name="Definition_Memory" type="VBoxContainer"]
 offset_right = 473.0
@@ -36,7 +37,7 @@ layout_mode = 2
 initial_vector = Vector3i(40, 0, 0)
 
 [node name="Gap" type="Control" parent="."]
-custom_minimum_size = Vector2(0, 4)
+custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="."]
@@ -47,18 +48,68 @@ horizontal_alignment = 1
 [node name="PanelContainer" type="PanelContainer" parent="."]
 layout_mode = 2
 
-[node name="dimensions" type="HBoxContainer" parent="PanelContainer"]
+[node name="MemoryParameters" type="VBoxContainer" parent="PanelContainer"]
 layout_mode = 2
+theme_override_constants/separation = 6
 
-[node name="Label" type="Label" parent="PanelContainer/dimensions"]
+[node name="initial_neuron_lifespan" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+layout_mode = 2
+tooltip_text = "Starting lifespan in bursts for newly created memory neurons."
+
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/initial_neuron_lifespan"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Default dimensions: "
+text = "Initial Neuron Lifespan"
 
-[node name="dimensions" parent="PanelContainer/dimensions" instance=ExtResource("3_dcueh")]
+[node name="initial_neuron_lifespan" type="LineEdit" parent="PanelContainer/MemoryParameters/initial_neuron_lifespan"]
 layout_mode = 2
-label_x_text = &"W"
-label_y_text = &"H"
-label_z_text = &"D"
-initial_vector = Vector3i(1, 1, 1)
-initial_editable = false
+alignment = 2
+script = ExtResource("5_int")
+initial_int = 0
+
+[node name="lifespan_growth_rate" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+layout_mode = 2
+tooltip_text = "Amount added to lifespan on each reactivation (non-LTM only)."
+
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/lifespan_growth_rate"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Lifespan Growth Rate"
+
+[node name="lifespan_growth_rate" type="LineEdit" parent="PanelContainer/MemoryParameters/lifespan_growth_rate"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("5_int")
+initial_int = 0
+
+[node name="longterm_memory_threshold" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+layout_mode = 2
+tooltip_text = "Lifespan threshold at which memory neurons become long-term."
+
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/longterm_memory_threshold"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Longterm Memory Threshold"
+
+[node name="longterm_memory_threshold" type="LineEdit" parent="PanelContainer/MemoryParameters/longterm_memory_threshold"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("5_int")
+initial_int = 0
+
+[node name="temporal_depth" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+layout_mode = 2
+tooltip_text = "Number of bursts to include when detecting upstream firing patterns."
+
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/temporal_depth"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Temporal Depth"
+
+[node name="temporal_depth" type="LineEdit" parent="PanelContainer/MemoryParameters/temporal_depth"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("5_int")
+initial_int = 1
+max_value = 99999999999999
+min_value = 1

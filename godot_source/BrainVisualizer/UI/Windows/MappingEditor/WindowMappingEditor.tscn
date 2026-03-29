@@ -17,7 +17,7 @@ script = ExtResource("1_cwaox")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_y8w4n")]
 layout_mode = 2
-title = "Mapping Editor"
+title = "Cortical Mapping Editor"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -41,6 +41,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 expand_mode = 1
+stretch_mode = 5
 
 [node name="Destination" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
@@ -70,9 +71,23 @@ layout_mode = 2
 visible = false
 layout_mode = 2
 
+[node name="ButtonSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 alignment = 2
+
+[node name="CancelButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+text = " Cancel "
+
+[node name="ButtonSpacing" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
 
 [node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(128, 64)
@@ -83,4 +98,5 @@ text = " Set Mapping "
 [connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Source" to="." method="_source_button_picked"]
 [connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Destination" to="." method="_destination_button_picked"]
 [connection signal="import_mapping_hint" from="WindowPanel/WindowMargin/WindowInternals/GenericMappingDetailSettingsPartial" to="." method="_import_partial_mapping"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/CancelButton" to="." method="close_window"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/Button" to="." method="_user_pressed_set_mappings"]

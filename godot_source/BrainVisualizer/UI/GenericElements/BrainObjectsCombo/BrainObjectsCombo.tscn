@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.gd" id="1_script"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_basebtn"]
@@ -15,12 +15,18 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="7_icon_input"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_icon_output"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png" id="6_icon_memory"]
+[ext_resource type="PackedScene" uid="uid://cm2activityvizdd1" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.tscn" id="16_activity_dd"]
+[ext_resource type="Script" uid="uid://dfllqleqyhqy4" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="17_btn_tex_scale"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_S.jpg" id="18_cam_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="19_cam_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="20_cam_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="21_cam_d"]
 
 [node name="BrainObjectsCombo" type="HBoxContainer"]
 mouse_filter = 1
 size_flags_vertical = 4
 theme_type_variation = &"HBoxContainer_far"
-theme_override_constants/separation = 0
+theme_override_constants/separation = 8
 script = ExtResource("1_script")
 
 [node name="MainGroup" type="PanelContainer" parent="."]
@@ -37,7 +43,7 @@ theme_override_constants/margin_bottom = 0
 [node name="ButtonsRow" type="HBoxContainer" parent="MainGroup/MarginContainer"]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_farther"
-theme_override_constants/separation = 0
+theme_override_constants/separation = 6
 
 [node name="BrainRegionsList" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow"]
 size_flags_vertical = 4
@@ -45,10 +51,7 @@ script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/BrainRegionsList"]
 metadata/hover_scale_target = true
-
-[node name="LeftPad" type="Control" parent="MainGroup/MarginContainer/ButtonsRow/BrainRegionsList/HBoxContainer"]
-custom_minimum_size = Vector2(0, 0)
-size_flags_horizontal = 0
+theme_override_constants/separation = 6
 
 [node name="TextureRect" type="TextureRect" parent="MainGroup/MarginContainer/ButtonsRow/BrainRegionsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
@@ -59,7 +62,7 @@ expand_mode = 1
 theme_type_variation = &"Label_Header"
 text = "Circuits"
 
-[node name="TextureButton_BrainRegions" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow"]
+[node name="TextureButton_BrainRegions" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow/BrainRegionsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
@@ -71,8 +74,8 @@ stretch_mode = 0
 metadata/ignore_parent_press = true
 
 [node name="Spacer_AfterAddCircuits" type="Control" parent="MainGroup/MarginContainer/ButtonsRow"]
-custom_minimum_size = Vector2(0, 0)
-size_flags_horizontal = 4
+custom_minimum_size = Vector2(5, 0)
+size_flags_horizontal = 0
 
 [node name="InputsList" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow"]
 size_flags_vertical = 4
@@ -80,6 +83,7 @@ script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/InputsList"]
 metadata/hover_scale_target = true
+theme_override_constants/separation = 6
 
 [node name="TextureRect" type="TextureRect" parent="MainGroup/MarginContainer/ButtonsRow/InputsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
@@ -90,7 +94,7 @@ expand_mode = 1
 theme_type_variation = &"Label_Header"
 text = "Inputs"
 
-[node name="TextureButton_Inputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow"]
+[node name="TextureButton_Inputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow/InputsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
@@ -102,8 +106,8 @@ stretch_mode = 0
 metadata/ignore_parent_press = true
 
 [node name="Spacer_AfterAddInputs" type="Control" parent="MainGroup/MarginContainer/ButtonsRow"]
-custom_minimum_size = Vector2(0, 0)
-size_flags_horizontal = 4
+custom_minimum_size = Vector2(5, 0)
+size_flags_horizontal = 0
 
 [node name="OutputsList" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow"]
 size_flags_vertical = 4
@@ -111,6 +115,7 @@ script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/OutputsList"]
 metadata/hover_scale_target = true
+theme_override_constants/separation = 6
 
 [node name="TextureRect" type="TextureRect" parent="MainGroup/MarginContainer/ButtonsRow/OutputsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
@@ -121,7 +126,7 @@ expand_mode = 1
 theme_type_variation = &"Label_Header"
 text = "Outputs"
 
-[node name="TextureButton_Outputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow"]
+[node name="TextureButton_Outputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow/OutputsList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
@@ -133,8 +138,8 @@ stretch_mode = 0
 metadata/ignore_parent_press = true
 
 [node name="Spacer_AfterMainGroup" type="Control" parent="."]
-custom_minimum_size = Vector2(0, 0)
-size_flags_horizontal = 4
+custom_minimum_size = Vector2(18, 0)
+size_flags_horizontal = 0
 
 [node name="InterconnectGroup" type="PanelContainer" parent="."]
 size_flags_vertical = 4
@@ -150,6 +155,7 @@ theme_override_constants/margin_bottom = 0
 [node name="ButtonsRow" type="HBoxContainer" parent="InterconnectGroup/MarginContainer"]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_farther"
+theme_override_constants/separation = 6
 
 [node name="InterconnectAreasList" type="PanelContainer" parent="InterconnectGroup/MarginContainer/ButtonsRow"]
 size_flags_vertical = 4
@@ -157,6 +163,7 @@ script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList"]
 metadata/hover_scale_target = true
+theme_override_constants/separation = 6
 
 [node name="TextureRect" type="TextureRect" parent="InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
@@ -167,7 +174,7 @@ expand_mode = 1
 theme_type_variation = &"Label_Header"
 text = "Interconnect Areas"
 
-[node name="TextureButton_Interconnect" type="TextureButton" parent="InterconnectGroup/MarginContainer/ButtonsRow"]
+[node name="TextureButton_Interconnect" type="TextureButton" parent="InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
@@ -180,7 +187,7 @@ metadata/ignore_parent_press = true
 
 [node name="Spacer_AfterInterconnectGroup" type="Control" parent="."]
 custom_minimum_size = Vector2(18, 0)
-size_flags_horizontal = 4
+size_flags_horizontal = 0
 
 [node name="MemoryGroup" type="PanelContainer" parent="."]
 size_flags_vertical = 4
@@ -196,6 +203,7 @@ theme_override_constants/margin_bottom = 0
 [node name="ButtonsRow" type="HBoxContainer" parent="MemoryGroup/MarginContainer"]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_farther"
+theme_override_constants/separation = 6
 
 [node name="MemoryAreasList" type="PanelContainer" parent="MemoryGroup/MarginContainer/ButtonsRow"]
 size_flags_vertical = 4
@@ -203,6 +211,7 @@ script = ExtResource("2_basebtn")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList"]
 metadata/hover_scale_target = true
+theme_override_constants/separation = 6
 
 [node name="TextureRect" type="TextureRect" parent="MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
@@ -213,7 +222,7 @@ expand_mode = 1
 theme_type_variation = &"Label_Header"
 text = "Memory Areas"
 
-[node name="TextureButton_Memory" type="TextureButton" parent="MemoryGroup/MarginContainer/ButtonsRow"]
+[node name="TextureButton_Memory" type="TextureButton" parent="MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
@@ -225,8 +234,8 @@ stretch_mode = 0
 metadata/ignore_parent_press = true
 
 [node name="Spacer_BeforeRearrange" type="Control" parent="."]
-custom_minimum_size = Vector2(18, 0)
-size_flags_horizontal = 4
+custom_minimum_size = Vector2(5, 0)
+size_flags_horizontal = 0
 
 [node name="RearrangePanel" type="PanelContainer" parent="."]
 size_flags_vertical = 4
@@ -254,6 +263,32 @@ stretch_mode = 0
 metadata/ignore_parent_press = true
 
 [node name="Spacer_AfterRearrange" type="Control" parent="."]
-custom_minimum_size = Vector2(14, 0)
+custom_minimum_size = Vector2(5, 0)
+size_flags_horizontal = 0
+
+[node name="Spacer_BeforeMonitorTools" type="Control" parent="."]
+visible = false
+custom_minimum_size = Vector2(5, 0)
+size_flags_horizontal = 0
+
+[node name="ActivityVisualizationDropDown" parent="." instance=ExtResource("16_activity_dd")]
+visible = false
+layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Brain activity: global neural connections or inspectors"
+
+[node name="CameraAnimations" type="TextureRect" parent="."]
+visible = false
+custom_minimum_size = Vector2(64, 64)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Camera Animations"
+texture = ExtResource("18_cam_s")
+expand_mode = 3
+script = ExtResource("17_btn_tex_scale")
+texture_normal = ExtResource("18_cam_s")
+texture_pressed = ExtResource("20_cam_c")
+texture_hover = ExtResource("19_cam_h")
+texture_disabled = ExtResource("21_cam_d")
 

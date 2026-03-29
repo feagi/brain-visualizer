@@ -80,7 +80,10 @@ mouse_filter = 2
 [node name="ScaleControl" parent="UIManager" instance=ExtResource("8_scale")]
 layout_mode = 3
 
-[node name="WindowManager" type="Node" parent="UIManager"]
+[node name="FloatingWindowsLayer" type="CanvasLayer" parent="UIManager"]
+layer = 1
+
+[node name="WindowManager" type="Node" parent="UIManager/FloatingWindowsLayer"]
 script = ExtResource("9_eg4r6")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="UIManager"]
@@ -99,7 +102,10 @@ grow_horizontal = 0
 grow_vertical = 0
 horizontal_alignment = 2
 
-[node name="TempLoadingScreen" type="PanelContainer" parent="UIManager"]
+[node name="LoadingScreenOverlayLayer" type="CanvasLayer" parent="UIManager"]
+layer = 128
+
+[node name="TempLoadingScreen" type="PanelContainer" parent="UIManager/LoadingScreenOverlayLayer"]
 z_index = 100
 anchors_preset = 15
 anchor_right = 1.0
@@ -108,52 +114,52 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_rogx1")
 
-[node name="LoadingOverlay" type="BoxContainer" parent="UIManager/TempLoadingScreen"]
+[node name="LoadingOverlay" type="BoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen"]
 layout_mode = 2
 alignment = 2
 vertical = true
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="TitleLabel" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 60
 text = "FEAGI BRAIN VISUALIZER"
 
-[node name="Label" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
+[node name="Label" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 40
 text = " "
 
-[node name="WarningPanel" type="PanelContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
+[node name="WarningPanel" type="PanelContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_warning_panel")
 
-[node name="WarningMargin" type="MarginContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel"]
+[node name="WarningMargin" type="MarginContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 72
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 72
 theme_override_constants/margin_bottom = 8
 
-[node name="WarningVBox" type="VBoxContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin"]
+[node name="WarningVBox" type="VBoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin"]
 layout_mode = 2
 alignment = 1
 
-[node name="WarningTitle" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox"]
+[node name="WarningTitle" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Warning: Flashing Lights"
 horizontal_alignment = 1
 
-[node name="WarningBody" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox"]
+[node name="WarningBody" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox"]
 custom_minimum_size = Vector2(900, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
@@ -164,24 +170,24 @@ If you feel unwell, stop using the application immediately."
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Bottom_Row" type="BoxContainer" parent="UIManager/TempLoadingScreen/LoadingOverlay"]
+[node name="Bottom_Row" type="BoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay"]
 layout_mode = 2
 
-[node name="Control" type="Control" parent="UIManager/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
+[node name="Control" type="Control" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 
-[node name="StatusLabel" type="Label" parent="UIManager/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
+[node name="StatusLabel" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Initializing..."
 
-[node name="BottomCenterOverlay" type="Control" parent="UIManager/TempLoadingScreen"]
+[node name="BottomCenterOverlay" type="Control" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen"]
 z_index = 101
 layout_mode = 2
 mouse_filter = 2
 
-[node name="CopyrightLabel" type="Label" parent="UIManager/TempLoadingScreen/BottomCenterOverlay"]
+[node name="CopyrightLabel" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/BottomCenterOverlay"]
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 1.0

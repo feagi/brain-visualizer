@@ -12,10 +12,13 @@ var _index_scale: int
 
 var _neuron_count: TextInput
 var _synapse_count: TextInput
+const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
+const PREFAB_BRAIN_OBJECTS_COMBO: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
+var _shared_combo: BrainObjectsCombo = null
 
 var _increase_scale_button: TextureButton
 var _decrease_scale_button: TextureButton
-var _activity_rendering_toggle: TextureButton
+var _activity_visualization_dropdown: ActivityVisualizationDropDown
 const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
 var _list_popup: FilterableListPopup
 
@@ -28,15 +31,13 @@ func _ready():
 	_increase_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Bigger
 	_decrease_scale_button = $ChangeSize/MarginContainer/HBoxContainer/Smaller
 	
-	_activity_rendering_toggle = $ActivityRenderingPanel/MarginContainer/ActivityRenderingToggle
-	print("🔍 DEBUG: Activity rendering toggle found: ", _activity_rendering_toggle != null)
-	if _activity_rendering_toggle:
-		print("🔍 DEBUG: Toggle visible: ", _activity_rendering_toggle.visible)
-		print("🔍 DEBUG: Toggle size: ", _activity_rendering_toggle.size)
-		print("🔍 DEBUG: Toggle position: ", _activity_rendering_toggle.position)
+	_activity_visualization_dropdown = $TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown
+	BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
 	
 	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
+	_mount_shared_combo_strip()
+	_apply_shared_combo_spacing_tokens()
 	
 	# FEAGI data
 	# Burst rate
@@ -55,6 +56,36 @@ func _ready():
 	toggle_buttons_interactability(false)
 
 
+## Apply shared spacing tokens to keep top bar combo strips consistent with Circuit Builder.
+func _apply_shared_combo_spacing_tokens() -> void:
+	COMBO_STYLER.apply_list_hbox_spacing(self, [
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer")
+	])
+	COMBO_STYLER.apply_spacer_width(self, [
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddCircuits"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddInputs"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddOutputs"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/Spacer_AfterAddBrainAreas")
+	])
+
+
+## Mount the shared combo implementation used across Circuit Builder and Brain Monitor.
+func _mount_shared_combo_strip() -> void:
+	var root_row := $Buttons/MarginContainer/HBoxContainer
+	var legacy_strip := $Buttons/MarginContainer/HBoxContainer/HBoxContainer
+	legacy_strip.visible = false
+	legacy_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _shared_combo == null:
+		_shared_combo = PREFAB_BRAIN_OBJECTS_COMBO.instantiate() as BrainObjectsCombo
+		_shared_combo.name = "SharedBrainObjectsCombo"
+		root_row.add_child(_shared_combo)
+		root_row.move_child(_shared_combo, 0)
+	_shared_combo.set_global_topbar_mode()
+
+
 ## Toggle button interactability of top bar (ignoring those that are not relevant to FEAGI directly)
 func toggle_buttons_interactability(pressable: bool) -> void:
 	if _refresh_rate_field == null:
@@ -68,6 +99,8 @@ func toggle_buttons_interactability(pressable: bool) -> void:
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Inputs.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Outputs.disabled = !pressable
+	if _shared_combo != null:
+		_shared_combo.set_force_disabled(!pressable)
 	
 	
 
@@ -127,6 +160,9 @@ func _open_inputs() -> void:
 	)
 
 func _open_create_input() -> void:
+	if _shared_combo != null:
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, _shared_combo.get_inputs_add_button())
+		return
 	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
 
 func _open_brain_regions() -> void:
@@ -148,6 +184,9 @@ func _open_outputs() -> void:
 	)
 
 func _open_create_output() -> void:
+	if _shared_combo != null:
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU, _shared_combo.get_outputs_add_button())
+		return
 	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
 
 func _open_neuron_morphologies() -> void:
@@ -177,13 +216,15 @@ func _bigger_scale() -> void:
 func _preview_button_pressed() -> void:
 	BV.WM.spawn_view_previews()
 
-func _placeholder_toggle_changed(button_pressed: bool) -> void:
-	print("🔗 Global Neural Connections toggle changed to: ", button_pressed)
-	_toggle_cortical_activity_rendering(button_pressed)
-
-func _toggle_cortical_activity_rendering(enabled: bool) -> void:
-	print("🔗 Setting global neural connections visibility to: ", enabled)
-	_toggle_global_neural_connections(enabled)
+func _on_activity_visualization_mode_changed(action: StringName, enabled: bool) -> void:
+	if action == ActivityVisualizationDropDown.ACTION_GLOBAL_NEURAL_CONNECTIONS:
+		_toggle_global_neural_connections(enabled)
+	elif action == ActivityVisualizationDropDown.ACTION_VOXEL_INSPECTOR:
+		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR
+		BV.WM.spawn_voxel_inspector()
+	elif action == ActivityVisualizationDropDown.ACTION_MEMORY_INSPECTOR:
+		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.MEMORY_INSPECTOR
+		BV.WM.spawn_memory_inspector()
 
 func _toggle_global_neural_connections(enabled: bool) -> void:
 	print("🔗 Toggling global neural connections: ", enabled)
@@ -255,6 +296,24 @@ func _recursive_find_cortical_areas(node: Node, cortical_areas: Array) -> void:
 
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
+	_sync_refresh_rate_background_style()
+
+
+## Keep refresh-rate input background visually aligned with neurons/synapses fields.
+func _sync_refresh_rate_background_style() -> void:
+	if _refresh_rate_field == null or _neuron_count == null:
+		return
+	var unified_style: StyleBox = null
+	if _neuron_count.has_theme_stylebox(&"read_only"):
+		unified_style = _neuron_count.get_theme_stylebox(&"read_only")
+	elif _neuron_count.has_theme_stylebox(&"normal"):
+		unified_style = _neuron_count.get_theme_stylebox(&"normal")
+	if unified_style == null:
+		return
+	for style_name in [&"normal", &"focus", &"read_only"]:
+		_refresh_rate_field.add_theme_stylebox_override(style_name, unified_style.duplicate())
+
+
 
 
 ## Create and attach the reusable list popup if needed.
@@ -271,13 +330,15 @@ func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], 
 	_list_popup.open_with_items(anchor_button, items, selection_handler, placeholder_text)
 
 
-## Build dropdown items for all regions in the cache.
+## Build dropdown items: all sub-circuits under the genome root (matches global top-bar Circuits combo).
 func _build_topbar_region_items() -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
-	var regions: Array[BrainRegion] = []
-	regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.values())
-	for region in regions:
-		items.append({"label": region.friendly_name, "payload": region})
+	var scope_region: BrainRegion = null
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null and FeagiCore.feagi_local_cache.brain_regions != null:
+		scope_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if scope_region != null:
+		for region in scope_region.get_all_subregions_recursive():
+			items.append({"label": region.friendly_name, "payload": region})
 	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return String(a.get("label", "")).to_lower() < String(b.get("label", "")).to_lower()
 	)

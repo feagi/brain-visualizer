@@ -35,6 +35,9 @@ var _manipulation_group_anchor_pos: Vector3i = Vector3i.ZERO
 var _manipulation_group_start_positions: Dictionary = {}  # AbstractCorticalArea -> Vector3i
 var _manipulation_group_previews: Dictionary = {}  # AbstractCorticalArea -> UI_BrainMonitor_InteractivePreview
 var _manipulation_explicit_members: Array[AbstractCorticalArea] = []  # Explicit user-selected members for multi-area manipulation
+var _manipulation_is_core_cluster: bool = false  # Move session: save only power; slaved cores follow layout
+var _core_cluster_plate: MeshInstance3D = null
+var _core_cluster_layout_refresh_pending: bool = false
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -74,6 +77,11 @@ var _qc_last_mouse_entry_pos: Vector2 = Vector2.ZERO
 var _qc_bridge_active: bool = false
 var _qc_bridge_node: Node3D = null
 var _qc_bridge_start: Vector3 = Vector3.ZERO
+
+## Voxel Inspector: arcs from inspected voxel to peer voxels (reuses cortical connection curve materials).
+var _voxel_synapse_curve_nodes: Array[Node3D] = []
+## Parent for voxel synapse curves only; excluded from _compute_world_aabb so framing stays on regions/cortical areas.
+var _voxel_synapse_overlay: Node3D = null
 
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
@@ -532,6 +540,9 @@ func _spawn_indicator_for_node_center(node: Node) -> void:
 
 ## Computes a world-space AABB for a Node3D by aggregating all MeshInstance3D children
 func _compute_world_aabb(node: Node) -> AABB:
+	# Voxel synapse cylinders are decorative; including them in root AABB breaks auto-frame (camera aims wrong).
+	if node.get_meta("bv_exclude_from_scene_aabb", false):
+		return AABB()
 	var have: bool = false
 	var aabb: AABB = AABB()
 	# If this node is a mesh, include its transformed bounds
@@ -1936,8 +1947,8 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		false,
 		area.cortical_type,
 		area,
-		false,  # do not auto-frame on create during manipulation
-		false  # do not auto-frame during user drag
+		false,  # do not auto-frame on create during manipulation (gizmo already placed)
+		true  # keep preview in view while dragging (reframes camera when content leaves the frustum)
 	)
 	_update_manipulation_position_label()
 
@@ -1998,6 +2009,43 @@ func start_cortical_area_multi_manipulation(areas: Array[AbstractCorticalArea], 
 		_manipulation_group_start_positions[member] = member.coordinates_3D
 		var preview: UI_BrainMonitor_InteractivePreview = create_preview(
 			member.coordinates_3D,
+			member.dimensions_3D,
+			false,
+			member.cortical_type,
+			member,
+			false,
+			false
+		)
+		_manipulation_group_previews[member] = preview
+
+## Starts 3D move for FEAGI invariant core areas as one row: previews move together; only power coordinates are saved to FEAGI.
+func start_core_cluster_cortical_manipulation(trigger_area: AbstractCorticalArea) -> void:
+	if trigger_area == null:
+		return
+	var power: AbstractCorticalArea = _find_power_core_area_in_cache()
+	if power == null:
+		start_cortical_area_manipulation(trigger_area, MANIPULATION_MODE.MOVE)
+		return
+	var members: Array[AbstractCorticalArea] = _collect_present_core_cluster_areas_ordered()
+	if members.size() <= 1:
+		start_cortical_area_manipulation(trigger_area, MANIPULATION_MODE.MOVE)
+		return
+	start_cortical_area_manipulation(power, MANIPULATION_MODE.MOVE)
+	if not _manipulation_active:
+		return
+	_manipulation_is_core_cluster = true
+	_manipulation_explicit_members = members.duplicate()
+	_manipulation_group_anchor_pos = power.coordinates_3D
+	_manipulation_group_start_positions.clear()
+	_clear_manipulation_group_previews()
+	for member in members:
+		if member == power:
+			continue
+		var start_pos: Vector3i = AbstractCorticalArea.core_cluster_computed_feagi_position(
+			member.cortical_ID, power.coordinates_3D)
+		_manipulation_group_start_positions[member] = start_pos
+		var preview: UI_BrainMonitor_InteractivePreview = create_preview(
+			start_pos,
 			member.dimensions_3D,
 			false,
 			member.cortical_type,
@@ -2081,6 +2129,7 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 	_manipulation_group_start_positions.clear()
 	_manipulation_group_anchor_pos = Vector3i.ZERO
 	_manipulation_explicit_members.clear()
+	_manipulation_is_core_cluster = false
 
 func _setup_manipulation_group_previews(area: AbstractCorticalArea) -> void:
 	var members: Array[AbstractCorticalArea] = _get_unit_group_members_in_same_region(area)
@@ -2367,6 +2416,9 @@ func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 	_prompt_confirm_and_apply_resize(candidate_dims)
 
 func _apply_move(new_pos: Vector3i) -> void:
+	if _manipulation_is_core_cluster:
+		await _apply_core_cluster_move(new_pos)
+		return
 	var selected_members: Array[AbstractCorticalArea] = _manipulation_explicit_members
 	if selected_members.size() > 1:
 		await _apply_group_move(selected_members, new_pos)
@@ -2423,6 +2475,33 @@ func _apply_region_move(new_pos: Vector3i) -> void:
 		))
 	if _manipulation_region != null:
 		_manipulation_region.FEAGI_change_coordinates_3D(new_pos)
+	_end_manipulation_session(true)
+
+## Persists only the power core position; slaved cores follow via [_refresh_core_cluster_layout].
+func _apply_core_cluster_move(new_pos: Vector3i) -> void:
+	if _manipulation_area == null or not AbstractCorticalArea.is_power_area(_manipulation_area.cortical_ID):
+		_end_manipulation_session(true)
+		return
+	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
+	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
+	if result.has_errored:
+		var details = result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Move failed",
+			"FEAGI rejected the update.\n\n%s\n%s" % [details[0], details[1]]
+		))
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		var save_details = save_result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Save failed",
+			"Saved position but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+		))
+		return
+	_manipulation_area.FEAGI_change_coordinates_3D(new_pos)
+	_manipulation_area.FEAGI_change_dimensions_3D(_manipulation_current_dims)
+	_refresh_core_cluster_layout()
 	_end_manipulation_session(true)
 
 ## Collect all cortical areas that are part of the same unit (uses shared AbstractCorticalArea logic).
@@ -2918,6 +2997,157 @@ func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vecto
 #endregion
 
 
+#region Invariant core cluster layout (power anchor + fixed row; binder plate)
+
+func _can_apply_core_cluster_layout() -> bool:
+	if _representing_region == null:
+		return false
+	if _brain_monitor_viewing_feagi_root_region():
+		return true
+	return _representing_region.current_parent_region == null
+
+func _find_power_core_area_in_cache() -> AbstractCorticalArea:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return null
+	for ca in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
+		if ca is AbstractCorticalArea and AbstractCorticalArea.is_power_area((ca as AbstractCorticalArea).cortical_ID):
+			return ca as AbstractCorticalArea
+	return null
+
+func _find_core_area_by_special_name(special_name: String) -> AbstractCorticalArea:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return null
+	for ca in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
+		if ca is AbstractCorticalArea:
+			var a := ca as AbstractCorticalArea
+			if AbstractCorticalArea.get_special_core_area_name(a.cortical_ID) == special_name:
+				return a
+	return null
+
+func _collect_present_core_cluster_areas_ordered() -> Array[AbstractCorticalArea]:
+	var out: Array[AbstractCorticalArea] = []
+	for row_name in AbstractCorticalArea.CORE_CLUSTER_ROW_ORDER:
+		var ca := _find_core_area_by_special_name(row_name)
+		if ca != null:
+			out.append(ca)
+	return out
+
+func _schedule_core_cluster_layout_refresh() -> void:
+	if _core_cluster_layout_refresh_pending:
+		return
+	_core_cluster_layout_refresh_pending = true
+	call_deferred("_deferred_refresh_core_cluster_layout")
+
+func _deferred_refresh_core_cluster_layout() -> void:
+	_core_cluster_layout_refresh_pending = false
+	_refresh_core_cluster_layout()
+
+func _on_power_core_area_coordinates_changed(_new_pos: Vector3i) -> void:
+	_schedule_core_cluster_layout_refresh()
+
+## Places non-power reserved cores on a fixed row relative to power; updates binder plate. Only power coords come from FEAGI.
+func _refresh_core_cluster_layout() -> void:
+	if not _can_apply_core_cluster_layout():
+		if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
+			_core_cluster_plate.visible = false
+		return
+	var power := _find_power_core_area_in_cache()
+	if power == null:
+		if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
+			_core_cluster_plate.visible = false
+		return
+	for row_name in AbstractCorticalArea.CORE_CLUSTER_ROW_ORDER:
+		if row_name == "power":
+			continue
+		var slave := _find_core_area_by_special_name(row_name)
+		if slave == null:
+			continue
+		var pos := AbstractCorticalArea.core_cluster_computed_feagi_position(slave.cortical_ID, power.coordinates_3D)
+		if slave.coordinates_3D != pos:
+			slave.FEAGI_change_coordinates_3D(pos)
+		# Slaved cores do not auto-follow coordinates_3D_updated on the DirectPoints renderer (API coords can disagree
+		# with the fixed row layout). Always snap the visualization to the computed plate position.
+		var slave_viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(String(slave.cortical_ID))
+		if slave_viz != null and is_instance_valid(slave_viz):
+			slave_viz.set_new_position(pos)
+	call_deferred("_update_core_cluster_plate_transform")
+
+func _ensure_core_cluster_plate() -> void:
+	if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
+		return
+	var plate := MeshInstance3D.new()
+	plate.name = "CoreClusterBinderPlate"
+	var box := BoxMesh.new()
+	plate.mesh = box
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(0.32, 0.42, 0.52, 0.24)
+	mat.emission_enabled = true
+	mat.emission = Color(0.18, 0.26, 0.34, 1.0)
+	mat.emission_energy = 0.4
+	mat.flags_unshaded = true
+	mat.flags_transparent = true
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.flags_do_not_receive_shadows = true
+	plate.material_override = mat
+	plate.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_node_3D_root.add_child(plate)
+	_core_cluster_plate = plate
+
+func _update_core_cluster_plate_transform() -> void:
+	if not _can_apply_core_cluster_layout():
+		return
+	_ensure_core_cluster_plate()
+	var members := _collect_present_core_cluster_areas_ordered()
+	if members.size() < 2:
+		_core_cluster_plate.visible = false
+		return
+	var xs: Array[float] = []
+	var zs: Array[float] = []
+	var ys: Array[float] = []
+	for ca in members:
+		var viz := get_cortical_area_visualization(String(ca.cortical_ID))
+		if viz == null or not is_instance_valid(viz):
+			continue
+		var gp: Vector3 = viz.get_volume_world_center()
+		xs.append(gp.x)
+		zs.append(gp.z)
+		ys.append(gp.y)
+	if xs.is_empty():
+		_core_cluster_plate.visible = false
+		return
+	var min_x: float = xs[0]
+	var max_x: float = xs[0]
+	var min_z: float = zs[0]
+	var max_z: float = zs[0]
+	var sum_y: float = ys[0]
+	for i in range(1, xs.size()):
+		min_x = minf(min_x, xs[i])
+		max_x = maxf(max_x, xs[i])
+		min_z = minf(min_z, zs[i])
+		max_z = maxf(max_z, zs[i])
+		sum_y += ys[i]
+	var cy: float = sum_y / float(ys.size())
+	const pad: float = 3.0
+	const min_span: float = 6.0
+	var width: float = maxf(max_x - min_x + pad * 2.0, min_span)
+	var depth: float = maxf(max_z - min_z + pad * 2.0, min_span)
+	var height: float = 0.4
+	var mesh := _core_cluster_plate.mesh as BoxMesh
+	if mesh != null:
+		mesh.size = Vector3(width, height, depth)
+	_core_cluster_plate.global_position = Vector3((min_x + max_x) * 0.5, cy - 1.8, (min_z + max_z) * 0.5)
+	_core_cluster_plate.visible = true
+
+func _teardown_core_cluster_plate() -> void:
+	if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
+		_core_cluster_plate.queue_free()
+	_core_cluster_plate = null
+
+#endregion
+
+
 #region Cache Responses
 
 # NOTE: Cortical area movements, resizes, and renames are handled by the [UI_BrainMonitor_CorticalArea]s themselves!
@@ -2980,7 +3210,16 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	var remove_callable := Callable(self, "_remove_cortical_area").bind(area)
 	if not area.about_to_be_deleted.is_connected(remove_callable):
 		area.about_to_be_deleted.connect(remove_callable)
-	area.coordinates_3D_updated.connect(rendering_area.set_new_position)
+	if AbstractCorticalArea.is_core_cluster_slaved_to_power_layout(area.cortical_ID):
+		# Visual position comes from [_refresh_core_cluster_layout]; power alone tracks FEAGI.
+		pass
+	else:
+		area.coordinates_3D_updated.connect(rendering_area.set_new_position)
+	if AbstractCorticalArea.is_power_area(area.cortical_ID):
+		var power_cb := Callable(self, "_on_power_core_area_coordinates_changed")
+		if not area.coordinates_3D_updated.is_connected(power_cb):
+			area.coordinates_3D_updated.connect(power_cb)
+	_schedule_core_cluster_layout_refresh()
 	
 	# If this area is I/O of a child region, it will be moved later by the brain region component
 	# For now, position it normally - it will be repositioned when brain regions populate
@@ -2995,6 +3234,8 @@ func add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalAr
 ## Gets an existing cortical area visualization by ID (used by brain region frames)
 func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
 	var viz = _cortical_visualizations_by_ID.get(cortical_id, null)
+	if viz == null:
+		viz = _cortical_visualizations_by_ID.get(StringName(cortical_id), null)
 	if viz == null or not is_instance_valid(viz):
 		if _cortical_visualizations_by_ID.has(cortical_id):
 			_cortical_visualizations_by_ID.erase(cortical_id)
@@ -3266,6 +3507,7 @@ func _deferred_invoke_ws_fastpath_rebuild() -> void:
 
 ## Drops every cortical volume node and clears the ID map. Caller must call [method _add_missing_cortical_area_visualizations] next.
 func _teardown_all_cortical_area_visualizations() -> void:
+	_teardown_core_cluster_plate()
 	# Snapshot keys: do not assign dict values directly to typed vars (freed nodes throw on assignment in Godot 4.5).
 	var ids_snapshot: Array = _cortical_visualizations_by_ID.keys()
 	for vid in ids_snapshot:
@@ -3317,6 +3559,7 @@ func _on_cache_replaced_refresh_all_connections() -> void:
 				cortical_viz._hide_neural_connections()
 				cortical_viz._show_neural_connections()
 	call_deferred("_release_io_indicator_suspend_after_settle")
+	_schedule_core_cluster_layout_refresh()
 
 
 func _on_cortical_areas_reloaded() -> void:
@@ -3326,6 +3569,7 @@ func _on_cortical_areas_reloaded() -> void:
 	_rebuild_cortical_visualizations_after_cache_touch()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 	call_deferred("_release_io_indicator_suspend_after_settle")
+	_schedule_core_cluster_layout_refresh()
 
 
 func _on_brain_regions_reloaded() -> void:
@@ -3564,5 +3808,184 @@ func force_create_missing_regions() -> void:
 				refreshed_count += 1
 	
 	print("BrainMonitor 3D Scene: ✅ Manual refresh completed for ", refreshed_count, " areas")
+
+
+func _ensure_voxel_synapse_overlay() -> Node3D:
+	if _voxel_synapse_overlay != null and is_instance_valid(_voxel_synapse_overlay):
+		return _voxel_synapse_overlay
+	if _node_3D_root == null:
+		return null
+	var overlay := Node3D.new()
+	overlay.name = "VoxelSynapseOverlay"
+	overlay.set_meta("bv_exclude_from_scene_aabb", true)
+	_node_3D_root.add_child(overlay)
+	_voxel_synapse_overlay = overlay
+	return overlay
+
+
+func clear_voxel_synapse_visualization() -> void:
+	for n in _voxel_synapse_curve_nodes:
+		if n != null and is_instance_valid(n):
+			n.queue_free()
+	_voxel_synapse_curve_nodes.clear()
+
+
+## JSON numbers are often float (e.g. 3.0); coerce so voxel indices match the genome volume.
+func _synapse_payload_coord_to_int(v: Variant) -> int:
+	if v == null:
+		return 0
+	if typeof(v) == TYPE_INT:
+		return v
+	if typeof(v) == TYPE_FLOAT:
+		return int(round(v))
+	if typeof(v) == TYPE_STRING:
+		return int(round(String(v).to_float()))
+	return int(round(float(v)))
+
+
+func _psp_byte_is_inhibitory(psp_value: Variant) -> bool:
+	var p: int = int(round(float(psp_value)))
+	p = p & 0xFF
+	if p >= 128:
+		p -= 256
+	return p < 0
+
+
+## Inhibitory/excitatory classification for voxel synapse visuals.
+## FEAGI payloads may encode inhibition via `synapse_type` (authoritative), while PSP can stay positive.
+func _synapse_is_inhibitory(syn: Dictionary) -> bool:
+	if syn.has("synapse_type"):
+		var st: int = _synapse_payload_coord_to_int(syn.get("synapse_type", 0))
+		# FEAGI convention: 0 = excitatory, 1 = inhibitory
+		if st == 1:
+			return true
+		if st == 0:
+			return false
+	return _psp_byte_is_inhibitory(syn.get("postsynaptic_potential", 0))
+
+
+func _voxel_synapses_array_from_payload(v: Variant) -> Array:
+	if v is Array:
+		return v
+	return []
+
+## Extract queried voxel coordinate from payload.
+## Prefer `voxel_coordinate` (canonical API response field), then fall back to top-level x/y/z.
+func _payload_query_voxel_coord(d: Dictionary) -> Vector3i:
+	var vc_raw: Variant = d.get("voxel_coordinate", null)
+	if vc_raw is Array:
+		var vc: Array = vc_raw
+		if vc.size() >= 3:
+			return Vector3i(
+				_synapse_payload_coord_to_int(vc[0]),
+				_synapse_payload_coord_to_int(vc[1]),
+				_synapse_payload_coord_to_int(vc[2])
+			)
+	return Vector3i(
+		_synapse_payload_coord_to_int(d.get("x", 0)),
+		_synapse_payload_coord_to_int(d.get("y", 0)),
+		_synapse_payload_coord_to_int(d.get("z", 0))
+	)
+
+## Extract a neuron coordinate from one entry in `neurons[]`; fallback to `default_coord` if fields are missing.
+func _payload_neuron_coord(nd: Dictionary, default_coord: Vector3i) -> Vector3i:
+	if nd.has("x") and nd.has("y") and nd.has("z"):
+		return Vector3i(
+			_synapse_payload_coord_to_int(nd.get("x", default_coord.x)),
+			_synapse_payload_coord_to_int(nd.get("y", default_coord.y)),
+			_synapse_payload_coord_to_int(nd.get("z", default_coord.z))
+		)
+	return default_coord
+
+
+## Builds arcs from `/v1/cortical_area/voxel_neurons` JSON: outgoing from query voxel to targets, incoming from sources to query voxel.
+func rebuild_voxel_synapse_visualization_from_api_payload(d: Dictionary) -> void:
+	clear_voxel_synapse_visualization()
+	var q_cid: String = str(d.get("cortical_id", ""))
+	if q_cid.is_empty():
+		return
+	var q_viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(q_cid)
+	if q_viz == null:
+		return
+	var q_coord: Vector3i = _payload_query_voxel_coord(d)
+	var qx: int = q_coord.x
+	var qy: int = q_coord.y
+	var qz: int = q_coord.z
+	var overlay := _ensure_voxel_synapse_overlay()
+	if overlay == null:
+		return
+	var line_idx: int = 0
+	var neurons_raw: Variant = d.get("neurons", [])
+	if not (neurons_raw is Array):
+		return
+	for neuron in neurons_raw:
+		if not (neuron is Dictionary):
+			continue
+		var nd: Dictionary = neuron
+		var neuron_coord: Vector3i = _payload_neuron_coord(nd, Vector3i(qx, qy, qz))
+		var neuron_world: Vector3 = q_viz.feagi_voxel_center_world_position(neuron_coord)
+		for syn in _voxel_synapses_array_from_payload(nd.get("outgoing_synapses")):
+			if syn is Dictionary:
+				_add_one_voxel_synapse_line(q_viz, neuron_world, syn as Dictionary, true, line_idx, overlay)
+				line_idx += 1
+		for syn in _voxel_synapses_array_from_payload(nd.get("incoming_synapses")):
+			if syn is Dictionary:
+				_add_one_voxel_synapse_line(q_viz, neuron_world, syn as Dictionary, false, line_idx, overlay)
+				line_idx += 1
+
+
+func _add_one_voxel_synapse_line(
+	query_viz: UI_BrainMonitor_CorticalArea,
+	query_world: Vector3,
+	syn: Dictionary,
+	is_outgoing: bool,
+	line_idx: int,
+	parent_3d: Node3D
+) -> void:
+	var peer_cid: String
+	var px: int
+	var py: int
+	var pz: int
+	if is_outgoing:
+		peer_cid = str(syn.get("target_cortical_id", "")).strip_edges()
+		px = _synapse_payload_coord_to_int(syn.get("target_x", 0))
+		py = _synapse_payload_coord_to_int(syn.get("target_y", 0))
+		pz = _synapse_payload_coord_to_int(syn.get("target_z", 0))
+	else:
+		peer_cid = str(syn.get("source_cortical_id", "")).strip_edges()
+		px = _synapse_payload_coord_to_int(syn.get("source_x", 0))
+		py = _synapse_payload_coord_to_int(syn.get("source_y", 0))
+		pz = _synapse_payload_coord_to_int(syn.get("source_z", 0))
+	if peer_cid.is_empty():
+		return
+	var query_cid: String = ""
+	if query_viz.cortical_area != null:
+		query_cid = String(query_viz.cortical_area.cortical_ID)
+	var peer_viz: UI_BrainMonitor_CorticalArea = query_viz if peer_cid == query_cid else get_cortical_area_visualization(peer_cid)
+	if peer_viz == null:
+		return
+	var peer_world: Vector3 = peer_viz.feagi_voxel_center_world_position(Vector3i(px, py, pz))
+	var start_w: Vector3
+	var end_w: Vector3
+	if is_outgoing:
+		start_w = query_world
+		end_w = peer_world
+	else:
+		start_w = peer_world
+		end_w = query_world
+	# Build voxel synapse curves in world-space (top_level) so parent transform changes cannot skew endpoints.
+	var start_p: Vector3 = start_w
+	var end_p: Vector3 = end_w
+	if start_p.distance_squared_to(end_p) < 1e-8:
+		# Same voxel (self-synapse): short vertical stub so the Bezier pipeline stays non-degenerate.
+		end_p = start_w + Vector3(0.0, 0.4, 0.0)
+	var is_inhibitory: bool = _synapse_is_inhibitory(syn)
+	var dir_tag: String = "out" if is_outgoing else "in"
+	var line_id: StringName = StringName("VS_%d_%s" % [line_idx, dir_tag])
+	# Same Bezier arc for intra-area (recursive) and inter-area: voxel center to voxel center.
+	var curve: Node3D = query_viz.create_voxel_level_synapse_visualization_curve(start_p, end_p, line_id, is_inhibitory, false, 0.0)
+	curve.top_level = true
+	parent_3d.add_child(curve)
+	_voxel_synapse_curve_nodes.append(curve)
 
 #endregion

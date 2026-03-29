@@ -975,7 +975,7 @@ func create_region(parent_region: BrainRegion, region_internals: Array[GenomeObj
 		var main_loop := Engine.get_main_loop()
 		if main_loop != null and main_loop is SceneTree:
 			var root: SceneTree = main_loop as SceneTree
-			var wm_node = root.root.get_node_or_null("BrainVisualizer/UIManager/WindowManager")
+			var wm_node = root.root.get_node_or_null("BrainVisualizer/UIManager/FloatingWindowsLayer/WindowManager")
 			if wm_node != null and wm_node.has_method("spawn_3d_brain_monitor_tab"):
 				wm = wm_node
 		if wm != null:
@@ -1212,6 +1212,60 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 
 #NOTE: No way to request a core area, since we shouldn't be able to make those directly!
 
+## GET /v1/cortical_area/voxel_neurons — neurons and synapse details for a voxel (paginated).
+func get_voxel_neurons(cortical_id: String, x: int, y: int, z: int, synapse_page: int = 0) -> FeagiRequestOutput:
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	var cid_enc: String = String(cortical_id).uri_encode()
+	var q: String = "cortical_id=%s&x=%d&y=%d&z=%d&synapse_page=%d" % [cid_enc, x, y, z, synapse_page]
+	var full_path: StringName = StringName(str(FeagiCore.network.http_API.address_list.GET_corticalArea_voxelNeurons) + "?" + q)
+	var req: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(full_path)
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(req)
+	await worker.worker_done
+	return worker.retrieve_output_and_close()
+
+## GET /v1/cortical_area/memory — memory area runtime stats and paginated memory neuron ids.
+func get_memory_cortical_area(cortical_id: String, page: int = 0, page_size: int = 50) -> FeagiRequestOutput:
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	var cid_enc: String = String(cortical_id).uri_encode()
+	var q: String = "cortical_id=%s&page=%d&page_size=%d" % [cid_enc, page, page_size]
+	var full_path: StringName = StringName(str(FeagiCore.network.http_API.address_list.GET_corticalArea_memory) + "?" + q)
+	var req: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(full_path)
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(req)
+	await worker.worker_done
+	return worker.retrieve_output_and_close()
+
+## GET /v1/connectome/memory_neuron — plasticity + synapse detail for one memory neuron id.
+func get_memory_neuron(neuron_id: int) -> FeagiRequestOutput:
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	var q: String = "neuron_id=%d" % neuron_id
+	var full_path: StringName = StringName(str(FeagiCore.network.http_API.address_list.GET_connectome_memoryNeuron) + "?" + q)
+	var req: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(full_path)
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(req)
+	await worker.worker_done
+	return worker.retrieve_output_and_close()
+
+## Flattens cortical-area API JSON: copies nested "properties" first, then overwrites with every
+## top-level field (except the properties bag). Rust CorticalAreaInfo fields must win over stale
+## duplicates still stored under properties (e.g. 1x1x1 per-device).
+func _flatten_cortical_area_response_dict(raw: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	if raw.has("properties") and raw["properties"] is Dictionary:
+		var nested: Dictionary = raw["properties"]
+		for key in nested.keys():
+			out[key] = nested[key]
+	for key in raw.keys():
+		if key == "properties":
+			continue
+		out[key] = raw[key]
+	return out
+
+
 ## Requests an update of a cortical area's properties a single time
 func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	# Fetching cortical area details
@@ -1244,18 +1298,8 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	
 	# Log visualization_voxel_granularity if present (suppressed)
 	
-	# Handle nested properties structure - FEAGI returns {"properties": {...}}
-	# Also handle top-level fields (like visualization_voxel_granularity) that are outside properties
-	var properties_dict: Dictionary = response
-	if "properties" in response and response["properties"] is Dictionary:
-		# Merge top-level fields with properties (top-level takes precedence)
-		properties_dict = response["properties"].duplicate()
-		# Copy top-level fields that aren't in properties (like visualization_voxel_granularity, cortical_type, etc.)
-		for key in response.keys():
-			if key != "properties" and not key in properties_dict:
-				properties_dict[key] = response[key]
-				if key == "visualization_voxel_granularity":
-					pass
+	# Flatten nested properties so top-level CorticalAreaInfo fields override stale duplicates in properties.
+	var properties_dict: Dictionary = _flatten_cortical_area_response_dict(response)
 	if "coding_options" in properties_dict:
 		var coding_options = properties_dict["coding_options"]
 		if coding_options is Dictionary:
@@ -1343,9 +1387,7 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 		var area_data_raw: Dictionary = responses_dict[cortical_id]
 		# Log visualization_voxel_granularity if present (suppressed)
 		
-		# Only use top-level response fields; legacy properties are ignored.
-		var area_data: Dictionary = area_data_raw.duplicate()
-		area_data.erase("properties")
+		var area_data: Dictionary = _flatten_cortical_area_response_dict(area_data_raw)
 		# Ensure cortical_id is in the dict (some responses omit it).
 		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:
@@ -1981,8 +2023,12 @@ func mass_reset_cortical_areas(cortical_areas: Array[AbstractCorticalArea]) -> F
 	
 	# Define Request
 	var ID_list: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(cortical_areas)
+	# JSON must serialize plain strings; StringName arrays can serialize incorrectly for some runtimes.
+	var area_list_strings: Array[String] = []
+	for id in ID_list:
+		area_list_strings.append(String(id))
 	var dict_to_send: Dictionary = {
-		"area_list": ID_list
+		"area_list": area_list_strings
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_reset, dict_to_send)
 

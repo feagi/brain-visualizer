@@ -18,7 +18,8 @@ func _ready() -> void:
 	if not BV.UI.theme_changed.is_connected(_on_theme_changed):
 		BV.UI.theme_changed.connect(_on_theme_changed)
 	_interface_dropdown.selected = _get_theme_index()
-	_version.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
+	# Show the actual Brain Visualizer version (not build timestamp).
+	_version.text = str(BVVersion.manual_version)
 
 func _on_theme_changed(_new_theme: Theme) -> void:
 	# Update dropdown selection to reflect the latest chosen UI magnification.

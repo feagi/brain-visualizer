@@ -1,45 +1,358 @@
-[gd_scene load_steps=3 format=3 uid="uid://c7ov4mq4cau4l"]
+[gd_scene load_steps=10 format=3 uid="uid://c7ov4mq4cau4l"]
 
 [ext_resource type="Script" uid="uid://bq1is02n2pkrg" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorMemoryMapping.gd" id="1_evrjv"]
-[ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="2_vtoir"]
+[ext_resource type="Script" uid="uid://c3kgtsjp4sogl" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="2_ndwr8"]
+[ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.tscn" id="3_7llad"]
+[ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="4_y0rve"]
+[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="5_7qf8u"]
+[ext_resource type="Texture2D" uid="uid://cyjkmin6bodpp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="6_taa4s"]
+[ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="7_3sy0c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="8_5oycp"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="9_jwhcp"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="10_owcrx"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="11_s71nl"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="12_s4moh"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="13_yxhwi"]
 
 [node name="MappingEditorMemoryMapping" type="VBoxContainer"]
 script = ExtResource("1_evrjv")
 
 [node name="label" type="Label" parent="."]
+custom_minimum_size = Vector2(1400, 0)
 layout_mode = 2
-text = "Memory Mapping Settings"
+theme_type_variation = &"Label_Header"
+text = "Established Mappings"
 
-[node name="labels_box" type="HBoxContainer" parent="."]
+[node name="HeaderRowWrapper" type="HBoxContainer" parent="."]
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_type_variation = &"HBoxContainer_adjacent"
+
+[node name="labels_box" type="HBoxContainer" parent="HeaderRowWrapper"]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_type_variation = &"HBoxContainer_farther"
 
-[node name="Label" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(150, 0)
+[node name="MappingDefinitionHeaderGroup" type="HBoxContainer" parent="HeaderRowWrapper/labels_box"]
 layout_mode = 2
-size_flags_horizontal = 3
+theme_type_variation = &"HBoxContainer_adjacent"
+size_flags_horizontal = 0
+
+[node name="Label" type="Label" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
+custom_minimum_size = Vector2(150, 48)
+layout_mode = 2
+size_flags_horizontal = 0
 text = "Mapping Definition"
+autowrap_mode = 3
+vertical_alignment = 1
 
-[node name="Label2" type="Label" parent="labels_box"]
-custom_minimum_size = Vector2(100, 0)
+[node name="edit_placeholder" type="Control" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Spacer_AfterMappingDefinition" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(4, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(210, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Overwrite Scalar"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_AfterScalar" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(170, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Post-Synaptic Potential Multiplier"
+mouse_filter = 1
+text = "PSP Multiplier"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_BetweenPSPAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label8" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(168, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Inhibitory"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label4" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(168, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Plasticity"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_AfterPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(150, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Plasticity Window"
+mouse_filter = 1
+text = "Plasticity Window"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(150, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Plasticity Constant"
+mouse_filter = 1
+text = "Plasticity Constant"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_AfterPlasticityConst" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(170, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Long-Term Potentiation Multiplier"
+mouse_filter = 1
+text = "LTP Multiplier"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(170, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Long-Term Depression Multiplier"
+mouse_filter = 1
+text = "LTD Multiplier"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="RowContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Toggle"
+theme_type_variation = &"HBoxContainer_farther"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="MappingDefinitionGroup" type="HBoxContainer" parent="RowContainer"]
 layout_mode = 2
+theme_type_variation = &"HBoxContainer_adjacent"
+size_flags_horizontal = 0
 
-[node name="Button" type="Button" parent="HBoxContainer"]
+[node name="Morphology_List" type="OptionButton" parent="RowContainer/MappingDefinitionGroup"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
+size_flags_horizontal = 0
+clip_text = true
+fit_to_longest_item = false
 disabled = true
-text = "Memory"
+script = ExtResource("2_ndwr8")
 
-[node name="ToggleButton" type="TextureButton" parent="HBoxContainer"]
-custom_minimum_size = Vector2(100, 0)
+[node name="edit" type="TextureButton" parent="RowContainer/MappingDefinitionGroup"]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("8_5oycp")
+texture_disabled = ExtResource("9_jwhcp")
 ignore_texture_size = true
 stretch_mode = 0
-script = ExtResource("2_vtoir")
+disabled = true
+
+[node name="Spacer_AfterMappingDefinition" type="Control" parent="RowContainer"]
+custom_minimum_size = Vector2(4, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Scalar" parent="RowContainer" instance=ExtResource("3_7llad")]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+alignment = 1
+label_x_text = &""
+label_y_text = &""
+label_z_text = &""
+initial_vector = Vector3i(1, 1, 1)
+modulate = Color(0.5, 0.5, 0.5, 1)
+
+[node name="Spacer_AfterScalar" type="Control" parent="RowContainer"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="PSP" type="LineEdit" parent="RowContainer"]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Post-Synaptic Potential"
+alignment = 1
+editable = false
+modulate = Color(0.5, 0.5, 0.5, 1)
+script = ExtResource("4_y0rve")
+initial_float = 1.0
+min_value = 0.0
+max_value = 9999999999.0
+number_decimal_places = 4
+
+[node name="Spacer_BetweenPSPAndInhibitory" type="Control" parent="RowContainer"]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Inhibitory" type="TextureButton" parent="RowContainer"]
+custom_minimum_size = Vector2(168, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"ToggleButton"
+texture_normal = ExtResource("6_taa4s")
+ignore_texture_size = true
+stretch_mode = 0
+disabled = true
+modulate = Color(0.5, 0.5, 0.5, 1)
+script = ExtResource("7_3sy0c")
+enable_autoscaling_with_theme = false
+
+[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="RowContainer"]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Plasticity" type="TextureButton" parent="RowContainer"]
+custom_minimum_size = Vector2(168, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"ToggleButton"
+texture_normal = ExtResource("6_taa4s")
+ignore_texture_size = true
+stretch_mode = 0
+disabled = true
+modulate = Color(0.5, 0.5, 0.5, 1)
+script = ExtResource("7_3sy0c")
+enable_autoscaling_with_theme = false
+
+[node name="Spacer_AfterPlasticity" type="Control" parent="RowContainer"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Plasticity_Window" type="LineEdit" parent="RowContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Plasticity Window"
+alignment = 1
+editable = false
+modulate = Color(0.5, 0.5, 0.5, 1)
+script = ExtResource("5_7qf8u")
+initial_int = 3
+
+[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="RowContainer"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Plasticity_Constant" type="LineEdit" parent="RowContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Plasticity"
+alignment = 1
+editable = false
+modulate = Color(0.5, 0.5, 0.5, 1)
+script = ExtResource("4_y0rve")
+initial_float = 1.0
+
+[node name="Spacer_AfterPlasticityConst" type="Control" parent="RowContainer"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="LTP_Multiplier" type="LineEdit" parent="RowContainer"]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+alignment = 1
+editable = false
+modulate = Color(0.5, 0.5, 0.5, 1)
+script = ExtResource("4_y0rve")
+initial_float = 1.0
+
+[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="RowContainer"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="LTD_Multiplier" type="LineEdit" parent="RowContainer"]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+alignment = 1
+editable = false
+modulate = Color(0.5, 0.5, 0.5, 1)
+script = ExtResource("4_y0rve")
+initial_float = 1.0
+
+[node name="remove_placeholder" type="Control" parent="RowContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="remove" type="TextureButton" parent="RowContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("10_owcrx")
+texture_pressed = ExtResource("11_s71nl")
+texture_hover = ExtResource("12_s4moh")
+texture_disabled = ExtResource("13_yxhwi")
+ignore_texture_size = true
+stretch_mode = 0
+
+[connection signal="pressed" from="RowContainer/MappingDefinitionGroup/edit" to="." method="_on_edit_pressed"]
+[connection signal="pressed" from="RowContainer/remove" to="." method="_on_mapping_delete_press"]

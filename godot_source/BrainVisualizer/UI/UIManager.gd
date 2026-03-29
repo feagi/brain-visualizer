@@ -89,6 +89,14 @@ const UI_SCALE_XLARGE: float = 2.0
 enum STARTUP_DPI_TIER { DPI_STANDARD, DPI_MEDIUM, DPI_LARGE, DPI_XLARGE }
 enum STARTUP_RES_TIER { RES_COMPACT, RES_STANDARD, RES_LARGE, RES_XLARGE }
 
+## Top bar "brain activity" tool: global connection curves vs voxel-level API inspector.
+enum BRAIN_MONITOR_ACTIVITY_MODE { GLOBAL_NEURAL_CONNECTIONS = 0, VOXEL_INSPECTOR = 1, MEMORY_INSPECTOR = 2 }
+
+var brain_monitor_activity_mode: BRAIN_MONITOR_ACTIVITY_MODE = BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
+var _voxel_inspector_fetch_generation: int = 0
+var _memory_inspector_fetch_generation: int = 0
+var _memory_neuron_fetch_generation: int = 0
+
 
 func _enter_tree():
 	_screen_size = get_viewport().get_visible_rect().size
@@ -122,11 +130,11 @@ func _process(_delta: float):
 func _ready():
 	_notification_system = $NotificationSystem
 	_top_bar = $TopBar
-	_window_manager = $WindowManager
+	_window_manager = $FloatingWindowsLayer/WindowManager
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
 	_selection_system = SelectionSystem.new()
-	_loading_status_label = $TempLoadingScreen/LoadingOverlay/Bottom_Row/StatusLabel
+	_loading_status_label = $LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/Bottom_Row/StatusLabel
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -221,6 +229,196 @@ func clear_mouse_context(source_bm: UI_BrainMonitor_3DScene) -> void:
 	if _active_hover_bm != null and source_bm != _active_hover_bm:
 		return
 	_mouse_context_label.text = ""
+
+
+func _voxel_inspector_window() -> WindowVoxelInspector:
+	if _window_manager == null:
+		return null
+	return _window_manager.loaded_windows.get(WindowVoxelInspector.WINDOW_NAME) as WindowVoxelInspector
+
+
+## Called from the Voxel inspector window: fetch `/v1/cortical_area/voxel_neurons` for the chosen area and voxel.
+## `synapse_page` is 0-based; outgoing/incoming synapse lists are paged together (see FEAGI API).
+func request_voxel_inspector_fetch(cortical_id: StringName, coord: Vector3i, synapse_page: int = 0) -> void:
+	if brain_monitor_activity_mode != BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR:
+		return
+	var win := _voxel_inspector_window()
+	if win == null:
+		_window_manager.spawn_voxel_inspector()
+		win = _voxel_inspector_window()
+	if win == null:
+		return
+	if not FeagiCore.can_interact_with_feagi():
+		win.set_error_line("FEAGI is not ready.")
+		win.restore_pagination_after_failed_fetch()
+		return
+	_voxel_inspector_fetch_generation += 1
+	var gen: int = _voxel_inspector_fetch_generation
+	win.set_loading()
+	_voxel_inspector_query_async(cortical_id, coord, synapse_page, gen)
+
+
+func _voxel_inspector_query_async(cortical_id: StringName, coord: Vector3i, synapse_page: int, gen: int) -> void:
+	var out: FeagiRequestOutput = await FeagiCore.requests.get_voxel_neurons(str(cortical_id), coord.x, coord.y, coord.z, synapse_page)
+	if gen != _voxel_inspector_fetch_generation:
+		return
+	var win := _voxel_inspector_window()
+	if win == null:
+		return
+	if out.success:
+		var d: Dictionary = out.decode_response_as_dict()
+		win.set_json_content(_format_voxel_inspector_response(d))
+		win.update_summary_from_response(d)
+		win.set_last_successful_voxel_payload(d)
+		win.update_synapse_pagination_from_response(d)
+		if win.is_voxel_synapse_visualization_enabled():
+			_voxel_inspector_apply_synapse_visualization(d)
+	else:
+		win.set_error_line(out.decode_response_as_string())
+		win.restore_pagination_after_failed_fetch()
+
+
+## Rebuild 3D voxel synapse arcs from the last successful Inspect payload (toggle on).
+func request_voxel_synapse_visualization_rebuild() -> void:
+	var win := _voxel_inspector_window()
+	if win == null:
+		return
+	var d: Dictionary = win.get_last_successful_voxel_payload()
+	if d.is_empty():
+		return
+	_voxel_inspector_apply_synapse_visualization(d)
+
+
+func _voxel_inspector_apply_synapse_visualization(d: Dictionary) -> void:
+	var cid: String = str(d.get("cortical_id", ""))
+	if cid.is_empty() or FeagiCore.feagi_local_cache == null:
+		return
+	var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(
+		StringName(cid),
+		null
+	)
+	if area == null:
+		return
+	var bm: UI_BrainMonitor_3DScene = get_brain_monitor_for_cortical_area(area)
+	if bm == null:
+		return
+	clear_voxel_synapse_visualization_all_brain_monitors()
+	bm.rebuild_voxel_synapse_visualization_from_api_payload(d)
+
+
+func clear_voxel_synapse_visualization_all_brain_monitors() -> void:
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm != null and is_instance_valid(bm):
+			bm.clear_voxel_synapse_visualization()
+
+
+func _format_voxel_inspector_response(d: Dictionary) -> String:
+	# JSON.parse() in Godot stores every number as float; stringify would show 1.0 for integers.
+	var normalized: Variant = _json_floats_whole_to_int_for_display(d)
+	var s: String = JSON.stringify(normalized, "\t")
+	if s.length() > 4000:
+		s = s.substr(0, 4000) + "\n...(truncated)"
+	return s
+
+
+## Recursively convert float variants that are mathematically integers to int so JSON.stringify prints 1 not 1.0.
+func _json_floats_whole_to_int_for_display(v: Variant) -> Variant:
+	var t: int = typeof(v)
+	if t == TYPE_FLOAT:
+		var f: float = v
+		if not is_finite(f):
+			return v
+		var r: float = roundf(f)
+		if is_equal_approx(f, r):
+			return int(r)
+		return v
+	if t == TYPE_DICTIONARY:
+		var d: Dictionary = v
+		var out: Dictionary = {}
+		for k in d.keys():
+			out[k] = _json_floats_whole_to_int_for_display(d[k])
+		return out
+	if t == TYPE_ARRAY:
+		var a: Array = v
+		var out: Array = []
+		out.resize(a.size())
+		for i in range(a.size()):
+			out[i] = _json_floats_whole_to_int_for_display(a[i])
+		return out
+	return v
+
+
+func _memory_inspector_window() -> WindowMemoryInspector:
+	if _window_manager == null:
+		return null
+	return _window_manager.loaded_windows.get(WindowMemoryInspector.WINDOW_NAME) as WindowMemoryInspector
+
+
+## Fetch `/v1/cortical_area/memory` for the selected memory cortical area (paginated neuron id list in JSON).
+func request_memory_inspector_fetch(cortical_id: StringName, page: int = 0, page_size: int = 50) -> void:
+	if brain_monitor_activity_mode != BRAIN_MONITOR_ACTIVITY_MODE.MEMORY_INSPECTOR:
+		return
+	var win := _memory_inspector_window()
+	if win == null:
+		_window_manager.spawn_memory_inspector()
+		win = _memory_inspector_window()
+	if win == null:
+		return
+	if not FeagiCore.can_interact_with_feagi():
+		win.set_error_line("FEAGI is not ready.")
+		win.restore_pagination_after_failed_fetch()
+		return
+	_memory_inspector_fetch_generation += 1
+	var gen: int = _memory_inspector_fetch_generation
+	win.set_loading()
+	_memory_inspector_query_async(cortical_id, page, page_size, gen)
+
+
+func _memory_inspector_query_async(cortical_id: StringName, page: int, page_size: int, gen: int) -> void:
+	var out: FeagiRequestOutput = await FeagiCore.requests.get_memory_cortical_area(str(cortical_id), page, page_size)
+	if gen != _memory_inspector_fetch_generation:
+		return
+	var win := _memory_inspector_window()
+	if win == null:
+		return
+	if out.success:
+		var d: Dictionary = out.decode_response_as_dict()
+		win.set_area_json_content(_format_voxel_inspector_response(d))
+		win.update_summary_from_response(d)
+		win.update_area_pagination_from_response(d)
+	else:
+		win.set_error_line(out.decode_response_as_string())
+		win.restore_pagination_after_failed_fetch()
+
+
+## Fetch `/v1/connectome/memory_neuron` for a single memory neuron id (detail JSON).
+func request_memory_neuron_detail_fetch(neuron_id: int) -> void:
+	if brain_monitor_activity_mode != BRAIN_MONITOR_ACTIVITY_MODE.MEMORY_INSPECTOR:
+		return
+	var win := _memory_inspector_window()
+	if win == null:
+		return
+	if not FeagiCore.can_interact_with_feagi():
+		win.set_neuron_error_line("FEAGI is not ready.")
+		return
+	_memory_neuron_fetch_generation += 1
+	var gen: int = _memory_neuron_fetch_generation
+	win.set_neuron_loading()
+	_memory_neuron_query_async(neuron_id, gen)
+
+
+func _memory_neuron_query_async(neuron_id: int, gen: int) -> void:
+	var out: FeagiRequestOutput = await FeagiCore.requests.get_memory_neuron(neuron_id)
+	if gen != _memory_neuron_fetch_generation:
+		return
+	var win := _memory_inspector_window()
+	if win == null:
+		return
+	if out.success:
+		var d: Dictionary = out.decode_response_as_dict()
+		win.set_neuron_json_content(_format_voxel_inspector_response(d))
+	else:
+		win.set_neuron_error_line(out.decode_response_as_string())
 
 
 ## Interactions with FEAGICORE
@@ -661,7 +859,7 @@ func show_developer_menu():
 
 
 func toggle_loading_screen(is_on: bool) -> void:
-	$TempLoadingScreen.visible = is_on
+	$LoadingScreenOverlayLayer/TempLoadingScreen.visible = is_on
 
 ## Update the loading status message displayed on the loading screen
 func update_loading_status(message: String) -> void:
@@ -720,7 +918,7 @@ func _build_loading_failure_summary() -> String:
 ## Show the shutdown screen with custom styling
 func show_shutdown_screen() -> void:
 	# Change the title from "Loading..." to "Shutting down..."
-	var loading_label = $TempLoadingScreen/LoadingOverlay/VBoxContainer/Label
+	var loading_label = $LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/Label
 	if loading_label:
 		loading_label.text = "Shutting down..."
 	
@@ -951,8 +1149,8 @@ func _load_new_theme(theme: Theme) -> void:
 		$TopBar.theme = _loaded_theme
 	if has_node("/root/BrainVisualizer/UIManager/NotificationSystem"):
 		$NotificationSystem.theme = _loaded_theme
-	if has_node("/root/BrainVisualizer/UIManager/TempLoadingScreen"):
-		$TempLoadingScreen.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/LoadingScreenOverlayLayer/TempLoadingScreen"):
+		$LoadingScreenOverlayLayer/TempLoadingScreen.theme = _loaded_theme
 	if has_node("/root/BrainVisualizer/UIManager/ScaleControl"):
 		$ScaleControl.theme = _loaded_theme
 
@@ -1446,6 +1644,14 @@ func _is_area_input_output_of_specific_child_region_for_brain_monitor(area: Abst
 func _find_active_tab_brain_monitor() -> UI_BrainMonitor_3DScene:
 	return _search_for_active_brain_monitor_in_view(_root_UI_view)
 
+## Brain monitor tab whose [TabContainer] current tab is a BM, or null if the active tab is not a BM.
+func get_brain_monitor_for_active_tab() -> UI_BrainMonitor_3DScene:
+	return _find_active_tab_brain_monitor()
+
+## Circuit Builder tab whose [TabContainer] current tab is a CB, or null if the active tab is not a CB.
+func get_circuit_builder_for_active_tab() -> CircuitBuilder:
+	return _find_active_tab_circuit_builder_in_view(_root_UI_view)
+
 ## Recursively searches a UIView for active brain monitor tabs
 func _search_for_active_brain_monitor_in_view(ui_view: UIView) -> UI_BrainMonitor_3DScene:
 	if ui_view == null:
@@ -1488,8 +1694,42 @@ func _search_for_active_brain_monitor_in_view(ui_view: UIView) -> UI_BrainMonito
 					return active_control as UI_BrainMonitor_3DScene
 	
 	return null
-	
-	
+
+
+## Recursively searches a UIView for active Circuit Builder tabs (same traversal as brain monitor search).
+func _find_active_tab_circuit_builder_in_view(ui_view: UIView) -> CircuitBuilder:
+	if ui_view == null:
+		return null
+	if ui_view.mode == UIView.MODE.TAB:
+		var tab_container = ui_view._get_primary_child() as UITabContainer
+		if tab_container != null and tab_container.get_tab_count() > 0:
+			var active_control = tab_container.get_tab_control(tab_container.current_tab)
+			if active_control is CircuitBuilder:
+				return active_control as CircuitBuilder
+	elif ui_view.mode == UIView.MODE.SPLIT:
+		var primary_child = ui_view._get_primary_child()
+		if primary_child is UIView:
+			var result = _find_active_tab_circuit_builder_in_view(primary_child as UIView)
+			if result != null:
+				return result
+		elif primary_child is UITabContainer:
+			var tab_container = primary_child as UITabContainer
+			if tab_container.get_tab_count() > 0:
+				var active_control = tab_container.get_tab_control(tab_container.current_tab)
+				if active_control is CircuitBuilder:
+					return active_control as CircuitBuilder
+		var secondary_child = ui_view._get_secondary_child()
+		if secondary_child is UIView:
+			var result2 = _find_active_tab_circuit_builder_in_view(secondary_child as UIView)
+			if result2 != null:
+				return result2
+		elif secondary_child is UITabContainer:
+			var tab_container2 = secondary_child as UITabContainer
+			if tab_container2.get_tab_count() > 0:
+				var active_control2 = tab_container2.get_tab_control(tab_container2.current_tab)
+				if active_control2 is CircuitBuilder:
+					return active_control2 as CircuitBuilder
+	return null
 
 
 #endregion

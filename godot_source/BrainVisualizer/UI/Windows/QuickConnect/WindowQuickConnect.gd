@@ -50,6 +50,8 @@ var _source: AbstractCorticalArea = null
 var _destination: AbstractCorticalArea = null
 var _destinations: Array[AbstractCorticalArea] = []
 var _selected_morphology: BaseMorphology = null
+## True when connecting a non-memory source to a memory destination: only episodic_memory applies; no rule picker/edit.
+var _memory_rule_locked: bool = false
 
 func _ready() -> void:
 	super()
@@ -181,6 +183,8 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			shrink_window()
 		POSSIBLE_STATES.IDLE:
 			_toggle_add_buttons(true)
+			if _memory_rule_locked:
+				_step3_button.visible = false
 			_step4_button.disabled = false
 			# Keep the core morphology icon bar visible so user can reselect
 			var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
@@ -196,12 +200,14 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 
 func _setting_source() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Source Area...")
+	_memory_rule_locked = false
 	_source = null
 	_step1_label.text = " Please Select A Source Area..."
 	_step1_panel.theme_type_variation = "PanelContainer_QC_waiting"
 
 func _setting_destination() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Destination Area...")
+	_memory_rule_locked = false
 	_clear_destination_highlights()
 	_destination = null
 	_destinations.clear()
@@ -215,6 +221,14 @@ func _setting_destination() -> void:
 			bm.start_quick_connect_guide(_source)
 			# Remember which BM started the guide; used to draw split-screen bridges later
 			BV.UI.qc_guide_source_bm = bm
+
+## Non-memory cortical area mapping into memory: FEAGI allows only episodic_memory; no picker or morphology edit.
+func _is_locked_episodic_memory_connection() -> bool:
+	if _source == null or _destination == null:
+		return false
+	var destination_is_memory: bool = _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	var source_is_memory: bool = _source.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	return destination_is_memory and not source_is_memory
 
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
@@ -243,12 +257,28 @@ func _setting_morphology() -> void:
 	# Populate core morph icon shortcuts (respecting restrictions if any)
 	_populate_core_morphology_icons(restrictions)
 	
-	# Auto-select default morphology if available
-	var default_morphology: BaseMorphology = mapping_defaults.try_get_default_morphology() if mapping_defaults != null else null
-	if default_morphology != null:
-		_step3_scroll.select_morphology(default_morphology)
-		if destination_is_memory and not allow_memory_choice:
-			_set_morphology(default_morphology)
+	# Non-memory -> memory: single valid rule (episodic_memory). Preselect, no list/edit; enable Establish via _set_morphology.
+	if _is_locked_episodic_memory_connection():
+		_memory_rule_locked = true
+		var locked_morph: BaseMorphology = null
+		if mapping_defaults != null:
+			locked_morph = mapping_defaults.try_get_default_morphology()
+		if locked_morph == null:
+			locked_morph = FeagiCore.feagi_local_cache.morphologies.try_get_morphology_object(&"episodic_memory")
+		if locked_morph != null:
+			_step3_scroll.select_morphology(locked_morph)
+			_set_morphology(locked_morph)
+		else:
+			push_warning("WindowQuickConnect: episodic_memory not in morphology cache yet; cannot enable Establish until it loads.")
+			_step3_label.text = " Connectivity rule: Episodic memory (loading...)"
+			_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
+			_step4_button.disabled = true
+	else:
+		_memory_rule_locked = false
+		# Auto-select default morphology if available
+		var default_morphology: BaseMorphology = mapping_defaults.try_get_default_morphology() if mapping_defaults != null else null
+		if default_morphology != null:
+			_step3_scroll.select_morphology(default_morphology)
 
 ## Repopulate icons when cache updates, only if we're in morphology selection view
 func _on_morphology_renamed_for_cache(_old_name: StringName, m: BaseMorphology) -> void:
@@ -551,7 +581,9 @@ func _toggle_destination(cortical_area: AbstractCorticalArea) -> void:
 		else:
 			_step3_panel.visible = true
 			_setting_morphology()
-		_step4_button.disabled = true
+		# Do not clobber Establish when _setting_morphology() completed the flow (e.g. locked episodic_memory -> IDLE).
+		if not (_current_state == POSSIBLE_STATES.IDLE and _selected_morphology != null):
+			_step4_button.disabled = true
 	# Refresh mapping preview/default context when primary destination changes.
 	if _source != null and _destination != null and _destination != previous_primary:
 		FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
@@ -582,7 +614,8 @@ func _sync_destinations_from_selected_objects(objects: Array[GenomeObject]) -> v
 		else:
 			_step3_panel.visible = true
 			_setting_morphology()
-		_step4_button.disabled = true
+		if not (_current_state == POSSIBLE_STATES.IDLE and _selected_morphology != null):
+			_step4_button.disabled = true
 	if _source != null and _destination != null and _destination != previous_primary:
 		FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 

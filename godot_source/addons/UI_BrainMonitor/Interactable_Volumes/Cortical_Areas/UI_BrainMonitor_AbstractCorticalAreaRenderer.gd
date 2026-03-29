@@ -48,6 +48,11 @@ func world_godot_position_to_neuron_coordinate(world_position: Vector3) -> Vecto
 	assert(false, "Not Implemented!")
 	return Vector3i(-1,-1,-1)
 
+## World-space center of the voxel at the given FEAGI neuron coordinate (inverse of world_godot_position_to_neuron_coordinate).
+func feagi_neuron_coordinate_to_world_center(feagi_coord: Vector3i) -> Vector3:
+	assert(false, "Not Implemented!")
+	return Vector3.ZERO
+
 func get_parent_BM_abstraction() -> UI_BrainMonitor_CorticalArea:
 	var output: UI_BrainMonitor_CorticalArea = get_parent() as UI_BrainMonitor_CorticalArea
 	return output # returns null if something is wrong, but never should!

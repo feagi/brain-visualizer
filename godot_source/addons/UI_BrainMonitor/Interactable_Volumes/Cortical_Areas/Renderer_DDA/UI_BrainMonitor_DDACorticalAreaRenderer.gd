@@ -29,11 +29,18 @@ var _selection_image: Image
 var _selection_image_texture: ImageTexture
 var _is_hovered_over: bool
 var _is_selected: bool
+## When true, apply hover-style outline so small cortical areas remain visible at camera distance.
+var _far_small_area_boost: bool = false
+var _visualization_settings: VisualizationSettings = null
 var _last_label_outside_dir_xz: Vector2 = Vector2(0.0, 1.0)
 var _friendly_name_label_target_position: Vector3 = Vector3.ZERO
 var _has_friendly_name_label_target_position: bool = false
 
 func setup(area: AbstractCorticalArea) -> void:
+	if ResourceLoader.exists("res://BrainVisualizer/Configs/visualization_settings.tres"):
+		_visualization_settings = load("res://BrainVisualizer/Configs/visualization_settings.tres")
+	else:
+		_visualization_settings = VisualizationSettings.new()
 	_static_body = PREFAB.instantiate()
 	_DDA_mat = load(WEBGL_DDA_MAT_PATH).duplicate()
 	_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
@@ -120,6 +127,9 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	_DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
 	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 
+	_far_small_area_boost = _compute_far_small_area_boost()
+	_apply_outline_visual_state()
+
 	# CRITICAL FIX: Recreate SVO trees with new dimensions
 	_highlight_SVO = SVOTree.create_SVOTree(new_dimensions)
 	_selection_SVO = SVOTree.create_SVOTree(new_dimensions)
@@ -176,10 +186,16 @@ func _clear_activation_texture() -> void:
 	_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
 
 func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) -> Vector3i:
-	const EPSILON: float = 1e-6;
-	world_godot_position -= _static_body.position
-	world_godot_position += _static_body.scale / 2
-	var world_godot_position_floored: Vector3i = Vector3i(floori(world_godot_position.x  - EPSILON), floori(world_godot_position.y  - EPSILON), floori(world_godot_position.z))
+	const EPSILON: float = 1e-6
+	# Convert world position into the cortical volume's axis frame WITHOUT undoing scale.
+	# This preserves 1 world-unit == 1 voxel spacing used by the static body scale.
+	var d: Vector3 = world_godot_position - _static_body.global_position
+	var bx: Vector3 = _static_body.global_transform.basis.x.normalized()
+	var by: Vector3 = _static_body.global_transform.basis.y.normalized()
+	var bz: Vector3 = _static_body.global_transform.basis.z.normalized()
+	var along: Vector3 = Vector3(d.dot(bx), d.dot(by), d.dot(bz))
+	along += _static_body.scale / 2.0
+	var world_godot_position_floored: Vector3i = Vector3i(floori(along.x - EPSILON), floori(along.y - EPSILON), floori(along.z - EPSILON))
 	world_godot_position_floored.z = _dimensions.z - world_godot_position_floored.z - EPSILON # flip
 	world_godot_position_floored = Vector3(
 		clampi(world_godot_position_floored.x, 0, _dimensions.x - 1),
@@ -188,7 +204,29 @@ func world_godot_position_to_neuron_coordinate(world_godot_position: Vector3) ->
 		) # lots of floating point shenanigans here!
 	return world_godot_position_floored
 
+## World-space center of the voxel at the given FEAGI neuron coordinate (matches world_godot_position_to_neuron_coordinate).
+func feagi_neuron_coordinate_to_world_center(feagi_coord: Vector3i) -> Vector3:
+	if _static_body == null:
+		return Vector3.ZERO
+	if _dimensions.x <= 0 or _dimensions.y <= 0 or _dimensions.z <= 0:
+		return Vector3.ZERO
+	# Match world_godot_position_to_neuron_coordinate: clamp to volume so JSON/API drift cannot shoot lines away.
+	var nx := clampi(int(feagi_coord.x), 0, max(0, _dimensions.x - 1))
+	var ny := clampi(int(feagi_coord.y), 0, max(0, _dimensions.y - 1))
+	var nz := clampi(int(feagi_coord.z), 0, max(0, _dimensions.z - 1))
+	var gz_internal := int(_dimensions.z) - nz - 1
+	gz_internal = clampi(gz_internal, 0, max(0, _dimensions.z - 1))
+	var local_scaled: Vector3 = Vector3(float(nx) + 0.5, float(ny) + 0.5, float(gz_internal) + 0.5) - (_static_body.scale * 0.5)
+	var bx: Vector3 = _static_body.global_transform.basis.x.normalized()
+	var by: Vector3 = _static_body.global_transform.basis.y.normalized()
+	var bz: Vector3 = _static_body.global_transform.basis.z.normalized()
+	return _static_body.global_position + (bx * local_scaled.x) + (by * local_scaled.y) + (bz * local_scaled.z)
+
 func _process(delta: float) -> void:
+	var next_boost := _compute_far_small_area_boost()
+	if next_boost != _far_small_area_boost:
+		_far_small_area_boost = next_boost
+		_apply_outline_visual_state()
 	var had_target := _has_friendly_name_label_target_position
 	if not _update_friendly_name_label_target_position():
 		return
@@ -245,11 +283,11 @@ func _update_friendly_name_label_target_position() -> bool:
 	
 func set_cortical_area_mouse_over_highlighting(is_highlighted: bool) -> void:
 	_is_hovered_over = is_highlighted
-	_set_cortical_area_outline(_is_hovered_over, _is_selected)
+	_apply_outline_visual_state()
 
 func set_cortical_area_selection(is_selected: bool) -> void:
 	_is_selected = is_selected
-	_set_cortical_area_outline(_is_hovered_over, _is_selected)
+	_apply_outline_visual_state()
 
 func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
 	# This only gets called if something changes. For now lets just rebuild the SVO each time
@@ -271,14 +309,27 @@ func set_neuron_selections(neuron_coordinates: Array[Vector3i]) -> void:
 	_DDA_mat.set_shader_parameter("selection_SVO", _selection_image_texture)
 
 
-func _set_cortical_area_outline(mouse_over: bool, selected: bool) -> void:
-	if not (mouse_over || selected):
+func _compute_far_small_area_boost() -> bool:
+	if _visualization_settings == null or not is_inside_tree():
+		return false
+	var viewport := get_viewport()
+	if viewport == null:
+		return false
+	var cam := viewport.get_camera_3d()
+	if cam == null:
+		return false
+	var dist: float = cam.global_position.distance_to(_static_body.global_position)
+	return _visualization_settings.should_apply_far_distance_highlight_for_dimensions(_dimensions, dist)
+
+func _apply_outline_visual_state() -> void:
+	var effective_mouse_over: bool = _is_hovered_over or _far_small_area_boost
+	if not (effective_mouse_over or _is_selected):
 		_DDA_mat.next_pass = null
 		return
 	_DDA_mat.next_pass = _outline_mat
-	if mouse_over && selected:
+	if effective_mouse_over and _is_selected:
 		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_both_color.r, cortical_area_outline_both_color.g, cortical_area_outline_both_color.b, cortical_area_outline_both_alpha))
-	elif mouse_over:
+	elif effective_mouse_over:
 		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_mouse_over_color.r, cortical_area_outline_mouse_over_color.g, cortical_area_outline_mouse_over_color.b, cortical_area_outline_mouse_over_alpha))
 	else:
 		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_select_color.r, cortical_area_outline_select_color.g, cortical_area_outline_select_color.b, cortical_area_outline_select_alpha))

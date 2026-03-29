@@ -37,11 +37,11 @@ func clear_all_cortical_areas() -> void:
 	_listed_areas = []
 	clear()
 
-## Replace cortical area listing with a new one
+## Replace cortical area listing with a new one (sorted by display name or ID per export).
 func overwrite_cortical_areas(new_areas: Array[AbstractCorticalArea]) -> void:
-	clear_all_cortical_areas()
-	for area in new_areas:
-		add_cortical_area(area)
+	var sorted: Array[AbstractCorticalArea] = new_areas.duplicate()
+	sorted.sort_custom(_compare_cortical_areas_by_display_name)
+	_rebuild_items_from_area_array(sorted)
 
 ## Display all cortical areas
 func list_all_cached_areas() -> void:
@@ -67,6 +67,14 @@ func set_selected_cortical_area(set_area: AbstractCorticalArea) -> void:
 		push_warning("Attemped to set cortical area drop down to an item that the drop down does not contain! Skipping!")
 		return
 	select(index)
+
+## Returns the currently selected cortical area, or null if none.
+func get_selected_cortical_area() -> AbstractCorticalArea:
+	var idx: int = selected
+	if idx < 0 or idx >= _listed_areas.size():
+		return null
+	return _listed_areas[idx]
+
 
 ## Set the dropdown to select nothing
 func deselect_all() -> void:
@@ -97,8 +105,30 @@ func _cortical_area_was_deleted_from_cache(deleted_cortical: AbstractCorticalAre
 	remove_cortical_area(deleted_cortical)
 
 func _cortical_area_was_added_to_cache(added_cortical: AbstractCorticalArea) -> void:
-	if added_cortical not in _listed_areas:
-		add_cortical_area(added_cortical)
+	if added_cortical in _listed_areas:
+		return
+	var merged: Array[AbstractCorticalArea] = _listed_areas.duplicate()
+	merged.append(added_cortical)
+	merged.sort_custom(_compare_cortical_areas_by_display_name)
+	_rebuild_items_from_area_array(merged)
 
 func _on_theme_change(_new_theme: Theme = null) -> void:
 	custom_minimum_size.x = _default_width * BV.UI.loaded_theme_scale.x
+
+
+func _rebuild_items_from_area_array(areas: Array[AbstractCorticalArea]) -> void:
+	clear_all_cortical_areas()
+	for area in areas:
+		add_cortical_area(area)
+
+
+func _compare_cortical_areas_by_display_name(a: AbstractCorticalArea, b: AbstractCorticalArea) -> bool:
+	var sa: String
+	var sb: String
+	if display_names_instead_of_IDs:
+		sa = String(a.friendly_name).to_lower()
+		sb = String(b.friendly_name).to_lower()
+	else:
+		sa = String(a.cortical_ID).to_lower()
+		sb = String(b.cortical_ID).to_lower()
+	return sa < sb
