@@ -963,6 +963,19 @@ func return_property_by_name_and_section(composition_section_name: StringName, p
 			return dimensions_3D
 		elif property_name == "coordinates_3D":
 			return coordinates_3D
+		elif property_name == "device_count":
+			# get() is unreliable for subclass-only getters; match dimensions_3D handling above.
+			if self is IPUCorticalArea:
+				return (self as IPUCorticalArea).device_count
+			if self is OPUCorticalArea:
+				return (self as OPUCorticalArea).device_count
+			return null
+		elif property_name == "cortical_dimensions_per_device":
+			if self is IPUCorticalArea:
+				return (self as IPUCorticalArea).cortical_dimensions_per_device
+			if self is OPUCorticalArea:
+				return (self as OPUCorticalArea).cortical_dimensions_per_device
+			return null
 		else:
 			# Try get() for other properties
 			return get(property_name)

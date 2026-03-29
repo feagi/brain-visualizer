@@ -83,6 +83,11 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	else:
 		per = _cortical_dimensions_per_device
 	FEAGI_set_cortical_dimensions_per_device(per)
+	if _device_count > 0 and total.x > 0 and total.y > 0 and total.z > 0:
+		if per == Vector3i(1, 1, 1) and total != Vector3i(1, 1, 1):
+			var inferred: Vector3i = _infer_per_device_from_total(total)
+			if inferred != Vector3i(1, 1, 1):
+				FEAGI_set_cortical_dimensions_per_device(inferred)
 
 	neuron_firing_parameters.FEAGI_apply_detail_dictionary(data)
 	return

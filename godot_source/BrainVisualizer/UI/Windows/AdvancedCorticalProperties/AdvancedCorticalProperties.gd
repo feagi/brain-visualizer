@@ -167,15 +167,14 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	else:
 		print("UI: Advanced Cortical Properties - Skipping FEAGI update request as network is not ready")
 	
-	# refresh all relevant sections again
+	# refresh all relevant sections again (detect ISVI before refresh so segment vs per-device UI is correct)
+	if len(_cortical_area_refs) == 1:
+		_detect_and_setup_isvi_segment()
 	_refresh_all_relevant()
 	_apply_type_based_ui_restrictions()
 	
-	# Re-detect isvi segments now that we have fresh data from FEAGI
+	# If it's isvi, fetch details for all other vision segments
 	if len(_cortical_area_refs) == 1:
-		_detect_and_setup_isvi_segment()
-		
-		# If it's now detected as isvi, we need to fetch details for all other vision segments
 		if _is_isvi_segment:
 			
 			# Collect all vision segment IDs (those starting with "aXN2aQ")
@@ -1169,8 +1168,13 @@ func _init_summary() -> void:
 
 		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
 			_connect_control_to_update_button(_device_count, "dev_count", _button_summary_send)
-			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
-			_dimensions_label.text = "Dimensions Per Device"
+			# isvi: one cortical area per segment; per-area voxel size is dimensions_3D, not unit-level per-device dims.
+			if _is_isvi_segment:
+				_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
+				_dimensions_label.text = "Segment dimensions"
+			else:
+				_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions_per_device", _button_summary_send)
+				_dimensions_label.text = "Dimensions Per Device"
 		else:
 			_connect_control_to_update_button(_vector_dimensions_spin, "cortical_dimensions", _button_summary_send)
 		
@@ -1220,6 +1224,8 @@ func _init_ipu_opu_decoded_info() -> void:
 	# Create all label rows (avoid duplicating coding info shown in Neuron Coding)
 
 func _refresh_from_cache_summary() -> void:
+	if len(_cortical_area_refs) == 1:
+		_detect_and_setup_isvi_segment()
 	var is_all_io = _are_all_io_areas()
 	if _line_voxel_neuron_density != null:
 		var voxel_row = _line_voxel_neuron_density.get_parent()
@@ -1282,10 +1288,17 @@ func _refresh_from_cache_summary() -> void:
 			var granularity_value = _cortical_area_refs[0].visualization_voxel_granularity
 			print("🔵 UI: Setting visualization_voxel_granularity in UI to: %s (from cache)" % granularity_value)
 			_vector_visualization_voxel_granularity.current_vector = granularity_value
-		if _cortical_area_refs[0].cortical_type in [AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU]:
+		if is_all_io:
 			_device_count_section.visible = true
 			_update_control_with_value_from_areas(_device_count, "", "device_count")
-			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "cortical_dimensions_per_device")
+			if _is_isvi_segment:
+				_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
+				if _dimensions_label != null:
+					_dimensions_label.text = "Segment dimensions"
+			else:
+				_update_control_with_value_from_areas(_vector_dimensions_spin, "", "cortical_dimensions_per_device")
+				if _dimensions_label != null:
+					_dimensions_label.text = "Dimensions Per Device"
 		else:
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
 		# NOTE: 3D preview is intentionally NOT created on window open.
@@ -1862,6 +1875,7 @@ func _detect_and_setup_isvi_segment() -> void:
 		return
 
 	var area = _cortical_area_refs[0]
+	area.ensure_unit_subunit_ids_from_cortical_id()
 
 	if area.normalized_subtype() != "isvi":
 		return
