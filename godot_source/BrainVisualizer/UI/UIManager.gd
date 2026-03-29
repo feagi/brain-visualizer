@@ -134,7 +134,7 @@ func _ready():
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
 	_selection_system = SelectionSystem.new()
-	_loading_status_label = $TempLoadingScreen/LoadingOverlay/Bottom_Row/StatusLabel
+	_loading_status_label = $LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/Bottom_Row/StatusLabel
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
 	_top_bar.resized.connect(_top_bar_resized)
@@ -859,7 +859,7 @@ func show_developer_menu():
 
 
 func toggle_loading_screen(is_on: bool) -> void:
-	$TempLoadingScreen.visible = is_on
+	$LoadingScreenOverlayLayer/TempLoadingScreen.visible = is_on
 
 ## Update the loading status message displayed on the loading screen
 func update_loading_status(message: String) -> void:
@@ -918,7 +918,7 @@ func _build_loading_failure_summary() -> String:
 ## Show the shutdown screen with custom styling
 func show_shutdown_screen() -> void:
 	# Change the title from "Loading..." to "Shutting down..."
-	var loading_label = $TempLoadingScreen/LoadingOverlay/VBoxContainer/Label
+	var loading_label = $LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/Label
 	if loading_label:
 		loading_label.text = "Shutting down..."
 	
@@ -1149,8 +1149,8 @@ func _load_new_theme(theme: Theme) -> void:
 		$TopBar.theme = _loaded_theme
 	if has_node("/root/BrainVisualizer/UIManager/NotificationSystem"):
 		$NotificationSystem.theme = _loaded_theme
-	if has_node("/root/BrainVisualizer/UIManager/TempLoadingScreen"):
-		$TempLoadingScreen.theme = _loaded_theme
+	if has_node("/root/BrainVisualizer/UIManager/LoadingScreenOverlayLayer/TempLoadingScreen"):
+		$LoadingScreenOverlayLayer/TempLoadingScreen.theme = _loaded_theme
 	if has_node("/root/BrainVisualizer/UIManager/ScaleControl"):
 		$ScaleControl.theme = _loaded_theme
 

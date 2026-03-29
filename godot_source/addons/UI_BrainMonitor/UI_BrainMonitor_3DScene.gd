@@ -1947,8 +1947,8 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		false,
 		area.cortical_type,
 		area,
-		false,  # do not auto-frame on create during manipulation
-		false  # do not auto-frame during user drag
+		false,  # do not auto-frame on create during manipulation (gizmo already placed)
+		true  # keep preview in view while dragging (reframes camera when content leaves the frustum)
 	)
 	_update_manipulation_position_label()
 
