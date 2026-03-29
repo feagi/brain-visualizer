@@ -104,7 +104,53 @@ func _are_all_io_areas() -> bool:
 			return false
 	return true
 
-	
+
+## True when every selected area is a memory cortical area (for memory-specific neuron firing UI).
+func _are_all_selected_memory_areas() -> bool:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return false
+	for area in _cortical_area_refs:
+		if area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			return false
+	return true
+
+
+## Keys that dense LIF exposes in BV but that do not apply to memory associative sparse LIF (see feagi-npu design §10).
+const _MEMORY_INAPPLICABLE_FIRING_KEYS: Array[StringName] = [
+	&"neuron_mp_charge_accumulation",
+	&"neuron_leak_coefficient",
+	&"neuron_leak_variability",
+	&"neuron_fire_threshold_increment",
+]
+
+
+func _strip_memory_inapplicable_firing_keys(update_data: Dictionary) -> void:
+	if not _are_all_selected_memory_areas():
+		return
+	for k in _MEMORY_INAPPLICABLE_FIRING_KEYS:
+		update_data.erase(k)
+
+
+func _apply_memory_firing_parameter_rows_visibility() -> void:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return
+	var advanced := true
+	if BV != null and BV.UI != null:
+		advanced = BV.UI.is_in_advanced_mode
+	var hide_dense_only := _are_all_selected_memory_areas()
+	# MP accumulation is shown in simple mode for dense areas; memory LIF does not use it — hide for memory-only.
+	if _firing_row_mp_accumulation != null:
+		_firing_row_mp_accumulation.visible = not hide_dense_only
+	# Leak / threshold increment rows are also hidden in simple mode via controls_to_hide_in_simple_mode.
+	if _firing_row_leak_constant != null:
+		_firing_row_leak_constant.visible = advanced and not hide_dense_only
+	if _firing_row_leak_variability != null:
+		_firing_row_leak_variability.visible = advanced and not hide_dense_only
+	if _firing_threshold_increment_label != null:
+		_firing_threshold_increment_label.visible = advanced and not hide_dense_only
+	if _line_Threshold_Inc != null:
+		_line_Threshold_Inc.visible = advanced and not hide_dense_only
+
 
 ## Load in initial values of the cortical area from Cache
 func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
@@ -156,6 +202,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 	
 	_refresh_all_relevant()
 	_apply_type_based_ui_restrictions()
+	_apply_memory_firing_parameter_rows_visibility()
 	
 	# Request the newest state from feagi, and dont continue until then
 	# Only if FeagiCore is ready and network components are initialized
@@ -172,6 +219,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_detect_and_setup_isvi_segment()
 	_refresh_all_relevant()
 	_apply_type_based_ui_restrictions()
+	_apply_memory_firing_parameter_rows_visibility()
 	
 	# If it's isvi, fetch details for all other vision segments
 	if len(_cortical_area_refs) == 1:
@@ -373,6 +421,7 @@ func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool)
 		_section_memory.visible = is_advanced_options_visible
 	# Hidden by product/UI request.
 	_section_cortical_area_monitoring.visible = false
+	_apply_memory_firing_parameter_rows_visibility()
 
 func _update_control_with_value_from_areas(control: Control, composition_section_name: StringName, property_name: StringName) -> void:
 	if control == null:
@@ -502,7 +551,13 @@ func _send_update(send_button: Button) -> void:
 		return
 	
 	if send_button.name in _growing_cortical_update:
-		var update_data: Dictionary = _growing_cortical_update[send_button.name]
+		var update_data: Dictionary = _growing_cortical_update[send_button.name].duplicate(true)
+		if send_button == _button_firing_send:
+			_strip_memory_inapplicable_firing_keys(update_data)
+		if update_data.is_empty():
+			send_button.disabled = true
+			_growing_cortical_update.erase(send_button.name)
+			return
 		if _should_confirm_unit_id_update(update_data):
 			_show_unit_id_update_confirmation(update_data, send_button)
 			return
@@ -1510,6 +1565,11 @@ func _enable_3D_preview(): #NOTE only currently works with single
 #region firing parameters
 
 @export var _section_firing_parameters: VerticalCollapsibleHiding
+## Whole rows hidden for memory-only selection (dense LIF parameters N/A for associative memory neurons).
+@export var _firing_row_mp_accumulation: Control
+@export var _firing_row_leak_constant: Control
+@export var _firing_row_leak_variability: Control
+@export var _firing_threshold_increment_label: Control
 @export var _line_Fire_Threshold: FloatInput
 @export var _line_Threshold_Limit: IntInput
 @export var _line_neuron_excitability: IntInput
@@ -1542,6 +1602,7 @@ func _init_firing_parameters() -> void:
 	_connect_control_to_update_button(_line_Threshold_Inc, "neuron_fire_threshold_increment", _button_firing_send)
 	
 	_button_firing_send.pressed.connect(_send_update.bind(_button_firing_send))
+	_apply_memory_firing_parameter_rows_visibility()
 
 func _refresh_from_cache_firing_parameters() -> void:
 	_update_control_with_value_from_areas(_button_MP_Accumulation, "neuron_firing_parameters", "neuron_mp_charge_accumulation")
@@ -1554,6 +1615,7 @@ func _refresh_from_cache_firing_parameters() -> void:
 	_update_control_with_value_from_areas(_line_Consecutive_Fire_Count, "neuron_firing_parameters", "neuron_consecutive_fire_count")
 	_update_control_with_value_from_areas(_line_Snooze_Period, "neuron_firing_parameters", "neuron_snooze_period")
 	_update_control_with_value_from_areas(_line_Threshold_Inc, "neuron_firing_parameters", "neuron_fire_threshold_increment")
+	_apply_memory_firing_parameter_rows_visibility()
 
 #endregion
 

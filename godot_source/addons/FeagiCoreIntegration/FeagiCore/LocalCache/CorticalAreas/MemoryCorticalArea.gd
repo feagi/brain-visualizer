@@ -12,6 +12,7 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	super(data)
 
 	memory_parameters.FEAGI_apply_detail_dictionary(data)
+	neuron_firing_parameters.FEAGI_apply_detail_dictionary(data)
 
 func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
 	return AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
@@ -35,8 +36,17 @@ func _user_can_edit_dimensions_directly() -> bool:
 func _has_memory_parameters() -> bool:
 	return true
 
+func _has_neuron_firing_parameters() -> bool:
+	return true
+
 #region Memory Parameters
 
 ## Holds all memory parameters
 var memory_parameters: CorticalPropertyMemoryParameters = CorticalPropertyMemoryParameters.new(self)
+#endregion
+
+#region Neuron Firing Parameters
+
+## Firing parameters for memory cortical areas (associative sparse LIF: threshold, limit, excitability, refractory, etc.).
+var neuron_firing_parameters: CorticalPropertyNeuronFiringParameters = CorticalPropertyNeuronFiringParameters.new(self)
 #endregion
