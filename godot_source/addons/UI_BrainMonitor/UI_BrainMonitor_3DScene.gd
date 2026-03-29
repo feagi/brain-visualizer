@@ -3065,6 +3065,11 @@ func _refresh_core_cluster_layout() -> void:
 		var pos := AbstractCorticalArea.core_cluster_computed_feagi_position(slave.cortical_ID, power.coordinates_3D)
 		if slave.coordinates_3D != pos:
 			slave.FEAGI_change_coordinates_3D(pos)
+		# Slaved cores do not auto-follow coordinates_3D_updated on the DirectPoints renderer (API coords can disagree
+		# with the fixed row layout). Always snap the visualization to the computed plate position.
+		var slave_viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(String(slave.cortical_ID))
+		if slave_viz != null and is_instance_valid(slave_viz):
+			slave_viz.set_new_position(pos)
 	call_deferred("_update_core_cluster_plate_transform")
 
 func _ensure_core_cluster_plate() -> void:

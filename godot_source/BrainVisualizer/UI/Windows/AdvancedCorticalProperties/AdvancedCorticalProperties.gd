@@ -301,6 +301,16 @@ func _is_core_type_context() -> bool:
 	return AbstractCorticalArea.array_oc_cortical_areas_type_identification(_cortical_area_refs) == AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE
 
 
+## True when every selected area is the reserved power core (same ID family as [method AbstractCorticalArea.is_power_area]).
+func _selection_is_only_power_core_areas() -> bool:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return false
+	for area in _cortical_area_refs:
+		if not AbstractCorticalArea.is_power_area(area.cortical_ID):
+			return false
+	return true
+
+
 func _apply_type_based_ui_restrictions() -> void:
 	# Currently only CORE has strict UI restrictions.
 	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
@@ -351,6 +361,8 @@ func _apply_core_type_restrictions() -> void:
 		_line_Threshold_Limit.editable = false
 	if _line_neuron_excitability != null:
 		_line_neuron_excitability.editable = false
+	if _line_Degeneracy_Constant != null and not _selection_is_only_power_core_areas():
+		_line_Degeneracy_Constant.editable = false
 	if _line_Refactory_Period != null:
 		_line_Refactory_Period.editable = false
 	if _line_Leak_Constant != null:
@@ -378,19 +390,27 @@ func _apply_core_type_restrictions() -> void:
 	if _button_memory_send != null:
 		_button_memory_send.disabled = true
 	
-	# Post Synaptic Potential Parameters
-	if _line_Post_Synaptic_Potential != null:
-		_line_Post_Synaptic_Potential.editable = false
-	if _line_PSP_Max != null:
-		_line_PSP_Max.editable = false
-	if _line_Degeneracy_Constant != null:
-		_line_Degeneracy_Constant.editable = false
-	if _button_PSP_Uniformity != null:
-		_button_PSP_Uniformity.disabled = true
-	if _button_MP_Driven_PSP != null:
-		_button_MP_Driven_PSP.disabled = true
-	if _button_pspp_send != null:
-		_button_pspp_send.disabled = true
+	# Post Synaptic Potential Parameters — power core: only PSP value + uniformity editable.
+	if _selection_is_only_power_core_areas():
+		if _line_PSP_Max != null:
+			_line_PSP_Max.editable = false
+		if _button_MP_Driven_PSP != null:
+			_button_MP_Driven_PSP.disabled = true
+		if _line_Post_Synaptic_Potential != null:
+			_line_Post_Synaptic_Potential.editable = true
+		if _button_PSP_Uniformity != null:
+			_button_PSP_Uniformity.disabled = false
+	else:
+		if _line_Post_Synaptic_Potential != null:
+			_line_Post_Synaptic_Potential.editable = false
+		if _line_PSP_Max != null:
+			_line_PSP_Max.editable = false
+		if _button_PSP_Uniformity != null:
+			_button_PSP_Uniformity.disabled = true
+		if _button_MP_Driven_PSP != null:
+			_button_MP_Driven_PSP.disabled = true
+		if _button_pspp_send != null:
+			_button_pspp_send.disabled = true
 	
 	# Monitoring
 	if membrane_toggle != null:
@@ -1573,6 +1593,7 @@ func _enable_3D_preview(): #NOTE only currently works with single
 @export var _line_Fire_Threshold: FloatInput
 @export var _line_Threshold_Limit: IntInput
 @export var _line_neuron_excitability: IntInput
+@export var _line_Degeneracy_Constant: FloatInput
 @export var _line_Refactory_Period: IntInput
 @export var _line_Leak_Constant: IntInput
 @export var _line_Leak_Variability: FloatInput
@@ -1600,6 +1621,7 @@ func _init_firing_parameters() -> void:
 	_connect_control_to_update_button(_line_Consecutive_Fire_Count, "neuron_consecutive_fire_count", _button_firing_send)
 	_connect_control_to_update_button(_line_Snooze_Period, "neuron_snooze_period", _button_firing_send)
 	_connect_control_to_update_button(_line_Threshold_Inc, "neuron_fire_threshold_increment", _button_firing_send)
+	_connect_control_to_update_button(_line_Degeneracy_Constant, "neuron_degeneracy_coefficient", _button_firing_send)
 	
 	_button_firing_send.pressed.connect(_send_update.bind(_button_firing_send))
 	_apply_memory_firing_parameter_rows_visibility()
@@ -1615,6 +1637,7 @@ func _refresh_from_cache_firing_parameters() -> void:
 	_update_control_with_value_from_areas(_line_Consecutive_Fire_Count, "neuron_firing_parameters", "neuron_consecutive_fire_count")
 	_update_control_with_value_from_areas(_line_Snooze_Period, "neuron_firing_parameters", "neuron_snooze_period")
 	_update_control_with_value_from_areas(_line_Threshold_Inc, "neuron_firing_parameters", "neuron_fire_threshold_increment")
+	_update_control_with_value_from_areas(_line_Degeneracy_Constant, "post_synaptic_potential_paramamters", "neuron_degeneracy_coefficient")
 	_apply_memory_firing_parameter_rows_visibility()
 
 #endregion
@@ -1649,7 +1672,6 @@ func _refresh_from_cache_memory() -> void:
 @export var _section_post_synaptic_potential_parameters: VerticalCollapsibleHiding
 @export var _line_Post_Synaptic_Potential: FloatInput
 @export var _line_PSP_Max: FloatInput
-@export var _line_Degeneracy_Constant: FloatInput
 @export var _button_PSP_Uniformity: ToggleButton
 @export var _button_MP_Driven_PSP: ToggleButton
 @export var _button_pspp_send: Button
@@ -1657,7 +1679,6 @@ func _refresh_from_cache_memory() -> void:
 func _init_psp() -> void:
 	_connect_control_to_update_button(_line_Post_Synaptic_Potential, "neuron_post_synaptic_potential", _button_pspp_send)
 	_connect_control_to_update_button(_line_PSP_Max, "neuron_post_synaptic_potential_max", _button_pspp_send)
-	_connect_control_to_update_button(_line_Degeneracy_Constant, "neuron_degeneracy_coefficient", _button_pspp_send)
 	_connect_control_to_update_button(_button_PSP_Uniformity, "neuron_psp_uniform_distribution", _button_pspp_send)
 	_connect_control_to_update_button(_button_MP_Driven_PSP, "neuron_mp_driven_psp", _button_pspp_send)
 	
@@ -1666,7 +1687,6 @@ func _init_psp() -> void:
 func _refresh_from_cache_psp() -> void:
 	_update_control_with_value_from_areas(_line_Post_Synaptic_Potential, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential")
 	_update_control_with_value_from_areas(_line_PSP_Max, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential_max")
-	_update_control_with_value_from_areas(_line_Degeneracy_Constant, "post_synaptic_potential_paramamters", "neuron_degeneracy_coefficient")
 	_update_control_with_value_from_areas(_button_PSP_Uniformity, "post_synaptic_potential_paramamters", "neuron_psp_uniform_distribution")
 	_update_control_with_value_from_areas(_button_MP_Driven_PSP, "post_synaptic_potential_paramamters", "neuron_mp_driven_psp")
 	_line_Post_Synaptic_Potential.editable = !_button_MP_Driven_PSP.button_pressed

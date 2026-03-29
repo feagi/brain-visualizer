@@ -120,8 +120,12 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 			defined_cortical_area.dimensions_3D_updated.connect(_dda_renderer.update_dimensions)
 	
 	if _directpoints_renderer != null:
-		if not defined_cortical_area.coordinates_3D_updated.is_connected(_directpoints_renderer.update_position_with_new_FEAGI_coordinate):
-			defined_cortical_area.coordinates_3D_updated.connect(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+		# Death / fatigue (slaved to power row): cache may carry non-layout FEAGI coords from API; visual position is
+		# owned by [_refresh_core_cluster_layout] via [method UI_BrainMonitor_3DScene.get_cortical_area_visualization]
+		# + [method set_new_position]. Do not move the mesh on every coordinates_3D_updated or selection refetch.
+		if not AbstractCorticalArea.is_core_cluster_slaved_to_power_layout(defined_cortical_area.cortical_ID):
+			if not defined_cortical_area.coordinates_3D_updated.is_connected(_directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+				defined_cortical_area.coordinates_3D_updated.connect(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 		if not defined_cortical_area.dimensions_3D_updated.is_connected(_directpoints_renderer.update_dimensions):
 			defined_cortical_area.dimensions_3D_updated.connect(_directpoints_renderer.update_dimensions)
 	
