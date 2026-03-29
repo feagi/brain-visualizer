@@ -59,10 +59,10 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(270, 48)
+custom_minimum_size = Vector2(210, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-text = "Overwrite Scalar [X, Y, Z]"
+text = "Overwrite Scalar"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -73,12 +73,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "Plasticity Multiplier"
+tooltip_text = "Post-Synaptic Potential Multiplier"
 mouse_filter = 1
-text = "PSP Multi."
+text = "PSP Multiplier"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -117,12 +117,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
 mouse_filter = 1
-text = "Plast. Win."
+text = "Plasticity Window"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -133,12 +133,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Constant"
 mouse_filter = 1
-text = "Plast. Const."
+text = "Plasticity Constant"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -149,12 +149,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "LTP Multiplier"
+tooltip_text = "Long-Term Potentiation Multiplier"
 mouse_filter = 1
-text = "LTP Multi."
+text = "LTP Multiplier"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -165,12 +165,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "LTD Multiplier"
+tooltip_text = "Long-Term Depression Multiplier"
 mouse_filter = 1
-text = "LTD Multi."
+text = "LTD Multiplier"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -210,7 +210,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Scalar" parent="RowContainer" instance=ExtResource("3_7llad")]
-custom_minimum_size = Vector2(270, 0)
+custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 alignment = 1
@@ -226,7 +226,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="PSP" type="LineEdit" parent="RowContainer"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Post-Synaptic Potential"
@@ -281,7 +281,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Plasticity_Window" type="LineEdit" parent="RowContainer"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
@@ -297,7 +297,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Plasticity_Constant" type="LineEdit" parent="RowContainer"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity"
@@ -313,7 +313,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="LTP_Multiplier" type="LineEdit" parent="RowContainer"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 alignment = 1
@@ -328,7 +328,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="LTD_Multiplier" type="LineEdit" parent="RowContainer"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 alignment = 1

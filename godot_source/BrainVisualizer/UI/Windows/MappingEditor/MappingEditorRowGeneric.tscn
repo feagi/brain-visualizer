@@ -53,7 +53,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Scalar" parent="." instance=ExtResource("3_7llad")]
-custom_minimum_size = Vector2(270, 0)
+custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 alignment = 1
@@ -68,7 +68,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="PSP" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Post-Synaptic Potential
@@ -118,7 +118,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Plasticity_Window" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
@@ -132,7 +132,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Plasticity_Constant" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity"
@@ -146,7 +146,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="LTP_Multiplier" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 alignment = 1
@@ -159,7 +159,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="LTD_Multiplier" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 alignment = 1

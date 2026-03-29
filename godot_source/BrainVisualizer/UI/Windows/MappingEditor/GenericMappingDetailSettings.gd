@@ -21,6 +21,7 @@ var _established_scroll_viewport: Control
 var _header_row_wrapper: HBoxContainer
 var _header_align_lead: Control
 var _scroll: ScrollSectionGeneric
+var _empty_state: VBoxContainer
 
 func _ready() -> void:
 	_established_scroll_viewport = $EstablishedScrollViewport
@@ -28,6 +29,7 @@ func _ready() -> void:
 	_header_align_lead = $HeaderRowWrapper/HeaderAlignLead
 	_scroll = $EstablishedScrollViewport/ScrollSectionGeneric
 	_add_button = $HeaderRowWrapper/labels_box/add_button
+	_empty_state = $EmptyState
 	_established_scroll_viewport.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_scroll.item_about_to_be_deleted.connect(_on_scroll_item_about_to_be_deleted)
 	if BV and BV.UI and not BV.UI.theme_changed.is_connected(_on_theme_changed):
@@ -44,11 +46,27 @@ func load_mappings(mappings: Array[SingleMappingDefinition], restrictions: Mappi
 	clear()
 	_restrictions = restrictions
 	_defaults = defaults
+	
+	if len(mappings) == 0:
+		_show_empty_state()
+		return
+	
+	_show_table_state()
 	for mapping in mappings:
 		_import_single_mapping_no_refit(mapping)
 	if restrictions != null and restrictions.has_max_number_mappings():
 		_add_button.disabled = restrictions.max_number_mappings < len(mappings)
 	_queue_refit_established_scroll_viewport()
+
+func _show_empty_state() -> void:
+	_empty_state.visible = true
+	_header_row_wrapper.visible = false
+	_established_scroll_viewport.visible = false
+
+func _show_table_state() -> void:
+	_empty_state.visible = false
+	_header_row_wrapper.visible = true
+	_established_scroll_viewport.visible = true
 
 func export_mappings() -> Array[SingleMappingDefinition]:
 	var mappings: Array[SingleMappingDefinition] = []
@@ -70,6 +88,7 @@ func _import_single_mapping_no_refit(mapping: SingleMappingDefinition) -> void:
 	item.about_to_be_deleted.connect(_on_row_deletion)
 
 func _add_mapping_row() -> void:
+	_show_table_state()
 	var row: MappingEditorRowGeneric = PREFAB_ROW.instantiate()
 	var item: ScrollSectionGenericItem = _scroll.add_generic_item(row, null, "")
 	item.about_to_be_deleted.connect(_on_row_deletion)
@@ -80,10 +99,14 @@ func _add_mapping_row() -> void:
 
 func _on_scroll_item_about_to_be_deleted(_item: ScrollSectionGenericItem) -> void:
 	_queue_refit_established_scroll_viewport()
+	if _scroll.get_item_count() <= 1:
+		call_deferred("_show_empty_state")
 
 func _on_row_deletion(item: ScrollSectionGenericItem) -> void:
 	if _restrictions != null and _restrictions.has_max_number_mappings():
-		_add_button.disabled = _restrictions.max_number_mappings < _scroll.get_item_count() - 1 # Subtract 1 since it is about to be 1 less
+		_add_button.disabled = _restrictions.max_number_mappings < _scroll.get_item_count() - 1
+	if _scroll.get_item_count() <= 1:
+		call_deferred("_show_empty_state")
 
 func _queue_refit_established_scroll_viewport() -> void:
 	if not is_node_ready():

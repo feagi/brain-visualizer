@@ -17,6 +17,28 @@ layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Established Mappings"
 
+[node name="EmptyState" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+alignment = 1
+
+[node name="EmptyMessage" type="Label" parent="EmptyState"]
+layout_mode = 2
+text = "No mapping currently defined for this connection"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Spacer" type="Control" parent="EmptyState"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="AddFirstButton" type="Button" parent="EmptyState"]
+custom_minimum_size = Vector2(200, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"Button_big"
+text = " Add First Mapping "
+
 [node name="HeaderRowWrapper" type="HBoxContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -59,10 +81,10 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(270, 48)
+custom_minimum_size = Vector2(210, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-text = "Overwrite Scalar [X, Y, Z]"
+text = "Overwrite Scalar"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -73,12 +95,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "Plasticity Multiplier"
+tooltip_text = "Post-Synaptic Potential Multiplier"
 mouse_filter = 1
-text = "PSP Multi."
+text = "PSP Multiplier"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -117,12 +139,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
 mouse_filter = 1
-text = "Plast. Win."
+text = "Plasticity Window"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -133,12 +155,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Constant"
 mouse_filter = 1
-text = "Plast. Const."
+text = "Plasticity Constant"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -149,12 +171,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "LTP Multiplier"
+tooltip_text = "Long-Term Potentiation Multiplier"
 mouse_filter = 1
-text = "LTP Multi."
+text = "LTP Multiplier"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -165,12 +187,12 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
+custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "LTD Multiplier"
+tooltip_text = "Long-Term Depression Multiplier"
 mouse_filter = 1
-text = "LTD Multi."
+text = "LTD Multiplier"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -179,6 +201,7 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 0
+size_flags_vertical = 4
 tooltip_text = "Add Mapping"
 theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("2_na2v5")
@@ -202,3 +225,4 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [connection signal="pressed" from="HeaderRowWrapper/labels_box/add_button" to="." method="_add_mapping_row"]
+[connection signal="pressed" from="EmptyState/AddFirstButton" to="." method="_add_mapping_row"]
