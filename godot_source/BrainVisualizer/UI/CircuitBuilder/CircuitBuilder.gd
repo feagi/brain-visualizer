@@ -1142,7 +1142,7 @@ func _fit_circuit_to_viewport() -> void:
 	var padded_size: Vector2 = bounds_size + initial_fit_padding
 	var fit_zoom_x: float = viewport_px.x / max(padded_size.x, 1.0)
 	var fit_zoom_y: float = viewport_px.y / max(padded_size.y, 1.0)
-	var target_zoom: float = min(fit_zoom_x, fit_zoom_y)
+	var target_zoom: float = min(fit_zoom_x, fit_zoom_y) * 0.5
 	var min_z: float = 0.2
 	var max_z: float = 2.0
 	if "min_zoom" in self:

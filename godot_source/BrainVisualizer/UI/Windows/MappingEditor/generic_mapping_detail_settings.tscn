@@ -41,10 +41,12 @@ theme_type_variation = &"HBoxContainer_adjacent"
 size_flags_horizontal = 0
 
 [node name="Label" type="Label" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Mapping Definition"
+autowrap_mode = 3
+vertical_alignment = 1
 
 [node name="edit_placeholder" type="Control" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
 custom_minimum_size = Vector2(32, 32)
@@ -57,11 +59,13 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(270, 0)
+custom_minimum_size = Vector2(270, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Overwrite Scalar [X, Y, Z]"
 horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
 [node name="Spacer_AfterScalar" type="Control" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(8, 0)
@@ -69,13 +73,15 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(100, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Multiplier"
 mouse_filter = 1
 text = "PSP Multi."
 horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
 [node name="Spacer_BetweenPSPAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(12, 0)
@@ -83,11 +89,13 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label8" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(168, 0)
+custom_minimum_size = Vector2(168, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Inhibitory"
 horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
 [node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(12, 0)
@@ -95,11 +103,13 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label4" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(168, 0)
+custom_minimum_size = Vector2(168, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Plasticity"
 horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
 [node name="Spacer_AfterPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(8, 0)
@@ -107,13 +117,15 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(100, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
 mouse_filter = 1
 text = "Plast. Win."
 horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
 [node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(8, 0)
@@ -121,13 +133,15 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(100, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Constant"
 mouse_filter = 1
 text = "Plast. Const."
 horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
 [node name="Spacer_AfterPlasticityConst" type="Control" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(8, 0)
@@ -135,13 +149,15 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(100, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "LTP Multiplier"
 mouse_filter = 1
 text = "LTP Multi."
 horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
 [node name="Spacer_BetweenLTPAndLTD" type="Control" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(8, 0)
@@ -149,13 +165,15 @@ layout_mode = 2
 size_flags_horizontal = 0
 
 [node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(100, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "LTD Multiplier"
 mouse_filter = 1
 text = "LTD Multi."
 horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
 
 [node name="add_button" type="TextureButton" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(32, 32)

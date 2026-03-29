@@ -2023,8 +2023,12 @@ func mass_reset_cortical_areas(cortical_areas: Array[AbstractCorticalArea]) -> F
 	
 	# Define Request
 	var ID_list: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(cortical_areas)
+	# JSON must serialize plain strings; StringName arrays can serialize incorrectly for some runtimes.
+	var area_list_strings: Array[String] = []
+	for id in ID_list:
+		area_list_strings.append(String(id))
 	var dict_to_send: Dictionary = {
-		"area_list": ID_list
+		"area_list": area_list_strings
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_reset, dict_to_send)
 
