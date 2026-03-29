@@ -44,9 +44,9 @@ func spawn_options() -> void:
 	var options_window: WindowOptionsMenu = _default_spawn_window(_PREFAB_OPTIONS, WindowOptionsMenu.WINDOW_NAME) as WindowOptionsMenu
 	options_window.setup()
 
-func spawn_camera_animations() -> void:
+func spawn_camera_animations(host_brain_monitor: UI_BrainMonitor_3DScene = null) -> void:
 	var cam_window: WindowCameraAnimations = _default_spawn_window(_PREFAB_CAMERA_ANIMATIONS, WindowCameraAnimations.WINDOW_NAME) as WindowCameraAnimations
-	cam_window.setup()
+	cam_window.setup(host_brain_monitor)
 
 func spawn_guide() -> void:
 	var guide_window: WindowGuide = _default_spawn_window(_PREFAB_GUIDE, WindowGuide.WINDOW_NAME) as WindowGuide

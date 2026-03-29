@@ -67,7 +67,6 @@ func _toggle_menu(show_menu: bool) -> void:
 		return
 	var child_button: TextureButton
 	if show_menu:
-		_panel.position = get_global_rect().position + Vector2(0, size.y)
 		for child in _button_holder.get_children():
 			if !(child is TextureButton):
 				push_error("Non-TextureButton found in ToggleImageDropDown! Skipping!")
@@ -75,11 +74,40 @@ func _toggle_menu(show_menu: bool) -> void:
 			child_button = (child as TextureButton)
 			child_button.size = Vector2(0,0)
 		_panel.size = Vector2(0,0)
+		# Same as FilterableListPopup: SubViewport controls report "global" coords in viewport space;
+		# reparent the panel to the root viewport and use screen-space anchor so the menu sits under the button.
+		_reparent_panel_to_root_viewport()
+		var anchor_screen := _get_anchor_screen_position()
+		_panel.position = anchor_screen + Vector2(0, size.y)
 		_panel.popup()
 		grab_focus()
 	else:
 		_panel.hide()
 		release_focus()
+
+
+## Match [method FilterableListPopup._reparent_to_root_viewport].
+func _reparent_panel_to_root_viewport() -> void:
+	if _panel == null:
+		return
+	var root_viewport := get_tree().root
+	if _panel.get_parent() == root_viewport:
+		return
+	var p := _panel.get_parent()
+	if p != null:
+		p.remove_child(_panel)
+	root_viewport.add_child(_panel)
+
+
+## Match [method FilterableListPopup._get_anchor_screen_position] for this trigger control.
+func _get_anchor_screen_position() -> Vector2:
+	var anchor_pos := get_global_position()
+	var anchor_viewport := get_viewport()
+	if anchor_viewport is SubViewport:
+		var container := anchor_viewport.get_parent()
+		if container is SubViewportContainer:
+			anchor_pos += (container as SubViewportContainer).get_global_position()
+	return anchor_pos
 
 func _is_menu_shown() -> bool:
 	return _panel.visible

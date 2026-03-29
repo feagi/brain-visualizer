@@ -23,7 +23,7 @@ layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
 initial_index = -1
 select_on_press = false
-tooltip_text = "Activity"
+tooltip_text = "Inspectors"
 
 [node name="GlobalNeuralConnections" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]
 layout_mode = 2

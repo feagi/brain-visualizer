@@ -30,6 +30,10 @@ var _spacer_before_rearrange: Control
 var _spacer_after_rearrange: Control
 var _spacer_after_add_circuits: Control
 var _spacer_after_add_inputs: Control
+var _spacer_before_monitor_tools: Control
+var _activity_visualization_dropdown: ActivityVisualizationDropDown
+var _activity_toggle_button: TextureButton
+var _camera_animations_button: ButtonTextureRectScaling
 
 const HOVER_SCALE := Vector2(1.15, 1.15)
 const NORMAL_SCALE := Vector2(1.0, 1.0)
@@ -65,6 +69,10 @@ func _ready() -> void:
 	_spacer_after_rearrange = $Spacer_AfterRearrange
 	_spacer_after_add_circuits = $MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddCircuits
 	_spacer_after_add_inputs = $MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddInputs
+	_spacer_before_monitor_tools = $Spacer_BeforeMonitorTools
+	_activity_visualization_dropdown = $ActivityVisualizationDropDown
+	_activity_toggle_button = $ActivityVisualizationDropDown/ToggleImageDropDown as TextureButton
+	_camera_animations_button = $CameraAnimations as ButtonTextureRectScaling
 	_btn_brain_regions_list.tooltip_text = "Select circuit"
 	_btn_brain_regions_add.tooltip_text = "Add circuit"
 	_btn_interconnect_list.tooltip_text = "Select interconnect area"
@@ -91,6 +99,10 @@ func _ready() -> void:
 	_btn_inputs_add.pressed.connect(_add_input_area)
 	_btn_outputs_list.pressed.connect(_open_outputs)
 	_btn_outputs_add.pressed.connect(_add_output_area)
+	if _activity_visualization_dropdown != null:
+		_activity_visualization_dropdown.activity_mode_changed.connect(_on_monitor_activity_mode_changed)
+	if _camera_animations_button != null:
+		_camera_animations_button.pressed.connect(_on_monitor_camera_animations_pressed)
 	_apply_shared_combo_spacing_tokens()
 	_flatten_group_wrapper_panels()
 	_ensure_list_popup()
@@ -120,7 +132,8 @@ func _apply_shared_combo_spacing_tokens() -> void:
 		NodePath("Spacer_AfterMainGroup"),
 		NodePath("Spacer_AfterInterconnectGroup"),
 		NodePath("Spacer_BeforeRearrange"),
-		NodePath("Spacer_AfterRearrange")
+		NodePath("Spacer_AfterRearrange"),
+		NodePath("Spacer_BeforeMonitorTools")
 	])
 
 
@@ -199,16 +212,19 @@ func _update_buttons_state() -> void:
 	if _global_topbar_mode:
 		_set_all_buttons_disabled(_force_disabled_override)
 		_set_visibility_for_context(false, true, false)
+		_update_monitor_tools_visibility()
 		return
 	if context_region == null:
 		_set_all_buttons_disabled(true)
 		_set_visibility_for_context(false, false, false)
+		_update_monitor_tools_visibility()
 		return
 	# Listing is always enabled (direct-only; will be empty if none)
 	_set_all_buttons_disabled(_force_disabled_override)
 	# Root region shows Inputs/Outputs; non-root shows Interconnect/Memory
 	var is_root := _is_root_region()
 	_set_visibility_for_context(not is_root, is_root, not _is_3d_context)
+	_update_monitor_tools_visibility()
 
 
 ## Toggle disabled state for every control in the combo strip.
@@ -224,6 +240,62 @@ func _set_all_buttons_disabled(disabled: bool) -> void:
 	_btn_inputs_add.disabled = disabled
 	_btn_outputs_list.disabled = disabled
 	_btn_outputs_add.disabled = disabled
+	if _activity_toggle_button != null:
+		_activity_toggle_button.disabled = disabled
+	if _camera_animations_button != null:
+		_camera_animations_button.disabled = disabled
+
+
+## Brain Monitor tab strip only: same controls as the main top bar, scoped to this tab's 3D scene.
+func _update_monitor_tools_visibility() -> void:
+	var show_tools := _is_3d_context and _bm_scene != null and not _global_topbar_mode
+	if _spacer_before_monitor_tools != null:
+		_spacer_before_monitor_tools.visible = show_tools
+	if _activity_visualization_dropdown != null:
+		_activity_visualization_dropdown.visible = show_tools
+	if _camera_animations_button != null:
+		_camera_animations_button.visible = show_tools
+
+
+func _on_monitor_activity_mode_changed(action: StringName, enabled: bool) -> void:
+	if _bm_scene == null:
+		return
+	if action == ActivityVisualizationDropDown.ACTION_GLOBAL_NEURAL_CONNECTIONS:
+		_toggle_global_neural_connections_for_scene(_bm_scene, enabled)
+	elif action == ActivityVisualizationDropDown.ACTION_VOXEL_INSPECTOR:
+		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR
+		BV.WM.spawn_voxel_inspector()
+	elif action == ActivityVisualizationDropDown.ACTION_MEMORY_INSPECTOR:
+		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.MEMORY_INSPECTOR
+		BV.WM.spawn_memory_inspector()
+
+
+func _toggle_global_neural_connections_for_scene(brain_monitor: UI_BrainMonitor_3DScene, enabled: bool) -> void:
+	var cortical_area_objects: Array = _find_all_cortical_area_objects_in_scene(brain_monitor)
+	for cortical_area_obj in cortical_area_objects:
+		if enabled:
+			cortical_area_obj.set_hover_over_volume_state(true, true)
+		else:
+			cortical_area_obj.set_hover_over_volume_state(false, false)
+
+
+func _find_all_cortical_area_objects_in_scene(root: Node) -> Array:
+	var cortical_areas: Array = []
+	_recursive_find_cortical_areas_bm(root, cortical_areas)
+	return cortical_areas
+
+
+func _recursive_find_cortical_areas_bm(node: Node, cortical_areas: Array) -> void:
+	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
+		cortical_areas.append(node)
+	for child in node.get_children():
+		_recursive_find_cortical_areas_bm(child, cortical_areas)
+
+
+func _on_monitor_camera_animations_pressed() -> void:
+	if _bm_scene != null:
+		BV.WM.spawn_camera_animations(_bm_scene)
+
 
 ## Open circuits dropdown for the current region.
 func _open_brain_regions() -> void:

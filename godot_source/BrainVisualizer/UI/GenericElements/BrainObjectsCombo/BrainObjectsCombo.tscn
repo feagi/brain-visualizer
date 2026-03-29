@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.gd" id="1_script"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_basebtn"]
@@ -15,6 +15,12 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="7_icon_input"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_icon_output"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png" id="6_icon_memory"]
+[ext_resource type="PackedScene" uid="uid://cm2activityvizdd1" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.tscn" id="16_activity_dd"]
+[ext_resource type="Script" uid="uid://dfllqleqyhqy4" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="17_btn_tex_scale"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_S.jpg" id="18_cam_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="19_cam_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="20_cam_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="21_cam_d"]
 
 [node name="BrainObjectsCombo" type="HBoxContainer"]
 mouse_filter = 1
@@ -259,4 +265,30 @@ metadata/ignore_parent_press = true
 [node name="Spacer_AfterRearrange" type="Control" parent="."]
 custom_minimum_size = Vector2(5, 0)
 size_flags_horizontal = 0
+
+[node name="Spacer_BeforeMonitorTools" type="Control" parent="."]
+visible = false
+custom_minimum_size = Vector2(5, 0)
+size_flags_horizontal = 0
+
+[node name="ActivityVisualizationDropDown" parent="." instance=ExtResource("16_activity_dd")]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Brain activity: global neural connections or inspectors"
+
+[node name="CameraAnimations" type="TextureRect" parent="."]
+visible = false
+custom_minimum_size = Vector2(64, 64)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = "Camera Animations"
+texture = ExtResource("18_cam_s")
+expand_mode = 3
+script = ExtResource("17_btn_tex_scale")
+texture_normal = ExtResource("18_cam_s")
+texture_pressed = ExtResource("20_cam_c")
+texture_hover = ExtResource("19_cam_h")
+texture_disabled = ExtResource("21_cam_d")
 
