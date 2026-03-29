@@ -1250,6 +1250,22 @@ func get_memory_neuron(neuron_id: int) -> FeagiRequestOutput:
 	await worker.worker_done
 	return worker.retrieve_output_and_close()
 
+## Flattens cortical-area API JSON: copies nested "properties" first, then overwrites with every
+## top-level field (except the properties bag). Rust CorticalAreaInfo fields must win over stale
+## duplicates still stored under properties (e.g. 1x1x1 per-device).
+func _flatten_cortical_area_response_dict(raw: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	if raw.has("properties") and raw["properties"] is Dictionary:
+		var nested: Dictionary = raw["properties"]
+		for key in nested.keys():
+			out[key] = nested[key]
+	for key in raw.keys():
+		if key == "properties":
+			continue
+		out[key] = raw[key]
+	return out
+
+
 ## Requests an update of a cortical area's properties a single time
 func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	# Fetching cortical area details
@@ -1282,18 +1298,8 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 	
 	# Log visualization_voxel_granularity if present (suppressed)
 	
-	# Handle nested properties structure - FEAGI returns {"properties": {...}}
-	# Also handle top-level fields (like visualization_voxel_granularity) that are outside properties
-	var properties_dict: Dictionary = response
-	if "properties" in response and response["properties"] is Dictionary:
-		# Merge top-level fields with properties (top-level takes precedence)
-		properties_dict = response["properties"].duplicate()
-		# Copy top-level fields that aren't in properties (like visualization_voxel_granularity, cortical_type, etc.)
-		for key in response.keys():
-			if key != "properties" and not key in properties_dict:
-				properties_dict[key] = response[key]
-				if key == "visualization_voxel_granularity":
-					pass
+	# Flatten nested properties so top-level CorticalAreaInfo fields override stale duplicates in properties.
+	var properties_dict: Dictionary = _flatten_cortical_area_response_dict(response)
 	if "coding_options" in properties_dict:
 		var coding_options = properties_dict["coding_options"]
 		if coding_options is Dictionary:
@@ -1381,9 +1387,7 @@ func get_cortical_areas(checking_areas: Array[AbstractCorticalArea]) -> FeagiReq
 		var area_data_raw: Dictionary = responses_dict[cortical_id]
 		# Log visualization_voxel_granularity if present (suppressed)
 		
-		# Only use top-level response fields; legacy properties are ignored.
-		var area_data: Dictionary = area_data_raw.duplicate()
-		area_data.erase("properties")
+		var area_data: Dictionary = _flatten_cortical_area_response_dict(area_data_raw)
 		# Ensure cortical_id is in the dict (some responses omit it).
 		# IMPORTANT: Cast to StringName so cache lookups using StringName keys work reliably.
 		if not "cortical_id" in area_data:

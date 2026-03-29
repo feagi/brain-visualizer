@@ -6,7 +6,7 @@
 [node name="WindowSelectCorticalTemplate" type="VBoxContainer"]
 offset_right = 600.0
 offset_bottom = 520.0
-custom_minimum_size = Vector2(640, 800)
+custom_minimum_size = Vector2(980, 800)
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
@@ -36,16 +36,16 @@ size_flags_vertical = 3
 
 [node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll"]
 layout_mode = 2
-theme_override_constants/margin_left = 0
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_bottom = 0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_bottom = 28
 
 [node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll/ContentMargin"]
 layout_mode = 2
 columns = 4
-theme_override_constants/h_separation = 30
-theme_override_constants/v_separation = 13
+theme_override_constants/h_separation = 52
+theme_override_constants/v_separation = 26
 
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2

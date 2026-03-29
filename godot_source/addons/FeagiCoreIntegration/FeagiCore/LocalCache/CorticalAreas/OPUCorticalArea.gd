@@ -56,13 +56,21 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		return
 	super(data)
 
+	var nested_props: Dictionary = data["properties"] if ("properties" in data.keys() and data["properties"] is Dictionary) else {}
 	if "dev_count" in data.keys():
-		FEAGI_set_device_count(data["dev_count"])
+		FEAGI_set_device_count(int(data["dev_count"]))
+	elif nested_props.has("dev_count"):
+		FEAGI_set_device_count(int(nested_props["dev_count"]))
 	
 	var total: Vector3i = _safe_convert_to_vector3i(data.get("cortical_dimensions", dimensions_3D), "cortical_dimensions")
 	var per: Vector3i
+	var per_device_raw: Variant = null
 	if "cortical_dimensions_per_device" in data.keys():
-		per = _safe_convert_to_vector3i(data["cortical_dimensions_per_device"], "cortical_dimensions_per_device")
+		per_device_raw = data["cortical_dimensions_per_device"]
+	elif nested_props.has("cortical_dimensions_per_device"):
+		per_device_raw = nested_props["cortical_dimensions_per_device"]
+	if per_device_raw != null:
+		per = _safe_convert_to_vector3i(per_device_raw, "cortical_dimensions_per_device")
 		if total.x > 0 and total.y > 0 and total.z > 0 and _device_count > 0:
 			var dx: int = maxi(1, per.x)
 			var dy: int = maxi(1, per.y)

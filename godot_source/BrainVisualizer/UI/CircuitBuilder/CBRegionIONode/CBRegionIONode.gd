@@ -30,9 +30,7 @@ func setup(outside_object: GenomeObject, inside_object: GenomeObject, is_region_
 	_inside = inside_object
 	
 	_set_direction(is_region_input)
-	_outside_name_updated(outside_object.friendly_name)
 	_path_updated()
-	_set_icon(outside_object)
 	
 	outside_object.friendly_name_updated.connect(_outside_name_updated)
 	outside_object.parent_region_updated.connect(_path_updated)
@@ -51,8 +49,8 @@ func add_output_endpoint(_endpoint_prefab: PackedScene, port_style: CBLineEndpoi
 	_endpoint.setup(self, node_moved, port_style)
 	return _endpoint
 
-func _outside_name_updated(new_name: StringName) -> void:
-	_arrow.text = new_name
+func _outside_name_updated(_new_name: StringName) -> void:
+	_update_arrow_label()
 
 func _set_direction(is_input: bool) -> void:
 	_is_region_input = is_input
@@ -73,6 +71,8 @@ func _path_updated(_irrelevant1 = null, _irrelevant2 = null) -> void:
 	else:
 		_path_between_objects = FeagiCore.feagi_local_cache.brain_regions.get_total_path_between_objects(_inside, _outside)
 	_toggle_path_button(_path.button_pressed)
+	_update_arrow_label()
+	_set_icon()
 
 func _toggle_path_button(toggled_open: bool) -> void:
 	var text: String
@@ -86,13 +86,35 @@ func _toggle_path_button(toggled_open: bool) -> void:
 	size = Vector2(0,0)
 	# TODO line shenanigans
 
-func _set_icon(external_object: GenomeObject) -> void:
-	if !(external_object is AbstractCorticalArea):
+## When the chain endpoint is a [BrainRegion] (partial / region-boundary mappings), use the first cortical area on the path for the icon instead of unknown placeholders.
+func _resolve_cortical_for_icon() -> AbstractCorticalArea:
+	if _outside is AbstractCorticalArea:
+		return _outside as AbstractCorticalArea
+	for obj in _path_between_objects:
+		if obj is AbstractCorticalArea:
+			return obj as AbstractCorticalArea
+	if _inside is AbstractCorticalArea:
+		return _inside as AbstractCorticalArea
+	return null
+
+func _update_arrow_label() -> void:
+	if _outside == null:
+		return
+	# Avoid repeating the region name: path already shows /Region/Area; arrow should name the cortical peer when outside is a region.
+	if _outside is BrainRegion:
+		var cortical_label: AbstractCorticalArea = _resolve_cortical_for_icon()
+		if cortical_label != null:
+			_arrow.text = str(cortical_label.friendly_name)
+			return
+	_arrow.text = str(_outside.friendly_name)
+
+func _set_icon() -> void:
+	var area: AbstractCorticalArea = _resolve_cortical_for_icon()
+	if area == null:
 		if _is_region_input:
 			_icon.texture = load(ICON_UNKNOWN_INPUT)
 		else:
 			_icon.texture = load(ICON_UNKNOWN_OUTPUT)
 		return
-	
-	_icon.texture = UIManager.get_icon_texture_by_ID(external_object.genome_ID, _is_region_input)
-	
+	_icon.texture = UIManager.get_icon_texture_by_ID(area.cortical_ID, _is_region_input)
+

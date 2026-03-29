@@ -1808,9 +1808,12 @@ func _user_pressed_reset_button() -> void:
 	if not FeagiCore or not FeagiCore.requests:
 		print("UI: Cannot reset cortical areas - FeagiCore or requests not available")
 		return
-	
-	FeagiCore.requests.mass_reset_cortical_areas(_cortical_area_refs)
-	BV.NOTIF.add_notification("Reseting cortical areas...")
+	BV.NOTIF.add_notification("Resetting cortical areas...")
+	var result = await FeagiCore.requests.mass_reset_cortical_areas(_cortical_area_refs)
+	if result.has_errored:
+		BV.NOTIF.add_notification("Cortical reset failed")
+	else:
+		BV.NOTIF.add_notification("Cortical areas reset")
 	close_window()
 
 #endregion

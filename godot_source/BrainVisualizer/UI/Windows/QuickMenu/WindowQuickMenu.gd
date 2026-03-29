@@ -322,7 +322,7 @@ func _button_ipu_opu_config() -> void:
 	BV.WM.spawn_ipu_opu_config(focus_key, focus_section)
 	close_window()
 
-## Resets selected cortical areas to their default values.
+## Resets selected cortical areas' runtime neural state (via FEAGI PUT /v1/cortical_area/reset).
 func _button_reset() -> void:
 	if FeagiCore == null or FeagiCore.requests == null:
 		BV.NOTIF.add_notification("Reset unavailable: FEAGI is not ready")
@@ -333,8 +333,12 @@ func _button_reset() -> void:
 		BV.NOTIF.add_notification("No cortical areas selected to reset")
 		close_window()
 		return
-	FeagiCore.requests.mass_reset_cortical_areas(areas)
 	BV.NOTIF.add_notification("Resetting cortical areas...")
+	var result = await FeagiCore.requests.mass_reset_cortical_areas(areas)
+	if result.has_errored:
+		BV.NOTIF.add_notification("Cortical reset failed")
+	else:
+		BV.NOTIF.add_notification("Cortical areas reset")
 	close_window()
 
 func _button_open_3d_tab() -> void:

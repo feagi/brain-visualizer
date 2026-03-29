@@ -1240,7 +1240,7 @@ mouse_filter = 1
 text = "Cortical ID"
 
 [node name="Cortical_ID" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/DangerZone/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Row_Cortical_ID"]
-custom_minimum_size = Vector2(190, 0)
+custom_minimum_size = Vector2(244, 0)
 layout_mode = 2
 editable = false
 tooltip_text = "The internal ID of this cortical area. It includes the unit code (3-letter designation), coding flag, unit ID, and subunit ID."
