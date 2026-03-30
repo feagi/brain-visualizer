@@ -7,7 +7,7 @@ const INTER_BUTTON_GAP: float = 5.0
 
 
 ## Apply a consistent icon/label separation to list button content rows.
-static func apply_list_hbox_spacing(root: Node, list_hbox_paths: Array[NodePath], separation: int = INNER_CONTENT_SEPARATION) -> void:
+static func apply_list_hbox_spacing(root: Node, list_hbox_paths: Array, separation: int = INNER_CONTENT_SEPARATION) -> void:
 	for path in list_hbox_paths:
 		var hbox := root.get_node_or_null(path) as HBoxContainer
 		if hbox == null:
@@ -16,7 +16,7 @@ static func apply_list_hbox_spacing(root: Node, list_hbox_paths: Array[NodePath]
 
 
 ## Apply a consistent fixed width to spacer controls between combo buttons.
-static func apply_spacer_width(root: Node, spacer_paths: Array[NodePath], width: float = INTER_BUTTON_GAP) -> void:
+static func apply_spacer_width(root: Node, spacer_paths: Array, width: float = INTER_BUTTON_GAP) -> void:
 	for path in spacer_paths:
 		var spacer := root.get_node_or_null(path) as Control
 		if spacer == null:
