@@ -192,22 +192,7 @@ jobs:
           if [ -f "godot_source/BrainVisualizer/BVVersion.gd" ]; then
             # Update ONLY brain_visualizer_timestamp getter.
             # The old sed pattern also matched manual_version (zero-length digit match) and corrupted script syntax.
-            python3 - <<'PY'
-            import os
-            import re
-            from pathlib import Path
-            
-            timestamp = os.environ["TIMESTAMP"]
-            path = Path("godot_source/BrainVisualizer/BVVersion.gd")
-            text = path.read_text(encoding="utf-8")
-            
-            pattern = r"(static var brain_visualizer_timestamp:\s*int:\s*\n\s*get:\s*return\s*)\d+"
-            updated_text, count = re.subn(pattern, rf"\g<1>{timestamp}", text, count=1)
-            if count != 1:
-                raise SystemExit("Failed to update BVVersion.brain_visualizer_timestamp exactly once")
-            
-            path.write_text(updated_text, encoding="utf-8")
-            PY
+            python3 -c 'import os,re,pathlib; t=os.environ["TIMESTAMP"]; p=pathlib.Path("godot_source/BrainVisualizer/BVVersion.gd"); s=p.read_text(encoding="utf-8"); pat=r"(static var brain_visualizer_timestamp:\s*int:\s*\n\s*get:\s*return\s*)\d+"; ns,c=re.subn(pat, r"\g<1>"+t, s, count=1); (_ for _ in ()).throw(SystemExit("Failed to update BVVersion.brain_visualizer_timestamp exactly once")) if c!=1 else None; p.write_text(ns, encoding="utf-8")'
             echo "✅ Updated BVVersion.brain_visualizer_timestamp to: $TIMESTAMP"
             echo "File contents:"
             cat godot_source/BrainVisualizer/BVVersion.gd
