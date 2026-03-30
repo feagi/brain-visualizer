@@ -58,18 +58,18 @@ func _ready():
 
 ## Apply shared spacing tokens to keep top bar combo strips consistent with Circuit Builder.
 func _apply_shared_combo_spacing_tokens() -> void:
-	COMBO_STYLER.apply_list_hbox_spacing(self, [
-		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"),
-		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"),
-		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"),
-		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer")
-	])
-	COMBO_STYLER.apply_spacer_width(self, [
-		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddCircuits"),
-		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddInputs"),
-		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddOutputs"),
-		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/Spacer_AfterAddBrainAreas")
-	])
+	var list_hbox_paths := []
+	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer"))
+	COMBO_STYLER.apply_list_hbox_spacing(self, list_hbox_paths)
+	var spacer_paths := []
+	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddCircuits"))
+	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddInputs"))
+	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddOutputs"))
+	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/Spacer_AfterAddBrainAreas"))
+	COMBO_STYLER.apply_spacer_width(self, spacer_paths)
 
 
 ## Mount the shared combo implementation used across Circuit Builder and Brain Monitor.
@@ -312,7 +312,11 @@ func _sync_refresh_rate_background_style() -> void:
 		unified_style = _neuron_count.get_theme_stylebox(&"normal")
 	if unified_style == null:
 		return
-	for style_name in [&"normal", &"focus", &"read_only"]:
+	var style_names: Array[StringName] = []
+	style_names.append(&"normal")
+	style_names.append(&"focus")
+	style_names.append(&"read_only")
+	for style_name in style_names:
 		_refresh_rate_field.add_theme_stylebox_override(style_name, unified_style.duplicate())
 
 

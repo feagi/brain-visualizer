@@ -624,9 +624,9 @@ func _aabb_transformed_by_transform3d(aabb: AABB, xform: Transform3D) -> AABB:
 	var min_v := Vector3(INF, INF, INF)
 	var max_v := Vector3(-INF, -INF, -INF)
 
-	for ix in [0, 1]:
-		for iy in [0, 1]:
-			for iz in [0, 1]:
+	for ix in 2:
+		for iy in 2:
+			for iz in 2:
 				var corner := Vector3(
 					p.x + (s.x if ix == 1 else 0.0),
 					p.y + (s.y if iy == 1 else 0.0),

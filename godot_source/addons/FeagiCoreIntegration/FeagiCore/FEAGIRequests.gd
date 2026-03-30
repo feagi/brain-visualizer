@@ -2827,7 +2827,12 @@ func _extract_brain_regions_io_from_mapping_response(response: Dictionary) -> Di
 
 	# Case 4: { "source_region": {...}, "destination_region": {...} }
 	if response.has("source_region") or response.has("destination_region") or response.has("src_region") or response.has("dst_region"):
-		for key in ["source_region", "destination_region", "src_region", "dst_region"]:
+		var region_keys: Array[String] = []
+		region_keys.append("source_region")
+		region_keys.append("destination_region")
+		region_keys.append("src_region")
+		region_keys.append("dst_region")
+		for key in region_keys:
 			if response.has(key) and response[key] is Dictionary:
 				var rr: Dictionary = response[key]
 				var rid3 = rr.get("region_id", rr.get("id", null))
