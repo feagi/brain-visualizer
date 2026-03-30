@@ -140,9 +140,17 @@ func _apply_shared_combo_spacing_tokens() -> void:
 ## Remove per-group wrapper plates so all contexts read as one cohesive strip.
 func _flatten_group_wrapper_panels() -> void:
 	var empty_style := StyleBoxEmpty.new()
-	for panel in [_group_main, _group_interconnect, _group_memory, _group_rearrange]:
-		if panel != null:
-			panel.add_theme_stylebox_override("panel", empty_style)
+	var panels := []
+	if _group_main != null:
+		panels.append(_group_main)
+	if _group_interconnect != null:
+		panels.append(_group_interconnect)
+	if _group_memory != null:
+		panels.append(_group_memory)
+	if _group_rearrange != null:
+		panels.append(_group_rearrange)
+	for panel in panels:
+		panel.add_theme_stylebox_override("panel", empty_style)
 
 func _on_theme_changed(new_theme: Theme) -> void:
 	theme = new_theme
