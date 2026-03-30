@@ -190,13 +190,24 @@ jobs:
           
           # Update the correct BVVersion file (BrainVisualizer/BVVersion.gd)
           if [ -f "godot_source/BrainVisualizer/BVVersion.gd" ]; then
-            # macOS sed needs backup extension, Linux doesn't care
-            if [[ "${{ runner.os }}" == "macOS" ]]; then
-              sed -i.bak "s/get: return [0-9]*/get: return $TIMESTAMP/" godot_source/BrainVisualizer/BVVersion.gd
-              rm -f godot_source/BrainVisualizer/BVVersion.gd.bak
-            else
-              sed -i "s/get: return [0-9]*/get: return $TIMESTAMP/" godot_source/BrainVisualizer/BVVersion.gd
-            fi
+            # Update ONLY brain_visualizer_timestamp getter.
+            # The old sed pattern also matched manual_version (zero-length digit match) and corrupted script syntax.
+            python3 - <<'PY'
+            import os
+            import re
+            from pathlib import Path
+            
+            timestamp = os.environ["TIMESTAMP"]
+            path = Path("godot_source/BrainVisualizer/BVVersion.gd")
+            text = path.read_text(encoding="utf-8")
+            
+            pattern = r"(static var brain_visualizer_timestamp:\s*int:\s*\n\s*get:\s*return\s*)\d+"
+            updated_text, count = re.subn(pattern, rf"\g<1>{timestamp}", text, count=1)
+            if count != 1:
+                raise SystemExit("Failed to update BVVersion.brain_visualizer_timestamp exactly once")
+            
+            path.write_text(updated_text, encoding="utf-8")
+            PY
             echo "✅ Updated BVVersion.brain_visualizer_timestamp to: $TIMESTAMP"
             echo "File contents:"
             cat godot_source/BrainVisualizer/BVVersion.gd
@@ -210,6 +221,16 @@ jobs:
             echo "✅ Timestamp update verified"
           else
             echo "❌ ERROR: Timestamp update failed!"
+            exit 1
+          fi
+          
+          # Ensure manual_version getter stayed valid and quoted (guard against accidental script corruption).
+          if grep -Eq 'manual_version:\s*String:\s*$' godot_source/BrainVisualizer/BVVersion.gd && \
+             grep -Eq 'get:\s*return\s*"[0-9]+\.[0-9]+\.[0-9]+"' godot_source/BrainVisualizer/BVVersion.gd; then
+            echo "✅ manual_version format verified"
+          else
+            echo "❌ ERROR: manual_version getter format is invalid"
+            cat godot_source/BrainVisualizer/BVVersion.gd
             exit 1
           fi
 
