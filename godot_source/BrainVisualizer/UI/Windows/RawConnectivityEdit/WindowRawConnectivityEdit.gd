@@ -110,7 +110,7 @@ func _validate_patterns(data: Variant) -> Dictionary:
 		var pair_arr: Array = item
 		if pair_arr.size() != 2:
 			return {"ok": false, "error": "Element %d: expected [source,destination] pair, got %d elements" % [i, pair_arr.size()]}
-		for j in [0, 1]:
+		for j in 2:
 			var vec_raw = pair_arr[j]
 			if !(vec_raw is Array):
 				return {"ok": false, "error": "Element %d vector %d: expected [x,y,z], got %s" % [i, j, _type_name(vec_raw)]}

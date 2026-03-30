@@ -119,22 +119,22 @@ func _ready() -> void:
 
 ## Apply shared spacing tokens to keep all combo strips consistent across views.
 func _apply_shared_combo_spacing_tokens() -> void:
-	COMBO_STYLER.apply_list_hbox_spacing(self, [
-		NodePath("MainGroup/MarginContainer/ButtonsRow/BrainRegionsList/HBoxContainer"),
-		NodePath("MainGroup/MarginContainer/ButtonsRow/InputsList/HBoxContainer"),
-		NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsList/HBoxContainer"),
-		NodePath("InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList/HBoxContainer"),
-		NodePath("MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList/HBoxContainer")
-	])
-	COMBO_STYLER.apply_spacer_width(self, [
-		NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddCircuits"),
-		NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddInputs"),
-		NodePath("Spacer_AfterMainGroup"),
-		NodePath("Spacer_AfterInterconnectGroup"),
-		NodePath("Spacer_BeforeRearrange"),
-		NodePath("Spacer_AfterRearrange"),
-		NodePath("Spacer_BeforeMonitorTools")
-	])
+	var list_hbox_paths := []
+	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/BrainRegionsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList/HBoxContainer"))
+	COMBO_STYLER.apply_list_hbox_spacing(self, list_hbox_paths)
+	var spacer_paths := []
+	spacer_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddCircuits"))
+	spacer_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddInputs"))
+	spacer_paths.append(NodePath("Spacer_AfterMainGroup"))
+	spacer_paths.append(NodePath("Spacer_AfterInterconnectGroup"))
+	spacer_paths.append(NodePath("Spacer_BeforeRearrange"))
+	spacer_paths.append(NodePath("Spacer_AfterRearrange"))
+	spacer_paths.append(NodePath("Spacer_BeforeMonitorTools"))
+	COMBO_STYLER.apply_spacer_width(self, spacer_paths)
 
 
 ## Remove per-group wrapper plates so all contexts read as one cohesive strip.

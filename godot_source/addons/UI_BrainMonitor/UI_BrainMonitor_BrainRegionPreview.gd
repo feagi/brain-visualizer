@@ -254,8 +254,10 @@ func _create_visible_wireframe_placeholder_plate(plate_size: Vector3, plate_name
 	# Thickness of edge rods
 	var edge_thickness: float = 0.18
 	# 4 edges along X (front/back, top/bottom)
-	for y in [-half_y, half_y]:
-		for z in [-half_z, half_z]:
+	for y_index in 2:
+		var y: float = -half_y if y_index == 0 else half_y
+		for z_index in 2:
+			var z: float = -half_z if z_index == 0 else half_z
 			var rod_x = MeshInstance3D.new()
 			rod_x.name = "Edge_X_%s_%s" % [str(y), str(z)]
 			var bm_x = BoxMesh.new()
@@ -266,8 +268,10 @@ func _create_visible_wireframe_placeholder_plate(plate_size: Vector3, plate_name
 			rod_x.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			plate_mesh_instance.add_child(rod_x)
 	# 4 edges along Y (front/back, left/right)
-	for z in [-half_z, half_z]:
-		for x in [-half_x, half_x]:
+	for z_index in 2:
+		var z: float = -half_z if z_index == 0 else half_z
+		for x_index in 2:
+			var x: float = -half_x if x_index == 0 else half_x
 			var rod_y = MeshInstance3D.new()
 			rod_y.name = "Edge_Y_%s_%s" % [str(x), str(z)]
 			var bm_y = BoxMesh.new()
@@ -278,8 +282,10 @@ func _create_visible_wireframe_placeholder_plate(plate_size: Vector3, plate_name
 			rod_y.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			plate_mesh_instance.add_child(rod_y)
 	# 4 edges along Z (left/right, top/bottom)
-	for y in [-half_y, half_y]:
-		for x in [-half_x, half_x]:
+	for y_index in 2:
+		var y: float = -half_y if y_index == 0 else half_y
+		for x_index in 2:
+			var x: float = -half_x if x_index == 0 else half_x
 			var rod_z = MeshInstance3D.new()
 			rod_z.name = "Edge_Z_%s_%s" % [str(x), str(y)]
 			var bm_z = BoxMesh.new()
