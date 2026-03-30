@@ -18,6 +18,12 @@ func _ready() -> void:
 	_button_holder = $PanelContainer/BoxContainer
 	# Keep panel in-scene to preserve child-node paths used by parent controls.
 	# PopupPanel renders above normal controls when opened via popup().
+	# When reparented to the root viewport, the panel must carry BV.UI.loaded_theme so tooltips
+	# on dropdown items use the same TooltipLabel size as top-bar controls (FilterableListPopup pattern).
+	if BV.UI:
+		if not BV.UI.theme_changed.is_connected(_on_bv_theme_changed):
+			BV.UI.theme_changed.connect(_on_bv_theme_changed)
+		_apply_panel_theme()
 	_button_holder.vertical = is_vertical
 	_setup_all_buttons()
 	if select_on_press:
@@ -86,6 +92,17 @@ func _toggle_menu(show_menu: bool) -> void:
 		release_focus()
 
 
+## Root-reparented popups must use [member UIManager.loaded_theme] so tooltip labels match the rest of the UI.
+func _on_bv_theme_changed(_new_theme: Theme) -> void:
+	_apply_panel_theme()
+
+
+func _apply_panel_theme() -> void:
+	if _panel == null or BV.UI == null:
+		return
+	_panel.theme = BV.UI.loaded_theme
+
+
 ## Match [method FilterableListPopup._reparent_to_root_viewport].
 func _reparent_panel_to_root_viewport() -> void:
 	if _panel == null:
@@ -102,6 +119,7 @@ func _reparent_panel_to_root_viewport() -> void:
 	if p != null:
 		p.remove_child(_panel)
 	root_viewport.add_child(_panel)
+	_apply_panel_theme()
 
 
 ## Match [method FilterableListPopup._get_anchor_screen_position] for this trigger control.

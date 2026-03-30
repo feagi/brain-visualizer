@@ -282,9 +282,9 @@ func _toggle_global_neural_connections_for_scene(brain_monitor: UI_BrainMonitor_
 	var cortical_area_objects: Array = _find_all_cortical_area_objects_in_scene(brain_monitor)
 	for cortical_area_obj in cortical_area_objects:
 		if enabled:
-			cortical_area_obj.set_hover_over_volume_state(true, true)
+			cortical_area_obj.set_hover_over_volume_state(true)
 		else:
-			cortical_area_obj.set_hover_over_volume_state(false, false)
+			cortical_area_obj.set_hover_over_volume_state(false)
 
 
 func _find_all_cortical_area_objects_in_scene(root: Node) -> Array:

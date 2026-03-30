@@ -758,7 +758,7 @@ func bv_update_friendly_name_label_positions() -> void:
 	if _directpoints_renderer != null:
 		_directpoints_renderer.bv_update_friendly_name_label_position()
 
-func set_hover_over_volume_state(is_moused_over: bool, is_global_mode: bool = false) -> void:
+func set_hover_over_volume_state(is_moused_over: bool) -> void:
 	if is_moused_over == _is_volume_moused_over:
 		return
 	_is_volume_moused_over = is_moused_over
@@ -770,7 +770,7 @@ func set_hover_over_volume_state(is_moused_over: bool, is_global_mode: bool = fa
 	
 	# Show/hide neural connection curves on hover
 	if is_moused_over:
-		_show_neural_connections(is_global_mode)
+		_show_neural_connections()
 	else:
 		_hide_neural_connections()
 
@@ -846,7 +846,7 @@ func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: Abs
 		return UI_BrainMonitor_DDACorticalAreaRenderer.new()
 
 ## Show 3D curves connecting this cortical area to all its destinations
-func _show_neural_connections(is_global_mode: bool = false) -> void:
+func _show_neural_connections() -> void:
 	if _are_connections_visible:
 		return  # Already showing connections
 	
@@ -876,7 +876,7 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 			
 			if destination_position != Vector3.ZERO:  # Valid position found
 				var mapping_set: InterCorticalMappingSet = efferent_mappings[destination_area]
-				var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, mapping_set, is_global_mode)
+				var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, mapping_set)
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
@@ -891,7 +891,7 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 			
 			if source_area_position != Vector3.ZERO:  # Valid position found
 				var mapping_set: InterCorticalMappingSet = afferent_mappings[source_area]
-				var curve_node = _create_connection_curve(source_area_position, source_position, source_area.cortical_ID, mapping_set, is_global_mode)
+				var curve_node = _create_connection_curve(source_area_position, source_position, source_area.cortical_ID, mapping_set)
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
@@ -904,7 +904,7 @@ func _show_neural_connections(is_global_mode: bool = false) -> void:
 		for recursive_area: AbstractCorticalArea in recursive_mappings.keys():
 			# Create a self-looping curve
 			var mapping_set: InterCorticalMappingSet = recursive_mappings[recursive_area]
-			var loop_node = _create_recursive_loop(source_position, recursive_area.cortical_ID, mapping_set, is_global_mode)
+			var loop_node = _create_recursive_loop(source_position, recursive_area.cortical_ID, mapping_set)
 			_connection_curves.append(loop_node)
 			add_child(loop_node)
 			curves_created += 1
@@ -1005,7 +1005,6 @@ func create_voxel_level_synapse_visualization_curve(
 	end_world: Vector3,
 	line_id: StringName,
 	is_inhibitory: bool,
-	is_global_mode: bool,
 	min_arc_height: float = 0.0
 ) -> Node3D:
 	return _create_connection_curve_variant(
@@ -1017,14 +1016,13 @@ func create_voxel_level_synapse_visualization_curve(
 		false,
 		false,
 		false,
-		is_global_mode,
 		0.4,
 		true,
 		min_arc_height
 	)
 
 ## Create a 3D curve connecting two points
-func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
+func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_id: StringName, mapping_set: InterCorticalMappingSet) -> Node3D:
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
 	var is_reciprocal_plastic: bool = _mapping_has_reciprocal_plastic_pair(mapping_set)
 	var has_associative: bool = _mapping_set_has_associative_memory(mapping_set)
@@ -1048,14 +1046,14 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		mixed_node.name = "MIXED_" + plastic_prefix + connection_id
 		
 		# Slightly different bend multipliers for separation
-		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, is_global_mode, 0.43)
-		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, is_global_mode, 0.37)
+		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.43)
+		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.37)
 		mixed_node.add_child(excitatory_curve)
 		mixed_node.add_child(inhibitory_curve)
 		return mixed_node
 	
 	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
-	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, is_global_mode, 0.4)
+	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.4)
 
 ## Internal helper that creates a single visual arc for a connection.
 ## arc_height_multiplier controls the curve bend height relative to distance (e.g. 0.4 = 40% of distance).
@@ -1068,7 +1066,6 @@ func _create_connection_curve_variant(
 	use_electric_arc: bool,
 	apply_reciprocal_offset: bool,
 	has_associative_memory_mapping: bool,
-	is_global_mode: bool,
 	arc_height_multiplier: float,
 	include_pulse_animation: bool = true,
 	min_arc_height: float = 0.0
@@ -1121,7 +1118,6 @@ func _create_connection_curve_variant(
 			control_point,
 			ep,
 			is_inhibitory,
-			is_global_mode,
 			connection_id,
 			arc_anim_freq_scale
 		)
@@ -1151,7 +1147,7 @@ func _create_connection_curve_variant(
 		var desired_dash_spacing = 2.5  # Units between dashes
 		var num_dashes = max(4, int(curve_length / desired_dash_spacing))  # Minimum 4 dashes
 		
-		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
+		var dash_material = _create_plastic_animated_material(is_inhibitory)
 		
 		for i in range(num_dashes):
 			var t = float(i) / float(num_dashes - 1)  # 0 to 1 along curve
@@ -1206,7 +1202,7 @@ func _create_connection_curve_variant(
 	else:
 		# For non-plastic connections, use continuous segments
 		var num_segments = 12
-		var segment_material = _create_curve_material(is_inhibitory, is_global_mode)
+		var segment_material = _create_curve_material(is_inhibitory)
 		
 		for i in range(num_segments):
 			var t1 = float(i) / float(num_segments)
@@ -1434,7 +1430,6 @@ func _create_electric_arc_segments(
 	control_point: Vector3,
 	end_pos: Vector3,
 	is_inhibitory: bool,
-	is_global_mode: bool,
 	connection_id: StringName,
 	anim_freq_scale: float = 1.0
 ) -> Array[Vector3]:
@@ -1448,7 +1443,7 @@ func _create_electric_arc_segments(
 	var seed_offset = float(hash(String(connection_id))) * 0.001
 	var points = _build_electric_arc_points(start_pos, control_point, end_pos, t_values, seed_offset, jitter_strength, anim_freq_scale)
 	
-	var material = _create_electric_arc_material(is_inhibitory, is_global_mode)
+	var material = _create_electric_arc_material(is_inhibitory)
 	var segments: Array = []
 	for i in range(segment_count):
 		var segment = _create_curve_segment(points[i], points[i + 1], i, material)
@@ -1508,12 +1503,9 @@ func _electric_arc_offset(
 	return lateral + longitudinal
 
 ## Electric arc material for associative / reciprocal-plastic connections
-func _create_electric_arc_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
+func _create_electric_arc_material(is_inhibitory: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
-	if is_global_mode:
-		material.albedo_color = Color(0.6, 0.7, 0.9, 0.85)
-		material.emission = Color(0.4, 0.6, 0.9)
-	elif is_inhibitory:
+	if is_inhibitory:
 		material.albedo_color = Color(0.9, 0.4, 1.0, 0.9)
 		material.emission = Color(0.8, 0.3, 1.0)
 	else:
@@ -1626,14 +1618,10 @@ func _create_curve_segment(start_pos: Vector3, end_pos: Vector3, segment_index: 
 	return mesh_instance
 
 ## Create material for curve segments based on inhibitory/excitatory properties
-func _create_curve_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
+func _create_curve_material(is_inhibitory: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
 	
-	if is_global_mode:
-		# Global mode - Gray color for all connections
-		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
-		material.emission = Color(0.5, 0.5, 0.5)     # Gray emission
-	elif is_inhibitory:
+	if is_inhibitory:
 		# Inhibitory connections - Red color
 		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
 		material.emission = Color(0.8, 0.1, 0.1)
@@ -1742,7 +1730,7 @@ func _create_pulse_animation(
 		pulse_tween.tween_interval(0.3)
 
 ## Create a recursive (self-looping) connection
-func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet, is_global_mode: bool = false) -> Node3D:
+func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet) -> Node3D:
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
 	
 	# If inhibitory and excitatory coexist in the recursive mapping set, render two loops
@@ -1759,14 +1747,14 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 		mixed_loop.name = "MIXED_RECURS_" + plastic_prefix + area_id
 		
 		var loop_height_separation := 0.6  # Small vertical separation between E/I loops
-		var excitatory_loop = _create_recursive_loop_variant(center_pos, area_id, false, is_plastic, is_global_mode, loop_height_separation)
-		var inhibitory_loop = _create_recursive_loop_variant(center_pos, area_id, true, is_plastic, is_global_mode, -loop_height_separation)
+		var excitatory_loop = _create_recursive_loop_variant(center_pos, area_id, false, is_plastic, loop_height_separation)
+		var inhibitory_loop = _create_recursive_loop_variant(center_pos, area_id, true, is_plastic, -loop_height_separation)
 		mixed_loop.add_child(excitatory_loop)
 		mixed_loop.add_child(inhibitory_loop)
 		return mixed_loop
 	
 	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
-	return _create_recursive_loop_variant(center_pos, area_id, is_inhibitory, is_plastic, is_global_mode, 0.0)
+	return _create_recursive_loop_variant(center_pos, area_id, is_inhibitory, is_plastic, 0.0)
 
 ## Internal helper that creates a single recursive loop visual.
 ## loop_height_offset vertically shifts the loop relative to its default loop height.
@@ -1776,7 +1764,6 @@ func _create_recursive_loop_variant(
 	area_id: StringName,
 	is_inhibitory: bool,
 	is_plastic: bool,
-	is_global_mode: bool,
 	loop_height_offset: float,
 	loop_radius_param: float = 3.0,
 	loop_height_base_param: float = 2.0,
@@ -1812,7 +1799,7 @@ func _create_recursive_loop_variant(
 		var desired_dash_spacing = 2.0  # Units between dashes for loops
 		var num_dashes = max(6, int(loop_circumference / desired_dash_spacing))  # Minimum 6 dashes
 		
-		var dash_material = _create_plastic_animated_material(is_inhibitory, is_global_mode)
+		var dash_material = _create_plastic_animated_material(is_inhibitory)
 		
 		for i in range(num_dashes):
 			var angle = (float(i) / float(num_dashes)) * TAU
@@ -1866,7 +1853,7 @@ func _create_recursive_loop_variant(
 		_add_circular_dash_wave_animation(loop_node, center_pos, loop_radius)
 	else:
 		# For non-plastic recursive connections, use continuous segments
-		var loop_material = _create_recursive_material(is_inhibitory, is_global_mode)
+		var loop_material = _create_recursive_material(is_inhibitory)
 		
 		for i in range(num_segments):
 			var point1 = loop_points[i]
@@ -1882,14 +1869,10 @@ func _create_recursive_loop_variant(
 	return loop_node
 
 ## Create material for recursive connections based on inhibitory/excitatory properties
-func _create_recursive_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
+func _create_recursive_material(is_inhibitory: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
 	
-	if is_global_mode:
-		# Global mode - Gray color for recursive connections
-		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)  # Light gray
-		material.emission = Color(0.5, 0.5, 0.5)     # Gray emission
-	elif is_inhibitory:
+	if is_inhibitory:
 		# Inhibitory recursive connections - Red
 		# Keep consistent with non-recursive inhibitory connections.
 		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
@@ -2092,15 +2075,11 @@ func _add_wobble_to_point(point: Vector3, t: float) -> Vector3:
 	return point + total_wobble
 
 ## Create animated material for plastic connections with pulsing effects
-func _create_plastic_animated_material(is_inhibitory: bool = false, is_global_mode: bool = false) -> StandardMaterial3D:
+func _create_plastic_animated_material(is_inhibitory: bool = false) -> StandardMaterial3D:
 	"""Create a dynamic, pulsing material for plastic connections with enhanced visual effects"""
 	var material = StandardMaterial3D.new()
 	
-	if is_global_mode:
-		# Global mode - Gray color for all connections
-		material.albedo_color = Color(0.7, 0.7, 0.7, 0.8)
-		material.emission = Color(0.5, 0.5, 0.5)
-	elif is_inhibitory:
+	if is_inhibitory:
 		# Inhibitory plastic connections - Enhanced red with stronger base emission
 		material.albedo_color = Color(1.0, 0.3, 0.3, 0.95)  # More opaque for visibility
 		material.emission = Color(1.0, 0.2, 0.2)  # Brighter emission

@@ -3983,7 +3983,7 @@ func _add_one_voxel_synapse_line(
 	var dir_tag: String = "out" if is_outgoing else "in"
 	var line_id: StringName = StringName("VS_%d_%s" % [line_idx, dir_tag])
 	# Same Bezier arc for intra-area (recursive) and inter-area: voxel center to voxel center.
-	var curve: Node3D = query_viz.create_voxel_level_synapse_visualization_curve(start_p, end_p, line_id, is_inhibitory, false, 0.0)
+	var curve: Node3D = query_viz.create_voxel_level_synapse_visualization_curve(start_p, end_p, line_id, is_inhibitory, 0.0)
 	curve.top_level = true
 	parent_3d.add_child(curve)
 	_voxel_synapse_curve_nodes.append(curve)
