@@ -260,8 +260,10 @@ func _toggle_global_neural_connections(enabled: bool) -> void:
 func _find_brain_monitor_scene() -> Node:
 	# Try to find the brain monitor scene in the scene tree
 	# Look for UI_BrainMonitor_3DScene or similar
-	var root = get_tree().root
-	return _recursive_find_node_by_class(root, "UI_BrainMonitor_3DScene")
+	var tree := get_tree()
+	if tree == null or tree.root == null:
+		return null
+	return _recursive_find_node_by_class(tree.root, "UI_BrainMonitor_3DScene")
 
 func _recursive_find_node_by_class(node: Node, target_class_name: String) -> Node:
 	# Check if current node matches
