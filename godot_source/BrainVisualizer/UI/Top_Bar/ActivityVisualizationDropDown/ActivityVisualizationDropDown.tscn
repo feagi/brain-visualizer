@@ -1,11 +1,15 @@
-[gd_scene load_steps=15 format=3 uid="uid://cm2activityvizdd1"]
+[gd_scene load_steps=19 format=3 uid="uid://cm2activityvizdd1"]
 
 [ext_resource type="PackedScene" uid="uid://mwx2wythpo1l" path="res://BrainVisualizer/UI/GenericElements/DropDown/ToggleImageDropDown/ToggleImageDropDown.tscn" id="1_toggle_dd"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.gd" id="2_script"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="3_eye_s"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="4_eye_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="5_eye_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_D.png" id="6_eye_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/inspectors_S.jpg" id="15_insp_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/inspectors_C.jpg" id="16_insp_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/inspectors_H.jpg" id="17_insp_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/inspectors_D.jpg" id="18_insp_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/connection_inspector_S.jpg" id="3_eye_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/connection_inspector_C.jpg" id="4_eye_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/connection_inspector_H.jpg" id="5_eye_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/connection_inspector_D.jpg" id="6_eye_d"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/voxel_inspector_S.jpg" id="7_voxel_s"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/voxel_inspector_C.jpg" id="8_voxel_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/voxel_inspector_H.jpg" id="9_voxel_h"]
@@ -24,11 +28,15 @@ theme_type_variation = &"TextureButton_TopBar"
 initial_index = -1
 select_on_press = false
 tooltip_text = "Inspectors"
+texture_normal = ExtResource("15_insp_s")
+texture_pressed = ExtResource("16_insp_c")
+texture_hover = ExtResource("17_insp_h")
+texture_disabled = ExtResource("18_insp_d")
 
 [node name="GlobalNeuralConnections" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]
 layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
-tooltip_text = "Connection overlay"
+tooltip_text = "Connection inspector"
 texture_normal = ExtResource("3_eye_s")
 texture_pressed = ExtResource("4_eye_c")
 texture_hover = ExtResource("5_eye_h")

@@ -247,10 +247,10 @@ func _toggle_global_neural_connections(enabled: bool) -> void:
 	for cortical_area_obj in cortical_area_objects:
 		if enabled:
 			# Show connections (simulate hover) with global mode
-			cortical_area_obj.set_hover_over_volume_state(true, true)  # true for hover, true for global mode
+			cortical_area_obj.set_hover_over_volume_state(true)
 		else:
 			# Hide connections (simulate unhover)
-			cortical_area_obj.set_hover_over_volume_state(false, false)  # false for hover, false for global mode
+			cortical_area_obj.set_hover_over_volume_state(false)
 	
 	if enabled:
 		print("🔗 ✅ Global neural connections ENABLED for ", cortical_area_objects.size(), " areas")

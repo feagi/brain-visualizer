@@ -16,13 +16,8 @@ const ACTION_MEMORY_INSPECTOR: StringName = &"memory_inspector"
 var _global_connections_enabled: bool = false
 
 func _ready() -> void:
-	# Fixed trigger icon: keep global-neural-connections icon on the dropdown button.
-	if _global_button != null and _dropdown != null:
-		_dropdown.texture_normal = _global_button.texture_normal
-		_dropdown.texture_pressed = _global_button.texture_pressed
-		_dropdown.texture_hover = _global_button.texture_hover
-		_dropdown.texture_disabled = _global_button.texture_disabled
-		# Make this entry a true push button in the menu (latched visual state).
+	# Trigger uses inspectors_*.jpg from scene; submenu row 0 keeps connection_inspector_*.
+	if _global_button != null:
 		_global_button.toggle_mode = true
 	_refresh_global_button_visual_state()
 
