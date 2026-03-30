@@ -90,7 +90,12 @@ func _toggle_menu(show_menu: bool) -> void:
 func _reparent_panel_to_root_viewport() -> void:
 	if _panel == null:
 		return
-	var root_viewport := get_tree().root
+	var tree := get_tree()
+	if tree == null:
+		return
+	var root_viewport := tree.root
+	if root_viewport == null:
+		return
 	if _panel.get_parent() == root_viewport:
 		return
 	var p := _panel.get_parent()
@@ -103,6 +108,8 @@ func _reparent_panel_to_root_viewport() -> void:
 func _get_anchor_screen_position() -> Vector2:
 	var anchor_pos := get_global_position()
 	var anchor_viewport := get_viewport()
+	if anchor_viewport == null:
+		return anchor_pos
 	if anchor_viewport is SubViewport:
 		var container := anchor_viewport.get_parent()
 		if container is SubViewportContainer:
