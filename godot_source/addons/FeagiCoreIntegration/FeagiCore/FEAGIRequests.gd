@@ -1027,6 +1027,65 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	FeagiCore.feagi_local_cache.brain_regions.FEAGI_edit_region(brain_region, region_name, region_description, parent_region, coords_2D, coords_3D)
 	return FEAGI_response_data
 
+## PUT designated_inputs / designated_outputs for a brain region (matches FEAGI region IO policy).
+func update_region_designated_io(parent_region: BrainRegion, cortical_id: StringName, new_preset: StringName) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
+
+	var inputs: Array[StringName] = []
+	var outputs: Array[StringName] = []
+	for x in parent_region.designated_inputs:
+		inputs.append(x)
+	for x in parent_region.designated_outputs:
+		outputs.append(x)
+
+	var id_cmp := String(cortical_id)
+	var filtered_in: Array[StringName] = []
+	for x in inputs:
+		if String(x) != id_cmp:
+			filtered_in.append(x)
+	inputs = filtered_in
+	var filtered_out: Array[StringName] = []
+	for x in outputs:
+		if String(x) != id_cmp:
+			filtered_out.append(x)
+	outputs = filtered_out
+
+	var preset_str := String(new_preset)
+	if preset_str == "Input":
+		inputs.append(cortical_id)
+	elif preset_str == "Output":
+		outputs.append(cortical_id)
+
+	var payload_in: Array = []
+	for x in inputs:
+		payload_in.append(String(x))
+	var payload_out: Array = []
+	for x in outputs:
+		payload_out.append(String(x))
+
+	var dict_to_send: Dictionary = {
+		"region_id": parent_region.region_ID,
+		"designated_inputs": payload_in,
+		"designated_outputs": payload_out,
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_region_region, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		return FEAGI_response_data
+	parent_region.FEAGI_set_designated_io(payload_in, payload_out)
+	var regions_out: FeagiRequestOutput = await get_regions_summary()
+	if not regions_out.has_errored and regions_out.success:
+		var summary_dict: Dictionary = regions_out.decode_response_as_dict()
+		if FeagiCore.feagi_local_cache.brain_regions.summary_has_root_region(summary_dict):
+			FeagiCore.feagi_local_cache.refresh_partial_mappings_from_regions_summary_dict(summary_dict)
+	call_deferred("_refresh_region_visualization", parent_region.region_ID)
+	return FEAGI_response_data
+
 func move_objects_to_region(target_region: BrainRegion, objects_to_move: Array[GenomeObject]) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
@@ -2565,6 +2624,131 @@ func delete_morphology(morphology: BaseMorphology) -> FeagiRequestOutput:
 
 #region Connections
 
+func _cortical_id_in_stringname_list(cortical_id: StringName, ids: Array[StringName]) -> bool:
+	for x in ids:
+		if x == cortical_id:
+			return true
+	return false
+
+
+## When mapping crosses regions, designated IO can contradict topology (e.g. Output + external afferent).
+## Returns empty dict if no conflict, else keys: kind, region, cortical_id, new_preset.
+func _detect_designation_conflict_for_new_mapping(
+	src: AbstractCorticalArea,
+	dst: AbstractCorticalArea,
+) -> Dictionary:
+	var sr: BrainRegion = src.current_parent_region
+	var dr: BrainRegion = dst.current_parent_region
+	if sr == null or dr == null:
+		return {}
+	if sr.region_ID == dr.region_ID:
+		return {}
+	if _cortical_id_in_stringname_list(dst.cortical_ID, dr.designated_outputs):
+		return {
+			"kind": "output_to_input",
+			"region": dr,
+			"cortical_id": dst.cortical_ID,
+			"new_preset": &"Input",
+		}
+	if _cortical_id_in_stringname_list(src.cortical_ID, sr.designated_inputs):
+		return {
+			"kind": "input_to_output",
+			"region": sr,
+			"cortical_id": src.cortical_ID,
+			"new_preset": &"Output",
+		}
+	return {}
+
+
+func _await_designation_switch_confirmation(
+	kind: String,
+	src: AbstractCorticalArea,
+	dst: AbstractCorticalArea,
+) -> bool:
+	var title := &"IO designation conflict"
+	var msg: String
+	var accept_label: String
+	if kind == "output_to_input":
+		msg = "%s is designated as Output for region \"%s\". This connection adds an input from another region, which conflicts with Output. Switch designation to Input and create the mapping?" % [
+			String(dst.friendly_name),
+			String(dst.current_parent_region.friendly_name),
+		]
+		accept_label = "Switch to Input"
+	else:
+		msg = "%s is designated as Input for region \"%s\". This connection sends output to another region, which conflicts with Input. Switch designation to Output and create the mapping?" % [
+			String(src.friendly_name),
+			String(src.current_parent_region.friendly_name),
+		]
+		accept_label = "Switch to Output"
+	var done := false
+	var accepted := false
+	var on_accept := func() -> void:
+		accepted = true
+		done = true
+	var on_cancel := func() -> void:
+		accepted = false
+		done = true
+	var b_ok: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_action_button(
+		on_accept,
+		StringName(accept_label),
+	)
+	var b_cancel: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_action_button(
+		on_cancel,
+		&"Cancel",
+	)
+	var def := ConfigurablePopupDefinition.new(
+		title,
+		StringName(msg),
+		[b_cancel, b_ok],
+	)
+	var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(def)
+	popup_window.set_enter_confirms_button(accept_label)
+	popup_window.call_deferred("focus_button_with_text", accept_label)
+	while not done:
+		await Engine.get_main_loop().process_frame
+	return accepted
+
+
+## When the server rejects a cross-region mapping (cache missed pre-check or other client), show a clear popup.
+func _show_region_io_policy_mapping_failure_popup_if_needed(
+	output: FeagiRequestOutput,
+	source_area: AbstractCorticalArea,
+	destination_area: AbstractCorticalArea,
+) -> void:
+	if not output.has_errored:
+		return
+	var parts: PackedStringArray = output.decode_response_as_generic_error_code()
+	var msg: String = parts[1] if parts.size() > 1 else ""
+	if msg == "" or msg == "UNDECODABLE":
+		msg = output.decode_response_as_string()
+	var mlow: String = msg.to_lower()
+	if "destination area is designated as a region output" in mlow:
+		var body: String = (
+			"Cannot create this mapping: \"%s\" is designated as a region output, so it cannot receive connections from outside its brain region. "
+			+ "Change its IO preset to Input, or remove it from designated outputs, before adding an external input."
+		) % destination_area.friendly_name
+		BV.WM.spawn_popup(
+			ConfigurablePopupDefinition.create_single_button_close_popup(
+				&"Mapping blocked",
+				StringName(body),
+				&"OK",
+			)
+		)
+		return
+	if "source area is designated as a region input" in mlow:
+		var body_in: String = (
+			"Cannot create this mapping: \"%s\" is designated as a region input, so it cannot send connections outside its brain region. "
+			+ "Change its IO preset to Output, or remove it from designated inputs, before adding an external output."
+		) % source_area.friendly_name
+		BV.WM.spawn_popup(
+			ConfigurablePopupDefinition.create_single_button_close_popup(
+				&"Mapping blocked",
+				StringName(body_in),
+				&"OK",
+			)
+		)
+
+
 ## Get mappings between 2 cortical areas. Can also be used to get mappings froma  cortical area to itself
 func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, destination_cortical_ID: StringName) -> FeagiRequestOutput:
 	# Requirement checking
@@ -2606,7 +2790,7 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	var response: Array = FEAGI_response_data.decode_response_as_array()
 	var source_area: AbstractCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
 	var destination_area: AbstractCorticalArea =  FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
-	var raw_dicts: Array[Dictionary] = []
+	var raw_dicts: Array = []
 	raw_dicts.assign(response)
 	
 	print("FEAGI REQUEST: Successfully retrieved mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
@@ -2638,7 +2822,7 @@ func _get_self_mappings_from_summary(cortical_id: StringName) -> FeagiRequestOut
 		print("FEAGI REQUEST: Mapping summary did not include %s; leaving cache unchanged" % cortical_id)
 		return mapping_summary
 	var targets: Dictionary = mapping_dict[cortical_id]
-	var mapping_dictionaries: Array[Dictionary] = []
+	var mapping_dictionaries: Array = []
 	if targets.has(cortical_id):
 		mapping_dictionaries.assign(targets[cortical_id])
 	var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_id]
@@ -2661,6 +2845,25 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	if !destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 		push_error("FEAGI Requests: Unable to get mappings toward uncached cortical area %s that is not found in cache!" % destination_cortical_ID)
 		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
+
+	# Cross-region mapping vs declared IO: confirm before PUT (BV). Skip when removing all mappings.
+	if mappings.size() > 0:
+		var conflict: Dictionary = _detect_designation_conflict_for_new_mapping(source_area, destination_area)
+		if conflict.has("kind") and String(conflict["kind"]) != "":
+			var kind_str: String = String(conflict["kind"])
+			var confirmed: bool = await _await_designation_switch_confirmation(
+				kind_str,
+				source_area,
+				destination_area,
+			)
+			if not confirmed:
+				return FeagiRequestOutput.requirement_fail(&"USER_CANCELLED_DESIGNATION")
+			var region: BrainRegion = conflict["region"]
+			var cid: StringName = conflict["cortical_id"]
+			var new_preset: StringName = conflict["new_preset"]
+			var io_out: FeagiRequestOutput = await update_region_designated_io(region, cid, new_preset)
+			if io_out.has_errored or not io_out.success or io_out.failed_requirement:
+				return io_out
 	
 	# Define Request
 	var mapping_payload: Array[Dictionary] = SingleMappingDefinition.to_FEAGI_JSON_array(mappings)
@@ -2688,6 +2891,11 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		_show_region_io_policy_mapping_failure_popup_if_needed(
+			FEAGI_response_data,
+			source_area,
+			destination_area,
+		)
 		push_error("FEAGI Requests: Unable to set mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 		return FEAGI_response_data
 	# Unlikely not, but checking to make sure cortical areas still exist

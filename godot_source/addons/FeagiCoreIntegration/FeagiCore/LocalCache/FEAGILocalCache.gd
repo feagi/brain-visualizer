@@ -1380,6 +1380,10 @@ func _clear_region_partial_mappings(region: BrainRegion) -> void:
 		# Trigger the removal signal and cleanup
 		mapping.mappings_about_to_be_deleted.emit(mapping)
 
+## Rebuild IO partial mappings from a fresh `regions_members`-style summary (e.g. after designated IO preset change).
+func refresh_partial_mappings_from_regions_summary_dict(region_summary_data: Dictionary) -> void:
+	_refresh_partial_mappings_from_summary(region_summary_data)
+
 ## Rebuild partial mappings from region summary data (clears existing mappings first).
 func _refresh_partial_mappings_from_summary(region_summary_data: Dictionary) -> void:
 	var region_count: int = 0

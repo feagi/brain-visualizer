@@ -23,6 +23,9 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 	
 	# Cache root region ID for O(1) lookup (check API data directly)
 	_cache_root_region_id_from_api_data(region_summary_data)
+
+	for region_ID: StringName in region_summary_data.keys():
+		_apply_designated_io_from_summary(region_summary_data[region_ID], _available_brain_regions[region_ID])
 	
 	var cortical_area_mapping: Dictionary = {}
 	# Second pass is to link all child region to a given parent region, and to calculate mappings for cortical IDs to their correct parent region
@@ -57,6 +60,15 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 	
 	
 	return cortical_area_mapping
+
+func _apply_designated_io_from_summary(region_data: Dictionary, region: BrainRegion) -> void:
+	var di: Array = []
+	var dout: Array = []
+	if region_data.has("designated_inputs"):
+		di.assign(region_data["designated_inputs"])
+	if region_data.has("designated_outputs"):
+		dout.assign(region_data["designated_outputs"])
+	region.FEAGI_set_designated_io(di, dout)
 
 func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> void:
 	var region_dict: Dictionary
@@ -122,6 +134,8 @@ func FEAGI_apply_region_summary_diff(region_summary_data: Dictionary) -> Diction
 			region.FEAGI_change_coordinates_2D(FEAGIUtils.array_to_vector2i(region_data["coordinate_2d"]))
 		if region_data.has("coordinate_3d"):
 			region.FEAGI_change_coordinates_3D(FEAGIUtils.array_to_vector3i(region_data["coordinate_3d"]))
+
+		_apply_designated_io_from_summary(region_data, region)
 
 		var parent_id = region_data.get("parent_region_id")
 		if parent_id != null:

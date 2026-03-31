@@ -38,6 +38,8 @@ var _isvi_all_segments: Array[AbstractCorticalArea] = []
 var _isvi_segment_previews: Dictionary = {}  # Maps subunit_id to preview object
 var _isvi_original_z_values: Dictionary = {}  # Maps subunit_id to original z coordinate (captured at detection)
 var _isvi_would_overflow: bool = false  # True if current resize would exceed NPU capacity
+## Suppress IO preset dropdown signal while programmatically refreshing selection.
+var _io_preset_refresh_silent: bool = false
 
 
 func _ready():
@@ -1182,6 +1184,7 @@ func _init_summary() -> void:
 	# Create IPU/OPU-specific decoded ID info section (if applicable)
 	_init_ipu_opu_decoded_info()
 	_init_io_preset_dropdown()
+	_connect_io_preset_signals()
 	
 	# Detect and setup isvi segment management
 	_detect_and_setup_isvi_segment()
@@ -1385,14 +1388,71 @@ func _init_io_preset_dropdown() -> void:
 		print("IO PRESET DEBUG: dropdown node missing in init")
 		return
 	_reset_io_preset_items()
-	_dropdown_io_preset.disabled = true
-	# Force a valid selection so the dropdown renders text.
+	# Force a valid selection so the dropdown renders text; enabled state comes from _refresh_io_preset.
 	_select_io_preset(IO_PRESET_INTERCONNECT)
-	print("IO PRESET DEBUG: init items=%d selected=%d text='%s'" % [
-		_dropdown_io_preset.item_count,
-		_dropdown_io_preset.selected,
-		_dropdown_io_preset.text
-	])
+
+
+func _connect_io_preset_signals() -> void:
+	if _dropdown_io_preset == null:
+		return
+	if _dropdown_io_preset is DropDown:
+		var dd: DropDown = _dropdown_io_preset
+		if not dd.option_changed.is_connected(_on_io_preset_option_changed):
+			dd.option_changed.connect(_on_io_preset_option_changed)
+	else:
+		if not _dropdown_io_preset.item_selected.is_connected(_on_io_preset_item_selected_index):
+			_dropdown_io_preset.item_selected.connect(_on_io_preset_item_selected_index)
+
+
+func _on_io_preset_item_selected_index(index: int) -> void:
+	if _io_preset_refresh_silent:
+		return
+	if index < 0:
+		return
+	await _on_io_preset_user_picked(StringName(_dropdown_io_preset.get_item_text(index)))
+
+
+func _on_io_preset_option_changed(_index: int, option: StringName) -> void:
+	if _io_preset_refresh_silent:
+		return
+	await _on_io_preset_user_picked(option)
+
+
+func _on_io_preset_user_picked(option: StringName) -> void:
+	if len(_cortical_area_refs) != 1:
+		return
+	var preset_data: Dictionary = _derive_io_preset_for_area(_cortical_area_refs[0])
+	if preset_data.get("locked", true):
+		return
+	if option == IO_PRESET_CONFLICT or option == IO_PRESET_MULTI:
+		return
+	await _apply_io_preset_to_feagi(option)
+
+
+func _apply_io_preset_to_feagi(option: StringName) -> void:
+	if not FeagiCore or not FeagiCore.requests:
+		return
+	var area: AbstractCorticalArea = _cortical_area_refs[0]
+	var parent: BrainRegion = area.current_parent_region
+	if parent == null:
+		return
+	var result: FeagiRequestOutput = await FeagiCore.requests.update_region_designated_io(parent, area.cortical_ID, option)
+	if result.has_errored:
+		var err_text := "IO preset update failed."
+		var d: Dictionary = result.decode_response_as_dict()
+		if d.has("message"):
+			err_text = str(d["message"])
+		elif result.response_code == 409:
+			err_text = "Conflict with current connectivity or designation (HTTP 409)."
+		BV.NOTIF.add_notification(err_text, NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+		_io_preset_refresh_silent = true
+		_refresh_io_preset()
+		_io_preset_refresh_silent = false
+		return
+	BV.NOTIF.add_notification("IO preset updated.", NotificationSystemNotification.NOTIFICATION_TYPE.INFO)
+	_io_preset_refresh_silent = true
+	_refresh_io_preset()
+	_io_preset_refresh_silent = false
 
 
 func _reset_io_preset_items() -> void:
@@ -1482,6 +1542,13 @@ func _refresh_io_preset() -> void:
 		])
 
 
+func _cortical_id_in_named_list(cortical_id: StringName, ids: Array[StringName]) -> bool:
+	for x in ids:
+		if x == cortical_id:
+			return true
+	return false
+
+
 func _derive_io_preset_for_area(area: AbstractCorticalArea) -> Dictionary:
 	var result := {
 		"preset": IO_PRESET_INTERCONNECT,
@@ -1501,20 +1568,34 @@ func _derive_io_preset_for_area(area: AbstractCorticalArea) -> Dictionary:
 			result["preset"] = core_preset
 		return result
 
-	var parent_region = area.current_parent_region
+	var parent_region: BrainRegion = area.current_parent_region
 	if parent_region == null:
 		return result
 
-	var is_input = _is_region_input_area(parent_region, area)
-	var is_output = _is_region_output_area(parent_region, area)
-	if is_input and is_output:
+	var cid: StringName = area.cortical_ID
+	var d_in: bool = _cortical_id_in_named_list(cid, parent_region.designated_inputs)
+	var d_out: bool = _cortical_id_in_named_list(cid, parent_region.designated_outputs)
+	var o_in: bool = _is_region_input_area(parent_region, area)
+	var o_out: bool = _is_region_output_area(parent_region, area)
+
+	if d_in and d_out:
 		result["preset"] = IO_PRESET_CONFLICT
-	elif is_input:
+		return result
+	if o_in and o_out:
+		result["preset"] = IO_PRESET_CONFLICT
+		return result
+	if (d_in or o_in) and (d_out or o_out):
+		result["preset"] = IO_PRESET_CONFLICT
+		return result
+
+	if d_in or o_in:
 		result["preset"] = IO_PRESET_INPUT
-	elif is_output:
+	elif d_out or o_out:
 		result["preset"] = IO_PRESET_OUTPUT
 	else:
 		result["preset"] = IO_PRESET_INTERCONNECT
+
+	result["locked"] = false
 	return result
 
 

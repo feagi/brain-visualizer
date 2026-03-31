@@ -108,8 +108,15 @@ func _user_pressed_set_mappings() -> void:
 		mappings = _generic_mapping_settings.export_mappings()
 	else: # assume memory
 		mappings = _memory_mapping_setting.export_mappings()
-	FeagiCore.requests.set_mappings_between_corticals((_source_button.current_selected as AbstractCorticalArea), (_destination_button.current_selected as AbstractCorticalArea), mappings)
-	close_window()
+	var out: FeagiRequestOutput = await FeagiCore.requests.set_mappings_between_corticals(
+		_source_button.current_selected as AbstractCorticalArea,
+		_destination_button.current_selected as AbstractCorticalArea,
+		mappings,
+	)
+	if out.failed_requirement and out.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+		return
+	if out.success:
+		close_window()
 
 
 func _source_button_picked(genome_object: GenomeObject) -> void:

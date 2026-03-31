@@ -794,20 +794,31 @@ func _auto_frame_camera_to_objects() -> void:
 	# Ensure transforms are current
 	await get_tree().process_frame
 	await get_tree().process_frame
-	# Prefer tight bounds from cortical area data (ignores huge placeholder frames)
-	var aabb := _compute_cortical_data_aabb()
+	# Primary: world-space bounds of cortical meshes and brain region plates ([_compute_scene_aabb]).
+	# FEAGI cache coords ([_compute_cortical_data_aabb]) reflect genome/load positions and miss
+	# on-plate layout; using them first made R reset look like "before regions" or wrong zoom.
+	var aabb := _compute_scene_aabb()
 	# Always include any active previews so framing contains in-progress placements
 	var previews_aabb := _compute_previews_aabb()
 	if previews_aabb.size != Vector3.ZERO or !previews_aabb.position.is_equal_approx(Vector3.ZERO):
 		aabb = previews_aabb if aabb.size == Vector3.ZERO else aabb.merge(previews_aabb)
 	if aabb.size == Vector3.ZERO:
-		# Fallback to visual bounds
-		aabb = _compute_scene_aabb()
-	# Retry a few frames until bounds become valid
+		# Meshes not ready yet: combine FEAGI-derived cortical bounds with region frame world AABBs
+		var cortical_aabb := _compute_cortical_data_aabb()
+		var regions_aabb := _compute_brain_region_frames_aabb()
+		if cortical_aabb.size != Vector3.ZERO or !cortical_aabb.position.is_equal_approx(Vector3.ZERO):
+			aabb = cortical_aabb
+		if regions_aabb.size != Vector3.ZERO or !regions_aabb.position.is_equal_approx(Vector3.ZERO):
+			aabb = regions_aabb if aabb.size == Vector3.ZERO else aabb.merge(regions_aabb)
+		if previews_aabb.size != Vector3.ZERO or !previews_aabb.position.is_equal_approx(Vector3.ZERO):
+			aabb = previews_aabb if aabb.size == Vector3.ZERO else aabb.merge(previews_aabb)
+	# Retry a few frames until bounds become valid (meshes may instantiate after load)
 	var tries := 0
 	while (aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01) and tries < 8:
 		await get_tree().process_frame
 		aabb = _compute_scene_aabb()
+		if previews_aabb.size != Vector3.ZERO or !previews_aabb.position.is_equal_approx(Vector3.ZERO):
+			aabb = previews_aabb if aabb.size == Vector3.ZERO else aabb.merge(previews_aabb)
 		tries += 1
 	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
 		# Fallback to legacy heuristic using FEAGI coordinates
@@ -932,6 +943,20 @@ func _compute_cortical_data_aabb() -> AABB:
 		var a := AABB(min_g, max_g - min_g)
 		merged = a if !have else merged.merge(a)
 		have = true
+	return merged if have else AABB()
+
+## Merges world AABBs of all brain region plate visualizations (same geometry as in [_compute_scene_aabb]).
+func _compute_brain_region_frames_aabb() -> AABB:
+	var have: bool = false
+	var merged := AABB()
+	for viz in _brain_region_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
+		if viz is Node:
+			var a := _compute_world_aabb(viz)
+			if a.size != Vector3.ZERO or !a.position.is_equal_approx(Vector3.ZERO):
+				merged = a if !have else merged.merge(a)
+				have = true
 	return merged if have else AABB()
 
 ## Computes world-space AABB for a brain region frame node (includes all its visualizations)
@@ -3501,8 +3526,11 @@ func _deferred_invoke_ws_fastpath_rebuild() -> void:
 	if FeagiCore == null or FeagiCore.network == null:
 		return
 	var ws: FEAGIWebSocketAPI = FeagiCore.network.websocket_API
-	if ws != null:
-		ws.request_bv_fastpath_cache_rebuild()
+	if ws == null:
+		# Paired with [method bv_begin_visual_rebuild_pause]; release if WebSocket node is gone before rebuild.
+		FeagiCore.bv_end_visual_rebuild_pause_one()
+		return
+	ws.request_bv_fastpath_cache_rebuild()
 
 
 ## Drops every cortical volume node and clears the ID map. Caller must call [method _add_missing_cortical_area_visualizations] next.
@@ -3528,6 +3556,8 @@ func _teardown_all_cortical_area_visualizations() -> void:
 
 ## Full cortical rebuild: same path as genome [signal genome_cache_replaced] — deterministic after hash refresh / reconnect.
 func _rebuild_cortical_visualizations_after_cache_touch() -> void:
+	if FeagiCore != null and FeagiCore.network != null and FeagiCore.network.websocket_API != null:
+		FeagiCore.bv_begin_visual_rebuild_pause()
 	_teardown_all_cortical_area_visualizations()
 	_add_missing_cortical_area_visualizations()
 	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()

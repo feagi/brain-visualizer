@@ -50,7 +50,7 @@ func _init(source_area: AbstractCorticalArea, destination_area: AbstractCortical
 	mappings_about_to_be_deleted.connect(source_area.CACHE_mapping_set_deregister_an_efferent)
 
 ## Create object from FEAGI JSON data
-static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array[Dictionary], source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> InterCorticalMappingSet:
+static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array, source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea) -> InterCorticalMappingSet:
 	var new_mappings: Array[SingleMappingDefinition] = SingleMappingDefinition.from_FEAGI_JSON_array(mapping_properties_from_FEAGI)
 	if new_mappings.is_empty() and not mapping_properties_from_FEAGI.is_empty():
 		push_error("InterCorticalMappingSet: All mappings skipped due to missing morphologies for %s -> %s" % [source_area.cortical_ID, destination_area.cortical_ID])
@@ -58,7 +58,7 @@ static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array[Dictionary], so
 	return InterCorticalMappingSet.new(source_area, destination_area, new_mappings)
 
 ## FEAGI responded with updated mappings
-func FEAGI_updated_mappings_JSON(FEAGI_mappings_JSON: Array[Dictionary]) -> void:
+func FEAGI_updated_mappings_JSON(FEAGI_mappings_JSON: Array) -> void:
 	var new_mappings: Array[SingleMappingDefinition] = SingleMappingDefinition.from_FEAGI_JSON_array(FEAGI_mappings_JSON)
 	if new_mappings.is_empty() and not FEAGI_mappings_JSON.is_empty():
 		push_error("InterCorticalMappingSet: Skipping mapping update due to missing morphologies for %s -> %s" % [_src_cortical.cortical_ID, _dst_cortical.cortical_ID])

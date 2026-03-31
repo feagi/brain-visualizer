@@ -307,13 +307,31 @@ func _confirm_establish_mapping() -> void:
 		return
 	_establishing = true
 	if _source is MemoryCorticalArea:
-		# establish a mapping using projector
 		var projector_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies["projector"]
-		FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, projector_morphology)
+		var out_mem: FeagiRequestOutput = await FeagiCore.requests.append_default_mapping_between_corticals(
+			_source,
+			_destination,
+			projector_morphology,
+		)
+		_establishing = false
+		if out_mem.failed_requirement and out_mem.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+			return
+		if out_mem.success:
+			close_window()
+		return
 	elif _destination is MemoryCorticalArea:
-		# episodic memory
 		var memory_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies["episodic_memory"]
-		FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, memory_morphology)
+		var out_ep: FeagiRequestOutput = await FeagiCore.requests.append_default_mapping_between_corticals(
+			_source,
+			_destination,
+			memory_morphology,
+		)
+		_establishing = false
+		if out_ep.failed_requirement and out_ep.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+			return
+		if out_ep.success:
+			close_window()
+		return
 	else:
 		# create a new pattern morphology, then use it in a new mapping
 		var morphology_name: StringName = _source.cortical_ID + "_" + _destination.cortical_ID
@@ -344,11 +362,21 @@ func _confirm_establish_mapping() -> void:
 		
 		if !response.success:
 			push_error("FEAGI: Failed to create morphology needed for quick connect!")
+			_establishing = false
 			close_window()
 			return
 		var new_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name]
-		FeagiCore.requests.append_default_mapping_between_corticals(_source, _destination, new_morphology)
-	close_window()
+		var out_pat: FeagiRequestOutput = await FeagiCore.requests.append_default_mapping_between_corticals(
+			_source,
+			_destination,
+			new_morphology,
+		)
+		_establishing = false
+		if out_pat.failed_requirement and out_pat.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+			return
+		if not out_pat.success:
+			return
+		close_window()
 
 func _build_mapping_update_warning_message(existing_mappings: Array[SingleMappingDefinition]) -> String:
 	var mapping_lines: PackedStringArray = []
