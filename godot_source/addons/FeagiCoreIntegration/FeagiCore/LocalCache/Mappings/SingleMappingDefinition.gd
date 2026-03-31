@@ -53,6 +53,11 @@ static func create_default_mapping(morphology: BaseMorphology) -> SingleMappingD
 
 ## Helper function to safely convert dimensions data that might be Array or Dictionary
 static func _safe_convert_to_vector3i(data: Variant, field_name: String = "") -> Vector3i:
+	if data is int:
+		return Vector3i(int(data), int(data), int(data))
+	if data is float:
+		var s := int(data)
+		return Vector3i(s, s, s)
 	if data is Array:
 		return FEAGIUtils.array_to_vector3i(data)
 	elif data is Dictionary:
@@ -69,45 +74,83 @@ static func _safe_convert_to_vector3i(data: Variant, field_name: String = "") ->
 		push_error("SINGLE MAPPING DEFINITION: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
 		return Vector3i(1, 1, 1)  # Default fallback
 
-## Given the dictionary from FEAGI directly creates a [SingleMappingDefinition] object
-static func from_FEAGI_JSON(mapping_property: Dictionary) -> SingleMappingDefinition:
-	if !(mapping_property["morphology_id"] in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys()):
-		push_error("Unable to find morphology %s in cache when creating MappingProperty! Skipping mapping entry." % mapping_property["morphology_id"])
+## Legacy row format from connectome / cortical_map_detailed (matches feagi-api cortical_mapping normalization):
+## [morphology_id, morphology_scalar, postSynapticCurrent_multiplier, plasticity_flag,
+##  plasticity_constant, ltp_multiplier, ltd_multiplier, plasticity_window]
+static func _from_FEAGI_JSON_array_rule(rule: Array) -> SingleMappingDefinition:
+	if rule.size() < 4:
+		push_error("SingleMappingDefinition: array mapping rule needs at least 4 elements, got %d" % rule.size())
 		return null
-	var morphology_cached: BaseMorphology =  FeagiCore.feagi_local_cache.morphologies.available_morphologies[mapping_property["morphology_id"]]
-	var scalar_used: Vector3i = _safe_convert_to_vector3i(mapping_property["morphology_scalar"], "morphology_scalar")
-	var psp_multiplier: float = float(mapping_property["postSynapticCurrent_multiplier"])
-	var plasticity: bool = mapping_property["plasticity_flag"]
+	var morphology_id: StringName = StringName(str(rule[0]))
+	if !(morphology_id in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys()):
+		push_error("Unable to find morphology %s in cache when creating MappingProperty! Skipping mapping entry." % morphology_id)
+		return null
+	var morphology_cached: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_id]
+	var scalar_used: Vector3i = _safe_convert_to_vector3i(rule[1], "morphology_scalar")
+	var psp_multiplier: float = float(rule[2])
+	var plasticity: bool = bool(rule[3])
 	if morphology_cached.name == &"associative_memory":
 		plasticity = true
 	if !plasticity:
 		return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity)
+	var plasticity_constant_used: float = DEFAULT_PLASTICITY_CONSTANT
+	var LTP_multiplier_used: float = DEFAULT_LTP_MULTIPLIER
+	var LTD_multiplier_used: float = DEFAULT_LTD_MULTIPLIER
+	var plasticity_window_used: int = DEFAULT_PLASTICITY_WINDOW
+	if rule.size() >= 8:
+		plasticity_constant_used = float(rule[4])
+		LTP_multiplier_used = float(rule[5])
+		LTD_multiplier_used = float(rule[6])
+		plasticity_window_used = int(rule[7])
 	else:
-		# failsafe since feagi can send invalid dicts sometimes
-		if !"plasticity_constant" in mapping_property:
-			mapping_property["plasticity_constant"] = 0.0
-			push_error("FEAGI CORE: Feagi missing key for plasticity_constant for mapping!")
-		if !"ltp_multiplier" in mapping_property:
-			mapping_property["ltp_multiplier"] = 0.0
-			push_error("FEAGI CORE: Feagi missing key for ltp_multiplier for mapping!")
-		if !"ltd_multiplier" in mapping_property:
-			mapping_property["ltd_multiplier"] = 0.0
-			push_error("FEAGI CORE: Feagi missing key for ltd_multiplier for mapping!")
-		if !"plasticity_window" in mapping_property:
-			mapping_property["plasticity_window"] = DEFAULT_PLASTICITY_WINDOW
-			push_error("FEAGI CORE: Feagi missing key for plasticity_window for mapping!")
-		var plasticity_constant_used: float = mapping_property["plasticity_constant"]
-		var LTP_multiplier_used: float = mapping_property["ltp_multiplier"]
-		var LTD_multiplier_used: float = mapping_property["ltd_multiplier"]
-		var plasticity_window_used: int = int(mapping_property["plasticity_window"])
-		return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_constant_used, LTP_multiplier_used, LTD_multiplier_used, plasticity_window_used)
+		push_error("FEAGI CORE: Plasticity mapping in array format with fewer than 8 elements; using defaults for plasticity fields.")
+	return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_constant_used, LTP_multiplier_used, LTD_multiplier_used, plasticity_window_used)
 
 
-## Given an array of Dictionaries from FEAGI, directly output an array of [SingleMappingDefinitions]
-static func from_FEAGI_JSON_array(mapping_dicts: Array[Dictionary]) -> Array[SingleMappingDefinition]:
+static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMappingDefinition:
+	var morph_id: Variant = mapping_property.get("morphology_id", null)
+	if morph_id == null:
+		push_error("SingleMappingDefinition: mapping dict missing morphology_id")
+		return null
+	if !(morph_id in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys()):
+		push_error("Unable to find morphology %s in cache when creating MappingProperty! Skipping mapping entry." % morph_id)
+		return null
+	var morphology_cached: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[morph_id]
+	var raw_scalar: Variant = mapping_property.get("morphology_scalar", null)
+	var scalar_used: Vector3i
+	if raw_scalar == null:
+		scalar_used = DEFAULT_POSITIVE_SCALAR
+	else:
+		scalar_used = _safe_convert_to_vector3i(raw_scalar, "morphology_scalar")
+	# Genome / API may omit keys; align with connectome defaults (e.g. plasticity_flag unwrap_or(false))
+	var psp_multiplier: float = float(mapping_property.get("postSynapticCurrent_multiplier", DEFAULT_PSP_MULTIPLIER))
+	var plasticity: bool = bool(mapping_property.get("plasticity_flag", DEFAULT_PLASTICITY))
+	if morphology_cached.name == &"associative_memory":
+		plasticity = true
+	if !plasticity:
+		return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity)
+	var plasticity_constant_used: float = float(mapping_property.get("plasticity_constant", 0.0))
+	var LTP_multiplier_used: float = float(mapping_property.get("ltp_multiplier", 0.0))
+	var LTD_multiplier_used: float = float(mapping_property.get("ltd_multiplier", 0.0))
+	var plasticity_window_used: int = int(mapping_property.get("plasticity_window", DEFAULT_PLASTICITY_WINDOW))
+	return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_constant_used, LTP_multiplier_used, LTD_multiplier_used, plasticity_window_used)
+
+
+## Given a mapping rule from FEAGI (object form or legacy array row) creates a [SingleMappingDefinition] object
+static func from_FEAGI_JSON(mapping_property: Variant) -> SingleMappingDefinition:
+	if mapping_property is Array:
+		return _from_FEAGI_JSON_array_rule(mapping_property as Array)
+	if mapping_property is Dictionary:
+		return _from_FEAGI_JSON_dict_rule(mapping_property as Dictionary)
+	push_error("SingleMappingDefinition: mapping rule must be Array or Dictionary, got %s" % type_string(typeof(mapping_property)))
+	return null
+
+
+## Given an array of mapping rules from FEAGI (objects and/or legacy arrays), output [SingleMappingDefinition]s
+static func from_FEAGI_JSON_array(mapping_rules: Array) -> Array[SingleMappingDefinition]:
 	var output: Array[SingleMappingDefinition] = []
-	for mapping_dict: Dictionary in mapping_dicts:
-		var mapping := SingleMappingDefinition.from_FEAGI_JSON(mapping_dict)
+	for rule in mapping_rules:
+		var mapping := SingleMappingDefinition.from_FEAGI_JSON(rule)
 		if mapping == null:
 			continue
 		output.append(mapping)

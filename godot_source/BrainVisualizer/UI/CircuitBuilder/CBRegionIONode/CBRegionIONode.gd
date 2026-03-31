@@ -25,6 +25,12 @@ func setup(outside_object: GenomeObject, inside_object: GenomeObject, is_region_
 	_path = $HBoxContainer/Path
 	_arrow = $HBoxContainer/Arrow
 	_endpoint = $HBoxContainer/CbLineEndPoint
+	# [CBLineInterTerminal] calls request_deletion() on endpoints when the line is removed. The base
+	# [CBAbstractNode] wires deletion_requested for spawned endpoints; we embed one endpoint from the
+	# scene and must hook it so this whole node is removed with the connection (otherwise the bar
+	# stays as a phantom after the line is disposed).
+	if not _endpoint.deletion_requested.is_connected(_on_embedded_endpoint_deletion_requested):
+		_endpoint.deletion_requested.connect(_on_embedded_endpoint_deletion_requested)
 	
 	_outside = outside_object
 	_inside = inside_object
@@ -48,6 +54,22 @@ func add_input_endpoint(_endpoint_prefab: PackedScene, port_style: CBLineEndpoin
 func add_output_endpoint(_endpoint_prefab: PackedScene, port_style: CBLineEndpoint.PORT_STYLE) -> CBLineEndpoint:
 	_endpoint.setup(self, node_moved, port_style)
 	return _endpoint
+
+
+func _on_embedded_endpoint_deletion_requested(_ref: CBLineEndpoint) -> void:
+	if is_queued_for_deletion():
+		return
+	if _outside != null and _outside.friendly_name_updated.is_connected(_outside_name_updated):
+		_outside.friendly_name_updated.disconnect(_outside_name_updated)
+	if _outside != null and _outside.parent_region_updated.is_connected(_path_updated):
+		_outside.parent_region_updated.disconnect(_path_updated)
+	if _inside != null and _inside.parent_region_updated.is_connected(_path_updated):
+		_inside.parent_region_updated.disconnect(_path_updated)
+	var p := get_parent()
+	if p is CircuitBuilder:
+		(p as CircuitBuilder).schedule_graph_element_removal(self)
+		return
+	queue_free()
 
 func _outside_name_updated(_new_name: StringName) -> void:
 	_update_arrow_label()

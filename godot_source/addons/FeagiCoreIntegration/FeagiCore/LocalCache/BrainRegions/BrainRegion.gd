@@ -35,6 +35,10 @@ var output_open_chain_links: Array[ConnectionChainLink]:
 var partial_mappings: Array[PartialMappingSet]:
 	get: return _partial_mappings
 
+## Server-persisted integration contract (designated_inputs / designated_outputs from FEAGI API).
+var designated_inputs: Array[StringName] = []
+var designated_outputs: Array[StringName] = []
+
 var _contained_cortical_areas: Array[AbstractCorticalArea]
 var _contained_regions: Array[BrainRegion]
 var _bridge_chain_links: Array[ConnectionChainLink]
@@ -182,6 +186,15 @@ func _FEAGI_partical_mapping_removed(mapping: PartialMappingSet) -> void:
 		return
 	partial_mappings_about_to_be_removed.emit(mapping)
 	_partial_mappings.remove_at(index)
+
+## Replaces designated IO lists from API / after a successful PUT.
+func FEAGI_set_designated_io(inputs: Array, outputs: Array) -> void:
+	designated_inputs.clear()
+	designated_outputs.clear()
+	for x in inputs:
+		designated_inputs.append(StringName(String(x)))
+	for x in outputs:
+		designated_outputs.append(StringName(String(x)))
 
 #endregion
 

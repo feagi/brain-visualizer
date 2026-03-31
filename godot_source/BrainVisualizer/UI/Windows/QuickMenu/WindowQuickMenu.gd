@@ -76,9 +76,10 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			iopu_config_button.disabled = not is_ipu_opu
 			iopu_config_button.tooltip_text = "Open IPU/OPU configuration" if is_ipu_opu else "IPU/OPU configuration only."
 			if _btn_move_3d != null:
-				_btn_move_3d.visible = true
-				_btn_move_3d.disabled = is_circuit_builder_context or is_on_plate_of_other_region
-				_btn_move_3d.tooltip_text = "Relocate from within the area's circuit" if is_on_plate_of_other_region else "Relocate this cortical area (3D gizmo)"
+				_btn_move_3d.visible = not is_circuit_builder_context
+				if _btn_move_3d.visible:
+					_btn_move_3d.disabled = is_on_plate_of_other_region
+					_btn_move_3d.tooltip_text = "Relocate from within the area's circuit" if is_on_plate_of_other_region else "Relocate this cortical area (3D gizmo)"
 			if _btn_resize_3d != null:
 				_btn_resize_3d.visible = true
 				_btn_resize_3d.disabled = is_circuit_builder_context or is_on_plate_of_other_region or not area.user_can_edit_dimensions_directly
@@ -115,12 +116,17 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			reset_button.visible = false
 			iopu_config_button.visible = false
+			var is_circuit_builder_region := _selection_context in [
+				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK,
+				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_DRAG
+			]
 			if _btn_relocate_2d != null:
 				_btn_relocate_2d.visible = false
 			if _btn_move_3d != null:
-				_btn_move_3d.visible = true
-				_btn_move_3d.disabled = false
-				_btn_move_3d.tooltip_text = "Relocate this circuit (3D gizmo)"
+				_btn_move_3d.visible = not is_circuit_builder_region
+				if _btn_move_3d.visible:
+					_btn_move_3d.disabled = false
+					_btn_move_3d.tooltip_text = "Relocate this circuit (3D gizmo)"
 			if _btn_resize_3d != null:
 				_btn_resize_3d.visible = false
 			quick_connect_button.visible = false

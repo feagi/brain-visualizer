@@ -16,6 +16,16 @@ use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 #[cfg(not(target_family = "wasm"))]
 use rayon::prelude::*;
 
+/// Cortical dimensions must be positive finite voxel counts; otherwise scale uses div-by-zero or NaN (GPU risk).
+fn dimensions_valid_for_neuron_multimesh(dimensions: Vector3) -> bool {
+    dimensions.x.is_finite()
+        && dimensions.y.is_finite()
+        && dimensions.z.is_finite()
+        && dimensions.x > 0.0
+        && dimensions.y > 0.0
+        && dimensions.z > 0.0
+}
+
 struct FeagiDataDeserializerLib;
 
 #[gdextension]
@@ -422,6 +432,15 @@ impl FeagiDataDeserializer {
             return result;
         }
 
+        if !dimensions_valid_for_neuron_multimesh(dimensions) {
+            godot_error!("Invalid cortical dimensions for multimesh (must be finite and > 0)");
+            multi_mesh.set_instance_count(0);
+            let mut result = Dictionary::new();
+            result.set("success", false);
+            result.set("error", "Invalid dimensions for multimesh (finite, > 0 required)");
+            return result;
+        }
+
         // Set instance count
         multi_mesh.set_instance_count(array_len as i32);
 
@@ -604,6 +623,9 @@ impl FeagiDataDeserializer {
                     Ok(d) => d,
                     Err(_) => continue,
                 };
+                if !dimensions_valid_for_neuron_multimesh(dimensions) {
+                    continue;
+                }
 
                 // Set instance count and apply transforms/colors directly.
                 multi_mesh.set_instance_count(num_neurons as i32);

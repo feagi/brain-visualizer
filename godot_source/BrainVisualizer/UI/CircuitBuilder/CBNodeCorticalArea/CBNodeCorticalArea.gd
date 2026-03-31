@@ -62,8 +62,7 @@ func CACHE_updated_cortical_area_name(name_text: StringName) -> void:
 
 ## Updates the position within CB of the node
 func CACHE_updated_2D_position(new_position: Vector2i) -> void:
-	position_offset = new_position
-	_dragged = false
+	apply_model_position_offset(new_position)
 
 #endregion
 

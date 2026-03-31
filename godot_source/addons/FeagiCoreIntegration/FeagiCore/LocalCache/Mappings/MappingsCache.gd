@@ -18,7 +18,7 @@ var _established_mappings: Dictionary
 
 
 ## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
-func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractCorticalArea, mappings_JSON: Array[Dictionary]) -> void:
+func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractCorticalArea, mappings_JSON: Array) -> void:
 	# IMPORTANT: An empty mapping list from FEAGI means the mapping does not exist.
 	# If we currently have a mapping-set cached, treat this as a deletion so that
 	# cortical areas emit their *_removed signals and UI stays in sync.
@@ -75,7 +75,7 @@ func FEAGI_load_all_mappings(mapping_summary: Dictionary)-> void:
 			#NOTE: Instead of verifying the morphology exists, we will allow [MappingProperty]'s  system handle it, as it has a fallback should it not be found
 			var source_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
 			var destination_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
-			var mapping_dictionaries: Array[Dictionary] = [] # Why doesnt godot support type inference for arrays yet?
+			var mapping_dictionaries: Array = [] # Rules may be FEAGI objects or legacy array rows (see SingleMappingDefinition)
 			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
 			FEAGI_set_mapping_JSON(source_area, destination_area, mapping_dictionaries)
 
@@ -98,7 +98,7 @@ func FEAGI_apply_mapping_summary_diff(mapping_summary: Dictionary) -> void:
 				continue
 			var source_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
 			var destination_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
-			var mapping_dictionaries: Array[Dictionary] = []
+			var mapping_dictionaries: Array = []
 			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
 			FEAGI_set_mapping_JSON(source_area, destination_area, mapping_dictionaries)
 			seen_pairs["%s->%s" % [source_cortical_ID, destination_cortical_ID]] = true

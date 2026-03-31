@@ -100,10 +100,17 @@ func _finalize_dispose() -> void:
 	call_deferred("queue_free")
 
 func _proxy_mapping_change_connection() -> void:
-	_on_full_mapping_change(_link.parent_chain.mapping_set)
-	
+	var chain := _link.parent_chain
+	if chain.is_registered_to_established_mapping_set():
+		_on_full_mapping_change(chain.mapping_set)
+	elif chain.is_registered_to_partial_mapping_set():
+		_on_partial_mapping(chain.partial_mapping_set)
+
 
 func _on_full_mapping_change(mapping_ref: InterCorticalMappingSet) -> void:
+	if mapping_ref == null or mapping_ref.number_mappings == 0:
+		_request_dispose()
+		return
 	_button.text = "  " + str(mapping_ref.number_mappings) + "  "
 	if mapping_ref.is_any_PSP_multiplier_negative():
 		set_line_base_color(Color(LINE_COLOR_PSPN.r, LINE_COLOR_PSPN.g, LINE_COLOR_PSPN.b, LINE_COLOR_PSPN.a))
@@ -112,7 +119,11 @@ func _on_full_mapping_change(mapping_ref: InterCorticalMappingSet) -> void:
 	set_line_dashing(mapping_ref.is_any_mapping_plastic())
 
 func _on_partial_mapping(partial_mapping: PartialMappingSet) -> void:
-	_button.text = "  0  "
+	# Partial chains previously hardcoded "0", so every hint looked like a phantom even when rules existed.
+	if partial_mapping == null or partial_mapping.number_mappings == 0:
+		_request_dispose()
+		return
+	_button.text = "  " + str(partial_mapping.number_mappings) + "  "
 	if partial_mapping.is_any_PSP_multiplier_negative():
 		set_line_base_color(Color(LINE_COLOR_PSPN.r, LINE_COLOR_PSPN.g, LINE_COLOR_PSPN.b, LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY))
 	else:

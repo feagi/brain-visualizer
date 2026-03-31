@@ -141,7 +141,7 @@ func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.S
 		_:
 			return
 
-func establish_connection_button():
+func establish_connection_button() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Requesting quick connection...")
 	if _source == null:
 		return
@@ -149,13 +149,21 @@ func establish_connection_button():
 		return
 	if _destinations.is_empty():
 		return
-	# Make sure the cache has the current mapping state of the cortical to source area to append to.
-	# This supports one-to-many quick connect in a single Establish action.
+	# Await each mapping so designation-conflict popups and update_region_designated_io complete before
+	# the next call. Without await, the first await inside set_mappings_between_corticals would yield
+	# and this function would hit close_window() immediately — breaking confirm/cancel and causing 500s.
 	for destination_area in _destinations:
 		if destination_area == null:
 			continue
-		FeagiCore.requests.append_default_mapping_between_corticals(_source, destination_area, _selected_morphology)
-	## TODO: This is technically a race condition, if a user clicks through the quick connect fast enough
+		var out: FeagiRequestOutput = await FeagiCore.requests.append_default_mapping_between_corticals(
+			_source,
+			destination_area,
+			_selected_morphology,
+		)
+		if out.failed_requirement and out.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+			return
+		if not out.success:
+			return
 	close_window()
 
 # State Machine

@@ -73,6 +73,9 @@ var _viz_resync_wait_generation: int = 0
 ## Transport resync arrived before GENOME_READY; run once when genome becomes ready.
 var _pending_visualization_resync_after_transport: bool = false
 
+## Brain Monitor cortical volume rebuild: skip Type11 -> MultiMesh GPU apply while > 0 (paired with fast-path rescan).
+var _bv_type11_visual_rebuild_pause_depth: int = 0
+
 
 # FEAGICore initialization starts here before any external action
 func _enter_tree():
@@ -726,3 +729,21 @@ func _perform_visualization_resync_after_transport() -> void:
 	if ui == null or not ui.has_method("resync_all_brain_monitors_after_transport_recovery"):
 		return
 	ui.resync_all_brain_monitors_after_transport_recovery()
+
+
+## Begin pause around cortical 3D teardown/rebuild; [method bv_end_visual_rebuild_pause_one] runs after fast-path rescan or on cancel.
+func bv_begin_visual_rebuild_pause() -> void:
+	if OS.has_feature("web"):
+		return
+	_bv_type11_visual_rebuild_pause_depth += 1
+
+
+func bv_end_visual_rebuild_pause_one() -> void:
+	if OS.has_feature("web"):
+		return
+	if _bv_type11_visual_rebuild_pause_depth > 0:
+		_bv_type11_visual_rebuild_pause_depth -= 1
+
+
+func bv_is_type11_visual_rebuild_pause_active() -> bool:
+	return _bv_type11_visual_rebuild_pause_depth > 0

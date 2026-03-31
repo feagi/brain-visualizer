@@ -337,13 +337,24 @@ func _process(_delta: float):
 						push_warning("[WS] Rust deserializer (FeagiDataDeserializer) not available. WebSocket Type 11 neural data is not being processed; build/enable rust_extensions/feagi_data_deserializer for neural activity.")
 				else:
 					if _USE_DESKTOP_TYPE11_FASTPATH and not OS.has_feature("web"):
-						_refresh_bv_fastpath_cache_if_needed()
-						var perf: Dictionary = _rust_deserializer.apply_type11_packet_to_multimeshes(
-							newest_binary,
-							_bv_fast_multimeshes_by_id,
-							_bv_fast_dimensions_by_id,
-							true # clear_all_before_apply
-						)
+						var perf: Dictionary
+						if FeagiCore != null and FeagiCore.bv_is_type11_visual_rebuild_pause_active():
+							# Avoid writing neuron instances into MultiMeshes while Brain Monitor is tearing down
+							# or before deferred fast-path rescan (stale/freed GPU buffers).
+							perf = {
+								"success": false,
+								"areas_applied": 0,
+								"neurons_applied": 0,
+								"error": "type11_gpu_apply_paused_visual_rebuild",
+							}
+						else:
+							_refresh_bv_fastpath_cache_if_needed()
+							perf = _rust_deserializer.apply_type11_packet_to_multimeshes(
+								newest_binary,
+								_bv_fast_multimeshes_by_id,
+								_bv_fast_dimensions_by_id,
+								true # clear_all_before_apply
+							)
 						# Rate-limited decode/apply diagnostics to pinpoint "receiving but not rendering".
 						# This will tell us if Rust decoded/applied any areas at all (and if it errored).
 						var now_ms_apply := Time.get_ticks_msec()
@@ -1351,6 +1362,8 @@ func _deferred_rebuild_bv_fastpath_after_cache_touch() -> void:
 		return
 	_bv_fast_cache_last_refresh_ms = 0
 	_refresh_bv_fastpath_cache_if_needed()
+	if FeagiCore != null:
+		FeagiCore.bv_end_visual_rebuild_pause_one()
 
 
 ## Public hook for Brain Monitor: after 3D cortical nodes re-register DirectPoints MultiMeshes on new cache
