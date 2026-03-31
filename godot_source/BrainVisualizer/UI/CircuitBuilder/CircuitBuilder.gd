@@ -15,6 +15,8 @@ const PREFAB_ENDPOINT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBu
 const PREFAB_NODE_PORT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLine/CBLineInterTerminal.tscn")
 const LAYOUT_COLUMN_GAP: float = 480.0
 const LAYOUT_ROW_GAP: float = 48.0
+## Horizontal spacing between hierarchical layers inside the interconnect (middle) zone.
+const LAYOUT_MIDDLE_LAYER_GAP: float = 480.0
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -34,6 +36,10 @@ var _multi_relocate_anchor_mouse: Vector2 = Vector2.ZERO
 var _multi_relocate_node_start_positions: Dictionary = {}
 var _multi_relocate_nodes: Array[CBNodeConnectableBase] = []
 var _suppress_move_buffer: bool = false
+## True while [setup] is populating nodes/links so we do not run auto hierarchical layout (preserves saved 2D coords).
+var _cb_setup_in_progress: bool = false
+## Coalesces deferred auto-layout runs when multiple topology events occur in one frame.
+var _auto_layout_scheduled_id: int = 0
 var _initial_fit_done: bool = false
 var _initial_fit_in_progress: bool = false
 const INITIAL_FIT_RETRY_MAX: int = 12
@@ -73,6 +79,7 @@ func _notification(what: int) -> void:
 ## scene tree so GraphEdit internal _connection_layer is in-tree when GraphElements are added (Godot 4.5
 ## skips item_rect_changed wiring otherwise, causing disconnect errors on removal).
 func setup(region: BrainRegion) -> void:
+	_cb_setup_in_progress = true
 	_representing_region = region
 	_initial_fit_done = false
 	if _combo:
@@ -120,6 +127,7 @@ func setup(region: BrainRegion) -> void:
 		region.input_open_link_added.connect(_CACHE_link_region_input_open_added)
 	if not region.output_open_link_added.is_connected(_CACHE_link_region_output_open_added):
 		region.output_open_link_added.connect(_CACHE_link_region_output_open_added)
+	_cb_setup_in_progress = false
 	call_deferred("_attempt_initial_fit")
 	
 
@@ -147,7 +155,9 @@ func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	add_child(cortical_node)
 	cortical_node.setup(area)
 	cortical_node.node_moved.connect(_genome_object_moved)
-	
+	if not _cb_setup_in_progress:
+		_request_auto_layout_after_topology_change()
+
 func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 	if !(area.cortical_ID in cortical_nodes.keys()):
 		push_error("UI CB: Unable to find cortical area %s to remove node of!" % area.cortical_ID)
@@ -175,6 +185,8 @@ func _CACHE_add_subregion(subregion: BrainRegion) -> void:
 	for link: ConnectionChainLink in subregion.output_open_chain_links:
 		_CACHE_link_region_output_open_added(link)
 	#TODO  _CACHE_link_region_input_open_added _CACHE_link_region_output_open_added need to be signal responsive!
+	if not _cb_setup_in_progress:
+		_request_auto_layout_after_topology_change()
 
 func _CACHE_remove_subregion(subregion: BrainRegion) -> void:
 	if !(subregion.region_ID in subregion_nodes.keys()):
@@ -214,6 +226,8 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	if source_node == destination_node:
 		#This is a recursive connection
 		source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.RECURSIVE, source_node.title, PREFAB_NODE_TERMINAL)
+		if not _cb_setup_in_progress:
+			_request_auto_layout_after_topology_change()
 		return
 	
 	var source_title: StringName
@@ -233,6 +247,8 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	add_child(line)
 	move_child(line, 0)
 	line.call_deferred("setup", source_terminal.active_port, destination_terminal.active_port, link)
+	if not _cb_setup_in_progress:
+		_request_auto_layout_after_topology_change()
 
 func _CACHE_link_parent_input_added(link: ConnectionChainLink) -> void:
 	if _representing_region != null and _representing_region.is_root_region():
@@ -663,12 +679,19 @@ func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
 	_center_on_graph_element(node)
 	_bring_node_to_front_and_jiggle(node)
 
-	## Rearrange all nodes into columns (inputs left, interconnect/memory/regions middle, outputs right).
+## Rearrange nodes: inputs left, outputs right; interconnect in layered columns by bridge direction
+## (downstream right); cycles share a layer via SCC + longest path on the component DAG.
 func relayout_nodes() -> void:
+	await apply_hierarchical_layout(true)
+
+
+## Applies hierarchical layout to all graph nodes and persists 2D positions to FEAGI when [param show_success_notification] is used for the manual rearrange action; auto-layout passes false to avoid toasts.
+func apply_hierarchical_layout(show_success_notification: bool = true) -> void:
 	var layout_positions: Dictionary = _compute_relayout_positions()
 	if layout_positions.is_empty():
 		return
-	_log_relayout_debug(layout_positions)
+	if show_success_notification:
+		_log_relayout_debug(layout_positions)
 	var update_payload: Dictionary = {}
 	for node in layout_positions.keys():
 		var new_pos: Vector2 = layout_positions[node]
@@ -678,31 +701,51 @@ func relayout_nodes() -> void:
 			update_payload[(node as CBNodeCorticalArea).representing_cortical_area] = Vector2i(new_pos)
 		elif node is CBNodeRegion:
 			update_payload[(node as CBNodeRegion).representing_region] = Vector2i(new_pos)
-	if not update_payload.is_empty():
-		print("CB_RELAYOUT_DEBUG: saving %d objects to FEAGI" % update_payload.size())
-		var result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(update_payload)
-		if result.has_errored:
-			print("CB_RELAYOUT_DEBUG: save failed -> ", result.decode_response_as_generic_error_code())
-			BV.NOTIF.add_notification(
-				"Auto-arrange failed to save positions.",
-				NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
-			)
-			return
-		print("CB_RELAYOUT_DEBUG: saving genome after relayout")
-		var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
-		if save_result.has_errored:
-			print("CB_RELAYOUT_DEBUG: genome save failed -> ", save_result.decode_response_as_generic_error_code())
-			BV.NOTIF.add_notification(
-				"Auto-arrange saved positions but failed to save genome.",
-				NotificationSystemNotification.NOTIFICATION_TYPE.WARNING
-			)
-			return
+	if update_payload.is_empty():
+		return
+	print("CB_RELAYOUT_DEBUG: saving %d objects to FEAGI" % update_payload.size())
+	var result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(update_payload)
+	if result.has_errored:
+		print("CB_RELAYOUT_DEBUG: save failed -> ", result.decode_response_as_generic_error_code())
+		BV.NOTIF.add_notification(
+			"Auto-arrange failed to save positions.",
+			NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
+		)
+		return
+	print("CB_RELAYOUT_DEBUG: saving genome after relayout")
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if save_result.has_errored:
+		print("CB_RELAYOUT_DEBUG: genome save failed -> ", save_result.decode_response_as_generic_error_code())
+		BV.NOTIF.add_notification(
+			"Auto-arrange saved positions but failed to save genome.",
+			NotificationSystemNotification.NOTIFICATION_TYPE.WARNING
+		)
+		return
+	if show_success_notification:
 		BV.NOTIF.add_notification(
 			"Auto-arrange saved positions to genome.",
 			NotificationSystemNotification.NOTIFICATION_TYPE.INFO
 		)
 
-## Compute layout positions using simple barycenter ordering to reduce connection overlap.
+
+func _request_auto_layout_after_topology_change() -> void:
+	if not is_inside_tree():
+		return
+	_auto_layout_scheduled_id += 1
+	var run_id: int = _auto_layout_scheduled_id
+	call_deferred("_run_auto_layout_deferred", run_id)
+
+
+func _run_auto_layout_deferred(run_id: int) -> void:
+	if run_id != _auto_layout_scheduled_id:
+		return
+	await get_tree().process_frame
+	if run_id != _auto_layout_scheduled_id:
+		return
+	await apply_hierarchical_layout(false)
+
+## Compute layout positions: IPU/OPU fixed columns; interconnect uses directed-bridge SCC layers
+## (longest path on the condensation DAG) for increasing X, barycenter Y within each layer.
 func _compute_relayout_positions() -> Dictionary:
 	var nodes: Array[CBNodeConnectableBase] = []
 	nodes.assign(_cortical_nodes.values())
@@ -711,7 +754,7 @@ func _compute_relayout_positions() -> Dictionary:
 	var region_io_nodes: Array[CBAbstractNode] = _collect_region_io_nodes()
 	if nodes.is_empty() and region_io_nodes.is_empty():
 		return {}
-	var adjacency: Dictionary = _build_cortical_adjacency()
+	var adjacency: Dictionary = _build_bridge_adjacency()
 	var outputs: Array[CBNodeConnectableBase] = []
 	var inputs: Array[CBNodeConnectableBase] = []
 	var inner_outputs: Array[CBAbstractNode] = []
@@ -739,7 +782,8 @@ func _compute_relayout_positions() -> Dictionary:
 	var left_x := min_x
 	var inner_left_x := left_x + _compute_max_width(inputs) + LAYOUT_COLUMN_GAP
 	var middle_x := inner_left_x + _compute_max_width_region_io(inner_inputs) + LAYOUT_COLUMN_GAP
-	var inner_right_x := middle_x + _compute_max_width(middle) + LAYOUT_COLUMN_GAP
+	var middle_width_span := _compute_middle_hierarchy_width_span(middle)
+	var inner_right_x := middle_x + middle_width_span + LAYOUT_COLUMN_GAP
 	var right_x := inner_right_x + _compute_max_width_region_io(inner_outputs) + LAYOUT_COLUMN_GAP
 	# Place IO columns first, then position interconnects between them.
 	var ordered_inputs := _sort_io_nodes(inputs, true)
@@ -755,8 +799,7 @@ func _compute_relayout_positions() -> Dictionary:
 		io_y_map[node] = (inner_input_positions[node] as Vector2).y
 	for node in inner_output_positions.keys():
 		io_y_map[node] = (inner_output_positions[node] as Vector2).y
-	var ordered_middle := _sort_nodes_by_barycenter(middle, adjacency, io_y_map)
-	var middle_positions := _layout_column(ordered_middle, middle_x, min_y)
+	var middle_positions := _layout_middle_hierarchical(middle, adjacency, io_y_map, middle_x, min_y)
 	var layout_positions: Dictionary = {}
 	for node in output_positions.keys():
 		layout_positions[node] = output_positions[node]
@@ -768,33 +811,28 @@ func _compute_relayout_positions() -> Dictionary:
 		layout_positions[node] = inner_input_positions[node]
 	for node in input_positions.keys():
 		layout_positions[node] = input_positions[node]
-	# Enforce strict column placement for all cortical areas.
+	# Enforce strict column placement for IPU/OPU; interconnect uses hierarchical X from middle_positions.
 	for node in nodes:
 		if node is CBNodeCorticalArea:
 			var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
-			var target_x := middle_x
 			var side := _classify_cortical_io_side(area)
 			if side == "left":
-				target_x = left_x
+				_set_node_column_x(layout_positions, node, left_x)
 			elif side == "right":
-				target_x = right_x
-			_set_node_column_x(layout_positions, node, target_x)
+				_set_node_column_x(layout_positions, node, right_x)
 	for io_node in region_io_nodes:
 		var io_target_x := inner_left_x if _is_region_io_input(io_node) else inner_right_x
 		_set_node_column_x(layout_positions, io_node, io_target_x)
 	return layout_positions
 
-func _build_cortical_adjacency() -> Dictionary:
+## Undirected adjacency from bridge links (cortical–cortical and cortical–subregion) for barycenter ordering.
+func _build_bridge_adjacency() -> Dictionary:
 	var adjacency: Dictionary = {}
 	if _representing_region == null:
 		return adjacency
 	for link: ConnectionChainLink in _representing_region.bridge_chain_links:
-		if not (link.source is AbstractCorticalArea and link.destination is AbstractCorticalArea):
-			continue
-		var source_area: AbstractCorticalArea = link.source as AbstractCorticalArea
-		var destination_area: AbstractCorticalArea = link.destination as AbstractCorticalArea
-		var source_node: CBNodeConnectableBase = _cortical_nodes.get(source_area.cortical_ID, null)
-		var destination_node: CBNodeConnectableBase = _cortical_nodes.get(destination_area.cortical_ID, null)
+		var source_node: CBNodeConnectableBase = _node_for_genome_object(link.source)
+		var destination_node: CBNodeConnectableBase = _node_for_genome_object(link.destination)
 		if source_node == null or destination_node == null:
 			continue
 		if not adjacency.has(source_node):
@@ -804,6 +842,222 @@ func _build_cortical_adjacency() -> Dictionary:
 		adjacency[source_node].append(destination_node)
 		adjacency[destination_node].append(source_node)
 	return adjacency
+
+
+func _node_for_genome_object(obj: GenomeObject) -> CBNodeConnectableBase:
+	if obj is AbstractCorticalArea:
+		return _cortical_nodes.get((obj as AbstractCorticalArea).cortical_ID, null)
+	if obj is BrainRegion:
+		return _subregion_nodes.get((obj as BrainRegion).region_ID, null)
+	return null
+
+
+## Directed edges between middle-column nodes only (FEAGI bridge direction: source -> destination).
+func _build_directed_middle_edges(middle_membership: Dictionary) -> Array:
+	var edges: Array = []
+	if _representing_region == null:
+		return edges
+	for link: ConnectionChainLink in _representing_region.bridge_chain_links:
+		var sn: CBNodeConnectableBase = _node_for_genome_object(link.source)
+		var dn: CBNodeConnectableBase = _node_for_genome_object(link.destination)
+		if sn == null or dn == null:
+			continue
+		if not middle_membership.has(sn) or not middle_membership.has(dn):
+			continue
+		edges.append([sn, dn])
+	return edges
+
+
+func _build_out_adjacency_for_tarjan(nodes: Array[CBNodeConnectableBase], edges: Array) -> Dictionary:
+	var adj: Dictionary = {}
+	for n in nodes:
+		adj[n] = []
+	for edge in edges:
+		var u: CBNodeConnectableBase = edge[0]
+		var v: CBNodeConnectableBase = edge[1]
+		adj[u].append(v)
+	return adj
+
+
+var _tarjan_index: int = 0
+var _tarjan_indices: Dictionary = {}
+var _tarjan_lowlink: Dictionary = {}
+var _tarjan_stack: Array = []
+var _tarjan_on_stack: Dictionary = {}
+var _tarjan_adj: Dictionary = {}
+var _tarjan_sccs: Array = []
+
+
+func _tarjan_run_scc(nodes: Array[CBNodeConnectableBase], adj: Dictionary) -> Array:
+	_tarjan_index = 0
+	_tarjan_indices.clear()
+	_tarjan_lowlink.clear()
+	_tarjan_stack.clear()
+	_tarjan_on_stack.clear()
+	_tarjan_adj = adj
+	_tarjan_sccs.clear()
+	for n in nodes:
+		if not _tarjan_indices.has(n):
+			_tarjan_strongconnect(n)
+	return _tarjan_sccs
+
+
+func _tarjan_strongconnect(v: CBNodeConnectableBase) -> void:
+	_tarjan_indices[v] = _tarjan_index
+	_tarjan_lowlink[v] = _tarjan_index
+	_tarjan_index += 1
+	_tarjan_stack.append(v)
+	_tarjan_on_stack[v] = true
+	for w in _tarjan_adj.get(v, []):
+		if not _tarjan_indices.has(w):
+			_tarjan_strongconnect(w)
+			_tarjan_lowlink[v] = min(_tarjan_lowlink[v], _tarjan_lowlink[w])
+		elif _tarjan_on_stack.get(w, false):
+			_tarjan_lowlink[v] = min(_tarjan_lowlink[v], _tarjan_indices[w])
+	if _tarjan_lowlink[v] == _tarjan_indices[v]:
+		var scc: Array = []
+		while true:
+			var w: CBNodeConnectableBase = _tarjan_stack.pop_back()
+			_tarjan_on_stack[w] = false
+			scc.append(w)
+			if w == v:
+				break
+		_tarjan_sccs.append(scc)
+
+
+## SCC condensation + longest path on the DAG of components (ties reciprocal cycles to one X layer).
+func _condensation_longest_path_layers(nodes: Array[CBNodeConnectableBase], directed_edges: Array) -> Dictionary:
+	var result: Dictionary = {}
+	if nodes.is_empty():
+		return result
+	var adj: Dictionary = _build_out_adjacency_for_tarjan(nodes, directed_edges)
+	var sccs: Array = _tarjan_run_scc(nodes, adj)
+	var node_to_scc: Dictionary = {}
+	for i in range(sccs.size()):
+		for node in sccs[i]:
+			node_to_scc[node] = i
+	var num_scc: int = sccs.size()
+	var cond_adj: Dictionary = {}
+	var cond_indegree: Array = []
+	cond_indegree.resize(num_scc)
+	for i in range(num_scc):
+		cond_indegree[i] = 0
+		cond_adj[i] = []
+	var edge_seen: Dictionary = {}
+	for edge in directed_edges:
+		var u: CBNodeConnectableBase = edge[0]
+		var v: CBNodeConnectableBase = edge[1]
+		var su: int = node_to_scc[u]
+		var sv: int = node_to_scc[v]
+		if su == sv:
+			continue
+		var key: String = "%d>%d" % [su, sv]
+		if edge_seen.has(key):
+			continue
+		edge_seen[key] = true
+		cond_adj[su].append(sv)
+		cond_indegree[sv] += 1
+	var indegree_copy: Array = []
+	indegree_copy.resize(num_scc)
+	for i in range(num_scc):
+		indegree_copy[i] = cond_indegree[i]
+	var queue: Array = []
+	for i in range(num_scc):
+		if indegree_copy[i] == 0:
+			queue.append(i)
+	var topo: Array = []
+	while not queue.is_empty():
+		var u: int = queue.pop_front()
+		topo.append(u)
+		for v in cond_adj.get(u, []):
+			indegree_copy[v] -= 1
+			if indegree_copy[v] == 0:
+				queue.append(v)
+	for i in range(num_scc):
+		if not i in topo:
+			topo.append(i)
+	var dist: Dictionary = {}
+	for i in range(num_scc):
+		dist[i] = 0
+	for u in topo:
+		for v in cond_adj.get(u, []):
+			if dist[v] < dist[u] + 1:
+				dist[v] = dist[u] + 1
+	for node in nodes:
+		var sid: int = node_to_scc[node]
+		result[node] = dist[sid]
+	return result
+
+
+func _compute_middle_hierarchy_width_span(middle: Array[CBNodeConnectableBase]) -> float:
+	if middle.is_empty():
+		return 0.0
+	var middle_membership: Dictionary = {}
+	for n in middle:
+		middle_membership[n] = true
+	var directed_edges: Array = _build_directed_middle_edges(middle_membership)
+	var layer_of: Dictionary = _condensation_longest_path_layers(middle, directed_edges)
+	var max_layer_idx: int = -1
+	var layers: Dictionary = {}
+	for node in middle:
+		var L: int = layer_of[node]
+		max_layer_idx = max(max_layer_idx, L)
+		if not layers.has(L):
+			var empty_layer: Array[CBNodeConnectableBase] = []
+			layers[L] = empty_layer
+		(layers[L] as Array[CBNodeConnectableBase]).append(node)
+	var span: float = 0.0
+	var first_layer: bool = true
+	for L in range(max_layer_idx + 1):
+		if not layers.has(L):
+			continue
+		if not first_layer:
+			span += LAYOUT_MIDDLE_LAYER_GAP
+		first_layer = false
+		var mw: float = 0.0
+		for node in layers[L] as Array[CBNodeConnectableBase]:
+			mw = max(mw, node.size.x)
+		span += mw
+	return span
+
+
+func _layout_middle_hierarchical(
+	middle: Array[CBNodeConnectableBase],
+	adjacency: Dictionary,
+	io_y_map: Dictionary,
+	middle_base_x: float,
+	start_y: float
+) -> Dictionary:
+	var positions: Dictionary = {}
+	if middle.is_empty():
+		return positions
+	var middle_membership: Dictionary = {}
+	for n in middle:
+		middle_membership[n] = true
+	var directed_edges: Array = _build_directed_middle_edges(middle_membership)
+	var layer_of: Dictionary = _condensation_longest_path_layers(middle, directed_edges)
+	var max_layer_idx: int = -1
+	var layers: Dictionary = {}
+	for node in middle:
+		var L: int = layer_of[node]
+		max_layer_idx = max(max_layer_idx, L)
+		if not layers.has(L):
+			var empty_layer: Array[CBNodeConnectableBase] = []
+			layers[L] = empty_layer
+		(layers[L] as Array[CBNodeConnectableBase]).append(node)
+	var cursor_x: float = middle_base_x
+	for L in range(max_layer_idx + 1):
+		if not layers.has(L):
+			continue
+		var layer_nodes: Array[CBNodeConnectableBase] = layers[L] as Array[CBNodeConnectableBase]
+		var ordered: Array[CBNodeConnectableBase] = _sort_nodes_by_barycenter(layer_nodes, adjacency, io_y_map)
+		var col_positions: Dictionary = _layout_column(ordered, cursor_x, start_y)
+		var layer_max_w: float = 0.0
+		for node in ordered:
+			layer_max_w = max(layer_max_w, node.size.x)
+			positions[node] = col_positions[node]
+		cursor_x += layer_max_w + LAYOUT_MIDDLE_LAYER_GAP
+	return positions
 
 func _sort_nodes_by_barycenter(nodes: Array[CBNodeConnectableBase], adjacency: Dictionary, ref_y_map: Dictionary) -> Array[CBNodeConnectableBase]:
 	var sortable: Array[Dictionary] = []
