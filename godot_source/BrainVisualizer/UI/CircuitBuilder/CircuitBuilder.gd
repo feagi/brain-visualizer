@@ -194,6 +194,10 @@ func _CACHE_this_region_name_update(new_name: StringName) -> void:
 func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	if link.parent_region != representing_region:
 		return
+	# Match parent input/output handlers: do not draw bridge lines or terminals when the mapping
+	# set has no rules (count 0). Otherwise CB shows phantom ports/lines until BV restart.
+	if link.parent_chain != null and link.parent_chain.is_registered_to_established_mapping_set() and link.parent_chain.mapping_set != null and link.parent_chain.mapping_set.number_mappings == 0:
+		return
 	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
 		return
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
