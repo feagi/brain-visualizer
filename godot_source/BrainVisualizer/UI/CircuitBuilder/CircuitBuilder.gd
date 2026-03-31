@@ -17,6 +17,8 @@ const LAYOUT_COLUMN_GAP: float = 480.0
 const LAYOUT_ROW_GAP: float = 48.0
 ## Horizontal spacing between hierarchical layers inside the interconnect (middle) zone.
 const LAYOUT_MIDDLE_LAYER_GAP: float = 480.0
+## Duration of the modulate-only focus flash when centering from the combo (no transform; wires stay aligned).
+const FOCUS_FLASH_DURATION_S: float = 1.0
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -669,15 +671,23 @@ func focus_on_region(region: BrainRegion) -> void:
 	var node: CBNodeConnectableBase = _get_associated_connectable_graph_node(region)
 	if node == null:
 		return
-	_center_on_graph_element(node)
-	_bring_node_to_front_and_jiggle(node)
+	_deferred_center_and_emphasize(node)
 
 func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
 	var node: CBNodeConnectableBase = _get_associated_connectable_graph_node(area)
 	if node == null:
 		return
+	_deferred_center_and_emphasize(node)
+
+
+func _deferred_center_and_emphasize(node: CBNodeConnectableBase) -> void:
+	## GraphEdit [member size] can be zero when the combo callback runs before layout; defer one frame.
+	if size == Vector2.ZERO:
+		await get_tree().process_frame
+	if not is_instance_valid(node):
+		return
 	_center_on_graph_element(node)
-	_bring_node_to_front_and_jiggle(node)
+	_bring_node_to_front_and_flash(node)
 
 ## Rearrange nodes: inputs left, outputs right; interconnect in layered columns by bridge direction
 ## (downstream right); cycles share a layer via SCC + longest path on the component DAG.
@@ -1323,7 +1333,7 @@ func _average(values: Array[float]) -> float:
 	return total / float(values.size())
 
 ## Ensure the chosen node is on top and visually emphasized.
-func _bring_node_to_front_and_jiggle(node: GraphElement) -> void:
+func _bring_node_to_front_and_flash(node: GraphElement) -> void:
 	if node == null or not is_instance_valid(node):
 		return
 	# Raise above overlapping nodes in the GraphEdit canvas.
@@ -1331,18 +1341,24 @@ func _bring_node_to_front_and_jiggle(node: GraphElement) -> void:
 	if parent_node != null:
 		parent_node.move_child(node, parent_node.get_child_count() - 1)
 	node.z_index = 4096
-	# Soft jiggle without changing graph position (avoid triggering moves).
-	var original_rotation: float = node.rotation
-	var original_scale: Vector2 = node.scale
-	node.pivot_offset = node.size * 0.5
+	# Do not tween rotation or scale: GraphEdit connection lines use port geometry; transforming the
+	# GraphNode desyncs wires until a full redraw (e.g. pan). Brightness flash via modulate/self_modulate only.
+	# A small RGB multiplier is often invisible on GraphNode's themed titlebar; lerp toward white is obvious.
+	var base_m: Color = node.modulate
+	var base_s: Color = node.self_modulate
+	var rise_s: float = FOCUS_FLASH_DURATION_S * 0.22
+	var fall_s: float = FOCUS_FLASH_DURATION_S - rise_s
+	const FLASH_LERP_TO_WHITE: float = 0.88
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(node, "rotation", original_rotation + 0.06, 0.08)
-	tween.tween_property(node, "rotation", original_rotation - 0.06, 0.08)
-	tween.tween_property(node, "rotation", original_rotation, 0.08)
-	tween.tween_property(node, "scale", original_scale * 1.03, 0.08)
-	tween.tween_property(node, "scale", original_scale, 0.1)
+	var apply_lerp := func(lerp_w: float) -> void:
+		if not is_instance_valid(node):
+			return
+		node.modulate = base_m.lerp(Color.WHITE, lerp_w)
+		node.self_modulate = base_s.lerp(Color.WHITE, lerp_w)
+	tween.tween_method(apply_lerp, 0.0, FLASH_LERP_TO_WHITE, rise_s)
+	tween.tween_method(apply_lerp, FLASH_LERP_TO_WHITE, 0.0, fall_s)
 
 func _center_on_graph_element(element: GraphElement) -> void:
 	# Determine a target zoom to fit the node comfortably in the current viewport, then zoom out a bit
@@ -1362,13 +1378,11 @@ func _center_on_graph_element(element: GraphElement) -> void:
 	target_zoom = clamp(target_zoom, min_z, max_z)
 	self.zoom = target_zoom
 
-	# Compute node center in content units (position_offset is content units; convert size from pixels to content)
-	var node_center_local: Vector2 = element.position_offset + (element.size / (2.0 * max(self.zoom, 0.0001)))
-
-	# Convert viewport pixels to content units based on zoom
-	var viewport_content_units: Vector2 = viewport_px / max(self.zoom, 0.0001)
-	# Center scroll so node center is in the middle of the visible area
-	scroll_offset = node_center_local - (viewport_content_units / 2.0)
+	# Match [method _fit_circuit_to_viewport]: scroll_offset is in screen pixels; center is in graph space.
+	var zoom_value: float = max(self.zoom, 0.0001)
+	var node_center_graph: Vector2 = element.position_offset + (element.size * 0.5)
+	var viewport_center_px: Vector2 = viewport_px * 0.5
+	scroll_offset = (node_center_graph * zoom_value) - viewport_center_px
 
 func _fit_circuit_to_viewport() -> void:
 	await get_tree().process_frame
