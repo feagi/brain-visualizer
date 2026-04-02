@@ -1270,19 +1270,39 @@ func _select_scale_from_startup_matrix(dpi_tier: int, resolution_tier: int) -> f
 				STARTUP_RES_TIER.RES_STANDARD: return UI_SCALE_LARGE
 				_: return UI_SCALE_XLARGE
 
-## Resolves the display index using window geometry, which is more reliable than current_screen
-## during multi-monitor startup restores.
+## Resolves the display index for metrics that must match the monitor showing BV (DPI, scale),
+## not the OS primary display. On macOS, [member Window.current_screen] and usable-rect probes alone
+## can track the main display until the window is fully placed.
 func _resolve_screen_for_window(window: Window) -> int:
-	var fallback_screen: int = window.current_screen
 	var screen_count: int = DisplayServer.get_screen_count()
 	if screen_count <= 1:
-		return fallback_screen
+		return 0
+	var wid: int = window.get_window_id()
+	var reported: int = DisplayServer.window_get_current_screen(wid)
+	if reported >= 0 and reported < screen_count:
+		return reported
 	var window_center: Vector2i = window.position + (window.size / 2)
+	for i in range(screen_count):
+		var sp: Vector2i = DisplayServer.screen_get_position(i)
+		var sz: Vector2i = DisplayServer.screen_get_size(i)
+		var full_rect: Rect2i = Rect2i(sp, sz)
+		if full_rect.has_point(window_center):
+			return i
+	var mouse_pos: Vector2i = DisplayServer.mouse_get_position()
+	for i in range(screen_count):
+		var sp2: Vector2i = DisplayServer.screen_get_position(i)
+		var sz2: Vector2i = DisplayServer.screen_get_size(i)
+		var full_rect2: Rect2i = Rect2i(sp2, sz2)
+		if full_rect2.has_point(mouse_pos):
+			return i
 	for i in range(screen_count):
 		var usable_rect: Rect2i = DisplayServer.screen_get_usable_rect(i)
 		if usable_rect.has_point(window_center):
 			return i
-	return fallback_screen
+	var fallback_screen: int = window.current_screen
+	if fallback_screen >= 0 and fallback_screen < screen_count:
+		return fallback_screen
+	return 0
 
 ## Computes effective (logical) sizes from raw display metrics.
 ## Uses usable rect when available and infers pixel ratio to normalize window size.
