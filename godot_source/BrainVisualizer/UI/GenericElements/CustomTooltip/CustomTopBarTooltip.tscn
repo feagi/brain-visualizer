@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTopBarTooltip.gd" id="1_custom_tooltip"]
 
-[node name="CustomTopBarTooltip" type="PanelContainer"]
+[node name="CustomTopBarTooltip" type="VBoxContainer"]
 custom_minimum_size = Vector2(360, 0)
 mouse_filter = 2
 script = ExtResource("1_custom_tooltip")

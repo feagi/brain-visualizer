@@ -8,6 +8,7 @@ const ICON_BM: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/Bu
 const TAB_ICON_MAX_WIDTH_BASE_PX: int = 20
 const TAB_H_SEPARATION_BASE_PX: int = 12
 const TAB_LEFT_PADDING_BASE_PX: int = 6
+const TAB_TOOLTIP_DELAY_SEC: float = 0.45
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
 signal requested_view_region_as_CB(region: BrainRegion, request_origin: UITabContainer)
@@ -19,7 +20,8 @@ var parent_UI_view: UIView:
 var _tab_bar: TabBar
 var _parent_UI_view: UIView
 var _tooltip_manager: Node
-var _tab_hover_detectors: Array[Control] = []
+var _tab_tooltip_timer: Timer
+var _pending_tab_idx_for_tooltip: int = -1
 
 func _ready():
 	_tab_bar = get_tab_bar()
@@ -334,11 +336,34 @@ func _setup_custom_tooltip_manager() -> void:
 	_tooltip_manager.name = "TabCustomTooltipManager"
 	add_child(_tooltip_manager)
 	
+	_tab_tooltip_timer = Timer.new()
+	_tab_tooltip_timer.name = "TabTooltipDelayTimer"
+	_tab_tooltip_timer.one_shot = true
+	_tab_tooltip_timer.wait_time = TAB_TOOLTIP_DELAY_SEC
+	add_child(_tab_tooltip_timer)
+	_tab_tooltip_timer.timeout.connect(_on_tab_tooltip_delay_timeout)
+	
 	if _tab_bar:
 		_tab_bar.gui_input.connect(_on_tab_bar_gui_input)
 		_tab_bar.mouse_exited.connect(_on_tab_bar_mouse_exited)
 
+func _on_tab_tooltip_delay_timeout() -> void:
+	var idx: int = _pending_tab_idx_for_tooltip
+	if idx < 0 or idx >= get_tab_count():
+		return
+	if _tooltip_manager == null or not is_instance_valid(_tooltip_manager):
+		return
+	var control: Control = get_tab_control(idx)
+	var tooltip_text: String = _get_tooltip_for_tab(control)
+	if _tooltip_manager.has_method("show_tooltip_at_tab"):
+		_tooltip_manager.show_tooltip_at_tab(tooltip_text, _tab_bar, idx)
+	elif _tooltip_manager.has_method("show_tooltip"):
+		_tooltip_manager.show_tooltip(tooltip_text, _tab_bar)
+
 func _on_tab_bar_mouse_exited() -> void:
+	_pending_tab_idx_for_tooltip = -1
+	if _tab_tooltip_timer:
+		_tab_tooltip_timer.stop()
 	if _tooltip_manager and _tooltip_manager.has_method("hide_tooltip"):
 		_tooltip_manager.hide_tooltip()
 
@@ -348,14 +373,14 @@ func _on_tab_bar_gui_input(event: InputEvent) -> void:
 		var tab_idx = _get_tab_at_position(mouse_event.position)
 		
 		if tab_idx >= 0 and tab_idx < get_tab_count():
-			var control = get_tab_control(tab_idx)
-			var tooltip_text = _get_tooltip_for_tab(control)
-			
-			if _tooltip_manager and _tooltip_manager.has_method("show_tooltip_at_tab"):
-				_tooltip_manager.show_tooltip_at_tab(tooltip_text, _tab_bar, tab_idx)
-			elif _tooltip_manager and _tooltip_manager.has_method("show_tooltip"):
-				_tooltip_manager.show_tooltip(tooltip_text, _tab_bar)
+			if tab_idx != _pending_tab_idx_for_tooltip:
+				_pending_tab_idx_for_tooltip = tab_idx
+				if _tab_tooltip_timer:
+					_tab_tooltip_timer.start()
 		else:
+			_pending_tab_idx_for_tooltip = -1
+			if _tab_tooltip_timer:
+				_tab_tooltip_timer.stop()
 			if _tooltip_manager and _tooltip_manager.has_method("hide_tooltip"):
 				_tooltip_manager.hide_tooltip()
 	elif event is InputEventMouseButton:

@@ -70,6 +70,9 @@ var _manual_stim_timeouts: Dictionary = {}
 var _genome_confirm_retry_in_flight: bool = false
 var _startup_scale_locked_by_endpoint: bool = false
 
+var _connection_inspector_stop_layer: CanvasLayer
+var _connection_inspector_stop_button: Button
+
 # Startup UI scaling thresholds based only on monitor DPI and resolution.
 # Goal: fit more content on low-resolution displays while preserving readability on high-DPI panels.
 const UI_STARTUP_DPI_XLARGE: int = 180
@@ -156,6 +159,7 @@ func _ready():
 	_fps_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_fps_label.add_theme_font_size_override("font_size", 16)
 	add_child(_fps_label)
+	_setup_connection_inspector_stop_overlay()
 	_setup_mouse_context_label()
 	
 	# Connect cortical area cache signals
@@ -223,6 +227,68 @@ func _setup_mouse_context_label() -> void:
 	_mouse_context_label.text = ""
 	_mouse_context_label.z_index = 80
 	add_child(_mouse_context_label)
+
+
+## Floating bottom-right control so users can exit connection inspector without reaching the top bar.
+func _setup_connection_inspector_stop_overlay() -> void:
+	_connection_inspector_stop_layer = CanvasLayer.new()
+	_connection_inspector_stop_layer.name = "ConnectionInspectorStopLayer"
+	_connection_inspector_stop_layer.layer = 24
+	_connection_inspector_stop_layer.visible = false
+	var host := Control.new()
+	host.name = "ConnectionInspectorStopHost"
+	host.set_anchors_preset(Control.PRESET_FULL_RECT)
+	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_connection_inspector_stop_button = Button.new()
+	_connection_inspector_stop_button.name = "StopInspectorButton"
+	_connection_inspector_stop_button.text = "Stop Inspector"
+	_connection_inspector_stop_button.tooltip_text = "Turn off connection inspector"
+	_connection_inspector_stop_button.focus_mode = Control.FOCUS_NONE
+	_connection_inspector_stop_button.anchor_left = 1.0
+	_connection_inspector_stop_button.anchor_top = 1.0
+	_connection_inspector_stop_button.anchor_right = 1.0
+	_connection_inspector_stop_button.anchor_bottom = 1.0
+	_connection_inspector_stop_button.offset_left = -288.0
+	_connection_inspector_stop_button.offset_top = -92.0
+	_connection_inspector_stop_button.offset_right = -18.0
+	_connection_inspector_stop_button.offset_bottom = -22.0
+	var style_normal := StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.1, 0.2, 0.3, 0.94)
+	style_normal.border_color = Color(0.38, 0.78, 0.95, 1.0)
+	style_normal.set_border_width_all(2)
+	style_normal.set_corner_radius_all(12)
+	style_normal.content_margin_left = 26.0
+	style_normal.content_margin_right = 26.0
+	style_normal.content_margin_top = 16.0
+	style_normal.content_margin_bottom = 16.0
+	var style_hover: StyleBoxFlat = style_normal.duplicate() as StyleBoxFlat
+	style_hover.bg_color = Color(0.14, 0.28, 0.4, 0.98)
+	style_hover.border_color = Color(0.5, 0.88, 1.0, 1.0)
+	var style_pressed: StyleBoxFlat = style_normal.duplicate() as StyleBoxFlat
+	style_pressed.bg_color = Color(0.08, 0.14, 0.22, 1.0)
+	_connection_inspector_stop_button.add_theme_stylebox_override(&"normal", style_normal)
+	_connection_inspector_stop_button.add_theme_stylebox_override(&"hover", style_hover)
+	_connection_inspector_stop_button.add_theme_stylebox_override(&"pressed", style_pressed)
+	_connection_inspector_stop_button.add_theme_font_size_override(&"font_size", 22)
+	_connection_inspector_stop_button.add_theme_color_override(&"font_color", Color(0.93, 0.97, 1.0))
+	_connection_inspector_stop_button.add_theme_color_override(&"font_hover_color", Color(1.0, 1.0, 1.0))
+	_connection_inspector_stop_button.add_theme_color_override(&"font_pressed_color", Color(0.85, 0.9, 0.95))
+	_connection_inspector_stop_button.pressed.connect(_on_connection_inspector_stop_pressed)
+	host.add_child(_connection_inspector_stop_button)
+	_connection_inspector_stop_layer.add_child(host)
+	add_child(_connection_inspector_stop_layer)
+
+
+## Shows or hides the floating stop control when connection inspector (global neural connection arcs) is active.
+func set_connection_inspector_stop_overlay_visible(visible: bool) -> void:
+	if _connection_inspector_stop_layer != null:
+		_connection_inspector_stop_layer.visible = visible
+
+
+func _on_connection_inspector_stop_pressed() -> void:
+	if _top_bar != null:
+		_top_bar.stop_connection_inspector_from_overlay()
+
 
 ## Marks which brain monitor currently owns hover updates.
 func set_active_hover_bm(bm: UI_BrainMonitor_3DScene) -> void:

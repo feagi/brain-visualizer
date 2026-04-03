@@ -260,6 +260,17 @@ func _toggle_global_neural_connections(enabled: bool) -> void:
 		print("🔗 ✅ Global neural connections ENABLED for ", cortical_area_objects.size(), " areas")
 	else:
 		print("🔗 ❌ Global neural connections DISABLED for ", cortical_area_objects.size(), " areas")
+	BV.UI.set_connection_inspector_stop_overlay_visible(enabled)
+
+
+## Turns off connection inspector from the bottom-right overlay; keeps top bar and monitor strip toggles in sync.
+func stop_connection_inspector_from_overlay() -> void:
+	_activity_visualization_dropdown.set_connection_inspector_enabled(false)
+	if _shared_combo != null:
+		_shared_combo.sync_connection_inspector_enabled(false)
+	_toggle_global_neural_connections(false)
+	# Ensure overlay hides even if the scene toggle returned early (e.g. monitor not found).
+	BV.UI.set_connection_inspector_stop_overlay_visible(false)
 
 func _find_brain_monitor_scene() -> Node:
 	# Try to find the brain monitor scene in the scene tree

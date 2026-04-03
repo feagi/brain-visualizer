@@ -330,6 +330,7 @@ func _on_monitor_activity_mode_changed(action: StringName, enabled: bool) -> voi
 		return
 	if action == ActivityVisualizationDropDown.ACTION_GLOBAL_NEURAL_CONNECTIONS:
 		_toggle_global_neural_connections_for_scene(_bm_scene, enabled)
+		BV.UI.set_connection_inspector_stop_overlay_visible(enabled)
 	elif action == ActivityVisualizationDropDown.ACTION_VOXEL_INSPECTOR:
 		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR
 		BV.WM.spawn_voxel_inspector()
@@ -345,6 +346,12 @@ func _toggle_global_neural_connections_for_scene(brain_monitor: UI_BrainMonitor_
 			cortical_area_obj.set_hover_over_volume_state(true)
 		else:
 			cortical_area_obj.set_hover_over_volume_state(false)
+
+
+## Keeps the Connection inspector toggle visuals aligned when the mode is cleared from elsewhere (e.g. floating stop button).
+func sync_connection_inspector_enabled(enabled: bool) -> void:
+	if _activity_visualization_dropdown != null:
+		_activity_visualization_dropdown.set_connection_inspector_enabled(enabled)
 
 
 func _find_all_cortical_area_objects_in_scene(root: Node) -> Array:
