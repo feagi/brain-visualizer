@@ -18,6 +18,8 @@ var parent_UI_view: UIView:
 
 var _tab_bar: TabBar
 var _parent_UI_view: UIView
+var _tooltip_manager: Node
+var _tab_hover_detectors: Array[Control] = []
 
 func _ready():
 	_tab_bar = get_tab_bar()
@@ -25,6 +27,8 @@ func _ready():
 	_tab_bar.tab_close_pressed.connect(_on_user_close_tab)
 	PREFAB_CIRCUITBUILDER = load("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn") #TODO using non const instead of const due to cyclid dependency issue currently
 	tab_changed.connect(_on_top_tab_change)
+	
+	_setup_custom_tooltip_manager()
 	
 	# Ensure TabContainer + TabBar participate in BV's theme-driven UI scaling.
 	BV.UI.theme_changed.connect(_theme_updated)
@@ -322,3 +326,70 @@ func _check_tab_visibility(region: BrainRegion, bm: UI_BrainMonitor_3DScene) -> 
 		current_tab = tab_idx
 	else:
 		push_error("UITabContainer: Could not find tab for brain monitor")
+
+func _setup_custom_tooltip_manager() -> void:
+	var tooltip_manager_script = load("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTopBarTooltipManager.gd")
+	_tooltip_manager = Node.new()
+	_tooltip_manager.set_script(tooltip_manager_script)
+	_tooltip_manager.name = "TabCustomTooltipManager"
+	add_child(_tooltip_manager)
+	
+	if _tab_bar:
+		_tab_bar.gui_input.connect(_on_tab_bar_gui_input)
+		_tab_bar.mouse_exited.connect(_on_tab_bar_mouse_exited)
+
+func _on_tab_bar_mouse_exited() -> void:
+	if _tooltip_manager and _tooltip_manager.has_method("hide_tooltip"):
+		_tooltip_manager.hide_tooltip()
+
+func _on_tab_bar_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var mouse_event = event as InputEventMouseMotion
+		var tab_idx = _get_tab_at_position(mouse_event.position)
+		
+		if tab_idx >= 0 and tab_idx < get_tab_count():
+			var control = get_tab_control(tab_idx)
+			var tooltip_text = _get_tooltip_for_tab(control)
+			
+			if _tooltip_manager and _tooltip_manager.has_method("show_tooltip_at_tab"):
+				_tooltip_manager.show_tooltip_at_tab(tooltip_text, _tab_bar, tab_idx)
+			elif _tooltip_manager and _tooltip_manager.has_method("show_tooltip"):
+				_tooltip_manager.show_tooltip(tooltip_text, _tab_bar)
+		else:
+			if _tooltip_manager and _tooltip_manager.has_method("hide_tooltip"):
+				_tooltip_manager.hide_tooltip()
+	elif event is InputEventMouseButton:
+		var mouse_button = event as InputEventMouseButton
+		if not mouse_button.pressed:
+			if _tooltip_manager and _tooltip_manager.has_method("hide_tooltip"):
+				_tooltip_manager.hide_tooltip()
+
+func _get_tab_at_position(position: Vector2) -> int:
+	if _tab_bar == null:
+		return -1
+	
+	var tab_count = get_tab_count()
+	
+	for i in range(tab_count):
+		var tab_rect = _tab_bar.get_tab_rect(i)
+		if position.x >= tab_rect.position.x and position.x <= tab_rect.position.x + tab_rect.size.x:
+			if position.y >= tab_rect.position.y and position.y <= tab_rect.position.y + tab_rect.size.y:
+				return i
+	
+	return -1
+
+func _get_tooltip_for_tab(control: Control) -> String:
+	if control is CircuitBuilder:
+		var cb = control as CircuitBuilder
+		if cb.representing_region:
+			return "Circuit Builder: " + cb.representing_region.friendly_name
+		return "Circuit Builder"
+	elif control is UI_BrainMonitor_3DScene:
+		var bm = control as UI_BrainMonitor_3DScene
+		if bm.representing_region:
+			return "Brain Monitor: " + bm.representing_region.friendly_name
+		return "Brain Monitor"
+	return "Tab"
+
+func get_custom_tooltip_manager() -> Node:
+	return _tooltip_manager

@@ -174,9 +174,31 @@ func _ready():
 	FeagiCore.genome_load_state_changed.connect(_on_genome_load_state_changed)
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
-	
+	_setup_visible_caret_style_globally()
 
 #endregion
+
+
+## Applies [VisibleCaretStyle] to controls already under this manager and subscribes to new nodes (spawned windows, reparented popups).
+func _setup_visible_caret_style_globally() -> void:
+	if not get_tree().node_added.is_connected(_on_node_added_apply_visible_caret):
+		get_tree().node_added.connect(_on_node_added_apply_visible_caret)
+	call_deferred("_apply_visible_caret_to_existing_ui_nodes")
+
+
+func _apply_visible_caret_to_existing_ui_nodes() -> void:
+	VisibleCaretStyle.apply_to_subtree(self)
+
+
+func _on_node_added_apply_visible_caret(node: Node) -> void:
+	if node is LineEdit:
+		VisibleCaretStyle.apply_to_line_edit(node as LineEdit)
+	elif node is TextEdit:
+		VisibleCaretStyle.apply_to_text_edit(node as TextEdit)
+	elif node is SpinBox:
+		var le: LineEdit = (node as SpinBox).get_line_edit()
+		if le != null:
+			VisibleCaretStyle.apply_to_line_edit(le)
 
 ## Initializes the global mouse hover label shown in the screen corner.
 func _setup_mouse_context_label() -> void:

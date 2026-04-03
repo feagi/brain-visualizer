@@ -40,6 +40,7 @@ const NORMAL_SCALE := Vector2(1.0, 1.0)
 const BACKPLATE_COLOR := Color("252525")
 const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
+const CUSTOM_TOOLTIP_TRIGGER_SCRIPT = preload("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTooltipTrigger.gd")
 const REARRANGE_SIZE_SCALE: float = 1.0
 const SIZE_SCALE_3D: float = 0.8
 const SIZE_SCALE_2D: float = 0.8
@@ -73,17 +74,7 @@ func _ready() -> void:
 	_activity_visualization_dropdown = $ActivityVisualizationDropDown
 	_activity_toggle_button = $ActivityVisualizationDropDown/ToggleImageDropDown as TextureButton
 	_camera_animations_button = $CameraAnimations as ButtonTextureRectScaling
-	_btn_brain_regions_list.tooltip_text = "Select circuit"
-	_btn_brain_regions_add.tooltip_text = "Add circuit"
-	_btn_interconnect_list.tooltip_text = "Select interconnect area"
-	_btn_interconnect_add.tooltip_text = "Add interconnect area"
-	_btn_memory_list.tooltip_text = "Select memory area"
-	_btn_memory_add.tooltip_text = "Add memory area"
-	_btn_inputs_list.tooltip_text = "Select input area"
-	_btn_inputs_add.tooltip_text = "Add input area"
-	_btn_outputs_list.tooltip_text = "Select output area"
-	_btn_outputs_add.tooltip_text = "Add output area"
-	_btn_rearrange_layout.tooltip_text = "Rearrange Circuit Builder layout"
+	_apply_native_tooltips_for_combo_strip()
 
 	# Ensure the combo captures events within its bounds; individual buttons will stop events
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -115,6 +106,75 @@ func _ready() -> void:
 	# Opt-in to BV's theme-driven scaling so these "top bar" buttons resize with +/- UI scaling.
 	BV.UI.theme_changed.connect(_on_theme_changed)
 	_on_theme_changed(BV.UI.loaded_theme)
+
+
+## Default Godot tooltips when this strip is not using the main top bar custom tooltip host.
+func _apply_native_tooltips_for_combo_strip() -> void:
+	_btn_brain_regions_list.tooltip_text = "Select circuit"
+	_btn_brain_regions_add.tooltip_text = "Add circuit"
+	_btn_interconnect_list.tooltip_text = "Select interconnect area"
+	_btn_interconnect_add.tooltip_text = "Add interconnect area"
+	_btn_memory_list.tooltip_text = "Select memory area"
+	_btn_memory_add.tooltip_text = "Add memory area"
+	_btn_inputs_list.tooltip_text = "Select input area"
+	_btn_inputs_add.tooltip_text = "Add input area"
+	_btn_outputs_list.tooltip_text = "Select output area"
+	_btn_outputs_add.tooltip_text = "Add output area"
+	_btn_rearrange_layout.tooltip_text = "Rearrange Circuit Builder layout"
+	if _activity_visualization_dropdown != null:
+		_activity_visualization_dropdown.tooltip_text = "Brain activity: global neural connections or inspectors"
+	if _camera_animations_button != null:
+		_camera_animations_button.tooltip_text = "Camera Animations"
+
+
+## Main top bar only: disable native tooltips and use [CustomTopBarTooltip] via [TopBar] host.
+func apply_custom_topbar_tooltips() -> void:
+	CustomTopBarTooltipManager.strip_native_tooltips_recursive(self)
+	var top_bar: Node = self
+	while top_bar != null:
+		if top_bar is TopBar:
+			break
+		top_bar = top_bar.get_parent()
+	if top_bar == null or not top_bar.has_method("get_custom_tooltip_manager"):
+		return
+	if top_bar.get_custom_tooltip_manager() == null:
+		return
+	var pairs: Array = [
+		[_btn_brain_regions_list, "View all circuits"],
+		[_btn_brain_regions_add, "Add a new circuit"],
+		[_btn_interconnect_list, "View interconnect areas"],
+		[_btn_interconnect_add, "Add interconnect area"],
+		[_btn_memory_list, "View memory areas"],
+		[_btn_memory_add, "Add memory area"],
+		[_btn_inputs_list, "View all input areas"],
+		[_btn_inputs_add, "Add input area"],
+		[_btn_outputs_list, "View all output areas"],
+		[_btn_outputs_add, "Add output area"],
+		[_btn_rearrange_layout, "Rearrange Circuit Builder layout"],
+	]
+	if _activity_visualization_dropdown != null:
+		pairs.append([_activity_visualization_dropdown, "Brain activity visualization modes"])
+	if _camera_animations_button != null:
+		pairs.append([_camera_animations_button, "Camera animations"])
+	for pair in pairs:
+		var ctl: Control = pair[0] as Control
+		var txt: String = str(pair[1])
+		if ctl == null or not is_instance_valid(ctl):
+			continue
+		ctl.tooltip_text = ""
+		ctl.mouse_filter = Control.MOUSE_FILTER_PASS
+		var existing: Node = ctl.get_node_or_null("TooltipTrigger")
+		if existing != null:
+			if existing.has_method("set_tooltip_text"):
+				existing.call("set_tooltip_text", txt)
+			else:
+				existing.set("tooltip_text", txt)
+			continue
+		var trigger := Node.new()
+		trigger.set_script(CUSTOM_TOOLTIP_TRIGGER_SCRIPT)
+		trigger.name = "TooltipTrigger"
+		ctl.add_child(trigger)
+		trigger.set("tooltip_text", txt)
 
 
 ## Apply shared spacing tokens to keep all combo strips consistent across views.
