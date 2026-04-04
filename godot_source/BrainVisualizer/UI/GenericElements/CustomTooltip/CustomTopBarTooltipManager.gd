@@ -6,8 +6,9 @@ const TOOLTIP_CANVAS_LAYER: int = 100
 ## [UITabContainer] must use a **higher** layer than [TopBar]'s manager: TopBar is listed after [CB_Holder]
 ## under [UIManager], so same layer (100) would paint tab tooltips under the global top bar.
 var tooltip_canvas_layer: int = TOOLTIP_CANVAS_LAYER
-## When true, [CanvasLayer] is moved under [member BV.UI] so tooltip coords match anchors anywhere in the tree
-## (dropdown rows reparented to root, [CB_Holder] tab strip, etc.). Required for correct anchoring.
+## When true, [CanvasLayer] is moved to [method SceneTree.root] ([Window]) so tooltip coords match reparented
+## [PopupPanel] menus (same parent as [method ToggleImageDropDown._reparent_panel_to_root_viewport]). Deep UI trees
+## under [member BV.UI] would otherwise mix canvas transforms with root-reparented anchors.
 var reparent_tooltip_canvas_to_uIManager: bool = true
 
 const PREFAB_TOOLTIP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTopBarTooltip.tscn")
@@ -59,26 +60,21 @@ func _reparent_tooltip_canvas_to_uIManager() -> void:
 		return
 	if _tooltip_layer == null or not is_instance_valid(_tooltip_layer):
 		return
-	if not is_instance_valid(BV) or BV.UI == null:
+	var root: Node = get_tree().root
+	if root == null:
 		return
-	var ui_root: Node = BV.UI as Node
-	if _tooltip_layer.get_parent() == ui_root:
+	if _tooltip_layer.get_parent() == root:
 		return
 	var par: Node = _tooltip_layer.get_parent()
 	if par != null:
 		par.remove_child(_tooltip_layer)
-	ui_root.add_child(_tooltip_layer)
+	root.add_child(_tooltip_layer)
 	_tooltip_layer.name = "StyledTooltipCanvasLayer"
-	var top_bar: Node = ui_root.get_node_or_null("TopBar")
-	if top_bar != null:
-		ui_root.move_child(_tooltip_layer, top_bar.get_index() + 1)
-	else:
-		ui_root.move_child(_tooltip_layer, 0)
 
 
-## Maps [param anchor] bounds to root [Window] coordinates (same space as [method FilterableListPopup._get_anchor_screen_position]).
-## For the root viewport, [method Control.get_global_rect] can disagree with reparented [PopupPanel] row controls (tooltips clamped to the left).
-## SubViewport-embedded anchors keep using scaled [method Control.get_global_rect] mapping.
+## Maps [param anchor] bounds to the same viewport space as tooltip [Control] positioning (root [Window] content coords).
+## Do not mix [member Window.position] (screen space) with [method Control.get_global_rect] (viewport space).
+## [SubViewport] anchors: scaled [method Control.get_global_rect] via [SubViewportContainer].
 static func anchor_control_global_rect_window(anchor: Control) -> Rect2:
 	if anchor == null or not is_instance_valid(anchor):
 		return Rect2()
@@ -97,11 +93,62 @@ static func anchor_control_global_rect_window(anchor: Control) -> Rect2:
 				var scale: Vector2 = svc.size / vp_size
 				return Rect2(cr.position + r.position * scale, r.size * scale)
 		return anchor.get_global_rect()
-	var top_left: Vector2 = anchor.get_global_position()
-	var sz: Vector2 = anchor.size
-	if sz.x <= 0.0 or sz.y <= 0.0:
-		sz = anchor.get_global_rect().size
-	return Rect2(top_left, sz)
+	# Reparented [PopupPanel] menus ([ToggleImageDropDown]): row [Control] rects are popup-local (~[P (4,4)]);
+	# add [member Window.position] so placement matches [method ToggleImageDropDown._toggle_menu].
+	var popup_root: Popup = _find_ancestor_popup(anchor)
+	if popup_root != null:
+		return _anchor_rect_via_popup_chain(anchor, popup_root)
+	return _anchor_rect_global_transform_aabb(anchor)
+
+
+## First [Popup] / [PopupPanel] walking up from [param anchor] (reparented dropdown rows live under one).
+static func _find_ancestor_popup(anchor: Control) -> Popup:
+	var n: Node = anchor
+	while n != null:
+		if n is Popup:
+			return n as Popup
+		n = n.get_parent()
+	return null
+
+
+## [param popup] is reparented [PopupPanel] ([Window]). Child controls' [method Control.get_global_rect] stays popup-local; [member Window.position] is the offset in the root viewport (set when the menu opens).
+static func _anchor_rect_via_popup_chain(anchor: Control, popup: Popup) -> Rect2:
+	var gr: Rect2 = anchor.get_global_rect()
+	if gr.size.x <= 0.0 or gr.size.y <= 0.0:
+		gr.size = anchor.size
+	if gr.size.x <= 0.0 or gr.size.y <= 0.0:
+		gr.size = anchor.get_combined_minimum_size()
+	var win: Window = popup as Window
+	if win == null:
+		return _anchor_rect_global_transform_aabb(anchor)
+	var wp: Vector2 = Vector2(win.position)
+	return Rect2(wp + gr.position, gr.size)
+
+
+static func _anchor_rect_from_transform(xf: Transform2D, local: Rect2) -> Rect2:
+	var p0: Vector2 = xf * local.position
+	var p1: Vector2 = xf * Vector2(local.end.x, local.position.y)
+	var p2: Vector2 = xf * local.end
+	var p3: Vector2 = xf * Vector2(local.position.x, local.end.y)
+	var min_x: float = minf(minf(p0.x, p1.x), minf(p2.x, p3.x))
+	var max_x: float = maxf(maxf(p0.x, p1.x), maxf(p2.x, p3.x))
+	var min_y: float = minf(minf(p0.y, p1.y), minf(p2.y, p3.y))
+	var max_y: float = maxf(maxf(p0.y, p1.y), maxf(p2.y, p3.y))
+	return Rect2(Vector2(min_x, min_y), Vector2(max_x - min_x, max_y - min_y))
+
+
+## Axis-aligned bounds in the same canvas space as drawing (includes [PopupPanel] / layer offset).
+## [method Control.get_global_transform] and [method Control.get_global_rect] can sit near (0,0) for popup rows
+## while the menu is drawn elsewhere; [method CanvasItem.get_global_transform_with_canvas] fixes that.
+static func _anchor_rect_global_transform_aabb(anchor: Control) -> Rect2:
+	var local: Rect2 = Rect2(Vector2.ZERO, anchor.size)
+	if local.size.x <= 0.0 or local.size.y <= 0.0:
+		local.size = anchor.get_global_rect().size
+	if local.size.x <= 0.0 or local.size.y <= 0.0:
+		local.size = anchor.get_combined_minimum_size()
+	if local.size.x <= 0.0 or local.size.y <= 0.0:
+		return anchor.get_global_rect()
+	return _anchor_rect_from_transform(anchor.get_global_transform_with_canvas(), local)
 
 
 ## Replaces native tooltips on [ToggleImageDropDown] popup row [TextureButton]s with [CustomTooltipTrigger].

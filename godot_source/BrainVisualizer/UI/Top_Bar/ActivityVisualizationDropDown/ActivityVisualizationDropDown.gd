@@ -15,6 +15,11 @@ const ACTION_MEMORY_INSPECTOR: StringName = &"memory_inspector"
 
 var _global_connections_enabled: bool = false
 
+## True while the inspector [ToggleImageDropDown] menu is open (used by [CustomTooltipTrigger] on this bar).
+func is_inspector_dropdown_menu_open() -> bool:
+	return _dropdown != null and _dropdown.is_menu_open()
+
+
 func _ready() -> void:
 	# Trigger uses inspectors_*.jpg from scene; submenu row 0 keeps connection_inspector_*.
 	if _global_button != null:

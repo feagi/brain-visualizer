@@ -193,7 +193,7 @@ func show_tooltip(text: String, anchor_control: Control) -> void:
 	_apply_caret_metrics()
 	_apply_tooltip_typography()
 	_apply_label_size_for_text(text)
-	
+	show()
 	await get_tree().process_frame
 	await get_tree().process_frame
 	reset_size()
@@ -204,7 +204,6 @@ func show_tooltip(text: String, anchor_control: Control) -> void:
 	_tween = create_tween()
 	_tween.set_parallel(false)
 	_tween.tween_property(self, "modulate", Color(1, 1, 1, 1), FADE_DURATION)
-	show()
 
 
 func hide_tooltip() -> void:
@@ -223,6 +222,21 @@ func _anchor_global_rect_in_root_window(anchor: Control) -> Rect2:
 	return CustomTopBarTooltipManager.anchor_control_global_rect_window(anchor)
 
 
+func _tooltip_size_for_layout() -> Vector2:
+	var s: Vector2 = size
+	if s.x < 1.0 or s.y < 1.0:
+		s = get_combined_minimum_size()
+	return s
+
+
+func _apply_global_top_left(tl_global: Vector2) -> void:
+	var parent_ctl: Control = get_parent() as Control
+	if parent_ctl != null:
+		position = parent_ctl.get_global_transform().affine_inverse() * tl_global
+	else:
+		global_position = tl_global
+
+
 func _position_tooltip() -> void:
 	if _current_anchor == null or not is_instance_valid(_current_anchor):
 		return
@@ -231,7 +245,7 @@ func _position_tooltip() -> void:
 		return
 	
 	var anchor_rect := _anchor_global_rect_in_root_window(_current_anchor)
-	var tooltip_size := size
+	var tooltip_size: Vector2 = _tooltip_size_for_layout()
 	
 	var x_pos := anchor_rect.position.x + (anchor_rect.size.x - tooltip_size.x) / 2.0
 	var y_pos := anchor_rect.position.y + anchor_rect.size.y + TOOLTIP_OFFSET_Y
@@ -245,7 +259,7 @@ func _position_tooltip() -> void:
 	else:
 		x_pos = min_x
 	
-	global_position = Vector2(x_pos, y_pos)
+	_apply_global_top_left(Vector2(x_pos, y_pos))
 
 
 func update_position() -> void:

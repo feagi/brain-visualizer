@@ -137,6 +137,12 @@ func _get_anchor_screen_position() -> Vector2:
 func _is_menu_shown() -> bool:
 	return _panel.visible
 
+
+## True while the popup menu is visible (after [method _toggle_menu](true) / [method popup]).
+func is_menu_open() -> bool:
+	return _is_menu_shown()
+
+
 func _get_texture_button(index: int) -> TextureButton:
 	return _button_holder.get_child(index)
 	

@@ -40,6 +40,16 @@ func _ready() -> void:
 	_parent_control.mouse_exited.connect(_on_mouse_exited)
 	_parent_control.tree_exiting.connect(_on_parent_tree_exiting)
 
+func _suppress_tooltip_while_dropdown_open() -> bool:
+	if _parent_control == null or not is_instance_valid(_parent_control):
+		return false
+	if _parent_control is ToggleImageDropDown:
+		return (_parent_control as ToggleImageDropDown).is_menu_open()
+	if _parent_control is ActivityVisualizationDropDown:
+		return (_parent_control as ActivityVisualizationDropDown).is_inspector_dropdown_menu_open()
+	return false
+
+
 func _on_mouse_entered() -> void:
 	_is_hovering = true
 	if not _tooltip_manager or not is_instance_valid(_tooltip_manager):
@@ -47,6 +57,8 @@ func _on_mouse_entered() -> void:
 	if not _parent_control or not is_instance_valid(_parent_control):
 		return
 	if tooltip_text.is_empty():
+		return
+	if _suppress_tooltip_while_dropdown_open():
 		return
 	if _show_timer:
 		_show_timer.start()
@@ -59,6 +71,8 @@ func _on_show_delay_timeout() -> void:
 	if not _parent_control or not is_instance_valid(_parent_control):
 		return
 	if tooltip_text.is_empty():
+		return
+	if _suppress_tooltip_while_dropdown_open():
 		return
 	if use_side_caret_tooltip and _tooltip_manager.has_method("show_tooltip_side_caret"):
 		_tooltip_manager.show_tooltip_side_caret(tooltip_text, _parent_control)
