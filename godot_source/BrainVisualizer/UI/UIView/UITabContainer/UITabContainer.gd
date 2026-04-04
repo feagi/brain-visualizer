@@ -9,6 +9,8 @@ const TAB_ICON_MAX_WIDTH_BASE_PX: int = 20
 const TAB_H_SEPARATION_BASE_PX: int = 12
 const TAB_LEFT_PADDING_BASE_PX: int = 6
 const TAB_TOOLTIP_DELAY_SEC: float = 0.45
+## Above [TopBar] tooltip CanvasLayer (100); see [member CustomTopBarTooltipManager.tooltip_canvas_layer].
+const TAB_TOOLTIP_CANVAS_LAYER: int = 101
 
 signal all_tabs_removed() ## Emitted when all tabs are removed, this container should be destroyed
 signal requested_view_region_as_CB(region: BrainRegion, request_origin: UITabContainer)
@@ -334,6 +336,8 @@ func _setup_custom_tooltip_manager() -> void:
 	_tooltip_manager = Node.new()
 	_tooltip_manager.set_script(tooltip_manager_script)
 	_tooltip_manager.name = "TabCustomTooltipManager"
+	_tooltip_manager.tooltip_canvas_layer = TAB_TOOLTIP_CANVAS_LAYER
+	_tooltip_manager.reparent_tooltip_canvas_to_uIManager = true
 	add_child(_tooltip_manager)
 	
 	_tab_tooltip_timer = Timer.new()

@@ -492,6 +492,11 @@ func _setup_custom_tooltips() -> void:
 	_tooltip_manager.set_script(tooltip_manager_script)
 	_tooltip_manager.name = "CustomTooltipManager"
 	add_child(_tooltip_manager)
+	# Popup menu rows still had native TooltipPanel styling (wider padding than combo strip).
+	var split_toggle: ToggleImageDropDown = $TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown/ToggleImageDropDown as ToggleImageDropDown
+	var activity_toggle: ToggleImageDropDown = $TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown/ToggleImageDropDown as ToggleImageDropDown
+	CustomTopBarTooltipManager.wire_toggle_dropdown_menu_tooltips(split_toggle, false)
+	CustomTopBarTooltipManager.wire_toggle_dropdown_menu_tooltips(activity_toggle, true)
 	# Kill nested scene-file tooltips (dropdown tiles, etc.) so only styled tooltips show.
 	CustomTopBarTooltipManager.strip_native_tooltips_recursive($Buttons)
 	CustomTopBarTooltipManager.strip_native_tooltips_recursive($TopBarControlsPanel)
@@ -503,7 +508,7 @@ func _setup_custom_tooltips() -> void:
 	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer/TextureButton, "Add connectivity rule")
 	# Hover target is the toggle control; nested TextureButtons kept native-free above.
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown/ToggleImageDropDown, "Split view: Circuit Builder, Brain Monitor, or split layout")
-	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown/ToggleImageDropDown, "Brain activity: connections, Voxel Inspector, Memory Inspector")
+	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown/ToggleImageDropDown, "Inspectors")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/CameraAnimations, "Camera animations")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/GuideButton, "User guide and tutorials")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/SettingsButton, "Brain Visualizer settings")

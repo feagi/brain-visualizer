@@ -5,6 +5,8 @@ class_name CustomTooltipTrigger
 const SHOW_DELAY_SEC: float = 0.45
 
 @export var tooltip_text: String = ""
+## When true, uses [method CustomTopBarTooltipManager.show_tooltip_side_caret] (left caret, body to the right).
+@export var use_side_caret_tooltip: bool = false
 @export var tooltip_manager_path: NodePath
 
 var _parent_control: Control
@@ -58,7 +60,9 @@ func _on_show_delay_timeout() -> void:
 		return
 	if tooltip_text.is_empty():
 		return
-	if _tooltip_manager.has_method("show_tooltip"):
+	if use_side_caret_tooltip and _tooltip_manager.has_method("show_tooltip_side_caret"):
+		_tooltip_manager.show_tooltip_side_caret(tooltip_text, _parent_control)
+	elif _tooltip_manager.has_method("show_tooltip"):
 		_tooltip_manager.show_tooltip(tooltip_text, _parent_control)
 
 func _on_mouse_exited() -> void:

@@ -46,6 +46,8 @@ const SIZE_SCALE_3D: float = 0.8
 const SIZE_SCALE_2D: float = 0.8
 
 var _list_popup: FilterableListPopup
+## True after [method apply_custom_topbar_tooltips] succeeded for this instance (TopBar or tab host).
+var _hosted_styled_tooltips_applied: bool = false
 
 ## Wire the combo buttons and dropdown popup.
 func _ready() -> void:
@@ -122,23 +124,41 @@ func _apply_native_tooltips_for_combo_strip() -> void:
 	_btn_outputs_add.tooltip_text = "Add output area"
 	_btn_rearrange_layout.tooltip_text = "Rearrange Circuit Builder layout"
 	if _activity_visualization_dropdown != null:
-		_activity_visualization_dropdown.tooltip_text = "Brain activity: global neural connections or inspectors"
+		_activity_visualization_dropdown.tooltip_text = "Inspectors"
 	if _camera_animations_button != null:
 		_camera_animations_button.tooltip_text = "Camera Animations"
 
 
-## Main top bar only: disable native tooltips and use [CustomTopBarTooltip] via [TopBar] host.
+## Walks up from this combo to a node that hosts [CustomTopBarTooltipManager] ([TopBar] or [UITabContainer]).
+func _find_first_tooltip_host() -> Node:
+	var n: Node = self
+	while n != null:
+		if n.has_method("get_custom_tooltip_manager"):
+			var mgr: Variant = n.call("get_custom_tooltip_manager")
+			if mgr != null:
+				return n
+		n = n.get_parent()
+	return null
+
+
+## Circuit Builder / Brain Monitor: use the tab [UITabContainer] tooltip host (same styled panel as main top bar).
+func _try_apply_styled_tooltips_for_current_host() -> void:
+	if _hosted_styled_tooltips_applied or _global_topbar_mode:
+		return
+	apply_custom_topbar_tooltips()
+
+
+## Disable native tooltips and use [CustomTopBarTooltip] via [TopBar] or [UITabContainer] host.
 func apply_custom_topbar_tooltips() -> void:
+	var host: Node = _find_first_tooltip_host()
+	if host == null:
+		return
+	if _activity_visualization_dropdown != null:
+		var act_toggle: ToggleImageDropDown = _activity_visualization_dropdown.get_node_or_null(
+			"ToggleImageDropDown"
+		) as ToggleImageDropDown
+		CustomTopBarTooltipManager.wire_toggle_dropdown_menu_tooltips(act_toggle, true)
 	CustomTopBarTooltipManager.strip_native_tooltips_recursive(self)
-	var top_bar: Node = self
-	while top_bar != null:
-		if top_bar is TopBar:
-			break
-		top_bar = top_bar.get_parent()
-	if top_bar == null or not top_bar.has_method("get_custom_tooltip_manager"):
-		return
-	if top_bar.get_custom_tooltip_manager() == null:
-		return
 	var pairs: Array = [
 		[_btn_brain_regions_list, "View all circuits"],
 		[_btn_brain_regions_add, "Add a new circuit"],
@@ -153,7 +173,7 @@ func apply_custom_topbar_tooltips() -> void:
 		[_btn_rearrange_layout, "Rearrange Circuit Builder layout"],
 	]
 	if _activity_visualization_dropdown != null:
-		pairs.append([_activity_visualization_dropdown, "Brain activity visualization modes"])
+		pairs.append([_activity_visualization_dropdown, "Inspectors"])
 	if _camera_animations_button != null:
 		pairs.append([_camera_animations_button, "Camera animations"])
 	for pair in pairs:
@@ -175,6 +195,7 @@ func apply_custom_topbar_tooltips() -> void:
 		trigger.name = "TooltipTrigger"
 		ctl.add_child(trigger)
 		trigger.set("tooltip_text", txt)
+	_hosted_styled_tooltips_applied = true
 
 
 ## Apply shared spacing tokens to keep all combo strips consistent across views.
@@ -243,6 +264,8 @@ func _apply_rearrange_button_size() -> void:
 	_btn_rearrange_layout.custom_minimum_size = base_size * REARRANGE_SIZE_SCALE * _get_context_size_scale()
 
 func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> void:
+	if not _hosted_styled_tooltips_applied:
+		_try_apply_styled_tooltips_for_current_host()
 	_is_3d_context = true
 	_global_topbar_mode = false
 	_bm_scene = bm_scene
@@ -258,6 +281,8 @@ func set_2d_context(cb_scene: CircuitBuilder, region: BrainRegion) -> void:
 	context_region = region
 	_update_buttons_state()
 	_on_theme_changed(theme)
+	if not _hosted_styled_tooltips_applied:
+		_try_apply_styled_tooltips_for_current_host()
 
 
 ## Use this component as the shared global top-bar strip.

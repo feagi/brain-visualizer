@@ -276,7 +276,7 @@ visible = false
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-tooltip_text = "Brain activity: global neural connections or inspectors"
+tooltip_text = "Inspectors"
 
 [node name="CameraAnimations" type="TextureRect" parent="."]
 visible = false
