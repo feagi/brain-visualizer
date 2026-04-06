@@ -2879,6 +2879,9 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 			if !"plasticity_window" in mapping_entry:
 				mapping_entry["plasticity_window"] = SingleMappingDefinition.DEFAULT_PLASTICITY_WINDOW
 			mapping_entry["plasticity_window"] = int(mapping_entry["plasticity_window"])
+			if !"synaptic_delay_bursts" in mapping_entry:
+				mapping_entry["synaptic_delay_bursts"] = SingleMappingDefinition.DEFAULT_SYNAPTIC_DELAY_BURSTS
+			mapping_entry["synaptic_delay_bursts"] = int(mapping_entry["synaptic_delay_bursts"])
 	var dict_to_send: Dictionary = {
 		"src_cortical_area": source_cortical_ID,
 		"dst_cortical_area": destination_cortical_ID,

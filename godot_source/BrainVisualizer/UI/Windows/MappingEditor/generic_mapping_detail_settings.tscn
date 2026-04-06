@@ -12,7 +12,7 @@ size_flags_vertical = 0
 script = ExtResource("1_a7y6g")
 
 [node name="Label9" type="Label" parent="."]
-custom_minimum_size = Vector2(1400, 0)
+custom_minimum_size = Vector2(1520, 0)
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Established Mappings"
@@ -105,7 +105,23 @@ horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
 
-[node name="Spacer_BetweenPSPAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label_Delay" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(100, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Whole bursts from presynaptic fire until PSP is applied (minimum 1)."
+mouse_filter = 1
+text = "Delay (bursts)"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0

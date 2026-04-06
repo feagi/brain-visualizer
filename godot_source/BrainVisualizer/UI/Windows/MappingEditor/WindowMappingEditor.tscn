@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://bifi2v0y8l2bl" path="res://BrainVisualizer/UI/Windows/MappingEditor/generic_mapping_detail_settings_partial.tscn" id="6_yr7ns"]
 
 [node name="WindowMappingEditor" type="VBoxContainer"]
-offset_right = 1332.0
+offset_right = 1452.0
 offset_bottom = 703.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
@@ -64,7 +64,7 @@ layout_mode = 2
 
 [node name="GenericMappingDetailSettings" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_n57ep")]
 visible = false
-custom_minimum_size = Vector2(1300, 0)
+custom_minimum_size = Vector2(1420, 0)
 layout_mode = 2
 
 [node name="GenericMappingDetailSettingsPartial" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_yr7ns")]

@@ -11,6 +11,8 @@ const DEFAULT_PLASTICITY_CONSTANT: float = 1.0
 const DEFAULT_LTP_MULTIPLIER: float = 1.0
 const DEFAULT_LTD_MULTIPLIER: float = 1.0
 const DEFAULT_PLASTICITY_WINDOW: int = 3
+## Whole bursts from presynaptic fire until PSP is applied (minimum 1; genome / API key: synaptic_delay_bursts).
+const DEFAULT_SYNAPTIC_DELAY_BURSTS: int = 1
 
 
 var morphology_used: BaseMorphology:
@@ -29,6 +31,8 @@ var LTD_multiplier: float:
 	get: return _LTD_multiplier
 var plasticity_window: int:
 	get: return _plasticity_window
+var synaptic_delay_bursts: int:
+	get: return _synaptic_delay_bursts
 
 var _morphology_used: BaseMorphology
 var _scalar: Vector3i # must all be non-zero positive
@@ -38,6 +42,7 @@ var _plasticity_constant: float
 var _LTP_multiplier: float
 var _LTD_multiplier: float
 var _plasticity_window: int
+var _synaptic_delay_bursts: int
 
 ## Creates a mapping with default settings (given a morphology)
 static func create_default_mapping(morphology: BaseMorphology) -> SingleMappingDefinition:
@@ -76,7 +81,7 @@ static func _safe_convert_to_vector3i(data: Variant, field_name: String = "") ->
 
 ## Legacy row format from connectome / cortical_map_detailed (matches feagi-api cortical_mapping normalization):
 ## [morphology_id, morphology_scalar, postSynapticCurrent_multiplier, plasticity_flag,
-##  plasticity_constant, ltp_multiplier, ltd_multiplier, plasticity_window]
+##  plasticity_constant, ltp_multiplier, ltd_multiplier, plasticity_window, synaptic_delay_bursts]
 static func _from_FEAGI_JSON_array_rule(rule: Array) -> SingleMappingDefinition:
 	if rule.size() < 4:
 		push_error("SingleMappingDefinition: array mapping rule needs at least 4 elements, got %d" % rule.size())
@@ -91,8 +96,21 @@ static func _from_FEAGI_JSON_array_rule(rule: Array) -> SingleMappingDefinition:
 	var plasticity: bool = bool(rule[3])
 	if morphology_cached.name == &"associative_memory":
 		plasticity = true
+	var delay_from_rule: int = DEFAULT_SYNAPTIC_DELAY_BURSTS
+	if rule.size() >= 9:
+		delay_from_rule = maxi(1, int(rule[8]))
 	if !plasticity:
-		return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity)
+		return SingleMappingDefinition.new(
+			morphology_cached,
+			scalar_used,
+			psp_multiplier,
+			plasticity,
+			DEFAULT_PLASTICITY_CONSTANT,
+			DEFAULT_LTP_MULTIPLIER,
+			DEFAULT_LTD_MULTIPLIER,
+			DEFAULT_PLASTICITY_WINDOW,
+			delay_from_rule,
+		)
 	var plasticity_constant_used: float = DEFAULT_PLASTICITY_CONSTANT
 	var LTP_multiplier_used: float = DEFAULT_LTP_MULTIPLIER
 	var LTD_multiplier_used: float = DEFAULT_LTD_MULTIPLIER
@@ -104,7 +122,17 @@ static func _from_FEAGI_JSON_array_rule(rule: Array) -> SingleMappingDefinition:
 		plasticity_window_used = int(rule[7])
 	else:
 		push_error("FEAGI CORE: Plasticity mapping in array format with fewer than 8 elements; using defaults for plasticity fields.")
-	return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_constant_used, LTP_multiplier_used, LTD_multiplier_used, plasticity_window_used)
+	return SingleMappingDefinition.new(
+		morphology_cached,
+		scalar_used,
+		psp_multiplier,
+		plasticity,
+		plasticity_constant_used,
+		LTP_multiplier_used,
+		LTD_multiplier_used,
+		plasticity_window_used,
+		delay_from_rule,
+	)
 
 
 static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMappingDefinition:
@@ -127,13 +155,34 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 	var plasticity: bool = bool(mapping_property.get("plasticity_flag", DEFAULT_PLASTICITY))
 	if morphology_cached.name == &"associative_memory":
 		plasticity = true
+	var delay_parsed: int = maxi(1, int(mapping_property.get("synaptic_delay_bursts", DEFAULT_SYNAPTIC_DELAY_BURSTS)))
 	if !plasticity:
-		return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity)
+		return SingleMappingDefinition.new(
+			morphology_cached,
+			scalar_used,
+			psp_multiplier,
+			plasticity,
+			DEFAULT_PLASTICITY_CONSTANT,
+			DEFAULT_LTP_MULTIPLIER,
+			DEFAULT_LTD_MULTIPLIER,
+			DEFAULT_PLASTICITY_WINDOW,
+			delay_parsed,
+		)
 	var plasticity_constant_used: float = float(mapping_property.get("plasticity_constant", 0.0))
 	var LTP_multiplier_used: float = float(mapping_property.get("ltp_multiplier", 0.0))
 	var LTD_multiplier_used: float = float(mapping_property.get("ltd_multiplier", 0.0))
 	var plasticity_window_used: int = int(mapping_property.get("plasticity_window", DEFAULT_PLASTICITY_WINDOW))
-	return SingleMappingDefinition.new(morphology_cached, scalar_used, psp_multiplier, plasticity, plasticity_constant_used, LTP_multiplier_used, LTD_multiplier_used, plasticity_window_used)
+	return SingleMappingDefinition.new(
+		morphology_cached,
+		scalar_used,
+		psp_multiplier,
+		plasticity,
+		plasticity_constant_used,
+		LTP_multiplier_used,
+		LTD_multiplier_used,
+		plasticity_window_used,
+		delay_parsed,
+	)
 
 
 ## Given a mapping rule from FEAGI (object form or legacy array row) creates a [SingleMappingDefinition] object
@@ -176,10 +225,17 @@ static func get_involved_morphologies(input_mappings: Array[SingleMappingDefinit
 
 
 ## Create Object
-func _init(morphology: BaseMorphology, positive_scalar: Vector3i, psp_multilpier: float, plasticity: bool, 
-	plasticity_constant_: float = DEFAULT_PLASTICITY_CONSTANT, ltp_multiplier: float = DEFAULT_LTP_MULTIPLIER,
-	 ltd_multiplier: float = DEFAULT_LTD_MULTIPLIER, plasticity_window_: int = DEFAULT_PLASTICITY_WINDOW):
-	
+func _init(
+	morphology: BaseMorphology,
+	positive_scalar: Vector3i,
+	psp_multilpier: float,
+	plasticity: bool,
+	plasticity_constant_: float = DEFAULT_PLASTICITY_CONSTANT,
+	ltp_multiplier: float = DEFAULT_LTP_MULTIPLIER,
+	ltd_multiplier: float = DEFAULT_LTD_MULTIPLIER,
+	plasticity_window_: int = DEFAULT_PLASTICITY_WINDOW,
+	synaptic_delay_bursts_: int = DEFAULT_SYNAPTIC_DELAY_BURSTS,
+):
 	_morphology_used = morphology
 	_scalar = positive_scalar
 	_post_synaptic_current_multiplier = psp_multilpier
@@ -190,6 +246,7 @@ func _init(morphology: BaseMorphology, positive_scalar: Vector3i, psp_multilpier
 	_LTP_multiplier = ltp_multiplier
 	_LTD_multiplier = ltd_multiplier
 	_plasticity_window = plasticity_window_
+	_synaptic_delay_bursts = maxi(1, synaptic_delay_bursts_)
 
 ## Returns a dictionary of this object in the same format FEAGI expects
 func to_FEAGI_JSON() -> Dictionary:
@@ -200,6 +257,7 @@ func to_FEAGI_JSON() -> Dictionary:
 			"morphology_scalar": FEAGIUtils.vector3i_to_array(_scalar),
 			"postSynapticCurrent_multiplier": _post_synaptic_current_multiplier,
 			"plasticity_flag": _plasticity_flag,
+			"synaptic_delay_bursts": int(_synaptic_delay_bursts),
 		}
 	else:
 		return {
@@ -211,6 +269,7 @@ func to_FEAGI_JSON() -> Dictionary:
 			"ltp_multiplier": _LTP_multiplier,
 			"ltd_multiplier": _LTD_multiplier,
 			"plasticity_window": int(_plasticity_window),
+			"synaptic_delay_bursts": int(_synaptic_delay_bursts),
 		}
 
 ## Returns if the morphology is not null and if it is found in the morphology cache
