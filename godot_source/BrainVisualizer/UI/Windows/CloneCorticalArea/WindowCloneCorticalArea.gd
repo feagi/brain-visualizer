@@ -13,7 +13,7 @@ const OFFSET_2D: Vector2i = Vector2i(10,10)
 var _field_cortical_name: TextInput
 var _field_3d_location: Vector3iSpinboxField
 var _field_2d_location: Vector2iSpinboxField
-var _field_wiring_toggle: CheckBox
+var _field_wiring_toggle: ToggleButton
 var _cloning_cortical_area: AbstractCorticalArea
 var _preview: UI_BrainMonitor_InteractivePreview
 
@@ -23,8 +23,20 @@ func _ready() -> void:
 	_field_3d_location = _window_internals.get_node('HBoxContainer2/Coordinates_3D')
 	_field_2d_location = _window_internals.get_node('HBoxContainer3/Coordinates_2D')
 	_field_wiring_toggle = _window_internals.get_node('HBoxContainer4/AutoWiring')
+	# Enter in the name field is consumed by LineEdit; route it to the same action as Clone Cortical Area.
+	_field_cortical_name.text_submitted.connect(func(_new_text: String) -> void: _clone_pressed())
 	# Connect to window close signal to ensure preview cleanup
 	close_window_requested.connect(_cleanup_preview_on_close)
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := event as InputEventKey
+		if key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER:
+			accept_event()
+			_clone_pressed()
+			return
+	super._unhandled_key_input(event)
 
 func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	_setup_base_window(WINDOW_NAME)

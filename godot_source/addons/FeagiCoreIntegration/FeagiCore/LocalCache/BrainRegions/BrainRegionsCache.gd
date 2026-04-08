@@ -62,12 +62,19 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 	return cortical_area_mapping
 
 func _apply_designated_io_from_summary(region_data: Dictionary, region: BrainRegion) -> void:
+	# If the summary omits these keys, keep cache values (older APIs did not round-trip designation).
 	var di: Array = []
 	var dout: Array = []
 	if region_data.has("designated_inputs"):
 		di.assign(region_data["designated_inputs"])
+	else:
+		for x in region.designated_inputs:
+			di.append(x)
 	if region_data.has("designated_outputs"):
 		dout.assign(region_data["designated_outputs"])
+	else:
+		for x in region.designated_outputs:
+			dout.append(x)
 	region.FEAGI_set_designated_io(di, dout)
 
 func FEAGI_load_all_partial_mapping_sets(region_summary_data: Dictionary) -> void:

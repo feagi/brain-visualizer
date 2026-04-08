@@ -6,7 +6,7 @@ class_name WindowVoxelInspector
 const WINDOW_NAME: StringName = "voxel_inspector"
 
 ## Default size: 1.5x prior width (520), 2x prior height (380).
-const DEFAULT_WINDOW_SIZE: Vector2 = Vector2(780, 760)
+const DEFAULT_WINDOW_SIZE: Vector2 = Vector2(780, 980)
 const MIN_WINDOW_WIDTH: int = 400
 const MIN_WINDOW_HEIGHT: int = 280
 
@@ -18,6 +18,12 @@ var _summary_incoming_name: Label
 var _summary_incoming_value: IntInput
 var _summary_outgoing_name: Label
 var _summary_outgoing_value: IntInput
+var _summary_firing_name: Label
+var _summary_firing_value: FloatInput
+var _summary_refractory_name: Label
+var _summary_refractory_value: IntInput
+var _summary_consecutive_name: Label
+var _summary_consecutive_value: IntInput
 var _json_text: TextEdit
 var _cortical_dropdown: CorticalDropDown
 var _coords: Vector3iSpinboxField
@@ -44,6 +50,26 @@ var _resize_start_mouse: Vector2 = Vector2.ZERO
 var _resize_start_size: Vector2 = Vector2.ZERO
 const _RESIZE_MARGIN: int = 16
 
+## Voxel `/v1/cortical_area/voxel_neurons` neuron[] fields for the dynamics block (API: get_neuron_properties).
+const _DYNAMICS_SPECS: Array[Dictionary] = [
+	{"key": "neuron_id", "label": "Neuron ID", "kind": "int"},
+	{"key": "cortical_area", "label": "Cortical Area Index", "kind": "int"},
+	{"key": "mp_charge_accumulation", "label": "MP Charge Accumulation", "kind": "bool"},
+	{"key": "mp_driven_psp", "label": "MP-Driven PSP (cortical area)", "kind": "bool"},
+	{"key": "psp_uniform_distribution", "label": "PSP Uniform Distribution (cortical area)", "kind": "bool"},
+	{"key": "neuron_type", "label": "Neuron Type", "kind": "int"},
+	{"key": "leak_coefficient", "label": "Leak Coefficient", "kind": "float"},
+	{"key": "resting_potential", "label": "Resting Potential", "kind": "float"},
+	{"key": "excitability", "label": "Excitability", "kind": "float"},
+	{"key": "threshold_limit", "label": "Firing Threshold Limit", "kind": "float"},
+	{"key": "refractory_period", "label": "Refractory Period (configured)", "kind": "int"},
+	{"key": "consecutive_fire_limit", "label": "Consecutive Fire Limit (configured)", "kind": "int"},
+	{"key": "snooze_period", "label": "Snooze Period (configured)", "kind": "int"},
+]
+
+## Maps API field name -> read-only LineEdit in the dynamics section.
+var _dynamics_value_by_key: Dictionary = {}
+
 
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
@@ -56,6 +82,13 @@ func setup() -> void:
 	_summary_incoming_value = summary_root.get_node("IncomingRow/Value") as IntInput
 	_summary_outgoing_name = summary_root.get_node("OutgoingRow/Name") as Label
 	_summary_outgoing_value = summary_root.get_node("OutgoingRow/Value") as IntInput
+	_summary_firing_name = summary_root.get_node("FiringThresholdRow/Name") as Label
+	_summary_firing_value = summary_root.get_node("FiringThresholdRow/Value") as FloatInput
+	_summary_refractory_name = summary_root.get_node("RefractoryCountdownRow/Name") as Label
+	_summary_refractory_value = summary_root.get_node("RefractoryCountdownRow/Value") as IntInput
+	_summary_consecutive_name = summary_root.get_node("ConsecutiveFiresRow/Name") as Label
+	_summary_consecutive_value = summary_root.get_node("ConsecutiveFiresRow/Value") as IntInput
+	_setup_dynamics_summary_rows(summary_root.get_node("DynamicsRowsHost") as VBoxContainer)
 	_json_text = $WindowPanel/WindowMargin/WindowInternals/JsonText
 	_cortical_dropdown = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/CorticalRow/CorticalAreaDropdown
 	_coords = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelCoords
@@ -78,6 +111,24 @@ func setup() -> void:
 	set_empty_state()
 	# IntInput/FloatInput _ready() runs after setup and applies initial_int/initial_float; re-apply empty placeholders.
 	call_deferred("_clear_summary_display")
+
+
+func _setup_dynamics_summary_rows(host: VBoxContainer) -> void:
+	if host == null:
+		return
+	for spec in _DYNAMICS_SPECS:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override(&"separation", 10)
+		var name_lbl := Label.new()
+		name_lbl.text = str(spec.get("label", spec.get("key", "")))
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var ve := LineEdit.new()
+		ve.custom_minimum_size = Vector2(280, 0)
+		ve.editable = false
+		row.add_child(name_lbl)
+		row.add_child(ve)
+		host.add_child(row)
+		_dynamics_value_by_key[str(spec["key"])] = ve
 
 
 func _refresh_cortical_list_and_selection() -> void:
@@ -284,7 +335,14 @@ func _clear_summary_display() -> void:
 		_set_summary_lineedit_placeholder(_summary_incoming_value)
 	if _summary_outgoing_value != null:
 		_set_summary_lineedit_placeholder(_summary_outgoing_value)
+	if _summary_firing_value != null:
+		_set_summary_lineedit_placeholder(_summary_firing_value)
+	if _summary_refractory_value != null:
+		_set_summary_lineedit_placeholder(_summary_refractory_value)
+	if _summary_consecutive_value != null:
+		_set_summary_lineedit_placeholder(_summary_consecutive_value)
 	_reset_summary_metric_names()
+	_clear_dynamics_summary_display()
 
 
 ## Read-only placeholder (em dash) without going through Int/Float validation (same LineEdit pattern as Cortical Area Details).
@@ -301,6 +359,12 @@ func _reset_summary_metric_names() -> void:
 		_summary_incoming_name.text = "Incoming Synapse Count"
 	if _summary_outgoing_name != null:
 		_summary_outgoing_name.text = "Outgoing Synapse Count"
+	if _summary_firing_name != null:
+		_summary_firing_name.text = "Firing Threshold"
+	if _summary_refractory_name != null:
+		_summary_refractory_name.text = "Refractory Countdown"
+	if _summary_consecutive_name != null:
+		_summary_consecutive_name.text = "Consecutive Fires"
 
 
 func _set_average_metric_names() -> void:
@@ -310,6 +374,12 @@ func _set_average_metric_names() -> void:
 		_summary_incoming_name.text = "Average Incoming Synapse Count"
 	if _summary_outgoing_name != null:
 		_summary_outgoing_name.text = "Average Outgoing Synapse Count"
+	if _summary_firing_name != null:
+		_summary_firing_name.text = "Average Firing Threshold"
+	if _summary_refractory_name != null:
+		_summary_refractory_name.text = "Average Refractory Countdown"
+	if _summary_consecutive_name != null:
+		_summary_consecutive_name.text = "Average Consecutive Fires"
 
 
 func _variant_to_float(v: Variant) -> float:
@@ -325,6 +395,113 @@ func _variant_to_float(v: Variant) -> float:
 
 func _format_membrane_for_display(v: float) -> String:
 	return String.num(v, 4)
+
+
+## Maps API `neuron` dict fields to a float for threshold (key `threshold`).
+func _neuron_firing_threshold(nd: Dictionary) -> float:
+	return _variant_to_float(nd.get("threshold", 0.0))
+
+
+## Integer runtime fields: `refractory_countdown`, `consecutive_fire_count`.
+func _neuron_int_metric(nd: Dictionary, key: StringName) -> int:
+	return int(round(_variant_to_float(nd.get(key, 0))))
+
+
+func _clear_dynamics_summary_display() -> void:
+	for k in _dynamics_value_by_key:
+		var le: LineEdit = _dynamics_value_by_key[k] as LineEdit
+		if le != null:
+			_set_summary_lineedit_placeholder(le)
+
+
+func _neuron_bool_field(nd: Dictionary, key: String) -> bool:
+	var v: Variant = nd.get(key, false)
+	if v is bool:
+		return v as bool
+	return bool(_variant_to_float(v) != 0.0)
+
+
+func _format_dynamics_float(v: float) -> String:
+	return String.num(v, 4)
+
+
+## Aggregates per-neuron dynamics for the summary when `neurons.size() >= 1`.
+func _update_dynamics_summary_from_neurons(neurons: Array) -> void:
+	if _dynamics_value_by_key.is_empty():
+		return
+	var n_sz: int = neurons.size()
+	if n_sz == 0:
+		_clear_dynamics_summary_display()
+		return
+	for spec in _DYNAMICS_SPECS:
+		var key: String = str(spec["key"])
+		var kind: String = str(spec["kind"])
+		var le: LineEdit = _dynamics_value_by_key.get(key) as LineEdit
+		if le == null:
+			continue
+		# Multiple neurons in one voxel: neuron id is not a single scalar.
+		if key == "neuron_id" and n_sz > 1:
+			le.text = "—"
+			continue
+		if n_sz == 1:
+			if not (neurons[0] is Dictionary):
+				_set_summary_lineedit_placeholder(le)
+				continue
+			var nd: Dictionary = neurons[0]
+			match kind:
+				"bool":
+					le.text = "true" if _neuron_bool_field(nd, key) else "false"
+				"float":
+					le.text = _format_dynamics_float(_variant_to_float(nd.get(key, 0.0)))
+				"int":
+					le.text = str(_neuron_int_metric(nd, StringName(key)))
+				_:
+					_set_summary_lineedit_placeholder(le)
+			continue
+		match kind:
+			"bool":
+				var first_b: Variant = null
+				var mixed_b := false
+				for item in neurons:
+					if not (item is Dictionary):
+						continue
+					var nd2: Dictionary = item
+					var b: bool = _neuron_bool_field(nd2, key)
+					if first_b == null:
+						first_b = b
+					elif bool(first_b) != b:
+						mixed_b = true
+						break
+				if mixed_b:
+					le.text = "mixed"
+				elif first_b != null:
+					le.text = "true" if bool(first_b) else "false"
+				else:
+					_set_summary_lineedit_placeholder(le)
+			"float":
+				var sumf: float = 0.0
+				var c: int = 0
+				for item in neurons:
+					if item is Dictionary:
+						sumf += _variant_to_float((item as Dictionary).get(key, 0.0))
+						c += 1
+				if c > 0:
+					le.text = _format_dynamics_float(sumf / float(c))
+				else:
+					_set_summary_lineedit_placeholder(le)
+			"int":
+				var sumi: float = 0.0
+				var c2: int = 0
+				for item in neurons:
+					if item is Dictionary:
+						sumi += float(_neuron_int_metric(item as Dictionary, StringName(key)))
+						c2 += 1
+				if c2 > 0:
+					le.text = str(int(round(sumi / float(c2))))
+				else:
+					_set_summary_lineedit_placeholder(le)
+			_:
+				_set_summary_lineedit_placeholder(le)
 
 
 ## Fills the Summary block from a successful `/v1/cortical_area/voxel_neurons` payload.
@@ -343,6 +520,10 @@ func update_summary_from_response(d: Dictionary) -> void:
 		_set_summary_lineedit_placeholder(_summary_membrane_value)
 		_set_summary_lineedit_placeholder(_summary_incoming_value)
 		_set_summary_lineedit_placeholder(_summary_outgoing_value)
+		_set_summary_lineedit_placeholder(_summary_firing_value)
+		_set_summary_lineedit_placeholder(_summary_refractory_value)
+		_set_summary_lineedit_placeholder(_summary_consecutive_value)
+		_clear_dynamics_summary_display()
 		return
 	if n == 1:
 		_reset_summary_metric_names()
@@ -355,20 +536,34 @@ func update_summary_from_response(d: Dictionary) -> void:
 		_summary_membrane_value.set_value_from_text(_format_membrane_for_display(mp))
 		_summary_incoming_value.set_value_from_text(str(int(round(inc_n))))
 		_summary_outgoing_value.set_value_from_text(str(int(round(out_n))))
+		_summary_firing_value.set_value_from_text(_format_membrane_for_display(_neuron_firing_threshold(nd)))
+		_summary_refractory_value.set_value_from_text(str(_neuron_int_metric(nd, &"refractory_countdown")))
+		_summary_consecutive_value.set_value_from_text(str(_neuron_int_metric(nd, &"consecutive_fire_count")))
+		_update_dynamics_summary_from_neurons(neurons)
 		return
 	_set_average_metric_names()
 	var sum_mp: float = 0.0
 	var sum_in: float = 0.0
 	var sum_out: float = 0.0
+	var sum_thr: float = 0.0
+	var sum_refr: float = 0.0
+	var sum_consec: float = 0.0
 	for item in neurons:
 		if item is Dictionary:
 			var nd2: Dictionary = item
 			sum_mp += _variant_to_float(nd2.get("membrane_potential", 0.0))
 			sum_in += _variant_to_float(nd2.get("incoming_synapse_count", 0))
 			sum_out += _variant_to_float(nd2.get("outgoing_synapse_count", 0))
+			sum_thr += _neuron_firing_threshold(nd2)
+			sum_refr += float(_neuron_int_metric(nd2, &"refractory_countdown"))
+			sum_consec += float(_neuron_int_metric(nd2, &"consecutive_fire_count"))
 	var nf: float = float(n)
 	_summary_membrane_value.set_value_from_text(_format_membrane_for_display(sum_mp / nf))
 	var avg_in: int = int(round(sum_in / nf))
 	var avg_out: int = int(round(sum_out / nf))
 	_summary_incoming_value.set_value_from_text(str(avg_in))
 	_summary_outgoing_value.set_value_from_text(str(avg_out))
+	_summary_firing_value.set_value_from_text(_format_membrane_for_display(sum_thr / nf))
+	_summary_refractory_value.set_value_from_text(str(int(round(sum_refr / nf))))
+	_summary_consecutive_value.set_value_from_text(str(int(round(sum_consec / nf))))
+	_update_dynamics_summary_from_neurons(neurons)
