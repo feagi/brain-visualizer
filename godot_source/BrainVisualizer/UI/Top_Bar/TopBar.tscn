@@ -289,7 +289,7 @@ tooltip_text = "Split view options (Circuit Builder / Brain Monitor / Split View
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-tooltip_text = "Brain activity: global neural connections or Voxel Inspector"
+tooltip_text = "Inspectors"
 
 [node name="CameraAnimations" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(64, 64)

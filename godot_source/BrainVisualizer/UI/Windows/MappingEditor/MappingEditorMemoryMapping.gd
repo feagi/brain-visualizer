@@ -6,6 +6,7 @@ signal user_changed_something()
 var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
 var _PSP: FloatInput
+var _synaptic_delay: IntInput
 var _inhibitory: ToggleButton
 var _plasticity: ToggleButton
 var _plasticity_window: IntInput
@@ -30,6 +31,7 @@ func _initialize_references() -> void:
 	_morphologies = $RowContainer/MappingDefinitionGroup/Morphology_List
 	_scalar = $RowContainer/Scalar
 	_PSP = $RowContainer/PSP
+	_synaptic_delay = $RowContainer/Synaptic_Delay
 	_inhibitory = $RowContainer/Inhibitory
 	_plasticity = $RowContainer/Plasticity
 	_plasticity_window = $RowContainer/Plasticity_Window
@@ -95,6 +97,7 @@ func load_mappings(mappings: Array[SingleMappingDefinition]) -> void:
 	
 	_scalar.editable = false
 	_PSP.editable = false
+	_synaptic_delay.editable = false
 	_plasticity_window.editable = false
 	_plasticity_constant.editable = false
 	_LTP_multiplier.editable = false
@@ -126,6 +129,7 @@ func _load_single_mapping(mapping: SingleMappingDefinition) -> void:
 	_morphologies.set_selected_morphology(mapping.morphology_used)
 	_scalar.current_vector = mapping.scalar
 	_PSP.current_float = absf(mapping.post_synaptic_current_multiplier)
+	_synaptic_delay.current_int = mapping.synaptic_delay_bursts
 	_inhibitory.set_toggle_no_signal(mapping.post_synaptic_current_multiplier < 0)
 	_plasticity.set_toggle_no_signal(mapping.is_plastic)
 	_plasticity_window.current_int = mapping.plasticity_window
@@ -149,7 +153,8 @@ func export_mappings() -> Array[SingleMappingDefinition]:
 	var plasticity_window: int = _plasticity_window.current_int
 	var LTP_multiplier: float = _LTP_multiplier.current_float
 	var LTD_multiplier: float = _LTD_multiplier.current_float
-	
+	var delay_bursts: int = maxi(1, _synaptic_delay.current_int)
+
 	var mapping: SingleMappingDefinition = SingleMappingDefinition.new(
 		morphology_used,
 		scalar,
@@ -158,7 +163,8 @@ func export_mappings() -> Array[SingleMappingDefinition]:
 		plasticity_constant,
 		LTP_multiplier,
 		LTD_multiplier,
-		plasticity_window
+		plasticity_window,
+		delay_bursts
 	)
 	return [mapping]
 

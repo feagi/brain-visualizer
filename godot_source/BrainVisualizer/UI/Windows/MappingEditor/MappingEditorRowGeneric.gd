@@ -7,6 +7,7 @@ var _defaults: MappingRestrictionDefault
 var _morphologies: MorphologyDropDown
 var _scalar: Vector3iField
 var _PSP: FloatInput
+var _synaptic_delay: IntInput
 var _inhibitory: ToggleButton
 var _plasticity: ToggleButton
 var _plasticity_window: IntInput
@@ -19,6 +20,7 @@ func _ready() -> void:
 	_morphologies = $MappingDefinitionGroup/Morphology_List
 	_scalar = $Scalar
 	_PSP = $PSP
+	_synaptic_delay = $Synaptic_Delay
 	_inhibitory = $Inhibitory
 	_plasticity = $Plasticity
 	_plasticity_window = $Plasticity_Window
@@ -41,12 +43,14 @@ func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults:
 				_morphologies.remove_morphology(disallowed)
 		_scalar.editable = restrictions.allow_changing_scalar
 		_PSP.editable = restrictions.allow_changing_PSP
+		_synaptic_delay.editable = restrictions.allow_changing_PSP
 		_inhibitory.disabled = !restrictions.allow_changing_inhibitory
 		_plasticity.disabled = !restrictions.allow_changing_plasticity
 	else:
 		# Default behavior when no restrictions
 		_scalar.editable = true
 		_PSP.editable = true
+		_synaptic_delay.editable = true
 		_inhibitory.disabled = false
 		_plasticity.disabled = false
 	
@@ -63,6 +67,7 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_morphologies.set_selected_morphology(mapping.morphology_used)
 	_scalar.current_vector = mapping.scalar
 	_PSP.current_float = absf(mapping.post_synaptic_current_multiplier)
+	_synaptic_delay.current_int = mapping.synaptic_delay_bursts
 	_inhibitory.set_toggle_no_signal(mapping.post_synaptic_current_multiplier < 0)
 	_plasticity.set_toggle_no_signal(mapping.is_plastic)
 	_plasticity_window.current_int = mapping.plasticity_window
@@ -93,6 +98,7 @@ func export_mapping() -> SingleMappingDefinition:
 	var plasticity_window: int = _plasticity_window.current_int
 	var LTP_multiplier: float = _LTP_multiplier.current_float
 	var LTD_multiplier: float = _LTD_multiplier.current_float
+	var delay_bursts: int = maxi(1, _synaptic_delay.current_int)
 	return SingleMappingDefinition.new(
 		morphology_used,
 		scalar,
@@ -101,7 +107,8 @@ func export_mapping() -> SingleMappingDefinition:
 		plasticity_constant,
 		LTP_multiplier,
 		LTD_multiplier,
-		plasticity_window
+		plasticity_window,
+		delay_bursts
 	)
 
 func _on_user_PSP(_value: float) -> void:

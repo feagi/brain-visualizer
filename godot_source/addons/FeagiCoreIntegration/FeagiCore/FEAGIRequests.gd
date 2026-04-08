@@ -2879,6 +2879,9 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 			if !"plasticity_window" in mapping_entry:
 				mapping_entry["plasticity_window"] = SingleMappingDefinition.DEFAULT_PLASTICITY_WINDOW
 			mapping_entry["plasticity_window"] = int(mapping_entry["plasticity_window"])
+			if !"synaptic_delay_bursts" in mapping_entry:
+				mapping_entry["synaptic_delay_bursts"] = SingleMappingDefinition.DEFAULT_SYNAPTIC_DELAY_BURSTS
+			mapping_entry["synaptic_delay_bursts"] = int(mapping_entry["synaptic_delay_bursts"])
 	var dict_to_send: Dictionary = {
 		"src_cortical_area": source_cortical_ID,
 		"dst_cortical_area": destination_cortical_ID,
@@ -3460,6 +3463,18 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 					print("FEAGI REQUEST: ✅ Loaded I/O mappings for region %s - inputs: %d, outputs: %d" % [region_id, inputs.size(), outputs.size()])
 			
 			print("FEAGI REQUEST: ✅ All partial mappings processed successfully")
+
+			# Inter-cortical edges (cortical_map_detailed): amalgamation replaces cortical area objects in cache.
+			# Without reloading, hash-driven diffs can run with skipped/empty keys and drop all edges.
+			var inter_mapping_out: FeagiRequestOutput = await get_mapping_summary()
+			if inter_mapping_out.success and not inter_mapping_out.has_errored:
+				var inter_map_dict: Dictionary = inter_mapping_out.decode_response_as_dict()
+				FeagiCore.feagi_local_cache.mapping_data.FEAGI_delete_all_mappings()
+				FeagiCore.feagi_local_cache.mapping_data.FEAGI_load_all_mappings(inter_map_dict)
+				FeagiCore.feagi_local_cache.mappings_reloaded.emit()
+				print("FEAGI REQUEST: ✅ Amalgamation: inter-cortical mapping cache replaced from cortical_map_detailed")
+			else:
+				push_warning("FEAGI REQUEST: Amalgamation: could not refresh inter-cortical mapping cache from FEAGI")
 		else:
 			print("FEAGI REQUEST: ❌ Failed to fetch cortical area data: %s" % cortical_areas_response.decode_response_as_generic_error_code())
 		

@@ -17,7 +17,7 @@
 [ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="14_naw4t"]
 
 [node name="MappingEditorRowGenericPartial" type="HBoxContainer"]
-offset_right = 1400.0
+offset_right = 1520.0
 offset_bottom = 32.0
 size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
@@ -79,7 +79,23 @@ min_value = 0.0
 max_value = 9999999999.0
 number_decimal_places = 4
 
-[node name="Spacer_BetweenPSPAndInhibitory" type="Control" parent="."]
+[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="."]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Synaptic_Delay" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Synaptic delay in whole bursts (minimum 1). PSP arrives at presynaptic fire burst + this value."
+alignment = 1
+script = ExtResource("15_8f0j2")
+initial_int = 1
+min_value = 1
+max_value = 255
+
+[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="."]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0

@@ -399,7 +399,10 @@ func _apply_core_type_restrictions() -> void:
 		if _button_MP_Driven_PSP != null:
 			_button_MP_Driven_PSP.disabled = true
 		if _line_Post_Synaptic_Potential != null:
-			_line_Post_Synaptic_Potential.editable = true
+			# Genome may still have MP-driven PSP on; line shows "—" and must stay non-editable.
+			_line_Post_Synaptic_Potential.editable = (
+				_button_MP_Driven_PSP == null or not _button_MP_Driven_PSP.button_pressed
+			)
 		if _button_PSP_Uniformity != null:
 			_button_PSP_Uniformity.disabled = false
 	else:
@@ -1757,21 +1760,86 @@ func _refresh_from_cache_memory() -> void:
 @export var _button_MP_Driven_PSP: ToggleButton
 @export var _button_pspp_send: Button
 
+## Genome PSP while the line shows "—" under MP-driven PSP (runtime uses source membrane potential).
+var _psp_backup_float: float = 0.0
+const _PSP_LINE_PLACEHOLDER_MP_DRIVEN: String = "—"
+const _PSP_TOOLTIP_BASE: String = "The amount of membrane potential increase each neuron can have on downstream neurons. Range: 0–255."
+const _PSP_TOOLTIP_MP_DRIVEN: String = "MP-driven PSP uses membrane potential, not this constant. Disabled while on."
+
 func _init_psp() -> void:
 	_connect_control_to_update_button(_line_Post_Synaptic_Potential, "neuron_post_synaptic_potential", _button_pspp_send)
 	_connect_control_to_update_button(_line_PSP_Max, "neuron_post_synaptic_potential_max", _button_pspp_send)
 	_connect_control_to_update_button(_button_PSP_Uniformity, "neuron_psp_uniform_distribution", _button_pspp_send)
 	_connect_control_to_update_button(_button_MP_Driven_PSP, "neuron_mp_driven_psp", _button_pspp_send)
-	
+
 	_button_pspp_send.pressed.connect(_send_update.bind(_button_pspp_send))
+	if _button_MP_Driven_PSP != null:
+		_button_MP_Driven_PSP.toggled.connect(_on_mp_driven_psp_toggled)
 
 func _refresh_from_cache_psp() -> void:
 	_update_control_with_value_from_areas(_line_Post_Synaptic_Potential, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential")
 	_update_control_with_value_from_areas(_line_PSP_Max, "post_synaptic_potential_paramamters", "neuron_post_synaptic_potential_max")
 	_update_control_with_value_from_areas(_button_PSP_Uniformity, "post_synaptic_potential_paramamters", "neuron_psp_uniform_distribution")
 	_update_control_with_value_from_areas(_button_MP_Driven_PSP, "post_synaptic_potential_paramamters", "neuron_mp_driven_psp")
+	_capture_psp_numeric_backup_from_loaded_line()
+	_apply_post_synaptic_line_for_mp_driven_state()
 	_line_Post_Synaptic_Potential.editable = !_button_MP_Driven_PSP.button_pressed
-	_button_MP_Driven_PSP.toggled.connect(func(is_on: bool): _line_Post_Synaptic_Potential.editable = !is_on )
+
+
+## Genome PSP for restoring the line when MP-driven PSP is off (first selected area when values differ).
+func _capture_psp_numeric_backup_from_loaded_line() -> void:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return
+	var v: Variant = _cortical_area_refs[0].return_property_by_name_and_section(
+		"post_synaptic_potential_paramamters", "neuron_post_synaptic_potential"
+	)
+	_psp_backup_float = float(v)
+
+
+## Keeps PSP row tooltips in sync with MP-driven mode (field, label, and row container).
+func _sync_psp_post_synaptic_tooltip(mp_driven: bool) -> void:
+	if _line_Post_Synaptic_Potential == null:
+		return
+	var text: String = _PSP_TOOLTIP_MP_DRIVEN if mp_driven else _PSP_TOOLTIP_BASE
+	_line_Post_Synaptic_Potential.tooltip_text = text
+	var row: Node = _line_Post_Synaptic_Potential.get_parent()
+	if row is Control:
+		(row as Control).tooltip_text = text
+	var label: Node = row.get_node_or_null("Label") if row != null else null
+	if label is Control:
+		(label as Control).tooltip_text = text
+
+
+func _apply_post_synaptic_line_for_mp_driven_state() -> void:
+	if _line_Post_Synaptic_Potential == null:
+		return
+	if _button_MP_Driven_PSP == null:
+		_sync_psp_post_synaptic_tooltip(false)
+		return
+	if _button_MP_Driven_PSP.button_pressed:
+		_line_Post_Synaptic_Potential.text = _PSP_LINE_PLACEHOLDER_MP_DRIVEN
+		_line_Post_Synaptic_Potential.previous_text = _PSP_LINE_PLACEHOLDER_MP_DRIVEN
+		_line_Post_Synaptic_Potential.modulate = Color(0.62, 0.62, 0.62, 1.0)
+	else:
+		_line_Post_Synaptic_Potential.modulate = Color.WHITE
+		_line_Post_Synaptic_Potential.set_float(_psp_backup_float)
+	_sync_psp_post_synaptic_tooltip(_button_MP_Driven_PSP.button_pressed)
+
+
+func _on_mp_driven_psp_toggled(is_on: bool) -> void:
+	if _line_Post_Synaptic_Potential == null:
+		return
+	if is_on:
+		if _line_Post_Synaptic_Potential.text != _PSP_LINE_PLACEHOLDER_MP_DRIVEN: # not already masked
+			_psp_backup_float = _line_Post_Synaptic_Potential.current_float
+		_line_Post_Synaptic_Potential.text = _PSP_LINE_PLACEHOLDER_MP_DRIVEN
+		_line_Post_Synaptic_Potential.previous_text = _PSP_LINE_PLACEHOLDER_MP_DRIVEN
+		_line_Post_Synaptic_Potential.modulate = Color(0.62, 0.62, 0.62, 1.0)
+	else:
+		_line_Post_Synaptic_Potential.modulate = Color.WHITE
+		_line_Post_Synaptic_Potential.set_float(_psp_backup_float)
+	_line_Post_Synaptic_Potential.editable = !is_on
+	_sync_psp_post_synaptic_tooltip(is_on)
 
 #endregion
 

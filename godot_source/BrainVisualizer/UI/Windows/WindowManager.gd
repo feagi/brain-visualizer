@@ -261,14 +261,13 @@ func spawn_3d_brain_monitor_tab(region: BrainRegion) -> void:
 	primary_tab_container.spawn_CB_of_region(region)
 	secondary_tab_container.spawn_BM_of_region(region)
 	
-	# Focus on both new tabs
-	if primary_tab_container.get_child_count() > 0:
-		var primary_last_tab = primary_tab_container.get_child_count() - 1
-		primary_tab_container.current_tab = primary_last_tab
-	
-	if secondary_tab_container.get_child_count() > 0:
-		var secondary_last_tab = secondary_tab_container.get_child_count() - 1
-		secondary_tab_container.current_tab = secondary_last_tab
+	# Focus on both new tabs (use get_tab_count — UITabContainer adds non-tab children e.g. tooltip nodes).
+	var primary_tabs: int = primary_tab_container.get_tab_count()
+	if primary_tabs > 0:
+		primary_tab_container.current_tab = primary_tabs - 1
+	var secondary_tabs: int = secondary_tab_container.get_tab_count()
+	if secondary_tabs > 0:
+		secondary_tab_container.current_tab = secondary_tabs - 1
 	
 	BV.NOTIF.add_notification("Opened Circuit Builder and 3D Brain Monitor tabs for region '%s'" % region.friendly_name)
 

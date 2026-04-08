@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://csidcaret_tooltip1"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomSideCaretTooltip.gd" id="1_side_tooltip"]
+
+[node name="CustomSideCaretTooltip" type="HBoxContainer"]
+mouse_filter = 2
+script = ExtResource("1_side_tooltip")

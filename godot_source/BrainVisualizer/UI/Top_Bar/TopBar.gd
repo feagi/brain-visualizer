@@ -22,6 +22,8 @@ var _activity_visualization_dropdown: ActivityVisualizationDropDown
 const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
 var _list_popup: FilterableListPopup
 
+var _tooltip_manager: Node
+
 
 func _ready():
 	# references
@@ -38,6 +40,8 @@ func _ready():
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
 	_mount_shared_combo_strip()
 	_apply_shared_combo_spacing_tokens()
+	
+	_setup_custom_tooltips()
 	
 	# FEAGI data
 	# Burst rate
@@ -256,6 +260,17 @@ func _toggle_global_neural_connections(enabled: bool) -> void:
 		print("🔗 ✅ Global neural connections ENABLED for ", cortical_area_objects.size(), " areas")
 	else:
 		print("🔗 ❌ Global neural connections DISABLED for ", cortical_area_objects.size(), " areas")
+	BV.UI.set_connection_inspector_stop_overlay_visible(enabled)
+
+
+## Turns off connection inspector from the bottom-right overlay; keeps top bar and monitor strip toggles in sync.
+func stop_connection_inspector_from_overlay() -> void:
+	_activity_visualization_dropdown.set_connection_inspector_enabled(false)
+	if _shared_combo != null:
+		_shared_combo.sync_connection_inspector_enabled(false)
+	_toggle_global_neural_connections(false)
+	# Ensure overlay hides even if the scene toggle returned early (e.g. monitor not found).
+	BV.UI.set_connection_inspector_stop_overlay_visible(false)
 
 func _find_brain_monitor_scene() -> Node:
 	# Try to find the brain monitor scene in the scene tree
@@ -470,3 +485,57 @@ func _format_int(number: int) -> String:
 		if digit_count % 3 == 0 and i != 0:
 			formatted_str = "," + formatted_str
 	return formatted_str
+
+func _setup_custom_tooltips() -> void:
+	var tooltip_manager_script = load("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTopBarTooltipManager.gd")
+	_tooltip_manager = Node.new()
+	_tooltip_manager.set_script(tooltip_manager_script)
+	_tooltip_manager.name = "CustomTooltipManager"
+	add_child(_tooltip_manager)
+	# Popup menu rows still had native TooltipPanel styling (wider padding than combo strip).
+	var split_toggle: ToggleImageDropDown = $TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown/ToggleImageDropDown as ToggleImageDropDown
+	var activity_toggle: ToggleImageDropDown = $TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown/ToggleImageDropDown as ToggleImageDropDown
+	CustomTopBarTooltipManager.wire_toggle_dropdown_menu_tooltips(split_toggle, false)
+	CustomTopBarTooltipManager.wire_toggle_dropdown_menu_tooltips(activity_toggle, true)
+	# Kill nested scene-file tooltips (dropdown tiles, etc.) so only styled tooltips show.
+	CustomTopBarTooltipManager.strip_native_tooltips_recursive($Buttons)
+	CustomTopBarTooltipManager.strip_native_tooltips_recursive($TopBarControlsPanel)
+	CustomTopBarTooltipManager.strip_native_tooltips_recursive($DetailsPanel)
+	# Visible strip is [SharedBrainObjectsCombo], not the hidden legacy [HBoxContainer] row.
+	if _shared_combo != null:
+		_shared_combo.apply_custom_topbar_tooltips()
+	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList, "View connectivity rules")
+	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer/TextureButton, "Add connectivity rule")
+	# Hover target is the toggle control; nested TextureButtons kept native-free above.
+	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown/ToggleImageDropDown, "Split view: Circuit Builder, Brain Monitor, or split layout")
+	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown/ToggleImageDropDown, "Inspectors")
+	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/CameraAnimations, "Camera animations")
+	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/GuideButton, "User guide and tutorials")
+	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/SettingsButton, "Brain Visualizer settings")
+	_add_tooltip_to_control($DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer/RR_Float, "FEAGI refresh rate (simulation frequency)")
+	_add_tooltip_to_control($DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron, "Total neuron count in the genome")
+	_add_tooltip_to_control($DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse, "Total synapse count in the genome")
+
+func _add_tooltip_to_control(control: Control, tooltip_text: String) -> void:
+	if control == null or not is_instance_valid(control):
+		push_warning("TopBar: Cannot add tooltip to null or invalid control for text: " + tooltip_text)
+		return
+	CustomTopBarTooltipManager.strip_native_tooltips_recursive(control)
+	control.tooltip_text = ""
+	control.mouse_filter = Control.MOUSE_FILTER_PASS
+	if control.get_node_or_null("TooltipTrigger") != null:
+		var existing: Node = control.get_node("TooltipTrigger")
+		if existing.has_method("set_tooltip_text"):
+			existing.call("set_tooltip_text", tooltip_text)
+		else:
+			existing.set("tooltip_text", tooltip_text)
+		return
+	var trigger_script = load("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTooltipTrigger.gd")
+	var trigger = Node.new()
+	trigger.set_script(trigger_script)
+	trigger.name = "TooltipTrigger"
+	control.add_child(trigger)
+	trigger.set("tooltip_text", tooltip_text)
+
+func get_custom_tooltip_manager() -> Node:
+	return _tooltip_manager
