@@ -17,6 +17,22 @@ var established_mappings: Dictionary: # Mappings Established in the FEAGI Connec
 var _established_mappings: Dictionary
 
 
+## Match a cortical id from HTTP JSON (often [String]) to a key in [CorticalAreasCache.available_cortical_areas] ([StringName]).
+func _resolve_cortical_cache_key(ambiguous_id: Variant) -> Variant:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return null
+	var areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
+	if areas.has(ambiguous_id):
+		return ambiguous_id
+	var token: String = String(ambiguous_id).strip_edges()
+	if token.is_empty():
+		return null
+	for k in areas.keys():
+		if String(k) == token:
+			return k
+	return null
+
+
 ## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
 func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractCorticalArea, mappings_JSON: Array) -> void:
 	# IMPORTANT: An empty mapping list from FEAGI means the mapping does not exist.
@@ -62,15 +78,17 @@ func FEAGI_set_mapping(source: AbstractCorticalArea, destination: AbstractCortic
 
 ## Load in all mappings from summary data. Called from [FEAGILocalCache] when loading genome
 func FEAGI_load_all_mappings(mapping_summary: Dictionary)-> void:
-	for source_cortical_ID: StringName in mapping_summary.keys():
-		if !(source_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()):
-			push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % source_cortical_ID)
+	for raw_source in mapping_summary.keys():
+		var source_cortical_ID: Variant = _resolve_cortical_cache_key(raw_source)
+		if source_cortical_ID == null:
+			push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % raw_source)
 			continue
-			
-		var mapping_targets: Dictionary = mapping_summary[source_cortical_ID]
-		for destination_cortical_ID: StringName in mapping_targets.keys():
-			if !(destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()):
-				push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % destination_cortical_ID)
+
+		var mapping_targets: Dictionary = mapping_summary[raw_source]
+		for raw_destination in mapping_targets.keys():
+			var destination_cortical_ID: Variant = _resolve_cortical_cache_key(raw_destination)
+			if destination_cortical_ID == null:
+				push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % raw_destination)
 				continue
 			#NOTE: Instead of verifying the morphology exists, we will allow [MappingProperty]'s  system handle it, as it has a fallback should it not be found
 			var source_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
@@ -81,32 +99,46 @@ func FEAGI_load_all_mappings(mapping_summary: Dictionary)-> void:
 
 ## Applies mapping summary as a diff to avoid full cache teardown.
 func FEAGI_apply_mapping_summary_diff(mapping_summary: Dictionary) -> void:
+	# Empty summary during a genome transition can be transient; diff would remove every edge.
+	if mapping_summary.is_empty() and not _established_mappings.is_empty():
+		var synapse_n: int = 0
+		if FeagiCore and FeagiCore.feagi_local_cache:
+			synapse_n = int(FeagiCore.feagi_local_cache.synapse_count_current)
+		if synapse_n > 0:
+			push_warning(
+				"FEAGI CACHE: Skipping mapping diff — empty summary while cache has mappings and synapse_count=%d"
+				% synapse_n
+			)
+			return
+
 	var existing_pairs: Array[Array] = []
 	for source_id in _established_mappings.keys():
 		for destination_id in _established_mappings[source_id].keys():
 			existing_pairs.append([source_id, destination_id])
 
 	var seen_pairs: Dictionary = {}
-	for source_cortical_ID: StringName in mapping_summary.keys():
-		if !(source_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()):
-			push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % source_cortical_ID)
+	for raw_source in mapping_summary.keys():
+		var source_cortical_ID: Variant = _resolve_cortical_cache_key(raw_source)
+		if source_cortical_ID == null:
+			push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % raw_source)
 			continue
-		var mapping_targets: Dictionary = mapping_summary[source_cortical_ID]
-		for destination_cortical_ID: StringName in mapping_targets.keys():
-			if !(destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys()):
-				push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % destination_cortical_ID)
+		var mapping_targets: Dictionary = mapping_summary[raw_source]
+		for raw_destination in mapping_targets.keys():
+			var destination_cortical_ID: Variant = _resolve_cortical_cache_key(raw_destination)
+			if destination_cortical_ID == null:
+				push_error("FEAGI CACHE: Mapping refers to nonexistant cortical area %s! Skipping!" % raw_destination)
 				continue
 			var source_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
 			var destination_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
 			var mapping_dictionaries: Array = []
-			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
+			mapping_dictionaries.assign(mapping_targets[raw_destination])
 			FEAGI_set_mapping_JSON(source_area, destination_area, mapping_dictionaries)
-			seen_pairs["%s->%s" % [source_cortical_ID, destination_cortical_ID]] = true
+			seen_pairs["%s->%s" % [String(source_cortical_ID), String(destination_cortical_ID)]] = true
 
 	for pair in existing_pairs:
 		var source_id: StringName = pair[0]
 		var destination_id: StringName = pair[1]
-		if seen_pairs.has("%s->%s" % [source_id, destination_id]):
+		if seen_pairs.has("%s->%s" % [String(source_id), String(destination_id)]):
 			continue
 		var source_area := FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(source_id, null)
 		var destination_area := FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(destination_id, null)
