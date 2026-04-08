@@ -33,6 +33,29 @@ func _resolve_cortical_cache_key(ambiguous_id: Variant) -> Variant:
 	return null
 
 
+## cortical_mapping_dst may store one rule as a JSON object or as an array of rules.
+## Returns [null] on parse failure, or an [Array] (possibly empty) of rules.
+func _normalize_mapping_rules_to_array(raw: Variant) -> Variant:
+	if raw is Array:
+		var out: Array = []
+		out.assign(raw)
+		return out
+	if raw is Dictionary:
+		var d: Dictionary = raw as Dictionary
+		if d.has("morphology_id") or d.has("morphology_scalar"):
+			return [d]
+		push_warning(
+			"FEAGI CACHE: Mapping rules dict missing morphology fields; keys=%s — skipping edge"
+			% str(d.keys())
+		)
+		return null
+	push_warning(
+		"FEAGI CACHE: Unsupported mapping rules type %s — skipping edge"
+		% type_string(typeof(raw))
+	)
+	return null
+
+
 ## Retrieved the mapping data between 2 cortical areas from FEAGI, use this to update the cache
 func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractCorticalArea, mappings_JSON: Array) -> void:
 	# IMPORTANT: An empty mapping list from FEAGI means the mapping does not exist.
@@ -93,9 +116,12 @@ func FEAGI_load_all_mappings(mapping_summary: Dictionary)-> void:
 			#NOTE: Instead of verifying the morphology exists, we will allow [MappingProperty]'s  system handle it, as it has a fallback should it not be found
 			var source_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
 			var destination_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
-			var mapping_dictionaries: Array = [] # Rules may be FEAGI objects or legacy array rows (see SingleMappingDefinition)
-			mapping_dictionaries.assign(mapping_targets[destination_cortical_ID])
-			FEAGI_set_mapping_JSON(source_area, destination_area, mapping_dictionaries)
+			var normalized: Variant = _normalize_mapping_rules_to_array(
+				mapping_targets[destination_cortical_ID]
+			)
+			if normalized == null:
+				continue
+			FEAGI_set_mapping_JSON(source_area, destination_area, normalized as Array)
 
 ## Applies mapping summary as a diff to avoid full cache teardown.
 func FEAGI_apply_mapping_summary_diff(mapping_summary: Dictionary) -> void:
@@ -130,9 +156,12 @@ func FEAGI_apply_mapping_summary_diff(mapping_summary: Dictionary) -> void:
 				continue
 			var source_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[source_cortical_ID]
 			var destination_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[destination_cortical_ID]
-			var mapping_dictionaries: Array = []
-			mapping_dictionaries.assign(mapping_targets[raw_destination])
-			FEAGI_set_mapping_JSON(source_area, destination_area, mapping_dictionaries)
+			var normalized: Variant = _normalize_mapping_rules_to_array(
+				mapping_targets[raw_destination]
+			)
+			if normalized == null:
+				continue
+			FEAGI_set_mapping_JSON(source_area, destination_area, normalized as Array)
 			seen_pairs["%s->%s" % [String(source_cortical_ID), String(destination_cortical_ID)]] = true
 
 	for pair in existing_pairs:

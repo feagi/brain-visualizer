@@ -333,7 +333,9 @@ func _confirm_establish_mapping() -> void:
 			close_window()
 		return
 	else:
-		# create a new pattern morphology, then use it in a new mapping
+		# Pattern morphology name: src cortical token + "_" + dst cortical token (both are base64
+		# cortical IDs, so the string often contains "=" and "_" — that is intentional, not corruption).
+		# Voxel suffixes are appended below; FEAGI name length is capped with left(16); collisions get "2".
 		var morphology_name: StringName = _source.cortical_ID + "_" + _destination.cortical_ID
 		var pairs: Array[PatternVector3Pairs]
 		match(_mode):

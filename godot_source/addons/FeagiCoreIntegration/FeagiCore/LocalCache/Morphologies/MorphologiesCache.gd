@@ -107,26 +107,104 @@ func hard_wipe_cached_morphologies():
 
 ## To update morphology listing given a dict with details about all morphologies
 func update_morphology_cache_from_summary(all_morphology_details: Dictionary) -> void:
-	for current_morphology: StringName in _available_morphologies.keys():
-		if !(all_morphology_details.keys().has(current_morphology)):
-			# This morphology doesnt exist anymore, delete it
-			print("CACHE: deleting morphology no longer in use: %s..." % current_morphology)
-			_available_morphologies.erase(current_morphology)
-	
-	var current_morphlogy_dict: Dictionary
-	for feagi_retrieved_morphology_name: StringName in all_morphology_details.keys():
-		current_morphlogy_dict = all_morphology_details[feagi_retrieved_morphology_name]
-		if feagi_retrieved_morphology_name in _available_morphologies.keys():
-			# Morphology exists but needs to be updated
-			_available_morphologies[feagi_retrieved_morphology_name].feagi_update(
+	if all_morphology_details.is_empty():
+		_available_morphologies.clear()
+		return
+	# HTTP/JSON keys are often String; cache may use StringName. Normalize for existence checks.
+	var api_id_strings: Dictionary = {}
+	for k in all_morphology_details.keys():
+		api_id_strings[String(k).strip_edges()] = true
+	var to_erase: Array[Variant] = []
+	for cur in _available_morphologies.keys():
+		if not api_id_strings.has(String(cur).strip_edges()):
+			to_erase.append(cur)
+	for cur in to_erase:
+		print("CACHE: deleting morphology no longer in use: %s..." % cur)
+		_available_morphologies.erase(cur)
+
+	for raw_name in all_morphology_details.keys():
+		var name_key: StringName = StringName(String(raw_name).strip_edges())
+		var current_morphlogy_dict: Dictionary = all_morphology_details[raw_name]
+		var existing: BaseMorphology = try_get_morphology_by_ambiguous_key(name_key)
+		if existing != null:
+			if not _available_morphologies.has(name_key):
+				for k in _available_morphologies.keys():
+					if String(k) == String(name_key):
+						_available_morphologies.erase(k)
+						break
+				_available_morphologies[name_key] = existing
+			_available_morphologies[name_key].feagi_update(
 				current_morphlogy_dict["parameters"],
 				BaseMorphology.morphology_class_str_to_class(current_morphlogy_dict["class"])
 			)
 		else:
-			# Morphology doesn't exist in cache, create it!	
-			_available_morphologies[feagi_retrieved_morphology_name] = BaseMorphology.create_from_FEAGI_template(feagi_retrieved_morphology_name, current_morphlogy_dict)
+			_available_morphologies[name_key] = BaseMorphology.create_from_FEAGI_template(name_key, current_morphlogy_dict)
 
-	
+
+## Collect morphology_id strings from cortical_map_detailed-style mapping summary.
+func _collect_morphology_ids_from_mapping_summary(mapping_summary: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	var seen: Dictionary = {}
+	for _src in mapping_summary.keys():
+		var targets: Variant = mapping_summary[_src]
+		if targets is not Dictionary:
+			continue
+		var mapping_targets: Dictionary = targets as Dictionary
+		for _dst in mapping_targets.keys():
+			var rules: Variant = mapping_targets[_dst]
+			if rules is Dictionary:
+				var mid0: Variant = (rules as Dictionary).get("morphology_id", null)
+				if mid0 != null:
+					var s0: String = String(mid0).strip_edges()
+					if not s0.is_empty() and not seen.has(s0):
+						seen[s0] = true
+						out.append(s0)
+				continue
+			if rules is not Array:
+				continue
+			for rule in rules:
+				if rule is Dictionary:
+					var mid: Variant = (rule as Dictionary).get("morphology_id", null)
+					if mid != null:
+						var s: String = String(mid).strip_edges()
+						if not s.is_empty() and not seen.has(s):
+							seen[s] = true
+							out.append(s)
+				elif rule is Array:
+					var arr: Array = rule as Array
+					if arr.size() > 0:
+						var s2: String = String(arr[0]).strip_edges()
+						if not s2.is_empty() and not seen.has(s2):
+							seen[s2] = true
+							out.append(s2)
+	return out
+
+
+func _find_morphology_template_in_summary(morphologies_summary: Dictionary, morph_id_str: String) -> Dictionary:
+	for k in morphologies_summary.keys():
+		if String(k).strip_edges() == morph_id_str:
+			var v: Variant = morphologies_summary[k]
+			if v is Dictionary:
+				return v as Dictionary
+	return {}
+
+
+## After [method update_morphology_cache_from_summary], add any mapping-referenced morphologies still missing
+## (recovers from String/StringName skew or ordering edge cases).
+func ensure_morphologies_referenced_in_mappings(mapping_summary: Dictionary, morphologies_summary: Dictionary) -> void:
+	for morph_id_str in _collect_morphology_ids_from_mapping_summary(mapping_summary):
+		if try_get_morphology_by_ambiguous_key(morph_id_str) != null:
+			continue
+		var template_dict: Dictionary = _find_morphology_template_in_summary(morphologies_summary, morph_id_str)
+		if template_dict.is_empty():
+			push_warning(
+				"FEAGI CACHE: Morphology '%s' is referenced in cortical mappings but has no definition in morphologies summary"
+				% morph_id_str
+			)
+			continue
+		var name_key: StringName = StringName(morph_id_str)
+		_available_morphologies[name_key] = BaseMorphology.create_from_FEAGI_template(name_key, template_dict)
+
 func attempt_to_get_morphology_arr_from_string_name_arr(requested: Array[StringName], surpress_missing_error: bool = false) -> Array[BaseMorphology]:
 	var output: Array[BaseMorphology] = []
 	for req_morph: StringName in requested:
@@ -139,6 +217,19 @@ func attempt_to_get_morphology_arr_from_string_name_arr(requested: Array[StringN
 
 ## Gets a morphology by name if exists, otherwise returns null
 func try_get_morphology_object(morphology_name: StringName) -> BaseMorphology:
-	if morphology_name in _available_morphologies:
-		return _available_morphologies[morphology_name]
+	return try_get_morphology_by_ambiguous_key(morphology_name)
+
+
+## Resolve morphology id from HTTP JSON ([String]) or cache ([StringName]) keys.
+func try_get_morphology_by_ambiguous_key(morph_id: Variant) -> BaseMorphology:
+	if morph_id == null:
+		return null
+	if _available_morphologies.has(morph_id):
+		return _available_morphologies[morph_id]
+	var token: String = String(morph_id).strip_edges()
+	if token.is_empty():
+		return null
+	for k in _available_morphologies.keys():
+		if String(k) == token:
+			return _available_morphologies[k]
 	return null
