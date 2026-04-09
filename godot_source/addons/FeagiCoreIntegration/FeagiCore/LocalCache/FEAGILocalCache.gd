@@ -254,6 +254,7 @@ signal synapse_count_current_changed(new_val: int)
 signal genome_availability_changed(new_val: int)
 signal genome_validity_changed(new_val: bool)
 signal brain_readiness_changed(new_val: bool)
+signal genome_loading_changed(new_val: bool)
 signal genome_availability_or_brain_readiness_changed(available: bool, ready: bool)
 signal simulation_timestep_changed(new_timestep: float)
 signal genome_refresh_needed(feagi_session: int, genome_num: int, reason: String)
@@ -314,6 +315,14 @@ var brain_readiness: bool:
 			_brain_readiness = v
 			brain_readiness_changed.emit(v)
 
+## True when FEAGI health_check reports an active genome load/upload (Rust API genome_loading).
+var genome_loading: bool:
+	get: return _genome_loading
+	set(v):
+		if v != _genome_loading:
+			_genome_loading = v
+			genome_loading_changed.emit(v)
+
 var genome_num: int:
 	get: return _genome_num
 
@@ -336,6 +345,7 @@ var _synapse_count_current: int = -1
 var _genome_availability: bool
 var _genome_validity: bool
 var _brain_readiness: bool
+var _genome_loading: bool = false
 var _genome_num: int = 0
 var _simulation_timestep: float = 0.05  # Default 50ms
 
@@ -383,121 +393,109 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 					print("FEAGI CACHE: Session changed (old: %d -> new: %d) - requesting full reload" % [previous_session, current_session_only])
 					feagi_session_changed.emit(previous_session, current_session_only)
 	
-	# GENOME CHANGE DETECTION: Check feagi_session and genome_num for changes
-	if "feagi_session" in health and "genome_num" in health:
+	# GENOME CHANGE DETECTION: genome_num transitions require a full cache reload.
+	# Partial WS status may omit feagi_session; use _last_seen_feagi_session from the last full health snapshot.
+	if "feagi_session" in health:
 		var feagi_session_value = health["feagi_session"]
-		var genome_num_value = health["genome_num"]
-		
 		# CRITICAL: Detect FEAGI readiness (null → valid session) to trigger agent re-registration
-		# This handles the case where BV connects before FEAGI is ready (feagi_session is null)
-		# and then FEAGI becomes ready (feagi_session becomes valid)
 		if feagi_session_value != null and (typeof(feagi_session_value) == TYPE_INT or typeof(feagi_session_value) == TYPE_FLOAT):
 			var current_session = int(feagi_session_value)
-			# Detect transition from null/invalid to valid session (FEAGI became ready)
-			# Only trigger if:
-			# 1. Current session is valid (> 0)
-			# 2. We haven't seen a valid session yet (or previous was 0)
-			# 3. BV is already connected (not during initial connection attempt)
 			if current_session > 0:
 				var was_previously_null_or_zero = (_previous_feagi_session == 0 and not _had_valid_session)
 				if was_previously_null_or_zero:
 					_had_valid_session = true
-					# Only trigger re-registration if BV is already connected (not during initial connection)
-					# Check if FeagiCore exists and is in a connected state
 					if FeagiCore and FeagiCore.network:
 						var conn_state = FeagiCore.network.connection_state
-						var is_already_connected = (conn_state == FeagiCore.network.CONNECTION_STATE.HEALTHY or 
-													conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_HTTP or
-													conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_WS)
+						var is_already_connected = (conn_state == FeagiCore.network.CONNECTION_STATE.HEALTHY or
+								conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_HTTP or
+								conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_WS)
 						if is_already_connected:
 							print("[AGENT-REG] FEAGI became ready (session: %d) while BV is connected - triggering re-registration" % current_session)
 							agent_reregistration_needed.emit("FEAGI became ready (session: %d)" % current_session)
-		
-		# Genome change detection requires BOTH feagi_session and genome_num to be non-null
-		# This ensures we only detect changes when FEAGI is fully initialized
-		if feagi_session_value != null and genome_num_value != null:
-			var current_feagi_session = int(feagi_session_value)
-			var current_genome_num = int(genome_num_value)
 
-			# Cache and health status checks
-			var health_genome_available = health.get("genome_availability", false)
-			var health_brain_ready = health.get("brain_readiness", false)
-			var cache_is_empty = (cortical_areas.available_cortical_areas.size() == 0 and brain_regions.available_brain_regions.size() == 0)
+	if "genome_num" in health and health["genome_num"] != null:
+		var current_genome_num: int = int(health["genome_num"])
 
-			# Session changes: detect both initial connection (0 → new) and FEAGI restarts (old → new)
-			var session_changed = ((_previous_feagi_session == 0 and current_feagi_session > 0) or
-								  (_previous_feagi_session != 0 and current_feagi_session != _previous_feagi_session))
-			
-			# If session changed and we previously had a valid session, trigger agent re-registration
+		var current_session_from_health: int = 0
+		if "feagi_session" in health and health["feagi_session"] != null:
+			var fsv = health["feagi_session"]
+			if typeof(fsv) == TYPE_INT or typeof(fsv) == TYPE_FLOAT:
+				current_session_from_health = int(fsv)
+
+		var effective_feagi_session: int = current_session_from_health if current_session_from_health > 0 else _last_seen_feagi_session
+
+		var health_genome_available = health.get("genome_availability", false)
+		var health_brain_ready = health.get("brain_readiness", false)
+		var cache_is_empty = (cortical_areas.available_cortical_areas.size() == 0 and brain_regions.available_brain_regions.size() == 0)
+
+		var session_changed: bool = false
+		if current_session_from_health > 0:
+			session_changed = ((_previous_feagi_session == 0 and current_session_from_health > 0) or
+					(_previous_feagi_session != 0 and current_session_from_health != _previous_feagi_session))
 			if session_changed and _previous_feagi_session != 0:
-				print("[AGENT-REG] FEAGI session changed (old: %d → new: %d) - agent needs to re-register" % [_previous_feagi_session, current_feagi_session])
-				agent_reregistration_needed.emit("FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_feagi_session])
+				print("[AGENT-REG] FEAGI session changed (old: %d → new: %d) - agent needs to re-register" % [_previous_feagi_session, current_session_from_health])
+				agent_reregistration_needed.emit("FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_session_from_health])
 
-			# Genome changes: only detect actual changes (not initial from 0)
-			var genome_changed = (_previous_genome_num != 0 and current_genome_num != _previous_genome_num)
+		var genome_changed: bool = (_previous_genome_num != 0 and current_genome_num != _previous_genome_num)
 
-			# Full wipe+reload when:
-			# - FEAGI session/instance changed (new process or first attach), OR
-			# - genome_num changed, OR
-			# - Local cache is empty while FEAGI reports genome+brain ready (recovery / stuck reload).
-			var force_reload_needed: bool = (
-				health_genome_available
-				and health_brain_ready
-				and cache_is_empty
-				and current_genome_num > 0
-			)
-			var trigger_full_reload: bool = session_changed or genome_changed or force_reload_needed
+		var force_reload_needed: bool = (
+			health_genome_available
+			and health_brain_ready
+			and cache_is_empty
+			and current_genome_num > 0
+		)
+		var trigger_full_reload: bool = session_changed or genome_changed or force_reload_needed
 
-			if trigger_full_reload:
-				# Never apply cooldown to initial startup (when _previous_feagi_session was 0)
-				var is_initial_startup: bool = (_previous_feagi_session == 0)
-				var skip_emit: bool = false
+		if trigger_full_reload:
+			var is_initial_startup: bool = (_previous_feagi_session == 0)
+			var skip_emit: bool = false
 
-				# Do not cooldown-block true version changes (session/genome).
-				# Cooldown only applies to recovery-driven force reloads.
-				if not is_initial_startup and not genome_changed and not session_changed:
-					var cooldown_now: int = Time.get_ticks_msec()
-					if cooldown_now - _last_genome_change_time < _genome_change_cooldown_ms:
-						var remaining_cooldown: float = (
-							(_genome_change_cooldown_ms - (cooldown_now - _last_genome_change_time)) / 1000.0
-						)
-						print(
-							"⚠️ FEAGI CACHE: Full reload in cooldown (%.1fs left) — deferring emit; hash sync still runs"
-							% remaining_cooldown
-						)
-						skip_emit = true
+			if not is_initial_startup and not genome_changed and not session_changed:
+				var cooldown_now: int = Time.get_ticks_msec()
+				if cooldown_now - _last_genome_change_time < _genome_change_cooldown_ms:
+					var remaining_cooldown: float = (
+						(_genome_change_cooldown_ms - (cooldown_now - _last_genome_change_time)) / 1000.0
+					)
+					print(
+						"⚠️ FEAGI CACHE: Full reload in cooldown (%.1fs left) — deferring emit; hash sync still runs"
+						% remaining_cooldown
+					)
+					skip_emit = true
 
-				if not skip_emit and FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING:
-					if not (force_reload_needed and cache_is_empty):
-						# Already reloading; avoid stacking another full reload (stuck case handled below).
-						skip_emit = true
+			# Do not suppress a new genome_num while a reload is in flight — server may have moved on (e.g. external load).
+			if not skip_emit and FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING:
+				if not genome_changed and not (force_reload_needed and cache_is_empty):
+					skip_emit = true
 
-				if trigger_full_reload and not skip_emit:
-					var reason: String = ""
-					if session_changed:
-						if is_initial_startup:
-							reason = "Initial BV startup (session: %d)" % current_feagi_session
-						else:
-							reason = "FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_feagi_session]
-					if force_reload_needed:
-						if reason != "":
-							reason += " & "
-						if FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING:
-							reason += "STUCK RELOAD - cache empty despite GENOME_RELOADING state"
-						else:
-							reason += "cache empty despite genome ready"
-					if genome_changed:
-						if reason != "":
-							reason += " & "
-						reason += "genome_num changed (%d -> %d)" % [_previous_genome_num, current_genome_num]
+			if trigger_full_reload and not skip_emit and effective_feagi_session > 0:
+				var reason: String = ""
+				if session_changed:
+					if is_initial_startup:
+						reason = "Initial BV startup (session: %d)" % effective_feagi_session
+					else:
+						reason = "FEAGI restarted (session: %d → %d)" % [_previous_feagi_session, current_session_from_health]
+				if force_reload_needed:
+					if reason != "":
+						reason += " & "
+					if FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING:
+						reason += "STUCK RELOAD - cache empty despite GENOME_RELOADING state"
+					else:
+						reason += "cache empty despite genome ready"
+				if genome_changed:
+					if reason != "":
+						reason += " & "
+					reason += "genome_num changed (%d -> %d)" % [_previous_genome_num, current_genome_num]
 
-					var emit_time: int = Time.get_ticks_msec()
-					_last_genome_change_time = emit_time
-					genome_refresh_needed.emit(current_feagi_session, current_genome_num, reason)
+				var emit_time: int = Time.get_ticks_msec()
+				_last_genome_change_time = emit_time
+				genome_refresh_needed.emit(effective_feagi_session, current_genome_num, reason)
 
-			_previous_feagi_session = current_feagi_session
+		if current_session_from_health > 0:
+			_previous_feagi_session = current_session_from_health
+		# If we saw a genome_num bump but had no session id yet, keep _previous_genome_num so the next full health can emit.
+		if effective_feagi_session > 0 or not genome_changed:
 			_previous_genome_num = current_genome_num
-	
+
 	_process_hash_change_detection(health)
 	
 	# DEBUG: Show health check details for amalgamation tracking (only when relevant)
@@ -551,6 +549,10 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		var value = health["brain_readiness"]
 		if value != null:
 			brain_readiness = bool(value)
+	if "genome_loading" in health:
+		var gl_val = health["genome_loading"]
+		if gl_val != null:
+			genome_loading = bool(gl_val)
 	if "genome_num" in health: 
 		var value = health["genome_num"]
 		if value != null:
@@ -651,6 +653,7 @@ func set_health_dead() -> void:
 	genome_availability = false
 	genome_validity = false
 	brain_readiness = false
+	genome_loading = false
 	
 #endregion
 

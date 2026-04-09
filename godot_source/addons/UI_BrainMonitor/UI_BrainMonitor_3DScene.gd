@@ -2097,7 +2097,12 @@ func start_brain_region_manipulation(region: BrainRegion) -> void:
 	_manipulation_start_pos = region.coordinates_3D
 	_manipulation_current_pos = _manipulation_start_pos
 	_manipulation_group_anchor_pos = _manipulation_start_pos
-	_manipulation_region_preview = create_brain_region_preview(region, region.coordinates_3D)
+	_manipulation_region_preview = create_brain_region_preview(
+		region,
+		region.coordinates_3D,
+		false,
+		true
+	)
 	var region_frame: Node3D = _brain_region_visualizations_by_ID.get(region.region_ID, null)
 	if region_frame != null and is_instance_valid(region_frame):
 		region_frame.visible = false
@@ -2219,13 +2224,12 @@ func _update_manipulation_gizmo_transform() -> void:
 		return
 	# Brain region path (shared gizmo logic; different anchor source)
 	if _manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview):
-		var anchor: Vector3 = _manipulation_region_preview.global_position
+		var anchor: Vector3 = _manipulation_region_preview.get_manipulation_gizmo_anchor_global()
 		var gizmo_scale: float = _get_gizmo_scale_for_camera(anchor)
 		_manipulation_gizmo.scale = Vector3.ONE * gizmo_scale
 		var axis_len: float = _manipulation_gizmo.get_axis_length() if _manipulation_gizmo.has_method("get_axis_length") else 0.0
 		axis_len *= gizmo_scale
-		var offset_x: float = 8.0 + (axis_len * 0.5)
-		_manipulation_gizmo.global_position = anchor + Vector3(offset_x, 0.0, 0.0)
+		_manipulation_gizmo.global_position = anchor
 		if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
 			var camera_pos: Vector3 = _pancake_cam.global_position
 			var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
@@ -2272,8 +2276,15 @@ func _update_manipulation_capacity_warning() -> void:
 	new_dims.z = max(1, new_dims.z)
 	_manipulation_preview.set_warning_state(_would_overflow_capacity(new_dims))
 
-## Allows external elements to create a brain region preview showing dual plates
-func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> UI_BrainMonitor_BrainRegionPreview:
+## Allows external elements to create a brain region preview showing dual plates.
+## [param auto_frame_on_create]: frame camera once after preview is added (e.g. edit/create region dialogs).
+## [param auto_frame_on_interaction]: reframe while preview moves (keeps relocation in view during drag).
+func create_brain_region_preview(
+	brain_region: BrainRegion,
+	initial_FEAGI_position: Vector3i,
+	auto_frame_on_create: bool = true,
+	auto_frame_on_interaction: bool = true
+) -> UI_BrainMonitor_BrainRegionPreview:
 	var preview: UI_BrainMonitor_BrainRegionPreview = UI_BrainMonitor_BrainRegionPreview.new()
 	_node_3D_root.add_child(preview)  # Add to 3D scene root
 	preview.setup(brain_region, initial_FEAGI_position)
@@ -2283,12 +2294,12 @@ func create_brain_region_preview(brain_region: BrainRegion, initial_FEAGI_positi
 	_spawn_indicator_for_node_center(preview)
 	# Use weak reference to self to avoid capturing freed objects
 	var weak_self = weakref(self)
-	# Reframe when brain-region preview is created or moved (defer by one frame)
-	get_tree().create_timer(0.0).timeout.connect(func():
-		if weak_self.get_ref():
-			_auto_frame_camera_to_objects()
-	)
-	if not preview.user_moved_preview.is_connected(func(_p): pass):
+	if auto_frame_on_create:
+		get_tree().create_timer(0.0).timeout.connect(func():
+			if weak_self.get_ref():
+				_auto_frame_camera_to_objects()
+		)
+	if auto_frame_on_interaction:
 		preview.user_moved_preview.connect(func(_pos: Vector3i):
 			if weak_self.get_ref():
 				get_tree().create_timer(0.0).timeout.connect(func():

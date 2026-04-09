@@ -30,6 +30,9 @@ const PLATE_LABEL_Y_OFFSET: float = 0.6
 const PLATE_LABEL_Z_OFFSET: float = 0.6
 const PLATE_BORDER_THICKNESS: float = 0.12
 const PLATE_BORDER_HEIGHT: float = 0.14
+## Region title (RegionNameLabel) sits this far below the mother/bezel center on Y, plus an extra drop (matches preview gizmo math).
+const REGION_NAME_LABEL_OFFSET_BELOW_BEZEL_CENTER: float = 2.0
+const REGION_NAME_LABEL_EXTRA_LOWER_Y: float = 5.0
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -777,12 +780,12 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 			# Place just below bezel and slightly in front of its front face
 			if mother.mesh is BoxMesh:
 				var bezel_front = (mother.mesh as BoxMesh).size.z / 2.0
-				_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25, -(bezel_front + 0.05))
+				_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25 - REGION_NAME_LABEL_EXTRA_LOWER_Y, -(bezel_front + 0.05))
 			else:
-				_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25, -0.05)
+				_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25 - REGION_NAME_LABEL_EXTRA_LOWER_Y, -0.05)
 		else:
 			var front_edge_world_z = -_representing_region.coordinates_3D.z
-			_region_name_label.global_position = Vector3(global_position.x, global_position.y - 0.5, front_edge_world_z - 1.0)
+			_region_name_label.global_position = Vector3(global_position.x, global_position.y - 0.5 - REGION_NAME_LABEL_EXTRA_LOWER_Y, front_edge_world_z - 1.0)
 	
 
 ## Repositions a single cortical area on its plate using new relative coordinates
@@ -971,12 +974,12 @@ func _create_3d_plate() -> void:
 	var bezel: MeshInstance3D = _frame_container.get_node_or_null("MotherPlate") as MeshInstance3D
 	if bezel != null:
 		var label_x_world = bezel.global_position.x  # Same X as bezel center
-		var label_y_world = bezel.global_position.y - 2.0  # 2 units below bezel center
+		var label_y_world = bezel.global_position.y - REGION_NAME_LABEL_OFFSET_BELOW_BEZEL_CENTER - REGION_NAME_LABEL_EXTRA_LOWER_Y
 		var label_z_world = bezel.global_position.z  # Same Z as bezel center
 		_region_name_label.global_position = Vector3(label_x_world, label_y_world, label_z_world)
 	else:
 		# Fallback if no bezel - use centered position
-		var label_y_world = global_position.y - 2.0
+		var label_y_world = global_position.y - REGION_NAME_LABEL_OFFSET_BELOW_BEZEL_CENTER - REGION_NAME_LABEL_EXTRA_LOWER_Y
 		var label_z_world = -_representing_region.coordinates_3D.z - 0.5
 		_region_name_label.global_position = Vector3(global_position.x + center_x, label_y_world, label_z_world)
 	# Report any oversized BoxMesh nodes in this region
@@ -2598,12 +2601,12 @@ func _update_label_position_after_refresh() -> void:
 		# Place just below bezel and slightly in front of its front face
 		if mother.mesh is BoxMesh:
 			var bezel_front2 = (mother.mesh as BoxMesh).size.z / 2.0
-			_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25, -(bezel_front2 + 0.05))
+			_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25 - REGION_NAME_LABEL_EXTRA_LOWER_Y, -(bezel_front2 + 0.05))
 		else:
-			_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25, -0.05)
+			_region_name_label.position = Vector3(0.0, -(PLATE_HEIGHT / 2.0) - 0.25 - REGION_NAME_LABEL_EXTRA_LOWER_Y, -0.05)
 	else:
 		var front_edge_world_z = -_representing_region.coordinates_3D.z
-		_region_name_label.global_position = Vector3(global_position.x, global_position.y - 0.5, front_edge_world_z - 1.0)
+		_region_name_label.global_position = Vector3(global_position.x, global_position.y - 0.5 - REGION_NAME_LABEL_EXTRA_LOWER_Y, front_edge_world_z - 1.0)
 
 ## Handles hover/selection interaction
 func set_hover_state(is_hovered: bool) -> void:

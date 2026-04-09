@@ -6,6 +6,8 @@ class_name UI_BrainMonitor_BrainRegionPreview
 var _brain_region: BrainRegion
 var _preview_container: Node3D
 var _region_name_label: Label3D
+## Local-space point (relative to this preview root) for the relocate gizmo: centered on plates, Y below the region title (matches BrainRegion3D label logic).
+var _gizmo_anchor_local: Vector3 = Vector3.ZERO
 
 const PREVIEW_PLATE_GAP: float = 1.0
 const PREVIEW_PLATE_HEIGHT: float = 1.0
@@ -91,19 +93,40 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	output_plate.position.z = -output_depth / 2.0
 	_preview_container.add_child(output_plate)
 	_add_preview_plate_border(output_plate, Vector3(actual_output_width, PREVIEW_PLATE_HEIGHT, output_depth), output_color)
+
+	# Center X under the full input+gap+output span; Z centered on depth; Y slightly below plate bottoms (y=0) so the gizmo stays visible.
+	var extent_x: float = output_front_left_x + actual_output_width
+	var max_plate_depth: float = maxf(input_depth, output_depth)
+	var center_x: float = extent_x * 0.5
+	var center_z: float = -max_plate_depth * 0.5
+	# Match UI_BrainMonitor_BrainRegion3D RegionNameLabel Y (mother center - offset - REGION_NAME_LABEL_EXTRA_LOWER_Y).
+	var mother_center_y: float = PREVIEW_PLATE_HEIGHT / 2.0 - 2.0
+	const REGION_NAME_LABEL_OFFSET_BELOW_BEZEL_CENTER: float = 2.0
+	const REGION_NAME_LABEL_EXTRA_LOWER_Y: float = 5.0
+	var region_title_center_y: float = mother_center_y - REGION_NAME_LABEL_OFFSET_BELOW_BEZEL_CENTER - REGION_NAME_LABEL_EXTRA_LOWER_Y
+	const GIZMO_CLEARANCE_BELOW_REGION_TITLE: float = 0.75
+	var gizmo_y: float = region_title_center_y - GIZMO_CLEARANCE_BELOW_REGION_TITLE
+	_gizmo_anchor_local = Vector3(center_x, gizmo_y, center_z)
 	
 	# Suppress preview label to avoid confusion with live region labels during editing
 	# (If needed later, we can enable via a debug flag.)
 	
-	# Set initial position
-	update_position_with_new_FEAGI_coordinate(initial_FEAGI_position)
+	# Set initial position without emitting user_moved_preview (avoids camera auto-frame on open;
+	# cortical InteractivePreview also does not emit until set_new_position is called).
+	update_position_with_new_FEAGI_coordinate(initial_FEAGI_position, false)
 
-## Updates the preview position when coordinates change
-func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate: Vector3i) -> void:
+## Updates the preview position when coordinates change.
+## [param emit_moved]: when false, skips [signal user_moved_preview] (used for initial setup only).
+func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate: Vector3i, emit_moved: bool = true) -> void:
 	# Convert FEAGI coordinates to Godot space (flip Z-axis)
 	var godot_position = Vector3(new_FEAGI_coordinate.x, new_FEAGI_coordinate.y, -new_FEAGI_coordinate.z)
 	global_position = godot_position
-	user_moved_preview.emit(new_FEAGI_coordinate)
+	if emit_moved:
+		user_moved_preview.emit(new_FEAGI_coordinate)
+
+## World-space anchor for the relocate gizmo (below the region title, centered on the assembly).
+func get_manipulation_gizmo_anchor_global() -> Vector3:
+	return to_global(_gizmo_anchor_local)
 
 ## Cleans up the preview
 func cleanup() -> void:

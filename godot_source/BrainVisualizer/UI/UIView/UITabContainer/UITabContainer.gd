@@ -226,27 +226,74 @@ func return_BM_of_region(searching_region: BrainRegion) -> UI_BrainMonitor_3DSce
 				return (child as UI_BrainMonitor_3DScene)
 	return null
 
+## Tab page for [param idx]. Uses [method TabContainer.get_tab_control], not [method Node.get_child]:
+## this node also has non-tab children (tooltip manager, timer) so child index != tab index.
 func get_tab_IDX_as_control(idx: int) -> Control:
-	return get_child(idx) as Control
+	if idx < 0 or idx >= get_tab_count():
+		return null
+	return get_tab_control(idx)
+
+
+## Debug string for tab close logging (region id / type).
+func _tab_close_target_description(control: Control) -> String:
+	if control == null:
+		return "null"
+	if control is CircuitBuilder:
+		var c := control as CircuitBuilder
+		if c.representing_region != null:
+			return "CircuitBuilder region_id=%s name=%s" % [c.representing_region.region_ID, c.representing_region.friendly_name]
+		return "CircuitBuilder (no region)"
+	if control is UI_BrainMonitor_3DScene:
+		var b := control as UI_BrainMonitor_3DScene
+		if b.representing_region != null:
+			return "BrainMonitor3D region_id=%s name=%s" % [b.representing_region.region_ID, b.representing_region.friendly_name]
+		return "BrainMonitor3D (no region)"
+	return control.get_class()
 
 
 #endregion
 func _on_user_close_tab(tab_idx: int) -> void:
-	var target = get_tab_IDX_as_control(tab_idx)
+	var tab_count: int = get_tab_count()
+	var target: Control = get_tab_IDX_as_control(tab_idx)
+	print(
+		"[UITabContainer] tab_close_pressed: tab_idx=%s tab_count=%s target=%s"
+		% [tab_idx, tab_count, _tab_close_target_description(target)]
+	)
+	if target == null:
+		push_error("[UITabContainer] tab_close_pressed: no control at tab_idx %s — abort" % tab_idx)
+		return
+	# Closing the "Main" (root) tab used to always call close_split_view() and skip tab removal.
+	# With multiple circuit tabs, that collapsed the whole split and left the Main tab open — felt
+	# like a broken close or an accidental split exit. Only exit split layout when this is the
+	# last tab; otherwise remove the root tab like any other tab.
 	if target is UI_BrainMonitor_3DScene:
 		var bm := target as UI_BrainMonitor_3DScene
 		if bm.representing_region != null and bm.representing_region.is_root_region():
-			var temp_split := BV.UI.get_node("CB_Holder") as TempSplit
-			if temp_split != null:
-				temp_split.close_split_view()
-			return
+			if get_tab_count() <= 1:
+				var temp_split := BV.UI.get_node("CB_Holder") as TempSplit
+				if temp_split != null:
+					temp_split.close_split_view()
+					print(
+						"[UITabContainer] tab close success: split view closed via root BrainMonitor tab (last tab), TempSplit=%s"
+						% temp_split.get_path()
+					)
+				else:
+					push_warning("[UITabContainer] tab close: root BM last tab but CB_Holder missing")
+				return
 	if target is CircuitBuilder:
 		var cb := target as CircuitBuilder
 		if cb.representing_region != null and cb.representing_region.is_root_region():
-			var temp_split_cb := BV.UI.get_node("CB_Holder") as TempSplit
-			if temp_split_cb != null:
-				temp_split_cb.close_split_view()
-			return
+			if get_tab_count() <= 1:
+				var temp_split_cb := BV.UI.get_node("CB_Holder") as TempSplit
+				if temp_split_cb != null:
+					temp_split_cb.close_split_view()
+					print(
+						"[UITabContainer] tab close success: split view closed via root CircuitBuilder tab (last tab), TempSplit=%s"
+						% temp_split_cb.get_path()
+					)
+				else:
+					push_warning("[UITabContainer] tab close: root CB last tab but CB_Holder missing")
+				return
 	_remove_control_view_as_tab(target)
 
 func _on_top_tab_change(_tab_index: int) -> void:
@@ -304,6 +351,8 @@ func _add_control_view_as_tab_with_region_info(region_view: Control, region: Bra
 		_add_control_view_as_tab(region_view)
 
 func _remove_control_view_as_tab(region_view: Control) -> void:
+	var desc: String = _tab_close_target_description(region_view)
+	var tabs_before: int = get_tab_count()
 	if region_view is CircuitBuilder:
 		var cb: CircuitBuilder = region_view as CircuitBuilder
 		cb.user_request_viewing_subregion.disconnect(_internal_CB_requesting_CB_view_of_region)
@@ -315,8 +364,17 @@ func _remove_control_view_as_tab(region_view: Control) -> void:
 		bm.clear_all_open_previews()
 		remove_child(bm)
 		bm.queue_free()
-	if len(get_children()) == 0:
+	else:
+		push_error("[UITabContainer] _remove_control_view_as_tab: unsupported control %s" % desc)
+		return
+	var tabs_after: int = get_tab_count()
+	print(
+		"[UITabContainer] tab close success: removed tab (%s) remaining_tab_count=%s (was %s)"
+		% [desc, tabs_after, tabs_before]
+	)
+	if tabs_after == 0:
 		all_tabs_removed.emit()
+		print("[UITabContainer] tab close success: all_tabs_removed emitted")
 
 func _internal_CB_requesting_CB_view_of_region(region: BrainRegion) -> void:
 	requested_view_region_as_CB.emit(region, self)
