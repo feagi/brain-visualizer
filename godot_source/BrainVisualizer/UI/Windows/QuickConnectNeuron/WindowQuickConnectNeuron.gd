@@ -2,7 +2,6 @@ extends BaseDraggableWindow
 class_name WindowQuickConnectNeuron
 
 const WINDOW_NAME: StringName = "quick_connect_neuron"
-const MAPPING_UPDATE_WARNING_POPUP_MIN_SIZE: Vector2i = Vector2i(640, 420)
 
 const INVALID_COORD: Vector3i = Vector3i(-1,-1,-1)
 
@@ -282,24 +281,6 @@ func _establish() -> void:
 	if !_has_enough_information_for_mapping():
 		close_window()
 		return
-
-	var existing_mappings: Array[SingleMappingDefinition] = _source.get_mapping_array_toward_cortical_area(_destination)
-	if existing_mappings.size() > 0:
-		var warning_message: String = _build_mapping_update_warning_message(existing_mappings)
-		var confirm_action: Callable = _confirm_establish_mapping
-		var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
-			"Confirm Voxel Mapping Update",
-			warning_message,
-			confirm_action,
-			"Apply Mapping",
-			"Cancel",
-			MAPPING_UPDATE_WARNING_POPUP_MIN_SIZE
-		)
-		var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(popup_definition)
-		popup_window.set_enter_confirms_button("Apply Mapping")
-		popup_window.call_deferred("focus_button_with_text", "Apply Mapping")
-		return
-
 	_confirm_establish_mapping()
 
 func _confirm_establish_mapping() -> void:
@@ -379,26 +360,6 @@ func _confirm_establish_mapping() -> void:
 		if not out_pat.success:
 			return
 		close_window()
-
-func _build_mapping_update_warning_message(existing_mappings: Array[SingleMappingDefinition]) -> String:
-	var mapping_lines: PackedStringArray = []
-	for mapping: SingleMappingDefinition in existing_mappings:
-		if mapping == null:
-			continue
-		var morphology_name: String = "UNKNOWN"
-		if mapping.morphology_used != null:
-			morphology_name = mapping.morphology_used.name
-		var scalar: Vector3i = mapping.scalar
-		mapping_lines.append(
-			"%s (scalar: [%d, %d, %d], plasticity: %s)"
-			% [morphology_name, scalar.x, scalar.y, scalar.z, str(mapping.is_plastic)]
-		)
-	var listing: String = "- " + "\n- ".join(mapping_lines)
-	return (
-		"Updating voxel-level mappings from '%s' to '%s' will update the full cortical mapping edge.\n"
-		+ "FEAGI will prune and regenerate synapses for this source -> destination pair.\n\n"
-		+ "Existing mapping rule(s) on this edge (%d):\n%s"
-	) % [_source.friendly_name, _destination.friendly_name, existing_mappings.size(), listing]
 
 ## True only while "area -> specific neuron block" is actively waiting for destination voxel picking.
 func is_waiting_for_single_destination_voxel_selection() -> bool:
