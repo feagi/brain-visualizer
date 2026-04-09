@@ -87,6 +87,7 @@ func _enter_tree():
 		add_child(network)
 	feagi_local_cache = FEAGILocalCache.new()
 	feagi_local_cache.genome_refresh_needed.connect(_on_genome_refresh_needed)
+	feagi_local_cache.genome_loading_changed.connect(_on_feagi_genome_loading_changed)
 	feagi_local_cache.agent_reregistration_needed.connect(_on_agent_reregistration_needed)
 	feagi_local_cache.feagi_session_changed.connect(_on_feagi_session_changed)
 	requests = FEAGIRequests.new()
@@ -536,6 +537,15 @@ func _on_feagi_session_changed(previous_session: int, current_session: int) -> v
 func _on_genome_refresh_needed(feagi_session: int, genome_num: int, reason: String):
 	_set_desired_genome_signature(feagi_session, genome_num, reason)
 	_evaluate_reload_coordinator("health-genome-refresh")
+
+## FEAGI health_check `genome_loading` became false (prioritized load finished on server).
+## If the reload coordinator deferred earlier because brain/genome were not ready, `brain_readiness`
+## may never flip — so `genome_availability_or_brain_readiness_changed` does not run — and BV keeps
+## stale regions/corticals until restart. Nudge the coordinator when loading completes.
+func _on_feagi_genome_loading_changed(loading: bool) -> void:
+	if loading:
+		return
+	_evaluate_reload_coordinator("genome-loading-finished")
 
 func _is_ready_for_deterministic_genome_reload() -> bool:
 	if not feagi_local_cache.genome_availability or not feagi_local_cache.brain_readiness:

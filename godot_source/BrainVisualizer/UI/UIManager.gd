@@ -171,6 +171,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_proxy_notification_morphology_removed)
 	#FeagiCore.feagi_local_cache.morphologies.morphology_updated.connect(_proxy_notification_morphology_updated)
 	FeagiCore.feagi_local_cache.brain_readiness_changed.connect(_on_brain_readiness_changed)
+	FeagiCore.feagi_local_cache.genome_loading_changed.connect(_on_genome_loading_changed)
 	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_on_genome_availability_changed)
 	FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_genome_cache_replaced)
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
@@ -554,6 +555,9 @@ func _on_brain_readiness_changed(ready: bool) -> void:
 		update_loading_status("FEAGI brain is ready")
 	_update_loading_screen_visibility()
 
+func _on_genome_loading_changed(_loading: bool) -> void:
+	_update_loading_screen_visibility()
+
 ## Handle genome availability changes
 func _on_genome_availability_changed(available: bool) -> void:
 	_update_loading_screen_visibility()
@@ -614,6 +618,7 @@ func _update_loading_screen_visibility() -> void:
 	print("UIMANAGER: Loading screen visibility check:")
 	print("  - Connection healthy: %s (state: %s)" % [connection_healthy, FEAGINetworking.CONNECTION_STATE.keys()[FeagiCore.network.connection_state]])
 	print("  - Brain ready: %s" % brain_ready)
+	print("  - Genome loading (FEAGI health): %s" % FeagiCore.feagi_local_cache.genome_loading)
 	print("  - Genome available: %s" % genome_available)
 	print("  - Genome scene ready: %s (state: %s)" % [genome_scene_ready, FeagiCore.GENOME_LOAD_STATE.keys()[FeagiCore.genome_load_state]])
 	print("  - 3D scene instantiated: %s" % _3d_scene_instantiated)
@@ -634,20 +639,29 @@ func _update_loading_screen_visibility() -> void:
 			reasons.append("connection not healthy")
 		if not brain_ready:
 			reasons.append("brain not ready")
-			if connection_healthy:
-				update_loading_status("Awaiting FEAGI brain readiness...")
 		if not genome_available:
 			reasons.append("no genome available")
 		if not genome_scene_ready:
 			reasons.append("3D scene loading")
-			if connection_healthy and brain_ready and genome_available:
-				update_loading_status("Loading 3D scene...")
 		if genome_scene_ready and not _3d_scene_instantiated:
 			reasons.append("3D scene instantiating")
-			update_loading_status("Initializing 3D scene...")
 		if not websocket_ok:
 			reasons.append("websocket not connected")
+		# Status line (bottom of flashing-lights overlay): last writer wins unless ordered by priority below.
+		# Genome loading message: set in UIManager._update_loading_screen_visibility when FEAGI health_check
+		# reports genome_loading (see FEAGILocalCache.genome_loading). Show whenever that flag is true and
+		# HTTP is healthy, even if brain_readiness is still true on the server during a transition.
+		if not websocket_ok:
 			update_loading_status("Websocket disconnected - reconnecting...")
+		elif connection_healthy and FeagiCore.feagi_local_cache.genome_loading:
+			update_loading_status("Genome loading, please wait.")
+		elif not brain_ready and connection_healthy:
+			update_loading_status("Awaiting FEAGI brain readiness...")
+		elif not genome_scene_ready:
+			if connection_healthy and brain_ready and genome_available:
+				update_loading_status("Loading 3D scene...")
+		elif genome_scene_ready and not _3d_scene_instantiated:
+			update_loading_status("Initializing 3D scene...")
 		print("UIMANAGER: ❌ Showing loading screen - reasons: %s" % ", ".join(reasons))
 		toggle_loading_screen(true)
 

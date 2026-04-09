@@ -254,6 +254,7 @@ signal synapse_count_current_changed(new_val: int)
 signal genome_availability_changed(new_val: int)
 signal genome_validity_changed(new_val: bool)
 signal brain_readiness_changed(new_val: bool)
+signal genome_loading_changed(new_val: bool)
 signal genome_availability_or_brain_readiness_changed(available: bool, ready: bool)
 signal simulation_timestep_changed(new_timestep: float)
 signal genome_refresh_needed(feagi_session: int, genome_num: int, reason: String)
@@ -314,6 +315,14 @@ var brain_readiness: bool:
 			_brain_readiness = v
 			brain_readiness_changed.emit(v)
 
+## True when FEAGI health_check reports an active genome load/upload (Rust API genome_loading).
+var genome_loading: bool:
+	get: return _genome_loading
+	set(v):
+		if v != _genome_loading:
+			_genome_loading = v
+			genome_loading_changed.emit(v)
+
 var genome_num: int:
 	get: return _genome_num
 
@@ -336,6 +345,7 @@ var _synapse_count_current: int = -1
 var _genome_availability: bool
 var _genome_validity: bool
 var _brain_readiness: bool
+var _genome_loading: bool = false
 var _genome_num: int = 0
 var _simulation_timestep: float = 0.05  # Default 50ms
 
@@ -539,6 +549,10 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		var value = health["brain_readiness"]
 		if value != null:
 			brain_readiness = bool(value)
+	if "genome_loading" in health:
+		var gl_val = health["genome_loading"]
+		if gl_val != null:
+			genome_loading = bool(gl_val)
 	if "genome_num" in health: 
 		var value = health["genome_num"]
 		if value != null:
@@ -639,6 +653,7 @@ func set_health_dead() -> void:
 	genome_availability = false
 	genome_validity = false
 	brain_readiness = false
+	genome_loading = false
 	
 #endregion
 
