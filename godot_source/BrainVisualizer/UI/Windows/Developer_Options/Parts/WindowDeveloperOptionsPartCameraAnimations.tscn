@@ -24,10 +24,6 @@ confirm_when_focus_lost = false
 layout_mode = 2
 text = "clear"
 
-[node name="Export" type="Button" parent="."]
-layout_mode = 2
-text = "Export Current Points"
-
 [node name="AnimationSaveLabel" type="Label" parent="."]
 layout_mode = 2
 text = "Exported Animation JSON"
@@ -38,8 +34,7 @@ layout_mode = 2
 
 [node name="Play" type="Button" parent="."]
 layout_mode = 2
-text = "Play"
+text = "Launch Animation Controller"
 
 [connection signal="pressed" from="HBoxContainer/clear" to="." method="clear_stored_data"]
-[connection signal="pressed" from="Export" to="." method="export_into_json"]
 [connection signal="pressed" from="Play" to="." method="execute_json"]
