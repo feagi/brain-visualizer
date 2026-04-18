@@ -311,6 +311,19 @@ const ANCHOR_PLACEMENT_MARGIN_PX: int = 8
 func get_anchor_rect_for_placement(anchor: Control) -> Rect2:
 	return _get_anchor_rect_in_root_viewport(anchor)
 
+## Root-viewport rects for all open floating windows (for occlusion tests against 3D SubViewport sampling).
+func get_open_floating_window_occlusion_rects_in_root_viewport() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for w in loaded_windows.values():
+		if w is Control:
+			var c: Control = w as Control
+			if not c.is_visible_in_tree():
+				continue
+			var r: Rect2 = _get_anchor_rect_in_root_viewport(c)
+			if r.has_area():
+				out.append(r)
+	return out
+
 func _get_anchor_rect_in_root_viewport(anchor: Control) -> Rect2:
 	if anchor == null or not is_instance_valid(anchor):
 		return Rect2()

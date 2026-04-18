@@ -11,6 +11,7 @@ var _vector: Vector3iSpinboxField
 var _add_button: ButtonTextureRectScaling
 var _scroll_section: ScrollSectionGeneric
 var _preview: UI_BrainMonitor_BrainRegionPreview
+var _preview_host_bm: UI_BrainMonitor_3DScene = null
 var _parent_region: BrainRegion = null
 
 func _ready():
@@ -57,24 +58,43 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 	for selected in selected_items:
 		_scroll_section.add_text_button_with_delete(selected, selected.friendly_name, Callable())
 	
-	# 🎯 FOLLOW CORTICAL AREA PATTERN: Set sensible default coordinates (not 0,0,0)
-	# Generate random coordinates in a reasonable range for visibility
-	var rand: RandomNumberGenerator = RandomNumberGenerator.new()
-	var default_3d = Vector3i(
-		rand.randi_range(-50, 50),   # Reasonable X range
-		rand.randi_range(5, 25),     # Reasonable Y range (above ground) 
-		rand.randi_range(-50, 50)    # Reasonable Z range
-	)
+	# Prefer embedded/split Brain Monitor — temp_root_bm draws behind CB_Holder and appears under split view.
+	var default_3d: Vector3i
+	var brain_monitor: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_new_circuit_preview()
+	if brain_monitor == null and BV.UI != null:
+		# Hard guard: never proceed with a null BM if any monitor exists in scene.
+		var visible_bms: Array[UI_BrainMonitor_3DScene] = BV.UI.get_all_visible_brain_monitors()
+		if visible_bms.size() > 0:
+			brain_monitor = visible_bms[0]
+		elif BV.UI.temp_root_bm != null:
+			brain_monitor = BV.UI.temp_root_bm
+	if brain_monitor != null and brain_monitor.has_method("suggest_feagi_position_for_new_circuit_visible_open_space"):
+		default_3d = brain_monitor.suggest_feagi_position_for_new_circuit_visible_open_space()
+	else:
+		var rand: RandomNumberGenerator = RandomNumberGenerator.new()
+		default_3d = Vector3i(
+			rand.randi_range(-50, 50),
+			rand.randi_range(5, 25),
+			rand.randi_range(-50, 50)
+		)
 	_vector.current_vector = default_3d
-	print("🎯 Region creation: Set default 3D coordinates to %s" % default_3d)
 
 	# Clear any existing brain-region previews to avoid duplicates
 	_clear_existing_region_previews()
 	# Create a lightweight transient region for preview positioning (no mutation of FEAGI cache)
 	var temp_region: BrainRegion = BrainRegion.new("__preview__", "(preview)", Vector2i.ZERO, default_3d)
-	# Use brain monitor's factory to create the preview (handles parenting/lifecycle)
-	var brain_monitor := BV.UI.temp_root_bm
-	_preview = brain_monitor.create_brain_region_preview(temp_region, default_3d)
+	# Use brain monitor's factory to create the preview (handles parenting/lifecycle).
+	# Do not auto-frame: reframing after adding the preview zooms the camera and can push existing circuit / region plates out of view or past the far plane.
+	if brain_monitor != null:
+		_preview_host_bm = brain_monitor
+		_preview = brain_monitor.create_brain_region_preview(temp_region, default_3d, false, false)
+		# Enable relocate gizmo for the transient preview so user can place before creation.
+		if _preview_host_bm.has_method("start_brain_region_preview_relocation"):
+			_preview_host_bm.start_brain_region_preview_relocation(
+				_preview,
+				default_3d,
+				Callable(self, "_on_preview_moved_via_gizmo")
+			)
 
 	# React to coordinate spinbox changes to move preview
 	_vector.user_updated_vector.connect(_on_preview_coords_changed)
@@ -103,14 +123,9 @@ func _create_region_button_pressed() -> void:
 	selected.assign(_scroll_section.get_key_array())
 	var region_name: StringName = _name_box.text
 	
-	# 🎯 FOLLOW CORTICAL AREA PATTERN: Generate random 2D position instead of averaging
-	var rand: RandomNumberGenerator = RandomNumberGenerator.new()
-	var coords_2D: Vector2i = Vector2i(rand.randi_range(-100, 100), rand.randi_range(-100, 100))
-	
 	var coords_3D: Vector3i = _vector.current_vector
-	
-	# 🚨 DEBUG: What coordinates are we using?
-	print("🏗️ REGION CREATION: 2D=%s, 3D=%s" % [coords_2D, coords_3D])
+	# Genome 2D layout matches horizontal FEAGI placement (same as 3D x / z).
+	var coords_2D: Vector2i = Vector2i(coords_3D.x, coords_3D.z)
 	
 	if region_name == "":
 		var popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Name", "Please define a name for your neural circuit!")
@@ -133,26 +148,47 @@ func _on_preview_coords_changed(new_coords: Vector3i) -> void:
 	if _preview:
 		_preview.update_position_with_new_FEAGI_coordinate(new_coords)
 
+func _on_preview_moved_via_gizmo(new_coords: Vector3i) -> void:
+	# Keep the Create Region 3D position field synchronized with gizmo drag updates.
+	_vector.current_vector = new_coords
+
 func _clear_existing_region_previews() -> void:
-	var bm := BV.UI.temp_root_bm
-	if bm == null:
-		return
-	for child in bm._node_3D_root.get_children():
-		if child is UI_BrainMonitor_BrainRegionPreview:
-			(child as UI_BrainMonitor_BrainRegionPreview).cleanup()
+	var bms: Array[UI_BrainMonitor_3DScene] = []
+	bms.append_array(BV.UI.get_all_visible_brain_monitors())
+	if BV.UI.temp_root_bm != null:
+		var tr: UI_BrainMonitor_3DScene = BV.UI.temp_root_bm
+		var have_tr: bool = false
+		for b in bms:
+			if b == tr:
+				have_tr = true
+				break
+		if not have_tr:
+			bms.append(tr)
+	for bm in bms:
+		if bm == null:
+			continue
+		for child in bm._node_3D_root.get_children():
+			if child is UI_BrainMonitor_BrainRegionPreview:
+				(child as UI_BrainMonitor_BrainRegionPreview).cleanup()
 
 func _on_region_added(_new_region: BrainRegion) -> void:
 	# FEAGI confirmed creation; ensure preview is removed
 	if _preview:
+		if _preview_host_bm != null and _preview_host_bm.has_method("stop_brain_region_preview_relocation"):
+			_preview_host_bm.stop_brain_region_preview_relocation(_preview)
 		_preview.cleanup()
 		_preview = null
+	_preview_host_bm = null
 	if FeagiCore.feagi_local_cache.brain_regions.region_added.is_connected(_on_region_added):
 		FeagiCore.feagi_local_cache.brain_regions.region_added.disconnect(_on_region_added)
 
 func _exit_tree() -> void:
 	# Safety cleanup if window closed via other path
 	if _preview:
+		if _preview_host_bm != null and _preview_host_bm.has_method("stop_brain_region_preview_relocation"):
+			_preview_host_bm.stop_brain_region_preview_relocation(_preview)
 		_preview.cleanup()
 		_preview = null
+	_preview_host_bm = null
 	if FeagiCore.feagi_local_cache.brain_regions and FeagiCore.feagi_local_cache.brain_regions.region_added.is_connected(_on_region_added):
 		FeagiCore.feagi_local_cache.brain_regions.region_added.disconnect(_on_region_added)

@@ -1606,6 +1606,222 @@ func get_active_brain_monitor() -> UI_BrainMonitor_3DScene:
 	# Fall back to main brain monitor if no tab is active
 	return temp_root_bm
 
+## True when the main split container shows Circuit Builder + Brain Monitor (not single full-width or hidden).
+func is_split_view_open() -> bool:
+	if not has_node("CB_Holder"):
+		return false
+	var ts: Node = $CB_Holder
+	if ts is TempSplit:
+		var split: TempSplit = ts as TempSplit
+		return split.visible and split.current_state != TempSplit.STATES.CB_CLOSED
+	return false
+
+## Root-viewport occlusion rect for the split dragger lane (the "invisible" slider strip between panes).
+## Placement samplers should avoid this region because objects created there appear under/inside the divider area.
+func get_split_view_occlusion_rects_in_root_viewport() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if not has_node("CB_Holder"):
+		return out
+	var ts_node: Node = $CB_Holder
+	if not (ts_node is TempSplit):
+		return out
+	var split: TempSplit = ts_node as TempSplit
+	if not split.is_visible_in_tree() or split.collapsed:
+		return out
+	# Only when dragger is shown in interactive split layouts.
+	if split.dragger_visibility != SplitContainer.DRAGGER_VISIBLE:
+		return out
+	var sep: int = 20
+	if split.theme != null:
+		sep = int(split.get_theme_constant("separation", "SplitContainer"))
+	var origin: Vector2 = split.get_global_position()
+	var s: Vector2 = split.size
+	var lane: Rect2
+	if split.vertical:
+		# Top/bottom panes: horizontal dragger lane.
+		lane = Rect2(
+			Vector2(origin.x, origin.y + float(split.split_offset) - float(sep) * 0.5),
+			Vector2(maxf(1.0, s.x), maxf(1.0, float(sep)))
+		)
+	else:
+		# Left/right panes: vertical dragger lane.
+		lane = Rect2(
+			Vector2(origin.x + float(split.split_offset) - float(sep) * 0.5, origin.y),
+			Vector2(maxf(1.0, float(sep)), maxf(1.0, s.y))
+		)
+	# Small safety grow so we don't place exactly at divider edge.
+	out.append(lane.grow(3.0))
+	return out
+
+## Full split container rect in root viewport space (used when sampling a monitor rendered behind split UI).
+func get_split_view_cover_rect_in_root_viewport() -> Rect2:
+	if not has_node("CB_Holder") or not is_split_view_open():
+		return Rect2()
+	if BV == null or BV.WM == null:
+		return Rect2()
+	var holder := $CB_Holder as Control
+	if holder == null or not holder.is_visible_in_tree():
+		return Rect2()
+	return BV.WM.get_anchor_rect_for_placement(holder)
+
+## Rect behind the split divider line in root viewport space.
+## Vertical split (top/bottom panes): blacklist area BELOW divider line.
+## Horizontal split (left/right panes): blacklist area RIGHT of divider line.
+func get_split_view_behind_line_occlusion_rect_in_root_viewport() -> Rect2:
+	if not has_node("CB_Holder") or not is_split_view_open():
+		return Rect2()
+	var ts_node: Node = $CB_Holder
+	if not (ts_node is TempSplit):
+		return Rect2()
+	var split: TempSplit = ts_node as TempSplit
+	if not split.is_visible_in_tree() or split.collapsed:
+		return Rect2()
+	var viewport_rect: Rect2 = get_viewport().get_visible_rect()
+	if not viewport_rect.has_area():
+		return Rect2()
+	var sep: int = 20
+	if split.theme != null:
+		sep = int(split.get_theme_constant("separation", "SplitContainer"))
+	if split.vertical:
+		# top/bottom: divider is horizontal at Y (global in root viewport space).
+		var divider_y: float = split.get_global_position().y + float(split.split_offset)
+		var start_y: float = divider_y + float(sep) * 0.5
+		var h: float = (viewport_rect.position.y + viewport_rect.size.y) - start_y
+		if h <= 0.0:
+			return Rect2()
+		return Rect2(
+			Vector2(viewport_rect.position.x, start_y),
+			Vector2(viewport_rect.size.x, h)
+		)
+	# left/right: divider is vertical at X
+	var divider_x: float = split.get_global_position().x + float(split.split_offset)
+	var start_x: float = divider_x + float(sep) * 0.5
+	var w: float = (viewport_rect.position.x + viewport_rect.size.x) - start_x
+	if w <= 0.0:
+		return Rect2()
+	return Rect2(
+		Vector2(start_x, viewport_rect.position.y),
+		Vector2(w, viewport_rect.size.y)
+	)
+
+## Picks a Brain Monitor tab from [param tab_container]; prefers current tab if it is a BM, else first BM tab.
+func _pick_brain_monitor_from_tab_container_prefer_current(tab_container: UITabContainer) -> UI_BrainMonitor_3DScene:
+	if tab_container == null or tab_container.get_tab_count() < 1:
+		return null
+	var cur: Control = tab_container.get_tab_control(tab_container.current_tab) as Control
+	if cur is UI_BrainMonitor_3DScene:
+		return cur as UI_BrainMonitor_3DScene
+	var n: int = tab_container.get_tab_count()
+	for i in n:
+		var c: Control = tab_container.get_tab_control(i) as Control
+		if c is UI_BrainMonitor_3DScene:
+			return c as UI_BrainMonitor_3DScene
+	return null
+
+## When split view is on, finds a BM inside [UIView] (secondary panel first). These nodes draw above [member temp_root_bm]'s tree branch.
+func _find_brain_monitor_in_split_layout() -> UI_BrainMonitor_3DScene:
+	if _root_UI_view == null or _root_UI_view.mode != UIView.MODE.SPLIT:
+		return null
+	var secondary: UITabContainer = _root_UI_view.get_secondary_tab_container()
+	if secondary != null:
+		var bm_sec: UI_BrainMonitor_3DScene = _pick_brain_monitor_from_tab_container_prefer_current(secondary)
+		if bm_sec != null:
+			return bm_sec
+	var primary_child: Control = _root_UI_view._get_primary_child()
+	if primary_child is UITabContainer:
+		return _pick_brain_monitor_from_tab_container_prefer_current(primary_child as UITabContainer)
+	if primary_child is UIView:
+		var nested: Array[UITabContainer] = (primary_child as UIView).get_recursive_UITabContainer_children()
+		for tc in nested:
+			var b: UI_BrainMonitor_3DScene = _pick_brain_monitor_from_tab_container_prefer_current(tc)
+			if b != null:
+				return b
+	return null
+
+## Scans all tab containers under the root [UIView] for any Brain Monitor (e.g. non-split or nested layouts).
+func _find_any_brain_monitor_in_root_ui_view_tabs() -> UI_BrainMonitor_3DScene:
+	if _root_UI_view == null:
+		return null
+	var tabs: Array[UITabContainer] = _root_UI_view.get_recursive_UITabContainer_children()
+	for tc in tabs:
+		var bm: UI_BrainMonitor_3DScene = _pick_brain_monitor_from_tab_container_prefer_current(tc)
+		if bm != null:
+			return bm
+	return null
+
+## True when [param bm] is rendered inside the split container branch (above temp_root/test branch).
+func _is_brain_monitor_under_cb_holder(bm: UI_BrainMonitor_3DScene) -> bool:
+	if bm == null or not has_node("CB_Holder"):
+		return false
+	var holder: Node = $CB_Holder
+	return holder.is_ancestor_of(bm)
+
+## Visible brain monitor currently rendered inside [CB_Holder]. Prefer this in split mode.
+func _find_visible_brain_monitor_under_cb_holder() -> UI_BrainMonitor_3DScene:
+	var all_bms: Array[UI_BrainMonitor_3DScene] = _find_all_brain_monitors_in_scene_tree()
+	for bm in all_bms:
+		if bm != null and bm.is_visible_in_tree() and _is_brain_monitor_under_cb_holder(bm):
+			return bm
+	return null
+
+## Any brain monitor under [CB_Holder] (visible preferred, then first match).
+func _find_any_brain_monitor_under_cb_holder() -> UI_BrainMonitor_3DScene:
+	if not has_node("CB_Holder"):
+		return null
+	var holder: Node = $CB_Holder
+	var all_bms: Array[UI_BrainMonitor_3DScene] = []
+	var seen: Dictionary = {}
+	_recursive_find_brain_monitors(holder, all_bms, seen)
+	var first_any: UI_BrainMonitor_3DScene = null
+	for bm in all_bms:
+		if bm == null:
+			continue
+		if first_any == null:
+			first_any = bm
+		if bm.is_visible_in_tree():
+			return bm
+	return first_any
+
+func get_active_hover_brain_monitor() -> UI_BrainMonitor_3DScene:
+	return _active_hover_bm
+
+## Brain monitor to use for new-circuit preview placement: [member temp_root_bm] lives under [code]test[/code] and renders **behind** [CB_Holder], so when split (or any embedded BM) exists, prefer those instances.
+func get_brain_monitor_for_new_circuit_preview() -> UI_BrainMonitor_3DScene:
+	if is_split_view_open():
+		# 1) Best signal: BM currently under mouse in split branch.
+		var hovered: UI_BrainMonitor_3DScene = get_active_hover_brain_monitor()
+		if hovered != null and _is_brain_monitor_under_cb_holder(hovered):
+			return hovered
+		# 2) Current tab selection in split layout (secondary-first traversal).
+		var split_bm: UI_BrainMonitor_3DScene = _find_brain_monitor_in_split_layout()
+		if split_bm != null and _is_brain_monitor_under_cb_holder(split_bm):
+			return split_bm
+		# 3) Active tab BM if it belongs to split branch.
+		var tab_bm: UI_BrainMonitor_3DScene = _find_active_tab_brain_monitor()
+		if tab_bm != null and _is_brain_monitor_under_cb_holder(tab_bm):
+			return tab_bm
+		# 4) Fallbacks inside split branch.
+		var split_visible_bm: UI_BrainMonitor_3DScene = _find_visible_brain_monitor_under_cb_holder()
+		if split_visible_bm != null:
+			return split_visible_bm
+		var split_any_bm: UI_BrainMonitor_3DScene = _find_any_brain_monitor_under_cb_holder()
+		if split_any_bm != null:
+			return split_any_bm
+	var split_bm: UI_BrainMonitor_3DScene = _find_brain_monitor_in_split_layout()
+	if split_bm != null:
+		return split_bm
+	var tab_bm: UI_BrainMonitor_3DScene = _find_active_tab_brain_monitor()
+	if tab_bm != null:
+		return tab_bm
+	var embedded: UI_BrainMonitor_3DScene = _find_any_brain_monitor_in_root_ui_view_tabs()
+	if embedded != null:
+		return embedded
+	if is_split_view_open():
+		var active: UI_BrainMonitor_3DScene = get_active_brain_monitor()
+		if active != null:
+			return active
+	return temp_root_bm
+
 ## Find the brain monitor that should display this cortical area using EXACT same logic as _add_cortical_area()
 func get_brain_monitor_for_cortical_area(cortical_area: AbstractCorticalArea) -> UI_BrainMonitor_3DScene:
 	if cortical_area == null:
