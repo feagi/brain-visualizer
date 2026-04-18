@@ -2352,19 +2352,7 @@ func _update_manipulation_gizmo_transform() -> void:
 		axis_len *= gizmo_scale
 		_manipulation_gizmo.global_position = anchor
 		if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
-			var camera_pos: Vector3 = _pancake_cam.global_position
-			var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
-			var base_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
-			var side_dir := toward_camera.cross(Vector3.UP).normalized()
-			if side_dir.length_squared() < 0.000001:
-				side_dir = Vector3.RIGHT
-			var side_offset := side_dir * (axis_len * 0.42)
-			var accept_world_pos := base_world_pos - side_offset
-			var close_world_pos := base_world_pos + side_offset
-			if _manipulation_gizmo.has_method("update_action_handles"):
-				_manipulation_gizmo.update_action_handles(close_world_pos, accept_world_pos, camera_pos)
-			else:
-				_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
+			_update_gizmo_action_handles(axis_len)
 		return
 	# Cortical area path (unchanged)
 	if _manipulation_preview == null:
@@ -2379,19 +2367,28 @@ func _update_manipulation_gizmo_transform() -> void:
 	var offset_x: float = (body.scale.x * 0.5) + (axis_len * 0.5)
 	_manipulation_gizmo.global_position = body.global_position + Vector3(offset_x, 0.0, 0.0)
 	if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
-		var camera_pos: Vector3 = _pancake_cam.global_position
-		var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
-		var base_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
-		var side_dir := toward_camera.cross(Vector3.UP).normalized()
-		if side_dir.length_squared() < 0.000001:
-			side_dir = Vector3.RIGHT
-		var side_offset := side_dir * (axis_len * 0.42)
-		var accept_world_pos := base_world_pos - side_offset
-		var close_world_pos := base_world_pos + side_offset
-		if _manipulation_gizmo.has_method("update_action_handles"):
-			_manipulation_gizmo.update_action_handles(close_world_pos, accept_world_pos, camera_pos)
-		else:
-			_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
+		_update_gizmo_action_handles(axis_len)
+
+func _update_gizmo_action_handles(axis_len: float) -> void:
+	if _pancake_cam == null or _manipulation_gizmo == null or not _manipulation_gizmo.has_method("update_close_handle"):
+		return
+	var camera_pos: Vector3 = _pancake_cam.global_position
+	var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
+	var base_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
+	var camera_right: Vector3 = _pancake_cam.global_transform.basis.x.normalized()
+	var side_dir: Vector3 = camera_right - toward_camera * camera_right.dot(toward_camera)
+	if side_dir.length_squared() < 0.000001:
+		side_dir = toward_camera.cross(Vector3.UP).normalized()
+	if side_dir.length_squared() < 0.000001:
+		side_dir = Vector3.RIGHT
+	side_dir = side_dir.normalized()
+	var side_offset := side_dir * (axis_len * 0.30)
+	var close_world_pos := base_world_pos - side_offset
+	var accept_world_pos := base_world_pos + side_offset
+	if _manipulation_gizmo.has_method("update_action_handles"):
+		_manipulation_gizmo.update_action_handles(close_world_pos, accept_world_pos, camera_pos)
+	else:
+		_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
 
 func _get_gizmo_scale_for_camera(target_pos: Vector3) -> float:
 	if _pancake_cam == null:
@@ -2795,7 +2792,20 @@ func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 		_pancake_cam.call("set_tank_pan_enabled", true)
 	# External preview mode (Create windows): commit preview position only, never send FEAGI update.
 	if _manipulation_external_preview_mode:
-		_end_manipulation_session(false)
+		# End preview relocation via the dedicated stop path so gizmo/action handles are always freed.
+		if _manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview):
+			_stop_external_preview_relocation(_manipulation_region_preview, true)
+		elif _manipulation_preview != null and is_instance_valid(_manipulation_preview):
+			_stop_external_preview_relocation(_manipulation_preview, false)
+		elif is_instance_valid(_manipulation_gizmo):
+			# Defensive cleanup if preview was freed externally before accept.
+			_manipulation_gizmo.queue_free()
+			_manipulation_gizmo = null
+			_manipulation_active = false
+			_manipulation_external_preview_mode = false
+			_manipulation_external_position_changed = Callable()
+			if _UI_layer_for_BM and _UI_layer_for_BM.has_method("clear_manipulation_position"):
+				_UI_layer_for_BM.clear_manipulation_position()
 		return
 	# Cortical area: original guards. Brain region: separate guards.
 	if _manipulation_region != null:

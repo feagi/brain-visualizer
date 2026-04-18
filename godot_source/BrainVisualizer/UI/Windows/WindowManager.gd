@@ -41,6 +41,12 @@ var _window_memory_states: Dictionary = {
 }
 var _suppress_auto_open_3d_tabs: bool = false
 var _suppress_auto_open_reset_token: int = 0
+const _ADD_FLOW_WINDOW_NAMES: Array[StringName] = [
+	"create_region",
+	"select_region_template",
+	"create_cortical",
+	"select_cortical_template",
+]
 
 func set_suppress_auto_open_3d_tabs(enabled: bool, auto_reset_ms: int = 0) -> void:
 	_suppress_auto_open_3d_tabs = enabled
@@ -51,6 +57,14 @@ func set_suppress_auto_open_3d_tabs(enabled: bool, auto_reset_ms: int = 0) -> vo
 			if token == _suppress_auto_open_reset_token:
 				_suppress_auto_open_3d_tabs = false
 		, CONNECT_ONE_SHOT)
+
+## Keep exactly one "add flow" window open at a time.
+func _close_other_add_flow_windows(except_window_name: StringName) -> void:
+	for window_name in _ADD_FLOW_WINDOW_NAMES:
+		if window_name == except_window_name:
+			continue
+		if window_name in loaded_windows:
+			force_close_window(window_name)
 
 func spawn_options() -> void:
 	var options_window: WindowOptionsMenu = _default_spawn_window(_PREFAB_OPTIONS, WindowOptionsMenu.WINDOW_NAME) as WindowOptionsMenu
@@ -116,10 +130,12 @@ func spawn_mapping_editor(source: GenomeObject, destination: GenomeObject, parti
 	return mapping_editor
 
 func spawn_create_cortical() -> void:
+	_close_other_add_flow_windows(WindowCreateCorticalArea.WINDOW_NAME)
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
 	create_cortical.setup()
 
 func spawn_create_cortical_with_type(cortical_type: int, placement_anchor: Control = null) -> void:
+	_close_other_add_flow_windows(WindowSelectCorticalTemplate.WINDOW_NAME if (cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU) else WindowCreateCorticalArea.WINDOW_NAME)
 	# For IPU/OPU, open the template selector; for CUSTOM/MEMORY (and others), open the direct create window
 	if cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 		var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME, true, placement_anchor) as WindowSelectCorticalTemplate
@@ -136,11 +152,13 @@ func spawn_create_cortical_with_type(cortical_type: int, placement_anchor: Contr
 	bring_window_to_top(create_cortical)
 
 func spawn_create_cortical_for_region(context_region: BrainRegion) -> void:
+	_close_other_add_flow_windows(WindowCreateCorticalArea.WINDOW_NAME)
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
 	create_cortical.setup_for_region(context_region)
 	bring_window_to_top(create_cortical)
 
 func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cortical_type: int, placement_anchor: Control = null) -> void:
+	_close_other_add_flow_windows(WindowSelectCorticalTemplate.WINDOW_NAME if (cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU) else WindowCreateCorticalArea.WINDOW_NAME)
 	# For IPU/OPU, open the template selector; for CUSTOM/MEMORY (and others), open the direct create window
 	if cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 		var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME, true, placement_anchor) as WindowSelectCorticalTemplate
@@ -237,6 +255,7 @@ func spawn_create_region(
 	placement_anchor_rect: Rect2 = Rect2(),
 	placement_anchor_rect_exact_top_left: bool = false
 ) -> void:
+	_close_other_add_flow_windows(WindowCreateRegion.WINDOW_NAME)
 	var create_region: WindowCreateRegion = _default_spawn_window(
 		_PREFAB_CREATE_REGION,
 		WindowCreateRegion.WINDOW_NAME,
@@ -255,6 +274,7 @@ func spawn_select_region_template(
 	placement_anchor_rect: Rect2 = Rect2(),
 	placement_anchor_rect_exact_top_left: bool = false
 ) -> void:
+	_close_other_add_flow_windows(WindowSelectRegionTemplate.WINDOW_NAME)
 	var selector: WindowSelectRegionTemplate = _default_spawn_window(
 		_PREFAB_SELECT_REGION_TEMPLATE,
 		WindowSelectRegionTemplate.WINDOW_NAME,
