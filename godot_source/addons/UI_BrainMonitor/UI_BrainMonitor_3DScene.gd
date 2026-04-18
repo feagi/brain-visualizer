@@ -36,6 +36,8 @@ var _manipulation_group_start_positions: Dictionary = {}  # AbstractCorticalArea
 var _manipulation_group_previews: Dictionary = {}  # AbstractCorticalArea -> UI_BrainMonitor_InteractivePreview
 var _manipulation_explicit_members: Array[AbstractCorticalArea] = []  # Explicit user-selected members for multi-area manipulation
 var _manipulation_is_core_cluster: bool = false  # Move session: save only power; slaved cores follow layout
+var _manipulation_external_preview_mode: bool = false  # true when gizmo controls a pre-create preview (no FEAGI save/apply)
+var _manipulation_external_position_changed: Callable = Callable()
 var _core_cluster_plate: MeshInstance3D = null
 var _core_cluster_layout_refresh_pending: bool = false
 
@@ -2126,6 +2128,23 @@ func start_brain_region_manipulation(region: BrainRegion) -> void:
 ## Starts relocate gizmo for an externally managed brain-region preview (e.g., Create New Circuit window).
 ## This session is preview-only and does NOT apply FEAGI updates on click/enter.
 func start_brain_region_preview_relocation(preview: UI_BrainMonitor_BrainRegionPreview, initial_pos: Vector3i, on_position_changed: Callable = Callable()) -> void:
+	_start_external_preview_relocation(preview, true, initial_pos, on_position_changed)
+
+## Stops preview-only relocation gizmo session for the given preview without deleting that preview node.
+func stop_brain_region_preview_relocation(preview: UI_BrainMonitor_BrainRegionPreview) -> void:
+	_stop_external_preview_relocation(preview, true)
+
+## Starts relocate gizmo for an externally managed cortical-area preview (Create Cortical Area window).
+## Preview-only session: moves preview and emits callback, but never applies FEAGI updates.
+func start_cortical_preview_relocation(preview: UI_BrainMonitor_InteractivePreview, initial_pos: Vector3i, on_position_changed: Callable = Callable()) -> void:
+	_start_external_preview_relocation(preview, false, initial_pos, on_position_changed)
+
+## Stops preview-only relocation gizmo session for the given cortical preview without deleting preview node.
+func stop_cortical_preview_relocation(preview: UI_BrainMonitor_InteractivePreview) -> void:
+	_stop_external_preview_relocation(preview, false)
+
+## Shared start path for externally managed preview relocation (circuit + cortical).
+func _start_external_preview_relocation(preview: Node, is_region_preview: bool, initial_pos: Vector3i, on_position_changed: Callable = Callable()) -> void:
 	if preview == null or not is_instance_valid(preview):
 		return
 	# End any existing manipulation session first; preserve externally managed preview nodes.
@@ -2136,7 +2155,13 @@ func start_brain_region_preview_relocation(preview: UI_BrainMonitor_BrainRegionP
 	_manipulation_region = null
 	_manipulation_area = null
 	_manipulation_preview = null
-	_manipulation_region_preview = preview
+	_manipulation_region_preview = null
+	if is_region_preview:
+		_manipulation_region_preview = preview as UI_BrainMonitor_BrainRegionPreview
+	else:
+		_manipulation_preview = preview as UI_BrainMonitor_InteractivePreview
+	_manipulation_external_preview_mode = true
+	_manipulation_external_position_changed = on_position_changed
 	_manipulation_start_pos = initial_pos
 	_manipulation_current_pos = initial_pos
 	_manipulation_group_anchor_pos = initial_pos
@@ -2149,19 +2174,24 @@ func start_brain_region_preview_relocation(preview: UI_BrainMonitor_BrainRegionP
 	_update_manipulation_gizmo_transform()
 	if _pancake_cam != null and not _pancake_cam.camera_user_moved.is_connected(_update_manipulation_gizmo_transform):
 		_pancake_cam.camera_user_moved.connect(_update_manipulation_gizmo_transform)
-	preview.user_moved_preview.connect(func(p: Vector3i):
-		_manipulation_current_pos = p
-		_update_manipulation_gizmo_transform()
-		if on_position_changed.is_valid():
-			on_position_changed.call(p)
-	)
+	if preview.has_signal("user_moved_preview"):
+		preview.user_moved_preview.connect(func(p: Vector3i):
+			_manipulation_current_pos = p
+			_update_manipulation_gizmo_transform()
+			if _manipulation_external_position_changed.is_valid():
+				_manipulation_external_position_changed.call(p)
+		)
 
-## Stops preview-only relocation gizmo session for the given preview without deleting that preview node.
-func stop_brain_region_preview_relocation(preview: UI_BrainMonitor_BrainRegionPreview) -> void:
+## Shared stop path for externally managed preview relocation (circuit + cortical).
+func _stop_external_preview_relocation(preview: Node, is_region_preview: bool) -> void:
 	if preview == null:
 		return
-	if _manipulation_region_preview != preview:
-		return
+	if is_region_preview:
+		if _manipulation_region_preview != preview:
+			return
+	else:
+		if _manipulation_preview != preview:
+			return
 	_manipulation_dragging = false
 	_manipulation_axis = -1
 	_manipulation_active = false
@@ -2176,6 +2206,8 @@ func stop_brain_region_preview_relocation(preview: UI_BrainMonitor_BrainRegionPr
 	_manipulation_gizmo = null
 	_manipulation_preview = null
 	_manipulation_region_preview = null
+	_manipulation_external_preview_mode = false
+	_manipulation_external_position_changed = Callable()
 	_clear_manipulation_group_previews()
 	_manipulation_group_start_positions.clear()
 	_manipulation_group_anchor_pos = Vector3i.ZERO
@@ -2716,6 +2748,10 @@ func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 	# Re-enable camera pan now that gizmo drag ended.
 	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
 		_pancake_cam.call("set_tank_pan_enabled", true)
+	# External preview mode (Create windows): commit preview position only, never send FEAGI update.
+	if _manipulation_external_preview_mode:
+		_end_manipulation_session(false)
+		return
 	# Cortical area: original guards. Brain region: separate guards.
 	if _manipulation_region != null:
 		if _manipulation_region_preview == null or not is_instance_valid(_manipulation_region_preview) or FeagiCore == null or FeagiCore.requests == null:
