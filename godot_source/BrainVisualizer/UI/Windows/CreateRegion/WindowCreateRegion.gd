@@ -16,6 +16,10 @@ const _VALIDATION_ERROR_COLOR: Color = Color(0.95, 0.42, 0.38)
 var _preview: UI_BrainMonitor_BrainRegionPreview
 var _preview_host_bm: UI_BrainMonitor_3DScene = null
 var _parent_region: BrainRegion = null
+var _force_main_scene_context: bool = false
+var _placement_anchor: Control = null
+var _placement_anchor_rect: Rect2 = Rect2()
+var _placement_anchor_rect_exact_top_left: bool = false
 
 func _ready():
 	super()
@@ -37,7 +41,39 @@ func _ready():
 	if _name_box != null:
 		if not _name_box.text_changed.is_connected(_on_name_text_changed):
 			_name_box.text_changed.connect(_on_name_text_changed)
+	call_deferred("_apply_anchored_placement_if_needed")
 	call_deferred("_apply_define_internals_add_button_size")
+
+## Called by WindowManager before add_child when opening near a toolbar button.
+func set_placement_anchor(anchor: Control) -> void:
+	_placement_anchor = anchor
+
+## Root-viewport rect fallback for anchor placement.
+func set_placement_anchor_rect(anchor_rect: Rect2, exact_top_left: bool = false) -> void:
+	_placement_anchor_rect = anchor_rect
+	_placement_anchor_rect_exact_top_left = exact_top_left
+
+func _apply_anchored_placement_if_needed() -> void:
+	if not _placement_anchor_rect.has_area() and (_placement_anchor == null or not is_instance_valid(_placement_anchor)):
+		return
+	await get_tree().process_frame
+	var window_size: Vector2i = size
+	if window_size.x < 2 or window_size.y < 2:
+		window_size = get_combined_minimum_size()
+	if window_size.x < 2 or window_size.y < 2:
+		visible = true
+		return
+	var pos: Vector2i = Vector2i.ZERO
+	if _placement_anchor_rect.has_area():
+		if _placement_anchor_rect_exact_top_left:
+			pos = BV.WM.position_window_at_top_left_of_rect(self, _placement_anchor_rect, window_size)
+		else:
+			pos = BV.WM.position_window_below_anchor_rect(self, _placement_anchor_rect, window_size)
+	elif _placement_anchor != null and is_instance_valid(_placement_anchor):
+		pos = BV.WM.position_window_below_anchor(self, _placement_anchor, window_size)
+	if pos != Vector2i.ZERO:
+		position = pos
+	visible = true
 
 
 func _on_ui_theme_changed_reapply_add_button(_new_theme: Theme) -> void:
@@ -61,9 +97,10 @@ func _apply_define_internals_add_button_size() -> void:
 	_add_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 
 
-func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = []) -> void:
+func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [], force_main_scene_context: bool = false) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_parent_region = parent_region
+	_force_main_scene_context = force_main_scene_context
 	_name_box.call_deferred("grab_focus")
 	_region_drop_down.set_selected_region(parent_region)
 	for selected in selected_items:
@@ -71,7 +108,11 @@ func setup(parent_region: BrainRegion, selected_items: Array[GenomeObject] = [])
 	
 	# Prefer embedded/split Brain Monitor — temp_root_bm draws behind CB_Holder and appears under split view.
 	var default_3d: Vector3i
-	var brain_monitor: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_new_circuit_preview()
+	var brain_monitor: UI_BrainMonitor_3DScene = null
+	if _force_main_scene_context and BV.UI != null and BV.UI.temp_root_bm != null:
+		brain_monitor = BV.UI.temp_root_bm
+	else:
+		brain_monitor = BV.UI.get_brain_monitor_for_new_circuit_preview()
 	if brain_monitor == null and BV.UI != null:
 		# Hard guard: never proceed with a null BM if any monitor exists in scene.
 		var visible_bms: Array[UI_BrainMonitor_3DScene] = BV.UI.get_all_visible_brain_monitors()
@@ -141,6 +182,9 @@ func _create_region_button_pressed() -> void:
 	if region_name == "":
 		_show_inline_validation_error("Please define a name for your neural circuit")
 		return
+	if BV != null and BV.WM != null and BV.WM.has_method("set_suppress_auto_open_3d_tabs"):
+		# Keep suppression active beyond this window's lifetime; auto-reset if no region-add event occurs.
+		BV.WM.set_suppress_auto_open_3d_tabs(true, 8000)
 	FeagiCore.requests.create_region(region, selected, region_name, coords_2D, coords_3D)
 	_cleanup_region_preview_session()
 	close_window()

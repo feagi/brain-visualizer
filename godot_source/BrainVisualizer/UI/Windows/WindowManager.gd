@@ -39,6 +39,18 @@ var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
 }
+var _suppress_auto_open_3d_tabs: bool = false
+var _suppress_auto_open_reset_token: int = 0
+
+func set_suppress_auto_open_3d_tabs(enabled: bool, auto_reset_ms: int = 0) -> void:
+	_suppress_auto_open_3d_tabs = enabled
+	_suppress_auto_open_reset_token += 1
+	if enabled and auto_reset_ms > 0:
+		var token: int = _suppress_auto_open_reset_token
+		get_tree().create_timer(float(auto_reset_ms) / 1000.0).timeout.connect(func():
+			if token == _suppress_auto_open_reset_token:
+				_suppress_auto_open_3d_tabs = false
+		, CONNECT_ONE_SHOT)
 
 func spawn_options() -> void:
 	var options_window: WindowOptionsMenu = _default_spawn_window(_PREFAB_OPTIONS, WindowOptionsMenu.WINDOW_NAME) as WindowOptionsMenu
@@ -217,22 +229,51 @@ func spawn_pattern_visual_edit(initial_pair: PatternVector3Pairs, on_save: Calla
 	edit_window.setup(initial_pair, on_save)
 	return edit_window
 
-func spawn_create_region(parent_region: BrainRegion, selected_objects: Array[GenomeObject]) -> void:
-	var create_region: WindowCreateRegion = _default_spawn_window(_PREFAB_CREATE_REGION, WindowCreateRegion.WINDOW_NAME) as WindowCreateRegion
-	create_region.setup(parent_region, selected_objects)
+func spawn_create_region(
+	parent_region: BrainRegion,
+	selected_objects: Array[GenomeObject],
+	force_main_scene_context: bool = false,
+	placement_anchor: Control = null,
+	placement_anchor_rect: Rect2 = Rect2(),
+	placement_anchor_rect_exact_top_left: bool = false
+) -> void:
+	var create_region: WindowCreateRegion = _default_spawn_window(
+		_PREFAB_CREATE_REGION,
+		WindowCreateRegion.WINDOW_NAME,
+		true,
+		placement_anchor,
+		placement_anchor_rect,
+		placement_anchor_rect_exact_top_left
+	) as WindowCreateRegion
+	create_region.setup(parent_region, selected_objects, force_main_scene_context)
 
 ## Open the circuit selection window (first tile opens Create Brain Region).
-func spawn_select_region_template(parent_region: BrainRegion = null) -> void:
-	var selector: WindowSelectRegionTemplate = _default_spawn_window(_PREFAB_SELECT_REGION_TEMPLATE, WindowSelectRegionTemplate.WINDOW_NAME) as WindowSelectRegionTemplate
-	selector.setup(parent_region)
+func spawn_select_region_template(
+	parent_region: BrainRegion = null,
+	force_main_scene_context: bool = false,
+	placement_anchor: Control = null,
+	placement_anchor_rect: Rect2 = Rect2(),
+	placement_anchor_rect_exact_top_left: bool = false
+) -> void:
+	var selector: WindowSelectRegionTemplate = _default_spawn_window(
+		_PREFAB_SELECT_REGION_TEMPLATE,
+		WindowSelectRegionTemplate.WINDOW_NAME,
+		true,
+		placement_anchor,
+		placement_anchor_rect,
+		placement_anchor_rect_exact_top_left
+	) as WindowSelectRegionTemplate
+	selector.setup(parent_region, force_main_scene_context)
 
 func spawn_edit_region(editing_region: BrainRegion) -> void:
 	var edit_region: WindowEditRegion = _default_spawn_window(_PREFAB_EDIT_REGION, WindowEditRegion.WINDOW_NAME) as WindowEditRegion
 	edit_region.setup(editing_region)
 
-func spawn_3d_brain_monitor_tab(region: BrainRegion) -> void:
+func spawn_3d_brain_monitor_tab(region: BrainRegion, force: bool = false) -> void:
 	if region == null:
 		push_error("WindowManager: spawn_3d_brain_monitor_tab called with NULL region!")
+		return
+	if _suppress_auto_open_3d_tabs and not force:
 		return
 	
 	var root_UI_view: UIView = BV.UI.root_UI_view

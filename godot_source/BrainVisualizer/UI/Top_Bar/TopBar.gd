@@ -177,7 +177,7 @@ func _open_brain_regions() -> void:
 
 func _open_create_brain_region() -> void:
 	# Open circuit selection window (first tile opens Create Brain Region).
-	BV.WM.spawn_select_region_template()
+	BV.WM.spawn_select_region_template(null, true)
 
 #VisConfig.UI_manager.window_manager.spawn_create_cortical()
 

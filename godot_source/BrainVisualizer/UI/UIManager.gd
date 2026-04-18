@@ -1787,16 +1787,20 @@ func get_active_hover_brain_monitor() -> UI_BrainMonitor_3DScene:
 
 ## Brain monitor to use for new-circuit preview placement: [member temp_root_bm] lives under [code]test[/code] and renders **behind** [CB_Holder], so when split (or any embedded BM) exists, prefer those instances.
 func get_brain_monitor_for_new_circuit_preview() -> UI_BrainMonitor_3DScene:
-	# Non-split layouts should create in the main scene monitor by default.
-	# If user is actively hovering another visible monitor, respect that.
+	# Non-split layouts:
+	# - If user is interacting with a BM, use that BM (hovered or active BM tab).
+	# - Otherwise default to main-scene BM.
 	if not is_split_view_open():
 		var hovered_any: UI_BrainMonitor_3DScene = get_active_hover_brain_monitor()
 		if hovered_any != null and hovered_any.is_visible_in_tree():
 			return hovered_any
+		var active_tab_bm: UI_BrainMonitor_3DScene = _find_active_tab_brain_monitor()
+		if active_tab_bm != null and active_tab_bm.is_visible_in_tree():
+			return active_tab_bm
 		if temp_root_bm != null and temp_root_bm.is_visible_in_tree():
 			return temp_root_bm
 		var active_any: UI_BrainMonitor_3DScene = get_active_brain_monitor()
-		if active_any != null:
+		if active_any != null and active_any.is_visible_in_tree():
 			return active_any
 		return temp_root_bm
 

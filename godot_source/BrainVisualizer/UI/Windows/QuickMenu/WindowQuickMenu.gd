@@ -43,7 +43,6 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 		close_window()
 		return
 	focus_exited.connect(_on_focus_lost)
-	_reposition_near_mouse()
 	
 	match(_mode):
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
@@ -241,6 +240,8 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				delete_button.disabled = true
 				delete_button.tooltip_text = "One or more of the selected objects cannot be deleted"
 			
+	# Position after mode-specific visibility/layout changes so vertical distance is consistent.
+	call_deferred("_reposition_near_mouse_after_layout")
 
 
 
@@ -382,7 +383,7 @@ func _button_open_3d_tab() -> void:
 		var area = region.contained_cortical_areas[i]
 		print("    %d. %s (parent: %s)" % [i+1, area.cortical_ID, area.current_parent_region.friendly_name if area.current_parent_region else "None"])
 	
-	BV.WM.spawn_3d_brain_monitor_tab(region)
+	BV.WM.spawn_3d_brain_monitor_tab(region, true)
 	_debug_selection_state("_button_open_3d_tab before close")
 	close_window()
 
@@ -610,14 +611,21 @@ func try_refresh_without_respawn(selection: Array[GenomeObject], context: Select
 func _reposition_near_mouse() -> void:
 	var viewport_size: Vector2 = get_viewport_rect().size
 	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	var window_size: Vector2i = size
+	if window_size.x <= 2 or window_size.y <= 2:
+		window_size = get_combined_minimum_size()
 	var position_to_spawn: Vector2i = Vector2i(
-		mouse_pos.x - (size.x / 2.0),
-		mouse_pos.y - size.y - SPAWN_DISTANCE_PX
+		mouse_pos.x - (window_size.x / 2.0),
+		mouse_pos.y - window_size.y - SPAWN_DISTANCE_PX
 	)
 	if position_to_spawn.y < 0:
 		position_to_spawn.y = mouse_pos.y + SPAWN_DISTANCE_PX
-		position_to_spawn.y = min(position_to_spawn.y, viewport_size.y - size.y)
+		position_to_spawn.y = min(position_to_spawn.y, viewport_size.y - window_size.y)
 	position = position_to_spawn
+
+func _reposition_near_mouse_after_layout() -> void:
+	await get_tree().process_frame
+	_reposition_near_mouse()
 
 func _refresh_multi_cortical_controls() -> void:
 	var iopu_config_button: TextureButton = _window_internals.get_node('ToolbarGrid/SetupIOPU')
