@@ -72,6 +72,13 @@ var _startup_scale_locked_by_endpoint: bool = false
 
 var _connection_inspector_stop_layer: CanvasLayer
 var _connection_inspector_stop_button: Button
+var _camera_presentation_layer: CanvasLayer
+var _camera_presentation_reset_button: Button
+var _camera_presentation_prev_button: Button
+var _camera_presentation_play_pause_button: Button
+var _camera_presentation_next_button: Button
+var _camera_presentation_close_button: Button
+var _camera_presentation_controller: WindowDeveloperOptionsPartCameraAnimations = null
 
 # Startup UI scaling thresholds based only on monitor DPI and resolution.
 # Goal: fit more content on low-resolution displays while preserving readability on high-DPI panels.
@@ -160,6 +167,7 @@ func _ready():
 	_fps_label.add_theme_font_size_override("font_size", 16)
 	add_child(_fps_label)
 	_setup_connection_inspector_stop_overlay()
+	_setup_camera_presentation_overlay()
 	_setup_mouse_context_label()
 	
 	# Connect cortical area cache signals
@@ -289,6 +297,149 @@ func set_connection_inspector_stop_overlay_visible(visible: bool) -> void:
 func _on_connection_inspector_stop_pressed() -> void:
 	if _top_bar != null:
 		_top_bar.stop_connection_inspector_from_overlay()
+
+
+## Floating bottom-right presentation controls for camera animation checkpoints.
+func _setup_camera_presentation_overlay() -> void:
+	_camera_presentation_layer = CanvasLayer.new()
+	_camera_presentation_layer.name = "CameraPresentationLayer"
+	_camera_presentation_layer.layer = 25
+	_camera_presentation_layer.visible = false
+	var host := Control.new()
+	host.name = "CameraPresentationHost"
+	host.set_anchors_preset(Control.PRESET_FULL_RECT)
+	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var panel := PanelContainer.new()
+	panel.name = "CameraPresentationPanel"
+	panel.focus_mode = Control.FOCUS_NONE
+	panel.anchor_left = 1.0
+	panel.anchor_top = 1.0
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = -472.0
+	panel.offset_top = -90.0
+	panel.offset_right = -18.0
+	panel.offset_bottom = -22.0
+	var row := HBoxContainer.new()
+	row.name = "ButtonRow"
+	row.add_theme_constant_override(&"separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 10.0
+	row.offset_top = 8.0
+	row.offset_right = -10.0
+	row.offset_bottom = -8.0
+	_camera_presentation_reset_button = _create_camera_presentation_button("CameraPresentationReset", "Reset", "Return to initial camera pose")
+	_camera_presentation_prev_button = _create_camera_presentation_button("CameraPresentationPrev", "<", "Previous checkpoint")
+	_camera_presentation_play_pause_button = _create_camera_presentation_button("CameraPresentationPlayPause", "Play", "Play timed animation")
+	_camera_presentation_next_button = _create_camera_presentation_button("CameraPresentationNext", ">", "Next checkpoint")
+	_camera_presentation_close_button = _create_camera_presentation_button("CameraPresentationClose", "X", "Exit presentation mode")
+	_camera_presentation_reset_button.pressed.connect(_on_camera_presentation_reset_pressed)
+	_camera_presentation_prev_button.pressed.connect(_on_camera_presentation_prev_pressed)
+	_camera_presentation_play_pause_button.pressed.connect(_on_camera_presentation_play_pause_pressed)
+	_camera_presentation_next_button.pressed.connect(_on_camera_presentation_next_pressed)
+	_camera_presentation_close_button.pressed.connect(_on_camera_presentation_close_pressed)
+	row.add_child(_camera_presentation_reset_button)
+	row.add_child(_camera_presentation_play_pause_button)
+	row.add_child(_camera_presentation_prev_button)
+	row.add_child(_camera_presentation_next_button)
+	row.add_child(_camera_presentation_close_button)
+	panel.add_child(row)
+	var style_panel := StyleBoxFlat.new()
+	style_panel.bg_color = Color(0.1, 0.2, 0.3, 0.94)
+	style_panel.border_color = Color(0.38, 0.78, 0.95, 1.0)
+	style_panel.set_border_width_all(2)
+	style_panel.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override(&"panel", style_panel)
+	host.add_child(panel)
+	_camera_presentation_layer.add_child(host)
+	add_child(_camera_presentation_layer)
+
+
+func _create_camera_presentation_button(name: String, text: String, tooltip: String) -> Button:
+	var button := Button.new()
+	button.name = name
+	button.text = text
+	button.tooltip_text = tooltip
+	button.focus_mode = Control.FOCUS_NONE
+	button.custom_minimum_size = Vector2(78.0, 48.0)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.add_theme_font_size_override(&"font_size", 18)
+	var style_normal := StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.13, 0.28, 0.4, 0.96)
+	style_normal.border_color = Color(0.5, 0.88, 1.0, 1.0)
+	style_normal.set_border_width_all(1)
+	style_normal.set_corner_radius_all(9)
+	style_normal.content_margin_left = 10.0
+	style_normal.content_margin_right = 10.0
+	style_normal.content_margin_top = 10.0
+	style_normal.content_margin_bottom = 10.0
+	var style_hover: StyleBoxFlat = style_normal.duplicate() as StyleBoxFlat
+	style_hover.bg_color = Color(0.18, 0.34, 0.48, 1.0)
+	style_hover.border_color = Color(0.62, 0.92, 1.0, 1.0)
+	var style_pressed: StyleBoxFlat = style_normal.duplicate() as StyleBoxFlat
+	style_pressed.bg_color = Color(0.09, 0.16, 0.25, 1.0)
+	button.add_theme_stylebox_override(&"normal", style_normal)
+	button.add_theme_stylebox_override(&"hover", style_hover)
+	button.add_theme_stylebox_override(&"pressed", style_pressed)
+	button.add_theme_color_override(&"font_color", Color(0.93, 0.97, 1.0))
+	button.add_theme_color_override(&"font_hover_color", Color(1.0, 1.0, 1.0))
+	button.add_theme_color_override(&"font_pressed_color", Color(0.85, 0.9, 0.95))
+	return button
+
+
+## Activates camera presentation controls and attaches them to the active camera animation controller.
+func show_camera_presentation_overlay(controller: WindowDeveloperOptionsPartCameraAnimations) -> void:
+	_camera_presentation_controller = controller
+	if _camera_presentation_layer != null:
+		_camera_presentation_layer.visible = controller != null
+
+
+## Hides camera presentation controls and clears active camera animation controller.
+func hide_camera_presentation_overlay() -> void:
+	_camera_presentation_controller = null
+	if _camera_presentation_layer != null:
+		_camera_presentation_layer.visible = false
+
+
+## Updates play/pause text and manual stepping availability for camera presentation controls.
+func set_camera_presentation_overlay_state(is_playing_timed: bool, can_step_prev: bool, can_step_next: bool) -> void:
+	if _camera_presentation_play_pause_button != null:
+		_camera_presentation_play_pause_button.text = "Pause" if is_playing_timed else "Play"
+		_camera_presentation_play_pause_button.tooltip_text = "Pause timed animation" if is_playing_timed else "Play timed animation"
+	if _camera_presentation_prev_button != null:
+		_camera_presentation_prev_button.disabled = not can_step_prev
+	if _camera_presentation_next_button != null:
+		_camera_presentation_next_button.disabled = not can_step_next
+
+
+func _on_camera_presentation_prev_pressed() -> void:
+	if _camera_presentation_controller != null:
+		_camera_presentation_controller.presentation_previous_checkpoint()
+
+
+func _on_camera_presentation_reset_pressed() -> void:
+	if _camera_presentation_controller != null:
+		_camera_presentation_controller.presentation_reset_to_initial()
+
+
+func _on_camera_presentation_play_pause_pressed() -> void:
+	if _camera_presentation_controller != null:
+		_camera_presentation_controller.presentation_toggle_play_pause()
+
+
+func _on_camera_presentation_next_pressed() -> void:
+	if _camera_presentation_controller != null:
+		_camera_presentation_controller.presentation_next_checkpoint()
+
+
+func _on_camera_presentation_close_pressed() -> void:
+	if _camera_presentation_controller != null:
+		_camera_presentation_controller.presentation_close()
+	else:
+		hide_camera_presentation_overlay()
 
 
 ## Marks which brain monitor currently owns hover updates.
