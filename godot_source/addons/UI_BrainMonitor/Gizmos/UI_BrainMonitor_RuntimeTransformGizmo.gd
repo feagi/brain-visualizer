@@ -15,6 +15,7 @@ const META_KIND: StringName = &"bv_gizmo_kind"
 const KIND_MOVE: StringName = &"move"
 const KIND_RESIZE: StringName = &"resize"
 const KIND_CLOSE: StringName = &"close"
+const KIND_ACCEPT: StringName = &"accept"
 const CLOSE_LAYER: int = 1 << 20
 const GIZMO_AXIS_LAYER: int = 1 << 19
 
@@ -24,6 +25,10 @@ var _close_root: Node3D = null
 var _close_hovered: bool = false
 var _close_hover_tween: Tween = null
 var _close_sprite: Sprite3D = null
+var _accept_root: Node3D = null
+var _accept_hovered: bool = false
+var _accept_hover_tween: Tween = null
+var _accept_sprite: Sprite3D = null
 
 func setup(mode: MODE) -> void:
 	_mode = mode
@@ -52,6 +57,7 @@ func _build_axes() -> void:
 	# FEAGI +Z maps to Godot -Z (FORWARD) in this project (see renderer Z flip).
 	_add_axis(AXIS.Z, Color(0.2, 0.4, 1.0, 0.9), Vector3.FORWARD, axis_length, shaft_radius, head_length, head_radius)
 	_add_close_handle(axis_length)
+	_add_accept_handle(axis_length)
 
 func _add_axis(axis: AXIS, color: Color, dir: Vector3, axis_length: float, shaft_radius: float, head_length: float, head_radius: float) -> void:
 	var axis_root := Node3D.new()
@@ -183,12 +189,53 @@ func _add_close_handle(axis_length: float) -> void:
 	# Place the close handle below the gizmo center.
 	close_root.position = Vector3(0.0, -axis_length * 0.9, 0.0)
 
+func _add_accept_handle(axis_length: float) -> void:
+	## Accept handle is a camera-facing sprite + collider for explicit commit.
+	var accept_root := Node3D.new()
+	accept_root.name = "AcceptHandle"
+	add_child(accept_root)
+	_accept_root = accept_root
+
+	var sprite := Sprite3D.new()
+	sprite.texture = _create_accept_icon_texture()
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.pixel_size = 0.01
+	sprite.no_depth_test = true
+	accept_root.add_child(sprite)
+	_accept_sprite = sprite
+
+	var body := StaticBody3D.new()
+	body.name = "Pick_Accept"
+	body.set_meta(META_KIND, KIND_ACCEPT)
+	body.collision_layer = CLOSE_LAYER
+	body.collision_mask = CLOSE_LAYER
+	body.input_ray_pickable = true
+	var shape := CollisionShape3D.new()
+	var pick_sphere := SphereShape3D.new()
+	pick_sphere.radius = 1.2
+	shape.shape = pick_sphere
+	body.add_child(shape)
+	accept_root.add_child(body)
+
+	# Initial placement; scene computes final world placement every frame.
+	accept_root.position = Vector3(axis_length * 0.5, -axis_length * 0.9, 0.0)
+
 ## Update close handle placement to face the camera and remain clickable.
 func update_close_handle(world_pos: Vector3, camera_pos: Vector3) -> void:
 	## Called by the 3D scene to reposition the close handle.
 	if _close_root == null:
 		return
 	_close_root.global_position = world_pos
+	if _accept_root != null:
+		# Backward-compatible fallback when only one world point is provided.
+		_accept_root.global_position = world_pos - Vector3(0.65, 0.0, 0.0)
+
+## Update both close and accept handle placement to face camera and remain clickable.
+func update_action_handles(close_world_pos: Vector3, accept_world_pos: Vector3, camera_pos: Vector3) -> void:
+	if _close_root != null:
+		_close_root.global_position = close_world_pos
+	if _accept_root != null:
+		_accept_root.global_position = accept_world_pos
 
 ## Grow/shrink close handle on hover so it's clearly interactive.
 func set_close_hovered(is_hovered: bool) -> void:
@@ -202,6 +249,17 @@ func set_close_hovered(is_hovered: bool) -> void:
 	var target_scale := Vector3.ONE * (1.25 if is_hovered else 1.0)
 	_close_hover_tween.tween_property(_close_root, "scale", target_scale, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
+## Grow/shrink accept handle on hover so it's clearly interactive.
+func set_accept_hovered(is_hovered: bool) -> void:
+	if _accept_root == null or _accept_hovered == is_hovered:
+		return
+	_accept_hovered = is_hovered
+	if _accept_hover_tween != null and _accept_hover_tween.is_running():
+		_accept_hover_tween.kill()
+	_accept_hover_tween = create_tween()
+	var target_scale := Vector3.ONE * (1.25 if is_hovered else 1.0)
+	_accept_hover_tween.tween_property(_accept_root, "scale", target_scale, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
 ## Builds a white X with a circular outline as a Sprite3D texture.
 func _create_close_icon_texture() -> Texture2D:
 	## Builds a white X with a circular outline as a Sprite3D texture.
@@ -212,16 +270,50 @@ func _create_close_icon_texture() -> Texture2D:
 	var radius := 48.0
 	var ring_thickness := 3.0
 	var x_thickness := 3.0
+	var x_max_radius := radius - ring_thickness - 2.0
 	for y in size:
 		for x in size:
 			var p := Vector2(x, y)
 			var d := p.distance_to(center)
 			var on_ring: bool = abs(d - radius) <= ring_thickness
-			var on_diag_a: bool = abs(float(x - y)) <= x_thickness
-			var on_diag_b: bool = abs(float((size - 1 - x) - y)) <= x_thickness
+			var on_diag_a: bool = abs(float(x - y)) <= x_thickness and d <= x_max_radius
+			var on_diag_b: bool = abs(float((size - 1 - x) - y)) <= x_thickness and d <= x_max_radius
 			if on_ring or on_diag_a or on_diag_b:
 				img.set_pixel(x, y, Color(1, 1, 1, 0.95))
 	return ImageTexture.create_from_image(img)
+
+## Builds a white checkmark with circular outline as a Sprite3D texture.
+func _create_accept_icon_texture() -> Texture2D:
+	var size := 128
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var center := Vector2(size / 2, size / 2)
+	var radius := 48.0
+	var ring_thickness := 3.0
+	var line_thickness := 3.2
+	# Checkmark segments: lower-left to center, then center to upper-right.
+	var p1 := Vector2(36, 68)
+	var p2 := Vector2(56, 88)
+	var p3 := Vector2(92, 40)
+	for y in size:
+		for x in size:
+			var p := Vector2(x, y)
+			var d := p.distance_to(center)
+			var on_ring: bool = abs(d - radius) <= ring_thickness
+			var on_leg_1: bool = _distance_point_to_segment(p, p1, p2) <= line_thickness
+			var on_leg_2: bool = _distance_point_to_segment(p, p2, p3) <= line_thickness
+			if on_ring or on_leg_1 or on_leg_2:
+				img.set_pixel(x, y, Color(1, 1, 1, 0.95))
+	return ImageTexture.create_from_image(img)
+
+func _distance_point_to_segment(p: Vector2, a: Vector2, b: Vector2) -> float:
+	var ab: Vector2 = b - a
+	var ab_len_sq: float = ab.length_squared()
+	if ab_len_sq <= 0.000001:
+		return p.distance_to(a)
+	var t: float = clamp((p - a).dot(ab) / ab_len_sq, 0.0, 1.0)
+	var projection: Vector2 = a + (ab * t)
+	return p.distance_to(projection)
 
 func _basis_from_y_axis(target_dir: Vector3) -> Basis:
 	var y := target_dir.normalized()

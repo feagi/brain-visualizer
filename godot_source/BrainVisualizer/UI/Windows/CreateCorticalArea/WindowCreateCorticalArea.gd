@@ -290,6 +290,7 @@ func _on_unit_id_validation_changed(is_valid: bool, message: String) -> void:
 func _back_pressed() -> void:
 	# If user was selecting an IPU/OPU template via the icon selector, return to that selector
 	if _type_selected == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or _type_selected == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+		_cleanup_creation_previews()
 		close_window()
 		if _context_region != null:
 			BV.WM.spawn_create_cortical_with_type_for_region(_context_region, _type_selected)
@@ -297,9 +298,11 @@ func _back_pressed() -> void:
 			BV.WM.spawn_create_cortical_with_type(_type_selected)
 		return
 	# Otherwise fall back to the internal type selection step
+	_cleanup_creation_previews()
 	_step_1_pick_type()
 
 func _user_requesting_exit() -> void:
+	_cleanup_creation_previews()
 	close_window()
 
 func _user_requesing_creation() -> void:
@@ -495,4 +498,19 @@ func _user_requesing_creation() -> void:
 			BV.UI.last_created_cortical_location = _memory_definition.location.current_vector
 			BV.UI.last_created_cortical_size = memory_dims
 	
+	_cleanup_creation_previews()
 	close_window()
+
+func _cleanup_creation_previews() -> void:
+	if _IOPU_definition != null:
+		if _IOPU_definition.has_method("_stop_preview_relocation"):
+			_IOPU_definition.call("_stop_preview_relocation")
+		if _IOPU_definition.has_method("_clear_all_previews"):
+			_IOPU_definition.call("_clear_all_previews")
+	if _custom_definition != null and _custom_definition.has_method("_stop_preview_relocation"):
+		_custom_definition.call("_stop_preview_relocation")
+	if _memory_definition != null and _memory_definition.has_method("_stop_preview_relocation"):
+		_memory_definition.call("_stop_preview_relocation")
+
+func _exit_tree() -> void:
+	_cleanup_creation_previews()

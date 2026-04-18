@@ -36,6 +36,8 @@ var _manipulation_group_start_positions: Dictionary = {}  # AbstractCorticalArea
 var _manipulation_group_previews: Dictionary = {}  # AbstractCorticalArea -> UI_BrainMonitor_InteractivePreview
 var _manipulation_explicit_members: Array[AbstractCorticalArea] = []  # Explicit user-selected members for multi-area manipulation
 var _manipulation_is_core_cluster: bool = false  # Move session: save only power; slaved cores follow layout
+var _manipulation_external_preview_mode: bool = false  # true when gizmo controls a pre-create preview (no FEAGI save/apply)
+var _manipulation_external_position_changed: Callable = Callable()
 var _core_cluster_plate: MeshInstance3D = null
 var _core_cluster_layout_refresh_pending: bool = false
 
@@ -135,6 +137,8 @@ func _ready() -> void:
 	# Keep SubViewport size in sync with container for consistent UI scaling.
 	resized.connect(_update_subviewport_size)
 	_update_subviewport_size()
+	# Split/tab BMs often get 0 size until the parent SplitContainer lays out; refresh after the frame settles.
+	call_deferred("_update_subviewport_size")
 	
 	# TODO check mode (PC)
 	_pancake_cam = $SubViewport/Center/PancakeCam
@@ -159,20 +163,19 @@ func _ready() -> void:
 		# Tabbed brain monitors need local input coordinates for correct hover.
 		if BV.UI.temp_root_bm != null and BV.UI.temp_root_bm != self:
 			subviewport.handle_input_locally = true
+		# Always use a dedicated World3D per SubViewport. Sharing one World3D between temp_root and tab/split
+		# monitors (previous bootstrap path) can break rendering of meshes under the second viewport — e.g. child
+		# circuit plates visible in the main monitor but missing in split view.
 		if subviewport.world_3d == null:
-			# Tab brain monitors need SEPARATE World3D to avoid seeing main content
-			if BV.UI.temp_root_bm and BV.UI.temp_root_bm != self:
-				var main_viewport = BV.UI.temp_root_bm.get_child(0) as SubViewport
-				if main_viewport.world_3d != null:
-					subviewport.world_3d = _create_world3d_with_environment()
-				else:
-					var shared_world = _create_world3d_with_environment()
-					subviewport.world_3d = shared_world
-					main_viewport.world_3d = shared_world
-			else:
-				subviewport.world_3d = _create_world3d_with_environment()
+			subviewport.world_3d = _create_world3d_with_environment()
 		
 		_world_3D = _pancake_cam.get_world_3d()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and is_visible_in_tree():
+		# Opening split view or switching tabs can leave SubViewport at 1x1 until this control is shown.
+		call_deferred("_update_subviewport_size")
 
 
 ## Ensure SubViewport matches this container size to avoid UI scale drift.
@@ -443,8 +446,9 @@ func _update_startup_camera_bezier(t: float) -> void:
 	# Smooth FOV easing in sync
 	_pancake_cam.fov = lerp(_intro_start_fov, _intro_final_fov, t)
 
-## Spawns a pulsing, glowing red downward arrow at a world position for 3 seconds
-func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float) -> void:
+## Spawns a pulsing, glowing red downward arrow at a world position for 3 seconds.
+## If [param source_node] is provided, indicator is removed immediately when that node exits.
+func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float, source_node: Node = null) -> void:
 	var indicator: Node3D = Node3D.new()
 	indicator.name = "PreviewIndicator"
 	_node_3D_root.add_child(indicator)
@@ -520,8 +524,14 @@ func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float) -> void:
 	bounce_tween.tween_property(indicator, "position:y", start_y, bounce_period * 0.5)
 
 	_active_preview_indicators.append(indicator)
+	if source_node != null and is_instance_valid(source_node):
+		source_node.tree_exiting.connect(func():
+			if indicator != null and is_instance_valid(indicator):
+				indicator.queue_free()
+			_active_preview_indicators.erase(indicator)
+		, CONNECT_ONE_SHOT)
 	get_tree().create_timer(life).timeout.connect(func():
-		if indicator:
+		if indicator != null and is_instance_valid(indicator):
 			indicator.queue_free()
 		_active_preview_indicators.erase(indicator)
 	)
@@ -536,7 +546,7 @@ func _spawn_indicator_for_node_center(node: Node) -> void:
 	var aabb := _compute_world_aabb(node)
 	var center := aabb.position + (aabb.size / 2.0)
 	var world_center := Vector3(center.x, center.y, center.z)
-	_spawn_preview_indicator(world_center, world_center.y)
+	_spawn_preview_indicator(world_center, world_center.y, node)
 
 ## Computes a world-space AABB for a Node3D by aggregating all MeshInstance3D children
 func _compute_world_aabb(node: Node) -> AABB:
@@ -617,7 +627,7 @@ func _process(delta: float) -> void:
 	else:
 		_enter_key_latched = false
 
-## True when mouse is over gizmo close button or axis (so position label should not overwrite hover text).
+## True when mouse is over gizmo action handle (close/accept) or axis.
 func _is_mouse_over_gizmo() -> bool:
 	if not _manipulation_active or _manipulation_gizmo == null or _pancake_cam == null:
 		return false
@@ -634,7 +644,7 @@ func _is_mouse_over_gizmo() -> bool:
 		return true
 	return not _raycast_gizmo(rq).is_empty()
 
-## Raycast only against the close handle collider.
+## Raycast only against gizmo action-handle colliders (close/accept).
 func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody3D:
 	var close_query := PhysicsRayQueryParameters3D.new()
 	close_query.from = ray_query.from
@@ -642,10 +652,19 @@ func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody
 	close_query.collision_mask = UI_BrainMonitor_RuntimeTransformGizmo.CLOSE_LAYER
 	close_query.collide_with_areas = false
 	close_query.collide_with_bodies = true
+	close_query.hit_from_inside = true
 	var hit: Dictionary = _world_3D.direct_space_state.intersect_ray(close_query)
 	if hit.is_empty():
 		return null
 	return hit[&"collider"] as StaticBody3D
+
+func _get_gizmo_action_kind(hit_body: StaticBody3D) -> StringName:
+	if hit_body == null or not hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND):
+		return &""
+	var kind: StringName = hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND)
+	if kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE or kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT:
+		return kind
+	return &""
 
 ## Raycast only against gizmo (axes + close). Use when manipulation active so cortical areas/plates cannot block.
 func _raycast_gizmo(ray_query: PhysicsRayQueryParameters3D) -> Dictionary:
@@ -655,6 +674,7 @@ func _raycast_gizmo(ray_query: PhysicsRayQueryParameters3D) -> Dictionary:
 	gizmo_query.collision_mask = UI_BrainMonitor_RuntimeTransformGizmo.GIZMO_AXIS_LAYER | UI_BrainMonitor_RuntimeTransformGizmo.CLOSE_LAYER
 	gizmo_query.collide_with_areas = false
 	gizmo_query.collide_with_bodies = true
+	gizmo_query.hit_from_inside = true
 	return _world_3D.direct_space_state.intersect_ray(gizmo_query)
 
 func _emit_tab_hover_event() -> void:
@@ -1429,7 +1449,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if _manipulation_active and _manipulation_dragging and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN in bm_input_event.all_buttons_being_held:
 				_process_manipulation_drag(bm_input_event)
 				continue
-			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
+			var action_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
+			var action_kind: StringName = _get_gizmo_action_kind(action_body)
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if _debug_hover_identity_enabled:
 				var hovered_collider := hit.get(&"collider") if not hit.is_empty() else null
@@ -1441,14 +1462,18 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				elif hit.is_empty() and _last_hovered_debug_path != NodePath(""):
 					_last_hovered_debug_path = NodePath("")
 					print("🧪 HOVER DEBUG: node=<none>")
-			if _manipulation_active and _manipulation_gizmo != null and _manipulation_gizmo.has_method("set_close_hovered"):
-				var hover_close := false
-				if close_body != null:
-					hover_close = true
-				_manipulation_gizmo.set_close_hovered(hover_close)
+			if _manipulation_active and _manipulation_gizmo != null:
+				if _manipulation_gizmo.has_method("set_close_hovered"):
+					_manipulation_gizmo.set_close_hovered(action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE)
+				if _manipulation_gizmo.has_method("set_accept_hovered"):
+					_manipulation_gizmo.set_accept_hovered(action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT)
 			if _manipulation_active and _UI_layer_for_BM != null:
-				if close_body != null:
+				if action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
 					_UI_layer_for_BM.show_gizmo_cancel_hover()
+					continue
+				if action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT:
+					if _UI_layer_for_BM.has_method("show_gizmo_accept_hover"):
+						_UI_layer_for_BM.show_gizmo_accept_hover()
 					continue
 				var gizmo_hit: Dictionary = _raycast_gizmo(bm_input_event.get_ray_query())
 				if not gizmo_hit.is_empty():
@@ -1686,6 +1711,16 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			
 			# When manipulation active, raycast gizmo first (axes + close) so cortical areas/plates cannot block.
 			if _manipulation_active:
+				# Always prioritize explicit action-handle hits to avoid axis/body intersections stealing the click.
+				var action_body_active := _raycast_close_handle(bm_input_event.get_ray_query())
+				var action_kind_active: StringName = _get_gizmo_action_kind(action_body_active)
+				if action_kind_active != &"":
+					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
+						if action_kind_active == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
+							_cancel_manipulation()
+						elif action_kind_active == UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT:
+							_finish_manipulation_drag_and_confirm(true)
+					continue
 				var gizmo_hit: Dictionary = _raycast_gizmo(bm_input_event.get_ray_query())
 				if not gizmo_hit.is_empty():
 					var hit_body: StaticBody3D = gizmo_hit[&"collider"] as StaticBody3D
@@ -1707,11 +1742,6 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
 					_finish_manipulation_drag_and_confirm(true)
 					continue
-			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
-			if close_body != null:
-				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
-					_cancel_manipulation()
-				continue
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
 				if _UI_layer_for_BM:
@@ -2122,6 +2152,97 @@ func start_brain_region_manipulation(region: BrainRegion) -> void:
 		_update_manipulation_gizmo_transform()
 	)
 
+## Starts relocate gizmo for an externally managed brain-region preview (e.g., Create New Circuit window).
+## This session is preview-only and does NOT apply FEAGI updates on click/enter.
+func start_brain_region_preview_relocation(preview: UI_BrainMonitor_BrainRegionPreview, initial_pos: Vector3i, on_position_changed: Callable = Callable()) -> void:
+	_start_external_preview_relocation(preview, true, initial_pos, on_position_changed)
+
+## Stops preview-only relocation gizmo session for the given preview without deleting that preview node.
+func stop_brain_region_preview_relocation(preview: UI_BrainMonitor_BrainRegionPreview) -> void:
+	_stop_external_preview_relocation(preview, true)
+
+## Starts relocate gizmo for an externally managed cortical-area preview (Create Cortical Area window).
+## Preview-only session: moves preview and emits callback, but never applies FEAGI updates.
+func start_cortical_preview_relocation(preview: UI_BrainMonitor_InteractivePreview, initial_pos: Vector3i, on_position_changed: Callable = Callable()) -> void:
+	_start_external_preview_relocation(preview, false, initial_pos, on_position_changed)
+
+## Stops preview-only relocation gizmo session for the given cortical preview without deleting preview node.
+func stop_cortical_preview_relocation(preview: UI_BrainMonitor_InteractivePreview) -> void:
+	_stop_external_preview_relocation(preview, false)
+
+## Shared start path for externally managed preview relocation (circuit + cortical).
+func _start_external_preview_relocation(preview: Node, is_region_preview: bool, initial_pos: Vector3i, on_position_changed: Callable = Callable()) -> void:
+	if preview == null or not is_instance_valid(preview):
+		return
+	# End any existing manipulation session first; preserve externally managed preview nodes.
+	if _manipulation_active:
+		_end_manipulation_session(false)
+	_manipulation_active = true
+	_manipulation_mode = MANIPULATION_MODE.MOVE
+	_manipulation_region = null
+	_manipulation_area = null
+	_manipulation_preview = null
+	_manipulation_region_preview = null
+	if is_region_preview:
+		_manipulation_region_preview = preview as UI_BrainMonitor_BrainRegionPreview
+	else:
+		_manipulation_preview = preview as UI_BrainMonitor_InteractivePreview
+	_manipulation_external_preview_mode = true
+	_manipulation_external_position_changed = on_position_changed
+	_manipulation_start_pos = initial_pos
+	_manipulation_current_pos = initial_pos
+	_manipulation_group_anchor_pos = initial_pos
+	if _pancake_cam != null:
+		_pancake_cam.current = true
+	_update_manipulation_position_label()
+	_manipulation_gizmo = UI_BrainMonitor_RuntimeTransformGizmo.new()
+	_manipulation_gizmo.setup(UI_BrainMonitor_RuntimeTransformGizmo.MODE.MOVE)
+	_node_3D_root.add_child(_manipulation_gizmo)
+	_update_manipulation_gizmo_transform()
+	if _pancake_cam != null and not _pancake_cam.camera_user_moved.is_connected(_update_manipulation_gizmo_transform):
+		_pancake_cam.camera_user_moved.connect(_update_manipulation_gizmo_transform)
+	if preview.has_signal("user_moved_preview"):
+		preview.user_moved_preview.connect(func(p: Vector3i):
+			_manipulation_current_pos = p
+			_update_manipulation_gizmo_transform()
+			if _manipulation_external_position_changed.is_valid():
+				_manipulation_external_position_changed.call(p)
+		)
+
+## Shared stop path for externally managed preview relocation (circuit + cortical).
+func _stop_external_preview_relocation(preview: Node, is_region_preview: bool) -> void:
+	if preview == null:
+		return
+	if is_region_preview:
+		if _manipulation_region_preview != preview:
+			return
+	else:
+		if _manipulation_preview != preview:
+			return
+	_manipulation_dragging = false
+	_manipulation_axis = -1
+	_manipulation_active = false
+	_manipulation_mode = MANIPULATION_MODE.MOVE
+	_manipulation_area = null
+	_manipulation_region = null
+	# Safety: ensure camera pan is restored if session ends while dragging.
+	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
+		_pancake_cam.call("set_tank_pan_enabled", true)
+	if is_instance_valid(_manipulation_gizmo):
+		_manipulation_gizmo.queue_free()
+	_manipulation_gizmo = null
+	_manipulation_preview = null
+	_manipulation_region_preview = null
+	_manipulation_external_preview_mode = false
+	_manipulation_external_position_changed = Callable()
+	_clear_manipulation_group_previews()
+	_manipulation_group_start_positions.clear()
+	_manipulation_group_anchor_pos = Vector3i.ZERO
+	_manipulation_explicit_members.clear()
+	_manipulation_is_core_cluster = false
+	if _UI_layer_for_BM and _UI_layer_for_BM.has_method("clear_manipulation_position"):
+		_UI_layer_for_BM.clear_manipulation_position()
+
 ## Cancel manipulation: reset to original position, do not save.
 func _cancel_manipulation() -> void:
 	_end_manipulation_session(true)
@@ -2231,10 +2352,7 @@ func _update_manipulation_gizmo_transform() -> void:
 		axis_len *= gizmo_scale
 		_manipulation_gizmo.global_position = anchor
 		if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
-			var camera_pos: Vector3 = _pancake_cam.global_position
-			var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
-			var close_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
-			_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
+			_update_gizmo_action_handles(axis_len)
 		return
 	# Cortical area path (unchanged)
 	if _manipulation_preview == null:
@@ -2249,9 +2367,27 @@ func _update_manipulation_gizmo_transform() -> void:
 	var offset_x: float = (body.scale.x * 0.5) + (axis_len * 0.5)
 	_manipulation_gizmo.global_position = body.global_position + Vector3(offset_x, 0.0, 0.0)
 	if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
-		var camera_pos: Vector3 = _pancake_cam.global_position
-		var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
-		var close_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
+		_update_gizmo_action_handles(axis_len)
+
+func _update_gizmo_action_handles(axis_len: float) -> void:
+	if _pancake_cam == null or _manipulation_gizmo == null or not _manipulation_gizmo.has_method("update_close_handle"):
+		return
+	var camera_pos: Vector3 = _pancake_cam.global_position
+	var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
+	var base_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
+	var camera_right: Vector3 = _pancake_cam.global_transform.basis.x.normalized()
+	var side_dir: Vector3 = camera_right - toward_camera * camera_right.dot(toward_camera)
+	if side_dir.length_squared() < 0.000001:
+		side_dir = toward_camera.cross(Vector3.UP).normalized()
+	if side_dir.length_squared() < 0.000001:
+		side_dir = Vector3.RIGHT
+	side_dir = side_dir.normalized()
+	var side_offset := side_dir * (axis_len * 0.30)
+	var close_world_pos := base_world_pos - side_offset
+	var accept_world_pos := base_world_pos + side_offset
+	if _manipulation_gizmo.has_method("update_action_handles"):
+		_manipulation_gizmo.update_action_handles(close_world_pos, accept_world_pos, camera_pos)
+	else:
 		_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
 
 func _get_gizmo_scale_for_camera(target_pos: Vector3) -> float:
@@ -2275,6 +2411,244 @@ func _update_manipulation_capacity_warning() -> void:
 	new_dims.y = max(1, new_dims.y)
 	new_dims.z = max(1, new_dims.z)
 	_manipulation_preview.set_warning_state(_would_overflow_capacity(new_dims))
+
+## Godot world position to FEAGI integer coordinates (matches [UI_BrainMonitor_BrainRegionPreview] Z flip).
+func _feagi_vector3i_from_godot_world(p: Vector3) -> Vector3i:
+	return Vector3i(int(round(p.x)), int(round(p.y)), int(round(-p.z)))
+
+## Minimum distance from [param p] to the surface or interior of [param box].
+func _distance_point_to_aabb(p: Vector3, box: AABB) -> float:
+	var mn: Vector3 = box.position
+	var mx: Vector3 = box.position + box.size
+	var q := Vector3(clampf(p.x, mn.x, mx.x), clampf(p.y, mn.y, mx.y), clampf(p.z, mn.z, mx.z))
+	return p.distance_to(q)
+
+## Ray [param origin] + t * [param dir] intersects plane through [param plane_point] with normal [param plane_normal]. Returns t or -1 if parallel/invalid.
+func _intersect_ray_plane_param(origin: Vector3, dir: Vector3, plane_point: Vector3, plane_normal: Vector3) -> float:
+	var denom: float = dir.dot(plane_normal)
+	if abs(denom) < 1e-8:
+		return -1.0
+	var t: float = (plane_point - origin).dot(plane_normal) / denom
+	return t
+
+## Padded world AABBs for cortical areas and brain region frames (used for open-space placement scoring).
+func _collect_individual_occupancy_aabbs_for_placement(pad: float) -> Array[AABB]:
+	var out: Array[AABB] = []
+	for viz in _cortical_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
+		var ca = viz.get("cortical_area")
+		if ca == null:
+			continue
+		var dims = ca.get("dimensions_3D")
+		var coords = ca.get("coordinates_3D")
+		if dims == null or coords == null:
+			continue
+		var dimv: Vector3 = Vector3(dims)
+		var coordv: Vector3 = Vector3(coords)
+		var min_g: Vector3 = Vector3(coordv.x, coordv.y, -(coordv.z + dimv.z))
+		var max_g: Vector3 = Vector3(coordv.x + dimv.x, coordv.y + dimv.y, -coordv.z)
+		var a: AABB = AABB(min_g, max_g - min_g)
+		out.append(a.grow(pad))
+	for viz in _brain_region_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
+		if viz is Node:
+			var a := _compute_world_aabb(viz as Node)
+			if a.size != Vector3.ZERO or !a.position.is_equal_approx(Vector3.ZERO):
+				out.append(a.grow(pad))
+	return out
+
+## 2D UI that overlaps this brain monitor in root viewport space (floating windows, notifications, etc.).
+func _collect_screen_occlusion_rects_for_brain_monitor() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if BV == null or BV.WM == null:
+		return out
+	out.append_array(BV.WM.get_open_floating_window_occlusion_rects_in_root_viewport())
+	if BV.UI != null and BV.UI.has_method("get_split_view_occlusion_rects_in_root_viewport"):
+		out.append_array(BV.UI.get_split_view_occlusion_rects_in_root_viewport())
+	if BV.UI != null and BV.UI.has_method("get_split_view_behind_line_occlusion_rect_in_root_viewport"):
+		var behind_line: Rect2 = BV.UI.get_split_view_behind_line_occlusion_rect_in_root_viewport()
+		if behind_line.has_area():
+			out.append(behind_line)
+	if BV.NOTIF != null and BV.NOTIF.is_visible_in_tree():
+		var nr: Rect2 = BV.WM.get_anchor_rect_for_placement(BV.NOTIF)
+		if nr.has_area():
+			out.append(nr)
+	return out
+
+func _screen_point_occluded_in_root_viewport(p: Vector2, rects: Array[Rect2]) -> bool:
+	for r in rects:
+		if r.has_point(p):
+			return true
+	return false
+
+## Helper for new-circuit placement: sample visible viewport points and pick the world hit with the highest
+## clearance to existing cortical/region occupancy AABBs ("most empty" location).
+func _find_most_empty_visible_hit_on_plane(
+	vp: Vector2,
+	bm_rect: Rect2,
+	plane_point: Vector3,
+	plane_normal: Vector3,
+	occupancy: Array[AABB],
+	occlusion_rects: Array[Rect2],
+	grid_n: int,
+	viewport_margin: float,
+	apply_occlusion: bool
+) -> Dictionary:
+	var best_score: float = -1.0
+	var best_clearance: float = -1.0
+	var best_center_bias: float = 1e20
+	var best_pocket_radius_px: float = -1.0
+	var best_hit: Vector3 = Vector3.ZERO
+	var u0: float = viewport_margin
+	var u1: float = 1.0 - viewport_margin
+	# If two candidates are similarly empty, prefer the one closer to viewport center.
+	const CLEARANCE_TIE_SLACK: float = 6.0
+	# Prioritize the largest visible screen-space pocket first (radius in pixels).
+	const POCKET_TIE_SLACK_PX: float = 20.0
+	for ix in grid_n:
+		for iy in grid_n:
+			var u: float = lerpf(u0, u1, (float(ix) + 0.5) / float(grid_n))
+			var v: float = lerpf(u0, u1, (float(iy) + 0.5) / float(grid_n))
+			var px: Vector2 = Vector2(u * vp.x, v * vp.y)
+			var global_sample: Vector2 = px + bm_rect.position if bm_rect.has_area() else px
+			if apply_occlusion and bm_rect.has_area():
+				if _screen_point_occluded_in_root_viewport(global_sample, occlusion_rects):
+					continue
+			# Screen-space pocket radius: how far this sample is from viewport edges and occlusion blocks.
+			var edge_dist_px: float = minf(minf(px.x, vp.x - px.x), minf(px.y, vp.y - px.y))
+			var occ_dist_px: float = 1e20
+			if bm_rect.has_area():
+				for r in occlusion_rects:
+					var clamped: Vector2 = Vector2(
+						clampf(global_sample.x, r.position.x, r.position.x + r.size.x),
+						clampf(global_sample.y, r.position.y, r.position.y + r.size.y)
+					)
+					var dpx: float = global_sample.distance_to(clamped)
+					if dpx < occ_dist_px:
+						occ_dist_px = dpx
+			var pocket_radius_px: float = minf(edge_dist_px, occ_dist_px)
+			var ro: Vector3 = _pancake_cam.project_ray_origin(px)
+			var rd: Vector3 = _pancake_cam.project_ray_normal(px)
+			var t: float = _intersect_ray_plane_param(ro, rd, plane_point, plane_normal)
+			if t <= 0.0:
+				continue
+			var hit: Vector3 = ro + rd * t
+			var clearance: float
+			if occupancy.is_empty():
+				clearance = 1.0
+			else:
+				clearance = 1e20
+				for box in occupancy:
+					var d: float = _distance_point_to_aabb(hit, box)
+					if d < clearance:
+						clearance = d
+			# Prefer the center once emptiness is "good enough" to avoid edge hugging.
+			var center_bias: float = absf(u - 0.5) + absf(v - 0.5)
+			var adjusted: float = clearance - center_bias * 0.01
+			if pocket_radius_px > best_pocket_radius_px + POCKET_TIE_SLACK_PX:
+				best_pocket_radius_px = pocket_radius_px
+				best_clearance = clearance
+				best_center_bias = center_bias
+				best_score = adjusted
+				best_hit = hit
+			elif pocket_radius_px >= best_pocket_radius_px - POCKET_TIE_SLACK_PX:
+				if clearance > best_clearance + CLEARANCE_TIE_SLACK:
+					best_pocket_radius_px = pocket_radius_px
+					best_clearance = clearance
+					best_center_bias = center_bias
+					best_score = adjusted
+					best_hit = hit
+				elif clearance >= best_clearance - CLEARANCE_TIE_SLACK:
+				# Similar emptiness: strongly prefer closer-to-middle candidate.
+					if center_bias < best_center_bias or (
+						is_equal_approx(center_bias, best_center_bias) and adjusted > best_score
+					):
+						best_pocket_radius_px = pocket_radius_px
+						best_clearance = clearance
+						best_center_bias = center_bias
+						best_score = adjusted
+						best_hit = hit
+	return {
+		"found": best_score >= 0.0,
+		"score": best_score,
+		"hit": best_hit,
+		"pocket_radius_px": best_pocket_radius_px,
+		"clearance": best_clearance,
+		"center_bias": best_center_bias,
+	}
+
+## Suggests FEAGI 3D coordinates for a new circuit: samples the visible viewport on a plane facing the camera through the scene center and picks the point with the most clearance from existing geometry.
+## Skips screen pixels covered by floating windows or other 2D UI when possible; samples only this widget's on-screen rect (split-view safe).
+func suggest_feagi_position_for_new_circuit_visible_open_space() -> Vector3i:
+	const GRID_N: int = 7
+	const VIEWPORT_MARGIN: float = 0.08
+	const OCC_PAD: float = 6.0
+	const MIN_FEAGI_Y: int = 1
+	const FALLBACK: Vector3i = Vector3i(0, 10, 0)
+	if _pancake_cam == null:
+		return FALLBACK
+	var sv: SubViewport = $SubViewport as SubViewport
+	if sv == null:
+		return FALLBACK
+	var vp: Vector2 = Vector2(sv.size)
+	if vp.x < 1.0 or vp.y < 1.0:
+		return FALLBACK
+	var merged_scene: AABB = _compute_scene_aabb()
+	var plane_point: Vector3
+	if merged_scene.size != Vector3.ZERO and (merged_scene.size.x + merged_scene.size.y + merged_scene.size.z) >= 0.01:
+		plane_point = merged_scene.get_center()
+	else:
+		plane_point = Vector3(0.0, 10.0, 0.0)
+	var forward: Vector3 = (-_pancake_cam.global_transform.basis.z).normalized()
+	var plane_normal: Vector3 = forward
+	var occupancy: Array[AABB] = _collect_individual_occupancy_aabbs_for_placement(OCC_PAD)
+	var occlusion_rects: Array[Rect2] = _collect_screen_occlusion_rects_for_brain_monitor()
+	var bm_rect: Rect2 = Rect2()
+	if BV != null and BV.WM != null:
+		# WindowManager expects a Control anchor; this SubViewport is rendered by this
+		# SubViewportContainer, so use self (Control) for root-viewport rect mapping.
+		bm_rect = BV.WM.get_anchor_rect_for_placement(self)
+	var split_open: bool = BV != null and BV.UI != null and BV.UI.has_method("is_split_view_open") and BV.UI.is_split_view_open()
+	var hosted_in_split: bool = BV != null and BV.UI != null and BV.UI.has_method("_is_brain_monitor_under_cb_holder") and BV.UI._is_brain_monitor_under_cb_holder(self)
+	var grid_n: int = GRID_N
+	var viewport_margin: float = VIEWPORT_MARGIN
+	# If this monitor is behind split UI, visible area can be a very thin edge strip.
+	# Sample edges too (no inset) and denser grid so we can still find a valid visible point.
+	if split_open and not hosted_in_split:
+		grid_n = 11
+		viewport_margin = 0.0
+	var allow_occlusion_bypass: bool = true
+	if BV != null and BV.UI != null and BV.UI.has_method("is_split_view_open"):
+		# In split mode the divider lane is a hard non-visible strip: never bypass occlusion filtering.
+		allow_occlusion_bypass = not BV.UI.is_split_view_open()
+	var pass_list: Array[bool] = [true]
+	if allow_occlusion_bypass:
+		pass_list.append(false)
+	var best_score: float = -1.0
+	var best_hit: Vector3 = Vector3.ZERO
+	for pass_use_occlusion in pass_list:
+		var scan: Dictionary = _find_most_empty_visible_hit_on_plane(
+			vp,
+			bm_rect,
+			plane_point,
+			plane_normal,
+			occupancy,
+			occlusion_rects,
+			grid_n,
+			viewport_margin,
+			pass_use_occlusion
+		)
+		if bool(scan.get("found", false)):
+			best_score = float(scan.get("score", -1.0))
+			best_hit = scan.get("hit", Vector3.ZERO)
+			break
+	if best_score < 0.0:
+		return FALLBACK
+	var best_feagi: Vector3i = _feagi_vector3i_from_godot_world(best_hit)
+	best_feagi.y = maxi(MIN_FEAGI_Y, best_feagi.y)
+	return best_feagi
 
 ## Allows external elements to create a brain region preview showing dual plates.
 ## [param auto_frame_on_create]: frame camera once after preview is added (e.g. edit/create region dialogs).
@@ -2416,6 +2790,23 @@ func _finish_manipulation_drag_and_confirm(force_commit: bool = false) -> void:
 	# Re-enable camera pan now that gizmo drag ended.
 	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
 		_pancake_cam.call("set_tank_pan_enabled", true)
+	# External preview mode (Create windows): commit preview position only, never send FEAGI update.
+	if _manipulation_external_preview_mode:
+		# End preview relocation via the dedicated stop path so gizmo/action handles are always freed.
+		if _manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview):
+			_stop_external_preview_relocation(_manipulation_region_preview, true)
+		elif _manipulation_preview != null and is_instance_valid(_manipulation_preview):
+			_stop_external_preview_relocation(_manipulation_preview, false)
+		elif is_instance_valid(_manipulation_gizmo):
+			# Defensive cleanup if preview was freed externally before accept.
+			_manipulation_gizmo.queue_free()
+			_manipulation_gizmo = null
+			_manipulation_active = false
+			_manipulation_external_preview_mode = false
+			_manipulation_external_position_changed = Callable()
+			if _UI_layer_for_BM and _UI_layer_for_BM.has_method("clear_manipulation_position"):
+				_UI_layer_for_BM.clear_manipulation_position()
+		return
 	# Cortical area: original guards. Brain region: separate guards.
 	if _manipulation_region != null:
 		if _manipulation_region_preview == null or not is_instance_valid(_manipulation_region_preview) or FeagiCore == null or FeagiCore.requests == null:

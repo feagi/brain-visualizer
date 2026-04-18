@@ -39,6 +39,32 @@ var loaded_windows: Dictionary
 
 var _window_memory_states: Dictionary = {
 }
+var _suppress_auto_open_3d_tabs: bool = false
+var _suppress_auto_open_reset_token: int = 0
+const _ADD_FLOW_WINDOW_NAMES: Array[StringName] = [
+	"create_region",
+	"select_region_template",
+	"create_cortical",
+	"select_cortical_template",
+]
+
+func set_suppress_auto_open_3d_tabs(enabled: bool, auto_reset_ms: int = 0) -> void:
+	_suppress_auto_open_3d_tabs = enabled
+	_suppress_auto_open_reset_token += 1
+	if enabled and auto_reset_ms > 0:
+		var token: int = _suppress_auto_open_reset_token
+		get_tree().create_timer(float(auto_reset_ms) / 1000.0).timeout.connect(func():
+			if token == _suppress_auto_open_reset_token:
+				_suppress_auto_open_3d_tabs = false
+		, CONNECT_ONE_SHOT)
+
+## Keep exactly one "add flow" window open at a time.
+func _close_other_add_flow_windows(except_window_name: StringName) -> void:
+	for window_name in _ADD_FLOW_WINDOW_NAMES:
+		if window_name == except_window_name:
+			continue
+		if window_name in loaded_windows:
+			force_close_window(window_name)
 
 func spawn_options() -> void:
 	var options_window: WindowOptionsMenu = _default_spawn_window(_PREFAB_OPTIONS, WindowOptionsMenu.WINDOW_NAME) as WindowOptionsMenu
@@ -104,10 +130,12 @@ func spawn_mapping_editor(source: GenomeObject, destination: GenomeObject, parti
 	return mapping_editor
 
 func spawn_create_cortical() -> void:
+	_close_other_add_flow_windows(WindowCreateCorticalArea.WINDOW_NAME)
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
 	create_cortical.setup()
 
 func spawn_create_cortical_with_type(cortical_type: int, placement_anchor: Control = null) -> void:
+	_close_other_add_flow_windows(WindowSelectCorticalTemplate.WINDOW_NAME if (cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU) else WindowCreateCorticalArea.WINDOW_NAME)
 	# For IPU/OPU, open the template selector; for CUSTOM/MEMORY (and others), open the direct create window
 	if cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 		var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME, true, placement_anchor) as WindowSelectCorticalTemplate
@@ -124,11 +152,13 @@ func spawn_create_cortical_with_type(cortical_type: int, placement_anchor: Contr
 	bring_window_to_top(create_cortical)
 
 func spawn_create_cortical_for_region(context_region: BrainRegion) -> void:
+	_close_other_add_flow_windows(WindowCreateCorticalArea.WINDOW_NAME)
 	var create_cortical: WindowCreateCorticalArea = _default_spawn_window(_PREFAB_CREATE_CORTICAL, WindowCreateCorticalArea.WINDOW_NAME) as WindowCreateCorticalArea
 	create_cortical.setup_for_region(context_region)
 	bring_window_to_top(create_cortical)
 
 func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cortical_type: int, placement_anchor: Control = null) -> void:
+	_close_other_add_flow_windows(WindowSelectCorticalTemplate.WINDOW_NAME if (cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU) else WindowCreateCorticalArea.WINDOW_NAME)
 	# For IPU/OPU, open the template selector; for CUSTOM/MEMORY (and others), open the direct create window
 	if cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 		var selector: WindowSelectCorticalTemplate = _default_spawn_window(_PREFAB_SELECT_CORTICAL_TEMPLATE, WindowSelectCorticalTemplate.WINDOW_NAME, true, placement_anchor) as WindowSelectCorticalTemplate
@@ -217,22 +247,53 @@ func spawn_pattern_visual_edit(initial_pair: PatternVector3Pairs, on_save: Calla
 	edit_window.setup(initial_pair, on_save)
 	return edit_window
 
-func spawn_create_region(parent_region: BrainRegion, selected_objects: Array[GenomeObject]) -> void:
-	var create_region: WindowCreateRegion = _default_spawn_window(_PREFAB_CREATE_REGION, WindowCreateRegion.WINDOW_NAME) as WindowCreateRegion
-	create_region.setup(parent_region, selected_objects)
+func spawn_create_region(
+	parent_region: BrainRegion,
+	selected_objects: Array[GenomeObject],
+	force_main_scene_context: bool = false,
+	placement_anchor: Control = null,
+	placement_anchor_rect: Rect2 = Rect2(),
+	placement_anchor_rect_exact_top_left: bool = false
+) -> void:
+	_close_other_add_flow_windows(WindowCreateRegion.WINDOW_NAME)
+	var create_region: WindowCreateRegion = _default_spawn_window(
+		_PREFAB_CREATE_REGION,
+		WindowCreateRegion.WINDOW_NAME,
+		true,
+		placement_anchor,
+		placement_anchor_rect,
+		placement_anchor_rect_exact_top_left
+	) as WindowCreateRegion
+	create_region.setup(parent_region, selected_objects, force_main_scene_context)
 
 ## Open the circuit selection window (first tile opens Create Brain Region).
-func spawn_select_region_template(parent_region: BrainRegion = null) -> void:
-	var selector: WindowSelectRegionTemplate = _default_spawn_window(_PREFAB_SELECT_REGION_TEMPLATE, WindowSelectRegionTemplate.WINDOW_NAME) as WindowSelectRegionTemplate
-	selector.setup(parent_region)
+func spawn_select_region_template(
+	parent_region: BrainRegion = null,
+	force_main_scene_context: bool = false,
+	placement_anchor: Control = null,
+	placement_anchor_rect: Rect2 = Rect2(),
+	placement_anchor_rect_exact_top_left: bool = false
+) -> void:
+	_close_other_add_flow_windows(WindowSelectRegionTemplate.WINDOW_NAME)
+	var selector: WindowSelectRegionTemplate = _default_spawn_window(
+		_PREFAB_SELECT_REGION_TEMPLATE,
+		WindowSelectRegionTemplate.WINDOW_NAME,
+		true,
+		placement_anchor,
+		placement_anchor_rect,
+		placement_anchor_rect_exact_top_left
+	) as WindowSelectRegionTemplate
+	selector.setup(parent_region, force_main_scene_context)
 
 func spawn_edit_region(editing_region: BrainRegion) -> void:
 	var edit_region: WindowEditRegion = _default_spawn_window(_PREFAB_EDIT_REGION, WindowEditRegion.WINDOW_NAME) as WindowEditRegion
 	edit_region.setup(editing_region)
 
-func spawn_3d_brain_monitor_tab(region: BrainRegion) -> void:
+func spawn_3d_brain_monitor_tab(region: BrainRegion, force: bool = false) -> void:
 	if region == null:
 		push_error("WindowManager: spawn_3d_brain_monitor_tab called with NULL region!")
+		return
+	if _suppress_auto_open_3d_tabs and not force:
 		return
 	
 	var root_UI_view: UIView = BV.UI.root_UI_view
@@ -310,6 +371,19 @@ const ANCHOR_PLACEMENT_MARGIN_PX: int = 8
 ## Screen-space rect of [param anchor] in root viewport coordinates (handles SubViewport brain monitor).
 func get_anchor_rect_for_placement(anchor: Control) -> Rect2:
 	return _get_anchor_rect_in_root_viewport(anchor)
+
+## Root-viewport rects for all open floating windows (for occlusion tests against 3D SubViewport sampling).
+func get_open_floating_window_occlusion_rects_in_root_viewport() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for w in loaded_windows.values():
+		if w is Control:
+			var c: Control = w as Control
+			if not c.is_visible_in_tree():
+				continue
+			var r: Rect2 = _get_anchor_rect_in_root_viewport(c)
+			if r.has_area():
+				out.append(r)
+	return out
 
 func _get_anchor_rect_in_root_viewport(anchor: Control) -> Rect2:
 	if anchor == null or not is_instance_valid(anchor):

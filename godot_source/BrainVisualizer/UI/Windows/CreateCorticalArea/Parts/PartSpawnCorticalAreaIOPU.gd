@@ -20,6 +20,7 @@ var _selected_template: CorticalTemplate = null
 var _preview_boxes: Array[UI_BrainMonitor_InteractivePreview] = []  # Multiple preview boxes for multi-unit cortical types
 var _active_brain_monitor = null  # Store reference to brain monitor
 var _preview_close_signals: Array[Signal] = []  # Store close signals
+var _relocation_anchor_preview: UI_BrainMonitor_InteractivePreview = null
 var _template_metadata: Dictionary = {}  # Fetched from /v1/genome/cortical_template
 var _selected_data_type_config: int = 4  # Default: SignedPercentage(Absolute, Linear) for OPU
 var _metadata_ready: bool = false  # Flag to track if template metadata has been loaded
@@ -67,6 +68,10 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 	if _active_brain_monitor == null:
 		_active_brain_monitor = BV.UI.get_active_brain_monitor()
 	_preview_close_signals = preview_close_signals
+	for preview_signal in _preview_close_signals:
+		var stop_callable := Callable(self, "_stop_preview_relocation")
+		if not preview_signal.is_connected(stop_callable):
+			preview_signal.connect(stop_callable)
 	
 	if _active_brain_monitor == null:
 		push_error("PartSpawnCorticalAreaIOPU: No brain monitor available for preview creation!")
@@ -83,14 +88,16 @@ func cortical_type_selected(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TY
 	else:
 		_iopu_image.texture = load(UIManager.KNOWN_ICON_PATHS["o__mot"])
 	
-	var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(location.current_vector, _current_dimensions_as_per_device_count, false, cortical_type)
+	var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(location.current_vector, _current_dimensions_as_per_device_count, false, cortical_type, null, false, false)
 	preview.connect_UI_signals(move_signals, resize_signals, preview_close_signals)
 	_preview_boxes.append(preview)
+	_activate_relocation_on_primary_preview()
 
 
 
 func _clear_all_previews() -> void:
 	"""Clear all existing preview boxes"""
+	_stop_preview_relocation()
 	for preview in _preview_boxes:
 		if preview != null and is_instance_valid(preview):
 			preview.queue_free()
@@ -141,11 +148,12 @@ func _create_preview_boxes_from_topology() -> void:
 		
 		# Create preview box for this unit
 		var cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU if _is_IPU_not_OPU else AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
-		var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(abs_position, dims, false, cortical_type)
+		var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(abs_position, dims, false, cortical_type, null, false, false)
 		preview.connect_UI_signals(move_signals, resize_signals, _preview_close_signals)
 		_preview_boxes.append(preview)
 	
 	print("PartSpawnCorticalAreaIOPU: Created %d preview boxes for %s" % [_preview_boxes.size(), _selected_template.cortical_name])
+	_activate_relocation_on_primary_preview()
 
 func _create_single_preview_box(pos: Vector3i, dims: Vector3i) -> void:
 	"""Create a single preview box (fallback when no topology data)"""
@@ -153,9 +161,62 @@ func _create_single_preview_box(pos: Vector3i, dims: Vector3i) -> void:
 	var move_signals: Array[Signal] = [location.user_updated_vector, location_changed_from_dropdown]
 	var resize_signals: Array[Signal] = [calculated_dimensions_updated]
 	var cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU if _is_IPU_not_OPU else AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
-	var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(pos, dims, false, cortical_type)
+	var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(pos, dims, false, cortical_type, null, false, false)
 	preview.connect_UI_signals(move_signals, resize_signals, _preview_close_signals)
 	_preview_boxes.append(preview)
+	_activate_relocation_on_primary_preview()
+
+
+func _activate_relocation_on_primary_preview() -> void:
+	_stop_preview_relocation()
+	if _active_brain_monitor == null:
+		return
+	for preview in _preview_boxes:
+		if preview != null and is_instance_valid(preview):
+			_relocation_anchor_preview = preview
+			if _active_brain_monitor.has_method("start_cortical_preview_relocation"):
+				_active_brain_monitor.start_cortical_preview_relocation(
+					_relocation_anchor_preview,
+					location.current_vector,
+					Callable(self, "_on_preview_moved_via_gizmo")
+				)
+			return
+
+
+func _on_preview_moved_via_gizmo(new_coords: Vector3i) -> void:
+	location.current_vector = new_coords
+	# Keep all non-anchor subunit previews in lockstep with the gizmo anchor preview.
+	# Avoid calling _on_location_changed() here because that path updates the anchor too,
+	# which emits user_moved_preview again and can recurse.
+	_sync_non_anchor_previews_from_base_location(new_coords)
+
+func _sync_non_anchor_previews_from_base_location(new_location: Vector3i) -> void:
+	if _selected_template == null or _preview_boxes.is_empty():
+		return
+	var topology: Dictionary = _selected_template.unit_default_topology
+	if topology.is_empty():
+		return
+	var sorted_unit_indices: Array = topology.keys()
+	sorted_unit_indices.sort()
+	for i in range(min(sorted_unit_indices.size(), _preview_boxes.size())):
+		var preview: UI_BrainMonitor_InteractivePreview = _preview_boxes[i]
+		if preview == null or not is_instance_valid(preview):
+			continue
+		if preview == _relocation_anchor_preview:
+			continue
+		var unit_idx = sorted_unit_indices[i]
+		var unit_data: Dictionary = topology[unit_idx]
+		var rel_pos: Array = unit_data.get("relative_position", [0, 0, 0])
+		var abs_position: Vector3i = new_location + Vector3i(rel_pos[0], rel_pos[1], rel_pos[2])
+		preview.set_new_position(abs_position)
+
+
+func _stop_preview_relocation() -> void:
+	if _relocation_anchor_preview == null:
+		return
+	if _active_brain_monitor != null and _active_brain_monitor.has_method("stop_cortical_preview_relocation"):
+		_active_brain_monitor.stop_cortical_preview_relocation(_relocation_anchor_preview)
+	_relocation_anchor_preview = null
 
 func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
 	"""Find existing cortical areas of the same type and return dimensions for each unit (from largest unit_id)"""

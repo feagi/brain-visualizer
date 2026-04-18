@@ -11,7 +11,11 @@ const GENOME_FILENAME: StringName = "genome.json"
 var _cancel_button: Button
 var _icon_grid: GridContainer
 var _parent_region: BrainRegion = null
+var _force_main_scene_context: bool = false
 var _footer_note: Label
+var _placement_anchor: Control = null
+var _placement_anchor_rect: Rect2 = Rect2()
+var _placement_anchor_rect_exact_top_left: bool = false
 
 
 func _ready() -> void:
@@ -21,12 +25,45 @@ func _ready() -> void:
 	_footer_note = _window_internals.get_node("FooterNote")
 	_cancel_button.pressed.connect(_on_cancel)
 	_apply_footer_font_bump()
+	call_deferred("_apply_anchored_placement_if_needed")
+
+## Called by WindowManager before add_child when opening near a toolbar button.
+func set_placement_anchor(anchor: Control) -> void:
+	_placement_anchor = anchor
+
+## Root-viewport rect fallback for anchor placement.
+func set_placement_anchor_rect(anchor_rect: Rect2, exact_top_left: bool = false) -> void:
+	_placement_anchor_rect = anchor_rect
+	_placement_anchor_rect_exact_top_left = exact_top_left
+
+func _apply_anchored_placement_if_needed() -> void:
+	if not _placement_anchor_rect.has_area() and (_placement_anchor == null or not is_instance_valid(_placement_anchor)):
+		return
+	await get_tree().process_frame
+	var window_size: Vector2i = size
+	if window_size.x < 2 or window_size.y < 2:
+		window_size = get_combined_minimum_size()
+	if window_size.x < 2 or window_size.y < 2:
+		visible = true
+		return
+	var pos: Vector2i = Vector2i.ZERO
+	if _placement_anchor_rect.has_area():
+		if _placement_anchor_rect_exact_top_left:
+			pos = BV.WM.position_window_at_top_left_of_rect(self, _placement_anchor_rect, window_size)
+		else:
+			pos = BV.WM.position_window_below_anchor_rect(self, _placement_anchor_rect, window_size)
+	elif _placement_anchor != null and is_instance_valid(_placement_anchor):
+		pos = BV.WM.position_window_below_anchor(self, _placement_anchor, window_size)
+	if pos != Vector2i.ZERO:
+		position = pos
+	visible = true
 
 
 ## Prepare and display the circuit selection window.
-func setup(parent_region: BrainRegion = null) -> void:
+func setup(parent_region: BrainRegion = null, force_main_scene_context: bool = false) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_parent_region = parent_region
+	_force_main_scene_context = force_main_scene_context
 	var title_bar = get_node("TitleBar")
 	if title_bar != null:
 		title_bar.set("title", "Add Circuit")
@@ -89,7 +126,10 @@ func _open_create_region() -> void:
 	if parent_region == null:
 		parent_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	var empty_selection: Array[GenomeObject] = []
-	BV.WM.spawn_create_region(parent_region, empty_selection)
+	var anchor_rect: Rect2 = Rect2()
+	if BV != null and BV.WM != null:
+		anchor_rect = BV.WM.get_anchor_rect_for_placement(self)
+	BV.WM.spawn_create_region(parent_region, empty_selection, _force_main_scene_context, null, anchor_rect, true)
 	close_window()
 
 ## Increase footer note font size by two points.

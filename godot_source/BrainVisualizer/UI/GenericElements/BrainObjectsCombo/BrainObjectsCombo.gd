@@ -408,11 +408,12 @@ func _open_brain_regions() -> void:
 
 func _add_brain_region() -> void:
 	if _global_topbar_mode:
-		BV.WM.spawn_select_region_template()
+		# Top bar trigger defines context: create under main/root scene.
+		BV.WM.spawn_select_region_template(null, true, _btn_brain_regions_add)
 		return
 	if context_region == null:
 		return
-	BV.WM.spawn_select_region_template(context_region)
+	BV.WM.spawn_select_region_template(context_region, false, _btn_brain_regions_add)
 
 ## Open interconnect areas dropdown for the current region.
 func _open_interconnect_areas() -> void:
@@ -455,21 +456,21 @@ func _open_outputs() -> void:
 
 func _add_interconnect_area() -> void:
 	if _global_topbar_mode:
-		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, _btn_interconnect_add)
 		return
 	if context_region == null:
 		return
 	print("BrainObjectsCombo: Opening create interconnect window for region:", context_region.region_ID)
-	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM)
+	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, _btn_interconnect_add)
 
 func _add_memory_area() -> void:
 	if _global_topbar_mode:
-		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, _btn_memory_add)
 		return
 	if context_region == null:
 		return
 	print("BrainObjectsCombo: Opening create memory window for region:", context_region.region_ID)
-	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, _btn_memory_add)
 
 func _add_input_area() -> void:
 	if _global_topbar_mode:
