@@ -185,6 +185,30 @@ func _activate_relocation_on_primary_preview() -> void:
 
 func _on_preview_moved_via_gizmo(new_coords: Vector3i) -> void:
 	location.current_vector = new_coords
+	# Keep all non-anchor subunit previews in lockstep with the gizmo anchor preview.
+	# Avoid calling _on_location_changed() here because that path updates the anchor too,
+	# which emits user_moved_preview again and can recurse.
+	_sync_non_anchor_previews_from_base_location(new_coords)
+
+func _sync_non_anchor_previews_from_base_location(new_location: Vector3i) -> void:
+	if _selected_template == null or _preview_boxes.is_empty():
+		return
+	var topology: Dictionary = _selected_template.unit_default_topology
+	if topology.is_empty():
+		return
+	var sorted_unit_indices: Array = topology.keys()
+	sorted_unit_indices.sort()
+	for i in range(min(sorted_unit_indices.size(), _preview_boxes.size())):
+		var preview: UI_BrainMonitor_InteractivePreview = _preview_boxes[i]
+		if preview == null or not is_instance_valid(preview):
+			continue
+		if preview == _relocation_anchor_preview:
+			continue
+		var unit_idx = sorted_unit_indices[i]
+		var unit_data: Dictionary = topology[unit_idx]
+		var rel_pos: Array = unit_data.get("relative_position", [0, 0, 0])
+		var abs_position: Vector3i = new_location + Vector3i(rel_pos[0], rel_pos[1], rel_pos[2])
+		preview.set_new_position(abs_position)
 
 
 func _stop_preview_relocation() -> void:
