@@ -104,6 +104,16 @@ size_flags_vertical = 3
 [node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/PanelContainer" instance=ExtResource("10_d4k8w")]
 layout_mode = 2
 
+[node name="ValidationMessageRow" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 4
+
+[node name="ValidationMessageLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ValidationMessageRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = ""
+
 [node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 theme_override_constants/separation = 4

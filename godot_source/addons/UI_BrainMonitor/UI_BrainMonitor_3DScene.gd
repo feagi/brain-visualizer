@@ -446,8 +446,9 @@ func _update_startup_camera_bezier(t: float) -> void:
 	# Smooth FOV easing in sync
 	_pancake_cam.fov = lerp(_intro_start_fov, _intro_final_fov, t)
 
-## Spawns a pulsing, glowing red downward arrow at a world position for 3 seconds
-func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float) -> void:
+## Spawns a pulsing, glowing red downward arrow at a world position for 3 seconds.
+## If [param source_node] is provided, indicator is removed immediately when that node exits.
+func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float, source_node: Node = null) -> void:
 	var indicator: Node3D = Node3D.new()
 	indicator.name = "PreviewIndicator"
 	_node_3D_root.add_child(indicator)
@@ -523,8 +524,14 @@ func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float) -> void:
 	bounce_tween.tween_property(indicator, "position:y", start_y, bounce_period * 0.5)
 
 	_active_preview_indicators.append(indicator)
+	if source_node != null and is_instance_valid(source_node):
+		source_node.tree_exiting.connect(func():
+			if indicator != null and is_instance_valid(indicator):
+				indicator.queue_free()
+			_active_preview_indicators.erase(indicator)
+		, CONNECT_ONE_SHOT)
 	get_tree().create_timer(life).timeout.connect(func():
-		if indicator:
+		if indicator != null and is_instance_valid(indicator):
 			indicator.queue_free()
 		_active_preview_indicators.erase(indicator)
 	)
@@ -539,7 +546,7 @@ func _spawn_indicator_for_node_center(node: Node) -> void:
 	var aabb := _compute_world_aabb(node)
 	var center := aabb.position + (aabb.size / 2.0)
 	var world_center := Vector3(center.x, center.y, center.z)
-	_spawn_preview_indicator(world_center, world_center.y)
+	_spawn_preview_indicator(world_center, world_center.y, node)
 
 ## Computes a world-space AABB for a Node3D by aggregating all MeshInstance3D children
 func _compute_world_aabb(node: Node) -> AABB:

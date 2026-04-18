@@ -10,6 +10,9 @@ var _name_box: TextInput
 var _vector: Vector3iSpinboxField
 var _add_button: ButtonTextureRectScaling
 var _scroll_section: ScrollSectionGeneric
+var _validation_message_row: MarginContainer
+var _validation_message_label: Label
+const _VALIDATION_ERROR_COLOR: Color = Color(0.95, 0.42, 0.38)
 var _preview: UI_BrainMonitor_BrainRegionPreview
 var _preview_host_bm: UI_BrainMonitor_3DScene = null
 var _parent_region: BrainRegion = null
@@ -21,11 +24,19 @@ func _ready():
 	_vector = _window_internals.get_node("HBoxContainer2/Vector3fField")
 	_add_button = _window_internals.get_node("ScrollSectionGenericTemplate/HBoxContainer/Add")
 	_scroll_section = _window_internals.get_node("ScrollSectionGenericTemplate/PanelContainer/ScrollSectionGeneric")
+	_validation_message_row = _window_internals.get_node("ValidationMessageRow")
+	_validation_message_label = _window_internals.get_node("ValidationMessageRow/ValidationMessageLabel")
 	# BaseDraggableWindow's ScaleThemeApplier sets all TextureRects to the theme "TextureRect" min size (large).
 	# This "+" must stay compact next to "Define Internals".
 	var theme_cb := Callable(self, "_on_ui_theme_changed_reapply_add_button")
 	if not BV.UI.theme_changed.is_connected(theme_cb):
 		BV.UI.theme_changed.connect(theme_cb)
+	if _validation_message_row != null:
+		_validation_message_row.visible = false
+	_clear_validation_message()
+	if _name_box != null:
+		if not _name_box.text_changed.is_connected(_on_name_text_changed):
+			_name_box.text_changed.connect(_on_name_text_changed)
 	call_deferred("_apply_define_internals_add_button_size")
 
 
@@ -128,29 +139,55 @@ func _create_region_button_pressed() -> void:
 	var coords_2D: Vector2i = Vector2i(coords_3D.x, coords_3D.z)
 	
 	if region_name == "":
-		var popup: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("No Name", "Please define a name for your neural circuit!")
-		BV.WM.spawn_popup(popup)
+		_show_inline_validation_error("Please define a name for your neural circuit")
 		return
 	FeagiCore.requests.create_region(region, selected, region_name, coords_2D, coords_3D)
+	_cleanup_region_preview_session()
 	close_window()
-	if _preview:
-		_preview.cleanup()
-		_preview = null
 
 func _back_pressed() -> void:
+	_cleanup_region_preview_session()
 	close_window()
 	BV.WM.spawn_select_region_template(_parent_region)
 
 func _user_requesting_exit() -> void:
+	_cleanup_region_preview_session()
 	close_window()
 
 func _on_preview_coords_changed(new_coords: Vector3i) -> void:
 	if _preview:
 		_preview.update_position_with_new_FEAGI_coordinate(new_coords)
 
+func _on_name_text_changed(_new_text: String) -> void:
+	_clear_validation_message()
+
+func _clear_validation_message() -> void:
+	if _validation_message_label == null:
+		return
+	_validation_message_label.text = ""
+	_validation_message_label.remove_theme_color_override("font_color")
+	if _validation_message_row != null:
+		_validation_message_row.visible = false
+
+func _show_inline_validation_error(message: String) -> void:
+	if _validation_message_label == null:
+		return
+	_validation_message_label.text = message
+	_validation_message_label.add_theme_color_override("font_color", _VALIDATION_ERROR_COLOR)
+	if _validation_message_row != null:
+		_validation_message_row.visible = true
+
 func _on_preview_moved_via_gizmo(new_coords: Vector3i) -> void:
 	# Keep the Create Region 3D position field synchronized with gizmo drag updates.
 	_vector.current_vector = new_coords
+
+func _cleanup_region_preview_session() -> void:
+	if _preview:
+		if _preview_host_bm != null and _preview_host_bm.has_method("stop_brain_region_preview_relocation"):
+			_preview_host_bm.stop_brain_region_preview_relocation(_preview)
+		_preview.cleanup()
+		_preview = null
+	_preview_host_bm = null
 
 func _clear_existing_region_previews() -> void:
 	var bms: Array[UI_BrainMonitor_3DScene] = []
@@ -173,22 +210,12 @@ func _clear_existing_region_previews() -> void:
 
 func _on_region_added(_new_region: BrainRegion) -> void:
 	# FEAGI confirmed creation; ensure preview is removed
-	if _preview:
-		if _preview_host_bm != null and _preview_host_bm.has_method("stop_brain_region_preview_relocation"):
-			_preview_host_bm.stop_brain_region_preview_relocation(_preview)
-		_preview.cleanup()
-		_preview = null
-	_preview_host_bm = null
+	_cleanup_region_preview_session()
 	if FeagiCore.feagi_local_cache.brain_regions.region_added.is_connected(_on_region_added):
 		FeagiCore.feagi_local_cache.brain_regions.region_added.disconnect(_on_region_added)
 
 func _exit_tree() -> void:
 	# Safety cleanup if window closed via other path
-	if _preview:
-		if _preview_host_bm != null and _preview_host_bm.has_method("stop_brain_region_preview_relocation"):
-			_preview_host_bm.stop_brain_region_preview_relocation(_preview)
-		_preview.cleanup()
-		_preview = null
-	_preview_host_bm = null
+	_cleanup_region_preview_session()
 	if FeagiCore.feagi_local_cache.brain_regions and FeagiCore.feagi_local_cache.brain_regions.region_added.is_connected(_on_region_added):
 		FeagiCore.feagi_local_cache.brain_regions.region_added.disconnect(_on_region_added)

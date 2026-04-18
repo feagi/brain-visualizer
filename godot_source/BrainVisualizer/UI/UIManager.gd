@@ -1787,6 +1787,19 @@ func get_active_hover_brain_monitor() -> UI_BrainMonitor_3DScene:
 
 ## Brain monitor to use for new-circuit preview placement: [member temp_root_bm] lives under [code]test[/code] and renders **behind** [CB_Holder], so when split (or any embedded BM) exists, prefer those instances.
 func get_brain_monitor_for_new_circuit_preview() -> UI_BrainMonitor_3DScene:
+	# Non-split layouts should create in the main scene monitor by default.
+	# If user is actively hovering another visible monitor, respect that.
+	if not is_split_view_open():
+		var hovered_any: UI_BrainMonitor_3DScene = get_active_hover_brain_monitor()
+		if hovered_any != null and hovered_any.is_visible_in_tree():
+			return hovered_any
+		if temp_root_bm != null and temp_root_bm.is_visible_in_tree():
+			return temp_root_bm
+		var active_any: UI_BrainMonitor_3DScene = get_active_brain_monitor()
+		if active_any != null:
+			return active_any
+		return temp_root_bm
+
 	if is_split_view_open():
 		# 1) Best signal: BM currently under mouse in split branch.
 		var hovered: UI_BrainMonitor_3DScene = get_active_hover_brain_monitor()
@@ -1807,19 +1820,9 @@ func get_brain_monitor_for_new_circuit_preview() -> UI_BrainMonitor_3DScene:
 		var split_any_bm: UI_BrainMonitor_3DScene = _find_any_brain_monitor_under_cb_holder()
 		if split_any_bm != null:
 			return split_any_bm
-	var split_bm: UI_BrainMonitor_3DScene = _find_brain_monitor_in_split_layout()
-	if split_bm != null:
-		return split_bm
-	var tab_bm: UI_BrainMonitor_3DScene = _find_active_tab_brain_monitor()
-	if tab_bm != null:
-		return tab_bm
-	var embedded: UI_BrainMonitor_3DScene = _find_any_brain_monitor_in_root_ui_view_tabs()
-	if embedded != null:
-		return embedded
-	if is_split_view_open():
-		var active: UI_BrainMonitor_3DScene = get_active_brain_monitor()
-		if active != null:
-			return active
+	var active: UI_BrainMonitor_3DScene = get_active_brain_monitor()
+	if active != null:
+		return active
 	return temp_root_bm
 
 ## Find the brain monitor that should display this cortical area using EXACT same logic as _add_cortical_area()
