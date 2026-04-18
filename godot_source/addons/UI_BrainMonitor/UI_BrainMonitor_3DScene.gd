@@ -620,7 +620,7 @@ func _process(delta: float) -> void:
 	else:
 		_enter_key_latched = false
 
-## True when mouse is over gizmo close button or axis (so position label should not overwrite hover text).
+## True when mouse is over gizmo action handle (close/accept) or axis.
 func _is_mouse_over_gizmo() -> bool:
 	if not _manipulation_active or _manipulation_gizmo == null or _pancake_cam == null:
 		return false
@@ -637,7 +637,7 @@ func _is_mouse_over_gizmo() -> bool:
 		return true
 	return not _raycast_gizmo(rq).is_empty()
 
-## Raycast only against the close handle collider.
+## Raycast only against gizmo action-handle colliders (close/accept).
 func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody3D:
 	var close_query := PhysicsRayQueryParameters3D.new()
 	close_query.from = ray_query.from
@@ -645,10 +645,19 @@ func _raycast_close_handle(ray_query: PhysicsRayQueryParameters3D) -> StaticBody
 	close_query.collision_mask = UI_BrainMonitor_RuntimeTransformGizmo.CLOSE_LAYER
 	close_query.collide_with_areas = false
 	close_query.collide_with_bodies = true
+	close_query.hit_from_inside = true
 	var hit: Dictionary = _world_3D.direct_space_state.intersect_ray(close_query)
 	if hit.is_empty():
 		return null
 	return hit[&"collider"] as StaticBody3D
+
+func _get_gizmo_action_kind(hit_body: StaticBody3D) -> StringName:
+	if hit_body == null or not hit_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND):
+		return &""
+	var kind: StringName = hit_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND)
+	if kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE or kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT:
+		return kind
+	return &""
 
 ## Raycast only against gizmo (axes + close). Use when manipulation active so cortical areas/plates cannot block.
 func _raycast_gizmo(ray_query: PhysicsRayQueryParameters3D) -> Dictionary:
@@ -658,6 +667,7 @@ func _raycast_gizmo(ray_query: PhysicsRayQueryParameters3D) -> Dictionary:
 	gizmo_query.collision_mask = UI_BrainMonitor_RuntimeTransformGizmo.GIZMO_AXIS_LAYER | UI_BrainMonitor_RuntimeTransformGizmo.CLOSE_LAYER
 	gizmo_query.collide_with_areas = false
 	gizmo_query.collide_with_bodies = true
+	gizmo_query.hit_from_inside = true
 	return _world_3D.direct_space_state.intersect_ray(gizmo_query)
 
 func _emit_tab_hover_event() -> void:
@@ -1432,7 +1442,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if _manipulation_active and _manipulation_dragging and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN in bm_input_event.all_buttons_being_held:
 				_process_manipulation_drag(bm_input_event)
 				continue
-			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
+			var action_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
+			var action_kind: StringName = _get_gizmo_action_kind(action_body)
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if _debug_hover_identity_enabled:
 				var hovered_collider := hit.get(&"collider") if not hit.is_empty() else null
@@ -1444,14 +1455,18 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				elif hit.is_empty() and _last_hovered_debug_path != NodePath(""):
 					_last_hovered_debug_path = NodePath("")
 					print("🧪 HOVER DEBUG: node=<none>")
-			if _manipulation_active and _manipulation_gizmo != null and _manipulation_gizmo.has_method("set_close_hovered"):
-				var hover_close := false
-				if close_body != null:
-					hover_close = true
-				_manipulation_gizmo.set_close_hovered(hover_close)
+			if _manipulation_active and _manipulation_gizmo != null:
+				if _manipulation_gizmo.has_method("set_close_hovered"):
+					_manipulation_gizmo.set_close_hovered(action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE)
+				if _manipulation_gizmo.has_method("set_accept_hovered"):
+					_manipulation_gizmo.set_accept_hovered(action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT)
 			if _manipulation_active and _UI_layer_for_BM != null:
-				if close_body != null:
+				if action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
 					_UI_layer_for_BM.show_gizmo_cancel_hover()
+					continue
+				if action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT:
+					if _UI_layer_for_BM.has_method("show_gizmo_accept_hover"):
+						_UI_layer_for_BM.show_gizmo_accept_hover()
 					continue
 				var gizmo_hit: Dictionary = _raycast_gizmo(bm_input_event.get_ray_query())
 				if not gizmo_hit.is_empty():
@@ -1689,6 +1704,16 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			
 			# When manipulation active, raycast gizmo first (axes + close) so cortical areas/plates cannot block.
 			if _manipulation_active:
+				# Always prioritize explicit action-handle hits to avoid axis/body intersections stealing the click.
+				var action_body_active := _raycast_close_handle(bm_input_event.get_ray_query())
+				var action_kind_active: StringName = _get_gizmo_action_kind(action_body_active)
+				if action_kind_active != &"":
+					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
+						if action_kind_active == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
+							_cancel_manipulation()
+						elif action_kind_active == UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT:
+							_finish_manipulation_drag_and_confirm(true)
+					continue
 				var gizmo_hit: Dictionary = _raycast_gizmo(bm_input_event.get_ray_query())
 				if not gizmo_hit.is_empty():
 					var hit_body: StaticBody3D = gizmo_hit[&"collider"] as StaticBody3D
@@ -1710,11 +1735,6 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
 					_finish_manipulation_drag_and_confirm(true)
 					continue
-			var close_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
-			if close_body != null:
-				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
-					_cancel_manipulation()
-				continue
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 			if hit.is_empty():
 				if _UI_layer_for_BM:
@@ -2327,8 +2347,17 @@ func _update_manipulation_gizmo_transform() -> void:
 		if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
 			var camera_pos: Vector3 = _pancake_cam.global_position
 			var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
-			var close_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
-			_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
+			var base_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
+			var side_dir := toward_camera.cross(Vector3.UP).normalized()
+			if side_dir.length_squared() < 0.000001:
+				side_dir = Vector3.RIGHT
+			var side_offset := side_dir * (axis_len * 0.42)
+			var accept_world_pos := base_world_pos - side_offset
+			var close_world_pos := base_world_pos + side_offset
+			if _manipulation_gizmo.has_method("update_action_handles"):
+				_manipulation_gizmo.update_action_handles(close_world_pos, accept_world_pos, camera_pos)
+			else:
+				_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
 		return
 	# Cortical area path (unchanged)
 	if _manipulation_preview == null:
@@ -2345,8 +2374,17 @@ func _update_manipulation_gizmo_transform() -> void:
 	if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
 		var camera_pos: Vector3 = _pancake_cam.global_position
 		var toward_camera := (camera_pos - _manipulation_gizmo.global_position).normalized()
-		var close_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
-		_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
+		var base_world_pos := _manipulation_gizmo.global_position + Vector3(0.0, -axis_len * 0.7, 0.0) + toward_camera * (axis_len * 0.6)
+		var side_dir := toward_camera.cross(Vector3.UP).normalized()
+		if side_dir.length_squared() < 0.000001:
+			side_dir = Vector3.RIGHT
+		var side_offset := side_dir * (axis_len * 0.42)
+		var accept_world_pos := base_world_pos - side_offset
+		var close_world_pos := base_world_pos + side_offset
+		if _manipulation_gizmo.has_method("update_action_handles"):
+			_manipulation_gizmo.update_action_handles(close_world_pos, accept_world_pos, camera_pos)
+		else:
+			_manipulation_gizmo.update_close_handle(close_world_pos, camera_pos)
 
 func _get_gizmo_scale_for_camera(target_pos: Vector3) -> float:
 	if _pancake_cam == null:

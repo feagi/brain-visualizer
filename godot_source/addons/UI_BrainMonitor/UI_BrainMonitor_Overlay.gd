@@ -617,3 +617,7 @@ func show_gizmo_axis_hover(axis: int, is_move: bool) -> void:
 ## Show gizmo cancel button hover
 func show_gizmo_cancel_hover() -> void:
 	_set_global_context("Cancel relocation (X)")
+
+## Show gizmo accept button hover
+func show_gizmo_accept_hover() -> void:
+	_set_global_context("Apply relocation (checkmark)")
