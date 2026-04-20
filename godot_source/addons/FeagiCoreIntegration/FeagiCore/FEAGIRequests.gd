@@ -2056,10 +2056,11 @@ func mass_delete_cortical_areas(deleting_areas: Array[AbstractCorticalArea]) -> 
 	
 	# Define Request
 	var ID_list: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(deleting_areas)
-	var dict_to_send: Dictionary = {
-		"cortical_id_list": ID_list
-	}
-	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_corticalArea_multi_corticalArea, dict_to_send)
+	# Rust API expects DELETE payload as top-level JSON sequence (Vec<String>), not an object wrapper.
+	var area_list_strings: Array[String] = []
+	for id in ID_list:
+		area_list_strings.append(String(id))
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_corticalArea_multi_corticalArea, area_list_strings)
 
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)

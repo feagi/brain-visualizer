@@ -3,6 +3,6 @@ class_name BVVersion
 ## NOTE: This class is updated by github actions, what you see here isnt what you get!
 
 static var manual_version: String:
-	get: return "2.3.20"
+	get: return "2.3.23"
 static var brain_visualizer_timestamp: int: # set by github actions
 	get: return 1775763542

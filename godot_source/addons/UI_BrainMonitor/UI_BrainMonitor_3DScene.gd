@@ -1436,6 +1436,15 @@ func _update_tab_title_after_setup() -> void:
 			tab_container.set_tab_title(tab_index, _representing_region.friendly_name)
 
 
+## Keeps the owning TabContainer's tab label in sync when the represented region is renamed.
+func _on_representing_region_friendly_name_updated(new_name: StringName) -> void:
+	if get_parent() is TabContainer:
+		var tab_container = get_parent() as TabContainer
+		var tab_index = tab_container.get_tab_idx_from_control(self)
+		if tab_index >= 0:
+			tab_container.set_tab_title(tab_index, new_name)
+
+
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
 	_ensure_ui_overlay()
 	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
@@ -3819,6 +3828,8 @@ func _connect_representing_region_dynamic_signals(region: BrainRegion) -> void:
 		region.subregion_added_to_region.connect(_add_brain_region_frame)
 	if not region.subregion_removed_from_region.is_connected(_remove_brain_region_frame):
 		region.subregion_removed_from_region.connect(_remove_brain_region_frame)
+	if not region.friendly_name_updated.is_connected(_on_representing_region_friendly_name_updated):
+		region.friendly_name_updated.connect(_on_representing_region_friendly_name_updated)
 
 
 func _disconnect_representing_region_dynamic_signals(region: BrainRegion) -> void:
@@ -3832,6 +3843,8 @@ func _disconnect_representing_region_dynamic_signals(region: BrainRegion) -> voi
 		region.subregion_added_to_region.disconnect(_add_brain_region_frame)
 	if region.subregion_removed_from_region.is_connected(_remove_brain_region_frame):
 		region.subregion_removed_from_region.disconnect(_remove_brain_region_frame)
+	if region.friendly_name_updated.is_connected(_on_representing_region_friendly_name_updated):
+		region.friendly_name_updated.disconnect(_on_representing_region_friendly_name_updated)
 
 
 ## After FEAGI reconnect the cache replaces BrainRegion instances; keep this scene on the live object and signals.
