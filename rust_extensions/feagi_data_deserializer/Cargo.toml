@@ -7,16 +7,23 @@ edition = "2021"
 # Godot Rust bindings
 godot = { git = "https://github.com/godot-rust/gdext", rev = "3416265e2f894be3c1a916f8590524f7be94ed3f", features = ["experimental-wasm", "lazy-function-tables", "api-4-5"] }
 
-# FEAGI data serialization (crates.io stable release)
-feagi-serialization = { version = "0.0.1" }
-feagi-structures = { version = "0.0.1" }
-feagi-sensorimotor = { version = "0.0.1" }
+# FEAGI data structures / serialization / sensorimotor.
+# Path overrides point at the local feagi-core monorepo so BV rebuilds track
+# the active feagi-rs-integration branch; the version pin matches the local
+# workspace version (0.0.10) so cargo enforces coherence if someone later
+# swaps the path for a crates.io publish.
+feagi-serialization = { version = "=0.0.10", path = "../../../feagi-core/crates/feagi-serialization" }
+feagi-structures = { version = "=0.0.10", path = "../../../feagi-core/crates/feagi-structures" }
+feagi-sensorimotor = { version = "=0.0.10", path = "../../../feagi-core/crates/feagi-sensorimotor" }
 
 # Additional dependencies for data handling
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lz4 = "1.28"  # LZ4 decompression for FEAGI visualization stream (matches PNS compression)
 base64 = "0.22"  # For decoding base64-encoded cortical IDs
+# ahash: used to build the cortical-id -> dimensions map that feagi-structures
+# expects for v2 wire-format prepopulation prior to deserialization.
+ahash = { version = "0.8", default-features = false }
 
 # Parallel processing for high-performance neuron visualization (desktop only)
 # Note: Rayon doesn't work in WASM, so we use conditional compilation

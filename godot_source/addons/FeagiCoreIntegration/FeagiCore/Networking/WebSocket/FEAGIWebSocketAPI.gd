@@ -370,7 +370,9 @@ func _process(_delta: float):
 						# Memory areas may not have a registered MultiMesh in the desktop fast-path cache.
 						# Areas with multiple BV renderers cannot rely on the single-MultiMesh fast-path either.
 						# Route those areas through the standard bulk-array path using decoded Type11 data.
-						var decoded: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
+						# v2 wire format: the packet no longer carries per-CA dimensions, so the
+						# deserializer requires the cortical_id -> Vector3 dims map from BV.
+						var decoded: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary, _bv_fast_dimensions_by_id)
 						var ok: bool = bool(decoded.get("success", false))
 						var areas_any: Variant = decoded.get("areas", null)
 						var areas: Dictionary = {}
@@ -410,7 +412,10 @@ func _process(_delta: float):
 						_type11_rootcause_log_packet_vs_fastpath(areas, perf)
 					else:
 						# Legacy desktop path (kept for parity/testing); web uses WASM decoder above.
-						var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
+						# v2 wire format requires per-CA dimensions; refresh the cache here too
+						# because this branch does not go through _refresh_bv_fastpath_cache_if_needed() above.
+						_refresh_bv_fastpath_cache_if_needed()
+						var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary, _bv_fast_dimensions_by_id)
 						if not decoded_result or not decoded_result.has("success"):
 							push_error("❌ [WS] Decode failed - no result returned")
 						elif not decoded_result.success:
@@ -761,7 +766,9 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 						_ws_deserializer_missing_warned = true
 						push_warning("[WS] Rust deserializer (FeagiDataDeserializer) not available. Type 11 neural data is not being processed; build/enable rust_extensions/feagi_data_deserializer for neural activity.")
 					return
-				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(bytes)
+				# v2 wire format requires per-CA dimensions to deserialize neuron voxel packets.
+				_refresh_bv_fastpath_cache_if_needed()
+				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(bytes, _bv_fast_dimensions_by_id)
 				if !decoded_result.success:
 					print("   ❌ ERROR: Type 11 decode failed: ", decoded_result.error)
 					return

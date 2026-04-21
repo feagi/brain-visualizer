@@ -1,6 +1,7 @@
 use godot::classes::MultiMesh;
 use godot::prelude::*;
-// FeagiByteContainer is imported within functions where needed
+// FeagiByteContainer is imported within functions where needed.
+use ahash::AHashMap;
 use feagi_serialization::FeagiSerializable;
 use feagi_structures::genomic::cortical_area::descriptors::{
     CorticalSubUnitIndex, CorticalUnitIndex,
@@ -10,7 +11,15 @@ use feagi_structures::genomic::cortical_area::io_cortical_area_configuration_fla
 };
 use feagi_structures::genomic::cortical_area::CorticalID;
 use feagi_structures::genomic::cortical_area::IOCorticalAreaConfigurationFlag;
-use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
+use feagi_structures::neuron_voxels::coord_potential::CorticalMappedNeuronVoxelCoordVectors;
+use feagi_structures::neuron_voxels::descriptors::NeuronVoxelDimensions;
+
+/// Quantization parameters that match the producer (feagi-rs visualization
+/// publisher): f32 potentials, u32 coordinates, u32 per-area voxel indices,
+/// u16 cortical-area index. See `feagi-rs/src/components.rs` and `main.rs` for
+/// the producer side — this MUST stay aligned, otherwise the AoS per-voxel
+/// stride on the wire won't match and decode will silently corrupt.
+type DecodedVectors = CorticalMappedNeuronVoxelCoordVectors<f32, u32, u32, u16>;
 
 // Rayon is only available on native platforms (not WASM)
 #[cfg(not(target_family = "wasm"))]
@@ -43,6 +52,129 @@ pub struct FeagiDataDeserializer {
 impl IRefCounted for FeagiDataDeserializer {
     fn init(base: Base<RefCounted>) -> Self {
         Self { base }
+    }
+}
+
+// Private helpers that live outside the `#[godot_api]` block so they are not
+// exposed to Godot. Placed here (rather than at the bottom of the file) to
+// keep the v2 decode entry points adjacent to the helpers they depend on.
+impl FeagiDataDeserializer {
+    /// Translate a Godot `Dictionary[base64_cortical_id -> Vector3]` into the
+    /// `AHashMap<CorticalID, NeuronVoxelDimensions<u32>>` shape that
+    /// `CorticalMappedNeuronVoxelCoordVectors::prepopulate_from_byte_slice`
+    /// expects. Entries with unparseable ids or non-positive dimensions are
+    /// silently skipped (they can never match a valid wire packet anyway); a
+    /// packet containing an id we couldn't translate will surface as a
+    /// clean "missing from dims_by_cortical_id" error downstream.
+    fn build_dims_map_from_godot(
+        &self,
+        dimensions_by_id: &Dictionary,
+    ) -> AHashMap<CorticalID, NeuronVoxelDimensions<u32>> {
+        let mut out: AHashMap<CorticalID, NeuronVoxelDimensions<u32>> = AHashMap::new();
+        for (k, v) in dimensions_by_id.iter_shared() {
+            let key_str = k.stringify().to_string();
+            let cortical_id = match CorticalID::try_from_base_64(&key_str) {
+                Ok(id) => id,
+                Err(_) => match CorticalID::try_from_legacy_ascii(&key_str) {
+                    Ok(id) => id,
+                    Err(_) => continue,
+                },
+            };
+            let vec3 = match v.try_to::<Vector3>() {
+                Ok(d) => d,
+                Err(_) => continue,
+            };
+            let x = vec3.x as i64;
+            let y = vec3.y as i64;
+            let z = vec3.z as i64;
+            if x <= 0 || y <= 0 || z <= 0 {
+                continue;
+            }
+            if let Ok(dims) = NeuronVoxelDimensions::<u32>::new(x as u32, y as u32, z as u32) {
+                out.insert(cortical_id, dims);
+            }
+        }
+        out
+    }
+
+    /// Build an empty `CorticalMappedNeuronVoxelCoordVectors` pre-installed
+    /// with one entry per cortical id in `dims_by_id` (dimensions wired up,
+    /// voxel vectors empty). This satisfies the v2 deserialization contract
+    /// up-front for every cortical area the genome knows about; the
+    /// deserializer only touches entries whose id is in the incoming wire
+    /// header, so extra pre-installed entries are harmless and are safely
+    /// ignored on the visualization side (they contribute zero voxels).
+    fn make_prepopulated_target(
+        &self,
+        dims_by_id: &AHashMap<CorticalID, NeuronVoxelDimensions<u32>>,
+    ) -> DecodedVectors {
+        use feagi_structures::neuron_voxels::coord_potential::NeuronVoxelCoordVector;
+        let mut target: DecodedVectors = CorticalMappedNeuronVoxelCoordVectors::new();
+        for (cortical_id, dims) in dims_by_id.iter() {
+            target.insert(
+                *cortical_id,
+                NeuronVoxelCoordVector::<f32, u32, u32>::new(*dims, 0u32),
+            );
+        }
+        target
+    }
+
+    /// Decode a v2 wire-format Type-11 payload (either a raw struct or
+    /// wrapped in a FeagiByteContainer) into a populated
+    /// `CorticalMappedNeuronVoxelCoordVectors`.
+    ///
+    /// The target is seeded with an entry per cortical id in `dims_by_id`
+    /// BEFORE deserialization, so the v2 deserialization contract
+    /// ("incoming id must be pre-populated") is satisfied without the
+    /// caller knowing which ids are in the packet. Any id that appears in
+    /// the wire header but is NOT in `dims_by_id` will surface as an
+    /// explicit deserialization error, identifying the gap.
+    fn decode_type11_bytes_to_coord_vectors(
+        &self,
+        rust_buffer: Vec<u8>,
+        dims_by_id: &AHashMap<CorticalID, NeuronVoxelDimensions<u32>>,
+    ) -> Result<DecodedVectors, String> {
+        use feagi_serialization::FeagiByteContainer;
+
+        if rust_buffer.is_empty() {
+            return Err("Empty buffer".to_string());
+        }
+
+        let first_byte = rust_buffer[0];
+        let is_container =
+            first_byte == 2 || first_byte == FeagiByteContainer::CURRENT_FBS_VERSION;
+
+        let mut target: DecodedVectors = self.make_prepopulated_target(dims_by_id);
+
+        if is_container {
+            let mut byte_container = FeagiByteContainer::new_empty();
+            let mut data_vec = rust_buffer;
+            byte_container
+                .try_write_data_to_container_and_verify(&mut |bytes| {
+                    std::mem::swap(bytes, &mut data_vec);
+                    Ok(())
+                })
+                .map_err(|e| format!("FeagiByteContainer load error: {:?}", e))?;
+
+            let num_structures = byte_container
+                .try_get_number_contained_structures()
+                .map_err(|e| format!("{:?}", e))?;
+            if num_structures == 0 {
+                return Err("Empty container".to_string());
+            }
+
+            byte_container
+                .try_update_struct_from_index(0, &mut target)
+                .map_err(|e| format!("container update error: {:?}", e))?;
+        } else if first_byte == 11 {
+            target
+                .try_deserialize_and_update_self_from_byte_slice(&rust_buffer)
+                .map_err(|e| format!("Type 11 deserialize error: {:?}", e))?;
+        } else {
+            return Err(format!("Unsupported payload first byte: {}", first_byte));
+        }
+
+        Ok(target)
     }
 }
 
@@ -107,86 +239,31 @@ impl FeagiDataDeserializer {
         }
     }
 
-    /// Decode Type 11 neuron data (handles both raw Type 11 and FeagiByteContainer wrappers)
+    /// Decode Type 11 neuron data (handles both raw Type 11 and FeagiByteContainer wrappers).
+    ///
+    /// `dimensions_by_id`: Godot Dictionary mapping each cortical area's
+    /// base64 id to its `Vector3` voxel dimensions. REQUIRED after the v2
+    /// wire-format migration: the on-wire packet no longer carries per-CA
+    /// dimensions, so the caller must supply them from the genome snapshot.
+    /// Passing an empty dictionary will cause any non-empty packet to fail
+    /// with an explicit "missing from dims_by_cortical_id" error.
     #[func]
-    pub fn decode_type_11_data(&self, buffer: PackedByteArray) -> Dictionary {
-        // Convert PackedByteArray to Vec<u8> for Rust processing
+    pub fn decode_type_11_data(
+        &self,
+        buffer: PackedByteArray,
+        dimensions_by_id: Dictionary,
+    ) -> Dictionary {
         let rust_buffer: Vec<u8> = buffer.to_vec();
-
         if rust_buffer.is_empty() {
             return self.create_error_dict("Empty buffer".to_string());
         }
 
-        // Detect format based on first byte
-        let first_byte = rust_buffer[0];
+        let dims_map = self.build_dims_map_from_godot(&dimensions_by_id);
 
-        // Log for debugging
-        let _preview: String = rust_buffer
-            .iter()
-            .take(20)
-            .map(|b| format!("{:02x}", b))
-            .collect::<Vec<_>>()
-            .join(" ");
-        // godot_print!("🦀 [PROC] Buf: {} bytes, first byte: 0x{:02x}, preview: {}",
-        //             rust_buffer.len(), first_byte, preview);
-
-        // Canonical pipeline (transport-independent):
-        // - FEAGI produces FeagiByteContainer (v2 first byte == 2, v3 first byte == 3) containing Type 11 structures
-        // - SHM transports the bytes as-is (no compression required)
-        // - WS may optionally compress at the transport layer, but BV should only decode the canonical bytes
-        //
-        // Therefore, we do NOT require LZ4 here. We decode either:
-        // - FeagiByteContainer v2 or v3 (first byte == 2 or 3)
-        // - Raw Type 11 struct bytes (first byte == 11) if the container was unwrapped upstream
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
-            use feagi_serialization::FeagiByteContainer;
-            use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
-
-            let is_container =
-                first_byte == 2 || first_byte == FeagiByteContainer::CURRENT_FBS_VERSION;
-            if is_container {
-                // FeagiByteContainer v2 or v3
-                let mut byte_container = FeagiByteContainer::new_empty();
-                let mut data_vec = rust_buffer;
-
-                if let Err(e) =
-                    byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
-                        std::mem::swap(bytes, &mut data_vec);
-                        Ok(())
-                    })
-                {
-                    return Err(format!("{:?}", e));
-                }
-
-                let num_structures = byte_container
-                    .try_get_number_contained_structures()
-                    .map_err(|e| format!("{:?}", e))?;
-                if num_structures == 0 {
-                    return Err("Empty container".to_string());
-                }
-
-                let boxed_struct = byte_container
-                    .try_create_new_struct_from_index(0)
-                    .map_err(|e| format!("{:?}", e))?;
-
-                let neuron_data = boxed_struct
-                    .as_any()
-                    .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
-                    .ok_or_else(|| "Wrong structure type".to_string())?;
-
-                Ok(self.convert_neuron_data_to_godot(neuron_data))
-            } else if first_byte == 11 {
-                // Raw Type 11 struct bytes
-                let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
-                neuron_data
-                    .try_deserialize_and_update_self_from_byte_slice(&rust_buffer)
-                    .map_err(|e| format!("{:?}", e))?;
-                Ok(self.convert_neuron_data_to_godot(&neuron_data))
-            } else {
-                Err(format!("Unsupported first byte: {}", first_byte))
-            }
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.decode_type11_bytes_to_coord_vectors(rust_buffer, &dims_map)
         })) {
-            Ok(Ok(dict)) => dict,
+            Ok(Ok(neuron_data)) => self.convert_neuron_data_to_godot(&neuron_data),
             Ok(Err(e)) => {
                 godot_error!("🦀 [DECODE] Type 11 decode failed: {}", e);
                 self.create_error_dict(e)
@@ -227,12 +304,12 @@ impl FeagiDataDeserializer {
     pub fn process_neuron_visualization(
         &self,
         buffer: PackedByteArray,
+        dimensions_by_id: Dictionary,
         dimensions: Vector3,
         max_neurons: i32,
     ) -> Dictionary {
         let start_time = std::time::Instant::now();
 
-        // Convert PackedByteArray to Vec<u8>
         let rust_buffer: Vec<u8> = buffer.to_vec();
         if rust_buffer.is_empty() {
             return self.create_visualization_error_dict(
@@ -240,81 +317,33 @@ impl FeagiDataDeserializer {
                 start_time.elapsed().as_micros() as i64,
             );
         }
-        let first_byte = rust_buffer[0];
 
-        // Canonical pipeline (transport-independent):
-        // - FeagiByteContainer v2 or v3 (first byte == 2 or 3) containing Type 11
-        // - Or raw Type 11 (first byte == 11) if upstream unwrapped the container
-        // Always materialize an owned CorticalMappedXYZPNeuronVoxels so we can safely
-        // use it for the duration of this function without borrowing temporary objects.
-        use feagi_serialization::FeagiByteContainer;
-        let is_container = first_byte == 2 || first_byte == FeagiByteContainer::CURRENT_FBS_VERSION;
-        let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if is_container {
-            let mut byte_container = FeagiByteContainer::new_empty();
-            let mut data_vec = rust_buffer;
-            if let Err(e) = byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
-                std::mem::swap(bytes, &mut data_vec);
-                Ok(())
-            }) {
-                godot_error!("🦀 Failed to load FeagiByteContainer: {:?}", e);
-                return self.create_visualization_error_dict(
-                    format!("FeagiByteContainer error: {:?}", e),
-                    start_time.elapsed().as_micros() as i64,
-                );
-            }
-            let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
-                Ok(s) => s,
+        let dims_map = self.build_dims_map_from_godot(&dimensions_by_id);
+        let neuron_data_owned =
+            match self.decode_type11_bytes_to_coord_vectors(rust_buffer, &dims_map) {
+                Ok(nd) => nd,
                 Err(e) => {
-                    godot_error!("🦀 Failed to extract structure: {:?}", e);
+                    godot_error!("🦀 process_neuron_visualization decode failed: {}", e);
                     return self.create_visualization_error_dict(
-                        format!("Structure extract error: {:?}", e),
+                        e,
                         start_time.elapsed().as_micros() as i64,
                     );
                 }
             };
-            match boxed_struct
-                .as_any()
-                .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
-            {
-                Some(nd) => nd.clone(),
-                None => {
-                    godot_error!("🦀 Structure is not CorticalMappedXYZPNeuronVoxels");
-                    return self.create_visualization_error_dict(
-                        "Wrong structure type".to_string(),
-                        start_time.elapsed().as_micros() as i64,
-                    );
-                }
-            }
-        } else if first_byte == 11 {
-            let mut nd = CorticalMappedXYZPNeuronVoxels::new();
-            if let Err(e) = nd.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
-                godot_error!("🦀 Type 11 deserialize failed: {:?}", e);
-                return self.create_visualization_error_dict(
-                    format!("Type 11 deserialize error: {:?}", e),
-                    start_time.elapsed().as_micros() as i64,
-                );
-            }
-            nd
-        } else {
-            godot_error!("🦀 Unsupported payload first byte: {}", first_byte);
-            return self.create_visualization_error_dict(
-                format!("Unsupported payload first byte: {}", first_byte),
-                start_time.elapsed().as_micros() as i64,
-            );
-        };
-        let neuron_data_ref: &CorticalMappedXYZPNeuronVoxels = &neuron_data_owned;
+        let neuron_data_ref: &DecodedVectors = &neuron_data_owned;
 
-        // Count total neurons
-        let total_neurons: usize = neuron_data_ref.mappings.values().map(|arr| arr.len()).sum();
+        // Count total neurons across every cortical area in the packet.
+        let total_neurons: usize = neuron_data_ref
+            .iter()
+            .map(|(_, arr)| arr.coord_x_slice().len())
+            .sum();
 
-        // Apply limit if specified
         let process_count = if max_neurons > 0 {
             std::cmp::min(total_neurons, max_neurons as usize)
         } else {
             total_neurons
         };
 
-        // Pre-calculate constants
         let half_dimensions =
             Vector3::new(dimensions.x / 2.0, dimensions.y / 2.0, dimensions.z / 2.0);
         let offset = Vector3::ZERO;
@@ -324,22 +353,21 @@ impl FeagiDataDeserializer {
             1.0 / -dimensions.z, // Note: negative Z
         );
 
-        // Collect all neurons into a flat vector
-        let mut all_neurons = Vec::with_capacity(process_count);
-        for (_, neuron_array) in neuron_data_ref.mappings.iter() {
-            for neuron in neuron_array.iter() {
+        // Collect up to `process_count` voxels into a flat vector for downstream
+        // transform/color computation. Iterate via the new SoA slices
+        // (coord_x_slice / potentials_slice) instead of the pre-refactor
+        // `neuron.*` struct-of-struct accessors.
+        let mut all_neurons: Vec<(u32, u32, u32, f32)> = Vec::with_capacity(process_count);
+        'outer: for (_, neuron_array) in neuron_data_ref.iter() {
+            let xs = neuron_array.coord_x_slice();
+            let ys = neuron_array.coord_y_slice();
+            let zs = neuron_array.coord_z_slice();
+            let ps = neuron_array.potentials_slice();
+            for i in 0..xs.len() {
                 if all_neurons.len() >= process_count {
-                    break;
+                    break 'outer;
                 }
-                all_neurons.push((
-                    neuron.neuron_voxel_coordinate.x,
-                    neuron.neuron_voxel_coordinate.y,
-                    neuron.neuron_voxel_coordinate.z,
-                    neuron.potential,
-                ));
-            }
-            if all_neurons.len() >= process_count {
-                break;
+                all_neurons.push((xs[i], ys[i], zs[i], ps[i].0));
             }
         }
 
@@ -526,61 +554,19 @@ impl FeagiDataDeserializer {
             return out;
         }
 
-        // Parse + apply inside one unwind boundary to avoid cloning decoded neuron data.
+        // Build the CorticalID->dimensions map OUTSIDE the catch_unwind closure:
+        // catch_unwind requires `AssertUnwindSafe` and our Godot Dictionary is
+        // moved into the closure by the existing design; the dims map must be
+        // cheap & self-contained so the closure can capture it by reference.
+        let dims_map = self.build_dims_map_from_godot(&dimensions_by_id);
+
+        // Parse + apply inside one unwind boundary so panics in the decoder
+        // (e.g. upstream byte-container corruption) don't crash the host.
         let parse_and_apply_start = std::time::Instant::now();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
-            use feagi_serialization::FeagiByteContainer;
-
-            // Canonical pipeline (transport-independent):
-            // - FeagiByteContainer v2 or v3 (first byte == 2 or 3) containing Type 11 structures
-            // - Or raw Type 11 struct bytes (first byte == 11) if upstream unwrapped it
-            let first_byte = rust_buffer[0];
-            let is_container = first_byte == 2
-                || first_byte == feagi_serialization::FeagiByteContainer::CURRENT_FBS_VERSION;
-            let neuron_data_owned: CorticalMappedXYZPNeuronVoxels = if is_container {
-                let mut byte_container = FeagiByteContainer::new_empty();
-                let mut data_vec = rust_buffer;
-
-                if let Err(e) =
-                    byte_container.try_write_data_to_container_and_verify(&mut |bytes| {
-                        std::mem::swap(bytes, &mut data_vec);
-                        Ok(())
-                    })
-                {
-                    return Err(format!("{:?}", e));
-                }
-
-                let num_structures = match byte_container.try_get_number_contained_structures() {
-                    Ok(n) => n,
-                    Err(e) => return Err(format!("{:?}", e)),
-                };
-                if num_structures == 0 {
-                    return Err("Empty container".to_string());
-                }
-
-                let boxed_struct = match byte_container.try_create_new_struct_from_index(0) {
-                    Ok(s) => s,
-                    Err(e) => return Err(format!("{:?}", e)),
-                };
-
-                let neuron_data_ref = match boxed_struct
-                    .as_any()
-                    .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
-                {
-                    Some(nd) => nd,
-                    None => return Err("Wrong structure type".to_string()),
-                };
-                neuron_data_ref.clone()
-            } else if first_byte == 11 {
-                let mut nd = CorticalMappedXYZPNeuronVoxels::new();
-                if let Err(e) = nd.try_deserialize_and_update_self_from_byte_slice(&rust_buffer) {
-                    return Err(format!("Type 11 deserialize error: {:?}", e));
-                }
-                nd
-            } else {
-                return Err(format!("Unsupported payload first byte: {}", first_byte));
-            };
-            let neuron_data_ref: &CorticalMappedXYZPNeuronVoxels = &neuron_data_owned;
+            let neuron_data_owned: DecodedVectors = self
+                .decode_type11_bytes_to_coord_vectors(rust_buffer, &dims_map)?;
+            let neuron_data_ref: &DecodedVectors = &neuron_data_owned;
 
             let container_parse_ms = parse_and_apply_start.elapsed().as_secs_f64() * 1000.0;
 
@@ -600,8 +586,11 @@ impl FeagiDataDeserializer {
             let mut neurons_applied: i32 = 0;
             let mut area_counts = Dictionary::new();
 
-            for (cortical_id, neuron_array) in neuron_data_ref.mappings.iter() {
-                let num_neurons = neuron_array.len();
+            for (cortical_id, neuron_array) in neuron_data_ref.iter() {
+                let xs = neuron_array.coord_x_slice();
+                let ys = neuron_array.coord_y_slice();
+                let zs = neuron_array.coord_z_slice();
+                let num_neurons = xs.len();
                 if num_neurons == 0 {
                     continue;
                 }
@@ -627,7 +616,6 @@ impl FeagiDataDeserializer {
                     continue;
                 }
 
-                // Set instance count and apply transforms/colors directly.
                 multi_mesh.set_instance_count(num_neurons as i32);
 
                 let half_dimensions =
@@ -640,10 +628,10 @@ impl FeagiDataDeserializer {
                 let max_y = (dimensions.y as u32).saturating_sub(1);
                 let max_z = (dimensions.z as u32).saturating_sub(1);
 
-                for (i, neuron) in neuron_array.iter().enumerate() {
-                    let x = neuron.neuron_voxel_coordinate.x.min(max_x);
-                    let y = neuron.neuron_voxel_coordinate.y.min(max_y);
-                    let z = neuron.neuron_voxel_coordinate.z.min(max_z);
+                for i in 0..num_neurons {
+                    let x = xs[i].min(max_x);
+                    let y = ys[i].min(max_y);
+                    let z = zs[i].min(max_z);
 
                     let transform_data =
                         Self::calculate_transform(x, y, z, half_dimensions, offset, scale);
@@ -675,7 +663,7 @@ impl FeagiDataDeserializer {
             }
 
             let multimesh_apply_ms = apply_start.elapsed().as_secs_f64() * 1000.0;
-            Ok((
+            Ok::<_, String>((
                 container_parse_ms,
                 clear_ms,
                 multimesh_apply_ms,
@@ -1502,11 +1490,13 @@ impl FeagiDataDeserializer {
         [red_intensity, 0.0, 0.0, 1.0] // Red gradient with full alpha
     }
 
-    /// Convert official neuron data structure to Godot Dictionary
-    fn convert_neuron_data_to_godot(
-        &self,
-        neuron_data: &CorticalMappedXYZPNeuronVoxels,
-    ) -> Dictionary {
+    /// Convert decoded neuron data (new v2 generic type) to a Godot Dictionary
+    /// of `{cortical_id_base64 -> {x_array, y_array, z_array, p_array}}`.
+    ///
+    /// The new SoA accessors (`coord_*_slice`, `potentials_slice`) avoid the
+    /// per-voxel iterator overhead that the pre-refactor path used and let us
+    /// extend PackedArrays from fixed-size slices directly.
+    fn convert_neuron_data_to_godot(&self, neuron_data: &DecodedVectors) -> Dictionary {
         let mut result_dict = Dictionary::new();
         result_dict.set("success", true);
         result_dict.set("error", "");
@@ -1514,36 +1504,34 @@ impl FeagiDataDeserializer {
         let mut areas_dict = Dictionary::new();
         let mut total_neurons: i32 = 0;
 
-        // Iterate through each cortical area in the neuron data using 'mappings' field
-        for (cortical_id, neuron_array) in neuron_data.mappings.iter() {
-            let num_neurons = neuron_array.len();
-
+        for (cortical_id, neuron_array) in neuron_data.iter() {
+            let xs = neuron_array.coord_x_slice();
+            let ys = neuron_array.coord_y_slice();
+            let zs = neuron_array.coord_z_slice();
+            let ps = neuron_array.potentials_slice();
+            let num_neurons = xs.len();
             if num_neurons == 0 {
                 continue;
             }
 
             total_neurons += num_neurons as i32;
 
-            // Convert cortical_id to base64 String to match API format
-            // CRITICAL: API responses use base64 format, so BV's cache expects base64 keys
-            // Visualization binary uses raw 8-byte ASCII, so we must convert here
+            // API responses key cortical areas by base64 id; the wire uses the
+            // raw 8-byte ASCII form, so re-encode here to match BV's caches.
             let cortical_id_str = cortical_id.as_base_64();
 
-            // Create area data dictionary
             let mut area_dict = Dictionary::new();
 
-            // Convert arrays to Godot PackedArrays
             let mut x_array = PackedInt32Array::new();
             let mut y_array = PackedInt32Array::new();
             let mut z_array = PackedInt32Array::new();
             let mut p_array = PackedFloat32Array::new();
 
-            // Use the iterator to access neurons
-            for neuron in neuron_array.iter() {
-                x_array.push(neuron.neuron_voxel_coordinate.x as i32);
-                y_array.push(neuron.neuron_voxel_coordinate.y as i32);
-                z_array.push(neuron.neuron_voxel_coordinate.z as i32);
-                p_array.push(neuron.potential);
+            for i in 0..num_neurons {
+                x_array.push(xs[i] as i32);
+                y_array.push(ys[i] as i32);
+                z_array.push(zs[i] as i32);
+                p_array.push(ps[i].0);
             }
 
             area_dict.set("x_array", x_array);

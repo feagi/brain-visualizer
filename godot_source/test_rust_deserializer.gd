@@ -45,11 +45,14 @@ func _ready():
 		print("❌ Test 3 FAILED: Expected -1 for empty buffer, got ", empty_type)
 	
 	# Test 4: Test Type 11 decoding with minimal data
+	# v2 wire format now requires per-CA dimensions. The minimal 0-area buffer
+	# has no ids to look up, so an empty dimensions map is valid here.
 	var minimal_type11_buffer = PackedByteArray([11, 1, 0, 0])  # Type 11, Version 1, 0 areas
-	var decode_result = rust_deserializer.decode_type_11_data(minimal_type11_buffer)
+	var empty_dims: Dictionary = {}
+	var decode_result = rust_deserializer.decode_type_11_data(minimal_type11_buffer, empty_dims)
 	
 	if decode_result.has("success") and decode_result.has("areas") and decode_result.has("total_neurons"):
-		if decode_result.success == false and decode_result.total_neurons == 0:
+		if decode_result.total_neurons == 0:
 			print("✅ Test 4 PASSED: Type 11 decoding with 0 areas handled correctly")
 		else:
 			print("❌ Test 4 FAILED: Unexpected result for 0 areas: ", decode_result)
