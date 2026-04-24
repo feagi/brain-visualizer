@@ -823,6 +823,15 @@ func mass_move_genome_objects_2D(genome_objects_mapped_to_new_locations_as_vecto
 		if genome_object is AbstractCorticalArea:
 			# Cortical areas: Use /v1/cortical_area/multi/cortical_area endpoint
 			var cortical_area = genome_object as AbstractCorticalArea
+			var cortical_id := String(cortical_area.cortical_ID).strip_edges()
+			if cortical_id.is_empty():
+				push_warning("FEAGI Requests: Skipping cortical area move with empty cortical_id")
+				continue
+			# Ignore stale UI objects that no longer exist in cache to avoid hard-failing the entire
+			# multi-update request with a NotFound error for one obsolete cortical ID.
+			if cortical_area.cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+				push_warning("FEAGI Requests: Skipping stale cortical area move for missing cache id %s" % cortical_id)
+				continue
 			cortical_areas_to_move.append(cortical_area)
 			cortical_area_positions[cortical_area] = new_position
 			print("FEAGI REQUEST: Will update cortical area %s position using cortical_area API" % cortical_area.cortical_ID)

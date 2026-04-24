@@ -318,7 +318,7 @@ static func _utf8_label_from_base64_cortical_token(token: String) -> String:
 	var raw: PackedByteArray = Marshalls.base64_to_raw(trimmed)
 	if raw.size() != 8:
 		return ""
-	# Only decode known ASCII-safe labels (e.g., "___death", "___power", "___fatig").
+	# Only decode known ASCII-safe labels (e.g., "___death", "___power", "___fatig", "___pain_", "___pleas").
 	# Avoid calling UTF-8 conversion on binary cortical IDs, which logs parser errors.
 	for byte_val in raw:
 		if byte_val < 32 or byte_val > 126:
@@ -352,6 +352,14 @@ static func get_special_core_area_name(cortical_id: Variant) -> String:
 		# Fatigue area (feagi-structures CoreCorticalType::Fatigue -> CorticalID bytes "___fatig")
 		"___fatig": "fatigue",
 		"X19fZmF0aWc=": "fatigue",  # base64 of "___fatig"
+
+		# Pain area (feagi-structures CoreCorticalType::Pain -> CorticalID bytes "___pain_")
+		"___pain_": "pain",
+		"X19fcGFpbl8=": "pain",  # base64 of "___pain_"
+
+		# Pleasure area (feagi-structures CoreCorticalType::Pleasure -> CorticalID bytes "___pleas")
+		"___pleas": "pleasure",
+		"X19fcGxlYXM=": "pleasure",  # base64 of "___pleas"
 	}
 	var id_str := String(cortical_id).strip_edges()
 	var by_direct: String = SPECIAL_CORE_AREAS.get(id_str, "")
@@ -374,14 +382,22 @@ static func is_death_area(cortical_id: Variant) -> bool:
 static func is_fatigue_area(cortical_id: Variant) -> bool:
 	return get_special_core_area_name(cortical_id) == "fatigue"
 
+## Check if a cortical_ID is the pain core area (supports string and base64 cortical IDs)
+static func is_pain_area(cortical_id: Variant) -> bool:
+	return get_special_core_area_name(cortical_id) == "pain"
+
+## Check if a cortical_ID is the pleasure core area (supports string and base64 cortical IDs)
+static func is_pleasure_area(cortical_id: Variant) -> bool:
+	return get_special_core_area_name(cortical_id) == "pleasure"
+
 ## True for reserved system core IDs (power, death, fatigue, ...) used by FEAGI connectome APIs.
 ## Root brain-geometry summaries may omit these while they still exist in the cortical cache; Brain Monitor uses this to show them at root.
 static func is_reserved_system_core_area(cortical_id: Variant) -> bool:
 	return not get_special_core_area_name(cortical_id).is_empty()
 
 ## Left-to-right row order for Brain Monitor root core-cluster layout (FEAGI X axis). Extend when new reserved cores are added to [method get_special_core_area_name].
-const CORE_CLUSTER_ROW_ORDER: Array[String] = ["death", "power", "fatigue"]
-## FEAGI voxel-grid spacing between adjacent core centers along X (death / power / fatigue).
+const CORE_CLUSTER_ROW_ORDER: Array[String] = ["death", "power", "fatigue", "pain", "pleasure"]
+## FEAGI voxel-grid spacing between adjacent core centers along X for invariant core row.
 const CORE_CLUSTER_FEAGI_SPACING_X: int = 20
 
 ## Non-power reserved cores use a fixed offset from the power anchor; only power coordinates are persisted to FEAGI.
