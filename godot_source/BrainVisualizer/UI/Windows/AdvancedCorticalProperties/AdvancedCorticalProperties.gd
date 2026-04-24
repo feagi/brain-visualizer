@@ -1606,7 +1606,7 @@ func _core_preset_from_id(cortical_id: StringName) -> StringName:
 	var core_name := AbstractCorticalArea.get_special_core_area_name(cortical_id)
 	if core_name == "power":
 		return IO_PRESET_INPUT
-	if core_name == "death" or core_name == "fatigue" or core_name == "pain" or core_name == "pleasure":
+	if core_name == "death" or core_name == "fatigue" or core_name == "pain" or core_name == "pleasure" or core_name == "fear" or core_name == "hope":
 		return IO_PRESET_OUTPUT
 	return ""
 

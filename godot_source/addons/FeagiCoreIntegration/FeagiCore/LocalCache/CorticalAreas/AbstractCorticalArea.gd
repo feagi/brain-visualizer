@@ -360,6 +360,14 @@ static func get_special_core_area_name(cortical_id: Variant) -> String:
 		# Pleasure area (feagi-structures CoreCorticalType::Pleasure -> CorticalID bytes "___pleas")
 		"___pleas": "pleasure",
 		"X19fcGxlYXM=": "pleasure",  # base64 of "___pleas"
+
+		# Fear area (feagi-structures CoreCorticalType::Fear -> CorticalID bytes "___fear_")
+		"___fear_": "fear",
+		"X19fZmVhcl8=": "fear",  # base64 of "___fear_"
+
+		# Hope area (feagi-structures CoreCorticalType::Hope -> CorticalID bytes "___hope_")
+		"___hope_": "hope",
+		"X19faG9wZV8=": "hope",  # base64 of "___hope_"
 	}
 	var id_str := String(cortical_id).strip_edges()
 	var by_direct: String = SPECIAL_CORE_AREAS.get(id_str, "")
@@ -390,13 +398,21 @@ static func is_pain_area(cortical_id: Variant) -> bool:
 static func is_pleasure_area(cortical_id: Variant) -> bool:
 	return get_special_core_area_name(cortical_id) == "pleasure"
 
+## Check if a cortical_ID is the fear core area (supports string and base64 cortical IDs)
+static func is_fear_area(cortical_id: Variant) -> bool:
+	return get_special_core_area_name(cortical_id) == "fear"
+
+## Check if a cortical_ID is the hope core area (supports string and base64 cortical IDs)
+static func is_hope_area(cortical_id: Variant) -> bool:
+	return get_special_core_area_name(cortical_id) == "hope"
+
 ## True for reserved system core IDs (power, death, fatigue, ...) used by FEAGI connectome APIs.
 ## Root brain-geometry summaries may omit these while they still exist in the cortical cache; Brain Monitor uses this to show them at root.
 static func is_reserved_system_core_area(cortical_id: Variant) -> bool:
 	return not get_special_core_area_name(cortical_id).is_empty()
 
 ## Left-to-right row order for Brain Monitor root core-cluster layout (FEAGI X axis). Extend when new reserved cores are added to [method get_special_core_area_name].
-const CORE_CLUSTER_ROW_ORDER: Array[String] = ["death", "power", "fatigue", "pain", "pleasure"]
+const CORE_CLUSTER_ROW_ORDER: Array[String] = ["death", "power", "fatigue", "pain", "pleasure", "fear", "hope"]
 ## FEAGI voxel-grid spacing between adjacent core centers along X for invariant core row.
 const CORE_CLUSTER_FEAGI_SPACING_X: int = 20
 

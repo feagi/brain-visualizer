@@ -113,8 +113,10 @@ func _apply_cortical_area_icon(area: AbstractCorticalArea) -> void:
 		return
 	if AbstractCorticalArea.is_fatigue_area(area.cortical_ID) \
 			or AbstractCorticalArea.is_pain_area(area.cortical_ID) \
-			or AbstractCorticalArea.is_pleasure_area(area.cortical_ID):
-		# No dedicated 2D asset for fatigue/pain/pleasure in BV yet; use per-ID lookup or unknown-output fallback.
+			or AbstractCorticalArea.is_pleasure_area(area.cortical_ID) \
+			or AbstractCorticalArea.is_fear_area(area.cortical_ID) \
+			or AbstractCorticalArea.is_hope_area(area.cortical_ID):
+		# No dedicated 2D asset for fatigue/pain/pleasure/fear/hope in BV yet; use per-ID lookup or unknown-output fallback.
 		_cortical_icon.texture = UIManager.get_icon_texture_by_ID(area.cortical_ID, false) as Texture2D
 		return
 	match area.cortical_type:

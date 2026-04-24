@@ -1161,6 +1161,10 @@ func _io_priority_for_node(node: CBNodeConnectableBase, is_input_column: bool) -
 				return -95
 			if (not is_input_column) and label == "pleasure":
 				return -94
+			if (not is_input_column) and label == "fear":
+				return -93
+			if (not is_input_column) and label == "hope":
+				return -92
 			if (not is_input_column) and label == "death":
 				return -90
 	return 0
@@ -1176,7 +1180,7 @@ func _classify_cortical_io_side(area: AbstractCorticalArea) -> String:
 		var core_label := _core_io_label(area)
 		if core_label == "power":
 			return "left"
-		if core_label in ["fatigue", "pain", "pleasure", "death"]:
+		if core_label in ["fatigue", "pain", "pleasure", "fear", "hope", "death"]:
 			return "right"
 		if area_id_lower.begins_with("i") or area_name_lower.contains("input") or area_name_lower.contains("ipu"):
 			return "left"
@@ -1203,6 +1207,10 @@ func _core_io_label(area: AbstractCorticalArea) -> String:
 		return "pain"
 	if area_name_lower.contains("pleasure"):
 		return "pleasure"
+	if area_name_lower.contains("fear"):
+		return "fear"
+	if area_name_lower.contains("hope"):
+		return "hope"
 	if area_name_lower.contains("death"):
 		return "death"
 	return "other"

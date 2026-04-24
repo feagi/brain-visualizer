@@ -113,7 +113,9 @@ var _fatigue_billboard_is_firing: bool = false
 func _is_fatigue_style_core_area_by_id(cortical_id: Variant) -> bool:
 	return AbstractCorticalArea.is_fatigue_area(cortical_id) \
 		or AbstractCorticalArea.is_pain_area(cortical_id) \
-		or AbstractCorticalArea.is_pleasure_area(cortical_id)
+		or AbstractCorticalArea.is_pleasure_area(cortical_id) \
+		or AbstractCorticalArea.is_fear_area(cortical_id) \
+		or AbstractCorticalArea.is_hope_area(cortical_id)
 
 func _is_fatigue_style_core_area(area: AbstractCorticalArea) -> bool:
 	return _is_fatigue_style_core_area_by_id(area.cortical_ID)
