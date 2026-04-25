@@ -746,13 +746,17 @@ func build_iopu_name_to_id_mapping_from_genome() -> Dictionary:
 		"ifs": ["dynamic_image_processing"],
 	}
 	# IPU unit ref -> capability key agents use in input
+	# The legacy `acc`/`gyr` (Accelerometer/Gyroscope) IPU unit refs are
+	# intentionally absent: those cortical IDs are dropped during genome
+	# migration. IMU sensors now live under the dedicated `rim` (RawIMU,
+	# accel + gyro + magnetometer composite) and `sim` (SmartIMU,
+	# orientation quaternion) unit refs, both of which advertise their own
+	# capability keys (`raw_imu` / `smart_imu`).
 	const IPU_UNIT_REF_TO_CAPABILITY_KEY: Dictionary = {
 		"mot": "servo_motion",
 		"pos": "servo_position",
 		"inf": "infrared",
 		"pro": "proximity",
-		"acc": "accelerometer",
-		"gyr": "gyro",
 		"bat": "battery",
 		"cam": "camera",
 		"mis": "miscellaneous",
@@ -761,6 +765,8 @@ func build_iopu_name_to_id_mapping_from_genome() -> Dictionary:
 		"pre": "pressure",
 		"lid": "lidar",
 		"hea": "audio",
+		"rim": "raw_imu",
+		"sim": "smart_imu",
 	}
 	for cortical_id in cortical_areas.available_cortical_areas:
 		var area: AbstractCorticalArea = cortical_areas.available_cortical_areas[cortical_id]

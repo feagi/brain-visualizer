@@ -6,6 +6,10 @@ class_name CircuitBuilder
 @export var keyboard_movement_speed: Vector2 = Vector2(1,1)
 @export var keyboard_move_speed: float = 50.0
 @export var initial_fit_padding: Vector2 = Vector2(128, 128)
+## Built-in minimap is sized as this fraction of the CircuitBuilder size.
+@export var minimap_size_ratio: Vector2 = Vector2(0.20, 0.20)
+## Minimum minimap size so it stays usable when the CircuitBuilder is small.
+@export var minimap_min_size: Vector2 = Vector2(120, 90)
 
 const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
 const PREFAB_NODE_BRAINREGION: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.tscn")
@@ -65,7 +69,9 @@ func _ready():
 	node_deselected.connect(_node_deselect)
 	visibility_changed.connect(_attempt_initial_fit)
 	resized.connect(_attempt_initial_fit)
+	resized.connect(_update_minimap_size_from_ratio)
 	child_entered_tree.connect(_attempt_initial_fit)
+	_update_minimap_size_from_ratio()
 	if has_node("BrainObjectsCombo"):
 		_combo = $BrainObjectsCombo
 		if _representing_region != null:
@@ -1474,6 +1480,15 @@ func _get_visible_global_rect(base_rect: Rect2) -> Rect2:
 
 func _global_to_local(point: Vector2) -> Vector2:
 	return get_global_transform_with_canvas().affine_inverse() * point
+
+## Sizes the built-in GraphEdit minimap to a fraction of the CircuitBuilder size,
+## clamped to a usable minimum so it stays visible at small CB dimensions.
+func _update_minimap_size_from_ratio() -> void:
+	var ratio: Vector2 = Vector2(maxf(minimap_size_ratio.x, 0.0), maxf(minimap_size_ratio.y, 0.0))
+	var target: Vector2 = size * ratio
+	target.x = maxf(target.x, minimap_min_size.x)
+	target.y = maxf(target.y, minimap_min_size.y)
+	minimap_size = target
 
 ## Attempts initial layout fit, ignoring optional signal args.
 func _attempt_initial_fit(_node: Node = null) -> void:

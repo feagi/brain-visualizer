@@ -27,8 +27,14 @@ const INPUT_DEVICE_ICON_IDS: Dictionary = {
 	"CountInput": "icnt",
 	"Vision": "iimg",
 	"SegmentedVision": "isvi",
-	"Accelerometer": "iacc",
-	"Gyroscope": "igyr",
+	# IMU device keys map to the new RawIMU/SmartIMU cortical unit refs.
+	# - RawIMU (`rim`)  -> linear 3-axis accel + gyro + mag bundle
+	# - SmartIMU (`sim`) -> orientation quaternion
+	# The legacy "Accelerometer"/"Gyroscope" device keys (-> `iacc` / `igyr`)
+	# are intentionally removed; both `Accelerometer`/`acc` and
+	# `Gyroscope`/`gyq` cortical IDs are dropped from migrated genomes.
+	"RawIMU": "irim",
+	"SmartIMU": "isim",
 }
 
 const OUTPUT_DEVICE_ICON_IDS: Dictionary = {

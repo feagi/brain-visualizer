@@ -74,24 +74,31 @@ const MEMORY_BOX_COLOR: Color = Color(0.5803921568627451, 0.06666666666666667, 0
 const OPU_BOX_COLOR: Color = Color(0.5803921568627451, 0.3215686274509804, 0)
 const CORE_BOX_COLOR: Color = Color(0.0, 0.204, 0.384)
 
-## Set the color depnding on cortical type
+## Set the color depnding on cortical type. Both `titlebar` and `panel` styleboxes
+## are tinted with the type color so the GraphEdit minimap (which reads
+## `panel.bg_color`) renders nodes in their type-distinct colors.
 func _setup_node_color(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
-	var style_box: StyleBoxFlat = StyleBoxFlat.new()
+	var type_color: Color
 	match(cortical_type):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-			style_box.bg_color = IPU_BOX_COLOR
+			type_color = IPU_BOX_COLOR
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-			style_box.bg_color = MEMORY_BOX_COLOR
+			type_color = MEMORY_BOX_COLOR
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
-			style_box.bg_color = CUSTOM_BOX_COLOR
+			type_color = CUSTOM_BOX_COLOR
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-			style_box.bg_color = OPU_BOX_COLOR
+			type_color = OPU_BOX_COLOR
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
-			style_box.bg_color = CORE_BOX_COLOR
+			type_color = CORE_BOX_COLOR
 		_:
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
-			pass
-	add_theme_stylebox_override("titlebar", style_box)
+			return
+	var titlebar_box: StyleBoxFlat = StyleBoxFlat.new()
+	titlebar_box.bg_color = type_color
+	add_theme_stylebox_override("titlebar", titlebar_box)
+	var panel_box: StyleBoxFlat = StyleBoxFlat.new()
+	panel_box.bg_color = type_color
+	add_theme_stylebox_override("panel", panel_box)
 
 
 #endregion
