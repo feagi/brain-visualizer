@@ -1019,7 +1019,7 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	# Define Request - Using correct FEAGI API key names
 	var dict_to_send: Dictionary = {
 		"region_id": brain_region.region_ID,
-		"region_title": region_name,  # title → region_title
+		"title": region_name,
 		"coordinate_2d": FEAGIUtils.vector2i_to_array(coords_2D),  # coordinates_2d → coordinate_2d
 		"coordinate_3d": FEAGIUtils.vector3i_to_array(coords_3D),  # coordinates_3d → coordinate_3d
 		# Removed unsupported keys: parent_region_id, region_description

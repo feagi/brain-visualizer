@@ -1763,7 +1763,7 @@ func _refresh_from_cache_memory() -> void:
 ## Genome PSP while the line shows "—" under MP-driven PSP (runtime uses source membrane potential).
 var _psp_backup_float: float = 0.0
 const _PSP_LINE_PLACEHOLDER_MP_DRIVEN: String = "—"
-const _PSP_TOOLTIP_BASE: String = "The amount of membrane potential increase each neuron can have on downstream neurons. Range: 0–255."
+const _PSP_TOOLTIP_BASE: String = "The amount of membrane potential increase each neuron can have on downstream neurons."
 const _PSP_TOOLTIP_MP_DRIVEN: String = "MP-driven PSP uses membrane potential, not this constant. Disabled while on."
 
 func _init_psp() -> void:
