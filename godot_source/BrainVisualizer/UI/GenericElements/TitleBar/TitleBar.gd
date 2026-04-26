@@ -15,6 +15,17 @@ signal close_pressed()
 ## How far out in any direction the title bar can go before it snaps back
 @export var screen_edge_buffer: int = 16
 
+## Per-edge controls for the snap-back behavior. When an edge is enforced (default),
+## the parent window snaps back to its spawn location if the title bar is dragged past
+## that edge of the screen on mouse release. Disable individual edges for windows that
+## are intentionally wider than the viewport (e.g. dense table editors that need to
+## scroll horizontally without being yanked back). Top-edge enforcement is recommended
+## to keep the title bar reachable for re-grabbing.
+@export var enforce_top_bound: bool = true
+@export var enforce_bottom_bound: bool = true
+@export var enforce_left_bound: bool = true
+@export var enforce_right_bound: bool = true
+
 ## if disabled, will disable (fade) the close button to prevent it from being clicked
 @export var enable_close_button: bool = true:
 	get: return $HBoxContainer/Close_Button.visible
@@ -66,11 +77,21 @@ func _gui_input(event: InputEvent) -> void:
 func setup_from_window(window: BaseDraggableWindow) -> void:
 	_window_parent = window
 
-## Check if TitleBar is within bounds
+## Returns true when the title bar respects every enforced edge of the screen rect.
+## Edges that are disabled via the enforce_*_bound exports are ignored, allowing the
+## parent window to extend past those edges without triggering snap-back.
 func is_titlebar_within_view_bounds() -> bool:
 	var self_rect: Rect2 = get_global_rect().grow(-screen_edge_buffer).abs() # Calculate bounds
 	var screen_rect: Rect2 = Rect2(Vector2(0,0), BV.UI.screen_size) # Get Screen Rect
-	return screen_rect.encloses(self_rect)
+	if enforce_top_bound and self_rect.position.y < screen_rect.position.y:
+		return false
+	if enforce_left_bound and self_rect.position.x < screen_rect.position.x:
+		return false
+	if enforce_right_bound and self_rect.end.x > screen_rect.end.x:
+		return false
+	if enforce_bottom_bound and self_rect.end.y > screen_rect.end.y:
+		return false
+	return true
 
 func get_minimum_width() -> int:
 	var minimum_width: int = 2 * int(_tex_button.size_x ) # size of the close button and left gap
