@@ -12,7 +12,7 @@ size_flags_vertical = 0
 script = ExtResource("1_a7y6g")
 
 [node name="Label9" type="Label" parent="."]
-custom_minimum_size = Vector2(1520, 0)
+custom_minimum_size = Vector2(2032, 0)
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Established Mappings"
@@ -144,7 +144,9 @@ size_flags_horizontal = 0
 custom_minimum_size = Vector2(168, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-text = "Plasticity"
+tooltip_text = "Off / STDP / R-STDP"
+mouse_filter = 1
+text = "Plasticity Mode"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
@@ -212,6 +214,59 @@ text = "LTD Multiplier"
 horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
+
+[node name="Spacer_AfterLTD_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label_EligibilityDecay" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(120, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Eligibility trace decay (bursts) for R-STDP. 0 disables temporal credit."
+mouse_filter = 1
+text = "Eligibility Decay"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_AfterEligibilityDecay_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label_RewardSource" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(180, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Cortical area whose firing density supplies positive reward R(t) for R-STDP."
+mouse_filter = 1
+text = "Reward Source"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_AfterRewardSource_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Label_PunishmentSource" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(180, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Cortical area whose firing density supplies negative reward R(t) for R-STDP."
+mouse_filter = 1
+text = "Punishment Source"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_AfterPunishmentSource_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
 
 [node name="add_button" type="TextureButton" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(32, 32)

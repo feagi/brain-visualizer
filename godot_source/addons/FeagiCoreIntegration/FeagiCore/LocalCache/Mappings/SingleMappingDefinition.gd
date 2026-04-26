@@ -49,6 +49,21 @@ var plasticity_window: int:
 	get: return _plasticity_window
 var synaptic_delay_bursts: int:
 	get: return _synaptic_delay_bursts
+## Plasticity mode string: "off" | "stdp" | "rstdp" (empty when genome doesn't specify)
+var plasticity_mode: String:
+	get: return _plasticity_mode
+## Decay time constant (in bursts) for the eligibility trace under R-STDP. 0 means no temporal credit.
+var eligibility_decay_bursts: int:
+	get: return _eligibility_decay_bursts
+## Base64 cortical_id of the area whose density drives positive R(t) (empty when not configured)
+var reward_source_area: String:
+	get: return _reward_source_area
+## Base64 cortical_id of the area whose density drives negative R(t) (empty when not configured)
+var punishment_source_area: String:
+	get: return _punishment_source_area
+## True iff this rule has any reward/punishment source declared (used by BV for tap rendering)
+var has_reward_modulation: bool:
+	get: return _reward_source_area != "" or _punishment_source_area != ""
 
 var _morphology_used: BaseMorphology
 var _scalar: Vector3i # must all be non-zero positive
@@ -59,6 +74,10 @@ var _LTP_multiplier: float
 var _LTD_multiplier: float
 var _plasticity_window: int
 var _synaptic_delay_bursts: int
+var _plasticity_mode: String = ""
+var _eligibility_decay_bursts: int = 0
+var _reward_source_area: String = ""
+var _punishment_source_area: String = ""
 
 ## Creates a mapping with default settings (given a morphology)
 static func create_default_mapping(morphology: BaseMorphology) -> SingleMappingDefinition:
@@ -185,7 +204,14 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 	var LTP_multiplier_used: float = float(mapping_property.get("ltp_multiplier", 0.0))
 	var LTD_multiplier_used: float = float(mapping_property.get("ltd_multiplier", 0.0))
 	var plasticity_window_used: int = int(mapping_property.get("plasticity_window", DEFAULT_PLASTICITY_WINDOW))
-	return SingleMappingDefinition.new(
+	# R-STDP optional fields. plasticity_mode arrives as a string ("off"|"stdp"|"rstdp"); when
+	# absent we leave the field empty and let downstream code infer the legacy STDP path.
+	var plasticity_mode_raw: Variant = mapping_property.get("plasticity_mode", "")
+	var plasticity_mode_used: String = String(plasticity_mode_raw).to_lower() if plasticity_mode_raw != null else ""
+	var eligibility_decay_used: int = int(mapping_property.get("eligibility_decay_bursts", 0))
+	var reward_area_used: String = String(mapping_property.get("reward_source_area", ""))
+	var punishment_area_used: String = String(mapping_property.get("punishment_source_area", ""))
+	var defn := SingleMappingDefinition.new(
 		morphology_cached,
 		scalar_used,
 		psp_multiplier,
@@ -196,6 +222,11 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 		plasticity_window_used,
 		delay_parsed,
 	)
+	defn._plasticity_mode = plasticity_mode_used
+	defn._eligibility_decay_bursts = eligibility_decay_used
+	defn._reward_source_area = reward_area_used
+	defn._punishment_source_area = punishment_area_used
+	return defn
 
 
 ## Given a mapping rule from FEAGI (object form or legacy array row) creates a [SingleMappingDefinition] object
@@ -238,6 +269,11 @@ static func get_involved_morphologies(input_mappings: Array[SingleMappingDefinit
 
 
 ## Create Object
+##
+## R-STDP fields are optional and default to "unset" (empty string / 0). When all four
+## R-STDP params are left at their defaults, the resulting object behaves exactly like
+## a legacy STDP definition: to_FEAGI_JSON() omits them and consumers fall back to the
+## STDP path. This keeps the constructor backward compatible with all existing callers.
 func _init(
 	morphology: BaseMorphology,
 	positive_scalar: Vector3i,
@@ -248,6 +284,10 @@ func _init(
 	ltd_multiplier: float = DEFAULT_LTD_MULTIPLIER,
 	plasticity_window_: int = DEFAULT_PLASTICITY_WINDOW,
 	synaptic_delay_bursts_: int = DEFAULT_SYNAPTIC_DELAY_BURSTS,
+	plasticity_mode_: String = "",
+	eligibility_decay_bursts_: int = 0,
+	reward_source_area_: String = "",
+	punishment_source_area_: String = "",
 ):
 	_morphology_used = morphology
 	_scalar = positive_scalar
@@ -260,6 +300,10 @@ func _init(
 	_LTD_multiplier = ltd_multiplier
 	_plasticity_window = plasticity_window_
 	_synaptic_delay_bursts = maxi(1, synaptic_delay_bursts_)
+	_plasticity_mode = plasticity_mode_.to_lower()
+	_eligibility_decay_bursts = maxi(0, eligibility_decay_bursts_)
+	_reward_source_area = reward_source_area_
+	_punishment_source_area = punishment_source_area_
 
 ## Returns a dictionary of this object in the same format FEAGI expects
 func to_FEAGI_JSON() -> Dictionary:
@@ -273,7 +317,7 @@ func to_FEAGI_JSON() -> Dictionary:
 			"synaptic_delay_bursts": int(_synaptic_delay_bursts),
 		}
 	else:
-		return {
+		var out: Dictionary = {
 			"morphology_id": _morphology_used.name,
 			"morphology_scalar": FEAGIUtils.vector3i_to_array(_scalar),
 			"postSynapticCurrent_multiplier": _post_synaptic_current_multiplier,
@@ -284,6 +328,15 @@ func to_FEAGI_JSON() -> Dictionary:
 			"plasticity_window": int(_plasticity_window),
 			"synaptic_delay_bursts": int(_synaptic_delay_bursts),
 		}
+		if _plasticity_mode != "":
+			out["plasticity_mode"] = _plasticity_mode
+		if _eligibility_decay_bursts > 0:
+			out["eligibility_decay_bursts"] = _eligibility_decay_bursts
+		if _reward_source_area != "":
+			out["reward_source_area"] = _reward_source_area
+		if _punishment_source_area != "":
+			out["punishment_source_area"] = _punishment_source_area
+		return out
 
 ## Returns if the morphology is not null and if it is found in the morphology cache
 func is_morphology_valid() -> bool:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://ct6y7211eq0w7"]
+[gd_scene load_steps=17 format=3 uid="uid://ct6y7211eq0w7"]
 
 [ext_resource type="Script" uid="uid://dyredtnvtm1na" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorRowGenericPartial.gd" id="1_2kgmf"]
 [ext_resource type="Script" uid="uid://c3kgtsjp4sogl" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="2_e5y5p"]
@@ -15,9 +15,10 @@
 [ext_resource type="Texture2D" uid="uid://cdje4hcnt8pai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="12_4yo2a"]
 [ext_resource type="Texture2D" uid="uid://clqnxjuyb23y1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="13_bhqih"]
 [ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="14_naw4t"]
+[ext_resource type="Script" uid="uid://7xygvrncscwh" path="res://BrainVisualizer/UI/GenericElements/DropDown/CorticalDropDown.gd" id="rstdp_cdd"]
 
 [node name="MappingEditorRowGenericPartial" type="HBoxContainer"]
-offset_right = 1520.0
+offset_right = 1932.0
 offset_bottom = 32.0
 size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
@@ -116,16 +117,16 @@ custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Plasticity" type="TextureButton" parent="."]
+[node name="Plasticity_Mode" type="OptionButton" parent="."]
 custom_minimum_size = Vector2(168, 0)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_type_variation = &"ToggleButton"
-texture_normal = ExtResource("9_5xiw6")
-ignore_texture_size = true
-stretch_mode = 0
-script = ExtResource("10_mpnb3")
-enable_autoscaling_with_theme = false
+tooltip_text = "Plasticity mode for this rule:
+  Off    - synaptic weights are frozen
+  STDP   - classical spike-timing dependent plasticity
+  R-STDP - reward-modulated STDP (requires reward and/or punishment source)"
+clip_text = true
+fit_to_longest_item = false
 
 [node name="Spacer_AfterPlasticity" type="Control" parent="."]
 custom_minimum_size = Vector2(8, 0)
@@ -178,6 +179,57 @@ size_flags_horizontal = 0
 alignment = 1
 script = ExtResource("8_wad2m")
 
+[node name="Spacer_AfterLTD" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Eligibility_Decay_Bursts" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Eligibility trace decay constant in bursts (R-STDP only). 0 disables temporal credit assignment."
+alignment = 1
+script = ExtResource("15_8f0j2")
+initial_int = 0
+min_value = 0
+max_value = 1024
+
+[node name="Spacer_AfterEligibilityDecay" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Reward_Source_Area" type="OptionButton" parent="."]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Cortical area whose firing density drives positive reward R(t) (R-STDP only).
+Leave unselected to use punishment-only learning."
+clip_text = true
+fit_to_longest_item = false
+script = ExtResource("rstdp_cdd")
+
+[node name="Spacer_AfterReward" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Punishment_Source_Area" type="OptionButton" parent="."]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Cortical area whose firing density drives negative reward R(t) (R-STDP only).
+Leave unselected to use reward-only learning."
+clip_text = true
+fit_to_longest_item = false
+script = ExtResource("rstdp_cdd")
+
+[node name="Spacer_AfterPunishment" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
 [node name="confirm" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -192,5 +244,5 @@ stretch_mode = 0
 
 [connection signal="pressed" from="MappingDefinitionGroup/edit" to="." method="_on_edit_pressed"]
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
-[connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
+[connection signal="item_selected" from="Plasticity_Mode" to="." method="_on_user_select_plasticity_mode"]
 [connection signal="pressed" from="confirm" to="." method="_pressed_add"]

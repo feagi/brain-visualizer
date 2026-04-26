@@ -1050,10 +1050,13 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.37)
 		mixed_node.add_child(excitatory_curve)
 		mixed_node.add_child(inhibitory_curve)
+		_attach_rstdp_tap_if_needed(mixed_node, start_pos, end_pos, mapping_set)
 		return mixed_node
 	
 	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
-	return _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.4)
+	var single_curve := _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.4)
+	_attach_rstdp_tap_if_needed(single_curve, start_pos, end_pos, mapping_set)
+	return single_curve
 
 ## Internal helper that creates a single visual arc for a connection.
 ## arc_height_multiplier controls the curve bend height relative to distance (e.g. 0.4 = 40% of distance).
@@ -1399,6 +1402,147 @@ func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, 
 				material.albedo_color.a = base_transparency + transparency_boost
 	
 	circular_tween.tween_method(circular_cb, 0.0, 100.0, 5.0)
+
+## R-STDP modulator tap visualization (Phase 13).
+##
+## When a mapping rule declares a reward and/or punishment source area, we render a short
+## perpendicular indicator at the midpoint of the synapse curve. The orientation is the
+## arc-plane normal (chord x up), so the tap visually "drops in" from the side of the
+## bezier rather than along it. Reward = green, punishment = red. Both: stacked, reward
+## above punishment along the perpendicular.
+const RSTDP_TAP_LENGTH: float = 1.6
+const RSTDP_TAP_RADIUS: float = 0.18
+const RSTDP_TAP_REWARD_ALBEDO: Color = Color(0.18, 1.0, 0.45, 1.0)
+const RSTDP_TAP_REWARD_EMISSION: Color = Color(0.0, 1.0, 0.35, 1.0)
+const RSTDP_TAP_PUNISHMENT_ALBEDO: Color = Color(1.0, 0.20, 0.30, 1.0)
+const RSTDP_TAP_PUNISHMENT_EMISSION: Color = Color(1.0, 0.05, 0.05, 1.0)
+
+## Attach a perpendicular reward/punishment tap to the connection if the mapping set
+## declares any reward_source_area or punishment_source_area. No-op when the mapping set
+## has no R-STDP modulation declared.
+func _attach_rstdp_tap_if_needed(
+	parent: Node3D,
+	start_pos: Vector3,
+	end_pos: Vector3,
+	mapping_set: InterCorticalMappingSet
+) -> void:
+	if mapping_set == null:
+		return
+	var has_reward: bool = mapping_set.has_any_reward_source()
+	var has_pain: bool = mapping_set.has_any_punishment_source()
+	if not (has_reward or has_pain):
+		return
+
+	# Reuse the same arc geometry shape as _create_connection_curve_variant defaults so the
+	# tap actually sits on the visible curve. The default arc_height_multiplier is 0.4.
+	var direction := end_pos - start_pos
+	var distance := direction.length()
+	if distance < 0.001:
+		return
+	var midpoint_chord := (start_pos + end_pos) * 0.5
+	var arc_height: float = distance * 0.4
+	var control_point := midpoint_chord + Vector3(0, arc_height, 0)
+	var curve_mid := _quadratic_bezier(start_pos, control_point, end_pos, 0.5)
+	var tangent := _quadratic_bezier_tangent(start_pos, control_point, end_pos, 0.5)
+	if tangent.length() < 0.001:
+		return
+	tangent = tangent.normalized()
+	# Perpendicular within the arc plane that points away from the chord (i.e. "outward").
+	var up_ref := Vector3.UP
+	if abs(tangent.dot(up_ref)) > 0.95:
+		up_ref = Vector3.FORWARD
+	var perp := tangent.cross(up_ref).cross(tangent).normalized()
+	# Make sure perpendicular points "up/outward" relative to the chord, not into the arc.
+	if perp.dot(Vector3.UP) < 0.0:
+		perp = -perp
+
+	if has_reward:
+		var reward_offset := perp * (RSTDP_TAP_LENGTH * 0.5)
+		var reward_node := _create_rstdp_modulator_tap(
+			curve_mid,
+			perp,
+			RSTDP_TAP_REWARD_ALBEDO,
+			RSTDP_TAP_REWARD_EMISSION,
+			"REWARD",
+		)
+		# When both reward and punishment exist, slide the reward tap further out so the
+		# two markers stack along the perpendicular without overlapping.
+		if has_pain:
+			reward_node.position += reward_offset
+		parent.add_child(reward_node)
+
+	if has_pain:
+		var pain_node := _create_rstdp_modulator_tap(
+			curve_mid,
+			-perp,
+			RSTDP_TAP_PUNISHMENT_ALBEDO,
+			RSTDP_TAP_PUNISHMENT_EMISSION,
+			"PUNISHMENT",
+		)
+		parent.add_child(pain_node)
+
+## Build a single perpendicular tap marker: a thin cylinder oriented along `direction`
+## with a small bulb at its outer end so the modulator type reads at a glance.
+func _create_rstdp_modulator_tap(
+	curve_midpoint: Vector3,
+	direction: Vector3,
+	albedo: Color,
+	emission: Color,
+	tag: String
+) -> Node3D:
+	var tap := Node3D.new()
+	tap.name = "RSTDP_TAP_" + tag
+	tap.position = curve_midpoint
+
+	var dir := direction.normalized() if direction.length() > 0.001 else Vector3.UP
+
+	# Stem: cylinder pointing along `dir` from curve midpoint outward by RSTDP_TAP_LENGTH.
+	var stem := MeshInstance3D.new()
+	stem.name = "Stem"
+	var stem_mesh := CylinderMesh.new()
+	stem_mesh.height = RSTDP_TAP_LENGTH
+	stem_mesh.top_radius = RSTDP_TAP_RADIUS
+	stem_mesh.bottom_radius = RSTDP_TAP_RADIUS
+	stem_mesh.radial_segments = 8
+	stem.mesh = stem_mesh
+	# Cylinder mesh height is along its local Y axis; orient Y to `dir`.
+	var up_ref := Vector3.UP
+	if abs(dir.dot(up_ref)) > 0.95:
+		up_ref = Vector3.FORWARD
+	var right_vec := up_ref.cross(dir).normalized()
+	var corrected_up := dir.cross(right_vec).normalized()
+	stem.transform.basis = Basis(right_vec, dir, corrected_up)
+	stem.position = dir * (RSTDP_TAP_LENGTH * 0.5)
+
+	var stem_mat := StandardMaterial3D.new()
+	stem_mat.albedo_color = albedo
+	stem_mat.emission_enabled = true
+	stem_mat.emission = emission
+	stem_mat.emission_energy_multiplier = 1.5
+	stem_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	stem.material_override = stem_mat
+	tap.add_child(stem)
+
+	# Outer-end bulb so reward vs. punishment shape is recognizable at distance.
+	var bulb := MeshInstance3D.new()
+	bulb.name = "Bulb"
+	var bulb_mesh := SphereMesh.new()
+	bulb_mesh.radius = RSTDP_TAP_RADIUS * 1.8
+	bulb_mesh.height = bulb_mesh.radius * 2.0
+	bulb_mesh.radial_segments = 12
+	bulb_mesh.rings = 8
+	bulb.mesh = bulb_mesh
+	bulb.position = dir * RSTDP_TAP_LENGTH
+	var bulb_mat := StandardMaterial3D.new()
+	bulb_mat.albedo_color = albedo
+	bulb_mat.emission_enabled = true
+	bulb_mat.emission = emission
+	bulb_mat.emission_energy_multiplier = 2.0
+	bulb_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	bulb.material_override = bulb_mat
+	tap.add_child(bulb)
+
+	return tap
 
 ## Calculate point on quadratic Bezier curve
 func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:

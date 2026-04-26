@@ -64,7 +64,7 @@ layout_mode = 2
 
 [node name="GenericMappingDetailSettings" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_n57ep")]
 visible = false
-custom_minimum_size = Vector2(1420, 0)
+custom_minimum_size = Vector2(2032, 0)
 layout_mode = 2
 
 [node name="GenericMappingDetailSettingsPartial" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_yr7ns")]
