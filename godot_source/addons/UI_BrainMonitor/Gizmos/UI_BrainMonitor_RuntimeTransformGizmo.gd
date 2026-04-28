@@ -19,8 +19,16 @@ const KIND_ACCEPT: StringName = &"accept"
 const CLOSE_LAYER: int = 1 << 20
 const GIZMO_AXIS_LAYER: int = 1 << 19
 
+## Uniform scale applied to the hovered axis arrow mesh only (pick collider unchanged).
+const AXIS_ARROW_HOVER_SCALE: float = 1.22
+const AXIS_ARROW_HOVER_TWEEN_SEC: float = 0.08
+
 var _mode: MODE = MODE.MOVE
 var _axis_length: float = 0.0
+## Index matches [enum AXIS]: X=0, Y=1, Z=2. Parent of arrow mesh only (not pick body).
+var _axis_visual_roots: Array[Node3D] = []
+var _axis_hover_tweens: Array[Tween] = [null, null, null]
+var _axis_hovered: int = -1
 var _close_root: Node3D = null
 var _close_hovered: bool = false
 var _close_hover_tween: Tween = null
@@ -40,6 +48,12 @@ func get_axis_length() -> float:
 	return _axis_length
 
 func _clear_children() -> void:
+	_axis_visual_roots.clear()
+	for i in range(_axis_hover_tweens.size()):
+		if _axis_hover_tweens[i] != null and _axis_hover_tweens[i].is_running():
+			_axis_hover_tweens[i].kill()
+		_axis_hover_tweens[i] = null
+	_axis_hovered = -1
 	for c in get_children():
 		c.queue_free()
 
@@ -81,7 +95,12 @@ func _add_axis(axis: AXIS, color: Color, dir: Vector3, axis_length: float, shaft
 	arrow_body.transform.basis = _basis_from_y_axis(dir)
 	# Place unibody arrow so it starts at origin and extends outward.
 	arrow_body.position = dir.normalized() * (axis_length * 0.5)
-	axis_root.add_child(arrow_body)
+	var visual_root := Node3D.new()
+	visual_root.name = "AxisVisual"
+	visual_root.scale = Vector3.ONE
+	axis_root.add_child(visual_root)
+	visual_root.add_child(arrow_body)
+	_axis_visual_roots.append(visual_root)
 
 	# Collider (use a slightly fatter cylinder around the whole axis)
 	var body := StaticBody3D.new()
@@ -259,6 +278,26 @@ func set_accept_hovered(is_hovered: bool) -> void:
 	_accept_hover_tween = create_tween()
 	var target_scale := Vector3.ONE * (1.25 if is_hovered else 1.0)
 	_accept_hover_tween.tween_property(_accept_root, "scale", target_scale, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+## Highlights one axis arrow on hover ([param axis] is [enum AXIS] value) or resets all when [param axis] is -1.
+func set_axis_hovered(axis: int) -> void:
+	if axis < -1 or axis > AXIS.Z:
+		axis = -1
+	if _axis_hovered == axis:
+		return
+	_axis_hovered = axis
+	for i in range(3):
+		if i >= _axis_visual_roots.size():
+			continue
+		var vr: Node3D = _axis_visual_roots[i]
+		if vr == null or not is_instance_valid(vr):
+			continue
+		var target_scale: float = AXIS_ARROW_HOVER_SCALE if axis == i else 1.0
+		if _axis_hover_tweens[i] != null and _axis_hover_tweens[i].is_running():
+			_axis_hover_tweens[i].kill()
+		_axis_hover_tweens[i] = create_tween()
+		_axis_hover_tweens[i].tween_property(vr, "scale", Vector3.ONE * target_scale, AXIS_ARROW_HOVER_TWEEN_SEC).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 ## Builds a white X with a circular outline as a Sprite3D texture.
 func _create_close_icon_texture() -> Texture2D:

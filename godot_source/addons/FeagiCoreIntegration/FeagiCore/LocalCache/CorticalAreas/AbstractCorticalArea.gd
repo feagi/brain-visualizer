@@ -174,7 +174,24 @@ var user_can_edit_dimensions_directly: bool:
 
 ## Can a user edit the dimensions of this cortical area?
 var user_can_delete_this_area: bool:
-	get: return _user_can_delete_area()
+	get:
+		if not _user_can_delete_area():
+			return false
+		if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+			if FeagiCore.feagi_local_cache.is_cortical_id_required_by_connected_agent_device_registration(cortical_ID):
+				return false
+		return true
+
+## Human-readable reason when [member user_can_delete_this_area] is false; empty when deletable.
+func user_delete_blocked_reason() -> String:
+	if not _user_can_delete_area():
+		if self is CoreCorticalArea:
+			return "Core cortical areas cannot be deleted."
+		return "This cortical area cannot be deleted."
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		if FeagiCore.feagi_local_cache.is_cortical_id_required_by_connected_agent_device_registration(cortical_ID):
+			return "This cortical area cannot be deleted while a connected agent lists it as a required input or output channel in its device registration. Disconnect the agent or update its device registrations, then try again."
+	return ""
 
 var user_can_edit_cortical_neuron_per_vox_count: bool:
 	get: return _user_can_edit_cortical_neuron_per_vox_count()
@@ -195,6 +212,10 @@ var has_neuron_firing_parameters: bool:
 var has_memory_parameters: bool:
 	get: return _has_memory_parameters()
 
+## Optional rate_modulated_leak cortical property (dense LIF homeostatic leak), as a Dictionary, or null if unset.
+var rate_modulated_leak: Variant:
+	get: return _rate_modulated_leak
+
 # Private Properties
 var _cortical_neuron_per_vox_count: int = 1
 var _cortical_synaptic_attractivity: int = 100
@@ -206,6 +227,8 @@ var _coordinates_3D_available: bool = false  # if coordinates_3D are available f
 var _cortical_visiblity: bool = true
 var _SVO_neuron_activations: PackedByteArray = []
 var _direct_neural_points: PackedByteArray = []
+## Parsed from flattened cortical area API (including nested [properties]).
+var _rate_modulated_leak: Variant = null
 
 # IPU/OPU-specific decoded cortical ID fields (empty strings if not IPU/OPU)
 var _cortical_subtype: String = ""
@@ -302,6 +325,19 @@ static func can_all_areas_be_deleted(areas: Array[AbstractCorticalArea]) -> bool
 		if !area.user_can_delete_this_area:
 			return false
 	return true
+
+## If any cortical object in [param genome_objects] cannot be deleted, shows [BV.NOTIF] and returns true (caller should abort).
+static func notify_and_abort_if_any_cortical_area_cannot_be_deleted(genome_objects: Array[GenomeObject]) -> bool:
+	var areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(genome_objects)
+	for area in areas:
+		if not area.user_can_delete_this_area:
+			var msg: String = area.user_delete_blocked_reason()
+			if msg.is_empty():
+				msg = "One or more cortical areas cannot be deleted."
+			if BV != null and BV.NOTIF != null:
+				BV.NOTIF.add_notification(msg)
+			return true
+	return false
 
 ## Given a cortical type enum, return the string
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
@@ -787,6 +823,15 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	else:
 		# Field not present in response - default is 1x1x1
 		_visualization_voxel_granularity = Vector3i(1, 1, 1)
+
+	if "rate_modulated_leak" in data.keys():
+		var rml: Variant = data["rate_modulated_leak"]
+		if rml is Dictionary:
+			_rate_modulated_leak = (rml as Dictionary).duplicate(true)
+		elif rml == null:
+			_rate_modulated_leak = null
+		else:
+			_rate_modulated_leak = rml
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 

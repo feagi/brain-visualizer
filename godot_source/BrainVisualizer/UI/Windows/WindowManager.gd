@@ -174,9 +174,13 @@ func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cor
 	create_cortical.setup_with_type_for_region(context_region, cortical_type)
 	bring_window_to_top(create_cortical)
 
-func spawn_confirm_deletion(objects_to_delete: Array[GenomeObject], is_deleting_single_region_internals_instead_of_raising: bool = false) -> void:
+## Returns false when deletion was blocked (e.g. required IO from a connected agent); caller should not close UI.
+func spawn_confirm_deletion(objects_to_delete: Array[GenomeObject], is_deleting_single_region_internals_instead_of_raising: bool = false) -> bool:
+	if AbstractCorticalArea.notify_and_abort_if_any_cortical_area_cannot_be_deleted(objects_to_delete):
+		return false
 	var confirm_deletion: WindowConfirmDeletion = _default_spawn_window(_PREFAB_CONFIRM_DELETION, WindowConfirmDeletion.WINDOW_NAME) as WindowConfirmDeletion
 	confirm_deletion.setup(objects_to_delete, is_deleting_single_region_internals_instead_of_raising)
+	return true
 
 func spawn_clone_cortical(cloning_from: AbstractCorticalArea) -> void:
 	var clone_cortical: WindowCloneCorticalArea = _default_spawn_window(_PREFAB_CLONE_CORTICAL, WindowCloneCorticalArea.WINDOW_NAME) as WindowCloneCorticalArea
