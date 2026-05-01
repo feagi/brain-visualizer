@@ -118,4 +118,36 @@ func is_recursive() -> bool:
 func is_empty() -> bool:
 	return len(_mappings) == 0
 
+## Returns true if any rule in this mapping set declares a reward source area (R-STDP).
+func has_any_reward_source() -> bool:
+	for mapping: SingleMappingDefinition in _mappings:
+		if mapping.reward_source_area != "":
+			return true
+	return false
+
+## Returns true if any rule in this mapping set declares a punishment source area (R-STDP).
+func has_any_punishment_source() -> bool:
+	for mapping: SingleMappingDefinition in _mappings:
+		if mapping.punishment_source_area != "":
+			return true
+	return false
+
+## Aggregated set of unique reward-source cortical IDs declared across all rules.
+func collect_reward_source_ids() -> PackedStringArray:
+	var ids := PackedStringArray()
+	for mapping: SingleMappingDefinition in _mappings:
+		var id := mapping.reward_source_area
+		if id != "" and not ids.has(id):
+			ids.append(id)
+	return ids
+
+## Aggregated set of unique punishment-source cortical IDs declared across all rules.
+func collect_punishment_source_ids() -> PackedStringArray:
+	var ids := PackedStringArray()
+	for mapping: SingleMappingDefinition in _mappings:
+		var id := mapping.punishment_source_area
+		if id != "" and not ids.has(id):
+			ids.append(id)
+	return ids
+
 

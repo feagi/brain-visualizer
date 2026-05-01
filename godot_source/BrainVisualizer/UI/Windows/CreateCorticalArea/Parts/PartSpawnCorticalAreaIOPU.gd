@@ -21,6 +21,7 @@ var _preview_boxes: Array[UI_BrainMonitor_InteractivePreview] = []  # Multiple p
 var _active_brain_monitor = null  # Store reference to brain monitor
 var _preview_close_signals: Array[Signal] = []  # Store close signals
 var _relocation_anchor_preview: UI_BrainMonitor_InteractivePreview = null
+var _is_syncing_from_location_fields: bool = false  # Prevent preview relocation callback from rewriting input fields during field-driven updates.
 var _template_metadata: Dictionary = {}  # Fetched from /v1/genome/cortical_template
 var _selected_data_type_config: int = 4  # Default: SignedPercentage(Absolute, Linear) for OPU
 var _metadata_ready: bool = false  # Flag to track if template metadata has been loaded
@@ -184,11 +185,16 @@ func _activate_relocation_on_primary_preview() -> void:
 
 
 func _on_preview_moved_via_gizmo(new_coords: Vector3i) -> void:
-	location.current_vector = new_coords
+	# Ignore callback echo while we are already applying field-driven moves to previews.
+	if _is_syncing_from_location_fields:
+		return
+	# `new_coords` is anchor-subunit absolute position, convert it back to base location.
+	var base_location: Vector3i = new_coords - _get_anchor_relative_offset()
+	location.current_vector = base_location
 	# Keep all non-anchor subunit previews in lockstep with the gizmo anchor preview.
 	# Avoid calling _on_location_changed() here because that path updates the anchor too,
 	# which emits user_moved_preview again and can recurse.
-	_sync_non_anchor_previews_from_base_location(new_coords)
+	_sync_non_anchor_previews_from_base_location(base_location)
 
 func _sync_non_anchor_previews_from_base_location(new_location: Vector3i) -> void:
 	if _selected_template == null or _preview_boxes.is_empty():
@@ -209,6 +215,27 @@ func _sync_non_anchor_previews_from_base_location(new_location: Vector3i) -> voi
 		var rel_pos: Array = unit_data.get("relative_position", [0, 0, 0])
 		var abs_position: Vector3i = new_location + Vector3i(rel_pos[0], rel_pos[1], rel_pos[2])
 		preview.set_new_position(abs_position)
+
+func _get_anchor_relative_offset() -> Vector3i:
+	"""Return the selected anchor preview relative offset from topology, or ZERO when unavailable."""
+	if _selected_template == null or _relocation_anchor_preview == null:
+		return Vector3i.ZERO
+	var topology: Dictionary = _selected_template.unit_default_topology
+	if topology.is_empty():
+		return Vector3i.ZERO
+	var anchor_index: int = _preview_boxes.find(_relocation_anchor_preview)
+	if anchor_index < 0:
+		return Vector3i.ZERO
+	var sorted_unit_indices: Array = topology.keys()
+	sorted_unit_indices.sort()
+	if anchor_index >= sorted_unit_indices.size():
+		return Vector3i.ZERO
+	var anchor_unit_idx = sorted_unit_indices[anchor_index]
+	var unit_data: Dictionary = topology.get(anchor_unit_idx, {})
+	var rel_pos: Array = unit_data.get("relative_position", [0, 0, 0])
+	if rel_pos.size() < 3:
+		return Vector3i.ZERO
+	return Vector3i(int(rel_pos[0]), int(rel_pos[1]), int(rel_pos[2]))
 
 
 func _stop_preview_relocation() -> void:
@@ -325,13 +352,14 @@ func _on_location_changed(new_location: Vector3i) -> void:
 	"""Handle location changes to update all preview boxes' positions"""
 	if _selected_template == null or _preview_boxes.is_empty():
 		return
-	
+	_is_syncing_from_location_fields = true
 	# Get topology to recalculate positions
 	var topology: Dictionary = _selected_template.unit_default_topology
 	if topology.is_empty():
 		# Single preview box, just update its position
 		if _preview_boxes.size() > 0 and _preview_boxes[0] != null:
 			_preview_boxes[0].set_new_position(new_location)
+		_is_syncing_from_location_fields = false
 		return
 	
 	# Update each preview box position based on topology
@@ -346,6 +374,7 @@ func _on_location_changed(new_location: Vector3i) -> void:
 		
 		if _preview_boxes[i] != null and is_instance_valid(_preview_boxes[i]):
 			_preview_boxes[i].set_new_position(abs_position)
+	_is_syncing_from_location_fields = false
 
 func _proxy_device_count_changes(_new_device_count: int) -> void:
 	var selected_template = _selected_template

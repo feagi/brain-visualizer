@@ -1,3 +1,5 @@
+mod device_registration_io_ids;
+
 use godot::classes::MultiMesh;
 use godot::prelude::*;
 // FeagiByteContainer is imported within functions where needed
@@ -1319,6 +1321,42 @@ impl FeagiDataDeserializer {
         result.set("success", true);
         result.set("cortical_id", new_id.as_base_64());
         result.set("error", "");
+        result
+    }
+
+    /// Parse `device_registrations` JSON (object with input/output unit maps) and return every
+    /// declared IPU/OPU cortical ID (standard base64) that FEAGI may auto-provision from agent registration.
+    ///
+    /// Returns: `Dictionary` with `success` (bool), `cortical_ids` ([PackedStringArray]), `error` (String).
+    #[func]
+    pub fn derive_io_cortical_ids_from_device_registrations_json(
+        &self,
+        device_registrations_json: GString,
+    ) -> Dictionary {
+        let mut result = Dictionary::new();
+        let text = device_registrations_json.to_string();
+        let value: serde_json::Value = match serde_json::from_str(&text) {
+            Ok(v) => v,
+            Err(e) => {
+                result.set("success", false);
+                result.set(
+                    "error",
+                    format!("Invalid device_registrations JSON: {}", e),
+                );
+                result.set("cortical_ids", PackedStringArray::new());
+                return result;
+            }
+        };
+        let ids = device_registration_io_ids::collect_io_cortical_ids_from_device_registrations(
+            &value,
+        );
+        let mut arr = PackedStringArray::new();
+        for id in ids {
+            arr.push(&id);
+        }
+        result.set("success", true);
+        result.set("error", "");
+        result.set("cortical_ids", arr);
         result
     }
 }

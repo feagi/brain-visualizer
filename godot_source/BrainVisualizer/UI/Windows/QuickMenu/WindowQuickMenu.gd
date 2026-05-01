@@ -93,7 +93,8 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 
 			if !area.user_can_delete_this_area:
 				delete_button.disabled = true
-				delete_button.tooltip_text = "This Cortical Area Cannot Be Deleted"
+				var del_reason: String = area.user_delete_blocked_reason()
+				delete_button.tooltip_text = del_reason if not del_reason.is_empty() else "This cortical area cannot be deleted."
 			if !area.user_can_clone_this_cortical_area:
 				clone_button.disabled = true
 				clone_button.tooltip_text = "This Cortical Area Cannot Be Cloned"
@@ -185,7 +186,13 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				move_to_region_button.tooltip_text = "One of the selected areas is of Input, Output, or Core type which is not allowed inside a neural circuit."
 			if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
 				delete_button.disabled = true
-				delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"
+				var multi_reason: String = ""
+				for a in areas:
+					if not a.user_can_delete_this_area:
+						multi_reason = a.user_delete_blocked_reason()
+						if not multi_reason.is_empty():
+							break
+				delete_button.tooltip_text = multi_reason if not multi_reason.is_empty() else "One or more of the selected areas cannot be deleted."
 			_refresh_multi_cortical_controls()
 				
 			
@@ -238,7 +245,13 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				move_to_region_button.tooltip_text = "One or more of the selected objects cannot be moved to a circuit"
 			if !AbstractCorticalArea.can_all_areas_be_deleted(filtered_areas):
 				delete_button.disabled = true
-				delete_button.tooltip_text = "One or more of the selected objects cannot be deleted"
+				var mix_reason: String = ""
+				for a in filtered_areas:
+					if not a.user_can_delete_this_area:
+						mix_reason = a.user_delete_blocked_reason()
+						if not mix_reason.is_empty():
+							break
+				delete_button.tooltip_text = mix_reason if not mix_reason.is_empty() else "One or more of the selected objects cannot be deleted."
 			
 	# Position after mode-specific visibility/layout changes so vertical distance is consistent.
 	call_deferred("_reposition_near_mouse_after_layout")
@@ -304,7 +317,8 @@ func _button_add_to_region() -> void:
 	close_window()
 
 func _button_delete() -> void:
-	BV.WM.spawn_confirm_deletion(_selection)
+	if not await BV.WM.spawn_confirm_deletion(_selection):
+		return
 	close_window()
 
 ## Opens a placeholder IPU/OPU configuration popup.
@@ -658,4 +672,10 @@ func _refresh_multi_cortical_controls() -> void:
 		move_to_region_button.tooltip_text = "One of the selected areas is of Input, Output, or Core type which is not allowed inside a neural circuit."
 	if !AbstractCorticalArea.can_all_areas_be_deleted(areas):
 		delete_button.disabled = true
-		delete_button.tooltip_text = "One or more of the selected areas cannot be deleted"
+		var rfr_reason: String = ""
+		for a in areas:
+			if not a.user_can_delete_this_area:
+				rfr_reason = a.user_delete_blocked_reason()
+				if not rfr_reason.is_empty():
+					break
+		delete_button.tooltip_text = rfr_reason if not rfr_reason.is_empty() else "One or more of the selected areas cannot be deleted."

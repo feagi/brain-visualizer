@@ -90,6 +90,10 @@ func _enter_tree():
 	feagi_local_cache.genome_loading_changed.connect(_on_feagi_genome_loading_changed)
 	feagi_local_cache.agent_reregistration_needed.connect(_on_agent_reregistration_needed)
 	feagi_local_cache.feagi_session_changed.connect(_on_feagi_session_changed)
+	# Health check polling refreshes simulation_timestep on the cache. Mirror it into
+	# _delay_between_bursts so any consumer of delay_between_bursts_updated (e.g. TopBar
+	# refresh-rate field) is automatically updated whenever FEAGI changes the timestep.
+	feagi_local_cache.simulation_timestep_changed.connect(_on_simulation_timestep_changed_from_health)
 	requests = FEAGIRequests.new()
 	# At this point, the scripts are initialized, but no attempt to connect to FEAGI was made.
 
@@ -509,6 +513,16 @@ func _if_brain_readiness_or_genome_availability_changes(available: bool, ready: 
 func feagi_retrieved_burst_rate(delay_bursts_apart: float) -> void:
 	_delay_between_bursts = delay_bursts_apart
 	delay_between_bursts_updated.emit(delay_bursts_apart)
+
+## Propagate health-check driven simulation_timestep changes through the same channel
+## used for explicit burst delay updates so all UI consumers (TopBar refresh-rate field,
+## etc.) stay in sync without needing to listen to the cache directly.
+func _on_simulation_timestep_changed_from_health(new_timestep: float) -> void:
+	if new_timestep <= 0.0:
+		return
+	if new_timestep == _delay_between_bursts:
+		return
+	feagi_retrieved_burst_rate(new_timestep)
 
 func feagi_recieved_skip_rate(new_skip_rate: int) -> void:
 	_skip_rate = new_skip_rate

@@ -174,7 +174,24 @@ var user_can_edit_dimensions_directly: bool:
 
 ## Can a user edit the dimensions of this cortical area?
 var user_can_delete_this_area: bool:
-	get: return _user_can_delete_area()
+	get:
+		if not _user_can_delete_area():
+			return false
+		if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+			if FeagiCore.feagi_local_cache.is_cortical_id_required_by_connected_agent_device_registration(cortical_ID):
+				return false
+		return true
+
+## Human-readable reason when [member user_can_delete_this_area] is false; empty when deletable.
+func user_delete_blocked_reason() -> String:
+	if not _user_can_delete_area():
+		if self is CoreCorticalArea:
+			return "Core cortical areas cannot be deleted."
+		return "This cortical area cannot be deleted."
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		if FeagiCore.feagi_local_cache.is_cortical_id_required_by_connected_agent_device_registration(cortical_ID):
+			return "This cortical area cannot be deleted while a connected agent lists it as a required input or output channel in its device registration. Disconnect the agent or update its device registrations, then try again."
+	return ""
 
 var user_can_edit_cortical_neuron_per_vox_count: bool:
 	get: return _user_can_edit_cortical_neuron_per_vox_count()
@@ -195,6 +212,10 @@ var has_neuron_firing_parameters: bool:
 var has_memory_parameters: bool:
 	get: return _has_memory_parameters()
 
+## Optional rate_modulated_leak cortical property (dense LIF homeostatic leak), as a Dictionary, or null if unset.
+var rate_modulated_leak: Variant:
+	get: return _rate_modulated_leak
+
 # Private Properties
 var _cortical_neuron_per_vox_count: int = 1
 var _cortical_synaptic_attractivity: int = 100
@@ -206,6 +227,8 @@ var _coordinates_3D_available: bool = false  # if coordinates_3D are available f
 var _cortical_visiblity: bool = true
 var _SVO_neuron_activations: PackedByteArray = []
 var _direct_neural_points: PackedByteArray = []
+## Parsed from flattened cortical area API (including nested [properties]).
+var _rate_modulated_leak: Variant = null
 
 # IPU/OPU-specific decoded cortical ID fields (empty strings if not IPU/OPU)
 var _cortical_subtype: String = ""
@@ -303,6 +326,19 @@ static func can_all_areas_be_deleted(areas: Array[AbstractCorticalArea]) -> bool
 			return false
 	return true
 
+## If any cortical object in [param genome_objects] cannot be deleted, shows [BV.NOTIF] and returns true (caller should abort).
+static func notify_and_abort_if_any_cortical_area_cannot_be_deleted(genome_objects: Array[GenomeObject]) -> bool:
+	var areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(genome_objects)
+	for area in areas:
+		if not area.user_can_delete_this_area:
+			var msg: String = area.user_delete_blocked_reason()
+			if msg.is_empty():
+				msg = "One or more cortical areas cannot be deleted."
+			if BV != null and BV.NOTIF != null:
+				BV.NOTIF.add_notification(msg)
+			return true
+	return false
+
 ## Given a cortical type enum, return the string
 static func cortical_type_to_str(cortical_type: CORTICAL_AREA_TYPE) -> StringName:
 	return CORTICAL_AREA_TYPE.keys()[cortical_type]
@@ -318,7 +354,7 @@ static func _utf8_label_from_base64_cortical_token(token: String) -> String:
 	var raw: PackedByteArray = Marshalls.base64_to_raw(trimmed)
 	if raw.size() != 8:
 		return ""
-	# Only decode known ASCII-safe labels (e.g., "___death", "___power", "___fatig").
+	# Only decode known ASCII-safe labels (e.g., "___death", "___power", "___fatig", "___pain_", "___pleas").
 	# Avoid calling UTF-8 conversion on binary cortical IDs, which logs parser errors.
 	for byte_val in raw:
 		if byte_val < 32 or byte_val > 126:
@@ -352,6 +388,22 @@ static func get_special_core_area_name(cortical_id: Variant) -> String:
 		# Fatigue area (feagi-structures CoreCorticalType::Fatigue -> CorticalID bytes "___fatig")
 		"___fatig": "fatigue",
 		"X19fZmF0aWc=": "fatigue",  # base64 of "___fatig"
+
+		# Pain area (feagi-structures CoreCorticalType::Pain -> CorticalID bytes "___pain_")
+		"___pain_": "pain",
+		"X19fcGFpbl8=": "pain",  # base64 of "___pain_"
+
+		# Pleasure area (feagi-structures CoreCorticalType::Pleasure -> CorticalID bytes "___pleas")
+		"___pleas": "pleasure",
+		"X19fcGxlYXM=": "pleasure",  # base64 of "___pleas"
+
+		# Fear area (feagi-structures CoreCorticalType::Fear -> CorticalID bytes "___fear_")
+		"___fear_": "fear",
+		"X19fZmVhcl8=": "fear",  # base64 of "___fear_"
+
+		# Hope area (feagi-structures CoreCorticalType::Hope -> CorticalID bytes "___hope_")
+		"___hope_": "hope",
+		"X19faG9wZV8=": "hope",  # base64 of "___hope_"
 	}
 	var id_str := String(cortical_id).strip_edges()
 	var by_direct: String = SPECIAL_CORE_AREAS.get(id_str, "")
@@ -374,14 +426,30 @@ static func is_death_area(cortical_id: Variant) -> bool:
 static func is_fatigue_area(cortical_id: Variant) -> bool:
 	return get_special_core_area_name(cortical_id) == "fatigue"
 
+## Check if a cortical_ID is the pain core area (supports string and base64 cortical IDs)
+static func is_pain_area(cortical_id: Variant) -> bool:
+	return get_special_core_area_name(cortical_id) == "pain"
+
+## Check if a cortical_ID is the pleasure core area (supports string and base64 cortical IDs)
+static func is_pleasure_area(cortical_id: Variant) -> bool:
+	return get_special_core_area_name(cortical_id) == "pleasure"
+
+## Check if a cortical_ID is the fear core area (supports string and base64 cortical IDs)
+static func is_fear_area(cortical_id: Variant) -> bool:
+	return get_special_core_area_name(cortical_id) == "fear"
+
+## Check if a cortical_ID is the hope core area (supports string and base64 cortical IDs)
+static func is_hope_area(cortical_id: Variant) -> bool:
+	return get_special_core_area_name(cortical_id) == "hope"
+
 ## True for reserved system core IDs (power, death, fatigue, ...) used by FEAGI connectome APIs.
 ## Root brain-geometry summaries may omit these while they still exist in the cortical cache; Brain Monitor uses this to show them at root.
 static func is_reserved_system_core_area(cortical_id: Variant) -> bool:
 	return not get_special_core_area_name(cortical_id).is_empty()
 
 ## Left-to-right row order for Brain Monitor root core-cluster layout (FEAGI X axis). Extend when new reserved cores are added to [method get_special_core_area_name].
-const CORE_CLUSTER_ROW_ORDER: Array[String] = ["death", "power", "fatigue"]
-## FEAGI voxel-grid spacing between adjacent core centers along X (death / power / fatigue).
+const CORE_CLUSTER_ROW_ORDER: Array[String] = ["death", "power", "fatigue", "pain", "pleasure", "fear", "hope"]
+## FEAGI voxel-grid spacing between adjacent core centers along X for invariant core row.
 const CORE_CLUSTER_FEAGI_SPACING_X: int = 20
 
 ## Non-power reserved cores use a fixed offset from the power anchor; only power coordinates are persisted to FEAGI.
@@ -755,6 +823,15 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	else:
 		# Field not present in response - default is 1x1x1
 		_visualization_voxel_granularity = Vector3i(1, 1, 1)
+
+	if "rate_modulated_leak" in data.keys():
+		var rml: Variant = data["rate_modulated_leak"]
+		if rml is Dictionary:
+			_rate_modulated_leak = (rml as Dictionary).duplicate(true)
+		elif rml == null:
+			_rate_modulated_leak = null
+		else:
+			_rate_modulated_leak = rml
 	
 	post_synaptic_potential_paramamters.FEAGI_apply_detail_dictionary(data)
 

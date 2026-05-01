@@ -40,7 +40,21 @@ var _isvi_original_z_values: Dictionary = {}  # Maps subunit_id to original z co
 var _isvi_would_overflow: bool = false  # True if current resize would exceed NPU capacity
 ## Suppress IO preset dropdown signal while programmatically refreshing selection.
 var _io_preset_refresh_silent: bool = false
-
+## Programmatic `rate_modulated_leak` refresh: skip marking pending on spin/toggle updates.
+var _rml_suppress_change_signals: bool = false
+## True after the RML block is added to [param controls_to_hide_in_simple_mode].
+var _rml_in_simple_mode_hide_list: bool = false
+var _rml_root: VBoxContainer = null
+## VBox for indented homeostatic numeric rows (the spins under the Enabled row).
+var _rml_params_vbox: VBoxContainer = null
+var _rml_toggle_enabled: ToggleButton = null
+var _rml_target: SpinBox = null
+var _rml_tau: SpinBox = null
+var _rml_gain: SpinBox = null
+var _rml_leak_min: SpinBox = null
+var _rml_leak_max: SpinBox = null
+var _rml_every: SpinBox = null
+var _button_rml_apply: Button = null
 
 func _ready():
 	super()
@@ -200,7 +214,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_section_memory.visible = false
 	if true: # currently, all cortical areas have this
 		_init_psp()
-	
+	_ensure_rate_modulated_leak_section()
 	
 	_refresh_all_relevant()
 	_apply_type_based_ui_restrictions()
@@ -251,6 +265,11 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 				_connect_isvi_layout_signals()
 				_init_isvi_previews()
 	
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		if not FeagiCore.feagi_local_cache.agent_capabilities_updated.is_connected(_on_agent_capabilities_updated_for_delete_guard):
+			FeagiCore.feagi_local_cache.agent_capabilities_updated.connect(_on_agent_capabilities_updated_for_delete_guard)
+	_apply_agent_device_registration_delete_guard()
+	
 	# Establish connections from core to the UI elements
 	#TODO
 
@@ -265,6 +284,9 @@ func _connect_isvi_layout_signals() -> void:
 		_vector_dimensions_spin.user_updated_vector.connect(layout_callable)
 
 func close_window() -> void:
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		if FeagiCore.feagi_local_cache.agent_capabilities_updated.is_connected(_on_agent_capabilities_updated_for_delete_guard):
+			FeagiCore.feagi_local_cache.agent_capabilities_updated.disconnect(_on_agent_capabilities_updated_for_delete_guard)
 	super()
 	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES)
 	# Cleanup auxiliary previews
@@ -292,10 +314,12 @@ func _refresh_all_relevant() -> void:
 		_refresh_from_cache_memory()
 	if true: # currently, all cortical areas have this
 		_refresh_from_cache_psp()
+	_refresh_from_cache_rate_modulated_leak()
 	
 	# Ensure per-type UI permissions are re-applied after refresh (some refresh methods
 	# adjust editability based on internal toggles, e.g. PSP).
 	_apply_type_based_ui_restrictions()
+	_apply_agent_device_registration_delete_guard()
 
 
 func _is_core_type_context() -> bool:
@@ -437,6 +461,40 @@ func _apply_core_type_restrictions() -> void:
 		var reset_btn: Node = dz_root.get_node_or_null("VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Reset/ResetButton")
 		if reset_btn is BaseButton:
 			(reset_btn as BaseButton).disabled = true
+	if _button_rml_apply != null:
+		_button_rml_apply.disabled = true
+	if _rml_toggle_enabled != null:
+		_rml_toggle_enabled.disabled = true
+	_rml_apply_homeostatic_param_block_state()
+
+
+## Disables the danger-zone delete control when a connected agent still declares this area in device registrations.
+func _apply_agent_device_registration_delete_guard() -> void:
+	if _section_dangerzone == null or _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return
+	var dz_root: Node = _section_dangerzone
+	var delete_btn: Node = dz_root.get_node_or_null(
+		"VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Delete/DeleteButton"
+	)
+	if not (delete_btn is BaseButton):
+		return
+	var btn := delete_btn as BaseButton
+	if not AbstractCorticalArea.can_all_areas_be_deleted(_cortical_area_refs):
+		btn.disabled = true
+		var r: String = ""
+		for a in _cortical_area_refs:
+			if not a.user_can_delete_this_area:
+				r = a.user_delete_blocked_reason()
+				if not r.is_empty():
+					break
+		btn.tooltip_text = r if not r.is_empty() else "This cortical area cannot be deleted."
+	else:
+		btn.disabled = false
+		btn.tooltip_text = "DELETE Cortical Area"
+
+
+func _on_agent_capabilities_updated_for_delete_guard() -> void:
+	_apply_agent_device_registration_delete_guard()
 
 #NOTE custom logic for sections
 func _toggle_visiblity_based_on_advanced_mode(is_advanced_options_visible: bool) -> void:
@@ -1606,7 +1664,7 @@ func _core_preset_from_id(cortical_id: StringName) -> StringName:
 	var core_name := AbstractCorticalArea.get_special_core_area_name(cortical_id)
 	if core_name == "power":
 		return IO_PRESET_INPUT
-	if core_name == "death" or core_name == "fatigue":
+	if core_name == "death" or core_name == "fatigue" or core_name == "pain" or core_name == "pleasure" or core_name == "fear" or core_name == "hope":
 		return IO_PRESET_OUTPUT
 	return ""
 
@@ -1763,7 +1821,7 @@ func _refresh_from_cache_memory() -> void:
 ## Genome PSP while the line shows "—" under MP-driven PSP (runtime uses source membrane potential).
 var _psp_backup_float: float = 0.0
 const _PSP_LINE_PLACEHOLDER_MP_DRIVEN: String = "—"
-const _PSP_TOOLTIP_BASE: String = "The amount of membrane potential increase each neuron can have on downstream neurons. Range: 0–255."
+const _PSP_TOOLTIP_BASE: String = "The amount of membrane potential increase each neuron can have on downstream neurons."
 const _PSP_TOOLTIP_MP_DRIVEN: String = "MP-driven PSP uses membrane potential, not this constant. Disabled while on."
 
 func _init_psp() -> void:
@@ -2044,7 +2102,8 @@ func _clear_flat_rows(container: VBoxContainer, rows_lookup: Dictionary) -> void
 func _user_pressed_delete_button() -> void:
 	var genome_objects: Array[GenomeObject] = []
 	genome_objects.assign(_cortical_area_refs)
-	BV.WM.spawn_confirm_deletion(genome_objects)
+	if not await BV.WM.spawn_confirm_deletion(genome_objects):
+		return
 	close_window()
 
 func _user_pressed_reset_button() -> void:
@@ -2059,6 +2118,281 @@ func _user_pressed_reset_button() -> void:
 	else:
 		BV.NOTIF.add_notification("Cortical areas reset")
 	close_window()
+
+const _RML_SECTION_NODE_NAME: NodePath = "RmlRateModulatedLeak"
+
+func _rml_spin_list() -> Array:
+	return [_rml_target, _rml_tau, _rml_gain, _rml_leak_min, _rml_leak_max, _rml_every]
+
+func _rml_default_spin_values() -> void:
+	if _rml_target:
+		_rml_target.value = 0.1
+	if _rml_tau:
+		_rml_tau.value = 50.0
+	if _rml_gain:
+		_rml_gain.value = 0.2
+	if _rml_leak_min:
+		_rml_leak_min.value = 0.02
+	if _rml_leak_max:
+		_rml_leak_max.value = 0.5
+	if _rml_every:
+		_rml_every.value = 1.0
+
+func _ensure_rate_modulated_leak_section() -> void:
+	if _section_dangerzone == null:
+		return
+	var dz: Node = _section_dangerzone.get_node_or_null(
+		"VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone"
+	)
+	if dz == null or not (dz is VBoxContainer):
+		return
+	var dzv := dz as VBoxContainer
+	if dzv.get_node_or_null(_RML_SECTION_NODE_NAME) != null:
+		_rml_rebind_controls_from_scene(dzv.get_node(_RML_SECTION_NODE_NAME) as VBoxContainer)
+		return
+	var section := VBoxContainer.new()
+	section.name = str(_RML_SECTION_NODE_NAME)
+	var title_row := HBoxContainer.new()
+	title_row.name = "RmlTitleRow"
+	var title := Label.new()
+	title.text = "Rate-modulated leak (homeostatic)"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_row.add_child(title)
+	_rml_toggle_enabled = ToggleButton.new()
+	# Match [Neuron_Firing / MP_Accumulation] — label fills left, toggle on the right
+	_rml_toggle_enabled.custom_minimum_size = Vector2(60, 0)
+	_rml_toggle_enabled.theme_type_variation = &"ToggleButton"
+	_rml_toggle_enabled.ignore_texture_size = true
+	_rml_toggle_enabled.stretch_mode = 0
+	_rml_toggle_enabled.size_flags_horizontal = Control.SIZE_SHRINK_END
+	title_row.add_child(_rml_toggle_enabled)
+	section.add_child(title_row)
+	var rml_indent := MarginContainer.new()
+	rml_indent.name = "RmlHomeostaticParamIndent"
+	rml_indent.add_theme_constant_override("margin_left", 22)
+	_rml_params_vbox = VBoxContainer.new()
+	_rml_params_vbox.name = "RmlHomeostaticParamRows"
+	rml_indent.add_child(_rml_params_vbox)
+	section.add_child(rml_indent)
+	_rml_target = _make_rml_float_spin(0.0, 1.0, 0.001, 0.1)
+	_rml_params_vbox.add_child(_add_rml_row("Target firing / burst", _rml_target))
+	_rml_tau = _make_rml_float_spin(1.0, 1_000_000.0, 0.5, 50.0)
+	_rml_params_vbox.add_child(_add_rml_row("EMA tau (bursts)", _rml_tau))
+	_rml_gain = _make_rml_float_spin(0.0, 10.0, 0.001, 0.2)
+	_rml_params_vbox.add_child(_add_rml_row("Gain", _rml_gain))
+	_rml_leak_min = _make_rml_float_spin(0.0, 1.0, 0.001, 0.02)
+	_rml_params_vbox.add_child(_add_rml_row("Leak min", _rml_leak_min))
+	_rml_leak_max = _make_rml_float_spin(0.0, 1.0, 0.001, 0.5)
+	_rml_params_vbox.add_child(_add_rml_row("Leak max", _rml_leak_max))
+	_rml_every = _make_rml_float_spin(1.0, 1_000_000.0, 1.0, 1.0)
+	_rml_every.rounded = true
+	_rml_params_vbox.add_child(_add_rml_row("Update every N bursts", _rml_every))
+	_button_rml_apply = Button.new()
+	_button_rml_apply.name = &"RmlRateModulatedApply"
+	_button_rml_apply.text = "Apply Update"
+	# Match other sections (e.g. Summary, Memory, Neuron Firing) — full width apply row
+	_button_rml_apply.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_button_rml_apply.disabled = true
+	section.add_child(_button_rml_apply)
+	var reset_node: Node = dzv.get_node_or_null("Reset")
+	if reset_node != null:
+		dzv.add_child(section)
+		dzv.move_child(section, reset_node.get_index())
+	else:
+		dzv.add_child(section)
+	_rml_root = section
+	if not _rml_in_simple_mode_hide_list:
+		controls_to_hide_in_simple_mode.append(section)
+		_rml_in_simple_mode_hide_list = true
+	_rml_rebind_controls_from_scene(section)
+	_connect_rml_ui_signals()
+
+func _add_rml_row(label_text: String, field: Control, field_fills_width: bool = true) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var lab := Label.new()
+	lab.text = label_text
+	lab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lab.custom_minimum_size.x = 180
+	row.add_child(lab)
+	if field is Control:
+		if field_fills_width:
+			field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(field)
+	return row
+
+func _make_rml_float_spin(minv: float, maxv: float, step: float, initial: float) -> SpinBox:
+	var sb := SpinBox.new()
+	sb.min_value = minv
+	sb.max_value = maxv
+	sb.step = step
+	sb.allow_greater = false
+	sb.allow_lesser = false
+	sb.value = initial
+	return sb
+
+## Dims and disables indented homeostatic spin rows when the feature is off (or in CORE read-only context).
+func _rml_apply_homeostatic_param_block_state() -> void:
+	if _rml_params_vbox == null or _rml_toggle_enabled == null:
+		return
+	if _rml_root != null and not _rml_root.visible:
+		return
+	if _is_core_type_context():
+		_rml_toggle_enabled.disabled = true
+		_rml_params_vbox.modulate = Color(0.55, 0.55, 0.55, 1.0)
+		for s in _rml_spin_list():
+			if s != null and s is SpinBox:
+				(s as SpinBox).editable = false
+		return
+	_rml_toggle_enabled.disabled = false
+	if _rml_toggle_enabled.button_pressed:
+		_rml_params_vbox.modulate = Color(1, 1, 1, 1)
+		for s in _rml_spin_list():
+			if s != null and s is SpinBox:
+				(s as SpinBox).editable = true
+	else:
+		_rml_params_vbox.modulate = Color(0.6, 0.6, 0.6, 1.0)
+		for s in _rml_spin_list():
+			if s != null and s is SpinBox:
+				(s as SpinBox).editable = false
+
+func _rml_rebind_controls_from_scene(container: VBoxContainer) -> void:
+	_rml_root = container
+	_rml_toggle_enabled = _find_rml_enable_toggle(container)
+	_rml_params_vbox = container.get_node_or_null("RmlHomeostaticParamIndent/RmlHomeostaticParamRows") as VBoxContainer
+	if _rml_params_vbox == null:
+		_rml_params_vbox = container.get_node_or_null("RmlHomeostaticParamRows") as VBoxContainer
+	_rml_target = _find_rml_spin(0)
+	_rml_tau = _find_rml_spin(1)
+	_rml_gain = _find_rml_spin(2)
+	_rml_leak_min = _find_rml_spin(3)
+	_rml_leak_max = _find_rml_spin(4)
+	_rml_every = _find_rml_spin(5)
+	_button_rml_apply = _rml_root.find_child("RmlRateModulatedApply", true, false) as Button
+
+func _find_rml_enable_toggle(root: VBoxContainer) -> ToggleButton:
+	var tr: Node = root.get_node_or_null("RmlTitleRow")
+	if tr is HBoxContainer:
+		for d in (tr as HBoxContainer).get_children():
+			if d is ToggleButton:
+				return d as ToggleButton
+	# Legacy: separate "Enabled" HBox with ToggleButton as first HBox in section
+	for c in root.get_children():
+		if c is HBoxContainer:
+			for d in c.get_children():
+				if d is ToggleButton:
+					return d as ToggleButton
+	return null
+
+func _find_rml_spin(idx: int) -> SpinBox:
+	var root: VBoxContainer = _rml_params_vbox
+	if root == null and _rml_root != null:
+		root = _rml_root
+	if root == null:
+		return null
+	var n := 0
+	for c in root.get_children():
+		if c is HBoxContainer:
+			for d in c.get_children():
+				if d is SpinBox:
+					if n == idx:
+						return d as SpinBox
+					n += 1
+	return null
+
+func _connect_rml_ui_signals() -> void:
+	if _rml_toggle_enabled and not _rml_toggle_enabled.toggled.is_connected(_on_rml_toggled):
+		_rml_toggle_enabled.toggled.connect(_on_rml_toggled)
+	for s in _rml_spin_list():
+		if s != null and s is SpinBox and not s.value_changed.is_connected(_on_rml_spin_value_changed):
+			s.value_changed.connect(_on_rml_spin_value_changed)
+	if _button_rml_apply and not _button_rml_apply.pressed.is_connected(_on_rml_apply_pressed):
+		_button_rml_apply.pressed.connect(_on_rml_apply_pressed)
+
+func _on_rml_toggled(_button_pressed: bool) -> void:
+	_on_rml_control_changed()
+	_rml_apply_homeostatic_param_block_state()
+
+func _on_rml_spin_value_changed(_val: float) -> void:
+	_on_rml_control_changed()
+
+func _on_rml_apply_pressed() -> void:
+	if _button_rml_apply == null:
+		return
+	_send_update(_button_rml_apply)
+
+func _on_rml_control_changed() -> void:
+	if _rml_suppress_change_signals:
+		return
+	if not _rml_rate_modulated_leak_section_relevant():
+		return
+	if _button_rml_apply == null:
+		return
+	_growing_cortical_update[_button_rml_apply.name] = _rml_build_update_dict()
+	_button_rml_apply.disabled = false
+
+func _rml_rate_modulated_leak_section_relevant() -> bool:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return false
+	if _cortical_area_refs.size() != 1:
+		return false
+	if _are_all_selected_memory_areas():
+		return false
+	if not _cortical_area_refs[0].has_neuron_firing_parameters:
+		return false
+	if _rml_root == null:
+		return false
+	return _rml_root.visible
+
+func _rml_build_update_dict() -> Dictionary:
+	return {
+		"rate_modulated_leak": {
+			"enabled": _rml_toggle_enabled.button_pressed if _rml_toggle_enabled else false,
+			"target_firing_per_burst": float(_rml_target.value) if _rml_target else 0.1,
+			"rate_ema_tau_bursts": float(_rml_tau.value) if _rml_tau else 50.0,
+			"gain": float(_rml_gain.value) if _rml_gain else 0.2,
+			"leak_min": float(_rml_leak_min.value) if _rml_leak_min else 0.02,
+			"leak_max": float(_rml_leak_max.value) if _rml_leak_max else 0.5,
+			"update_every_n_bursts": int(_rml_every.value) if _rml_every else 1
+		}
+	}
+
+func _refresh_from_cache_rate_modulated_leak() -> void:
+	_ensure_rate_modulated_leak_section()
+	if _rml_root == null:
+		return
+	var vis := _cortical_area_refs.size() == 1
+	vis = vis and not _are_all_selected_memory_areas()
+	vis = vis and _cortical_area_refs[0].has_neuron_firing_parameters
+	_rml_root.visible = vis
+	if not vis:
+		return
+	_rml_suppress_change_signals = true
+	var a: AbstractCorticalArea = _cortical_area_refs[0]
+	var d: Variant = a.rate_modulated_leak
+	if d is Dictionary:
+		var o: Dictionary = d
+		if _rml_toggle_enabled:
+			_rml_toggle_enabled.set_toggle_no_signal(bool(o.get("enabled", false)))
+		if _rml_target:
+			_rml_target.value = float(o.get("target_firing_per_burst", 0.1))
+		if _rml_tau:
+			_rml_tau.value = float(o.get("rate_ema_tau_bursts", 50.0))
+		if _rml_gain:
+			_rml_gain.value = float(o.get("gain", 0.2))
+		if _rml_leak_min:
+			_rml_leak_min.value = float(o.get("leak_min", 0.02))
+		if _rml_leak_max:
+			_rml_leak_max.value = float(o.get("leak_max", 0.5))
+		if _rml_every:
+			_rml_every.value = float(int(o.get("update_every_n_bursts", 1)))
+	else:
+		if _rml_toggle_enabled:
+			_rml_toggle_enabled.set_toggle_no_signal(false)
+		_rml_default_spin_values()
+	_rml_suppress_change_signals = false
+	if _button_rml_apply != null:
+		_button_rml_apply.disabled = not _growing_cortical_update.has(_button_rml_apply.name)
+	_rml_apply_homeostatic_param_block_state()
 
 #endregion
 

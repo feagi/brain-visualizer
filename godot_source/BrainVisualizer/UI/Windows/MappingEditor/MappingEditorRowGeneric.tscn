@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://ckfda4upmty53"]
+[gd_scene load_steps=17 format=3 uid="uid://ckfda4upmty53"]
 
 [ext_resource type="Script" uid="uid://cfnq802dlqokv" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorRowGeneric.gd" id="1_j8fwg"]
 [ext_resource type="Script" uid="uid://c3kgtsjp4sogl" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="2_ndwr8"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="15_7qf8u"]
 [ext_resource type="Texture2D" uid="uid://cyjkmin6bodpp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="5_taa4s"]
 [ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="6_3sy0c"]
+[ext_resource type="Script" uid="uid://7xygvrncscwh" path="res://BrainVisualizer/UI/GenericElements/DropDown/CorticalDropDown.gd" id="rstdp_cdd"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="7_5oycp"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="8_bbn6j"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="9_21qfw"]
@@ -17,7 +18,7 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="14_yxhwi"]
 
 [node name="MappingEditorRowGeneric" type="HBoxContainer"]
-offset_right = 1520.0
+offset_right = 2032.0
 offset_bottom = 32.0
 size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
@@ -117,16 +118,16 @@ custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Plasticity" type="TextureButton" parent="."]
+[node name="Plasticity_Mode" type="OptionButton" parent="."]
 custom_minimum_size = Vector2(168, 0)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_type_variation = &"ToggleButton"
-texture_normal = ExtResource("5_taa4s")
-ignore_texture_size = true
-stretch_mode = 0
-script = ExtResource("6_3sy0c")
-enable_autoscaling_with_theme = false
+tooltip_text = "Plasticity mode for this rule:
+  Off    - synaptic weights are frozen
+  STDP   - classical spike-timing dependent plasticity
+  R-STDP - reward-modulated STDP (requires reward and/or punishment source)"
+clip_text = true
+fit_to_longest_item = false
 
 [node name="Spacer_AfterPlasticity" type="Control" parent="."]
 custom_minimum_size = Vector2(8, 0)
@@ -182,6 +183,57 @@ alignment = 1
 script = ExtResource("4_y0rve")
 initial_float = 1.0
 
+[node name="Spacer_AfterLTD" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Eligibility_Decay_Bursts" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Eligibility trace decay constant in bursts (R-STDP only). 0 disables temporal credit assignment."
+alignment = 1
+script = ExtResource("15_7qf8u")
+initial_int = 0
+min_value = 0
+max_value = 1024
+
+[node name="Spacer_AfterEligibilityDecay" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Reward_Source_Area" type="OptionButton" parent="."]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Cortical area whose firing density drives positive reward R(t) (R-STDP only).
+Leave unselected to use punishment-only learning."
+clip_text = true
+fit_to_longest_item = false
+script = ExtResource("rstdp_cdd")
+
+[node name="Spacer_AfterReward" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Punishment_Source_Area" type="OptionButton" parent="."]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Cortical area whose firing density drives negative reward R(t) (R-STDP only).
+Leave unselected to use reward-only learning."
+clip_text = true
+fit_to_longest_item = false
+script = ExtResource("rstdp_cdd")
+
+[node name="Spacer_AfterPunishment" type="Control" parent="."]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
 [node name="remove" type="TextureButton" parent="."]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -196,5 +248,5 @@ stretch_mode = 0
 
 [connection signal="pressed" from="MappingDefinitionGroup/edit" to="." method="_on_edit_pressed"]
 [connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
-[connection signal="toggled" from="Plasticity" to="." method="_on_user_toggle_plasticity"]
+[connection signal="item_selected" from="Plasticity_Mode" to="." method="_on_user_select_plasticity_mode"]
 [connection signal="pressed" from="remove" to="." method="_on_mapping_delete_press"]

@@ -1088,6 +1088,67 @@ func _compute_frame_distance_for_aabb_from_orientation(
 	var max_dist: float = 3000.0
 	return clamp(distance, min_dist, max_dist)
 
+
+## World-space AABB of the object(s) being manipulated (anchor preview, region preview, group previews).
+func _compute_manipulation_target_world_aabb() -> AABB:
+	var have := false
+	var merged := AABB()
+	if _manipulation_preview != null and is_instance_valid(_manipulation_preview):
+		var a := _compute_world_aabb(_manipulation_preview)
+		if a.size != Vector3.ZERO or !a.position.is_equal_approx(Vector3.ZERO):
+			merged = a if !have else merged.merge(a)
+			have = true
+	if _manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview):
+		var ar := _compute_world_aabb(_manipulation_region_preview)
+		if ar.size != Vector3.ZERO or !ar.position.is_equal_approx(Vector3.ZERO):
+			merged = ar if !have else merged.merge(ar)
+			have = true
+	for gp in _manipulation_group_previews.values():
+		if gp == null or not is_instance_valid(gp):
+			continue
+		var ag := _compute_world_aabb(gp)
+		if ag.size != Vector3.ZERO or !ag.position.is_equal_approx(Vector3.ZERO):
+			merged = ag if !have else merged.merge(ag)
+			have = true
+	return merged if have else AABB()
+
+
+## During relocation/resize gizmo: preserve camera orientation; only push the camera back along the
+## anchor-to-camera ray if the manipulation AABB no longer fits in the current frustum.
+func _nudge_camera_distance_for_manipulation_if_needed() -> void:
+	if _pancake_cam == null or not _manipulation_active:
+		return
+	var aabb := _compute_manipulation_target_world_aabb()
+	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
+		return
+	var center: Vector3 = aabb.get_center()
+	var cam_pos: Vector3 = _pancake_cam.global_position
+	var to_cam: Vector3 = cam_pos - center
+	var len_sq: float = to_cam.length_squared()
+	if len_sq < 1e-8:
+		return
+	var view_dir: Vector3 = to_cam.normalized()
+	var cam_up: Vector3 = _pancake_cam.global_transform.basis.y.normalized()
+	if absf(cam_up.dot(view_dir)) > 0.98:
+		cam_up = Vector3.UP
+		if absf(cam_up.dot(view_dir)) > 0.98:
+			cam_up = Vector3.RIGHT
+	var fov_used: float = _pancake_cam.fov
+	if fov_used < 5.0:
+		fov_used = 70.0
+	var vfov_rad: float = deg_to_rad(fov_used)
+	var vp_size := _pancake_cam.get_viewport().get_visible_rect().size
+	var aspect: float = vp_size.x / max(1.0, vp_size.y)
+	var hfov_rad: float = 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
+	var required: float = _compute_frame_distance_for_aabb_from_orientation(
+		aabb, vfov_rad, hfov_rad, view_dir, cam_up
+	)
+	var current: float = sqrt(len_sq)
+	# Small epsilon avoids jitter when already barely fits.
+	if required <= current * 1.002:
+		return
+	_pancake_cam.global_position = center + view_dir * required
+
 func _resolve_up_for_plane(plane_name: StringName) -> Vector3:
 	match plane_name:
 		&"xz":
@@ -1476,6 +1537,20 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					_manipulation_gizmo.set_close_hovered(action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE)
 				if _manipulation_gizmo.has_method("set_accept_hovered"):
 					_manipulation_gizmo.set_accept_hovered(action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT)
+			# Single gizmo ray for axis hover text + per-axis arrow scale (close/accept suppress axis highlight).
+			var gizmo_hover_hit: Dictionary = {}
+			var gizmo_axis_hover_index: int = -1
+			if _manipulation_active and _manipulation_gizmo != null:
+				if action_kind != UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE and action_kind != UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT:
+					gizmo_hover_hit = _raycast_gizmo(bm_input_event.get_ray_query())
+					if not gizmo_hover_hit.is_empty():
+						var pick_body: StaticBody3D = gizmo_hover_hit.get(&"collider") as StaticBody3D
+						if pick_body and pick_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND):
+							var pick_kind: StringName = pick_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND)
+							if pick_kind != UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE and pick_kind != UI_BrainMonitor_RuntimeTransformGizmo.KIND_ACCEPT and pick_body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
+								gizmo_axis_hover_index = int(pick_body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS))
+				if _manipulation_gizmo.has_method("set_axis_hovered"):
+					_manipulation_gizmo.set_axis_hovered(gizmo_axis_hover_index)
 			if _manipulation_active and _UI_layer_for_BM != null:
 				if action_kind == UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE:
 					_UI_layer_for_BM.show_gizmo_cancel_hover()
@@ -1484,9 +1559,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					if _UI_layer_for_BM.has_method("show_gizmo_accept_hover"):
 						_UI_layer_for_BM.show_gizmo_accept_hover()
 					continue
-				var gizmo_hit: Dictionary = _raycast_gizmo(bm_input_event.get_ray_query())
-				if not gizmo_hit.is_empty():
-					var body: StaticBody3D = gizmo_hit.get(&"collider") as StaticBody3D
+				if not gizmo_hover_hit.is_empty():
+					var body: StaticBody3D = gizmo_hover_hit.get(&"collider") as StaticBody3D
 					if body and body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND):
 						var kind: StringName = body.get_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_KIND)
 						if kind != UI_BrainMonitor_RuntimeTransformGizmo.KIND_CLOSE and body.has_meta(UI_BrainMonitor_RuntimeTransformGizmo.META_AXIS):
@@ -2012,7 +2086,7 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		area.cortical_type,
 		area,
 		false,  # do not auto-frame on create during manipulation (gizmo already placed)
-		true  # keep preview in view while dragging (reframes camera when content leaves the frustum)
+		false  # no full auto-frame on drag (preserves camera angle); see _nudge_camera_distance_for_manipulation_if_needed
 	)
 	_update_manipulation_position_label()
 
@@ -2032,12 +2106,14 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		_manipulation_current_pos = p
 		_update_manipulation_group_previews(p)
 		_update_manipulation_gizmo_transform()
+		call_deferred("_nudge_camera_distance_for_manipulation_if_needed")
 	)
 	_manipulation_preview.user_resized_preview.connect(func(d: Vector3i):
 		_manipulation_current_dims = d
 		_update_manipulation_group_resize_previews(d)
 		_update_manipulation_capacity_warning()
 		_update_manipulation_gizmo_transform()
+		call_deferred("_nudge_camera_distance_for_manipulation_if_needed")
 	)
 	if mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area):
 		_setup_manipulation_group_previews(area)
@@ -2140,7 +2216,7 @@ func start_brain_region_manipulation(region: BrainRegion) -> void:
 		region,
 		region.coordinates_3D,
 		false,
-		true
+		false
 	)
 	var region_frame: Node3D = _brain_region_visualizations_by_ID.get(region.region_ID, null)
 	if region_frame != null and is_instance_valid(region_frame):
@@ -2159,6 +2235,7 @@ func start_brain_region_manipulation(region: BrainRegion) -> void:
 	_manipulation_region_preview.user_moved_preview.connect(func(p: Vector3i):
 		_manipulation_current_pos = p
 		_update_manipulation_gizmo_transform()
+		call_deferred("_nudge_camera_distance_for_manipulation_if_needed")
 	)
 
 ## Starts relocate gizmo for an externally managed brain-region preview (e.g., Create New Circuit window).
@@ -2214,6 +2291,7 @@ func _start_external_preview_relocation(preview: Node, is_region_preview: bool, 
 		preview.user_moved_preview.connect(func(p: Vector3i):
 			_manipulation_current_pos = p
 			_update_manipulation_gizmo_transform()
+			call_deferred("_nudge_camera_distance_for_manipulation_if_needed")
 			if _manipulation_external_position_changed.is_valid():
 				_manipulation_external_position_changed.call(p)
 		)
@@ -2732,6 +2810,8 @@ func _start_manipulation_drag(hit_body: StaticBody3D, bm_input_event: UI_BrainMo
 		_axis_dir_world(_manipulation_axis),
 		bm_input_event.get_ray_query()
 	)
+	if _manipulation_gizmo.has_method("set_axis_hovered"):
+		_manipulation_gizmo.set_axis_hovered(_manipulation_axis)
 
 func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover) -> void:
 	var has_preview := _manipulation_preview != null or (_manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview))

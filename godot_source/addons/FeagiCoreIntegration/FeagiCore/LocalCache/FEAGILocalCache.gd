@@ -691,6 +691,8 @@ var _agent_capabilities_raw_json: String = ""
 var _agent_capabilities_schema_errors: Dictionary = {}
 var _OPU_cortical_ID_to_capability_key: Dictionary = {}
 var _IPU_cortical_ID_to_capability_key: Dictionary = {}
+## Lazily created [FeagiDataDeserializer] for deriving IO cortical IDs from cached device registrations.
+var _bv_feagi_data_deserializer: Object = null
 
 func update_plasticity_queue_depth(new_depth: int) -> void:
 	if new_depth == _plasticity_queue_depth:
@@ -704,7 +706,62 @@ func clear_configuration_jsons() -> void:
 ## Overwrites cached agent capability data (capabilities + device registrations).
 func set_agent_capabilities_map(new_map: Dictionary) -> void:
 	_agent_capabilities_map = new_map
+	_bv_feagi_data_deserializer = null
 	agent_capabilities_updated.emit()
+
+
+## Merges [code]device_registrations[/code] from [method FEAGIRequests.supplement_agent_capabilities_device_registrations_from_http] (GET per agent) into the cached capabilities map.
+func merge_device_registrations_for_agent(agent_id: String, device_registrations: Dictionary) -> void:
+	var key := agent_id.strip_edges()
+	if key.is_empty() or device_registrations.is_empty():
+		return
+	var entry: Variant = _agent_capabilities_map.get(key)
+	if entry == null or not (entry is Dictionary):
+		_agent_capabilities_map[key] = {
+			"agent_name": key,
+			"capabilities": {},
+			"device_registrations": device_registrations,
+		}
+	else:
+		(entry as Dictionary)["device_registrations"] = device_registrations
+	_bv_feagi_data_deserializer = null
+
+## Returns a cached [FeagiDataDeserializer] instance when the GDExtension class is available.
+func _bv_get_feagi_data_deserializer() -> Object:
+	if _bv_feagi_data_deserializer != null and is_instance_valid(_bv_feagi_data_deserializer):
+		return _bv_feagi_data_deserializer
+	if not ClassDB.class_exists("FeagiDataDeserializer"):
+		return null
+	_bv_feagi_data_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
+	return _bv_feagi_data_deserializer
+
+## True when [param cortical_id] appears in any non-BV agent's cached [code]device_registrations[/code]
+## as a declared IPU/OPU channel (same derivation FEAGI uses for auto-provisioned IO areas).
+func is_cortical_id_required_by_connected_agent_device_registration(cortical_id: StringName) -> bool:
+	var id_norm := str(cortical_id).strip_edges()
+	if id_norm.is_empty():
+		return false
+	var resolver := _bv_get_feagi_data_deserializer()
+	if resolver == null or not resolver.has_method("derive_io_cortical_ids_from_device_registrations_json"):
+		return false
+	for agent_key in _agent_capabilities_map.keys():
+		if str(agent_key).begins_with("bv_"):
+			continue
+		var entry: Variant = _agent_capabilities_map[agent_key]
+		if not (entry is Dictionary):
+			continue
+		var dr: Variant = (entry as Dictionary).get("device_registrations", null)
+		if not (dr is Dictionary):
+			continue
+		var json_text := JSON.stringify(dr)
+		var out: Dictionary = resolver.call("derive_io_cortical_ids_from_device_registrations_json", json_text) as Dictionary
+		if not bool(out.get("success", false)):
+			continue
+		var ids: PackedStringArray = out.get("cortical_ids", PackedStringArray()) as PackedStringArray
+		for i in range(ids.size()):
+			if str(ids[i]).strip_edges() == id_norm:
+				return true
+	return false
 
 ## Store raw agent capability JSON for schema validation.
 func set_agent_capabilities_raw_json(raw_json: String) -> void:
@@ -719,6 +776,7 @@ func clear_agent_capabilities_map() -> void:
 	_agent_capabilities_map = {}
 	_agent_capabilities_raw_json = ""
 	_agent_capabilities_schema_errors = {}
+	_bv_feagi_data_deserializer = null
 	agent_capabilities_updated.emit()
 
 ## Add a configuration json to the cache. Dictionary should be the dictionary holding inputs / output keys
@@ -746,13 +804,17 @@ func build_iopu_name_to_id_mapping_from_genome() -> Dictionary:
 		"ifs": ["dynamic_image_processing"],
 	}
 	# IPU unit ref -> capability key agents use in input
+	# The legacy `acc`/`gyr` (Accelerometer/Gyroscope) IPU unit refs are
+	# intentionally absent: those cortical IDs are dropped during genome
+	# migration. IMU sensors now live under the dedicated `rim` (RawIMU,
+	# accel + gyro + magnetometer composite) and `sim` (SmartIMU,
+	# orientation quaternion) unit refs, both of which advertise their own
+	# capability keys (`raw_imu` / `smart_imu`).
 	const IPU_UNIT_REF_TO_CAPABILITY_KEY: Dictionary = {
 		"mot": "servo_motion",
 		"pos": "servo_position",
 		"inf": "infrared",
 		"pro": "proximity",
-		"acc": "accelerometer",
-		"gyr": "gyro",
 		"bat": "battery",
 		"cam": "camera",
 		"mis": "miscellaneous",
@@ -761,6 +823,8 @@ func build_iopu_name_to_id_mapping_from_genome() -> Dictionary:
 		"pre": "pressure",
 		"lid": "lidar",
 		"hea": "audio",
+		"rim": "raw_imu",
+		"sim": "smart_imu",
 	}
 	for cortical_id in cortical_areas.available_cortical_areas:
 		var area: AbstractCorticalArea = cortical_areas.available_cortical_areas[cortical_id]

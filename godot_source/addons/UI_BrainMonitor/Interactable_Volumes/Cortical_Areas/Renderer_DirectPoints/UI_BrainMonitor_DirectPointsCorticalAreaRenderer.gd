@@ -110,6 +110,16 @@ var _memory_default_height: float = 3.0
 var _fatigue_billboard_material: StandardMaterial3D = null
 var _fatigue_billboard_is_firing: bool = false
 
+func _is_fatigue_style_core_area_by_id(cortical_id: Variant) -> bool:
+	return AbstractCorticalArea.is_fatigue_area(cortical_id) \
+		or AbstractCorticalArea.is_pain_area(cortical_id) \
+		or AbstractCorticalArea.is_pleasure_area(cortical_id) \
+		or AbstractCorticalArea.is_fear_area(cortical_id) \
+		or AbstractCorticalArea.is_hope_area(cortical_id)
+
+func _is_fatigue_style_core_area(area: AbstractCorticalArea) -> bool:
+	return _is_fatigue_style_core_area_by_id(area.cortical_ID)
+
 ## DirectPoints indices are cell-origin based; DDA highlights are cell-center based.
 ## Apply +0.5 world correction via local offset, compensating for parent (_static_body) scale.
 func _get_multimesh_origin_offset() -> Vector3:
@@ -169,7 +179,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		collision_shape.shape = cylinder_shape
 		collision_shape.position = Vector3(0.0, POWER_CONE_MESH_LOCAL_Y_OFFSET, 0.0)
 		# Debug log suppressed to reduce runtime console spam.
-	elif AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
+	elif _is_fatigue_style_core_area(area):
 		# One pick volume: scaled cortical box (size 1 @ origin) + billboard quad above (quad ~3x3 @ y=2)
 		var box_shape = BoxShape3D.new()
 		box_shape.size = Vector3(3.0, 4.0, 3.0)
@@ -210,7 +220,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
 		_multi_mesh.mesh = invisible_mesh
-	elif AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
+	elif _is_fatigue_style_core_area(area):
 		# Billboard only (like power custom visual); hide multimesh so desktop WS fast-path cannot show cubes
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)
@@ -451,7 +461,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Update collision shape size (but preserve custom sizes for special areas)
 	var collision_shape = _static_body.get_child(0) as CollisionShape3D
 	if collision_shape and collision_shape.shape is BoxShape3D:
-		if AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+		if _is_fatigue_style_core_area_by_id(_cortical_area_id):
 			(collision_shape.shape as BoxShape3D).size = Vector3(3.0, 4.0, 3.0)
 			collision_shape.position = Vector3(0.0, 1.5, 0.0)
 		elif _should_use_png_icon_by_id(_cortical_area_id):
@@ -466,9 +476,9 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	
 	bv_update_friendly_name_label_position()
 	
-	if _fatigue_billboard_material != null and AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+	if _fatigue_billboard_material != null and _is_fatigue_style_core_area_by_id(_cortical_area_id):
 		_fatigue_billboard_refresh_for_activity_state()
-	if AbstractCorticalArea.is_fatigue_area(_cortical_area_id) and _multi_mesh_instance != null:
+	if _is_fatigue_style_core_area_by_id(_cortical_area_id) and _multi_mesh_instance != null:
 		_multi_mesh_instance.visible = false
 	
 	# Update outline material scaling (only for non-memory areas that use shader materials)
@@ -660,7 +670,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 			if has_meta("_last_had_origin") and get_meta("_last_had_origin"):
 				set_meta("_last_had_origin", false)
 		
-		if not AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+		if not _is_fatigue_style_core_area_by_id(_cortical_area_id):
 			_process_neurons_with_rust(x_array, y_array, z_array)
 		# Keep neurons/chunks visible for the configured timestep window.
 		_start_visibility_timer()
@@ -677,7 +687,7 @@ func _refresh_visualization_voxel_granularity_from_cache() -> void:
 	"""
 	# Special areas don't use voxel meshes for visualization.
 	if AbstractCorticalArea.is_power_area(_cortical_area_id) \
-			or AbstractCorticalArea.is_fatigue_area(_cortical_area_id) \
+			or _is_fatigue_style_core_area_by_id(_cortical_area_id) \
 			or _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		return
 	if _multi_mesh == null:
@@ -734,7 +744,7 @@ func _process_neurons_with_rust(x_array: PackedInt32Array, y_array: PackedInt32A
 	- Mesh size is set to granularity dimensions in setup()
 	- Rust processor converts chunk center coordinates to Godot space correctly
 	"""
-	if AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+	if _is_fatigue_style_core_area_by_id(_cortical_area_id):
 		return
 	
 	var point_count = x_array.size()
@@ -880,7 +890,7 @@ func _apply_fatigue_billboard_firing_state() -> void:
 func _fatigue_billboard_set_firing(is_firing: bool) -> void:
 	if _fatigue_billboard_material == null:
 		return
-	if not AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+	if not _is_fatigue_style_core_area_by_id(_cortical_area_id):
 		return
 	_fatigue_billboard_is_firing = is_firing
 	if is_firing:
@@ -891,7 +901,7 @@ func _fatigue_billboard_set_firing(is_firing: bool) -> void:
 func _fatigue_billboard_refresh_for_activity_state() -> void:
 	if _fatigue_billboard_material == null:
 		return
-	if not AbstractCorticalArea.is_fatigue_area(_cortical_area_id):
+	if not _is_fatigue_style_core_area_by_id(_cortical_area_id):
 		return
 	_fatigue_billboard_set_firing(_fatigue_billboard_is_firing)
 
@@ -1255,7 +1265,7 @@ func _create_tesla_coil_spikes() -> void:
 ## Check if a cortical area should use PNG icon rendering
 func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
 	# Check for special core areas (supports both old and new formats)
-	if AbstractCorticalArea.is_death_area(area.cortical_ID) or AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
+	if AbstractCorticalArea.is_death_area(area.cortical_ID) or _is_fatigue_style_core_area(area):
 		return true
 	
 	# Add more cortical area IDs here that should use PNG icons (using old format for now)
@@ -1265,7 +1275,7 @@ func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
 ## Check if a cortical area ID should use PNG icon rendering (helper for when we only have ID)
 func _should_use_png_icon_by_id(cortical_id: StringName) -> bool:
 	# Check for special core areas (supports both old and new formats)
-	if AbstractCorticalArea.is_death_area(cortical_id) or AbstractCorticalArea.is_fatigue_area(cortical_id):
+	if AbstractCorticalArea.is_death_area(cortical_id) or _is_fatigue_style_core_area_by_id(cortical_id):
 		return true
 	
 	# Add more cortical area IDs here that should use PNG icons (using old format for now)
@@ -1293,7 +1303,7 @@ func _create_png_icon_billboard(area: AbstractCorticalArea) -> void:
 	icon_material.no_depth_test = true  # Always visible
 	icon_material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Visible from both sides
 	
-	if AbstractCorticalArea.is_fatigue_area(area.cortical_ID):
+	if _is_fatigue_style_core_area(area):
 		# Solid color only - no placeholder texture (avoids cross / grid look)
 		_fatigue_billboard_material = icon_material
 		_fatigue_billboard_is_firing = false

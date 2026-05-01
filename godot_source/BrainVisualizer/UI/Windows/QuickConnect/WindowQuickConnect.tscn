@@ -21,6 +21,7 @@ window_spawn_location = Vector2i(800, 400)
 
 [node name="TitleBar" parent="." instance=ExtResource("3_ad4rt")]
 layout_mode = 2
+enforce_bottom_bound = false
 title = "Quick Connect"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]

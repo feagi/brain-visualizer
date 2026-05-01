@@ -512,6 +512,77 @@ func refresh_agent_capabilities_cache(include_device_registrations: bool = true)
 	FeagiCore.feagi_local_cache.set_agent_capabilities_map(filtered_caps_map)
 	return agent_caps_data
 
+
+## Refreshes agent capabilities from FEAGI when the delete flow involves IPU/OPU so device registrations are present for the IO delete guard.
+func ensure_agent_capabilities_cached_for_delete_guard(objects_to_delete: Array[GenomeObject] = []) -> FeagiRequestOutput:
+	if FeagiCore == null or not FeagiCore.can_interact_with_feagi():
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var need_refresh := objects_to_delete.is_empty()
+	if not need_refresh:
+		for o in objects_to_delete:
+			if o is AbstractCorticalArea:
+				var t: AbstractCorticalArea.CORTICAL_AREA_TYPE = (o as AbstractCorticalArea).cortical_type
+				if t == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU or t == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
+					need_refresh = true
+					break
+	if not need_refresh:
+		return FeagiRequestOutput.generic_success()
+	var refresh_out: FeagiRequestOutput = await refresh_agent_capabilities_cache(true)
+	await supplement_agent_capabilities_device_registrations_from_http()
+	return refresh_out
+
+
+## Fills missing [code]device_registrations[/code] on cached agents via GET [code]/v1/agent/{agent_id}/device_registrations[/code] (capabilities/all often returns null there).
+func supplement_agent_capabilities_device_registrations_from_http() -> void:
+	if FeagiCore == null or not FeagiCore.can_interact_with_feagi() or FeagiCore.network == null or FeagiCore.network.http_API == null:
+		return
+	var list_def: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
+		FeagiCore.network.http_API.address_list.GET_agent_list
+	)
+	var list_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(list_def)
+	await list_worker.worker_done
+	var list_out: FeagiRequestOutput = list_worker.retrieve_output_and_close()
+	if list_out.has_errored or not list_out.success:
+		return
+	var agent_id_set: Dictionary = {}
+	var parsed_list: Variant = JSON.parse_string(list_out.decode_response_as_string())
+	if parsed_list is Array:
+		for x in parsed_list as Array:
+			var sid: String = str(x).strip_edges()
+			if not sid.is_empty():
+				agent_id_set[sid] = true
+	elif parsed_list is Dictionary:
+		for k in (parsed_list as Dictionary).keys():
+			var sk: String = str(k).strip_edges()
+			if not sk.is_empty():
+				agent_id_set[sk] = true
+	for k in FeagiCore.feagi_local_cache.agent_capabilities_map.keys():
+		var cap_key: String = str(k).strip_edges()
+		if cap_key.is_empty() or cap_key.begins_with("bv_"):
+			continue
+		agent_id_set[cap_key] = true
+	var base_reg_path: String = str(FeagiCore.network.http_API.address_list.GET_agent_device_registrations)
+	for agent_id in agent_id_set.keys():
+		if str(agent_id).begins_with("bv_"):
+			continue
+		var entry: Variant = FeagiCore.feagi_local_cache.agent_capabilities_map.get(agent_id)
+		if entry is Dictionary:
+			var dr: Variant = (entry as Dictionary).get("device_registrations", null)
+			if dr is Dictionary and (dr as Dictionary).size() > 0:
+				continue
+		var full_url: StringName = StringName(base_reg_path.replace("{agent_id}", str(agent_id)))
+		var get_def: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(full_url)
+		var get_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(get_def)
+		await get_worker.worker_done
+		var reg_out: FeagiRequestOutput = get_worker.retrieve_output_and_close()
+		if reg_out.has_errored or not reg_out.success:
+			continue
+		var dr_dict: Dictionary = reg_out.decode_response_as_dict()
+		if dr_dict.is_empty():
+			continue
+		FeagiCore.feagi_local_cache.merge_device_registrations_for_agent(str(agent_id), dr_dict)
+
+
 ## Import device registrations for a specific agent.
 func import_device_registrations(agent_id: StringName, device_registrations: Dictionary) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
@@ -823,6 +894,15 @@ func mass_move_genome_objects_2D(genome_objects_mapped_to_new_locations_as_vecto
 		if genome_object is AbstractCorticalArea:
 			# Cortical areas: Use /v1/cortical_area/multi/cortical_area endpoint
 			var cortical_area = genome_object as AbstractCorticalArea
+			var cortical_id := String(cortical_area.cortical_ID).strip_edges()
+			if cortical_id.is_empty():
+				push_warning("FEAGI Requests: Skipping cortical area move with empty cortical_id")
+				continue
+			# Ignore stale UI objects that no longer exist in cache to avoid hard-failing the entire
+			# multi-update request with a NotFound error for one obsolete cortical ID.
+			if cortical_area.cortical_ID not in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
+				push_warning("FEAGI Requests: Skipping stale cortical area move for missing cache id %s" % cortical_id)
+				continue
 			cortical_areas_to_move.append(cortical_area)
 			cortical_area_positions[cortical_area] = new_position
 			print("FEAGI REQUEST: Will update cortical area %s position using cortical_area API" % cortical_area.cortical_ID)
@@ -1010,7 +1090,7 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	# Define Request - Using correct FEAGI API key names
 	var dict_to_send: Dictionary = {
 		"region_id": brain_region.region_ID,
-		"region_title": region_name,  # title → region_title
+		"title": region_name,
 		"coordinate_2d": FEAGIUtils.vector2i_to_array(coords_2D),  # coordinates_2d → coordinate_2d
 		"coordinate_3d": FEAGIUtils.vector3i_to_array(coords_3D),  # coordinates_3d → coordinate_3d
 		# Removed unsupported keys: parent_region_id, region_description
