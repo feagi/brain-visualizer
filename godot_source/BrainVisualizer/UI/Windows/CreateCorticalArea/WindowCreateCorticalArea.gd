@@ -332,7 +332,8 @@ func _user_requesing_creation() -> void:
 				if device_count == 0:
 					# delete area since the calculated dimensions would be 0
 					var areas_to_delete: Array[GenomeObject] = [area]
-					BV.UI.window_manager.spawn_confirm_deletion(areas_to_delete)
+					if not await BV.UI.window_manager.spawn_confirm_deletion(areas_to_delete):
+						return
 				else:
 					# update area
 					var new_dimension_property: Dictionary = {"cortical_dimensions" = FEAGIUtils.vector3i_to_array(template.calculate_IOPU_dimension(device_count))}
@@ -386,7 +387,8 @@ func _user_requesing_creation() -> void:
 				if device_count == 0:
 					# delete area since the calculated dimensions would be 0
 					var areas_to_delete: Array[GenomeObject] = [area]
-					BV.UI.window_manager.spawn_confirm_deletion(areas_to_delete)
+					if not await BV.UI.window_manager.spawn_confirm_deletion(areas_to_delete):
+						return
 				else:
 					# update area
 					var new_dimension_property: Dictionary = {"cortical_dimensions" = FEAGIUtils.vector3i_to_array(template.calculate_IOPU_dimension(device_count))}

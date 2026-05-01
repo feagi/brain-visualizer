@@ -2102,7 +2102,7 @@ func _clear_flat_rows(container: VBoxContainer, rows_lookup: Dictionary) -> void
 func _user_pressed_delete_button() -> void:
 	var genome_objects: Array[GenomeObject] = []
 	genome_objects.assign(_cortical_area_refs)
-	if not BV.WM.spawn_confirm_deletion(genome_objects):
+	if not await BV.WM.spawn_confirm_deletion(genome_objects):
 		return
 	close_window()
 

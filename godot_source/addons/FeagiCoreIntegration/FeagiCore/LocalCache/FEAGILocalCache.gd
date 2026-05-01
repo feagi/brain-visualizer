@@ -709,6 +709,23 @@ func set_agent_capabilities_map(new_map: Dictionary) -> void:
 	_bv_feagi_data_deserializer = null
 	agent_capabilities_updated.emit()
 
+
+## Merges [code]device_registrations[/code] from [method FEAGIRequests.supplement_agent_capabilities_device_registrations_from_http] (GET per agent) into the cached capabilities map.
+func merge_device_registrations_for_agent(agent_id: String, device_registrations: Dictionary) -> void:
+	var key := agent_id.strip_edges()
+	if key.is_empty() or device_registrations.is_empty():
+		return
+	var entry: Variant = _agent_capabilities_map.get(key)
+	if entry == null or not (entry is Dictionary):
+		_agent_capabilities_map[key] = {
+			"agent_name": key,
+			"capabilities": {},
+			"device_registrations": device_registrations,
+		}
+	else:
+		(entry as Dictionary)["device_registrations"] = device_registrations
+	_bv_feagi_data_deserializer = null
+
 ## Returns a cached [FeagiDataDeserializer] instance when the GDExtension class is available.
 func _bv_get_feagi_data_deserializer() -> Object:
 	if _bv_feagi_data_deserializer != null and is_instance_valid(_bv_feagi_data_deserializer):

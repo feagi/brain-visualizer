@@ -176,6 +176,8 @@ func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cor
 
 ## Returns false when deletion was blocked (e.g. required IO from a connected agent); caller should not close UI.
 func spawn_confirm_deletion(objects_to_delete: Array[GenomeObject], is_deleting_single_region_internals_instead_of_raising: bool = false) -> bool:
+	if FeagiCore != null and FeagiCore.requests != null:
+		await FeagiCore.requests.ensure_agent_capabilities_cached_for_delete_guard(objects_to_delete)
 	if AbstractCorticalArea.notify_and_abort_if_any_cortical_area_cannot_be_deleted(objects_to_delete):
 		return false
 	var confirm_deletion: WindowConfirmDeletion = _default_spawn_window(_PREFAB_CONFIRM_DELETION, WindowConfirmDeletion.WINDOW_NAME) as WindowConfirmDeletion

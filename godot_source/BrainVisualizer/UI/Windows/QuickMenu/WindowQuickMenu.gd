@@ -317,7 +317,7 @@ func _button_add_to_region() -> void:
 	close_window()
 
 func _button_delete() -> void:
-	if not BV.WM.spawn_confirm_deletion(_selection):
+	if not await BV.WM.spawn_confirm_deletion(_selection):
 		return
 	close_window()
 

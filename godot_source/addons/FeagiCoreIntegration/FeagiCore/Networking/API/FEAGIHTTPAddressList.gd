@@ -69,6 +69,7 @@ var POST_input_vision: StringName = "/v1/input/vision"
 var POST_agent_register: StringName = "/v1/agent/register"
 var POST_agent_heartbeat: StringName = "/v1/agent/heartbeat"
 var POST_agent_manualStimulation: StringName = "/v1/agent/manual_stimulation"
+var GET_agent_device_registrations: StringName = "/v1/agent/{agent_id}/device_registrations"
 var POST_agent_device_registrations: StringName = "/v1/agent/{agent_id}/device_registrations"
 
 # Put Requests
