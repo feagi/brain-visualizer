@@ -56,6 +56,9 @@ func _ready() -> void:
 
 ## Clear all text
 func clear() -> void:
+	var bm := _get_owning_bm()
+	if bm != null:
+		bm.brain_monitor_clear_mouse_context_cortical_id()
 	_clear_global_context()
 
 ## Resolve device index for IOPU. Uses per-device dimensions for channel/device mapping.
@@ -445,6 +448,9 @@ func _get_area_encoding_summary_text(cortical_area: AbstractCorticalArea) -> Str
 	return " - ".join(parts)
 
 func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron_coordinate: Vector3i) -> void:
+	var bm_sync := _get_owning_bm()
+	if bm_sync != null:
+		bm_sync.brain_monitor_sync_mouse_context_cortical_id(cortical_area.cortical_ID)
 	if DEBUG_DEVICE_INDEX:
 		print("[BV mouse_over ENTRY] %s type=%s coord=%s" % [cortical_area.cortical_ID, cortical_area.cortical_type, neuron_coordinate])
 	if _mouse_context_label == null:
@@ -576,6 +582,9 @@ func mouse_over_single_cortical_area(cortical_area: AbstractCorticalArea, neuron
 
 ## Show plate hover context (region name + plate kind)
 func show_plate_hover(region_name: String, plate_kind: String) -> void:
+	var bm := _get_owning_bm()
+	if bm != null:
+		bm.brain_monitor_clear_mouse_context_cortical_id()
 	var kind := plate_kind.strip_edges()
 	if kind == "":
 		_set_global_context("Circuit - " + region_name)
@@ -584,6 +593,9 @@ func show_plate_hover(region_name: String, plate_kind: String) -> void:
 
 ## Clear plate hover context (only if no cortical hover text is present)
 func clear_plate_hover() -> void:
+	var bm := _get_owning_bm()
+	if bm != null:
+		bm.brain_monitor_clear_mouse_context_cortical_id()
 	# Optional: do not clear if cortical context is showing
 	# For now, we clear unconditionally when plate hover ends
 	_clear_global_context()

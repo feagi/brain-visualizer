@@ -88,6 +88,21 @@ var _voxel_synapse_overlay: Node3D = null
 var _previously_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea] = []
 var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_CorticalArea, Array] = {} # where Array is an Array of Vector3i representing Neuron Coordinates
 
+## Cortical ID for the bottom hover line ([method UI_BrainMonitor_Overlay.mouse_over_single_cortical_area]); 3D name labels use the same condition.
+var _mouse_context_cortical_id: StringName = &""
+
+
+func brain_monitor_sync_mouse_context_cortical_id(cortical_id: StringName) -> void:
+	_mouse_context_cortical_id = cortical_id
+
+
+func brain_monitor_mouse_context_cortical_id() -> StringName:
+	return _mouse_context_cortical_id
+
+
+func brain_monitor_clear_mouse_context_cortical_id() -> void:
+	_mouse_context_cortical_id = &""
+
 
 
 ## Startup camera intro configuration and state
@@ -677,6 +692,39 @@ func _raycast_gizmo(ray_query: PhysicsRayQueryParameters3D) -> Dictionary:
 	gizmo_query.hit_from_inside = true
 	return _world_3D.direct_space_state.intersect_ray(gizmo_query)
 
+
+
+## Closest cortical renderer hit along the ray. Skips plate pick volumes and any other non-cortical colliders
+## (mother plate, bridges, wireframe shells, etc.) so thin DDA plates behind them still receive hover.
+func _raycast_first_cortical_renderer_hit(space: PhysicsDirectSpaceState3D, base_query: PhysicsRayQueryParameters3D) -> Dictionary:
+	var excludes: Array[RID] = []
+	const MAX_NON_CORTICAL_SKIPS: int = 48
+	for _pass_idx in MAX_NON_CORTICAL_SKIPS:
+		var q := PhysicsRayQueryParameters3D.new()
+		q.from = base_query.from
+		q.to = base_query.to
+		q.collision_mask = base_query.collision_mask
+		q.collide_with_areas = base_query.collide_with_areas
+		q.collide_with_bodies = base_query.collide_with_bodies
+		q.exclude = excludes
+		var ray_hit: Dictionary = space.intersect_ray(q)
+		if ray_hit.is_empty():
+			return ray_hit
+		var collider_variant: Variant = ray_hit.get(&"collider")
+		if collider_variant == null:
+			return ray_hit
+		var collider_node: Node = collider_variant as Node
+		if collider_node == null:
+			return ray_hit
+		if collider_node.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
+			return ray_hit
+		if collider_variant is CollisionObject3D:
+			excludes.append((collider_variant as CollisionObject3D).get_rid())
+			continue
+		return {}
+	return {}
+
+
 func _emit_tab_hover_event() -> void:
 	if _pancake_cam == null or BV == null or BV.UI == null:
 		return
@@ -1212,10 +1260,7 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 		if label.text == "":
 			return -1
 		
-		# CRITICAL: Labels on plates should ALWAYS be visible
 		var on_plate = is_label_on_plate.call(label)
-		if on_plate:
-			should_be_visible = true
 		
 		var label_pos = label.global_position
 		var distance_to_cam = _pancake_cam.global_position.distance_to(label_pos)
@@ -1258,15 +1303,16 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 			return entry_index
 		return -1
 	
-	# Check DDA renderer label - DDA labels should always be visible if they have text
+	var always_show_name := viz.bv_friendly_name_label_always_visible()
+	var ctx_matches_bottom_hover := viz.cortical_area != null and viz.cortical_area.cortical_ID == _mouse_context_cortical_id
+	var show_from_hover := viz.is_volume_moused_over or ctx_matches_bottom_hover
+	# DDA renderer: hover-only on region plates; invariant cores always show when using DDA (unusual).
 	if viz._dda_renderer != null and viz._dda_renderer._friendly_name_label != null:
 		var label = viz._dda_renderer._friendly_name_label
-		var area_id = viz.cortical_area.cortical_ID if viz.cortical_area else ""
-		# DDA labels should always be visible - they're the primary renderer
-		add_label.call(label, area_id, true)
+		var area_id = viz.cortical_area.cortical_ID if viz.cortical_area else &""
+		add_label.call(label, area_id, always_show_name or show_from_hover)
 	
-	# Check DirectPoints renderer label (only if different from DDA)
-	# DirectPoints labels are only visible for memory/power/death areas, or if DDA doesn't exist
+	# DirectPoints: same rules; hidden when DDA owns the visible label
 	if viz._directpoints_renderer != null and viz._directpoints_renderer._friendly_name_label != null:
 		var label = viz._directpoints_renderer._friendly_name_label
 		# Check if we already added this label (same as DDA)
@@ -1276,15 +1322,8 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 				already_added = true
 				break
 		if not already_added:
-			var ca: AbstractCorticalArea = viz.cortical_area
-			var area_id = ca.cortical_ID if ca != null else &""
-			# Only process DirectPoints label if DDA doesn't exist (it's the primary renderer)
-			# OR if it's a special area type that should show the label
-			var should_be_visible = (viz._dda_renderer == null or 
-				(ca != null and (
-					ca.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or
-					AbstractCorticalArea.is_feagi_invariant_core_area(ca)
-				)))
+			var area_id = viz.cortical_area.cortical_ID if viz.cortical_area else &""
+			var should_be_visible := (always_show_name or show_from_hover) and viz._dda_renderer == null
 			add_label.call(label, area_id, should_be_visible)
 
 ## Updates label visibility to prevent overlaps when cortical areas are close together
@@ -1330,13 +1369,7 @@ func _update_label_overlap_visibility() -> void:
 	# First, restore all labels to their original visibility state
 	# This ensures labels that were hidden due to previous overlap checks can become visible again
 	for label_info in label_data:
-		# CRITICAL: Labels on plates should ALWAYS be visible (unless they overlap)
-		# Set them visible regardless of projection success
-		if label_info.on_plate:
-			label_info.label.visible = true  # Force visible for labels on plates
-		elif label_info.projection_success:
-			# For non-plate labels, restore to original visibility only if projection succeeded
-			label_info.label.visible = label_info.original_visible
+		label_info.label.visible = label_info.original_visible
 	
 	# Track which labels to hide (use an array to avoid double-hiding)
 	var labels_to_hide: Array[Label3D] = []
@@ -1345,12 +1378,10 @@ func _update_label_overlap_visibility() -> void:
 	# Plate labels can overlap too, so we need to check them
 	for i in range(label_data.size()):
 		var label1 = label_data[i]
-		# Only check visibility for labels that were originally visible (or on plates)
-		if not label1.original_visible and not label1.on_plate:
+		if not label1.original_visible:
 			continue
 		
-		# CRITICAL: If projection failed for a plate label, skip overlap check (keep it visible)
-		# We can't check overlaps without valid screen position
+		# No screen position: skip pairwise overlap (label keeps restored visibility)
 		if label1.on_plate and not label1.projection_success:
 			continue
 		
@@ -1360,11 +1391,9 @@ func _update_label_overlap_visibility() -> void:
 		
 		for j in range(i + 1, label_data.size()):
 			var label2 = label_data[j]
-			# Only consider labels that were originally visible (or on plates)
-			if not label2.original_visible and not label2.on_plate:
+			if not label2.original_visible:
 				continue
 			
-			# CRITICAL: If projection failed for a plate label, skip overlap check (keep it visible)
 			if label2.on_plate and not label2.projection_success:
 				continue
 			
@@ -1383,26 +1412,20 @@ func _update_label_overlap_visibility() -> void:
 			if screen_dist < OVERLAP_SCREEN_DISTANCE_THRESHOLD:
 				if label1.distance > label2.distance:
 					# Label1 is farther, mark it to hide
-					if label1.label not in labels_to_hide:
+					var immune1: bool = label1.original_visible and label1.area_id == _mouse_context_cortical_id
+					if not immune1 and label1.label not in labels_to_hide:
 						labels_to_hide.append(label1.label)
 					break
 				else:
 					# Label2 is farther, mark it to hide
-					if label2.label not in labels_to_hide:
+					var immune2: bool = label2.original_visible and label2.area_id == _mouse_context_cortical_id
+					if not immune2 and label2.label not in labels_to_hide:
 						labels_to_hide.append(label2.label)
 	
-	# Apply visibility changes
-	# CRITICAL: Plate labels should ALWAYS be visible - don't hide them even if they overlap
-	# This ensures labels on region plates are always visible
+	# Apply overlap hiding on top of restored visibility
 	for label_info in label_data:
-		if label_info.on_plate:
-			# Plate labels: ALWAYS visible, never hide them
-			label_info.label.visible = true
-		else:
-			# Non-plate labels: hide if marked to hide
-			if label_info.label in labels_to_hide:
-				label_info.label.visible = false
-			# Otherwise keep their restored visibility state (already set in restore step)
+		if label_info.label in labels_to_hide:
+			label_info.label.visible = false
 
 ## Debug helper: logs which major objects are in front of vs behind the camera based on dot product with camera forward
 func _log_objects_relative_to_camera(context: String = "") -> void:
@@ -1504,6 +1527,90 @@ func _on_representing_region_friendly_name_updated(new_name: StringName) -> void
 		var tab_index = tab_container.get_tab_idx_from_control(self)
 		if tab_index >= 0:
 			tab_container.set_tab_title(tab_index, new_name)
+
+
+## Click handling when the ray hits a cortical renderer collider (primary hit only).
+func _handle_cortical_pick_click_event(
+	bm_input_event: UI_BrainMonitor_InputEvent_Abstract,
+	hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer,
+	hit_world_location: Vector3,
+	currently_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea],
+) -> void:
+	var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
+	if hit_parent_parent == null:
+		return
+	var neuron_coordinate_clicked: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
+	currently_moused_over_volumes.append(hit_parent_parent)
+	var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
+	if not bm_input_event.button_pressed:
+		return
+	var quick_connect_override_active: bool = BV != null and BV.UI != null and BV.UI.selection_system != null and BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
+	var quick_connect_neuron_click_voxel_mode: bool = _should_disable_unit_group_auto_selection_for_click()
+	var selecting_quick_connect_neuron_voxel_with_click: bool = quick_connect_neuron_click_voxel_mode and bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN
+	if (not quick_connect_override_active and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held) or selecting_quick_connect_neuron_voxel_with_click:
+		if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
+			return
+		var is_neuron_selected: bool = hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
+		cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
+		cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, is_neuron_selected)
+	else:
+		if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+			if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
+				return
+			if Input.is_physical_key_pressed(KEY_CTRL):
+				var focus_plane: StringName = &""
+				if Input.is_physical_key_pressed(KEY_1):
+					focus_plane = &"xy"
+				elif Input.is_physical_key_pressed(KEY_2):
+					focus_plane = &"xz"
+				elif Input.is_physical_key_pressed(KEY_3):
+					focus_plane = &"yz"
+				if focus_plane != &"":
+					if _pancake_cam:
+						var cortical_aabb = _compute_world_aabb(hit_parent)
+						if cortical_aabb.size != Vector3.ZERO and (cortical_aabb.size.x + cortical_aabb.size.y + cortical_aabb.size.z) > 0.01:
+							_frame_camera_to_aabb_with_plane(cortical_aabb, focus_plane)
+							print("Focused camera on cortical area: %s (%s plane)" % [hit_parent_parent.cortical_area.cortical_ID, String(focus_plane).to_upper()])
+						else:
+							_pancake_cam.teleport_to_look_at_without_changing_angle(hit_parent.global_position)
+							print("Focused camera on cortical area: %s (fallback)" % hit_parent_parent.cortical_area.cortical_ID)
+				else:
+					var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
+					if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
+						ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
+					var clicked_area: AbstractCorticalArea = hit_parent_parent.cortical_area
+					var selection_system: SelectionSystem = BV.UI.selection_system
+					if selection_system.is_highlighted(clicked_area):
+						selection_system.remove_from_highlighted(clicked_area)
+					else:
+						var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(clicked_area)
+						var filtered_group: Array[AbstractCorticalArea] = []
+						if unit_members.size() > 1:
+							var clicked_region = clicked_area.current_parent_region
+							for m in unit_members:
+								if m.current_parent_region == clicked_region:
+									filtered_group.append(m)
+						if filtered_group.size() > 1:
+							for member in filtered_group:
+								if not selection_system.is_highlighted(member):
+									selection_system.add_to_highlighted(member)
+						else:
+							selection_system.add_to_highlighted(clicked_area)
+					BV.UI.selection_system.select_objects(ctx)
+				return
+			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+				var ctx_select: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
+				if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
+					ctx_select = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
+				var to_select: Array[GenomeObject] = arr_test
+				BV.UI.selection_system.clear_all_highlighted()
+				for obj in to_select:
+					BV.UI.selection_system.add_to_highlighted(obj)
+				BV.UI.selection_system.select_objects(ctx_select, to_select)
+				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and _is_quick_connect_neuron_waiting_for_entire_area_selection():
+					cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, true)
+				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+					BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
 
 
 func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) -> void:
@@ -1663,6 +1770,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
+			var cortical_hover_hit: Dictionary = _raycast_first_cortical_renderer_hit(current_space, bm_input_event.get_ray_query())
 			
 			# PRIORITY: Plate click areas first so we don't short-circuit on region frame parent
 			if hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
@@ -1683,29 +1791,25 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						if fname != null:
 							region_name = str(fname)
 					_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
-			# Check if we hit a cortical area renderer
-			elif hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
-				var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
-				if not hit_parent:
-					continue # this shouldn't be possible
-				var hit_world_location: Vector3 = hit["position"]
-				var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
-				var neuron_coordinate_mousing_over: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
-				if not hit_parent_parent:
-					continue # this shouldnt be possible
-				
-				currently_moused_over_volumes.append(hit_parent_parent)
-				if hit_parent_parent in currently_mousing_over_neurons:
-					if neuron_coordinate_mousing_over not in currently_mousing_over_neurons[hit_parent_parent]:
-						currently_mousing_over_neurons[hit_parent_parent].append(neuron_coordinate_mousing_over)
-				else:
-					var typed_arr: Array[Vector3i] = [neuron_coordinate_mousing_over]
-					currently_mousing_over_neurons[hit_parent_parent] = typed_arr
-				
-				if _UI_layer_for_BM != null:
-					_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)
-			
-			# Check if we hit a brain region frame (by checking script global name)
+			# Cortical pick: use a pass-through ray so plate pick volumes do not hide output-side areas
+			if not cortical_hover_hit.is_empty():
+				var cortical_collider: StaticBody3D = cortical_hover_hit.get(&"collider") as StaticBody3D
+				if cortical_collider != null and cortical_collider.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
+					var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = cortical_collider.get_parent()
+					var hit_world_location: Vector3 = cortical_hover_hit["position"]
+					var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
+					var neuron_coordinate_mousing_over: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
+					if hit_parent_parent:
+						currently_moused_over_volumes.append(hit_parent_parent)
+						if hit_parent_parent in currently_mousing_over_neurons:
+							if neuron_coordinate_mousing_over not in currently_mousing_over_neurons[hit_parent_parent]:
+								currently_mousing_over_neurons[hit_parent_parent].append(neuron_coordinate_mousing_over)
+						else:
+							var typed_arr: Array[Vector3i] = [neuron_coordinate_mousing_over]
+							currently_mousing_over_neurons[hit_parent_parent] = typed_arr
+						
+						if _UI_layer_for_BM != null:
+							_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)
 			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
 				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame:
@@ -1832,104 +1936,17 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 			var hit_body: StaticBody3D = hit[&"collider"] as StaticBody3D
 			
-			# Check if we hit a cortical area renderer
+			# Use primary ray hit only for clicks so plate / brain-region picks stay authoritative.
+			# Pass-through cortical picking is hover-only (area labels on output plates).
 			if hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
-				var hit_parent: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
-				if not hit_parent:
-					continue # this shouldn't be possible
-				var hit_world_location: Vector3 = hit["position"]
-				var hit_parent_parent: UI_BrainMonitor_CorticalArea = hit_parent.get_parent_BM_abstraction()
-				var neuron_coordinate_clicked: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
-				if hit_parent_parent:
-					currently_moused_over_volumes.append(hit_parent_parent)
-					var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
-					if bm_input_event.button_pressed:
-						var quick_connect_override_active: bool = BV != null and BV.UI != null and BV.UI.selection_system != null and BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
-						var quick_connect_neuron_click_voxel_mode: bool = _should_disable_unit_group_auto_selection_for_click()
-						var selecting_quick_connect_neuron_voxel_with_click: bool = quick_connect_neuron_click_voxel_mode and bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN
-						if (not quick_connect_override_active and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held) or selecting_quick_connect_neuron_voxel_with_click:
-							# Additional safety check - object might have been freed between initial check and method calls
-							if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
-								continue
-							var is_neuron_selected: bool = hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
-							cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
-							cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, is_neuron_selected)
-						else:
-							# Check for left-click or right-click
-							if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
-								# Additional safety check - object might have been freed
-								if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
-									continue
-								
-								# Ctrl+1/2/3+click focuses camera by plane; plain Ctrl+click toggles multi-select.
-								if Input.is_physical_key_pressed(KEY_CTRL):
-									var focus_plane: StringName = &""
-									if Input.is_physical_key_pressed(KEY_1):
-										focus_plane = &"xy"
-									elif Input.is_physical_key_pressed(KEY_2):
-										focus_plane = &"xz"
-									elif Input.is_physical_key_pressed(KEY_3):
-										focus_plane = &"yz"
-									if focus_plane != &"":
-										# Ctrl+1/2/3+Click: Focus camera on cortical area by requested plane.
-										if _pancake_cam:
-											var cortical_aabb = _compute_world_aabb(hit_parent)
-											if cortical_aabb.size != Vector3.ZERO and (cortical_aabb.size.x + cortical_aabb.size.y + cortical_aabb.size.z) > 0.01:
-												_frame_camera_to_aabb_with_plane(cortical_aabb, focus_plane)
-												print("Focused camera on cortical area: %s (%s plane)" % [hit_parent_parent.cortical_area.cortical_ID, String(focus_plane).to_upper()])
-											else:
-												_pancake_cam.teleport_to_look_at_without_changing_angle(hit_parent.global_position)
-												print("Focused camera on cortical area: %s (fallback)" % hit_parent_parent.cortical_area.cortical_ID)
-									else:
-										# Plain Ctrl+Click:
-										# - If clicked area is selected, toggle only that area off.
-										# - If clicked area is not selected and belongs to a unit collection,
-										#   add all sibling subunits in the same region.
-										# - If clicked area is not selected and has no unit collection,
-										#   add only the clicked area.
-										var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
-										if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
-											ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
-										var clicked_area: AbstractCorticalArea = hit_parent_parent.cortical_area
-										var selection_system: SelectionSystem = BV.UI.selection_system
-										if selection_system.is_highlighted(clicked_area):
-											selection_system.remove_from_highlighted(clicked_area)
-										else:
-											var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(clicked_area)
-											var filtered_group: Array[AbstractCorticalArea] = []
-											if unit_members.size() > 1:
-												var clicked_region = clicked_area.current_parent_region
-												for m in unit_members:
-													if m.current_parent_region == clicked_region:
-														filtered_group.append(m)
-											if filtered_group.size() > 1:
-												for member in filtered_group:
-													if not selection_system.is_highlighted(member):
-														selection_system.add_to_highlighted(member)
-											else:
-												selection_system.add_to_highlighted(clicked_area)
-										BV.UI.selection_system.select_objects(ctx)
-									continue
-								
-								# Left-click or right-click on cortical area: always single-select clicked area.
-								if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
-									var ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
-									if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
-										ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
-									var to_select: Array[GenomeObject] = arr_test
-									BV.UI.selection_system.clear_all_highlighted()
-									for obj in to_select:
-										BV.UI.selection_system.add_to_highlighted(obj)
-									BV.UI.selection_system.select_objects(ctx, to_select)
-									if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and _is_quick_connect_neuron_waiting_for_entire_area_selection():
-										# Whole-area QuickConnectNeuron steps still consume delta callbacks to progress source/destination.
-										cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, true)
-									if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-										BV.UI.selection_system.cortical_area_voxel_clicked(hit_parent_parent.cortical_area, neuron_coordinate_clicked)
-									#BV.UI.window_manager.spawn_quick_cortical_menu(arr_test)
-									#clicked_cortical_area.emit(hit_parent_parent.cortical_area)
-			
-			# Check if we hit a brain region frame (by checking script global name)
+				var cortical_renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
+				if cortical_renderer != null:
+					_handle_cortical_pick_click_event(
+						bm_input_event,
+						cortical_renderer,
+						hit["position"],
+						currently_moused_over_volumes,
+					)
 			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
 				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame and bm_input_event.button_pressed:

@@ -194,6 +194,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		if not defined_cortical_area.dimensions_3D_updated.is_connected(_refresh_io_direction_indicator):
 			defined_cortical_area.dimensions_3D_updated.connect(_refresh_io_direction_indicator)
 	call_deferred("_refresh_io_direction_indicator")
+	call_deferred("_update_friendly_name_label_visibility_for_hover")
 
 	# Cache-level update signals (lightweight refreshes).
 	if FeagiCore.feagi_local_cache:
@@ -758,6 +759,39 @@ func bv_update_friendly_name_label_positions() -> void:
 	if _directpoints_renderer != null:
 		_directpoints_renderer.bv_update_friendly_name_label_position()
 
+
+## Invariant core cluster areas (root plate row) keep names visible; region I/O plates use hover-only labels.
+func bv_friendly_name_label_always_visible() -> bool:
+	return _representing_cortial_area != null and AbstractCorticalArea.is_feagi_invariant_core_area(_representing_cortial_area)
+
+
+## Toggles the 3D cortical area name label (not the brain region title).
+func _update_friendly_name_label_visibility_for_hover() -> void:
+	if bv_friendly_name_label_always_visible():
+		if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
+			(_dda_renderer.get("_friendly_name_label") as Label3D).visible = true
+		if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:
+			var dp_label_core := _directpoints_renderer.get("_friendly_name_label") as Label3D
+			dp_label_core.visible = true if _dda_renderer == null else false
+		return
+	var show_from_bottom_line := false
+	if _representing_cortial_area != null:
+		var bm_scene := get_parent()
+		while bm_scene != null:
+			if bm_scene is UI_BrainMonitor_3DScene:
+				var s := bm_scene as UI_BrainMonitor_3DScene
+				show_from_bottom_line = s.brain_monitor_mouse_context_cortical_id() == _representing_cortial_area.cortical_ID
+				break
+			bm_scene = bm_scene.get_parent()
+	var show_area_name := _is_volume_moused_over or show_from_bottom_line
+	if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
+		(_dda_renderer.get("_friendly_name_label") as Label3D).visible = show_area_name
+	if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:
+		var dp_label := _directpoints_renderer.get("_friendly_name_label") as Label3D
+		# Dual-renderer areas use the DDA label only; keep DirectPoints label hidden.
+		dp_label.visible = show_area_name if _dda_renderer == null else false
+
+
 func set_hover_over_volume_state(is_moused_over: bool) -> void:
 	if is_moused_over == _is_volume_moused_over:
 		return
@@ -766,6 +800,7 @@ func set_hover_over_volume_state(is_moused_over: bool) -> void:
 		_dda_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
 	if _directpoints_renderer != null:
 		_directpoints_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
+	_update_friendly_name_label_visibility_for_hover()
 	_update_io_direction_indicator_label_visibility()
 	
 	# Show/hide neural connection curves on hover
