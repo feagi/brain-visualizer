@@ -1,11 +1,11 @@
 extends AbstractLineInput
 class_name PatternValInput
-## Text Box that use can input [PatternVal] into
+## Text Box that user can input [PatternVal] into.
+## Accepts: integers, *, ?, !, ?+, ?-, ?+=, ?-=, ?+N, ?-N, ?-A:?+B
 
 # useful properties inherited
 # editable
 # max_length
-# TODO: Bounds - limit number length
 
 # do not use the text_changed and text_submitted signals due top various limitations with them, unless you have a specific reason to
 
@@ -14,7 +14,8 @@ signal patternval_confirmed(new_patternval: PatternVal)
 
 ## due to godot limitations, can only use int here
 @export var intial_patternval: int
-## When value is int, enforce minimum. Used for voxel coordinates (e.g. patterns) where values must be >= 0.
+## When value is a plain integer (exact coordinate), enforce minimum.
+## Does not apply to offset/range patterns which encode relative values.
 @export var min_int_value: int = -999999
 
 var current_patternval: PatternVal:
