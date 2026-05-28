@@ -67,7 +67,7 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 		_cloning_cortical_area.cortical_type,
 		_cloning_cortical_area,
 		false, # auto_frame_on_create
-		true  # auto_frame_on_interaction
+		false  # no full reframe on drag; gizmo path uses frustum-nudge instead
 	)
 	_preview.connect_UI_signals(move_signals, resize_signals, closing_signals)
 	if _active_brain_monitor.has_method("start_cortical_preview_relocation"):
