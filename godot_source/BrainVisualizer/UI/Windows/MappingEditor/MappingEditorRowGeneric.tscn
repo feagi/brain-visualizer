@@ -113,7 +113,23 @@ stretch_mode = 0
 script = ExtResource("6_3sy0c")
 enable_autoscaling_with_theme = false
 
-[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="."]
+[node name="Spacer_BetweenInhibitoryAndGate" type="Control" parent="."]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Gate_Source_Area" type="OptionButton" parent="."]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Gate Source: cortical area whose firing activity gates this synapse (transistor mode).
+When set, synapses contribute zero PSP unless the gate area fires in the same burst.
+Leave unselected for unconditional propagation."
+clip_text = true
+fit_to_longest_item = false
+script = ExtResource("rstdp_cdd")
+
+[node name="Spacer_BetweenGateAndPlasticity" type="Control" parent="."]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0

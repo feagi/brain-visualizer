@@ -23,6 +23,7 @@ var _scalar: Vector3iField
 var _PSP: FloatInput
 var _synaptic_delay: IntInput
 var _inhibitory: ToggleButton
+var _gate_source: CorticalDropDown
 var _plasticity_mode: OptionButton  # Off / STDP / R-STDP
 var _plasticity_window: IntInput
 var _plasticity_constant: FloatInput
@@ -39,6 +40,7 @@ func _ready() -> void:
 	_PSP = $PSP
 	_synaptic_delay = $Synaptic_Delay
 	_inhibitory = $Inhibitory
+	_gate_source = $Gate_Source_Area
 	_plasticity_mode = $Plasticity_Mode
 	_plasticity_window = $Plasticity_Window
 	_plasticity_constant = $Plasticity_Constant
@@ -95,6 +97,7 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_PSP.current_float = absf(mapping.post_synaptic_current_multiplier)
 	_synaptic_delay.current_int = mapping.synaptic_delay_bursts
 	_inhibitory.set_toggle_no_signal(mapping.post_synaptic_current_multiplier < 0)
+	_set_dropdown_to_area_id(_gate_source, mapping.gate_source_area)
 
 	var mode_index: int = _resolve_mode_index_from_mapping(mapping)
 	_plasticity_mode.select(mode_index)
@@ -147,6 +150,8 @@ func export_mapping() -> SingleMappingDefinition:
 		# field empty so legacy consumers continue to read plasticity_flag=false.
 		mode_string = _MODE_INDEX_TO_STRING[_MODE_STDP]
 
+	var gate_id: String = _get_dropdown_area_id(_gate_source)
+
 	return SingleMappingDefinition.new(
 		morphology_used,
 		scalar,
@@ -161,6 +166,7 @@ func export_mapping() -> SingleMappingDefinition:
 		eligibility_decay_bursts,
 		reward_id,
 		punishment_id,
+		gate_id,
 	)
 
 func _on_user_PSP(_value: float) -> void:

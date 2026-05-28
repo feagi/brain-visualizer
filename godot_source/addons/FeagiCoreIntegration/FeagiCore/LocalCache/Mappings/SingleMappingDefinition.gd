@@ -61,6 +61,9 @@ var reward_source_area: String:
 ## Base64 cortical_id of the area whose density drives negative R(t) (empty when not configured)
 var punishment_source_area: String:
 	get: return _punishment_source_area
+## Base64 cortical_id of the area whose firing gates propagation (empty = unconditional)
+var gate_source_area: String:
+	get: return _gate_source_area
 ## True iff this rule has any reward/punishment source declared (used by BV for tap rendering)
 var has_reward_modulation: bool:
 	get: return _reward_source_area != "" or _punishment_source_area != ""
@@ -77,7 +80,8 @@ var _synaptic_delay_bursts: int
 var _plasticity_mode: String = ""
 var _eligibility_decay_bursts: int = 0
 var _reward_source_area: String = ""
-var _punishment_source_area: String = ""
+var _punishment_source_area: String
+var _gate_source_area: String = ""
 
 ## Creates a mapping with default settings (given a morphology)
 static func create_default_mapping(morphology: BaseMorphology) -> SingleMappingDefinition:
@@ -188,6 +192,7 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 	if morphology_cached.name == &"associative_memory":
 		plasticity = true
 	var delay_parsed: int = maxi(1, int(mapping_property.get("synaptic_delay_bursts", DEFAULT_SYNAPTIC_DELAY_BURSTS)))
+	var gate_area_used: String = String(mapping_property.get("gate_source_area", ""))
 	if !plasticity:
 		return SingleMappingDefinition.new(
 			morphology_cached,
@@ -199,6 +204,11 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 			DEFAULT_LTD_MULTIPLIER,
 			DEFAULT_PLASTICITY_WINDOW,
 			delay_parsed,
+			"",
+			0,
+			"",
+			"",
+			gate_area_used,
 		)
 	var plasticity_constant_used: float = float(mapping_property.get("plasticity_constant", 0.0))
 	var LTP_multiplier_used: float = float(mapping_property.get("ltp_multiplier", 0.0))
@@ -226,6 +236,7 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 	defn._eligibility_decay_bursts = eligibility_decay_used
 	defn._reward_source_area = reward_area_used
 	defn._punishment_source_area = punishment_area_used
+	defn._gate_source_area = gate_area_used
 	return defn
 
 
@@ -288,6 +299,7 @@ func _init(
 	eligibility_decay_bursts_: int = 0,
 	reward_source_area_: String = "",
 	punishment_source_area_: String = "",
+	gate_source_area_: String = "",
 ):
 	_morphology_used = morphology
 	_scalar = positive_scalar
@@ -304,18 +316,22 @@ func _init(
 	_eligibility_decay_bursts = maxi(0, eligibility_decay_bursts_)
 	_reward_source_area = reward_source_area_
 	_punishment_source_area = punishment_source_area_
+	_gate_source_area = gate_source_area_
 
 ## Returns a dictionary of this object in the same format FEAGI expects
 func to_FEAGI_JSON() -> Dictionary:
 	var associative_memory: bool = _morphology_used != null and _morphology_used.name == &"associative_memory"
 	if !_plasticity_flag and !associative_memory:
-		return {
+		var out: Dictionary = {
 			"morphology_id": _morphology_used.name,
 			"morphology_scalar": FEAGIUtils.vector3i_to_array(_scalar),
 			"postSynapticCurrent_multiplier": _post_synaptic_current_multiplier,
 			"plasticity_flag": _plasticity_flag,
 			"synaptic_delay_bursts": int(_synaptic_delay_bursts),
 		}
+		if _gate_source_area != "":
+			out["gate_source_area"] = _gate_source_area
+		return out
 	else:
 		var out: Dictionary = {
 			"morphology_id": _morphology_used.name,
@@ -336,6 +352,8 @@ func to_FEAGI_JSON() -> Dictionary:
 			out["reward_source_area"] = _reward_source_area
 		if _punishment_source_area != "":
 			out["punishment_source_area"] = _punishment_source_area
+		if _gate_source_area != "":
+			out["gate_source_area"] = _gate_source_area
 		return out
 
 ## Returns if the morphology is not null and if it is found in the morphology cache
