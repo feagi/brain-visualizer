@@ -38,8 +38,11 @@ var _manipulation_explicit_members: Array[AbstractCorticalArea] = []  # Explicit
 var _manipulation_is_core_cluster: bool = false  # Move session: save only power; slaved cores follow layout
 var _manipulation_external_preview_mode: bool = false  # true when gizmo controls a pre-create preview (no FEAGI save/apply)
 var _manipulation_external_position_changed: Callable = Callable()
+var _manipulation_moved_cb: Callable = Callable()    # stored for explicit disconnect before preview is freed
+var _manipulation_resized_cb: Callable = Callable()  # stored for explicit disconnect before preview is freed
 var _core_cluster_plate: MeshInstance3D = null
 var _core_cluster_layout_refresh_pending: bool = false
+var _ws_fastpath_resync_pending: bool = false
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -122,6 +125,12 @@ var _intro_final_fov: float
 var _intro_start_rot: Quaternion
 var _intro_target_rot: Quaternion
 var _io_indicator_suspend_depth: int = 0
+# Coalesces the three cache-reload handlers (genome_cache_replaced, cortical_areas_reloaded,
+# brain_regions_reloaded) into a single full rebuild per frame. A hash refresh emits two of these
+# back-to-back and a full genome load adds the third; without coalescing each one runs a complete
+# teardown+rebuild of every cortical area in the same frame, flooding Godot's CallQueue with deferred
+# calls (overflow crash) and leaving deferred work queued on just-freed nodes (dangling-callable crash).
+var _cache_rebuild_pending: bool = false
 var _active_preview_indicators: Array[Node3D] = []
 var _last_scene_center: Vector3 = Vector3.ZERO
 var _is_mouse_hovering_viewport: bool = false
@@ -1197,6 +1206,69 @@ func _nudge_camera_distance_for_manipulation_if_needed() -> void:
 		return
 	_pancake_cam.global_position = center + view_dir * required
 
+
+## During external preview relocation: reframe only when the manipulation target drifts near the
+## viewport edge (within a margin) or behind the camera. Also pulls the camera back in when the
+## target returns toward the scene center and the current framing has excess empty space.
+func _reframe_if_manipulation_near_viewport_edge() -> void:
+	if _pancake_cam == null or not _manipulation_active:
+		return
+	var aabb := _compute_manipulation_target_world_aabb()
+	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
+		return
+	var center := aabb.get_center()
+	if _pancake_cam.is_position_behind(center):
+		_auto_frame_camera_to_objects()
+		return
+	var screen_pos := _pancake_cam.unproject_position(center)
+	var vp_size := _pancake_cam.get_viewport().get_visible_rect().size
+	var margin_fraction := 0.15
+	var min_x := vp_size.x * margin_fraction
+	var max_x := vp_size.x * (1.0 - margin_fraction)
+	var min_y := vp_size.y * margin_fraction
+	var max_y := vp_size.y * (1.0 - margin_fraction)
+	if screen_pos.x < min_x or screen_pos.x > max_x or screen_pos.y < min_y or screen_pos.y > max_y:
+		_auto_frame_camera_to_objects()
+		return
+	# Preview is comfortably inside the viewport; check if camera is zoomed out more than needed
+	# (from a prior edge-triggered reframe) and pull it back in using the full scene AABB.
+	var scene_aabb := _compute_scene_aabb()
+	var previews_aabb := _compute_previews_aabb()
+	if previews_aabb.size != Vector3.ZERO or !previews_aabb.position.is_equal_approx(Vector3.ZERO):
+		scene_aabb = previews_aabb if scene_aabb.size == Vector3.ZERO else scene_aabb.merge(previews_aabb)
+	if scene_aabb.size == Vector3.ZERO or (scene_aabb.size.x + scene_aabb.size.y + scene_aabb.size.z) < 0.01:
+		return
+	var scene_center := scene_aabb.get_center()
+	var cam_pos := _pancake_cam.global_position
+	var to_cam := cam_pos - scene_center
+	var len_sq := to_cam.length_squared()
+	if len_sq < 1e-8:
+		return
+	var view_dir := to_cam.normalized()
+	var cam_up := _pancake_cam.global_transform.basis.y.normalized()
+	if absf(cam_up.dot(view_dir)) > 0.98:
+		cam_up = Vector3.UP
+		if absf(cam_up.dot(view_dir)) > 0.98:
+			cam_up = Vector3.RIGHT
+	var fov_used := _pancake_cam.fov
+	if fov_used < 5.0:
+		fov_used = 70.0
+	var vfov_rad := deg_to_rad(fov_used)
+	var vp := _pancake_cam.get_viewport().get_visible_rect().size
+	var aspect: float = vp.x / max(1.0, vp.y)
+	var hfov_rad := 2.0 * atan(tan(vfov_rad * 0.5) * aspect)
+	var required := _compute_frame_distance_for_aabb_from_orientation(
+		scene_aabb, vfov_rad, hfov_rad, view_dir, cam_up
+	)
+	var current := sqrt(len_sq)
+	if required > current * 1.002:
+		# Need to zoom out to fit
+		_pancake_cam.global_position = scene_center + view_dir * required
+	elif current > required * 1.4:
+		# Camera is significantly further than needed; ease in to reduce empty space
+		var target_pos := scene_center + view_dir * required
+		_pancake_cam.global_position = _pancake_cam.global_position.lerp(target_pos, 0.12)
+
 func _resolve_up_for_plane(plane_name: StringName) -> Vector3:
 	match plane_name:
 		&"xz":
@@ -2119,19 +2191,21 @@ func start_cortical_area_manipulation(area: AbstractCorticalArea, mode: MANIPULA
 		_pancake_cam.camera_user_moved.connect(_update_manipulation_gizmo_transform)
 
 	# Keep gizmo pinned as preview moves/resizes.
-	_manipulation_preview.user_moved_preview.connect(func(p: Vector3i):
+	# Lambdas stored so they can be explicitly disconnected before the preview is freed,
+	# preventing "Lambda capture at index 0 was freed" when call_deferred fires after session end.
+	_manipulation_moved_cb = func(p: Vector3i):
 		_manipulation_current_pos = p
 		_update_manipulation_group_previews(p)
 		_update_manipulation_gizmo_transform()
 		call_deferred("_nudge_camera_distance_for_manipulation_if_needed")
-	)
-	_manipulation_preview.user_resized_preview.connect(func(d: Vector3i):
+	_manipulation_preview.user_moved_preview.connect(_manipulation_moved_cb)
+	_manipulation_resized_cb = func(d: Vector3i):
 		_manipulation_current_dims = d
 		_update_manipulation_group_resize_previews(d)
 		_update_manipulation_capacity_warning()
 		_update_manipulation_gizmo_transform()
 		call_deferred("_nudge_camera_distance_for_manipulation_if_needed")
-	)
+	_manipulation_preview.user_resized_preview.connect(_manipulation_resized_cb)
 	if mode == MANIPULATION_MODE.RESIZE and _is_isvi_peripheral(area):
 		_setup_manipulation_group_previews(area)
 
@@ -2249,11 +2323,11 @@ func start_brain_region_manipulation(region: BrainRegion) -> void:
 	_update_manipulation_gizmo_transform()
 	if _pancake_cam != null and not _pancake_cam.camera_user_moved.is_connected(_update_manipulation_gizmo_transform):
 		_pancake_cam.camera_user_moved.connect(_update_manipulation_gizmo_transform)
-	_manipulation_region_preview.user_moved_preview.connect(func(p: Vector3i):
+	_manipulation_moved_cb = func(p: Vector3i):
 		_manipulation_current_pos = p
 		_update_manipulation_gizmo_transform()
 		call_deferred("_nudge_camera_distance_for_manipulation_if_needed")
-	)
+	_manipulation_region_preview.user_moved_preview.connect(_manipulation_moved_cb)
 
 ## Starts relocate gizmo for an externally managed brain-region preview (e.g., Create New Circuit window).
 ## This session is preview-only and does NOT apply FEAGI updates on click/enter.
@@ -2305,13 +2379,13 @@ func _start_external_preview_relocation(preview: Node, is_region_preview: bool, 
 	if _pancake_cam != null and not _pancake_cam.camera_user_moved.is_connected(_update_manipulation_gizmo_transform):
 		_pancake_cam.camera_user_moved.connect(_update_manipulation_gizmo_transform)
 	if preview.has_signal("user_moved_preview"):
-		preview.user_moved_preview.connect(func(p: Vector3i):
+		_manipulation_moved_cb = func(p: Vector3i):
 			_manipulation_current_pos = p
 			_update_manipulation_gizmo_transform()
-			call_deferred("_nudge_camera_distance_for_manipulation_if_needed")
+			call_deferred("_reframe_if_manipulation_near_viewport_edge")
 			if _manipulation_external_position_changed.is_valid():
 				_manipulation_external_position_changed.call(p)
-		)
+		preview.user_moved_preview.connect(_manipulation_moved_cb)
 
 ## Shared stop path for externally managed preview relocation (circuit + cortical).
 func _stop_external_preview_relocation(preview: Node, is_region_preview: bool) -> void:
@@ -2335,10 +2409,19 @@ func _stop_external_preview_relocation(preview: Node, is_region_preview: bool) -
 	if is_instance_valid(_manipulation_gizmo):
 		_manipulation_gizmo.queue_free()
 	_manipulation_gizmo = null
+	# Disconnect stored lambda from the externally managed preview before releasing the reference;
+	# prevents "Lambda capture freed" if a deferred call fires after the session ends.
+	if _manipulation_moved_cb.is_valid():
+		if is_instance_valid(_manipulation_preview) and _manipulation_preview.has_signal("user_moved_preview") and _manipulation_preview.user_moved_preview.is_connected(_manipulation_moved_cb):
+			_manipulation_preview.user_moved_preview.disconnect(_manipulation_moved_cb)
+		if is_instance_valid(_manipulation_region_preview) and _manipulation_region_preview.has_signal("user_moved_preview") and _manipulation_region_preview.user_moved_preview.is_connected(_manipulation_moved_cb):
+			_manipulation_region_preview.user_moved_preview.disconnect(_manipulation_moved_cb)
 	_manipulation_preview = null
 	_manipulation_region_preview = null
 	_manipulation_external_preview_mode = false
 	_manipulation_external_position_changed = Callable()
+	_manipulation_moved_cb = Callable()
+	_manipulation_resized_cb = Callable()
 	_clear_manipulation_group_previews()
 	_manipulation_group_start_positions.clear()
 	_manipulation_group_anchor_pos = Vector3i.ZERO
@@ -2363,6 +2446,16 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 	# Safety: ensure camera pan is restored if session ends while dragging.
 	if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
 		_pancake_cam.call("set_tank_pan_enabled", true)
+	# Disconnect stored lambdas before freeing previews; prevents "Lambda capture freed" errors
+	# when call_deferred calls queued by the lambda fire after the session ends.
+	if is_instance_valid(_manipulation_preview):
+		if _manipulation_moved_cb.is_valid() and _manipulation_preview.user_moved_preview.is_connected(_manipulation_moved_cb):
+			_manipulation_preview.user_moved_preview.disconnect(_manipulation_moved_cb)
+		if _manipulation_resized_cb.is_valid() and _manipulation_preview.user_resized_preview.is_connected(_manipulation_resized_cb):
+			_manipulation_preview.user_resized_preview.disconnect(_manipulation_resized_cb)
+	if is_instance_valid(_manipulation_region_preview):
+		if _manipulation_moved_cb.is_valid() and _manipulation_region_preview.user_moved_preview.is_connected(_manipulation_moved_cb):
+			_manipulation_region_preview.user_moved_preview.disconnect(_manipulation_moved_cb)
 	if clear_nodes:
 		if is_instance_valid(_manipulation_preview):
 			_manipulation_preview.queue_free()
@@ -2385,6 +2478,8 @@ func _end_manipulation_session(clear_nodes: bool) -> void:
 	_manipulation_group_anchor_pos = Vector3i.ZERO
 	_manipulation_explicit_members.clear()
 	_manipulation_is_core_cluster = false
+	_manipulation_moved_cb = Callable()
+	_manipulation_resized_cb = Callable()
 
 func _setup_manipulation_group_previews(area: AbstractCorticalArea) -> void:
 	var members: Array[AbstractCorticalArea] = _get_unit_group_members_in_same_region(area)
@@ -4030,11 +4125,16 @@ func _should_show_feagi_invariant_core_in_this_monitor(area: AbstractCorticalAre
 
 
 ## Desktop WS Type 11 applies to MultiMeshes registered on AbstractCorticalArea; schedule rebuild after BM recreates nodes.
+## Guard prevents multiple identical deferred calls from stacking in the CallQueue when several signal handlers fire per frame.
 func _schedule_ws_fastpath_resync_after_cortical_visuals_refresh() -> void:
+	if _ws_fastpath_resync_pending:
+		return
+	_ws_fastpath_resync_pending = true
 	call_deferred("_deferred_invoke_ws_fastpath_rebuild")
 
 
 func _deferred_invoke_ws_fastpath_rebuild() -> void:
+	_ws_fastpath_resync_pending = false
 	if FeagiCore == null or FeagiCore.network == null:
 		return
 	var ws: FEAGIWebSocketAPI = FeagiCore.network.websocket_API
@@ -4087,36 +4187,24 @@ func resync_visualization_after_transport_recovery() -> void:
 	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
 
 
-## Cache replacement event handler - refreshes all cortical area connections AND creates new brain regions
+## Cache replacement event handler - refreshes all cortical area connections AND creates new brain regions.
+## Heavy teardown+rebuild is coalesced via [method _request_coalesced_cache_rebuild] so multiple cache
+## signals in one frame produce a single rebuild. The suspend push here is balanced by the deferred release
+## below (1:1 per handler), so the indicator-suspend depth stays correct regardless of how many signals fire.
 func _on_cache_replaced_refresh_all_connections() -> void:
 	_push_io_indicator_suspend()
-	_ensure_representing_region_from_cache()
-	# CRITICAL: Check for new brain regions that need visualization after cloning
-	_create_missing_brain_region_visualizations()
-	_rebuild_cortical_visualizations_after_cache_touch()
-	# Force refresh connections for all currently hovered cortical areas
-	for cortical_viz in _cortical_visualizations_by_ID.values():
-		if cortical_viz != null and is_instance_valid(cortical_viz):
-			if cortical_viz._is_volume_moused_over:
-				cortical_viz._hide_neural_connections()
-				cortical_viz._show_neural_connections()
+	_request_coalesced_cache_rebuild()
 	call_deferred("_release_io_indicator_suspend_after_settle")
-	_schedule_core_cluster_layout_refresh()
 
 
 func _on_cortical_areas_reloaded() -> void:
 	_push_io_indicator_suspend()
-	_ensure_representing_region_from_cache()
-	_create_missing_brain_region_visualizations()
-	_rebuild_cortical_visualizations_after_cache_touch()
-	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+	_request_coalesced_cache_rebuild()
 	call_deferred("_release_io_indicator_suspend_after_settle")
-	_schedule_core_cluster_layout_refresh()
 
 
 func _on_brain_regions_reloaded() -> void:
 	_push_io_indicator_suspend()
-	_ensure_representing_region_from_cache()
 	if _region_reload_debug_enabled():
 		var br = FeagiCore.feagi_local_cache.brain_regions if FeagiCore != null and FeagiCore.feagi_local_cache != null else null
 		print("[REGION-DBG][3DScene] brain_regions_reloaded representing=%s available_regions=%d existing_plates=%d" % [
@@ -4124,10 +4212,35 @@ func _on_brain_regions_reloaded() -> void:
 			br.available_brain_regions.size() if br != null else -1,
 			_brain_region_visualizations_by_ID.size(),
 		])
+	_request_coalesced_cache_rebuild()
+	call_deferred("_release_io_indicator_suspend_after_settle")
+
+
+## Debounced entry point for the three cache-reload handlers. Queues exactly one full rebuild for the
+## next idle frame; subsequent requests in the same frame are no-ops. The cache signals fire after the
+## cache is fully updated, so a single rebuild on the next frame captures the final state.
+func _request_coalesced_cache_rebuild() -> void:
+	if _cache_rebuild_pending:
+		return
+	_cache_rebuild_pending = true
+	call_deferred("_perform_coalesced_cache_rebuild")
+
+
+## Performs the single, coalesced full rebuild. Replaces the per-handler synchronous rebuilds.
+func _perform_coalesced_cache_rebuild() -> void:
+	_cache_rebuild_pending = false
+	_ensure_representing_region_from_cache()
+	# CRITICAL: Check for new brain regions that need visualization after cloning / reload.
 	_create_missing_brain_region_visualizations()
 	_rebuild_cortical_visualizations_after_cache_touch()
+	# Force refresh connections for all currently hovered cortical areas (post-rebuild on fresh nodes).
+	for cortical_viz in _cortical_visualizations_by_ID.values():
+		if cortical_viz != null and is_instance_valid(cortical_viz):
+			if cortical_viz._is_volume_moused_over:
+				cortical_viz._hide_neural_connections()
+				cortical_viz._show_neural_connections()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
-	call_deferred("_release_io_indicator_suspend_after_settle")
+	_schedule_core_cluster_layout_refresh()
 
 ## Creates visualizations for any new cortical areas in this region after cache refresh
 func _add_missing_cortical_area_visualizations() -> void:

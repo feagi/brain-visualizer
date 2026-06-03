@@ -36,6 +36,12 @@ var _io_direction_indicator_material: StandardMaterial3D = null
 var _io_direction_indicator_mode: StringName = &"none" # "none" | "input" | "output" | "bidirectional"
 var _io_direction_indicator_base_scale: Vector3 = Vector3.ONE
 var _io_direction_indicator_label: Label3D = null
+# Per-instance deferred-call guards: prevent duplicate queue entries during bulk cortical area creation.
+var _io_indicator_refresh_pending: bool = false
+var _friendly_name_refresh_pending: bool = false
+# Caps the scale-compensation retry loop so a persistently-zero parent scale cannot
+# keep this area's deferred slot permanently occupied in the CallQueue.
+var _io_indicator_scale_retries: int = 0
 
 # Tunables for arrow look/feel
 const IO_ARROW_COLOR: Color = Color(0.827, 0.706, 0.196, 0.85)  # Mustard yellow, semi-transparent
@@ -193,8 +199,13 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 			defined_cortical_area.coordinates_3D_updated.connect(_refresh_io_direction_indicator)
 		if not defined_cortical_area.dimensions_3D_updated.is_connected(_refresh_io_direction_indicator):
 			defined_cortical_area.dimensions_3D_updated.connect(_refresh_io_direction_indicator)
-	call_deferred("_refresh_io_direction_indicator")
-	call_deferred("_update_friendly_name_label_visibility_for_hover")
+	# Guards prevent duplicate deferred calls when hundreds of cortical areas initialize in the same frame.
+	if not _io_indicator_refresh_pending:
+		_io_indicator_refresh_pending = true
+		call_deferred("_refresh_io_direction_indicator")
+	if not _friendly_name_refresh_pending:
+		_friendly_name_refresh_pending = true
+		call_deferred("_update_friendly_name_label_visibility_for_hover")
 
 	# Cache-level update signals (lightweight refreshes).
 	if FeagiCore.feagi_local_cache:
@@ -273,6 +284,8 @@ func _retry_directpoints_fastpath_registration(defined_cortical_area: AbstractCo
 ## - Both: bidirectional (double-headed)
 ## Skips indicators for areas currently positioned on brain-region plates.
 func _refresh_io_direction_indicator(_unused = null) -> void:
+	_io_indicator_refresh_pending = false
+	_io_indicator_scale_retries = 0
 	if not _io_direction_indicators_allowed_by_scene():
 		_clear_io_direction_indicator()
 		return
@@ -424,8 +437,14 @@ func _update_io_direction_indicator_transform(mode: StringName) -> void:
 		or absf(parent_scale.y) < IO_ARROW_MIN_PARENT_SCALE_FOR_COMPENSATION
 		or absf(parent_scale.z) < IO_ARROW_MIN_PARENT_SCALE_FOR_COMPENSATION
 	):
-		# During cache refresh there can be transient tiny scales; keep previous stable value and retry.
-		call_deferred("_refresh_io_direction_indicator")
+		# During cache refresh there can be transient tiny scales; keep the previous stable scale
+		# value and retry once. The retry counter prevents an infinite re-queue loop if the parent
+		# scale never recovers (e.g. a permanently-zero-scale node during teardown).
+		const MAX_SCALE_RETRIES: int = 3
+		if _io_indicator_scale_retries < MAX_SCALE_RETRIES and not _io_indicator_refresh_pending:
+			_io_indicator_scale_retries += 1
+			_io_indicator_refresh_pending = true
+			call_deferred("_refresh_io_direction_indicator")
 		return
 	_io_direction_indicator_base_scale = Vector3(
 		clampf(1.0 / absf(parent_scale.x), 0.001, IO_ARROW_MAX_INVERSE_SCALE_COMPENSATION),
@@ -760,19 +779,23 @@ func bv_update_friendly_name_label_positions() -> void:
 		_directpoints_renderer.bv_update_friendly_name_label_position()
 
 
-## Invariant core cluster areas (root plate row) keep names visible; region I/O plates use hover-only labels.
+## Names stay visible for genome/main-scene areas and for invariant cores on plates; other plate-mounted areas use hover-only labels.
 func bv_friendly_name_label_always_visible() -> bool:
+	if not _is_on_brain_region_plate():
+		return true
 	return _representing_cortial_area != null and AbstractCorticalArea.is_feagi_invariant_core_area(_representing_cortial_area)
 
 
 ## Toggles the 3D cortical area name label (not the brain region title).
 func _update_friendly_name_label_visibility_for_hover() -> void:
+	_friendly_name_refresh_pending = false
 	if bv_friendly_name_label_always_visible():
 		if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
 			(_dda_renderer.get("_friendly_name_label") as Label3D).visible = true
 		if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:
 			var dp_label_core := _directpoints_renderer.get("_friendly_name_label") as Label3D
 			dp_label_core.visible = true if _dda_renderer == null else false
+		_apply_friendly_name_label_depth_policy()
 		return
 	var show_from_bottom_line := false
 	if _representing_cortial_area != null:
@@ -790,6 +813,22 @@ func _update_friendly_name_label_visibility_for_hover() -> void:
 		var dp_label := _directpoints_renderer.get("_friendly_name_label") as Label3D
 		# Dual-renderer areas use the DDA label only; keep DirectPoints label hidden.
 		dp_label.visible = show_area_name if _dda_renderer == null else false
+	_apply_friendly_name_label_depth_policy()
+
+
+## Plate meshes occlude labels unless depth test is disabled; genome scene keeps normal depth on titles.
+func _apply_friendly_name_label_depth_policy() -> void:
+	var on_plate := _is_on_brain_region_plate()
+	var ndt := on_plate
+	var prio := 2 if on_plate else 1
+	if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
+		var dda_lbl := _dda_renderer.get("_friendly_name_label") as Label3D
+		dda_lbl.no_depth_test = ndt
+		dda_lbl.render_priority = prio
+	if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:
+		var dp_lbl := _directpoints_renderer.get("_friendly_name_label") as Label3D
+		dp_lbl.no_depth_test = ndt
+		dp_lbl.render_priority = prio
 
 
 func set_hover_over_volume_state(is_moused_over: bool) -> void:
@@ -2328,6 +2367,11 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		_cleanup_cache_connections()
+	elif what == NOTIFICATION_PARENTED:
+		# Genome root vs brain-region plate changes hover-only vs always-visible name rules.
+		if not _friendly_name_refresh_pending:
+			_friendly_name_refresh_pending = true
+			call_deferred("_update_friendly_name_label_visibility_for_hover")
 
 func _cleanup_cache_connections() -> void:
 	# Disconnect cache reload signal
@@ -2365,18 +2409,32 @@ func _cleanup_cache_connections() -> void:
 
 ## Called when the cache is reloaded to refresh connection curves
 func _on_cache_reloaded() -> void:
+	# A node being torn down during a cache rebuild must not enqueue more deferred work:
+	# the queued callable would target a freed object once queue_free completes.
+	if is_queued_for_deletion():
+		return
 	# If we're currently showing connections, refresh them with updated cache data
 	if _is_volume_moused_over:
-		_hide_neural_connections()  # Clear old curves
-		_show_neural_connections()  # Rebuild with fresh cache data
-	_refresh_io_direction_indicator()
+		_hide_neural_connections()
+		_show_neural_connections()
+	# Defer the IO indicator refresh; during genome reload hundreds of cache signals
+	# fire per area, so batching into one deferred call prevents queue saturation.
+	if not _io_indicator_refresh_pending:
+		_io_indicator_refresh_pending = true
+		call_deferred("_refresh_io_direction_indicator")
 
 ## Called when mapping connections change in real-time
 func _on_mapping_changed(_area = null, _mapping_set = null) -> void:
+	if is_queued_for_deletion():
+		return
 	# If we're currently showing connections, refresh them immediately
 	if _is_volume_moused_over:
-		_hide_neural_connections()  # Clear old curves
-		_show_neural_connections()  # Rebuild with updated mappings
-	_refresh_io_direction_indicator()
+		_hide_neural_connections()
+		_show_neural_connections()
+	# Defer the IO indicator refresh; during genome load thousands of mapping-change
+	# signals can fire across all areas in one frame. One deferred call per area is enough.
+	if not _io_indicator_refresh_pending:
+		_io_indicator_refresh_pending = true
+		call_deferred("_refresh_io_direction_indicator")
 		
 #endregion

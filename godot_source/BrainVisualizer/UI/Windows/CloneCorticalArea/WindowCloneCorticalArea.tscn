@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="5_6v723"]
 [ext_resource type="PackedScene" uid="uid://brwx50pyfywb7" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinBoxField.tscn" id="6_sl08t"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_t2gp1"]
-[ext_resource type="Texture2D" uid="uid://cyjkmin6bodpp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="7_taa4s"]
+[ext_resource type="Texture2D" uid="uid://ch54esboqsyem" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="7_taa4s"]
 [ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="8_tgbtn"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="10_smykg"]
 
@@ -90,22 +90,14 @@ size_flags_vertical = 4
 text = "Auto wire mappings"
 
 [node name="AutoWiring" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
-custom_minimum_size = Vector2(168, 0)
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-size_flags_vertical = 4
 theme_type_variation = &"ToggleButton"
 texture_normal = ExtResource("7_taa4s")
 ignore_texture_size = true
 stretch_mode = 0
-toggle_mode = true
 button_pressed = true
 script = ExtResource("8_tgbtn")
-enable_autoscaling_with_theme = false
-
-[node name="LabelEnabled" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
-layout_mode = 2
-size_flags_vertical = 4
-text = "Enabled"
 
 [node name="Clone_button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2

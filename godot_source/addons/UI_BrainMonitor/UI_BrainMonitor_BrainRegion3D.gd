@@ -536,6 +536,7 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 
 ## Comprehensive plate and positioning update after cortical area dimension changes
 func _recalculate_plates_and_positioning_after_dimension_change() -> void:
+	_dimension_recalc_pending = false
 	if not _representing_region:
 		return
 	# This method is async (awaits frames) and can race with teardown/refresh.
@@ -1922,11 +1923,14 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 	
 	var container_world_pos = brain_region_world_pos + container_offset
 	
-	# Calculate position relative to container: desired_world - container_world  
+	# Calculate position relative to container: desired_world - container_world.
+	# This is used to keep renderer-local state coherent after reparenting onto plate containers.
 	var position_relative_to_container = desired_world_pos - container_world_pos
 	
-	
-	# CRITICAL: Move renderers via their FEAGI positioning APIs so internal state (and animations) stay in sync
+	# Keep FEAGI-space cache in sync for dimension updates/rebuilds, but apply transform in world space.
+	# When these visualizations are parented under region plate containers, feeding FEAGI coordinates through
+	# update_position_with_new_FEAGI_coordinate() places them in root-space instead of above the plate.
+	# So we compute LFF FEAGI once, then set world transform explicitly.
 	# Compute lower-left-front FEAGI coordinate from absolute center FEAGI (area_data.new_coordinates)
 	var dims_feagi: Vector3i = cortical_viz.cortical_area.dimensions_3D
 	# absolute_feagi_coords is available earlier; re-derive center from brain region + relative new_position
@@ -1938,12 +1942,18 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 	)
 	
 	# Position DDA renderer (structure + labels)
-	if cortical_viz._dda_renderer != null:
-		cortical_viz._dda_renderer.update_position_with_new_FEAGI_coordinate(lff_feagi)
+	if cortical_viz._dda_renderer != null and cortical_viz._dda_renderer._static_body != null:
+		cortical_viz._dda_renderer._position_FEAGI_space = lff_feagi
+		cortical_viz._dda_renderer._position_godot_space = position_relative_to_container
+		cortical_viz._dda_renderer._static_body.global_position = desired_world_pos
+		cortical_viz._dda_renderer.bv_update_friendly_name_label_position()
 	
 	# Position DirectPoints renderer (points + labels)
-	if cortical_viz._directpoints_renderer != null:
-		cortical_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate(lff_feagi)
+	if cortical_viz._directpoints_renderer != null and cortical_viz._directpoints_renderer._static_body != null:
+		cortical_viz._directpoints_renderer._position_FEAGI_space = lff_feagi
+		cortical_viz._directpoints_renderer._position_godot_space = position_relative_to_container
+		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
+		cortical_viz._directpoints_renderer.bv_update_friendly_name_label_position()
 
 	# If neural connections are currently shown (hover state), rebuild them to align pulses with new position
 	if cortical_viz._is_volume_moused_over:
@@ -2411,7 +2421,7 @@ func _on_region_partial_mappings_changed(_param) -> void:
 
 ## Checks if I/O status has changed and refreshes if needed
 func _check_io_status_and_refresh() -> void:
-	# Suppressed spam log during clone
+	_io_check_pending = false
 	force_refresh()
 
 ## Validates that all plates are properly aligned
@@ -2656,6 +2666,8 @@ func _cleanup_all_children() -> void:
 ## CRITICAL: Disable connection monitoring to prevent recursive refresh loops
 var _connection_monitoring_enabled: bool = true
 var _dimension_recalc_in_progress: bool = false
+var _io_check_pending: bool = false
+var _dimension_recalc_pending: bool = false
 
 func _disable_connection_monitoring() -> void:
 	_connection_monitoring_enabled = false
@@ -2719,8 +2731,10 @@ func _on_area_connections_changed(_other_area: AbstractCorticalArea, _mapping_se
 	if is_queued_for_deletion() or not is_inside_tree():
 		return
 		
-	# Small delay to ensure connection changes are fully processed
-	call_deferred("_check_io_status_and_refresh")
+	# Guard prevents duplicate deferred calls when multiple connection changes arrive per frame.
+	if not _io_check_pending:
+		_io_check_pending = true
+		call_deferred("_check_io_status_and_refresh")
 
 ## Called when dimensions change for an area in this region (with monitoring control)
 func _on_area_dimensions_changed(_new_dims: Vector3i, area: AbstractCorticalArea) -> void:
@@ -2729,6 +2743,7 @@ func _on_area_dimensions_changed(_new_dims: Vector3i, area: AbstractCorticalArea
 		return
 	if is_queued_for_deletion() or not is_inside_tree():
 		return
-	# Debounce multiple dimension changes in a single frame
-	# print("📐 DIMENSION CHANGE: Area %s dimensions changed -> scheduling comprehensive plate rebuild" % area.cortical_ID)
-	call_deferred("_recalculate_plates_and_positioning_after_dimension_change")
+	# Guard prevents duplicate deferred calls when multiple areas change dimensions in the same frame.
+	if not _dimension_recalc_pending:
+		_dimension_recalc_pending = true
+		call_deferred("_recalculate_plates_and_positioning_after_dimension_change")

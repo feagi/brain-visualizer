@@ -334,10 +334,9 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_friendly_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_friendly_name_label.alpha_scissor_threshold = 0.5  # Clean edges
-	# Draw through scene depth so plate meshes do not hide names (same idea as region title labels).
-	_friendly_name_label.no_depth_test = true
-	_friendly_name_label.render_priority = 2
-	# Region-plate areas: label on hover only. Invariant core row (power/death/...) always shows the name.
+	_friendly_name_label.no_depth_test = false
+	_friendly_name_label.render_priority = 1
+	# Initial guess; UI_BrainMonitor_CorticalArea refreshes for genome vs plate hover rules.
 	_friendly_name_label.visible = AbstractCorticalArea.is_feagi_invariant_core_area(area)
 	# Parent to this renderer (same as power/memory) so bv_update_friendly_name_label_position()
 	# uses one coordinate space for all special areas (label below footprint, camera-aware XZ).

@@ -13,6 +13,7 @@ var _line_initial_neuron_lifespan: IntInput
 var _line_lifespan_growth_rate: IntInput
 var _line_longterm_memory_threshold: IntInput
 var _line_temporal_depth: IntInput
+var _check_mp_learning: ToggleButton
 var _active_brain_monitor: UI_BrainMonitor_3DScene = null
 var _preview: UI_BrainMonitor_InteractivePreview = null
 
@@ -23,6 +24,7 @@ func _ready() -> void:
 	_line_lifespan_growth_rate = $PanelContainer/MemoryParameters/lifespan_growth_rate/lifespan_growth_rate
 	_line_longterm_memory_threshold = $PanelContainer/MemoryParameters/longterm_memory_threshold/longterm_memory_threshold
 	_line_temporal_depth = $PanelContainer/MemoryParameters/temporal_depth/temporal_depth
+	_check_mp_learning = $PanelContainer/MemoryParameters/mp_learning_enabled/mp_learning_enabled
 
 
 func cortical_type_selected(_cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal], host_bm = null) -> void:
@@ -74,4 +76,5 @@ func get_memory_parameters_for_api() -> Dictionary:
 		"neuron_lifespan_growth_rate": _line_lifespan_growth_rate.current_int,
 		"neuron_longterm_mem_threshold": _line_longterm_memory_threshold.current_int,
 		"temporal_depth": _line_temporal_depth.current_int,
+		"mp_learning_enabled": _check_mp_learning.button_pressed if _check_mp_learning != null else false,
 	}

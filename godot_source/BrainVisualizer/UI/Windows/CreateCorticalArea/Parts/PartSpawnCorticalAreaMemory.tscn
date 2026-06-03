@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://csvjqt8dbo5ec"]
+[gd_scene load_steps=7 format=3 uid="uid://csvjqt8dbo5ec"]
 
 [ext_resource type="Script" uid="uid://bjgbpc5y6tnmd" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaMemory.gd" id="1_se87m"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="3_dcueh"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_af2cq"]
 [ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="5_int"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="6_tgl_off"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="7_tgl_script"]
 
 [node name="Definition_Memory" type="VBoxContainer"]
 offset_right = 473.0
@@ -113,3 +115,21 @@ script = ExtResource("5_int")
 initial_int = 1
 max_value = 99999999999999
 min_value = 1
+
+[node name="mp_learning_enabled" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+layout_mode = 2
+tooltip_text = "When enabled, membrane potentials are captured and stored with replay frames for intensity-faithful pattern reconstruction."
+
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_learning_enabled"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "MP Learning"
+
+[node name="mp_learning_enabled" type="TextureButton" parent="PanelContainer/MemoryParameters/mp_learning_enabled"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_type_variation = &"ToggleButton"
+texture_normal = ExtResource("6_tgl_off")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("7_tgl_script")

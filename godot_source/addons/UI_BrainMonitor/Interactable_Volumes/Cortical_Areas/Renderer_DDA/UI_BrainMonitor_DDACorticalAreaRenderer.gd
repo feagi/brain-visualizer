@@ -58,10 +58,10 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_friendly_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_friendly_name_label.alpha_scissor_threshold = 0.5  # Clean edges
-	# Draw through scene depth so plate meshes do not hide names (same idea as region title labels).
-	_friendly_name_label.no_depth_test = true
-	_friendly_name_label.render_priority = 2
-	_friendly_name_label.visible = false  # Shown only while the cortical volume is hovered
+	_friendly_name_label.no_depth_test = false
+	_friendly_name_label.render_priority = 1
+	# Visibility (always vs hover-only on brain-region plates) is set by UI_BrainMonitor_CorticalArea.
+	_friendly_name_label.visible = false
 	add_child(_friendly_name_label)
 	set_process(true)
 

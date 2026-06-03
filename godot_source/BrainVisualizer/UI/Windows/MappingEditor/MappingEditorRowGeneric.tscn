@@ -128,6 +128,7 @@ Leave unselected for unconditional propagation."
 clip_text = true
 fit_to_longest_item = false
 script = ExtResource("rstdp_cdd")
+include_none_option = true
 
 [node name="Spacer_BetweenGateAndPlasticity" type="Control" parent="."]
 custom_minimum_size = Vector2(12, 0)
@@ -229,6 +230,7 @@ Leave unselected to use punishment-only learning."
 clip_text = true
 fit_to_longest_item = false
 script = ExtResource("rstdp_cdd")
+include_none_option = true
 
 [node name="Spacer_AfterReward" type="Control" parent="."]
 custom_minimum_size = Vector2(8, 0)
@@ -244,6 +246,7 @@ Leave unselected to use reward-only learning."
 clip_text = true
 fit_to_longest_item = false
 script = ExtResource("rstdp_cdd")
+include_none_option = true
 
 [node name="Spacer_AfterPunishment" type="Control" parent="."]
 custom_minimum_size = Vector2(8, 0)
