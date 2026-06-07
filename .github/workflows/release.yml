@@ -553,7 +553,32 @@ jobs:
           cd godot_source
           mkdir -p ../exports
           echo "Exporting to: ../exports/${{ matrix.output_name }}"
-          ${GODOT} --headless --export-release "${{ matrix.export_name }}" ../exports/${{ matrix.output_name }}
+          EXPORT_TARGET="../exports/${{ matrix.output_name }}"
+          set +e
+          ${GODOT} --headless --export-release "${{ matrix.export_name }}" "${EXPORT_TARGET}"
+          EXPORT_EXIT_CODE=$?
+          set -e
+          
+          if [ "${EXPORT_EXIT_CODE}" -ne 0 ]; then
+            # On macOS Intel, Godot can occasionally abort during teardown after a successful export.
+            # Treat as success only when a valid .app bundle was produced.
+            if [[ "${{ runner.os }}" == "macOS" && "${{ matrix.platform }}" == "macOS-x86_64" ]]; then
+              APP_MACOS_DIR="${EXPORT_TARGET}/Contents/MacOS"
+              APP_EXECUTABLE_COUNT=$(find "${APP_MACOS_DIR}" -type f -perm -111 2>/dev/null | wc -l | tr -d ' ')
+              if [ -d "${EXPORT_TARGET}" ] && [ "${APP_EXECUTABLE_COUNT}" -gt 0 ]; then
+                echo "::warning::Godot exited with code ${EXPORT_EXIT_CODE} after producing a valid macOS x86_64 app bundle. Continuing."
+                ls -la "${APP_MACOS_DIR}"
+              else
+                echo "❌ ERROR: Godot export failed for macOS x86_64 and app bundle is incomplete."
+                echo "Expected app bundle at: ${EXPORT_TARGET}"
+                [ -d "${EXPORT_TARGET}" ] && find "${EXPORT_TARGET}" -maxdepth 3 -type f || true
+                exit "${EXPORT_EXIT_CODE}"
+              fi
+            else
+              echo "❌ ERROR: Godot export failed with exit code ${EXPORT_EXIT_CODE}"
+              exit "${EXPORT_EXIT_CODE}"
+            fi
+          fi
 
       - name: Copy GDExtension DLLs to exports (Windows)
         if: runner.os == 'Windows'
