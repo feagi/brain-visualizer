@@ -92,6 +92,8 @@ const _WS_RETRY_LOG_INTERVAL_MS: int = 10000
 var _ws_disabled_by_shm_notice_printed: bool = false
 # One-time warning when Type 11 is skipped due to missing Rust deserializer (no silent drop)
 var _ws_deserializer_missing_warned: bool = false
+# Guard: prevents multiple identical call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch") from queuing per frame.
+var _fastpath_rebuild_pending: bool = false
 
 # WS receive diagnostics (rate-limited)
 var _ws_last_rx_log_ms: int = 0
@@ -1354,10 +1356,14 @@ func _on_genome_reloaded() -> void:
 	_bv_fast_dimensions_by_id.clear()
 	_bv_fast_cache_last_refresh_ms = 0
 	# Brain Monitor may create DirectPoints MultiMeshes after this signal; rebuild fast-path map once the tree has settled.
-	call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
+	# Guard prevents duplicate deferred calls when both genome_cache_replaced and cortical_areas_reloaded fire in the same frame.
+	if not _fastpath_rebuild_pending:
+		_fastpath_rebuild_pending = true
+		call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
 
 ## Re-scan cortical areas for MultiMesh registration after genome / incremental cortical refresh (desktop Type 11 fast path).
 func _deferred_rebuild_bv_fastpath_after_cache_touch() -> void:
+	_fastpath_rebuild_pending = false
 	if OS.has_feature("web"):
 		return
 	_bv_fast_cache_last_refresh_ms = 0
@@ -1368,13 +1374,16 @@ func _deferred_rebuild_bv_fastpath_after_cache_touch() -> void:
 
 ## Public hook for Brain Monitor: after 3D cortical nodes re-register DirectPoints MultiMeshes on new cache
 ## instances, rebuild the desktop Type 11 map so packets target the current MultiMeshes (reconnect safe).
+## Guard prevents duplicate deferred calls when multiple brain monitor instances or signal handlers call this per frame.
 func request_bv_fastpath_cache_rebuild() -> void:
 	if OS.has_feature("web"):
 		return
 	_bv_fast_multimeshes_by_id.clear()
 	_bv_fast_dimensions_by_id.clear()
 	_bv_fast_cache_last_refresh_ms = 0
-	call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
+	if not _fastpath_rebuild_pending:
+		_fastpath_rebuild_pending = true
+		call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
 
 func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 	"""Convert byte array to hex string for debugging"""

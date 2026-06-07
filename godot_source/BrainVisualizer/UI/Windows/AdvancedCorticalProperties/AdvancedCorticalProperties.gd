@@ -15,6 +15,7 @@ const WINDOW_NAME: StringName = "adv_cortical_properties"
 const UPDATE_FAILED_POPUP_MIN_SIZE: Vector2i = Vector2i(440, 0)
 const INITIAL_WINDOW_LEFT_X: int = 0
 const INITIAL_WINDOW_BOTTOM_MARGIN: int = 0
+const INITIAL_WINDOW_EXTRA_BOTTOM_CLEARANCE_PX: int = 8
 const MIN_SCROLLABLE_HEIGHT: int = 180
 const IO_PRESET_INPUT: StringName = "Input"
 const IO_PRESET_OUTPUT: StringName = "Output"
@@ -88,7 +89,7 @@ func _ensure_window_content_scroll_container() -> void:
 	_window_internals.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_content_scroll = scroll
 
-## On open, place window directly under top bar at left edge and use full available height.
+## On open, place window under top bar on the left and reserve bottom HUD space.
 func _apply_initial_window_geometry() -> void:
 	if BV == null or BV.UI == null:
 		return
@@ -98,7 +99,15 @@ func _apply_initial_window_geometry() -> void:
 		top_bar_bottom_y = int(BV.UI.top_bar.position.y + BV.UI.top_bar.size.y)
 
 	position = Vector2i(INITIAL_WINDOW_LEFT_X, top_bar_bottom_y)
-	var available_window_height: int = maxi(MIN_SCROLLABLE_HEIGHT, viewport_height - top_bar_bottom_y - INITIAL_WINDOW_BOTTOM_MARGIN)
+	var reserved_bottom_hud_height: int = (
+		UIManager.MOUSE_CONTEXT_HEIGHT_PX
+		+ (UIManager.MOUSE_CONTEXT_MARGIN_PX * 2)
+		+ INITIAL_WINDOW_EXTRA_BOTTOM_CLEARANCE_PX
+	)
+	var available_window_height: int = maxi(
+		MIN_SCROLLABLE_HEIGHT,
+		viewport_height - top_bar_bottom_y - INITIAL_WINDOW_BOTTOM_MARGIN - reserved_bottom_hud_height
+	)
 	size = Vector2i(size.x, available_window_height)
 
 	if _window_panel != null:
@@ -413,6 +422,8 @@ func _apply_core_type_restrictions() -> void:
 		_line_longterm_memory_threshold.editable = false
 	if _line_temporal_depth != null:
 		_line_temporal_depth.editable = false
+	if _check_mp_learning != null:
+		_check_mp_learning.disabled = true
 	if _button_memory_send != null:
 		_button_memory_send.disabled = true
 	
@@ -1791,6 +1802,7 @@ func _refresh_from_cache_firing_parameters() -> void:
 @export var _line_lifespan_growth_rate: IntInput
 @export var _line_longterm_memory_threshold: IntInput
 @export var _line_temporal_depth: IntInput
+@export var _check_mp_learning: ToggleButton
 @export var _button_memory_send: Button
 
 func _init_memory() -> void:
@@ -1798,6 +1810,7 @@ func _init_memory() -> void:
 	_connect_control_to_update_button(_line_lifespan_growth_rate, "neuron_lifespan_growth_rate", _button_memory_send)
 	_connect_control_to_update_button(_line_longterm_memory_threshold, "neuron_longterm_mem_threshold", _button_memory_send)
 	_connect_control_to_update_button(_line_temporal_depth, "temporal_depth", _button_memory_send)
+	_connect_control_to_update_button(_check_mp_learning, "mp_learning_enabled", _button_memory_send)
 	
 	_button_memory_send.pressed.connect(_send_update.bind(_button_memory_send))
 
@@ -1806,6 +1819,7 @@ func _refresh_from_cache_memory() -> void:
 	_update_control_with_value_from_areas(_line_lifespan_growth_rate, "memory_parameters", "lifespan_growth_rate")
 	_update_control_with_value_from_areas(_line_longterm_memory_threshold, "memory_parameters", "longterm_memory_threshold")
 	_update_control_with_value_from_areas(_line_temporal_depth, "memory_parameters", "temporal_depth")
+	_update_control_with_value_from_areas(_check_mp_learning, "memory_parameters", "mp_learning_enabled")
 
 #endregion
 

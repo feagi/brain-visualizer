@@ -295,8 +295,81 @@ func set_connection_inspector_stop_overlay_visible(visible: bool) -> void:
 
 
 func _on_connection_inspector_stop_pressed() -> void:
+	stop_connection_inspector()
+
+
+## Hard-stops Connection inspector regardless of which toolbar instance enabled it.
+## This is used by the floating stop button to reliably clear inspector arcs in the active monitor tab.
+func stop_connection_inspector() -> void:
+	brain_monitor_activity_mode = BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
+	_set_connection_inspector_enabled_for_all_brain_monitors(false)
+	_sync_connection_inspector_toggle_visuals(false)
+	set_connection_inspector_stop_overlay_visible(false)
+
+
+## Applies global connection hover state to every known brain monitor instance.
+func _set_connection_inspector_enabled_for_all_brain_monitors(enabled: bool) -> void:
+	for brain_monitor in _find_all_brain_monitors_in_scene_tree():
+		if brain_monitor == null or not is_instance_valid(brain_monitor):
+			continue
+		_set_connection_inspector_enabled_for_brain_monitor(brain_monitor, enabled)
+
+
+## Forces all cortical area visuals in one monitor to update the global connection hover state.
+func _set_connection_inspector_enabled_for_brain_monitor(brain_monitor: UI_BrainMonitor_3DScene, enabled: bool) -> void:
+	if brain_monitor == null:
+		return
+	var cortical_area_objects: Array = []
+	_collect_brain_monitor_cortical_area_nodes(brain_monitor, cortical_area_objects)
+	for cortical_area_obj in cortical_area_objects:
+		cortical_area_obj.set_hover_over_volume_state(enabled)
+
+
+func _collect_brain_monitor_cortical_area_nodes(node: Node, cortical_areas: Array) -> void:
+	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
+		cortical_areas.append(node)
+	for child in node.get_children():
+		_collect_brain_monitor_cortical_area_nodes(child, cortical_areas)
+
+
+## Keeps all inspector toggle controls (top bar and per-tab strips) in sync after a forced stop.
+func _sync_connection_inspector_toggle_visuals(enabled: bool) -> void:
 	if _top_bar != null:
-		_top_bar.stop_connection_inspector_from_overlay()
+		var top_bar_dropdown: ActivityVisualizationDropDown = _top_bar.get_node_or_null(
+			"TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown"
+		) as ActivityVisualizationDropDown
+		if top_bar_dropdown != null:
+			top_bar_dropdown.set_connection_inspector_enabled(enabled)
+	var combos: Array[BrainObjectsCombo] = _find_all_brain_objects_combo_nodes()
+	for combo in combos:
+		if combo == null or not is_instance_valid(combo):
+			continue
+		combo.sync_connection_inspector_enabled(enabled)
+
+
+func _find_all_brain_objects_combo_nodes() -> Array[BrainObjectsCombo]:
+	var combos: Array[BrainObjectsCombo] = []
+	var seen: Dictionary = {}
+	var scene_tree := get_tree()
+	if scene_tree == null:
+		return combos
+	if scene_tree.current_scene != null:
+		_recursive_collect_brain_objects_combos(scene_tree.current_scene, combos, seen)
+	var bv_root: Node = scene_tree.root.get_node_or_null("BrainVisualizer")
+	if bv_root != null:
+		_recursive_collect_brain_objects_combos(bv_root, combos, seen)
+	return combos
+
+
+func _recursive_collect_brain_objects_combos(node: Node, combos: Array[BrainObjectsCombo], seen: Dictionary) -> void:
+	if node is BrainObjectsCombo:
+		var combo: BrainObjectsCombo = node as BrainObjectsCombo
+		var iid: int = combo.get_instance_id()
+		if not seen.has(iid):
+			seen[iid] = true
+			combos.append(combo)
+	for child in node.get_children():
+		_recursive_collect_brain_objects_combos(child, combos, seen)
 
 
 ## Floating bottom-right presentation controls for camera animation checkpoints.

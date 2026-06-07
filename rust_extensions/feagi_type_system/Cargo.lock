@@ -307,9 +307,9 @@ dependencies = [
 
 [[package]]
 name = "feagi-sensorimotor"
-version = "0.0.11"
+version = "0.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae2013354f2e01c69ae7ceb2938173b59f75e226c2316ab642f6f43edc56cc63"
+checksum = "5182e602d4ef6faecf849d470bc6602c54696767eeef65c09455a6d2c017f598"
 dependencies = [
  "feagi-serialization",
  "feagi-structures",
@@ -324,9 +324,9 @@ dependencies = [
 
 [[package]]
 name = "feagi-serialization"
-version = "0.0.11"
+version = "0.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7757149ffed1086453d0346075ffd78780dddde5f8575eac37150fc6cffa9f22"
+checksum = "e9c0e71412aef3f10b614233d033a29faaa4f8812d173c462493a9a2dd69ae19"
 dependencies = [
  "byteorder",
  "feagi-structures",
@@ -336,9 +336,9 @@ dependencies = [
 
 [[package]]
 name = "feagi-structures"
-version = "0.0.11"
+version = "0.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23ba5cad360a4a40efd7f6d84aecdf9329293266e375864b8f7356572e299458"
+checksum = "dc4b32b3933513591d7fc3fe89c91a194e3a28dc8555d4cd902f1e12065d73c0"
 dependencies = [
  "base64",
  "ndarray",
@@ -351,7 +351,7 @@ dependencies = [
 
 [[package]]
 name = "feagi_type_system"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "feagi-sensorimotor",
  "feagi-structures",

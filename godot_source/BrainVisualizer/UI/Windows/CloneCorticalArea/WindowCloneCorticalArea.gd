@@ -16,6 +16,7 @@ var _field_2d_location: Vector2iSpinboxField
 var _field_wiring_toggle: ToggleButton
 var _cloning_cortical_area: AbstractCorticalArea
 var _preview: UI_BrainMonitor_InteractivePreview
+var _active_brain_monitor: UI_BrainMonitor_3DScene = null
 
 func _ready() -> void:
 	super()
@@ -57,17 +58,24 @@ func setup(cloning_cortical_area: AbstractCorticalArea) -> void:
 	if active_bm == null:
 		push_error("WindowCloneCorticalArea: No brain monitor available for preview creation!")
 		return
+	_active_brain_monitor = active_bm
 	# Do NOT auto-frame the camera during clone: creating/moving the clone preview should not reset user view.
-	_preview = active_bm.create_preview(
+	_preview = _active_brain_monitor.create_preview(
 		_field_3d_location.current_vector,
 		_cloning_cortical_area.dimensions_3D,
 		false,
 		_cloning_cortical_area.cortical_type,
 		_cloning_cortical_area,
 		false, # auto_frame_on_create
-		true  # auto_frame_on_interaction
+		false  # no full reframe on drag; gizmo path uses frustum-nudge instead
 	)
 	_preview.connect_UI_signals(move_signals, resize_signals, closing_signals)
+	if _active_brain_monitor.has_method("start_cortical_preview_relocation"):
+		_active_brain_monitor.start_cortical_preview_relocation(
+			_preview,
+			_field_3d_location.current_vector,
+			Callable(self, "_on_preview_moved_via_gizmo")
+		)
 
 
 func _clone_pressed():
@@ -88,8 +96,14 @@ func _clone_pressed():
 	_cleanup_preview()
 	close_window()
 
+func _on_preview_moved_via_gizmo(new_coords: Vector3i) -> void:
+	_field_3d_location.current_vector = new_coords
+
+
 func _cleanup_preview() -> void:
 	if _preview and is_instance_valid(_preview):
+		if _active_brain_monitor != null and _active_brain_monitor.has_method("stop_cortical_preview_relocation"):
+			_active_brain_monitor.stop_cortical_preview_relocation(_preview)
 		_preview.queue_free()
 		_preview = null
 

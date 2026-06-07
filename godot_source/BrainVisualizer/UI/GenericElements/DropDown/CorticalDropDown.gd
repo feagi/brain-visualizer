@@ -14,14 +14,23 @@ signal user_selected_cortical_area(cortical_area_reference: AbstractCorticalArea
 @export var sync_all_areas_on_load: bool = true
 ## If True, will hide the circle selection icon on the dropdown
 @export var hide_circle_select_icon: bool = true
+## If True, adds a "(None)" entry at index 0 so the user can clear the selection
+@export var include_none_option: bool = false
 
 var _listed_areas: Array[AbstractCorticalArea] = []
 var _popup: PopupMenu
 var _default_width: float
+var _none_offset: int = 0
 
 func _ready():
 	_default_width = custom_minimum_size.x
 	_popup = get_popup()
+	if include_none_option:
+		add_item("(None)")
+		if hide_circle_select_icon:
+			_popup.set_item_as_radio_checkable(0, false)
+		_none_offset = 1
+		select(0)
 	if sync_removed_cortical_areas:
 		FeagiCore.feagi_local_cache.cortical_areas.cortical_area_about_to_be_removed.connect(_cortical_area_was_deleted_from_cache)
 	if sync_added_cortical_areas:
@@ -36,6 +45,11 @@ func _ready():
 func clear_all_cortical_areas() -> void:
 	_listed_areas = []
 	clear()
+	if include_none_option:
+		add_item("(None)")
+		if hide_circle_select_icon:
+			_popup.set_item_as_radio_checkable(0, false)
+		select(0)
 
 ## Replace cortical area listing with a new one (sorted by display name or ID per export).
 func overwrite_cortical_areas(new_areas: Array[AbstractCorticalArea]) -> void:
@@ -66,19 +80,22 @@ func set_selected_cortical_area(set_area: AbstractCorticalArea) -> void:
 	if index == -1:
 		push_warning("Attemped to set cortical area drop down to an item that the drop down does not contain! Skipping!")
 		return
-	select(index)
+	select(index + _none_offset)
 
 ## Returns the currently selected cortical area, or null if none.
 func get_selected_cortical_area() -> AbstractCorticalArea:
-	var idx: int = selected
+	var idx: int = selected - _none_offset
 	if idx < 0 or idx >= _listed_areas.size():
 		return null
 	return _listed_areas[idx]
 
 
-## Set the dropdown to select nothing
+## Set the dropdown to select nothing (or the "(None)" entry if available)
 func deselect_all() -> void:
-	select(-1)
+	if include_none_option:
+		select(0)
+	else:
+		select(-1)
 
 ## Remove cortical area from listing
 func remove_cortical_area(removing: AbstractCorticalArea) -> void:
@@ -87,7 +104,7 @@ func remove_cortical_area(removing: AbstractCorticalArea) -> void:
 		push_warning("Attempted to remove cortical area that the drop down does not contain! Skipping!")
 		return
 	_listed_areas.remove_at(index)
-	remove_item(index)
+	remove_item(index + _none_offset)
 
 ## Populate dropdown with cortical areas of specific types
 func list_cortical_area_types(types_to_show: Array[AbstractCorticalArea.CORTICAL_AREA_TYPE]) -> void:
@@ -97,7 +114,11 @@ func list_cortical_area_types(types_to_show: Array[AbstractCorticalArea.CORTICAL
 	overwrite_cortical_areas(areas_to_show)
 
 func _user_selected_option(index: int) -> void:
-	user_selected_cortical_area.emit(_listed_areas[index])
+	var area_index: int = index - _none_offset
+	if area_index < 0 or area_index >= _listed_areas.size():
+		user_selected_cortical_area.emit(null)
+		return
+	user_selected_cortical_area.emit(_listed_areas[area_index])
 
 func _cortical_area_was_deleted_from_cache(deleted_cortical: AbstractCorticalArea) -> void:
 	if deleted_cortical not in _listed_areas:

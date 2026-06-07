@@ -334,19 +334,10 @@ func setup(area: AbstractCorticalArea) -> void:
 	_friendly_name_label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_friendly_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
 	_friendly_name_label.alpha_scissor_threshold = 0.5  # Clean edges
-	_friendly_name_label.no_depth_test = false  # Respect depth for proper occlusion
-	_friendly_name_label.render_priority = 1  # Render after most objects
-	# Memory, power, and PNG icon areas should show their label since they're primary renderers
-	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-		_friendly_name_label.visible = true  # Show label for memory areas
-		print("   [mem]  Memory sphere label set to visible")
-	elif AbstractCorticalArea.is_power_area(area.cortical_ID):
-		_friendly_name_label.visible = true  # Show label for power areas
-		# Debug log suppressed to reduce runtime console spam.
-	elif AbstractCorticalArea.is_death_area(area.cortical_ID) or _should_use_png_icon(area):
-		_friendly_name_label.visible = true  # Show label for PNG icon areas
-	else:
-		_friendly_name_label.visible = false  # Hidden when used as secondary renderer
+	_friendly_name_label.no_depth_test = false
+	_friendly_name_label.render_priority = 1
+	# Initial guess; UI_BrainMonitor_CorticalArea refreshes for genome vs plate hover rules.
+	_friendly_name_label.visible = AbstractCorticalArea.is_feagi_invariant_core_area(area)
 	# Parent to this renderer (same as power/memory) so bv_update_friendly_name_label_position()
 	# uses one coordinate space for all special areas (label below footprint, camera-aware XZ).
 	add_child(_friendly_name_label)

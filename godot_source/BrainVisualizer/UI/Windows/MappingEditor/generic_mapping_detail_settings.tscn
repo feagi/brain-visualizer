@@ -135,7 +135,23 @@ horizontal_alignment = 0
 autowrap_mode = 3
 vertical_alignment = 1
 
-[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenInhibitoryAndGate" type="Control" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(12, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="LabelGateSource" type="Label" parent="HeaderRowWrapper/labels_box"]
+custom_minimum_size = Vector2(180, 48)
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Gate Source: cortical area whose firing gates this synapse"
+mouse_filter = 1
+text = "Gate Source"
+horizontal_alignment = 0
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="Spacer_BetweenGateAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0

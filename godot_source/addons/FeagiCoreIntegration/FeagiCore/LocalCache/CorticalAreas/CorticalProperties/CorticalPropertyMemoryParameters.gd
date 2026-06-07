@@ -5,6 +5,7 @@ signal initial_neuron_lifespan_updated(val: int, this_cortical_area: MemoryCorti
 signal lifespan_growth_rate_updated(val: int, this_cortical_area: MemoryCorticalArea)
 signal longterm_memory_threshold_updated(val: int, this_cortical_area: MemoryCorticalArea)
 signal temporal_depth_updated(val: int, this_costical_area: MemoryCorticalArea)
+signal mp_learning_enabled_updated(val: bool, this_cortical_area: MemoryCorticalArea)
 
 ## Apply Properties from FEAGI
 func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
@@ -43,6 +44,12 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		var value = data["temporal_depth"]
 		if value != null:
 			temporal_depth = value
+
+	# MP Learning Enabled
+	if "mp_learning_enabled" in data.keys():
+		var value = data["mp_learning_enabled"]
+		if value != null:
+			mp_learning_enabled = value
 	return
 
 var initial_neuron_lifespan: int:
@@ -69,10 +76,17 @@ var temporal_depth: int:
 	set(v):
 		_set_temporal_depth(v)
 
+var mp_learning_enabled: bool:
+	get:
+		return _mp_learning_enabled
+	set(v):
+		_set_mp_learning_enabled(v)
+
 var _initial_neuron_lifespan: int = 0
 var _lifespan_growth_rate: int = 0
 var _longterm_memory_threshold: int = 0
 var _temporal_depth: int = 1
+var _mp_learning_enabled: bool = false
 var _cortical_area: AbstractCorticalArea
 
 func _init(cortical_area_ref: AbstractCorticalArea) -> void:
@@ -104,3 +118,9 @@ func _set_temporal_depth(new_val: int) -> void:
 		return
 	_temporal_depth = new_val
 	temporal_depth_updated.emit(new_val, _cortical_area)
+
+func _set_mp_learning_enabled(new_val: bool) -> void:
+	if new_val == _mp_learning_enabled:
+		return
+	_mp_learning_enabled = new_val
+	mp_learning_enabled_updated.emit(new_val, _cortical_area)
