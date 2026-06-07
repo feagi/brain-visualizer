@@ -922,6 +922,10 @@ impl FeagiDataDeserializer {
             IOCorticalAreaConfigurationFlag::Percentage4D(_, _)
             | IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _) => "4d",
 
+            // Pose estimation joints are represented as normalized 2D coordinates
+            // with confidence over depth-indexed channels.
+            IOCorticalAreaConfigurationFlag::PoseEstimation(_, _) => "2d",
+
             IOCorticalAreaConfigurationFlag::Misc(_) => "1d",
         };
 
@@ -1240,6 +1244,16 @@ impl FeagiDataDeserializer {
                     return result;
                 }
                 IOCorticalAreaConfigurationFlag::Boolean
+            }
+            IOCorticalAreaConfigurationFlag::PoseEstimation(frame, schema) => {
+                if signage_raw != "pose estimation" && signage_raw != "not applicable" {
+                    result.set("success", false);
+                    result.set("error", "coding_signage not supported for PoseEstimation");
+                    result.set("cortical_id", "");
+                    return result;
+                }
+                let next_frame = frame_override.unwrap_or(frame);
+                IOCorticalAreaConfigurationFlag::PoseEstimation(next_frame, schema)
             }
         };
 

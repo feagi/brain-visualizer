@@ -36,6 +36,8 @@ var _io_direction_indicator_material: StandardMaterial3D = null
 var _io_direction_indicator_mode: StringName = &"none" # "none" | "input" | "output" | "bidirectional"
 var _io_direction_indicator_base_scale: Vector3 = Vector3.ONE
 var _io_direction_indicator_label: Label3D = null
+# One-shot diagnostic: if a plate-mounted area receives FEAGI position updates, signal wiring regressed.
+var _plate_signal_drift_log_emitted: bool = false
 # Per-instance deferred-call guards: prevent duplicate queue entries during bulk cortical area creation.
 var _io_indicator_refresh_pending: bool = false
 var _friendly_name_refresh_pending: bool = false
@@ -766,6 +768,28 @@ func _has_efferent_to_outside_region(area: AbstractCorticalArea, region: BrainRe
 
 ## Sets new position (in FEAGI space)
 func set_new_position(new_position: Vector3i) -> void:
+	# Strategic diagnostic for runtime drift:
+	# Plate-mounted areas should not be driven by direct coordinates_3D_updated callbacks.
+	if _is_on_brain_region_plate() and not _plate_signal_drift_log_emitted:
+		_plate_signal_drift_log_emitted = true
+		var parent_name := String(get_parent().name) if get_parent() != null else "none"
+		var connected_self := false
+		var connected_dda := false
+		var connected_dp := false
+		if _representing_cortial_area != null:
+			connected_self = _representing_cortial_area.coordinates_3D_updated.is_connected(set_new_position)
+			if _dda_renderer != null:
+				connected_dda = _representing_cortial_area.coordinates_3D_updated.is_connected(_dda_renderer.update_position_with_new_FEAGI_coordinate)
+			if _directpoints_renderer != null:
+				connected_dp = _representing_cortial_area.coordinates_3D_updated.is_connected(_directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+		print("[REGION-DBG][PlateDrift] plate area received set_new_position id=%s parent=%s new_feagi=%s conn_self=%s conn_dda=%s conn_dp=%s" % [
+			String(_representing_cortial_area.cortical_ID) if _representing_cortial_area != null else "none",
+			parent_name,
+			str(new_position),
+			str(connected_self),
+			str(connected_dda),
+			str(connected_dp),
+		])
 	if _dda_renderer != null:
 		_dda_renderer.update_position_with_new_FEAGI_coordinate(new_position)
 	if _directpoints_renderer != null:

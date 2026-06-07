@@ -352,6 +352,7 @@ impl FeagiCorticalType {
             SignedPercentage4D(_, _) => "SignedPercentage4D",
             Misc(_) => "Misc",
             Boolean => "Boolean",
+            PoseEstimation(_, _) => "PoseEstimation",
         };
         GString::from(name)
     }
@@ -369,6 +370,7 @@ impl FeagiCorticalType {
             SignedPercentage3D(h, _) => h,
             SignedPercentage4D(h, _) => h,
             Misc(h) => h,
+            PoseEstimation(h, _) => h,
             Boolean => &FrameChangeHandling::Absolute, // Boolean uses absolute by default
         };
         
@@ -391,6 +393,7 @@ impl FeagiCorticalType {
             SignedPercentage3D(h, _) => h,
             SignedPercentage4D(h, _) => h,
             Misc(h) => h,
+            PoseEstimation(h, _) => h,
             Boolean => &FrameChangeHandling::Absolute, // Boolean uses absolute by default
         };
         *handling == target

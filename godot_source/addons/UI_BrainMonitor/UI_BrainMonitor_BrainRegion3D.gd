@@ -1663,6 +1663,14 @@ func _populate_cortical_areas() -> void:
 		
 		# Check if visualization is already correctly positioned on input plate
 		if existing_viz.get_parent() == _input_areas_container:
+			# Re-enforce signal disconnections even when already parented correctly.
+			# Cache/agent reload paths can reconnect these and cause root-relative drift.
+			if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
+				area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
+			if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
+			if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 			# print("    ✅ Input area %s already correctly positioned on input plate, skipping repositioning" % area.cortical_ID)
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
 			continue
@@ -1713,6 +1721,14 @@ func _populate_cortical_areas() -> void:
 		
 		# Check if visualization is already correctly positioned on output plate
 		if existing_viz.get_parent() == _output_areas_container:
+			# Re-enforce signal disconnections even when already parented correctly.
+			# Cache/agent reload paths can reconnect these and cause root-relative drift.
+			if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
+				area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
+			if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
+			if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 			# print("    ✅ Output area %s already correctly positioned on output plate, skipping repositioning" % area.cortical_ID)
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
 			continue
@@ -1763,6 +1779,14 @@ func _populate_cortical_areas() -> void:
 		
 		# Check if visualization is already correctly positioned on conflict plate
 		if existing_viz.get_parent() == _conflict_areas_container:
+			# Re-enforce signal disconnections even when already parented correctly.
+			# Cache/agent reload paths can reconnect these and cause root-relative drift.
+			if area.coordinates_3D_updated.is_connected(existing_viz.set_new_position):
+				area.coordinates_3D_updated.disconnect(existing_viz.set_new_position)
+			if existing_viz._dda_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
+			if existing_viz._directpoints_renderer != null and area.coordinates_3D_updated.is_connected(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 			# print("    ✅ Conflict area %s already correctly positioned on conflict plate, skipping repositioning" % area.cortical_ID)
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
 			continue
