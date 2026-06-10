@@ -548,16 +548,22 @@ func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float, source_nod
 	bounce_tween.tween_property(indicator, "position:y", start_y, bounce_period * 0.5)
 
 	_active_preview_indicators.append(indicator)
+	var indicator_ref: WeakRef = weakref(indicator)
 	if source_node != null and is_instance_valid(source_node):
 		source_node.tree_exiting.connect(func():
-			if indicator != null and is_instance_valid(indicator):
-				indicator.queue_free()
-			_active_preview_indicators.erase(indicator)
+			_cleanup_preview_indicator(indicator_ref)
 		, CONNECT_ONE_SHOT)
 	get_tree().create_timer(life).timeout.connect(func():
-		if indicator != null and is_instance_valid(indicator):
-			indicator.queue_free()
-		_active_preview_indicators.erase(indicator)
+		_cleanup_preview_indicator(indicator_ref)
+	)
+
+func _cleanup_preview_indicator(indicator_ref: WeakRef) -> void:
+	var indicator_node: Node3D = indicator_ref.get_ref() as Node3D
+	if indicator_node != null and is_instance_valid(indicator_node):
+		indicator_node.queue_free()
+	_active_preview_indicators = _active_preview_indicators.filter(
+		func(node: Node3D) -> bool:
+			return node != null and is_instance_valid(node)
 	)
 
 ## Defers indicator spawning until transforms are updated, then places it at true world center
@@ -2111,7 +2117,7 @@ func create_preview(initial_FEAGI_position: Vector3i, initial_dimensions: Vector
 	_node_3D_root.add_child(preview)  # CRITICAL FIX: Add to 3D scene root, not brain monitor container
 	preview.setup(initial_FEAGI_position, initial_dimensions, show_voxels, cortical_area_type, existing_cortical_area)
 	_active_previews.append(preview)
-	preview.tree_exiting.connect(func(): _preview_closing(preview))
+	preview.tree_exiting.connect(_preview_closing)
 	# Defer indicator spawn to ensure preview children are initialized and transforms updated
 	_spawn_indicator_for_node_center(preview)
 	# Keep camera framing valid while preview is added or moved/resized by user
@@ -2891,8 +2897,12 @@ func clear_all_open_previews() -> void:
 	_active_previews = []
 
 ## Called when the preview is about to be free'd for any reason
-func _preview_closing(preview: UI_BrainMonitor_InteractivePreview):
-	_active_previews.erase(preview)
+func _preview_closing() -> void:
+	var still_valid: Array[UI_BrainMonitor_InteractivePreview] = []
+	for p in _active_previews:
+		if p != null and is_instance_valid(p):
+			still_valid.append(p)
+	_active_previews = still_valid
 
 ## Called when a brain region preview is about to be freed
 func _brain_region_preview_closing():
@@ -4233,6 +4243,7 @@ func _perform_coalesced_cache_rebuild() -> void:
 	# CRITICAL: Check for new brain regions that need visualization after cloning / reload.
 	_create_missing_brain_region_visualizations()
 	_rebuild_cortical_visualizations_after_cache_touch()
+	_refresh_existing_region_plates_after_cortical_rebuild()
 	# Force refresh connections for all currently hovered cortical areas (post-rebuild on fresh nodes).
 	for cortical_viz in _cortical_visualizations_by_ID.values():
 		if cortical_viz != null and is_instance_valid(cortical_viz):
@@ -4241,6 +4252,17 @@ func _perform_coalesced_cache_rebuild() -> void:
 				cortical_viz._show_neural_connections()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 	_schedule_core_cluster_layout_refresh()
+
+
+## Re-runs region plate population after cortical rebuild so rebuilt nodes are reparented off root.
+func _refresh_existing_region_plates_after_cortical_rebuild() -> void:
+	for plate_raw in _brain_region_visualizations_by_ID.values():
+		if plate_raw == null or not is_instance_valid(plate_raw):
+			continue
+		var plate: UI_BrainMonitor_BrainRegion3D = plate_raw as UI_BrainMonitor_BrainRegion3D
+		if plate == null:
+			continue
+		plate.force_refresh()
 
 ## Creates visualizations for any new cortical areas in this region after cache refresh
 func _add_missing_cortical_area_visualizations() -> void:
