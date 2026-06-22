@@ -526,6 +526,10 @@ func _is_root_region() -> bool:
 		return false
 	if not FeagiCore or not FeagiCore.feagi_local_cache or not FeagiCore.feagi_local_cache.brain_regions:
 		return false
+	# During reload windows, region cache may not have an established root yet.
+	# Avoid surfacing noisy errors by short-circuiting until root is available.
+	if not FeagiCore.feagi_local_cache.brain_regions.is_root_available():
+		return false
 	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	return root_region != null and root_region == context_region
 

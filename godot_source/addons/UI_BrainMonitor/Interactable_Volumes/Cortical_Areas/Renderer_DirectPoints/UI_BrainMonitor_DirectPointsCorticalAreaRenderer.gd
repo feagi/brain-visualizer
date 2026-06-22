@@ -1129,6 +1129,12 @@ func _trigger_power_firing_animation() -> void:
 	
 	# print("   [pwr]  Triggering power cone firing animation!")  # Suppressed to reduce log spam
 	
+	# Keep exactly one active tween so sustained activity cannot leave multiple
+	# concurrent tweens fighting over the same shader parameter.
+	if _firing_tween != null and _firing_tween.is_valid():
+		_firing_tween.kill()
+		_firing_tween = null
+	
 	# Make power cone use firing colors when firing animation starts
 	_power_material.set_shader_parameter("albedo_color", Color(1, 0.1, 0.1, 0.8))  # Bright red for firing
 	_power_material.set_shader_parameter("emission_color", Color(1, 0.2, 0.2, 1))  # Bright red emission

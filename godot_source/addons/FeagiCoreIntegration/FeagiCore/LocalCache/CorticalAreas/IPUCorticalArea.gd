@@ -76,8 +76,9 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 			var dx: int = maxi(1, per.x)
 			var dy: int = maxi(1, per.y)
 			var dz: int = maxi(1, per.z)
-			var blocks: int = (total.x / dx) * (total.y / dy) * (total.z / dz)
-			if blocks != _device_count:
+			var x_matches: bool = (dx * _device_count) == total.x
+			var yz_match: bool = (dy == total.y and dz == total.z)
+			if not (x_matches and yz_match):
 				per = _infer_per_device_from_total(total)
 	elif total.x > 0 and total.y > 0 and total.z > 0 and _device_count > 0:
 		per = _infer_per_device_from_total(total)
@@ -94,11 +95,11 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	neuron_firing_parameters.FEAGI_apply_detail_dictionary(data)
 	return
 
-## Infer per-device dimensions from total so blocks == device_count. Handles devices along x, y, or z.
+## Infer per-device dimensions from total with device_count scaling on X only.
 func _infer_per_device_from_total(total: Vector3i) -> Vector3i:
 	var px: int = (total.x / _device_count) if _device_count > 0 and total.x % _device_count == 0 else total.x
-	var py: int = (total.y / _device_count) if _device_count > 0 and total.y % _device_count == 0 else total.y
-	var pz: int = (total.z / _device_count) if _device_count > 0 and total.z % _device_count == 0 else total.z
+	var py: int = total.y
+	var pz: int = total.z
 	return Vector3i(maxi(1, px), maxi(1, py), maxi(1, pz))
 
 func FEAGI_set_device_count(new_count: int) -> void:
