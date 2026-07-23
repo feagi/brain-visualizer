@@ -26,7 +26,9 @@ fn build_io_config_map() -> Result<Map<String, serde_json::Value>, String> {
 }
 
 /// Same rules as `feagi-api` `agent_registration::build_io_config_map_from_unit_def`.
-fn build_io_config_map_from_unit_def(unit_def: &Value) -> Result<Map<String, serde_json::Value>, String> {
+fn build_io_config_map_from_unit_def(
+    unit_def: &Value,
+) -> Result<Map<String, serde_json::Value>, String> {
     let io_flags = unit_def
         .get("io_configuration_flags")
         .and_then(|v| v.as_object());
@@ -87,7 +89,8 @@ fn collect_motor_cortical_ids_lenient(device_registrations: &serde_json::Value) 
             let Some(unit_def) = pair.first() else {
                 continue;
             };
-            let Some(group_u64) = unit_def.get("cortical_unit_index").and_then(|v| v.as_u64()) else {
+            let Some(group_u64) = unit_def.get("cortical_unit_index").and_then(|v| v.as_u64())
+            else {
                 continue;
             };
             let group_u8: u8 = match group_u64.try_into() {
@@ -123,7 +126,9 @@ fn collect_motor_cortical_ids_lenient(device_registrations: &serde_json::Value) 
 }
 
 /// Sensory IO cortical IDs: skip malformed entries (same spirit as FEAGI auto-create).
-fn collect_sensory_cortical_ids_lenient(device_registrations: &serde_json::Value) -> HashSet<String> {
+fn collect_sensory_cortical_ids_lenient(
+    device_registrations: &serde_json::Value,
+) -> HashSet<String> {
     let mut out = HashSet::new();
     let Some(input_units) = device_registrations
         .get("input_units_and_encoder_properties")
@@ -148,7 +153,8 @@ fn collect_sensory_cortical_ids_lenient(device_registrations: &serde_json::Value
             let Some(unit_def) = pair.first() else {
                 continue;
             };
-            let Some(group_u64) = unit_def.get("cortical_unit_index").and_then(|v| v.as_u64()) else {
+            let Some(group_u64) = unit_def.get("cortical_unit_index").and_then(|v| v.as_u64())
+            else {
                 continue;
             };
             let group_u8: u8 = match group_u64.try_into() {
