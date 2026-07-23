@@ -109,6 +109,12 @@ godot_source/addons/feagi_shared_video/*.dylib
 godot_source/addons/feagi_shared_video/*.dll
 godot_source/addons/feagi_shared_video/*.so
 
+# feagi_embedded: experiment disabled; never commit platform binaries
+godot_source/addons/feagi_embedded/*.dylib
+godot_source/addons/feagi_embedded/*.dll
+godot_source/addons/feagi_embedded/*.so
+godot_source/addons/feagi_embedded/target/
+
 # We commit RELEASE binaries only for all platforms (Linux, macOS, Windows)
 # These binaries are built by GitHub Actions and committed to the repo
 # Users can clone and run without building Rust extensions
