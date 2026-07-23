@@ -439,7 +439,10 @@ impl FeagiDataDeserializer {
             multi_mesh.set_instance_count(0);
             let mut result = Dictionary::new();
             result.set("success", false);
-            result.set("error", "Invalid dimensions for multimesh (finite, > 0 required)");
+            result.set(
+                "error",
+                "Invalid dimensions for multimesh (finite, > 0 required)",
+            );
             return result;
         }
 
@@ -1353,17 +1356,13 @@ impl FeagiDataDeserializer {
             Ok(v) => v,
             Err(e) => {
                 result.set("success", false);
-                result.set(
-                    "error",
-                    format!("Invalid device_registrations JSON: {}", e),
-                );
+                result.set("error", format!("Invalid device_registrations JSON: {}", e));
                 result.set("cortical_ids", PackedStringArray::new());
                 return result;
             }
         };
-        let ids = device_registration_io_ids::collect_io_cortical_ids_from_device_registrations(
-            &value,
-        );
+        let ids =
+            device_registration_io_ids::collect_io_cortical_ids_from_device_registrations(&value);
         let mut arr = PackedStringArray::new();
         for id in ids {
             arr.push(&id);
