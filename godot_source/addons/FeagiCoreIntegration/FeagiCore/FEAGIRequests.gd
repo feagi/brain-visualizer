@@ -2741,6 +2741,111 @@ func _detect_designation_conflict_for_new_mapping(
 	return {}
 
 
+## Morphology id for dense cartesian connectivity (every source neuron to every destination neuron).
+const ALL_TO_ALL_MORPHOLOGY_ID: StringName = &"all_to_all"
+
+
+## Count mapping rules that use the all_to_all morphology.
+func _count_all_to_all_mapping_rules(mappings: Array[SingleMappingDefinition]) -> int:
+	var count: int = 0
+	for mapping: SingleMappingDefinition in mappings:
+		if mapping == null or mapping.morphology_used == null:
+			continue
+		if mapping.morphology_used.name == ALL_TO_ALL_MORPHOLOGY_ID:
+			count += 1
+	return count
+
+
+## Estimate synapses created by all_to_all: source_neurons * destination_neurons per rule.
+func _estimate_all_to_all_synapse_count(
+	source_area: AbstractCorticalArea,
+	destination_area: AbstractCorticalArea,
+	all_to_all_rule_count: int,
+) -> int:
+	if all_to_all_rule_count <= 0:
+		return 0
+	var source_neurons: int = maxi(source_area.neuron_count, 0)
+	var destination_neurons: int = maxi(destination_area.neuron_count, 0)
+	return source_neurons * destination_neurons * all_to_all_rule_count
+
+
+## Format a non-negative integer with thousands separators for warning dialogs.
+func _format_count_with_commas(number: int) -> String:
+	var number_str: String = str(maxi(number, 0))
+	var formatted_str: String = ""
+	var digit_count: int = 0
+	for i in range(number_str.length() - 1, -1, -1):
+		formatted_str = number_str[i] + formatted_str
+		digit_count += 1
+		if digit_count % 3 == 0 and i != 0:
+			formatted_str = "," + formatted_str
+	return formatted_str
+
+
+## Describe an area's dimensions and neuron count for the all_to_all warning body.
+func _format_area_neuron_summary(area: AbstractCorticalArea) -> String:
+	var dims: Vector3i = area.dimensions_3D
+	return "%s (%d×%d×%d = %s neurons)" % [
+		String(area.friendly_name),
+		dims.x,
+		dims.y,
+		dims.z,
+		_format_count_with_commas(area.neuron_count),
+	]
+
+
+## Warn before applying all_to_all mappings. Returns true if the user confirms.
+func _await_all_to_all_mapping_confirmation(
+	source_area: AbstractCorticalArea,
+	destination_area: AbstractCorticalArea,
+	all_to_all_rule_count: int,
+	estimated_synapses: int,
+) -> bool:
+	var rule_label: String = "rule" if all_to_all_rule_count == 1 else "rules"
+	var msg: String = (
+		"The morphology \"all_to_all\" connects every neuron in the source area to every neuron in the destination area.\n\n"
+		+ "Source: %s\n"
+		+ "Destination: %s\n"
+		+ "all_to_all %s: %d\n"
+		+ "Estimated synapses that will be created: %s\n\n"
+		+ "This can make FEAGI slow, unresponsive, or exhaust memory. Continue only if you intend this dense connectivity."
+	) % [
+		_format_area_neuron_summary(source_area),
+		_format_area_neuron_summary(destination_area),
+		rule_label,
+		all_to_all_rule_count,
+		_format_count_with_commas(estimated_synapses),
+	]
+	var done := false
+	var accepted := false
+	var on_accept := func() -> void:
+		accepted = true
+		done = true
+	var on_cancel := func() -> void:
+		accepted = false
+		done = true
+	var b_ok: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_action_button(
+		on_accept,
+		&"Create Mapping",
+	)
+	var b_cancel: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_action_button(
+		on_cancel,
+		&"Cancel",
+	)
+	var def := ConfigurablePopupDefinition.new(
+		&"Dense connectivity warning",
+		StringName(msg),
+		[b_cancel, b_ok],
+		Vector2i(520, 0),
+	)
+	var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(def)
+	# Prefer Cancel as the safe default for this footgun morphology.
+	popup_window.call_deferred("focus_button_with_text", "Cancel")
+	while not done:
+		await Engine.get_main_loop().process_frame
+	return accepted
+
+
 func _await_designation_switch_confirmation(
 	kind: String,
 	src: AbstractCorticalArea,
@@ -2926,6 +3031,24 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 	if !destination_cortical_ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
 		push_error("FEAGI Requests: Unable to get mappings toward uncached cortical area %s that is not found in cache!" % destination_cortical_ID)
 		return FeagiRequestOutput.requirement_fail("DESTINATION_NOT_FOUND")
+
+	# all_to_all is a dense cartesian product (src neurons × dst neurons). Confirm before any
+	# side effects or FEAGI PUT so users can back out of accidental footgun mappings.
+	var all_to_all_rule_count: int = _count_all_to_all_mapping_rules(mappings)
+	if all_to_all_rule_count > 0:
+		var estimated_synapses: int = _estimate_all_to_all_synapse_count(
+			source_area,
+			destination_area,
+			all_to_all_rule_count,
+		)
+		var all_to_all_confirmed: bool = await _await_all_to_all_mapping_confirmation(
+			source_area,
+			destination_area,
+			all_to_all_rule_count,
+			estimated_synapses,
+		)
+		if not all_to_all_confirmed:
+			return FeagiRequestOutput.requirement_fail(&"USER_CANCELLED_ALL_TO_ALL")
 
 	# Cross-region mapping vs declared IO: confirm before PUT (BV). Skip when removing all mappings.
 	if mappings.size() > 0:

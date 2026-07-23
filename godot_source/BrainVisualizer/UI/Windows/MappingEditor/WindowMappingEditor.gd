@@ -113,7 +113,10 @@ func _user_pressed_set_mappings() -> void:
 		_destination_button.current_selected as AbstractCorticalArea,
 		mappings,
 	)
-	if out.failed_requirement and out.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+	if out.failed_requirement and out.failed_requirement_key in [
+		&"USER_CANCELLED_DESIGNATION",
+		&"USER_CANCELLED_ALL_TO_ALL",
+	]:
 		return
 	if out.success:
 		close_window()

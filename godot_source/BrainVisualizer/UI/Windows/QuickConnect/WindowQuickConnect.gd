@@ -160,7 +160,10 @@ func establish_connection_button() -> void:
 			destination_area,
 			_selected_morphology,
 		)
-		if out.failed_requirement and out.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+		if out.failed_requirement and out.failed_requirement_key in [
+			&"USER_CANCELLED_DESIGNATION",
+			&"USER_CANCELLED_ALL_TO_ALL",
+		]:
 			return
 		if not out.success:
 			return

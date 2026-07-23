@@ -350,6 +350,24 @@ jobs:
           echo "⏱️  Rust build start: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           if [[ "${{ runner.os }}" == "macOS" ]]; then
             python3 build.py --release --no-clean --local-arch
+
+            # feagi_shared_video is not built by build.py. Never reuse its default-target
+            # output from a cache restored on the other macOS architecture.
+            rm -rf feagi_shared_video/target/release
+            cargo build \
+              --manifest-path feagi_shared_video/Cargo.toml \
+              --release \
+              --locked
+            SHARED_VIDEO_LIB="feagi_shared_video/target/release/libfeagi_shared_video.dylib"
+            EXPECTED_ARCH="${{ matrix.arch }}"
+            SHARED_VIDEO_ARCHS="$(lipo -archs "${SHARED_VIDEO_LIB}")"
+            if [[ "${SHARED_VIDEO_ARCHS}" != "${EXPECTED_ARCH}" ]]; then
+              echo "ERROR: feagi_shared_video architecture mismatch: expected ${EXPECTED_ARCH}, got ${SHARED_VIDEO_ARCHS}"
+              exit 1
+            fi
+            SHARED_VIDEO_DEST="../godot_source/addons/feagi_shared_video/target/release"
+            mkdir -p "${SHARED_VIDEO_DEST}"
+            cp "${SHARED_VIDEO_LIB}" "${SHARED_VIDEO_DEST}/libfeagi_shared_video.dylib"
           else
             python3 build.py --release --no-clean
           fi
@@ -360,9 +378,13 @@ jobs:
           # Verify macOS binaries are single-arch
           if [[ "${{ runner.os }}" == "macOS" ]]; then
             echo "Verifying macOS binaries..."
-            for lib in $(find godot_source/addons -name "*.dylib" -type f 2>/dev/null); do
-              ARCHS=$(file "$lib" 2>/dev/null | grep -oE 'arm64|x86_64' | tr '\n' ' ' || echo "unknown")
+            for lib in $(find ../godot_source/addons -name "*.dylib" -type f 2>/dev/null); do
+              ARCHS="$(lipo -archs "$lib")"
               echo "  $lib architectures: $ARCHS"
+              if [[ " ${ARCHS} " != *" ${{ matrix.arch }} "* ]]; then
+                echo "ERROR: $lib does not contain required architecture ${{ matrix.arch }}"
+                exit 1
+              fi
             done
           fi
 

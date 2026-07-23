@@ -295,7 +295,10 @@ func _confirm_establish_mapping() -> void:
 			projector_morphology,
 		)
 		_establishing = false
-		if out_mem.failed_requirement and out_mem.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+		if out_mem.failed_requirement and out_mem.failed_requirement_key in [
+			&"USER_CANCELLED_DESIGNATION",
+			&"USER_CANCELLED_ALL_TO_ALL",
+		]:
 			return
 		if out_mem.success:
 			close_window()
@@ -308,7 +311,10 @@ func _confirm_establish_mapping() -> void:
 			memory_morphology,
 		)
 		_establishing = false
-		if out_ep.failed_requirement and out_ep.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+		if out_ep.failed_requirement and out_ep.failed_requirement_key in [
+			&"USER_CANCELLED_DESIGNATION",
+			&"USER_CANCELLED_ALL_TO_ALL",
+		]:
 			return
 		if out_ep.success:
 			close_window()
@@ -355,7 +361,10 @@ func _confirm_establish_mapping() -> void:
 			new_morphology,
 		)
 		_establishing = false
-		if out_pat.failed_requirement and out_pat.failed_requirement_key == &"USER_CANCELLED_DESIGNATION":
+		if out_pat.failed_requirement and out_pat.failed_requirement_key in [
+			&"USER_CANCELLED_DESIGNATION",
+			&"USER_CANCELLED_ALL_TO_ALL",
+		]:
 			return
 		if not out_pat.success:
 			return
