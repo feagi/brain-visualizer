@@ -43,6 +43,11 @@ var _manipulation_resized_cb: Callable = Callable()  # stored for explicit disco
 var _core_cluster_plate: MeshInstance3D = null
 var _core_cluster_layout_refresh_pending: bool = false
 var _ws_fastpath_resync_pending: bool = false
+# Number of [method FeagiCore.bv_begin_visual_rebuild_pause] calls awaiting their matching release.
+# Accumulated (never dropped) so overlapping rebuild cycles - e.g. cortical_areas_hash and
+# brain_geometry_hash both changing from one property update and resolving at different times -
+# can never leave [method FeagiCore.bv_is_type11_visual_rebuild_pause_active] stuck true.
+var _ws_fastpath_resync_pause_ends_owed: int = 0
 
 var representing_region: BrainRegion:
 	get: return _representing_region
@@ -4135,8 +4140,12 @@ func _should_show_feagi_invariant_core_in_this_monitor(area: AbstractCorticalAre
 
 
 ## Desktop WS Type 11 applies to MultiMeshes registered on AbstractCorticalArea; schedule rebuild after BM recreates nodes.
-## Guard prevents multiple identical deferred calls from stacking in the CallQueue when several signal handlers fire per frame.
+## Guard dedupes the deferred *work* when several signal handlers fire per frame, but every call still
+## registers one owed pause-release in [member _ws_fastpath_resync_pause_ends_owed] so a caller whose
+## [method FeagiCore.bv_begin_visual_rebuild_pause] gets coalesced into an already-pending resync is
+## still guaranteed a matching release (see [method _deferred_invoke_ws_fastpath_rebuild]).
 func _schedule_ws_fastpath_resync_after_cortical_visuals_refresh() -> void:
+	_ws_fastpath_resync_pause_ends_owed += 1
 	if _ws_fastpath_resync_pending:
 		return
 	_ws_fastpath_resync_pending = true
@@ -4145,14 +4154,20 @@ func _schedule_ws_fastpath_resync_after_cortical_visuals_refresh() -> void:
 
 func _deferred_invoke_ws_fastpath_rebuild() -> void:
 	_ws_fastpath_resync_pending = false
-	if FeagiCore == null or FeagiCore.network == null:
+	var pause_ends_owed: int = _ws_fastpath_resync_pause_ends_owed
+	_ws_fastpath_resync_pause_ends_owed = 0
+	if FeagiCore == null:
+		# No FeagiCore reference means [method FeagiCore.bv_begin_visual_rebuild_pause] could not have
+		# run either, so there is nothing outstanding to release.
 		return
-	var ws: FEAGIWebSocketAPI = FeagiCore.network.websocket_API
+	var ws: FEAGIWebSocketAPI = FeagiCore.network.websocket_API if FeagiCore.network != null else null
 	if ws == null:
-		# Paired with [method bv_begin_visual_rebuild_pause]; release if WebSocket node is gone before rebuild.
-		FeagiCore.bv_end_visual_rebuild_pause_one()
+		# Paired with [method FeagiCore.bv_begin_visual_rebuild_pause]; release all owed pauses if the
+		# network/WebSocket node is gone before rebuild.
+		for _i in range(pause_ends_owed):
+			FeagiCore.bv_end_visual_rebuild_pause_one()
 		return
-	ws.request_bv_fastpath_cache_rebuild()
+	ws.request_bv_fastpath_cache_rebuild(pause_ends_owed)
 
 
 ## Drops every cortical volume node and clears the ID map. Caller must call [method _add_missing_cortical_area_visualizations] next.

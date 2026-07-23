@@ -94,6 +94,11 @@ var _ws_disabled_by_shm_notice_printed: bool = false
 var _ws_deserializer_missing_warned: bool = false
 # Guard: prevents multiple identical call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch") from queuing per frame.
 var _fastpath_rebuild_pending: bool = false
+# Number of [method FeagiCore.bv_end_visual_rebuild_pause_one] calls owed once the fast-path cache rebuild
+# actually completes. Accumulated (never dropped) across coalesced calls so every matching
+# [method FeagiCore.bv_begin_visual_rebuild_pause] is guaranteed a release, even if several rebuild
+# requests overlap and get coalesced into a single deferred cache refresh.
+var _fastpath_rebuild_pause_ends_owed: int = 0
 
 # WS receive diagnostics (rate-limited)
 var _ws_last_rx_log_ms: int = 0
@@ -1364,19 +1369,39 @@ func _on_genome_reloaded() -> void:
 ## Re-scan cortical areas for MultiMesh registration after genome / incremental cortical refresh (desktop Type 11 fast path).
 func _deferred_rebuild_bv_fastpath_after_cache_touch() -> void:
 	_fastpath_rebuild_pending = false
+	# Drain every owed release now, regardless of the "web" early-return below, so a pause requested via
+	# [method request_bv_fastpath_cache_rebuild] can never be left stuck if this build has no fast path.
+	var pause_ends_owed: int = _fastpath_rebuild_pause_ends_owed
+	_fastpath_rebuild_pause_ends_owed = 0
 	if OS.has_feature("web"):
+		_release_visual_rebuild_pauses(pause_ends_owed)
 		return
 	_bv_fast_cache_last_refresh_ms = 0
 	_refresh_bv_fastpath_cache_if_needed()
-	if FeagiCore != null:
+	_release_visual_rebuild_pauses(pause_ends_owed)
+
+
+func _release_visual_rebuild_pauses(count: int) -> void:
+	if FeagiCore == null:
+		return
+	for _i in range(count):
 		FeagiCore.bv_end_visual_rebuild_pause_one()
 
 
 ## Public hook for Brain Monitor: after 3D cortical nodes re-register DirectPoints MultiMeshes on new cache
 ## instances, rebuild the desktop Type 11 map so packets target the current MultiMeshes (reconnect safe).
-## Guard prevents duplicate deferred calls when multiple brain monitor instances or signal handlers call this per frame.
-func request_bv_fastpath_cache_rebuild() -> void:
+## Guard prevents duplicate deferred calls when multiple brain monitor instances or signal handlers call this per frame;
+## [param pause_ends_owed] accumulates across coalesced calls so every caller's matching
+## [method FeagiCore.bv_begin_visual_rebuild_pause] is still released exactly once, even when its own
+## rebuild request gets coalesced into an already-pending one.
+func request_bv_fastpath_cache_rebuild(pause_ends_owed: int = 0) -> void:
+	_fastpath_rebuild_pause_ends_owed += pause_ends_owed
 	if OS.has_feature("web"):
+		# No desktop fast path (and no pause to release: [method FeagiCore.bv_begin_visual_rebuild_pause]
+		# is itself a no-op on web) - drain immediately so the counter never grows unbounded.
+		var owed: int = _fastpath_rebuild_pause_ends_owed
+		_fastpath_rebuild_pause_ends_owed = 0
+		_release_visual_rebuild_pauses(owed)
 		return
 	_bv_fast_multimeshes_by_id.clear()
 	_bv_fast_dimensions_by_id.clear()
