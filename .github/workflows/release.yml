@@ -375,17 +375,22 @@ jobs:
           echo "⏱️  Rust build end: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           echo "⏱️  Rust build duration: $((BUILD_END - BUILD_START)) seconds"
           
-          # Verify macOS binaries are single-arch
+          # Verify macOS release binaries for this runner arch.
+          # Skip debug leftovers and non-release paths; CI builds --release --local-arch only.
           if [[ "${{ runner.os }}" == "macOS" ]]; then
-            echo "Verifying macOS binaries..."
-            for lib in $(find ../godot_source/addons -name "*.dylib" -type f 2>/dev/null); do
+            echo "Verifying macOS release binaries..."
+            while IFS= read -r lib; do
               ARCHS="$(lipo -archs "$lib")"
               echo "  $lib architectures: $ARCHS"
               if [[ " ${ARCHS} " != *" ${{ matrix.arch }} "* ]]; then
                 echo "ERROR: $lib does not contain required architecture ${{ matrix.arch }}"
                 exit 1
               fi
-            done
+            done < <(find ../godot_source/addons -name "*.dylib" -type f \
+              ! -name "*_debug*" \
+              ! -path "*/debug/*" \
+              \( -path "*/target/release/*" -o -path "*/FeagiCoreIntegration/*" \) \
+              2>/dev/null)
           fi
 
       - name: Build Rust extensions (Windows)

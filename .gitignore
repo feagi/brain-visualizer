@@ -109,6 +109,11 @@ godot_source/addons/feagi_shared_video/*.dylib
 godot_source/addons/feagi_shared_video/*.dll
 godot_source/addons/feagi_shared_video/*.so
 
+# feagi_rust_deserializer: only target/release binaries may be committed; never root/debug
+godot_source/addons/feagi_rust_deserializer/*.dylib
+godot_source/addons/feagi_rust_deserializer/*.dll
+godot_source/addons/feagi_rust_deserializer/*.so
+
 # feagi_embedded: experiment disabled; never commit platform binaries
 godot_source/addons/feagi_embedded/*.dylib
 godot_source/addons/feagi_embedded/*.dll
