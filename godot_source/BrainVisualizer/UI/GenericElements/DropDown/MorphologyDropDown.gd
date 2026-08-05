@@ -36,6 +36,8 @@ func _ready():
 	if sync_added_morphologies:
 		FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_morphology_was_added_to_cache)
 	FeagiCore.feagi_local_cache.morphologies.morphology_renamed.connect(_morphology_was_renamed_in_cache)
+	if not FeagiCore.feagi_local_cache.morphologies_reloaded.is_connected(_on_morphologies_reloaded):
+		FeagiCore.feagi_local_cache.morphologies_reloaded.connect(_on_morphologies_reloaded)
 	BV.UI.theme_changed.connect(_on_theme_change)
 	_on_theme_change()
 
@@ -114,6 +116,9 @@ func _morphology_was_deleted_from_cache(deleted_morphology: BaseMorphology) -> v
 func _morphology_was_added_to_cache(added_morphology: BaseMorphology) -> void:
 	if added_morphology not in _listed_morphologies:
 		add_morphology(added_morphology)
+
+func _on_morphologies_reloaded() -> void:
+	reload_available_morphologies()
 
 func _morphology_was_renamed_in_cache(_old_name: StringName, morphology: BaseMorphology) -> void:
 	var index: int = _listed_morphologies.find(morphology)

@@ -1216,13 +1216,16 @@ func _refresh_morphologies_from_feagi() -> FeagiRequestOutput:
 		return morphologies_output
 	
 	morphologies.update_morphology_cache_from_summary(morphologies_output.decode_response_as_dict())
-	print("HASH REFRESH: morphologies_reloaded emitted for morphologies_hash")
 	morphologies_reloaded.emit()
 	return morphologies_output
 
 ## Public method to refresh cortical mappings from FEAGI (e.g. after morphology rename).
 func refresh_mappings_from_feagi() -> FeagiRequestOutput:
 	return await _refresh_mappings_from_feagi()
+
+## Public method to refresh morphology catalog from FEAGI (e.g. after morphology rename).
+func refresh_morphologies_from_feagi() -> FeagiRequestOutput:
+	return await _refresh_morphologies_from_feagi()
 
 ## Refresh cortical mappings from FEAGI
 func _refresh_mappings_from_feagi() -> FeagiRequestOutput:

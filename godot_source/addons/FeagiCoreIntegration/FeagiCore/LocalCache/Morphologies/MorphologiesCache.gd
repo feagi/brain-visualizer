@@ -48,17 +48,23 @@ func update_morphology_by_dict(morphology_properties: Dictionary) -> void:
 
 ## Updates cache after a successful rename. Call only after FEAGI rename succeeds.
 func rename_morphology_in_cache(old_name: StringName, new_name: StringName) -> void:
-	if old_name not in _available_morphologies.keys():
+	var morphology: BaseMorphology = try_get_morphology_by_ambiguous_key(old_name)
+	if morphology == null:
 		push_error("Attempted to rename non-cached morphology %s, Skipping..." % [old_name])
 		return
-	if new_name in _available_morphologies.keys():
-		push_error("Attempted to rename morphology %s to existing name %s, Skipping..." % [old_name, new_name])
+	var new_key: StringName = StringName(String(new_name).strip_edges())
+	var existing_at_new: BaseMorphology = try_get_morphology_by_ambiguous_key(new_key)
+	if existing_at_new != null and existing_at_new != morphology:
+		push_error("Attempted to rename morphology %s to existing name %s, Skipping..." % [old_name, new_key])
 		return
-	var morphology: BaseMorphology = _available_morphologies[old_name]
-	_available_morphologies.erase(old_name)
-	morphology.name = new_name
-	_available_morphologies[new_name] = morphology
-	morphology_renamed.emit(old_name, morphology)
+	var prior_name: StringName = morphology.name
+	for k in _available_morphologies.keys():
+		if _available_morphologies[k] == morphology:
+			_available_morphologies.erase(k)
+	morphology.name = new_key
+	_available_morphologies[new_key] = morphology
+	morphology_renamed.emit(prior_name, morphology)
+
 
 ## Should only be called by FEAGI - removes a morphology by name
 func remove_morphology(morphology_Name: StringName) -> void:
@@ -119,7 +125,10 @@ func update_morphology_cache_from_summary(all_morphology_details: Dictionary) ->
 		if not api_id_strings.has(String(cur).strip_edges()):
 			to_erase.append(cur)
 	for cur in to_erase:
+		var removing: BaseMorphology = _available_morphologies.get(cur, null)
 		print("CACHE: deleting morphology no longer in use: %s..." % cur)
+		if removing != null:
+			morphology_about_to_be_removed.emit(removing)
 		_available_morphologies.erase(cur)
 
 	for raw_name in all_morphology_details.keys():
@@ -127,18 +136,25 @@ func update_morphology_cache_from_summary(all_morphology_details: Dictionary) ->
 		var current_morphlogy_dict: Dictionary = all_morphology_details[raw_name]
 		var existing: BaseMorphology = try_get_morphology_by_ambiguous_key(name_key)
 		if existing != null:
+			var prior_name: StringName = existing.name
 			if not _available_morphologies.has(name_key):
 				for k in _available_morphologies.keys():
-					if String(k) == String(name_key):
+					if _available_morphologies[k] == existing:
 						_available_morphologies.erase(k)
 						break
 				_available_morphologies[name_key] = existing
-			_available_morphologies[name_key].feagi_update(
+			if String(prior_name) != String(name_key):
+				existing.name = name_key
+				morphology_renamed.emit(prior_name, existing)
+			existing.feagi_update(
 				current_morphlogy_dict["parameters"],
 				BaseMorphology.morphology_class_str_to_class(current_morphlogy_dict["class"])
 			)
+			morphology_updated.emit(existing)
 		else:
-			_available_morphologies[name_key] = BaseMorphology.create_from_FEAGI_template(name_key, current_morphlogy_dict)
+			var created: BaseMorphology = BaseMorphology.create_from_FEAGI_template(name_key, current_morphlogy_dict)
+			_available_morphologies[name_key] = created
+			morphology_added.emit(created)
 
 
 ## Collect morphology_id strings from cortical_map_detailed-style mapping summary.
