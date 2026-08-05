@@ -38,6 +38,8 @@ func _ready() -> void:
 	FeagiCore.feagi_local_cache.morphologies.morphology_about_to_be_removed.connect(_respond_to_deleted_morphology)
 	FeagiCore.feagi_local_cache.morphologies.morphology_added.connect(_respond_to_added_morphology)
 	FeagiCore.feagi_local_cache.morphologies.morphology_renamed.connect(_respond_to_renamed_morphology)
+	if not FeagiCore.feagi_local_cache.morphologies_reloaded.is_connected(_on_morphologies_reloaded):
+		FeagiCore.feagi_local_cache.morphologies_reloaded.connect(_on_morphologies_reloaded)
 
 ## Clears list, then loads morphology list from FeagiCache
 func repopulate_from_cache() -> void:
@@ -83,6 +85,16 @@ func _respond_to_deleted_morphology(morphology: BaseMorphology) -> void:
 func _respond_to_added_morphology(morphology: BaseMorphology) -> void:
 	_items.append({"label": morphology.name, "payload": morphology})
 	_apply_filter(_filter_line.text)
+
+func _on_morphologies_reloaded() -> void:
+	var keep_selection: BaseMorphology = _selected_morphology
+	repopulate_from_cache()
+	if keep_selection != null and !(keep_selection is NullMorphology):
+		var resolved: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.try_get_morphology_object(
+			keep_selection.name
+		)
+		if resolved != null:
+			select_morphology(resolved)
 
 func _respond_to_renamed_morphology(_old_name: StringName, morphology: BaseMorphology) -> void:
 	for i in range(_items.size()):

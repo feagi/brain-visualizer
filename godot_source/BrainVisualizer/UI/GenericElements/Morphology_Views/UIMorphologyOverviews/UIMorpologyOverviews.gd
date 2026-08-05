@@ -28,7 +28,8 @@ var _custom_minimum_size_scalar: ScalingCustomMinimumSize
 
 var _no_name_text: StringName
 var _loaded_morphology: BaseMorphology
-var _skip_next_focus_revert: bool = false
+## Last name typed in the Selected Rule field (survives focus changes until load_morphology or successful rename).
+var _pending_rule_display_name: String = ""
 
 const MORPHOLOGY_UPDATE_WARNING_POPUP_MIN_SIZE: Vector2i = Vector2i(640, 420)
 
@@ -38,14 +39,14 @@ func _ready() -> void:
 	_morphology_scroll = $Listings/MorphologyScroll
 	_morphology_name_edit = $SelectedDetails/HBoxContainer/Name
 	_morphology_name_edit.text_submitted.connect(_on_morphology_name_submitted)
-	_morphology_name_edit.focus_exited.connect(_on_morphology_name_focus_exited)
+	_morphology_name_edit.text_changed.connect(_on_morphology_name_text_changed)
 	_UI_morphology_definition = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/PanelContainer/SmartMorphologyView
 	_UI_morphology_image = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyImage
 	_UI_morphology_usage = $SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyUsage
 	_UI_morphology_description = $SelectedDetails/Details/MarginContainer/VBoxContainer/UIMorphologyDescription
 	_UI_morphology_delete_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Delete
 	_close_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Close
-	_update_morphology_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Close
+	_update_morphology_button = $SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons/Update
 	
 	_add_morphology_button.visible = enable_add_morphology_button
 	_UI_morphology_delete_button.visible = enable_delete_morphology_button
@@ -59,6 +60,7 @@ func _ready() -> void:
 	
 func load_morphology(morphology: BaseMorphology, override_scroll_selection: bool = false) -> void:
 	_loaded_morphology = morphology
+	_pending_rule_display_name = ""
 	if morphology is NullMorphology:
 		_morphology_name_edit.text = ""
 		_morphology_name_edit.placeholder_text = _no_name_text
@@ -84,13 +86,17 @@ func load_morphology(morphology: BaseMorphology, override_scroll_selection: bool
 	size = Vector2i(0,0) # Force shrink to minimum possible size
 
 func _user_requested_update_morphology() -> void:
-	_skip_next_focus_revert = true
 	if !_loaded_morphology or _loaded_morphology is NullMorphology:
 		return
-	var name_trimmed: String = _morphology_name_edit.text.strip_edges()
+	var name_from_field: String = _morphology_name_edit.text.strip_edges()
+	if name_from_field.is_empty() and !_pending_rule_display_name.is_empty():
+		name_from_field = _pending_rule_display_name.strip_edges()
+	var name_trimmed: String = name_from_field
 	var is_name_change: bool = name_trimmed != String(_loaded_morphology.name) and !name_trimmed.is_empty()
 	var is_custom: bool = _loaded_morphology.internal_class == BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM
 	if is_name_change and is_custom:
+		if _morphology_name_edit.text.strip_edges() != name_trimmed:
+			_morphology_name_edit.text = name_trimmed
 		_rename_then_update_parameters(name_trimmed)
 		return
 	_request_morphology_update_with_warning(_loaded_morphology.name)
@@ -99,14 +105,20 @@ func _rename_then_update_parameters(new_name: String) -> void:
 	var result: FeagiRequestOutput = await FeagiCore.requests.rename_morphology(_loaded_morphology.name, new_name)
 	if !result.success:
 		var error_details: PackedStringArray = result.decode_response_as_generic_error_code()
-		BV.NOTIF.add_notification("Failed to rename connectivity rule: %s" % error_details[1])
+		var fail_reason: String = error_details[1]
+		if result.failed_requirement:
+			fail_reason = String(result.failed_requirement_key)
+		BV.NOTIF.add_notification("Failed to rename connectivity rule: %s" % fail_reason)
 		_morphology_name_edit.text = _loaded_morphology.name
 		return
 	BV.NOTIF.add_notification("Renamed connectivity rule to %s" % new_name)
+	_pending_rule_display_name = ""
 	_loaded_morphology = FeagiCore.feagi_local_cache.morphologies.try_get_morphology_object(new_name)
 	if _loaded_morphology:
 		_request_morphology_update_with_warning(_loaded_morphology.name)
 		load_morphology(_loaded_morphology, true)
+	else:
+		push_error("UI rename: cache lookup failed for new name '%s'" % new_name)
 
 func _request_morphology_update_with_warning(morphology_name: StringName) -> void:
 	var usage_result: FeagiRequestOutput = await FeagiCore.requests.get_morphology_usage(morphology_name)
@@ -198,20 +210,19 @@ func _user_request_delete_morphology() -> void:
 func _user_selected_morphology_from_scroll(morphology) -> void:
 	load_morphology(morphology)
 
-func _on_morphology_name_focus_exited() -> void:
-	# Defer revert so that clicking Update (which steals focus) does not wipe the user's edit before the handler runs.
-	if _loaded_morphology and !(_loaded_morphology is NullMorphology):
-		call_deferred("_deferred_revert_name_if_not_submitted")
-
-func _deferred_revert_name_if_not_submitted() -> void:
-	if _skip_next_focus_revert:
-		_skip_next_focus_revert = false
+func _on_morphology_name_text_changed(new_text: String) -> void:
+	if _loaded_morphology == null or _loaded_morphology is NullMorphology:
 		return
-	if _loaded_morphology and !(_loaded_morphology is NullMorphology) and _morphology_name_edit.text != String(_loaded_morphology.name):
-		_morphology_name_edit.text = _loaded_morphology.name
+	var trimmed: String = new_text.strip_edges()
+	if trimmed.is_empty():
+		_pending_rule_display_name = ""
+		return
+	if trimmed != String(_loaded_morphology.name):
+		_pending_rule_display_name = trimmed
+	else:
+		_pending_rule_display_name = ""
 
 func _on_morphology_name_submitted(new_name: String) -> void:
-	_skip_next_focus_revert = true
 	if _loaded_morphology == null or _loaded_morphology is NullMorphology:
 		return
 	if _loaded_morphology.internal_class == BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE:
@@ -228,10 +239,16 @@ func _rename_morphology_async(new_name: String) -> void:
 	var result: FeagiRequestOutput = await FeagiCore.requests.rename_morphology(_loaded_morphology.name, new_name)
 	if !result.success:
 		var error_details: PackedStringArray = result.decode_response_as_generic_error_code()
-		BV.NOTIF.add_notification("Failed to rename connectivity rule: %s" % error_details[1])
+		var fail_reason: String = error_details[1]
+		if result.failed_requirement:
+			fail_reason = String(result.failed_requirement_key)
+		BV.NOTIF.add_notification("Failed to rename connectivity rule: %s" % fail_reason)
 		_morphology_name_edit.text = _loaded_morphology.name
 		return
 	BV.NOTIF.add_notification("Renamed connectivity rule to %s" % new_name)
+	_pending_rule_display_name = ""
 	_loaded_morphology = FeagiCore.feagi_local_cache.morphologies.try_get_morphology_object(new_name)
 	if _loaded_morphology:
 		load_morphology(_loaded_morphology, true)
+	else:
+		push_error("UI rename: cache lookup failed for new name '%s'" % new_name)

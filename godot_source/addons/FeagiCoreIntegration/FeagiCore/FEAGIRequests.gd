@@ -2426,7 +2426,7 @@ func add_vector_morphology(morphology_name: StringName, vectors: Array[Vector3i]
 		push_error("FEAGI Requests: Unable to create vector morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully created morphology of name %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.add_defined_vector_morphology(morphology_name, vectors)
+	FeagiCore.feagi_local_cache.morphologies.add_defined_vector_morphology(morphology_name, vectors, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM)
 	return FEAGI_response_data
 	
 	
@@ -2461,7 +2461,7 @@ func add_pattern_morphology(morphology_name: StringName, patterns: Array[Pattern
 		push_error("FEAGI Requests: Unable to create pattern morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully created morphology of name %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.add_defined_pattern_morphology(morphology_name, patterns)
+	FeagiCore.feagi_local_cache.morphologies.add_defined_pattern_morphology(morphology_name, patterns, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM)
 	return FEAGI_response_data
 
 
@@ -2503,7 +2503,7 @@ func add_composite_morphology(morphology_name: StringName, source_seed: Vector3i
 		push_error("FEAGI Requests: Unable to create composite morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
 	print("FEAGI REQUEST: Successfully added composite morphology of name %s" % morphology_name)
-	FeagiCore.feagi_local_cache.morphologies.add_defined_composite_morphology(morphology_name, source_seed, source_pattern, mapped_morphology_name)
+	FeagiCore.feagi_local_cache.morphologies.add_defined_composite_morphology(morphology_name, source_seed, source_pattern, mapped_morphology_name, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CUSTOM)
 	return FEAGI_response_data
 
 
@@ -2529,18 +2529,14 @@ func update_vector_morphology(morphology_name: StringName, vectors: Array[Vector
 		}
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_morphology, dict_to_send)
-	print("[MORPH-AUDIT][BV] PUT morphology request (vectors): name=%s vectors=%d" % [morphology_name, vectors.size()])
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		var error_details: PackedStringArray = FEAGI_response_data.decode_response_as_generic_error_code()
-		print("[MORPH-AUDIT][BV] PUT morphology failed (vectors): name=%s http=%d reason=%s" % [morphology_name, FEAGI_response_data.response_code, error_details[1]])
 		push_error("FEAGI Requests: Unable to update vector morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
-	print("[MORPH-AUDIT][BV] PUT morphology success (vectors): name=%s http=%d" % [morphology_name, FEAGI_response_data.response_code])
 	print("FEAGI REQUEST: Successfully updated vector morphology of name %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_confirmed_value_update(vectors)
 	return FEAGI_response_data
@@ -2568,18 +2564,14 @@ func update_pattern_morphology(morphology_name: StringName, patterns: Array[Patt
 		}
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_morphology, dict_to_send)
-	print("[MORPH-AUDIT][BV] PUT morphology request (patterns): name=%s patterns=%d" % [morphology_name, patterns.size()])
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		var error_details: PackedStringArray = FEAGI_response_data.decode_response_as_generic_error_code()
-		print("[MORPH-AUDIT][BV] PUT morphology failed (patterns): name=%s http=%d reason=%s" % [morphology_name, FEAGI_response_data.response_code, error_details[1]])
 		push_error("FEAGI Requests: Unable to update pattern morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
-	print("[MORPH-AUDIT][BV] PUT morphology success (patterns): name=%s http=%d" % [morphology_name, FEAGI_response_data.response_code])
 	print("FEAGI REQUEST: Successfully updated pattern morphology of name %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_confirmed_value_update(patterns)
 	return FEAGI_response_data
@@ -2614,18 +2606,14 @@ func update_composite_morphology(morphology_name: StringName, source_seed: Vecto
 		}
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_genome_morphology, dict_to_send)
-	print("[MORPH-AUDIT][BV] PUT morphology request (composite): name=%s pattern=%d mapper=%s" % [morphology_name, source_pattern.size(), mapped_morphology_name])
 	
 	# Send request and await results
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
-		var error_details: PackedStringArray = FEAGI_response_data.decode_response_as_generic_error_code()
-		print("[MORPH-AUDIT][BV] PUT morphology failed (composite): name=%s http=%d reason=%s" % [morphology_name, FEAGI_response_data.response_code, error_details[1]])
 		push_error("FEAGI Requests: Unable to update composite morphology of name %s!" % morphology_name)
 		return FEAGI_response_data
-	print("[MORPH-AUDIT][BV] PUT morphology success (composite): name=%s http=%d" % [morphology_name, FEAGI_response_data.response_code])
 	print("FEAGI REQUEST: Successfully updated composite morphology of name %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_confirmed_value_update(source_seed, source_pattern)
 	return FEAGI_response_data
@@ -2636,10 +2624,11 @@ func rename_morphology(old_morphology_id: StringName, new_morphology_id: StringN
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
-	if !old_morphology_id in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
+	var morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.try_get_morphology_object(old_morphology_id)
+	if morphology == null:
 		push_error("FEAGI Requests: Morphology %s doesn't exist to rename!" % old_morphology_id)
 		return FeagiRequestOutput.requirement_fail("MORPHOLOGY_MISSING")
-	var morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[old_morphology_id]
+	var old_id_str: String = String(morphology.name)
 	if morphology.internal_class == BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE:
 		push_error("FEAGI Requests: Cannot rename core morphology %s!" % old_morphology_id)
 		return FeagiRequestOutput.requirement_fail("CORE_MORPHOLOGY_NOT_RENAMEABLE")
@@ -2647,13 +2636,13 @@ func rename_morphology(old_morphology_id: StringName, new_morphology_id: StringN
 	if new_trimmed.is_empty():
 		push_error("FEAGI Requests: New morphology name cannot be empty!")
 		return FeagiRequestOutput.requirement_fail("NEW_NAME_EMPTY")
-	if new_trimmed == String(old_morphology_id):
+	if new_trimmed == old_id_str:
 		return FeagiRequestOutput.requirement_fail("SAME_NAME")
-	if new_trimmed in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys():
+	if FeagiCore.feagi_local_cache.morphologies.try_get_morphology_object(new_trimmed) != null:
 		push_error("FEAGI Requests: Morphology with name %s already exists!" % new_trimmed)
 		return FeagiRequestOutput.requirement_fail("NAME_EXISTS")
 	var dict_to_send: Dictionary = {
-		"old_morphology_id": old_morphology_id,
+		"old_morphology_id": old_id_str,
 		"new_morphology_id": new_trimmed
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_morphology_rename, dict_to_send)
@@ -2663,8 +2652,9 @@ func rename_morphology(old_morphology_id: StringName, new_morphology_id: StringN
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to rename morphology from %s to %s!" % [old_morphology_id, new_trimmed])
 		return FEAGI_response_data
-	print("FEAGI REQUEST: Successfully renamed morphology from %s to %s" % [old_morphology_id, new_trimmed])
-	FeagiCore.feagi_local_cache.morphologies.rename_morphology_in_cache(old_morphology_id, new_trimmed)
+	print("FEAGI REQUEST: Successfully renamed morphology from %s to %s" % [old_id_str, new_trimmed])
+	FeagiCore.feagi_local_cache.morphologies.rename_morphology_in_cache(morphology.name, new_trimmed)
+	await FeagiCore.feagi_local_cache.refresh_morphologies_from_feagi()
 	await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
 	return FEAGI_response_data
 

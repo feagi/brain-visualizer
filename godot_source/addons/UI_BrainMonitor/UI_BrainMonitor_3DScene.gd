@@ -566,10 +566,11 @@ func _cleanup_preview_indicator(indicator_ref: WeakRef) -> void:
 	var indicator_node: Node3D = indicator_ref.get_ref() as Node3D
 	if indicator_node != null and is_instance_valid(indicator_node):
 		indicator_node.queue_free()
-	_active_preview_indicators = _active_preview_indicators.filter(
-		func(node: Node3D) -> bool:
+	var filtered: Array = _active_preview_indicators.filter(
+		func(node) -> bool:
 			return node != null and is_instance_valid(node)
 	)
+	_active_preview_indicators.assign(filtered)
 
 ## Defers indicator spawning until transforms are updated, then places it at true world center
 func _spawn_indicator_for_node_center(node: Node) -> void:
