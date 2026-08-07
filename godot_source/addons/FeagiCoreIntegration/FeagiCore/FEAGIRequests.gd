@@ -2806,14 +2806,16 @@ func _await_all_to_all_mapping_confirmation(
 		all_to_all_rule_count,
 		_format_count_with_commas(estimated_synapses),
 	]
-	var done := false
-	var accepted := false
+	# Use a Dictionary so the lambda captures a reference type and can mutate shared state.
+	# GDScript 4 captures bool/int/float by value, so plain `var done := false` would never
+	# be updated by the lambda, causing the await loop to spin forever.
+	var state := {"done": false, "accepted": false}
 	var on_accept := func() -> void:
-		accepted = true
-		done = true
+		state["accepted"] = true
+		state["done"] = true
 	var on_cancel := func() -> void:
-		accepted = false
-		done = true
+		state["accepted"] = false
+		state["done"] = true
 	var b_ok: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_action_button(
 		on_accept,
 		&"Create Mapping",
@@ -2831,9 +2833,9 @@ func _await_all_to_all_mapping_confirmation(
 	var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(def)
 	# Prefer Cancel as the safe default for this footgun morphology.
 	popup_window.call_deferred("focus_button_with_text", "Cancel")
-	while not done:
+	while not state["done"]:
 		await Engine.get_main_loop().process_frame
-	return accepted
+	return state["accepted"]
 
 
 func _await_designation_switch_confirmation(
@@ -2856,14 +2858,16 @@ func _await_designation_switch_confirmation(
 			String(src.current_parent_region.friendly_name),
 		]
 		accept_label = "Switch to Output"
-	var done := false
-	var accepted := false
+	# Use a Dictionary so the lambda captures a reference type and can mutate shared state.
+	# GDScript 4 captures bool/int/float by value, so plain `var done := false` would never
+	# be updated by the lambda, causing the await loop to spin forever.
+	var state := {"done": false, "accepted": false}
 	var on_accept := func() -> void:
-		accepted = true
-		done = true
+		state["accepted"] = true
+		state["done"] = true
 	var on_cancel := func() -> void:
-		accepted = false
-		done = true
+		state["accepted"] = false
+		state["done"] = true
 	var b_ok: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_action_button(
 		on_accept,
 		StringName(accept_label),
@@ -2880,9 +2884,9 @@ func _await_designation_switch_confirmation(
 	var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(def)
 	popup_window.set_enter_confirms_button(accept_label)
 	popup_window.call_deferred("focus_button_with_text", accept_label)
-	while not done:
+	while not state["done"]:
 		await Engine.get_main_loop().process_frame
-	return accepted
+	return state["accepted"]
 
 
 ## When the server rejects a cross-region mapping (cache missed pre-check or other client), show a clear popup.
