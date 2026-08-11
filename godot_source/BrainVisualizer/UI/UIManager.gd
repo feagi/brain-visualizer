@@ -86,6 +86,7 @@ var _voxel_capture_copy_button: Button
 var _voxel_capture_close_button: Button
 var _voxel_capture_selected_by_area: Dictionary[StringName, Dictionary] = {}
 var _voxel_capture_dismissed_by_user: bool = false
+const VOXEL_CAPTURE_MIN_VISIBLE_VOXELS: int = 2
 
 # Startup UI scaling thresholds based only on monitor DPI and resolution.
 # Goal: fit more content on low-resolution displays while preserving readability on high-DPI panels.
@@ -706,19 +707,20 @@ func _build_voxel_capture_display_text(payload: Dictionary) -> String:
 func _refresh_voxel_capture_overlay() -> void:
 	if _voxel_capture_layer == null:
 		return
-	if _voxel_capture_selected_by_area.is_empty():
-		_voxel_capture_layer.visible = false
-		_voxel_capture_dismissed_by_user = false
-		if _voxel_capture_summary_label != null:
-			_voxel_capture_summary_label.text = "0 voxels from 0 areas"
-		if _voxel_capture_preview_text != null:
-			_voxel_capture_preview_text.text = "No voxels selected yet.\n\nHold Shift and click voxels to build a live selection."
-		if _voxel_capture_copy_button != null:
-			_voxel_capture_copy_button.disabled = true
-		return
 	var payload: Dictionary = _build_voxel_capture_payload()
 	var total_areas: int = int(payload.get("area_count", 0))
 	var total_voxels: int = int(payload.get("total_voxel_count", 0))
+	if total_voxels < VOXEL_CAPTURE_MIN_VISIBLE_VOXELS:
+		_voxel_capture_layer.visible = false
+		if total_voxels == 0:
+			_voxel_capture_dismissed_by_user = false
+		if _voxel_capture_summary_label != null:
+			_voxel_capture_summary_label.text = "%d voxels from %d areas" % [total_voxels, total_areas]
+		if _voxel_capture_preview_text != null:
+			_voxel_capture_preview_text.text = "Select at least 2 voxels to show capture details."
+		if _voxel_capture_copy_button != null:
+			_voxel_capture_copy_button.disabled = true
+		return
 	if _voxel_capture_summary_label != null:
 		_voxel_capture_summary_label.text = "%d voxels from %d areas" % [total_voxels, total_areas]
 	if _voxel_capture_preview_text != null:

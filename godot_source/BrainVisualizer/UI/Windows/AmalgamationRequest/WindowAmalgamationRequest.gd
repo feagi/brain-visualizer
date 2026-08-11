@@ -9,6 +9,8 @@ var _field_title: TextInput
 var _field_3d_location: Vector3iSpinboxField
 var _region_button: GenomeObjectSelectorButton
 var _wiring_selector: OptionButton
+var _import_button: Button
+var _cancel_button: Button
 
 var _amalgamation_ID: StringName
 var _circuit_size: Vector3i
@@ -22,6 +24,7 @@ var _preview_refresh_generation: int = 0
 var _flashing_preview: UI_BrainMonitor_BrainRegionPreview = null
 var _flash_timer: Timer = null
 var _is_flashing: bool = false
+var _import_in_progress: bool = false
 
 
 func _ready() -> void:
@@ -30,6 +33,8 @@ func _ready() -> void:
 	_field_3d_location = _window_internals.get_node('HBoxContainer2/Coordinates_3D')
 	_region_button = _window_internals.get_node('HBoxContainer4/GenomeObjectSelectorButton')
 	_wiring_selector = _window_internals.get_node('HBoxContainer5/OptionButton')
+	_import_button = _window_internals.get_node('HBoxContainer3/import')
+	_cancel_button = _window_internals.get_node('HBoxContainer3/cancel')
 
 
 func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
@@ -146,6 +151,13 @@ func _cleanup_placement_previews() -> void:
 
 
 func _import_pressed():
+	if _import_in_progress:
+		return
+	_import_in_progress = true
+	if _import_button != null:
+		_import_button.disabled = true
+	if _cancel_button != null:
+		_cancel_button.disabled = true
 	print("🔧 DEBUG: _import_pressed() called for amalgamation import")
 	print("🔧 DEBUG: Region button state: %s" % _region_button)
 	print("🔧 DEBUG: Region button current_selected: %s" % _region_button.current_selected)
@@ -159,14 +171,17 @@ func _import_pressed():
 		2:
 			wiring_mode = "none"
 	
-	var selected_region = _region_button.current_selected
+	var selected_region: BrainRegion = _get_parent_circuit_region()
 	if selected_region == null:
-		print("🔧 DEBUG: No region selected, falling back to root region")
-		selected_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-		if selected_region == null:
-			push_error("WindowAmalgamationRequest: No region available for amalgamation import!")
-			BV.NOTIF.add_notification("❌ No region available for amalgamation import!", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
-			return
+		push_error("WindowAmalgamationRequest: No region available for amalgamation import!")
+		if BV != null and BV.NOTIF != null:
+			BV.NOTIF.add_notification("No parent circuit available for import.", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+		_import_in_progress = false
+		if _import_button != null:
+			_import_button.disabled = false
+		if _cancel_button != null:
+			_cancel_button.disabled = false
+		return
 	
 	print("🔧 DEBUG: Selected region: %s" % selected_region.friendly_name)
 	print("🔧 DEBUG: Selected region genome ID: %s" % selected_region.genome_ID)
@@ -180,13 +195,42 @@ func _import_pressed():
 	print("🔧 DEBUG: _flashing_preview after start: %s" % (_flashing_preview.name if _flashing_preview else "null"))
 	
 	if _is_pre_submit_clone:
+		if _source_region_for_clone == null:
+			push_error("WindowAmalgamationRequest: Clone requested without source region.")
+			if BV != null and BV.NOTIF != null:
+				BV.NOTIF.add_notification("Clone failed: source circuit is missing.", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+			_stop_flashing_preview()
+			_import_in_progress = false
+			if _import_button != null:
+				_import_button.disabled = false
+			if _cancel_button != null:
+				_cancel_button.disabled = false
+			return
 		var pending_out: FeagiRequestOutput = await FeagiCore.requests.clone_brain_region_pending(_source_region_for_clone, _field_title.text, _field_3d_location.current_vector, Vector2i(0,0))
 		if FeagiCore.requests._return_if_HTTP_failed_and_automatically_handle(pending_out):
 			push_error("WindowAmalgamationRequest: Failed to initiate region clone pending")
+			if BV != null and BV.NOTIF != null:
+				BV.NOTIF.add_notification("Clone initiation failed. Check FEAGI connectivity and logs.", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
 			_stop_flashing_preview()
+			_import_in_progress = false
+			if _import_button != null:
+				_import_button.disabled = false
+			if _cancel_button != null:
+				_cancel_button.disabled = false
 			return
 		var pending_dict: Dictionary = pending_out.decode_response_as_dict()
 		_amalgamation_ID = pending_dict.get("amalgamation_id", &"")
+		if _amalgamation_ID == &"":
+			push_error("WindowAmalgamationRequest: Pending clone response missing amalgamation_id.")
+			if BV != null and BV.NOTIF != null:
+				BV.NOTIF.add_notification("Clone initiation failed: no amalgamation id returned.", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+			_stop_flashing_preview()
+			_import_in_progress = false
+			if _import_button != null:
+				_import_button.disabled = false
+			if _cancel_button != null:
+				_cancel_button.disabled = false
+			return
 	
 	print("🔧 DEBUG: About to call request_import_amalgamation...")
 	print("🚨 WINDOW DEBUG: Parameters - position: %s, amalgamation_ID: %s, parent_region_ID: %s, wiring_mode: %s" % [_field_3d_location.current_vector, _amalgamation_ID, selected_region.genome_ID, wiring_mode])
@@ -194,8 +238,19 @@ func _import_pressed():
 	
 	var result = await FeagiCore.requests.request_import_amalgamation(_field_3d_location.current_vector, _amalgamation_ID, selected_region.genome_ID, wiring_mode)
 	print("🚨 WINDOW DEBUG: request_import_amalgamation call completed: %s" % (result != null))
+	if result == null or not result.success:
+		if BV != null and BV.NOTIF != null:
+			BV.NOTIF.add_notification("Import request failed before completion.", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+		_stop_flashing_preview()
+		_import_in_progress = false
+		if _import_button != null:
+			_import_button.disabled = false
+		if _cancel_button != null:
+			_cancel_button.disabled = false
+		return
 	print("🔧 DEBUG: request_import_amalgamation initiated - closing window immediately for user feedback")
 	
+	_import_in_progress = false
 	close_window(false)
 
 #OVERRIDE
