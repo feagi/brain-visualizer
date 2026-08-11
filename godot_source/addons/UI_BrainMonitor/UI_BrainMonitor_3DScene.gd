@@ -1980,6 +1980,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					bm_cortical_area.clear_all_neuron_selection_states() # slow but I dont care right now
 					if had_selected_neurons and bm_cortical_area.cortical_area != null:
 						cortical_area_selected_neurons_changed.emit(bm_cortical_area.cortical_area, [])
+				requesting_to_clear_all_selected_neurons.emit()
 			
 			
 			
@@ -2115,6 +2116,7 @@ func clear_all_selected_cortical_area_neurons() -> void:
 			area.clear_all_neuron_selection_states()
 			if had_selected_neurons and area.cortical_area != null:
 				cortical_area_selected_neurons_changed.emit(area.cortical_area, [])
+	requesting_to_clear_all_selected_neurons.emit()
 
 func set_further_neuron_selection_restriction_to_cortical_area(restrict_to: AbstractCorticalArea) -> void:
 	if restrict_to.cortical_ID in _cortical_visualizations_by_ID:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://jjxpbkym537m"]
+[gd_scene load_steps=15 format=3 uid="uid://jjxpbkym537m"]
 
 [ext_resource type="Script" uid="uid://bt4hvlcblfybq" path="res://BrainVisualizer/UI/Windows/QuickConnectNeuron/WindowQuickConnectNeuron.gd" id="1_xsnx8"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_now4c"]
@@ -10,6 +10,10 @@
 [ext_resource type="Texture2D" uid="uid://bb1koiuqt23fn" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_C.png" id="8_w4h15"]
 [ext_resource type="Texture2D" uid="uid://3p7xrje62t1b" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_H.png" id="9_et2nk"]
 [ext_resource type="Texture2D" uid="uid://cujpfgo6o63hg" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_D.png" id="10_6622n"]
+[ext_resource type="Texture2D" uid="uid://bt11f6y0pdrwq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_S.png" id="11_pastes"]
+[ext_resource type="Texture2D" uid="uid://ditnngl227va2" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_C.png" id="12_pastec"]
+[ext_resource type="Texture2D" uid="uid://dlj5qdg1x8fhy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_H.png" id="13_pasteh"]
+[ext_resource type="Texture2D" uid="uid://ckvawum8e7h4u" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_D.png" id="14_pasted"]
 
 [node name="WindowQuickConnectNeuron" type="VBoxContainer"]
 offset_right = 126.0
@@ -61,6 +65,20 @@ texture_disabled = ExtResource("6_5pfvd")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="PasteTextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/source/step1"]
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("11_pastes")
+texture_pressed = ExtResource("12_pastec")
+texture_hover = ExtResource("13_pasteh")
+texture_disabled = ExtResource("14_pasted")
+ignore_texture_size = true
+stretch_mode = 0
+tooltip_text = "Paste voxel selection from clipboard"
+
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/source/step1"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
@@ -90,6 +108,20 @@ texture_hover = ExtResource("5_smclk")
 texture_disabled = ExtResource("6_5pfvd")
 ignore_texture_size = true
 stretch_mode = 0
+
+[node name="PasteTextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2"]
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("11_pastes")
+texture_pressed = ExtResource("12_pastec")
+texture_hover = ExtResource("13_pasteh")
+texture_disabled = ExtResource("14_pasted")
+ignore_texture_size = true
+stretch_mode = 0
+tooltip_text = "Paste voxel selection from clipboard"
 
 [node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2"]
 custom_minimum_size = Vector2(5, 0)
@@ -137,6 +169,8 @@ disabled = true
 text = "Establish the Connection"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/source/step1/TextureButton" to="." method="_start_edit_source_config"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/source/step1/PasteTextureButton" to="." method="_paste_source_from_clipboard"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/destination/step2/TextureButton" to="." method="_start_edit_destination_config"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/destination/step2/PasteTextureButton" to="." method="_paste_destination_from_clipboard"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/confirm/step3/TextureButton" to="." method="_mapping_establish_check_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Establish" to="." method="_establish"]

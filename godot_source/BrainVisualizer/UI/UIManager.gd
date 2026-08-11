@@ -83,7 +83,9 @@ var _voxel_capture_layer: CanvasLayer
 var _voxel_capture_summary_label: Label
 var _voxel_capture_preview_text: TextEdit
 var _voxel_capture_copy_button: Button
+var _voxel_capture_close_button: Button
 var _voxel_capture_selected_by_area: Dictionary[StringName, Dictionary] = {}
+var _voxel_capture_dismissed_by_user: bool = false
 
 # Startup UI scaling thresholds based only on monitor DPI and resolution.
 # Goal: fit more content on low-resolution displays while preserving readability on high-DPI panels.
@@ -467,11 +469,25 @@ func _setup_voxel_capture_overlay() -> void:
 	content.offset_top = 10.0
 	content.offset_right = -10.0
 	content.offset_bottom = -10.0
+	var title_row := HBoxContainer.new()
+	title_row.name = "VoxelCaptureTitleRow"
+	title_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_row.add_theme_constant_override(&"separation", 8)
 	var title := Label.new()
 	title.name = "VoxelCaptureTitle"
 	title.text = "Voxel Selection Capture"
 	title.add_theme_font_size_override(&"font_size", 18)
 	title.add_theme_color_override(&"font_color", Color(0.93, 0.97, 1.0))
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_voxel_capture_close_button = Button.new()
+	_voxel_capture_close_button.name = "VoxelCaptureClose"
+	_voxel_capture_close_button.text = "X"
+	_voxel_capture_close_button.tooltip_text = "Hide voxel capture panel"
+	_voxel_capture_close_button.focus_mode = Control.FOCUS_NONE
+	_voxel_capture_close_button.custom_minimum_size = Vector2(42.0, 32.0)
+	_voxel_capture_close_button.pressed.connect(_on_voxel_capture_close_pressed)
+	title_row.add_child(title)
+	title_row.add_child(_voxel_capture_close_button)
 	_voxel_capture_summary_label = Label.new()
 	_voxel_capture_summary_label.name = "VoxelCaptureSummary"
 	_voxel_capture_summary_label.text = "0 voxels from 0 areas"
@@ -483,14 +499,27 @@ func _setup_voxel_capture_overlay() -> void:
 	_voxel_capture_preview_text.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	_voxel_capture_preview_text.custom_minimum_size = Vector2(0.0, 150.0)
 	_voxel_capture_preview_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var preview_style := StyleBoxFlat.new()
+	preview_style.bg_color = Color(0.07, 0.14, 0.21, 0.92)
+	preview_style.border_color = Color(0.34, 0.62, 0.82, 1.0)
+	preview_style.set_border_width_all(1)
+	preview_style.set_corner_radius_all(8)
+	preview_style.content_margin_left = 12.0
+	preview_style.content_margin_right = 10.0
+	preview_style.content_margin_top = 10.0
+	preview_style.content_margin_bottom = 10.0
+	_voxel_capture_preview_text.add_theme_stylebox_override(&"normal", preview_style)
+	var preview_focus_style: StyleBoxFlat = preview_style.duplicate() as StyleBoxFlat
+	preview_focus_style.border_color = Color(0.5, 0.82, 1.0, 1.0)
+	_voxel_capture_preview_text.add_theme_stylebox_override(&"focus", preview_focus_style)
 	_voxel_capture_preview_text.text = "No voxels selected yet.\n\nHold Shift and click voxels to build a live selection."
 	_voxel_capture_copy_button = _create_camera_presentation_button(
 		"VoxelCaptureCopyJSON",
-		"Copy JSON",
+		"Copy JSON to clipboard",
 		"Copy selected voxels JSON to clipboard"
 	)
 	_voxel_capture_copy_button.pressed.connect(_on_voxel_capture_copy_pressed)
-	content.add_child(title)
+	content.add_child(title_row)
 	content.add_child(_voxel_capture_summary_label)
 	content.add_child(_voxel_capture_preview_text)
 	content.add_child(_voxel_capture_copy_button)
@@ -612,6 +641,7 @@ func _on_voxel_capture_selection_changed(area: AbstractCorticalArea, selected_ne
 		_voxel_capture_selected_by_area.erase(area_id)
 		_refresh_voxel_capture_overlay()
 		return
+	_voxel_capture_dismissed_by_user = false
 	var encoded_voxels: Array[Array] = []
 	for voxel in selected_neuron_coordinates:
 		encoded_voxels.append([voxel.x, voxel.y, voxel.z])
@@ -678,6 +708,7 @@ func _refresh_voxel_capture_overlay() -> void:
 		return
 	if _voxel_capture_selected_by_area.is_empty():
 		_voxel_capture_layer.visible = false
+		_voxel_capture_dismissed_by_user = false
 		if _voxel_capture_summary_label != null:
 			_voxel_capture_summary_label.text = "0 voxels from 0 areas"
 		if _voxel_capture_preview_text != null:
@@ -694,7 +725,7 @@ func _refresh_voxel_capture_overlay() -> void:
 		_voxel_capture_preview_text.text = _build_voxel_capture_display_text(payload)
 	if _voxel_capture_copy_button != null:
 		_voxel_capture_copy_button.disabled = false
-	_voxel_capture_layer.visible = true
+	_voxel_capture_layer.visible = not _voxel_capture_dismissed_by_user
 
 
 func _on_voxel_capture_copy_pressed() -> void:
@@ -707,6 +738,12 @@ func _on_voxel_capture_copy_pressed() -> void:
 		var area_count: int = int(payload.get("area_count", 0))
 		var total_count: int = int(payload.get("total_voxel_count", 0))
 		BV.NOTIF.add_notification("Copied %d voxels from %d areas to clipboard." % [total_count, area_count])
+
+
+func _on_voxel_capture_close_pressed() -> void:
+	_voxel_capture_dismissed_by_user = true
+	if _voxel_capture_layer != null:
+		_voxel_capture_layer.visible = false
 
 
 ## Marks which brain monitor currently owns hover updates.
@@ -1147,6 +1184,7 @@ func FEAGI_confirmed_genome() -> void:
 	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up brain monitor with Main circuit...")
 	brain_monitor.setup(root_region, false)  # false = don't show combo buttons in main scene
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
+	brain_monitor.requesting_to_clear_all_selected_neurons.connect(_handle_voxel_selection_cleared)
 	# NOTE: Main brain monitor does NOT connect to central handlers to avoid infinite recursion
 	# Only brain region tab monitors connect to central handlers, which then forward to main monitor
 	_disconnect_voxel_capture_signals_from_root_bm()
@@ -1339,6 +1377,11 @@ func _handle_voxel_selection_changed_delta(area: AbstractCorticalArea, neuron_co
 	# This is only called by brain region tab monitors, never by the main monitor
 	if temp_root_bm:
 		temp_root_bm.cortical_area_selected_neurons_changed_delta.emit(area, neuron_coordinate, is_added)
+
+## Central handler for "clear all selected voxels" actions from any Brain Monitor.
+func _handle_voxel_selection_cleared() -> void:
+	_voxel_capture_selected_by_area.clear()
+	_refresh_voxel_capture_overlay()
 
 
 

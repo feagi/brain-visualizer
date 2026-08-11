@@ -108,6 +108,7 @@ func spawn_BM_of_region(region: BrainRegion) -> void:
 	
 	# CRITICAL: Connect neuron firing signal to FEAGI handler (same as main brain monitor)
 	new_bm.requesting_to_fire_selected_neurons.connect(BV.UI._send_activations_to_FEAGI)
+	new_bm.requesting_to_clear_all_selected_neurons.connect(BV.UI._handle_voxel_selection_cleared)
 	
 	# CRITICAL: Connect voxel selection signals for QuickConnect functionality (same as main brain monitor)
 	new_bm.cortical_area_selected_neurons_changed.connect(BV.UI._handle_voxel_selection_changed)
