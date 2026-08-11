@@ -594,7 +594,9 @@ func _search_for_active_cb_in_view(ui_view: UIView) -> CircuitBuilder:
 	return null
 
 func _on_focus_lost() -> void:
-	close_window()
+	# Do not clear active scene selection when this utility window loses focus.
+	# Scene clicks (including additive multi-select) naturally move focus away.
+	close_window(false)
 
 # Debug function to check selection state
 func _debug_selection_state(context: String) -> void:

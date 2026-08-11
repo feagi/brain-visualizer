@@ -348,7 +348,11 @@ func spawn_quick_cortical_menu(selected_objects: Array[GenomeObject], context: S
 		if existing_menu != null and existing_menu.try_refresh_without_respawn(selected_objects, context):
 			bring_window_to_top(existing_menu)
 			return
-	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_PREFAB_QUICK_MENU, QuickCorticalMenu.WINDOW_NAME) as QuickCorticalMenu
+		# Important: do not call `close_window()` here because QuickMenu.close_window()
+		# may clear current selection (default behavior). During single->multi mode
+		# transitions this would immediately wipe highlights.
+		force_close_window(QuickCorticalMenu.WINDOW_NAME)
+	var quick_cortical_menu: QuickCorticalMenu = _default_spawn_window(_PREFAB_QUICK_MENU, QuickCorticalMenu.WINDOW_NAME, false) as QuickCorticalMenu
 	quick_cortical_menu.setup(selected_objects, context)
 
 func spawn_view_previews() -> void:

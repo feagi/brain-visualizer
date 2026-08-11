@@ -679,10 +679,10 @@ func _stop_quick_connect_guide() -> void:
 	BV.UI.qc_guide_source_bm = null
 
 func _is_ctrl_modifier_held() -> bool:
-	return Input.is_physical_key_pressed(KEY_CTRL)
+	return Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_META)
 
 func _is_ctrl_key(keycode: int) -> bool:
-	return keycode == KEY_CTRL
+	return keycode == KEY_CTRL or keycode == KEY_META
 
 
 func _toggle_add_buttons(is_enabled: bool):

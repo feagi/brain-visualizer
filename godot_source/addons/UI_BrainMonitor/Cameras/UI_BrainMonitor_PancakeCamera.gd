@@ -149,8 +149,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				var bm_mouse_position: Vector2 = mouse_button_event.position
 				var bm_double_clicked: bool = mouse_button_event.double_click
 				
-				# Capture modifier keys from the event for web/desktop compatibility
-				var bm_ctrl: bool = mouse_button_event.ctrl_pressed
+				# Treat Command (macOS) as the same multi-select modifier as Ctrl.
+				# This keeps downstream selection handling platform-agnostic.
+				var bm_ctrl: bool = mouse_button_event.ctrl_pressed or mouse_button_event.meta_pressed
 				var bm_shift: bool = mouse_button_event.shift_pressed
 				var bm_alt: bool = mouse_button_event.alt_pressed
 				
@@ -179,8 +180,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			var mouse_motion_event: InputEventMouseMotion = event as InputEventMouseMotion
 			var bm_mouse_position: Vector2 = mouse_motion_event.position
 			
-			# Capture modifier keys from the event for web/desktop compatibility
-			var bm_ctrl: bool = mouse_motion_event.ctrl_pressed
+			# Treat Command (macOS) as the same multi-select modifier as Ctrl.
+			var bm_ctrl: bool = mouse_motion_event.ctrl_pressed or mouse_motion_event.meta_pressed
 			var bm_shift: bool = mouse_motion_event.shift_pressed
 			var bm_alt: bool = mouse_motion_event.alt_pressed
 			

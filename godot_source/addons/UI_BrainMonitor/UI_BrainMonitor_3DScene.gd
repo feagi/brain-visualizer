@@ -1641,7 +1641,7 @@ func _handle_cortical_pick_click_event(
 		if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
 			if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
 				return
-			if Input.is_physical_key_pressed(KEY_CTRL):
+			if bm_input_event.ctrl_pressed:
 				var focus_plane: StringName = &""
 				if Input.is_physical_key_pressed(KEY_1):
 					focus_plane = &"xy"
@@ -2037,7 +2037,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					# Check for left-click or right-click
 					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
 						# Check for ctrl+click to focus camera on region
-						if Input.is_physical_key_pressed(KEY_CTRL):
+						if bm_input_event.ctrl_pressed:
 							# Ctrl+Click: Focus camera on the region's bounding box
 							if _pancake_cam:
 								# Compute world-space AABB of the brain region frame (includes all visualizations)

@@ -30,7 +30,7 @@ func setup(cortical_area_ref: AbstractCorticalArea) -> void:
 func _on_single_left_click() -> void:
 	if _dragged:
 		return
-	var is_multi := Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_SHIFT)
+	var is_multi := Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_META) or Input.is_physical_key_pressed(KEY_SHIFT)
 	if not is_multi:
 		var cb_parent = get_parent()
 		if cb_parent is CircuitBuilder:
