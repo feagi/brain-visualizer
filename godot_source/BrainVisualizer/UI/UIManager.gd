@@ -79,6 +79,11 @@ var _camera_presentation_play_pause_button: Button
 var _camera_presentation_next_button: Button
 var _camera_presentation_close_button: Button
 var _camera_presentation_controller: WindowDeveloperOptionsPartCameraAnimations = null
+var _voxel_capture_layer: CanvasLayer
+var _voxel_capture_summary_label: Label
+var _voxel_capture_preview_text: TextEdit
+var _voxel_capture_copy_button: Button
+var _voxel_capture_selected_by_area: Dictionary[StringName, Dictionary] = {}
 
 # Startup UI scaling thresholds based only on monitor DPI and resolution.
 # Goal: fit more content on low-resolution displays while preserving readability on high-DPI panels.
@@ -168,6 +173,7 @@ func _ready():
 	add_child(_fps_label)
 	_setup_connection_inspector_stop_overlay()
 	_setup_camera_presentation_overlay()
+	_setup_voxel_capture_overlay()
 	_setup_mouse_context_label()
 	
 	# Connect cortical area cache signals
@@ -431,6 +437,75 @@ func _setup_camera_presentation_overlay() -> void:
 	add_child(_camera_presentation_layer)
 
 
+## Floating bottom-right voxel capture panel for Shift+click neuron selections.
+func _setup_voxel_capture_overlay() -> void:
+	_voxel_capture_layer = CanvasLayer.new()
+	_voxel_capture_layer.name = "VoxelCaptureLayer"
+	_voxel_capture_layer.layer = 26
+	_voxel_capture_layer.visible = false
+	var host := Control.new()
+	host.name = "VoxelCaptureHost"
+	host.set_anchors_preset(Control.PRESET_FULL_RECT)
+	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var panel := PanelContainer.new()
+	panel.name = "VoxelCapturePanel"
+	panel.focus_mode = Control.FOCUS_NONE
+	panel.anchor_left = 1.0
+	panel.anchor_top = 1.0
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = -560.0
+	panel.offset_top = -300.0
+	panel.offset_right = -18.0
+	panel.offset_bottom = -22.0
+	var content := VBoxContainer.new()
+	content.name = "VoxelCaptureContent"
+	content.mouse_filter = Control.MOUSE_FILTER_PASS
+	content.add_theme_constant_override(&"separation", 8)
+	content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = 10.0
+	content.offset_top = 10.0
+	content.offset_right = -10.0
+	content.offset_bottom = -10.0
+	var title := Label.new()
+	title.name = "VoxelCaptureTitle"
+	title.text = "Voxel Selection Capture"
+	title.add_theme_font_size_override(&"font_size", 18)
+	title.add_theme_color_override(&"font_color", Color(0.93, 0.97, 1.0))
+	_voxel_capture_summary_label = Label.new()
+	_voxel_capture_summary_label.name = "VoxelCaptureSummary"
+	_voxel_capture_summary_label.text = "0 voxels from 0 areas"
+	_voxel_capture_summary_label.add_theme_color_override(&"font_color", Color(0.78, 0.88, 0.97))
+	_voxel_capture_preview_text = TextEdit.new()
+	_voxel_capture_preview_text.name = "VoxelCapturePreview"
+	_voxel_capture_preview_text.editable = false
+	_voxel_capture_preview_text.selecting_enabled = true
+	_voxel_capture_preview_text.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	_voxel_capture_preview_text.custom_minimum_size = Vector2(0.0, 150.0)
+	_voxel_capture_preview_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_voxel_capture_preview_text.text = "No voxels selected yet.\n\nHold Shift and click voxels to build a live selection."
+	_voxel_capture_copy_button = _create_camera_presentation_button(
+		"VoxelCaptureCopyJSON",
+		"Copy JSON",
+		"Copy selected voxels JSON to clipboard"
+	)
+	_voxel_capture_copy_button.pressed.connect(_on_voxel_capture_copy_pressed)
+	content.add_child(title)
+	content.add_child(_voxel_capture_summary_label)
+	content.add_child(_voxel_capture_preview_text)
+	content.add_child(_voxel_capture_copy_button)
+	panel.add_child(content)
+	var style_panel := StyleBoxFlat.new()
+	style_panel.bg_color = Color(0.1, 0.2, 0.3, 0.94)
+	style_panel.border_color = Color(0.38, 0.78, 0.95, 1.0)
+	style_panel.set_border_width_all(2)
+	style_panel.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override(&"panel", style_panel)
+	host.add_child(panel)
+	_voxel_capture_layer.add_child(host)
+	add_child(_voxel_capture_layer)
+
+
 func _create_camera_presentation_button(name: String, text: String, tooltip: String) -> Button:
 	var button := Button.new()
 	button.name = name
@@ -513,6 +588,125 @@ func _on_camera_presentation_close_pressed() -> void:
 		_camera_presentation_controller.presentation_close()
 	else:
 		hide_camera_presentation_overlay()
+
+
+func _connect_voxel_capture_signals_to_root_bm() -> void:
+	if temp_root_bm == null or not is_instance_valid(temp_root_bm):
+		return
+	if not temp_root_bm.cortical_area_selected_neurons_changed.is_connected(_on_voxel_capture_selection_changed):
+		temp_root_bm.cortical_area_selected_neurons_changed.connect(_on_voxel_capture_selection_changed)
+
+
+func _disconnect_voxel_capture_signals_from_root_bm() -> void:
+	if temp_root_bm == null or not is_instance_valid(temp_root_bm):
+		return
+	if temp_root_bm.cortical_area_selected_neurons_changed.is_connected(_on_voxel_capture_selection_changed):
+		temp_root_bm.cortical_area_selected_neurons_changed.disconnect(_on_voxel_capture_selection_changed)
+
+
+func _on_voxel_capture_selection_changed(area: AbstractCorticalArea, selected_neuron_coordinates: Array[Vector3i]) -> void:
+	if area == null:
+		return
+	var area_id: StringName = area.cortical_ID
+	if selected_neuron_coordinates.is_empty():
+		_voxel_capture_selected_by_area.erase(area_id)
+		_refresh_voxel_capture_overlay()
+		return
+	var encoded_voxels: Array[Array] = []
+	for voxel in selected_neuron_coordinates:
+		encoded_voxels.append([voxel.x, voxel.y, voxel.z])
+	_voxel_capture_selected_by_area[area_id] = {
+		"friendly_name": String(area.friendly_name),
+		"voxels": encoded_voxels
+	}
+	_refresh_voxel_capture_overlay()
+
+
+func _build_voxel_capture_payload() -> Dictionary:
+	var by_cortical_id: Dictionary = {}
+	var areas: Array[Dictionary] = []
+	var area_keys: Array[StringName] = _voxel_capture_selected_by_area.keys()
+	area_keys.sort()
+	var total_voxels: int = 0
+	for area_id in area_keys:
+		var info: Dictionary = _voxel_capture_selected_by_area[area_id]
+		var voxels: Array = info.get("voxels", [])
+		total_voxels += voxels.size()
+		by_cortical_id[String(area_id)] = voxels
+		areas.append({
+			"cortical_id": String(area_id),
+			"friendly_name": String(info.get("friendly_name", "")),
+			"voxel_count": voxels.size(),
+			"voxels": voxels,
+		})
+	return {
+		"area_count": area_keys.size(),
+		"total_voxel_count": total_voxels,
+		"by_cortical_id": by_cortical_id,
+		"areas": areas,
+	}
+
+
+func _build_voxel_capture_display_text(payload: Dictionary) -> String:
+	var areas: Array = payload.get("areas", [])
+	if areas.is_empty():
+		return "No voxels selected yet.\n\nHold Shift and click voxels to build a live selection."
+	var lines: PackedStringArray = []
+	lines.append("Selections by area:")
+	lines.append("")
+	for area_entry in areas:
+		var cortical_id: String = String(area_entry.get("cortical_id", ""))
+		var friendly_name: String = String(area_entry.get("friendly_name", ""))
+		var voxel_count: int = int(area_entry.get("voxel_count", 0))
+		var voxels: Array = area_entry.get("voxels", [])
+		var title: String = "- %s [%s]: %d voxels" % [friendly_name if not friendly_name.is_empty() else cortical_id, cortical_id, voxel_count]
+		lines.append(title)
+		var voxel_line_parts: PackedStringArray = []
+		for voxel in voxels:
+			if voxel is Array and (voxel as Array).size() >= 3:
+				voxel_line_parts.append("(%s,%s,%s)" % [str(voxel[0]), str(voxel[1]), str(voxel[2])])
+		if voxel_line_parts.is_empty():
+			lines.append("  (none)")
+		else:
+			lines.append("  " + ", ".join(voxel_line_parts))
+		lines.append("")
+	return "\n".join(lines).strip_edges()
+
+
+func _refresh_voxel_capture_overlay() -> void:
+	if _voxel_capture_layer == null:
+		return
+	if _voxel_capture_selected_by_area.is_empty():
+		_voxel_capture_layer.visible = false
+		if _voxel_capture_summary_label != null:
+			_voxel_capture_summary_label.text = "0 voxels from 0 areas"
+		if _voxel_capture_preview_text != null:
+			_voxel_capture_preview_text.text = "No voxels selected yet.\n\nHold Shift and click voxels to build a live selection."
+		if _voxel_capture_copy_button != null:
+			_voxel_capture_copy_button.disabled = true
+		return
+	var payload: Dictionary = _build_voxel_capture_payload()
+	var total_areas: int = int(payload.get("area_count", 0))
+	var total_voxels: int = int(payload.get("total_voxel_count", 0))
+	if _voxel_capture_summary_label != null:
+		_voxel_capture_summary_label.text = "%d voxels from %d areas" % [total_voxels, total_areas]
+	if _voxel_capture_preview_text != null:
+		_voxel_capture_preview_text.text = _build_voxel_capture_display_text(payload)
+	if _voxel_capture_copy_button != null:
+		_voxel_capture_copy_button.disabled = false
+	_voxel_capture_layer.visible = true
+
+
+func _on_voxel_capture_copy_pressed() -> void:
+	if _voxel_capture_selected_by_area.is_empty():
+		return
+	var payload: Dictionary = _build_voxel_capture_payload()
+	var payload_json: String = JSON.stringify(payload, "\t")
+	DisplayServer.clipboard_set(payload_json)
+	if BV != null and BV.NOTIF != null:
+		var area_count: int = int(payload.get("area_count", 0))
+		var total_count: int = int(payload.get("total_voxel_count", 0))
+		BV.NOTIF.add_notification("Copied %d voxels from %d areas to clipboard." % [total_count, area_count])
 
 
 ## Marks which brain monitor currently owns hover updates.
@@ -955,7 +1149,11 @@ func FEAGI_confirmed_genome() -> void:
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
 	# NOTE: Main brain monitor does NOT connect to central handlers to avoid infinite recursion
 	# Only brain region tab monitors connect to central handlers, which then forward to main monitor
+	_disconnect_voxel_capture_signals_from_root_bm()
 	temp_root_bm = brain_monitor
+	_connect_voxel_capture_signals_to_root_bm()
+	_voxel_capture_selected_by_area.clear()
+	_refresh_voxel_capture_overlay()
 
 	# If we restored a previous camera position (e.g., genome reload), disable the startup intro this time
 	if _temp_bm_camera_pos.length() > 0.01:

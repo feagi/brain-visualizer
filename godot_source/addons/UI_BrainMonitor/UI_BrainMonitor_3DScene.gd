@@ -1976,7 +1976,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					# Check if the cortical area object is still valid before accessing it
 					if not is_instance_valid(bm_cortical_area):
 						continue
+					var had_selected_neurons: bool = not bm_cortical_area.get_neuron_selection_states().is_empty()
 					bm_cortical_area.clear_all_neuron_selection_states() # slow but I dont care right now
+					if had_selected_neurons and bm_cortical_area.cortical_area != null:
+						cortical_area_selected_neurons_changed.emit(bm_cortical_area.cortical_area, [])
 			
 			
 			
@@ -2108,7 +2111,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 func clear_all_selected_cortical_area_neurons() -> void:
 	for area: UI_BrainMonitor_CorticalArea in _cortical_visualizations_by_ID.values():
 		if area != null and is_instance_valid(area):
+			var had_selected_neurons: bool = not area.get_neuron_selection_states().is_empty()
 			area.clear_all_neuron_selection_states()
+			if had_selected_neurons and area.cortical_area != null:
+				cortical_area_selected_neurons_changed.emit(area.cortical_area, [])
 
 func set_further_neuron_selection_restriction_to_cortical_area(restrict_to: AbstractCorticalArea) -> void:
 	if restrict_to.cortical_ID in _cortical_visualizations_by_ID:
