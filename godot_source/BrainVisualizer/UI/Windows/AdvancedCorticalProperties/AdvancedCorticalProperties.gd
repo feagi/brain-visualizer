@@ -17,6 +17,7 @@ const INITIAL_WINDOW_LEFT_X: int = 0
 const INITIAL_WINDOW_BOTTOM_MARGIN: int = 0
 const INITIAL_WINDOW_EXTRA_BOTTOM_CLEARANCE_PX: int = 8
 const MIN_SCROLLABLE_HEIGHT: int = 180
+const MIN_COUNT_FIELD_WIDTH_PX: float = 190.0
 const IO_PRESET_INPUT: StringName = "Input"
 const IO_PRESET_OUTPUT: StringName = "Output"
 const IO_PRESET_INTERCONNECT: StringName = "Interconnect"
@@ -56,6 +57,7 @@ var _rml_leak_min: SpinBox = null
 var _rml_leak_max: SpinBox = null
 var _rml_every: SpinBox = null
 var _button_rml_apply: Button = null
+var _memory_count_fetch_generation: int = 0
 
 func _ready():
 	super()
@@ -1274,6 +1276,9 @@ func _init_summary() -> void:
 		_line_incoming_synapse_count.editable = false
 	if _line_outgoing_synapse_count != null:
 		_line_outgoing_synapse_count.editable = false
+	_apply_min_count_field_width(_line_neuron_count)
+	_apply_min_count_field_width(_line_incoming_synapse_count)
+	_apply_min_count_field_width(_line_outgoing_synapse_count)
 	
 	# TODO renable region button, but check to make sure all types can be moved
 	
@@ -1384,7 +1389,13 @@ func _refresh_from_cache_summary() -> void:
 	if not is_all_io:
 		_update_control_with_value_from_areas(_line_voxel_neuron_density, "", "cortical_neuron_per_vox_count")
 	_update_control_with_value_from_areas(_line_synaptic_attractivity, "", "cortical_synaptic_attractivity")
+	# Reset any prior memory-specific suffix before writing the baseline total from cache.
+	if _line_neuron_count != null:
+		_line_neuron_count.suffix = ""
+		_line_neuron_count.tooltip_text = ""
 	_update_control_with_value_from_areas(_line_neuron_count, "", "reported_neuron_count")
+	if _line_neuron_count != null:
+		_apply_neuron_count_display(_line_neuron_count.current_int)
 	_update_control_with_value_from_areas(_line_incoming_synapse_count, "", "incoming_synapse_count")
 	_update_control_with_value_from_areas(_line_outgoing_synapse_count, "", "outgoing_synapse_count")
 	if _line_unit_id != null:
@@ -1453,6 +1464,94 @@ func _refresh_from_cache_summary() -> void:
 			_update_control_with_value_from_areas(_vector_dimensions_spin, "", "dimensions_3D")
 		# NOTE: 3D preview is intentionally NOT created on window open.
 		# It will appear when the user starts editing position/dimensions.
+	_refresh_memory_neuron_count_breakdown_if_needed()
+
+func _refresh_memory_neuron_count_breakdown_if_needed() -> void:
+	if _line_neuron_count == null:
+		return
+	if len(_cortical_area_refs) != 1:
+		return
+	var area: AbstractCorticalArea = _cortical_area_refs[0]
+	if area == null:
+		return
+	if area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		return
+	if FeagiCore == null or FeagiCore.requests == null or not FeagiCore.can_interact_with_feagi():
+		return
+	_memory_count_fetch_generation += 1
+	var generation: int = _memory_count_fetch_generation
+	_refresh_memory_neuron_count_breakdown_async(area.cortical_ID, generation)
+
+func _refresh_memory_neuron_count_breakdown_async(cortical_id: StringName, generation: int) -> void:
+	var out: FeagiRequestOutput = await FeagiCore.requests.get_memory_cortical_area(str(cortical_id), 0, 1)
+	if generation != _memory_count_fetch_generation:
+		return
+	if len(_cortical_area_refs) != 1 or _line_neuron_count == null:
+		return
+	var area: AbstractCorticalArea = _cortical_area_refs[0]
+	if area == null or area.cortical_ID != cortical_id:
+		return
+	if not out.success:
+		return
+	var d: Dictionary = out.decode_response_as_dict()
+	var short_term_count: int = int(d.get("short_term_neuron_count", 0))
+	var long_term_count: int = int(d.get("long_term_neuron_count", 0))
+	_apply_neuron_count_display(_line_neuron_count.current_int, short_term_count, long_term_count)
+
+func _apply_min_count_field_width(field: Control) -> void:
+	if field == null:
+		return
+	field.custom_minimum_size.x = maxf(field.custom_minimum_size.x, MIN_COUNT_FIELD_WIDTH_PX)
+
+func _apply_neuron_count_display(total_count: int, short_term_count: Variant = null, long_term_count: Variant = null) -> void:
+	if _line_neuron_count == null:
+		return
+	var compact_total: String = _format_compact_count(total_count)
+	var suffix_text: String = ""
+	if short_term_count != null and long_term_count != null:
+		var st: int = int(short_term_count)
+		var lt: int = int(long_term_count)
+		suffix_text = " (ST: %s | LT: %s)" % [_format_compact_count(st), _format_compact_count(lt)]
+		_line_neuron_count.tooltip_text = "Total neurons: %s\nShort-term neurons: %s\nLong-term neurons: %s" % [
+			_format_int_with_commas(total_count),
+			_format_int_with_commas(st),
+			_format_int_with_commas(lt),
+		]
+	else:
+		_line_neuron_count.tooltip_text = "Total neurons: %s" % _format_int_with_commas(total_count)
+	_line_neuron_count.suffix = suffix_text
+	# Keep current_int numeric for callers, while rendering compact text for display.
+	_line_neuron_count.previous_text = str(total_count)
+	_line_neuron_count.text = compact_total + suffix_text
+
+func _format_compact_count(value: int) -> String:
+	var abs_value: int = absi(value)
+	if abs_value >= 1000000000:
+		return _compact_with_unit(value, 1000000000.0, "B")
+	if abs_value >= 1000000:
+		return _compact_with_unit(value, 1000000.0, "M")
+	if abs_value >= 1000:
+		return _compact_with_unit(value, 1000.0, "K")
+	return str(value)
+
+func _compact_with_unit(value: int, divisor: float, unit: String) -> String:
+	var scaled: float = float(value) / divisor
+	var rounded_1: float = roundf(scaled * 10.0) / 10.0
+	var rounded_0: int = int(roundf(rounded_1))
+	if is_equal_approx(rounded_1, float(rounded_0)):
+		return str(rounded_0) + unit
+	return str(rounded_1) + unit
+
+func _format_int_with_commas(value: int) -> String:
+	var negative: bool = value < 0
+	var s: String = str(absi(value))
+	var parts: Array[String] = []
+	while s.length() > 3:
+		parts.push_front(s.substr(s.length() - 3, 3))
+		s = s.substr(0, s.length() - 3)
+	parts.push_front(s)
+	var joined: String = ",".join(parts)
+	return "-" + joined if negative else joined
 
 
 func _init_io_preset_dropdown() -> void:
