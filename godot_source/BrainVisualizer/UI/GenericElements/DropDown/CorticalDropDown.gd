@@ -138,9 +138,14 @@ func _on_theme_change(_new_theme: Theme = null) -> void:
 
 
 func _rebuild_items_from_area_array(areas: Array[AbstractCorticalArea]) -> void:
+	var selected_id: StringName = &""
+	var selected_area: AbstractCorticalArea = get_selected_cortical_area()
+	if selected_area != null:
+		selected_id = selected_area.cortical_ID
 	clear_all_cortical_areas()
 	for area in areas:
 		add_cortical_area(area)
+	_restore_selection_by_cortical_id(selected_id)
 
 
 func _compare_cortical_areas_by_display_name(a: AbstractCorticalArea, b: AbstractCorticalArea) -> bool:
@@ -153,3 +158,18 @@ func _compare_cortical_areas_by_display_name(a: AbstractCorticalArea, b: Abstrac
 		sa = String(a.cortical_ID).to_lower()
 		sb = String(b.cortical_ID).to_lower()
 	return sa < sb
+
+func _restore_selection_by_cortical_id(cortical_id: StringName) -> void:
+	if cortical_id == &"":
+		if include_none_option:
+			select(0)
+		return
+	for i in _listed_areas.size():
+		var area: AbstractCorticalArea = _listed_areas[i]
+		if area != null and area.cortical_ID == cortical_id:
+			select(i + _none_offset)
+			return
+	if include_none_option:
+		select(0)
+	else:
+		select(-1)

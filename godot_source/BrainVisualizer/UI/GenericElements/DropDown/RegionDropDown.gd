@@ -32,9 +32,13 @@ func _ready():
 	_on_theme_change()
 
 func reload_available_brain_regions() -> void:
+	var selected_region_id: StringName = &""
+	if selected >= 0 and selected < _listed_regions.size():
+		selected_region_id = _listed_regions[selected].region_ID
 	var regions: Array[BrainRegion] = []
 	regions.assign(FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.values())
 	overwrite_regions(regions)
+	_restore_selection_by_region_id(selected_region_id)
 
 ## Clears all listed regions
 func clear_all_regions() -> void:
@@ -109,3 +113,13 @@ func _region_was_added_to_cache(added_region: BrainRegion) -> void:
 
 func _on_theme_change(_new_theme: Theme = null) -> void:
 	custom_minimum_size.x = _default_width * BV.UI.loaded_theme_scale.x
+
+func _restore_selection_by_region_id(region_id: StringName) -> void:
+	if region_id == &"":
+		return
+	for i in _listed_regions.size():
+		var region: BrainRegion = _listed_regions[i]
+		if region != null and region.region_ID == region_id:
+			select(i)
+			return
+	select(-1)

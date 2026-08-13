@@ -42,9 +42,13 @@ func _ready():
 	_on_theme_change()
 
 func reload_available_morphologies() -> void:
+	var selected_name: StringName = &""
+	if selected >= 0 and selected < _listed_morphologies.size():
+		selected_name = _listed_morphologies[selected].name
 	var morphologies: Array[BaseMorphology] = []
 	morphologies.assign(FeagiCore.feagi_local_cache.morphologies.available_morphologies.values())
 	overwrite_morphologies(morphologies)
+	_restore_selection_by_name(selected_name)
 
 ## Clears all listed morphologies
 func clear_all_morphologies() -> void:
@@ -135,3 +139,12 @@ func _get_morphology_display_name(morphology: BaseMorphology) -> String:
 	if override_name != "":
 		return override_name
 	return str(morphology.name)
+
+func _restore_selection_by_name(morphology_name: StringName) -> void:
+	if morphology_name == &"":
+		return
+	for i in _listed_morphologies.size():
+		var morphology: BaseMorphology = _listed_morphologies[i]
+		if morphology != null and morphology.name == morphology_name:
+			select(i)
+			return
