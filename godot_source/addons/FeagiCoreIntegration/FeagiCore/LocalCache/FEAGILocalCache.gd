@@ -1223,6 +1223,10 @@ func _refresh_morphologies_from_feagi() -> FeagiRequestOutput:
 func refresh_mappings_from_feagi() -> FeagiRequestOutput:
 	return await _refresh_mappings_from_feagi()
 
+## Refresh cortical areas and their region membership from FEAGI after a server-side area mutation.
+func refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
+	return await _refresh_cortical_areas_from_feagi()
+
 ## Public method to refresh morphology catalog from FEAGI (e.g. after morphology rename).
 func refresh_morphologies_from_feagi() -> FeagiRequestOutput:
 	return await _refresh_morphologies_from_feagi()

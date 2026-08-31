@@ -3010,10 +3010,18 @@ func _get_self_mappings_from_summary(cortical_id: StringName) -> FeagiRequestOut
 	return mapping_summary
 
 
+## Returns true when a mapping update creates a server-managed replay twin cortical area.
+func _mapping_creates_memory_twin(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea, mappings: Array[SingleMappingDefinition]) -> bool:
+	if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		return false
+	return destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and not mappings.is_empty()
+
+
 ## Set (overwrite) the mappings between 2 areas
 func set_mappings_between_corticals(source_area: AbstractCorticalArea, destination_area: AbstractCorticalArea,  mappings: Array[SingleMappingDefinition]) -> FeagiRequestOutput:
 	var source_cortical_ID = source_area.cortical_ID
 	var destination_cortical_ID = destination_area.cortical_ID
+	var creates_memory_twin: bool = _mapping_creates_memory_twin(source_area, destination_area, mappings)
 	
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
@@ -3126,6 +3134,21 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 		# Fallback: refresh regions containing the source and destination areas
 		await _refresh_regions_containing_areas([source_area, destination_area])
 	
+	# FEAGI creates a replay twin and a memory-to-twin mapping as a side effect of a mapping into
+	# memory. Synchronize in dependency order so the replay morphology and twin endpoint exist
+	# before MappingsCache parses the generated edge.
+	if creates_memory_twin:
+		var morphology_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_morphologies_from_feagi()
+		if morphology_refresh == null or morphology_refresh.has_errored or not morphology_refresh.success:
+			push_warning("FEAGI REQUEST: Mapping succeeded, but BV could not synchronize the memory replay morphology.")
+		var cortical_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
+		if cortical_refresh == null or cortical_refresh.has_errored or not cortical_refresh.success:
+			push_warning("FEAGI REQUEST: Mapping succeeded, but BV could not synchronize its generated memory twin.")
+		else:
+			var mappings_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
+			if mappings_refresh == null or mappings_refresh.has_errored or not mappings_refresh.success:
+				push_warning("FEAGI REQUEST: Memory twin was synchronized, but BV could not synchronize its replay mapping.")
+
 	#var mapping_set: InterCorticalMappingSet = FeagiCore.feagi_local_cache.mapping_data.established_mappings[source_area.cortical_ID][destination_area.cortical_ID]
 	#mapping_set.mappings_changed.emit(mapping_set)
 	#mapping_set._connection_chain.FEAGI_updated_associated_mapping_set()

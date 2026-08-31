@@ -58,7 +58,7 @@ func _ready() -> void:
 		_plasticity_mode.add_item("Off", _MODE_OFF)
 		_plasticity_mode.add_item("STDP", _MODE_STDP)
 		_plasticity_mode.add_item("R-STDP", _MODE_RSTDP)
-	_plasticity_mode.select(_MODE_OFF)
+	_select_plasticity_mode(_MODE_OFF)
 
 	_morphologies.user_selected_morphology.connect(_on_morphology_selected)
 
@@ -87,9 +87,10 @@ func load_settings(restrictions: MappingRestrictionCorticalMorphology, defaults:
 	if defaults != null:
 		_morphologies.set_selected_morphology(defaults.try_get_default_morphology())
 
-	# Default selection is "Off"; STDP/R-STDP fields stay disabled until the user opts in.
-	_plasticity_mode.select(_MODE_OFF)
-	_apply_mode_field_state(_MODE_OFF)
+	# Normal mappings default to Off. Associative-memory mappings require STDP or R-STDP.
+	_select_plasticity_mode(_MODE_OFF)
+	_apply_associative_plasticity_mode(_morphologies.get_selected_morphology())
+	_apply_mode_field_state(_get_selected_plasticity_mode())
 
 func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_morphologies.set_selected_morphology(mapping.morphology_used)
@@ -100,7 +101,7 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_set_dropdown_to_area_id(_gate_source, mapping.gate_source_area)
 
 	var mode_index: int = _resolve_mode_index_from_mapping(mapping)
-	_plasticity_mode.select(mode_index)
+	_select_plasticity_mode(mode_index)
 
 	_plasticity_window.current_int = mapping.plasticity_window
 	_plasticity_constant.current_float = mapping.plasticity_constant
@@ -110,8 +111,8 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_set_dropdown_to_area_id(_reward_source, mapping.reward_source_area)
 	_set_dropdown_to_area_id(_punishment_source, mapping.punishment_source_area)
 
-	_apply_bi_directional_stdp_lock(mapping.morphology_used)
-	_apply_mode_field_state(_plasticity_mode.selected)
+	_apply_associative_plasticity_mode(mapping.morphology_used)
+	_apply_mode_field_state(_get_selected_plasticity_mode())
 
 func export_mapping() -> SingleMappingDefinition:
 	var morphology_used: BaseMorphology = _morphologies.get_selected_morphology()
@@ -120,10 +121,10 @@ func export_mapping() -> SingleMappingDefinition:
 	if _inhibitory.button_pressed:
 		PSP = -PSP
 
-	var mode_index: int = _plasticity_mode.selected
-	# associative_memory always implies STDP (bi-directional). Force-promote any "Off" to STDP
-	# so we do not silently downgrade the morphology semantics.
-	if _is_bi_directional_stdp_morphology(morphology_used) and mode_index == _MODE_OFF:
+	var mode_index: int = _get_selected_plasticity_mode()
+	# associative_memory always requires a plastic mode. Preserve the user's explicit choice
+	# between STDP and R-STDP, while treating an Off selection as STDP.
+	if _is_associative_memory_morphology(morphology_used) and mode_index == _MODE_OFF:
 		mode_index = _MODE_STDP
 
 	var is_plastic: bool = mode_index != _MODE_OFF
@@ -177,30 +178,54 @@ func _on_user_PSP(_value: float) -> void:
 ## OptionButton.item_selected handler. Toggles edit-state of plasticity-related fields
 ## according to the new mode selection.
 func _on_user_select_plasticity_mode(mode_index: int) -> void:
-	_apply_mode_field_state(mode_index)
+	_apply_mode_field_state(_plasticity_mode.get_item_id(mode_index))
 
 func _on_morphology_selected(morphology: BaseMorphology) -> void:
-	_apply_bi_directional_stdp_lock(morphology)
-	_apply_mode_field_state(_plasticity_mode.selected)
+	_apply_associative_plasticity_mode(morphology)
+	_apply_mode_field_state(_get_selected_plasticity_mode())
 
-## Locks the dropdown to STDP when the morphology is associative_memory (bi-directional STDP),
-## otherwise restores user editability subject to the row restrictions.
-func _apply_bi_directional_stdp_lock(morphology: BaseMorphology) -> void:
-	if _is_bi_directional_stdp_morphology(morphology):
-		# Force STDP and disable mode editing; R-STDP is not meaningful for the symmetric
-		# associative_memory morphology in the current design.
-		if _plasticity_mode.selected != _MODE_STDP:
-			_plasticity_mode.select(_MODE_STDP)
-		_plasticity_mode.disabled = true
+## Keeps associative-memory mappings plastic without constraining STDP versus R-STDP.
+func _apply_associative_plasticity_mode(morphology: BaseMorphology) -> void:
+	if _is_associative_memory_morphology(morphology):
+		_set_off_mode_visible(false)
+		if _get_selected_plasticity_mode() == _MODE_OFF:
+			_select_plasticity_mode(_MODE_STDP)
+		if _restrictions:
+			_plasticity_mode.disabled = !_restrictions.allow_changing_plasticity
+		else:
+			_plasticity_mode.disabled = false
 	else:
+		_set_off_mode_visible(true)
 		if _restrictions:
 			_plasticity_mode.disabled = !_restrictions.allow_changing_plasticity
 		else:
 			_plasticity_mode.disabled = false
 
-func _is_bi_directional_stdp_morphology(morphology: BaseMorphology) -> bool:
-	# associative_memory is the morphology ID for bi-directional STDP.
+func _is_associative_memory_morphology(morphology: BaseMorphology) -> bool:
 	return morphology != null and morphology.name == &"associative_memory"
+
+## Keeps Off available for normal mappings but removes it from associative-memory choices.
+func _set_off_mode_visible(visible: bool) -> void:
+	var selected_mode: int = _get_selected_plasticity_mode()
+	if not visible and selected_mode == _MODE_OFF:
+		selected_mode = _MODE_STDP
+	_plasticity_mode.clear()
+	if visible:
+		_plasticity_mode.add_item("Off", _MODE_OFF)
+	_plasticity_mode.add_item("STDP", _MODE_STDP)
+	_plasticity_mode.add_item("R-STDP", _MODE_RSTDP)
+	_select_plasticity_mode(selected_mode)
+
+## Returns the stable mode ID, which differs from the option index when Off is omitted.
+func _get_selected_plasticity_mode() -> int:
+	return _plasticity_mode.get_selected_id()
+
+## Selects a plasticity mode by its stable item ID.
+func _select_plasticity_mode(mode: int) -> void:
+	for item_index in _plasticity_mode.item_count:
+		if _plasticity_mode.get_item_id(item_index) == mode:
+			_plasticity_mode.select(item_index)
+			return
 
 ## Centralised editability rules for plasticity-related fields, keyed off the dropdown
 ## selection. Honors mapping restrictions when present.

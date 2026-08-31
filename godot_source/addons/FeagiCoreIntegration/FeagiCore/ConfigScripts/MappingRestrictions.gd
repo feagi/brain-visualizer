@@ -40,15 +40,19 @@ static func get_restrictions_between_cortical_areas(source: GenomeObject, destin
 	if key in _restrictions_cache:
 		return _restrictions_cache[key]
 	
-	# Special handling for memory areas - check if either source or destination is memory
+	# Memory mappings have direction-specific contracts.
 	if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-		# Memory-to-memory allows episodic_memory + associative_memory (bi-directional STDP)
 		var memory_restriction = MappingRestrictionCorticalMorphology.new()
 		memory_restriction.cortical_source_type = source_area.cortical_type
 		memory_restriction.cortical_destination_type = destination_area.cortical_type
-		var memory_names: Array[StringName] = [&"episodic_memory"]
+		var memory_names: Array[StringName] = []
 		if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			memory_names.append(&"episodic_memory")
 			memory_names.append(&"associative_memory")
+		elif source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			memory_names.append(&"associative_memory")
+		else:
+			memory_names.append(&"episodic_memory")
 		memory_restriction.restricted_to_morphology_of_names = memory_names
 		return memory_restriction
 	
@@ -72,12 +76,12 @@ static func get_defaults_between_cortical_areas(source: GenomeObject, destinatio
 	if key in _defaults_cache:
 		return _defaults_cache[key]
 	
-	# Special handling for memory areas - default to episodic_memory morphology
+	# Memory mappings have direction-specific defaults.
 	if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or destination_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		var memory_default = MappingRestrictionDefault.new()
 		memory_default.cortical_source_type = source_area.cortical_type
 		memory_default.cortical_destination_type = destination_area.cortical_type
-		memory_default.name_of_default_morphology = &"episodic_memory"
+		memory_default.name_of_default_morphology = &"associative_memory" if source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and destination_area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY else &"episodic_memory"
 		return memory_default
 	
 	# No specific defaults found

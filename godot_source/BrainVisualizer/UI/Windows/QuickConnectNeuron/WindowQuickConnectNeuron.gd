@@ -732,11 +732,11 @@ func _confirm_establish_mapping() -> void:
 		return
 	_establishing = true
 	if _source is MemoryCorticalArea:
-		var projector_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies["projector"]
+		var associative_morphology: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies["associative_memory"]
 		var out_mem: FeagiRequestOutput = await FeagiCore.requests.append_default_mapping_between_corticals(
 			_source,
 			_destination,
-			projector_morphology,
+			associative_morphology,
 		)
 		_establishing = false
 		if out_mem.failed_requirement and out_mem.failed_requirement_key in [
