@@ -11,6 +11,8 @@ class_name UI_BrainMonitor_AbstractCorticalAreaRenderer
 @export var cortical_area_outline_select_alpha: float = 0.3
 @export var cortical_area_outline_both_color: Color = Color.WHITE_SMOKE
 @export var cortical_area_outline_both_alpha: float = 0.4
+@export var cortical_area_outline_idle_tiny_color: Color = Color(0.12, 0.85, 0.95, 1.0)
+@export var cortical_area_outline_idle_tiny_alpha: float = 0.1
 
 func setup(area: AbstractCorticalArea) -> void:
 	assert(false, "Not Implemented!")

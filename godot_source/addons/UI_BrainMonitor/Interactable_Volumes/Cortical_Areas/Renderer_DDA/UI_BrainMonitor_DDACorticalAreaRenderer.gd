@@ -31,6 +31,8 @@ var _is_hovered_over: bool
 var _is_selected: bool
 ## When true, apply hover-style outline so small cortical areas remain visible at camera distance.
 var _far_small_area_boost: bool = false
+## When true, keep a subtle idle outline for tiny cortical areas (for example 1x1x1) at any distance.
+var _idle_tiny_area_outline: bool = false
 var _visualization_settings: VisualizationSettings = null
 var _last_label_outside_dir_xz: Vector2 = Vector2(0.0, 1.0)
 var _friendly_name_label_target_position: Vector3 = Vector3.ZERO
@@ -130,6 +132,7 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 
 	_far_small_area_boost = _compute_far_small_area_boost()
+	_idle_tiny_area_outline = _compute_idle_tiny_area_outline()
 	_apply_outline_visual_state()
 
 	# CRITICAL FIX: Recreate SVO trees with new dimensions
@@ -226,8 +229,15 @@ func feagi_neuron_coordinate_to_world_center(feagi_coord: Vector3i) -> Vector3:
 
 func _process(delta: float) -> void:
 	var next_boost := _compute_far_small_area_boost()
+	var next_idle_tiny := _compute_idle_tiny_area_outline()
+	var visual_state_changed := false
 	if next_boost != _far_small_area_boost:
 		_far_small_area_boost = next_boost
+		visual_state_changed = true
+	if next_idle_tiny != _idle_tiny_area_outline:
+		_idle_tiny_area_outline = next_idle_tiny
+		visual_state_changed = true
+	if visual_state_changed:
 		_apply_outline_visual_state()
 	var had_target := _has_friendly_name_label_target_position
 	if not _update_friendly_name_label_target_position():
@@ -323,9 +333,15 @@ func _compute_far_small_area_boost() -> bool:
 	var dist: float = cam.global_position.distance_to(_static_body.global_position)
 	return _visualization_settings.should_apply_far_distance_highlight_for_dimensions(_dimensions, dist)
 
+func _compute_idle_tiny_area_outline() -> bool:
+	if _visualization_settings == null:
+		return false
+	return _visualization_settings.should_apply_idle_tiny_area_outline(_dimensions)
+
 func _apply_outline_visual_state() -> void:
 	var effective_mouse_over: bool = _is_hovered_over or _far_small_area_boost
-	if not (effective_mouse_over or _is_selected):
+	var effective_idle_tiny_outline: bool = _idle_tiny_area_outline and not _is_selected and not effective_mouse_over
+	if not (effective_mouse_over or _is_selected or effective_idle_tiny_outline):
 		_DDA_mat.next_pass = null
 		return
 	_DDA_mat.next_pass = _outline_mat
@@ -333,6 +349,8 @@ func _apply_outline_visual_state() -> void:
 		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_both_color.r, cortical_area_outline_both_color.g, cortical_area_outline_both_color.b, cortical_area_outline_both_alpha))
 	elif effective_mouse_over:
 		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_mouse_over_color.r, cortical_area_outline_mouse_over_color.g, cortical_area_outline_mouse_over_color.b, cortical_area_outline_mouse_over_alpha))
+	elif effective_idle_tiny_outline:
+		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_idle_tiny_color.r, cortical_area_outline_idle_tiny_color.g, cortical_area_outline_idle_tiny_color.b, cortical_area_outline_idle_tiny_alpha))
 	else:
 		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_select_color.r, cortical_area_outline_select_color.g, cortical_area_outline_select_color.b, cortical_area_outline_select_alpha))
 

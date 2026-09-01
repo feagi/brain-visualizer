@@ -38,6 +38,9 @@ class_name VisualizationSettings
 ## the DDA volume uses the same outline pass as mouse hover so tiny areas stay visible.
 @export var small_cortical_dimension_threshold: int = 2
 @export var camera_distance_far_threshold: float = 65
+## Tiny cortical areas (x, y, and z all <= this threshold) keep a faint outline even when idle,
+## unselected, and close to camera. Set to 0 to disable this behavior.
+@export var always_visible_tiny_cortical_dimension_threshold: int = 1
 
 func _init():
 	# Defaults are set via @export annotations above
@@ -57,3 +60,10 @@ func should_apply_far_distance_highlight_for_dimensions(
 	var t: int = small_cortical_dimension_threshold
 	var has_small_extent_xy: bool = dimensions_3d.x <= t or dimensions_3d.y <= t
 	return has_small_extent_xy and distance_to_cortical_center >= camera_distance_far_threshold
+
+## Returns true when all dimensions are at or below [member always_visible_tiny_cortical_dimension_threshold].
+func should_apply_idle_tiny_area_outline(dimensions_3d: Vector3i) -> bool:
+	var t: int = always_visible_tiny_cortical_dimension_threshold
+	if t <= 0:
+		return false
+	return dimensions_3d.x <= t and dimensions_3d.y <= t and dimensions_3d.z <= t
