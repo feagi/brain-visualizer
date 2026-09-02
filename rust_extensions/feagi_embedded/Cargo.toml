@@ -11,10 +11,10 @@ description = "FEAGI Embedded - GDExtension for running FEAGI in Godot applicati
 godot = { git = "https://github.com/godot-rust/gdext", rev = "309881cab73255934a0c85853f4e52de278f114c", features = ["api-4-5"] }
 
 # Application embedding layer: sibling feagi-rs (crate name `feagi-rs`, Rust import `feagi`).
-# All feagi-* crates below resolve from crates.io (same release train as feagi-core); do not patch feagi-core locally here.
+# feagi-* crates below resolve from crates.io (feagi-core 0.0.22 release train).
 feagi = { package = "feagi-rs", path = "../../../feagi-rs", default-features = false, features = ["embedded"] }
-feagi-config = { version = "^0.0.12" }
-feagi-npu-burst-engine = { version = "^0.0.12" }
+feagi-config = { version = "^0.0.22" }
+feagi-npu-burst-engine = { version = "^0.0.22" }
 
 # Error handling
 anyhow = "1.0"
