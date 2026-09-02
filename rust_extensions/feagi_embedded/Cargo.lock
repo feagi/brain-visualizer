@@ -1243,7 +1243,7 @@ dependencies = [
 
 [[package]]
 name = "feagi_embedded"
-version = "2.3.26"
+version = "2.3.34"
 dependencies = [
  "anyhow",
  "crossbeam-channel",
