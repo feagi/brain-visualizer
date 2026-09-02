@@ -49,6 +49,10 @@ func _ready():
 	_field_x = $HBoxContainer/FloatX
 	_field_y = $HBoxContainer2/FloatY
 	_field_z = $HBoxContainer3/FloatZ
+	# Keep float vectors readable for small threshold increments (e.g., 0.001).
+	_field_x.number_decimal_places = 3
+	_field_y.number_decimal_places = 3
+	_field_z.number_decimal_places = 3
 
 	_field_x.prefix = float_x_prefix
 	_field_x.suffix = float_x_suffix

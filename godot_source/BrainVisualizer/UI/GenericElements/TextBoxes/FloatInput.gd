@@ -14,7 +14,7 @@ signal float_confirmed(new_float: float)
 @export var initial_float: float = 0
 @export var max_value: float = 9999999999.0
 @export var min_value: float = -9999999999.0
-@export var number_decimal_places: int = 2
+@export var number_decimal_places: int = 3
 
 var current_float: float:
 	get: return previous_text.to_float()
