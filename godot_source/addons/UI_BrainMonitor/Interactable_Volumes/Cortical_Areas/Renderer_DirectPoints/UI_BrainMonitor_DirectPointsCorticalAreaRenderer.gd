@@ -36,6 +36,10 @@ const BILLBOARD_QUAD_MESH_HALF_EXTENT: float = 1.5
 # Visual scale for voxel meshes (world units). Matches existing individual-voxel sizing.
 const _VOXEL_VISUAL_SCALE: float = 0.8
 
+## Red intensity floor for the furthest-back (highest z) firing voxels in
+## [_z_depth_to_color]. Plain linear value with no gamma curve applied.
+const ACTIVATION_MIN_RED_INTENSITY: float = 0.3
+
 # Rendering components
 var _static_body: StaticBody3D
 var _multi_mesh_instance: MultiMeshInstance3D
@@ -850,13 +854,11 @@ func _z_depth_to_color(z_coordinate: float, z_max: float) -> Color:
 	# Normalize z-coordinate to 0.0-1.0 range (exact shader logic)
 	var z_normalized = clamp(z_coordinate / z_max, 0.0, 1.0)
 	
-	# REVERSED: Front neurons (low z) bright, back neurons (high z) dark
-	# z=0 -> (1.0, 0.0, 0.0) = bright red
-	# z=max -> (0.2, 0.0, 0.0) = dark red
-	var red_intensity = 1.0 - z_normalized
-	
-	# Add minimum visibility so back neurons aren't completely invisible
-	red_intensity = max(red_intensity, 0.2)  # Minimum 20% red for visibility
+	# REVERSED: Front neurons (low z) bright, back neurons (high z) dark.
+	# Plain linear interpolation: red = 1.0 at the front, red = ACTIVATION_MIN_RED_INTENSITY
+	# at the back, varying evenly in between. (A gamma-precompensation curve was tried here
+	# and produced a harsh, uneven cliff instead of a smooth gradient, so it was reverted.)
+	var red_intensity = lerp(ACTIVATION_MIN_RED_INTENSITY, 1.0, 1.0 - z_normalized)
 	
 	return Color(red_intensity, 0.0, 0.0, 1.0)
 

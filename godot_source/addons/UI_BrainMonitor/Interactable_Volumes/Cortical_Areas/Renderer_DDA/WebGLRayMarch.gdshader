@@ -16,6 +16,7 @@ uniform int voxel_count_z : hint_range(1, 2500) = 3;
 uniform float voxel_opacity : hint_range(0.0, 1.0) = 0.2;
 uniform vec3 voxel_color : source_color = vec3(0.0, 0.2, 0.0);
 uniform int shared_SVO_depth: hint_range(1, SVO_MAX_DEPTH); // All SVOs use the same depth factor. This is the depth of the SVO tree (root included)
+uniform float activation_min_red : hint_range(0.0, 1.0) = 0.3; // Red intensity floor for the furthest-back firing voxels (plain linear, no gamma curve)
 uniform sampler2D activation_SVO : hint_default_black;
 uniform sampler2D highlight_SVO: hint_default_black;
 uniform sampler2D selection_SVO: hint_default_black;
@@ -325,7 +326,10 @@ void fragment()
 		// Activation (red) - always full visibility
 		vec3 local_hit_space_mn = local_SVO_space_to_vert_0_1_space(neuron_activation_hit_coordinate_svon, voxel_counts_per_dim, shared_SVO_depth);
 		float z_offset_color = local_hit_space_mn.z;
-		float activation_red = max(z_offset_color, 0.35);
+		// Remap depth (0=back, 1=front) into [activation_min_red, 1.0] using a plain
+		// linear mix. (A gamma-precompensation curve was tried here and produced a
+		// harsh, uneven cliff instead of a smooth gradient, so it was reverted.)
+		float activation_red = mix(activation_min_red, 1.0, z_offset_color);
 		final_color.rgb = vec3(activation_red, 0.0, 0.0);
 		final_color.a = max(final_color.a, 0.85); // High visibility for firing
 	}

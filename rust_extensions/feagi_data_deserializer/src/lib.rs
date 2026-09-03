@@ -1545,11 +1545,22 @@ impl FeagiDataDeserializer {
         ]
     }
 
-    /// Calculate z-depth color for a single neuron (shared by both versions)
+    /// Red intensity floor for the furthest-back (highest z) firing voxels.
+    /// This is a plain linear value applied directly to the vertex color with no gamma
+    /// curve: the gamma-precompensation approach was tried and produced a harsh, uneven
+    /// cliff (bright for most of the depth range, then a steep drop near the very back)
+    /// rather than a smooth gradient, so it was reverted in favor of this simple, linear,
+    /// predictable mapping.
+    const ACTIVATION_MIN_RED_INTENSITY: f32 = 0.3;
+
+    /// Calculate z-depth color for a single neuron (shared by both versions).
+    /// Plain linear interpolation: red = 1.0 at the front (z=0), red =
+    /// ACTIVATION_MIN_RED_INTENSITY at the back (z=z_max), varying evenly in between.
     #[inline(always)]
     fn calculate_color(z: u32, z_max: f32) -> [f32; 4] {
         let z_normalized = (z as f32 / z_max).clamp(0.0, 1.0);
-        let red_intensity = (1.0 - z_normalized).max(0.2); // Front bright, back dark
+        let red_intensity = Self::ACTIVATION_MIN_RED_INTENSITY
+            + (1.0 - Self::ACTIVATION_MIN_RED_INTENSITY) * (1.0 - z_normalized);
         [red_intensity, 0.0, 0.0, 1.0] // Red gradient with full alpha
     }
 
