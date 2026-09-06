@@ -1,6 +1,6 @@
 [package]
 name = "feagi_embedded"
-version = "2.3.34"
+version = "2.3.35"
 edition = "2021"
 authors = ["Neuraville Inc. <feagi@neuraville.com>"]
 license = "Apache-2.0"
@@ -11,10 +11,10 @@ description = "FEAGI Embedded - GDExtension for running FEAGI in Godot applicati
 godot = { git = "https://github.com/godot-rust/gdext", rev = "309881cab73255934a0c85853f4e52de278f114c", features = ["api-4-5"] }
 
 # Application embedding layer: sibling feagi-rs (crate name `feagi-rs`, Rust import `feagi`).
-# feagi-* crates below resolve from crates.io (feagi-core 0.0.22 release train).
+# feagi-* crates below resolve from crates.io (feagi-core 0.0.24 release train).
 feagi = { package = "feagi-rs", path = "../../../feagi-rs", default-features = false, features = ["embedded"] }
-feagi-config = { version = "^0.0.22" }
-feagi-npu-burst-engine = { version = "^0.0.22" }
+feagi-config = { version = "^0.0.24" }
+feagi-npu-burst-engine = { version = "^0.0.24" }
 
 # Error handling
 anyhow = "1.0"
