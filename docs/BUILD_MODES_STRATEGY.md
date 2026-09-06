@@ -666,7 +666,7 @@ docker run -p 8000:8000 -p 9050:9050 feagi:latest
 cd exports/web && python -m http.server 8080
 
 # 3. Start FEAGI (with CORS enabled)
-./feagi --genome brain.json
+./feagi --genome brain.genome
 
 # 4. Open browser
 http://localhost:8080?feagi_url=ws://localhost:9050

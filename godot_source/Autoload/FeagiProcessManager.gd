@@ -24,6 +24,7 @@ const FEAGI_HTTP_PORT = 8000
 const FEAGI_WEBSOCKET_PORT = 9050
 const STARTUP_TIMEOUT_SECONDS = 10
 const HEALTH_CHECK_INTERVAL = 5.0
+const GENOME_ARTIFACT_MEDIA_TYPE = "application/vnd.feagi.genome+json"
 
 func _ready():
 	# Create health check timer
@@ -277,25 +278,28 @@ func _load_default_genome() -> bool:
 		push_error("Failed to read genome file")
 		return false
 	
-	var genome_json = file.get_as_text()
+	var genome_artifact = file.get_buffer(file.get_length())
 	file.close()
 	
-	# Parse to validate it's valid JSON
-	var json = JSON.new()
-	var parse_result = json.parse(genome_json)
-	if parse_result != OK:
-		push_error("Invalid genome JSON")
-		return false
-	
-	# POST to FEAGI's genome upload endpoint
+	# Forward artifact bytes to FEAGI's codec boundary.
+	var boundary = "----FeagiGenomeBoundary" + str(Time.get_unix_time_from_system())
+	var header_text = "--%s\r\n" % boundary
+	header_text += "Content-Disposition: form-data; name=\"file\"; filename=\"%s\"\r\n" % genome_path.get_file()
+	header_text += "Content-Type: %s\r\n\r\n" % GENOME_ARTIFACT_MEDIA_TYPE
+	var footer_text = "\r\n--%s--\r\n" % boundary
+	var body = PackedByteArray()
+	body.append_array(header_text.to_utf8_buffer())
+	body.append_array(genome_artifact)
+	body.append_array(footer_text.to_utf8_buffer())
+
 	var http = HTTPRequest.new()
 	add_child(http)
 	
-	var upload_url = get_api_url() + "/v1/genome/upload"
-	var headers = ["Content-Type: application/json"]
+	var upload_url = get_api_url() + "/v1/genome/upload/file"
+	var headers = ["Content-Type: multipart/form-data; boundary=%s" % boundary]
 	
 	print("      🌐 Uploading genome to: ", upload_url)
-	var error = http.request(upload_url, headers, HTTPClient.METHOD_POST, genome_json)
+	var error = http.request_raw(upload_url, headers, HTTPClient.METHOD_POST, body)
 	
 	if error != OK:
 		push_error("Failed to initiate genome upload request")
@@ -318,16 +322,16 @@ func _load_default_genome() -> bool:
 func _get_default_genome_path() -> String:
 	if OS.has_feature("editor"):
 		# Development mode
-		return ProjectSettings.globalize_path("res://Resources/genomes/essential_genome.json")
+		return ProjectSettings.globalize_path("res://Resources/genomes/essential_genome.genome")
 	else:
 		# Packaged mode
 		var os_name = OS.get_name()
 		if os_name == "macOS":
-			return OS.get_executable_path().get_base_dir() + "/../Resources/genomes/essential_genome.json"
+			return OS.get_executable_path().get_base_dir() + "/../Resources/genomes/essential_genome.genome"
 		elif os_name == "Windows":
-			return OS.get_executable_path().get_base_dir() + "/genomes/essential_genome.json"
+			return OS.get_executable_path().get_base_dir() + "/genomes/essential_genome.genome"
 		elif os_name in ["Linux", "LinuxBSD"]:
-			return OS.get_executable_path().get_base_dir() + "/genomes/essential_genome.json"
+			return OS.get_executable_path().get_base_dir() + "/genomes/essential_genome.genome"
 	
 	return ""
 

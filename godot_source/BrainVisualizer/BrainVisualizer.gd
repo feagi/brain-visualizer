@@ -202,13 +202,16 @@ func _on_wasm_genome_saved(genome_id: String) -> void:
 ## Load genome from file (for web builds, uses WASM engine)
 func load_genome_from_file(path: String) -> void:
 	"""Load genome from file path"""
+	if path.get_extension().to_lower() != "genome":
+		push_error("Genome files must use the .genome extension")
+		return
 	if OS.has_feature("web") and _feagi_wasm_manager != null:
 		# Web build - use WASM engine
 		var file = FileAccess.open(path, FileAccess.READ)
 		if file:
-			var genome_json = file.get_as_text()
+			var genome_artifact = file.get_buffer(file.get_length())
 			file.close()
-			_feagi_wasm_manager.load_genome_from_json(genome_json)
+			_feagi_wasm_manager.load_genome_artifact(genome_artifact)
 		else:
 			push_error("Failed to read genome file: " + path)
 	else:

@@ -717,7 +717,7 @@ func _ready():
         print("✅ FEAGI initialized")
         
         # Load genome (optional - can be done later via UI)
-        # feagi.load_genome("res://genomes/default.brain.json")
+        # feagi.load_genome("res://genomes/default.genome")
         
         # Start burst engine
         feagi.start()

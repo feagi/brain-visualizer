@@ -111,6 +111,9 @@ func request_amalgamation_by_upload(genome_path: String) -> FeagiRequestOutput:
 	if genome_path == "":
 		push_error("FEAGI REQUEST: Genome path is empty")
 		return FeagiRequestOutput.requirement_fail("GENOME_PATH_EMPTY")
+	if genome_path.get_extension().to_lower() != "genome":
+		push_error("FEAGI REQUEST: Genome files must use the .genome extension")
+		return FeagiRequestOutput.requirement_fail("GENOME_FILE_EXTENSION_INVALID")
 	if not FileAccess.file_exists(genome_path):
 		push_error("FEAGI REQUEST: Genome file not found at %s" % genome_path)
 		return FeagiRequestOutput.requirement_fail("GENOME_FILE_NOT_FOUND")
@@ -127,7 +130,7 @@ func request_amalgamation_by_upload(genome_path: String) -> FeagiRequestOutput:
 	
 	var header_text := "--%s\r\n" % boundary
 	header_text += "Content-Disposition: form-data; name=\"file\"; filename=\"%s\"\r\n" % filename
-	header_text += "Content-Type: application/json\r\n\r\n"
+	header_text += "Content-Type: application/vnd.feagi.genome+json\r\n\r\n"
 	var footer_text := "\r\n--%s--\r\n" % boundary
 	
 	var body := PackedByteArray()

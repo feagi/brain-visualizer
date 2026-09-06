@@ -69,7 +69,7 @@ from feagi_bv import BrainVisualizer
 
 # Start FEAGI engine
 engine = FeagiEngine()
-engine.load_genome("genome.json")
+engine.load_genome("brain.genome")
 engine.start()
 
 # Start Brain Visualizer (connects to FEAGI)

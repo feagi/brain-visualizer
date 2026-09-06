@@ -29,7 +29,7 @@ cd feagi && cargo check --bin feagi
 ✅ SUCCESS
 
 # Standalone mode works
-./feagi --genome brain.json
+./feagi --genome brain.genome
 ✅ WORKS (unchanged)
 ```
 

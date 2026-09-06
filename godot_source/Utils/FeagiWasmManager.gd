@@ -87,7 +87,13 @@ func _poll_storage_init() -> void:
 		await get_tree().process_frame
 		_poll_storage_init()
 
-## Load genome from JSON string
+## Decode external genome artifact bytes before invoking the WASM JSON API.
+func load_genome_artifact(artifact: PackedByteArray) -> void:
+	"""Load current-format `.genome` bytes without exposing encoding to callers."""
+	var genome_document = artifact.get_string_from_utf8()
+	load_genome_from_json(genome_document)
+
+## Load an internal genome JSON API document.
 func load_genome_from_json(genome_json: String) -> void:
 	"""Load genome from JSON string (async via Promise)"""
 	if not is_initialized:

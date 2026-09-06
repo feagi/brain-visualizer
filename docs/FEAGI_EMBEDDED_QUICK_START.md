@@ -142,7 +142,7 @@ var http = HTTPRequest.new()
 add_child(http)
 
 var url = api_url + "/v1/genome/load"
-var body = JSON.stringify({"genome_path": "res://genomes/my_brain.json"})
+var body = JSON.stringify({"genome_path": "res://genomes/my_brain.genome"})
 http.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, body)
 
 # Analytics queries

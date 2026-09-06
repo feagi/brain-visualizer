@@ -256,7 +256,7 @@ feagi_embedded (GDExtension)
 
 **Standalone Mode (unchanged):**
 ```bash
-./feagi --genome brain.json
+./feagi --genome brain.genome
 # Independent server, remote connections
 ```
 

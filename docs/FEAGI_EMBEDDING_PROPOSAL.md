@@ -168,7 +168,7 @@ impl FeagiInstance {
     /// Load a genome from a file path
     /// 
     /// # Arguments
-    /// * `genome_path` - Path to .brain.json genome file
+    /// * `genome_path` - Path to a `.genome` artifact
     /// 
     /// # Returns
     /// Ok(()) if genome loaded successfully
@@ -471,7 +471,7 @@ impl FeagiEmbedded {
     /// Load a genome from a file
     /// 
     /// # Arguments
-    /// * `genome_path` - Path to .brain.json file
+    /// * `genome_path` - Path to a `.genome` artifact
     /// 
     /// # Returns
     /// true if genome loaded successfully, false otherwise
@@ -1042,7 +1042,7 @@ jobs:
 **Options:**
 
 1. **Embedded in app bundle**
-   - Location: `res://genomes/default.brain.json`
+   - Location: `res://genomes/default.genome`
    - Shipped with application
    - Good for demos/standalone experiences
 
@@ -1102,7 +1102,7 @@ BrainVisualizer.app/
 │   │   ├── feagi_embedded.dylib     # FEAGI extension (universal)
 │   │   ├── feagi_configuration.toml # Default config
 │   │   ├── genomes/
-│   │   │   └── default.brain.json   # Default genome
+│   │   │   └── default.genome       # Default genome
 │   │   └── ... (Godot assets)
 │   └── Info.plist
 ```
@@ -1116,7 +1116,7 @@ BrainVisualizer/
 ├── feagi_embedded.dll               # FEAGI extension
 ├── feagi_configuration.toml         # Default config
 ├── genomes/
-│   └── default.brain.json           # Default genome
+│   └── default.genome               # Default genome
 └── ... (Godot assets)
 ```
 

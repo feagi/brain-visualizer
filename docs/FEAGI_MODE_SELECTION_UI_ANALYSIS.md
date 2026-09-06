@@ -162,7 +162,7 @@ Continue with loading sequence
 **Use case:** View pre-recorded brain activity without FEAGI server
 
 **Features:**
-- Load genome from .brain.json file (static structure)
+- Load genome from a `.genome` file (static structure)
 - Load recorded neural activity from .recording file
 - Playback recorded bursts in 3D
 - Scrub timeline, pause/play
@@ -172,7 +172,7 @@ Continue with loading sequence
 ```
 Viewer Only Mode
     ↓
-File → Open Genome (.brain.json)
+File → Open Genome (.genome)
     ↓
 File → Open Recording (.recording.json) [optional]
     ↓
@@ -349,7 +349,7 @@ func _initialize_with_mode(mode: String):
 ```gdscript
 ## Viewer-only mode - loads genome structure without FEAGI
 func load_genome_structure_only(genome_path: String):
-    # Parse .brain.json
+    # Parse the .genome artifact
     # Build 3D structure
     # Show static brain
     # No neural activity (unless recording loaded)

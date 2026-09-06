@@ -6,7 +6,7 @@ const CREATE_REGION_LABEL: StringName = "Create New Circuit"
 const CIRCUIT_ICON: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png")
 const CIRCUITS_DIR_NAME: StringName = "circuits"
 const MANIFEST_FILENAME: StringName = "manifest.json"
-const GENOME_FILENAME: StringName = "genome.json"
+const GENOME_FILENAME: StringName = "genome.genome"
 
 var _cancel_button: Button
 var _icon_grid: GridContainer

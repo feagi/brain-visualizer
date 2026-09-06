@@ -8,7 +8,7 @@ This folder contains reusable circuit packages that appear in the Brain Visualiz
 - Each circuit lives in its own subfolder under `circuits/`.
 - Each circuit folder must include:
   - `circuit_image.png` (icon shown in the selector)
-  - `genome.json` (genome payload sent to FEAGI)
+  - `genome.genome` (genome artifact sent to FEAGI)
 - The `manifest.json` file defines how circuits are displayed.
 
 ## Manifest format
