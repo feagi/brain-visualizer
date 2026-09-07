@@ -300,11 +300,7 @@ func close_window() -> void:
 			FeagiCore.feagi_local_cache.agent_capabilities_updated.disconnect(_on_agent_capabilities_updated_for_delete_guard)
 	super()
 	BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.CORTICAL_PROPERTIES)
-	# Cleanup auxiliary previews
-	for aux in _aux_previews:
-		if aux != null:
-			aux.queue_free()
-	_aux_previews.clear()
+	_clear_aux_previews()
 	# Cleanup isvi segment previews
 	for preview in _isvi_segment_previews.values():
 		if preview != null:
@@ -954,16 +950,20 @@ func _setup_bm_prevew() -> void:
 	# Determine the cortical area context (if any)
 	var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
 	
-	# Host BM: ONLY the brain monitor representing the cortical area's direct parent region.
-	# This intentionally ignores any additional scenes that may display the area as region I/O.
+	# Prefer BM of the cortical area's direct parent region.
+	# If that tab/view is not open, use the BM currently visualizing this cortical area
+	# (e.g. parent-region plate view).
 	var host_bm: UI_BrainMonitor_3DScene = null
 	if existing_area and existing_area.current_parent_region:
 		host_bm = BV.UI.get_brain_monitor_for_region(existing_area.current_parent_region)
+	if host_bm == null and existing_area != null:
+		host_bm = BV.UI.get_brain_monitor_for_cortical_area(existing_area)
 	if host_bm == null:
-		push_error("AdvancedCorticalProperties: No brain monitor found for cortical area's parent region; cannot create preview.")
+		push_error("AdvancedCorticalProperties: No brain monitor found for cortical area preview.")
 		return
 	
 	var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
+	var host_preview_position: Vector3i = _get_preview_position_for_bm(host_bm, existing_area)
 	if _preview == null:
 		# For isvi segments, don't connect move/resize signals - we handle updates manually via _on_isvi_layout_changed
 		var moves: Array[Signal] = []
@@ -972,9 +972,8 @@ func _setup_bm_prevew() -> void:
 			moves.append(_vector_position.user_updated_vector)
 			resizes.append(_vector_dimensions_spin.user_updated_vector)
 		var closes: Array[Signal] = [close_window_requesed_no_arg, _button_summary_send.pressed]
-		# Host uses area's actual FEAGI LFF
 		# Don't auto-frame camera when opening properties of existing cortical area
-		_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
+		_preview = host_bm.create_preview(host_preview_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
 		_preview.connect_UI_signals(moves, resizes, closes)
 		# Ensure main preview is cleared when window closes
 		_preview.tree_exiting.connect(func(): _preview = null)
@@ -999,7 +998,7 @@ func _setup_bm_prevew() -> void:
 				moves.append(_vector_position.user_updated_vector)
 				resizes.append(_vector_dimensions_spin.user_updated_vector)
 			# Don't auto-frame camera when reopening properties
-			_preview = host_bm.create_preview(_vector_position.current_vector, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
+			_preview = host_bm.create_preview(host_preview_position, _vector_dimensions_spin.current_vector, false, cortical_type, existing_area, false)
 			_preview.connect_UI_signals(moves, resizes, [close_window_requesed_no_arg, _button_summary_send.pressed])
 			_preview.tree_exiting.connect(func(): _preview = null)
 			_host_preview_bm = host_bm
@@ -1011,6 +1010,61 @@ func _setup_bm_prevew() -> void:
 						preview.queue_free()
 				_isvi_segment_previews.clear()
 				_init_isvi_previews()
+		else:
+			_preview.set_new_position(host_preview_position)
+			_preview.set_new_dimensions(_vector_dimensions_spin.current_vector)
+	_sync_aux_plate_previews(existing_area, cortical_type)
+
+func _clear_aux_previews() -> void:
+	for aux in _aux_previews:
+		if aux != null:
+			aux.queue_free()
+	_aux_previews.clear()
+	_aux_preview_to_bm.clear()
+
+func _sync_aux_plate_previews(existing_area: AbstractCorticalArea, cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
+	if existing_area == null or _host_preview_bm == null or BV == null or BV.UI == null:
+		_clear_aux_previews()
+		return
+
+	var desired_dims: Vector3i = _vector_dimensions_spin.current_vector
+	var desired_by_bm: Dictionary = {}
+	var visible_bms: Array[UI_BrainMonitor_3DScene] = BV.UI.get_all_visible_brain_monitors()
+	for bm in visible_bms:
+		if bm == null or bm == _host_preview_bm:
+			continue
+		var plate_result: Dictionary = _compute_plate_lff_for_bm(bm, existing_area)
+		if bool(plate_result.get("found", false)):
+			desired_by_bm[bm] = plate_result.get("lff", _vector_position.current_vector)
+
+	# Remove stale aux previews that no longer have a destination BM.
+	for tracked_bm in _aux_preview_to_bm.keys():
+		if desired_by_bm.has(tracked_bm):
+			continue
+		var stale_preview: UI_BrainMonitor_InteractivePreview = _aux_preview_to_bm.get(tracked_bm)
+		if stale_preview != null:
+			stale_preview.queue_free()
+		_aux_preview_to_bm.erase(tracked_bm)
+
+	# Create/update previews per destination BM.
+	for destination_bm in desired_by_bm.keys():
+		var plate_lff: Vector3i = desired_by_bm[destination_bm]
+		var aux_preview: UI_BrainMonitor_InteractivePreview = _aux_preview_to_bm.get(destination_bm)
+		if aux_preview == null or not is_instance_valid(aux_preview) or aux_preview.get_parent() != destination_bm._node_3D_root:
+			if aux_preview != null:
+				aux_preview.queue_free()
+			aux_preview = destination_bm.create_preview(plate_lff, desired_dims, false, cortical_type, existing_area, false)
+			aux_preview.connect_UI_signals([], [], [close_window_requesed_no_arg, _button_summary_send.pressed])
+			_aux_preview_to_bm[destination_bm] = aux_preview
+		else:
+			aux_preview.set_new_position(plate_lff)
+			aux_preview.set_new_dimensions(desired_dims)
+
+	# Rebuild list used by cleanup/diagnostic paths.
+	_aux_previews.clear()
+	for preview in _aux_preview_to_bm.values():
+		if preview != null:
+			_aux_previews.append(preview)
 
 ## Gets the correct preview position - plate location for I/O areas, API coordinates for regular areas
 func _get_preview_position_for_cortical_area() -> Vector3i:
@@ -1019,61 +1073,33 @@ func _get_preview_position_for_cortical_area() -> Vector3i:
 		return _vector_position.current_vector
 	
 	var cortical_area = _cortical_area_refs[0]
-	
-	# Check if this cortical area is I/O of any brain region with plates
-	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	if root_region == null:
+
+	if BV == null or BV.UI == null or BV.UI.temp_root_bm == null:
 		return _vector_position.current_vector
-	
-	# Check all child regions to see if this area is their I/O
-	for child_region in root_region.contained_regions:
-		# Check if cortical area is in this region's partial mappings (I/O)
-		for partial_mapping in child_region.partial_mappings:
-			if partial_mapping.internal_target_cortical_area == cortical_area:
-				print("🔮 Cortical area %s is I/O of region %s - using plate position" % [cortical_area.cortical_ID, child_region.friendly_name])
-				
-				# Find the brain region 3D visualization to get plate coordinates
-				var brain_monitor = BV.UI.temp_root_bm
-				if brain_monitor == null:
-					push_warning("AdvancedCorticalProperties: No brain monitor available for I/O area plate position calculation")
-					return _vector_position.current_vector
-				
-				# Get the brain region 3D object (with robust ID matching)
-				var brain_region_3d = brain_monitor._brain_region_visualizations_by_ID.get(child_region.region_ID)
-				if brain_region_3d == null:
-					for existing_id in brain_monitor._brain_region_visualizations_by_ID.keys():
-						if str(existing_id) == str(child_region.region_ID):
-							brain_region_3d = brain_monitor._brain_region_visualizations_by_ID[existing_id]
-							break
-				if brain_region_3d == null:
-					print("🔮 Brain region 3D not found for %s - using API coordinates" % child_region.friendly_name)
-					return _vector_position.current_vector
-				
-				# Generate I/O coordinates to get the plate position
-				var io_coords = brain_region_3d.generate_io_coordinates_for_brain_region(child_region)
-				# Search inputs, then outputs, then conflicts to handle conflict-plate areas
-				var search_sets = [io_coords.inputs, io_coords.outputs, io_coords.conflicts]
-				for set_arr in search_sets:
-					for area_data in set_arr:
-						if area_data.area_id == cortical_area.cortical_ID:
-							print("🔮 Found plate coordinates (CENTER FEAGI) for %s: %s" % [cortical_area.cortical_ID, area_data.new_coordinates])
-							# Convert center FEAGI coords to lower-left-front FEAGI (renderer expects LFF)
-							var dims: Vector3i = _vector_dimensions_spin.current_vector
-							var center: Vector3i = Vector3i(area_data.new_coordinates)
-							var lff: Vector3i = Vector3i(center.x - dims.x / 2, center.y - dims.y / 2, center.z - dims.z / 2)
-							return lff
-	
-	# Not an I/O area, use regular API coordinates
+	var plate_result: Dictionary = _compute_plate_lff_for_bm(BV.UI.temp_root_bm, cortical_area)
+	if bool(plate_result.get("found", false)):
+		return plate_result.get("lff", _vector_position.current_vector)
 	return _vector_position.current_vector
 
-# Helper: compute plate LFF coords for a given BM and area (unused path)
-func _compute_plate_lff_for_bm(bm: UI_BrainMonitor_3DScene, area: AbstractCorticalArea) -> Vector3i:
+## Returns preview position for a specific BM:
+## - plate LFF when this area is shown as child-region I/O in that BM
+## - otherwise the area's FEAGI LFF coordinates.
+func _get_preview_position_for_bm(bm: UI_BrainMonitor_3DScene, area: AbstractCorticalArea) -> Vector3i:
 	if bm == null or area == null:
 		return _vector_position.current_vector
-	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	if root_region == null:
-		return _vector_position.current_vector
-	for child_region in root_region.contained_regions:
+	var plate_result: Dictionary = _compute_plate_lff_for_bm(bm, area)
+	if bool(plate_result.get("found", false)):
+		return plate_result.get("lff", _vector_position.current_vector)
+	return _vector_position.current_vector
+
+# Helper: compute plate LFF coords for a given BM and area.
+func _compute_plate_lff_for_bm(bm: UI_BrainMonitor_3DScene, area: AbstractCorticalArea) -> Dictionary:
+	if bm == null or area == null:
+		return {"found": false, "lff": _vector_position.current_vector}
+	var representing_region: BrainRegion = bm.representing_region
+	if representing_region == null:
+		return {"found": false, "lff": _vector_position.current_vector}
+	for child_region in representing_region.contained_regions:
 		for partial_mapping in child_region.partial_mappings:
 			if partial_mapping.internal_target_cortical_area == area:
 				var brain_region_3d = bm._brain_region_visualizations_by_ID.get(child_region.region_ID)
@@ -1083,7 +1109,7 @@ func _compute_plate_lff_for_bm(bm: UI_BrainMonitor_3DScene, area: AbstractCortic
 							brain_region_3d = bm._brain_region_visualizations_by_ID[existing_id]
 							break
 				if brain_region_3d == null:
-					return _vector_position.current_vector
+					return {"found": false, "lff": _vector_position.current_vector}
 				var io_coords = brain_region_3d.generate_io_coordinates_for_brain_region(child_region)
 				var search_sets = [io_coords.inputs, io_coords.outputs, io_coords.conflicts]
 				for set_arr in search_sets:
@@ -1091,8 +1117,11 @@ func _compute_plate_lff_for_bm(bm: UI_BrainMonitor_3DScene, area: AbstractCortic
 						if area_data.area_id == area.cortical_ID:
 							var dims: Vector3i = _vector_dimensions_spin.current_vector
 							var center: Vector3i = Vector3i(area_data.new_coordinates)
-							return Vector3i(center.x - dims.x / 2, center.y - dims.y / 2, center.z - dims.z / 2)
-	return _vector_position.current_vector
+							return {
+								"found": true,
+								"lff": Vector3i(center.x - dims.x / 2, center.y - dims.y / 2, center.z - dims.z / 2)
+							}
+	return {"found": false, "lff": _vector_position.current_vector}
 
 ## Handles dimension changes for I/O area previews - recalculates plate position since dimensions affect positioning
 func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
@@ -1104,20 +1133,13 @@ func _update_preview_for_io_area_resize(new_dimensions: Vector3i) -> void:
 		return
 	
 	# For I/O areas, when dimensions change, the plate position might change too
-	# Recalculate the preview position to ensure it stays on the plate
-	var updated_plate_pos = _get_preview_position_for_cortical_area()
-	# Host/tab preview must stay at the area's actual FEAGI LFF position
-	_preview.set_new_position(_vector_position.current_vector)
-	# Apply per-BM updated positions to auxiliary previews
-	for aux in _aux_previews:
-		if aux != null:
-			var bm_for_aux: UI_BrainMonitor_3DScene = _aux_preview_to_bm.get(aux)
-			if bm_for_aux == BV.UI.temp_root_bm:
-				# Root/main: plate position
-				aux.set_new_position(updated_plate_pos)
-			else:
-				# Region tab: area’s actual FEAGI LFF coordinate (no plate alignment)
-				aux.set_new_position(_vector_position.current_vector)
+	# Recalculate auxiliary plate previews to keep plate-space alignment.
+	var existing_area = _cortical_area_refs[0] if _cortical_area_refs.size() == 1 else null
+	var host_preview_position: Vector3i = _get_preview_position_for_bm(_host_preview_bm, existing_area)
+	_preview.set_new_position(host_preview_position)
+	_preview.set_new_dimensions(new_dimensions)
+	var cortical_type = _cortical_area_refs[0].cortical_type if _cortical_area_refs.size() > 0 else AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN
+	_sync_aux_plate_previews(existing_area, cortical_type)
 
 
 
