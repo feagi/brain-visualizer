@@ -103,6 +103,9 @@ func remove_from_highlighted(genome_object: GenomeObject) -> ERROR:
 func is_highlighted(genome_object: GenomeObject) -> bool:
 	return genome_object in _highlighted_genome_objects
 
+func get_highlighted_cortical_areas() -> Array[AbstractCorticalArea]:
+	return GenomeObject.filter_cortical_areas(_highlighted_genome_objects)
+
 ## Generic object selection function
 func select_objects(context: SOURCE_CONTEXT = SOURCE_CONTEXT.UNKNOWN, objects_to_select: Array[GenomeObject] = _highlighted_genome_objects) -> void:
 	objects_selection_event_called.emit(objects_to_select, context, _override_use_cases)

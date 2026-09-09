@@ -1681,8 +1681,12 @@ func _handle_cortical_pick_click_event(
 						else:
 							selection_system.add_to_highlighted(clicked_area)
 					BV.UI.selection_system.select_objects(ctx)
+					if BV.UI != null:
+						BV.UI.refresh_area_firing_recorder_from_ctrl_selection()
 				return
 			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+				if BV != null and BV.UI != null:
+					BV.UI.dismiss_area_firing_recorder_for_normal_selection()
 				var ctx_select: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
 				if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
 					ctx_select = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE

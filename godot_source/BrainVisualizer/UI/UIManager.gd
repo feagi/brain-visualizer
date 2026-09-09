@@ -87,6 +87,15 @@ var _voxel_capture_close_button: Button
 var _voxel_capture_selected_by_area: Dictionary[StringName, Dictionary] = {}
 var _voxel_capture_dismissed_by_user: bool = false
 const VOXEL_CAPTURE_MIN_VISIBLE_VOXELS: int = 2
+var _area_firing_recorder: AreaFiringVoxelRecorder
+var _area_firing_recorder_layer: CanvasLayer
+var _area_firing_recorder_status_label: Label
+var _area_firing_recorder_areas_label: Label
+var _area_firing_recorder_start_button: Button
+var _area_firing_recorder_stop_button: Button
+var _area_firing_recorder_close_button: Button
+var _area_firing_recorder_dismissed_by_user: bool = false
+var _area_firing_recorder_ctrl_selection_active: bool = false
 
 # Startup UI scaling thresholds based only on monitor DPI and resolution.
 # Goal: fit more content on low-resolution displays while preserving readability on high-DPI panels.
@@ -152,6 +161,7 @@ func _ready():
 	_version_label = $VersionLabel
 	_root_UI_view = $CB_Holder/UIView
 	_selection_system = SelectionSystem.new()
+	_selection_system.highlighted_objects_changed.connect(_on_selection_highlighted_objects_changed)
 	_loading_status_label = $LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/Bottom_Row/StatusLabel
 	
 	_version_label.text = Time.get_datetime_string_from_unix_time(BVVersion.brain_visualizer_timestamp)
@@ -177,6 +187,7 @@ func _ready():
 	_setup_connection_inspector_stop_overlay()
 	_setup_camera_presentation_overlay()
 	_setup_voxel_capture_overlay()
+	_setup_area_firing_recorder_overlay()
 	_setup_mouse_context_label()
 	
 	# Connect cortical area cache signals
@@ -748,6 +759,204 @@ func _on_voxel_capture_close_pressed() -> void:
 		_voxel_capture_layer.visible = false
 
 
+## Floating panel for Ctrl+click cortical area firing capture.
+func _setup_area_firing_recorder_overlay() -> void:
+	_area_firing_recorder = AreaFiringVoxelRecorder.new()
+	_area_firing_recorder.recording_state_changed.connect(_on_area_firing_recorder_recording_state_changed)
+	_area_firing_recorder.accumulation_updated.connect(_refresh_area_firing_recorder_overlay)
+	_area_firing_recorder_layer = CanvasLayer.new()
+	_area_firing_recorder_layer.name = "AreaFiringRecorderLayer"
+	_area_firing_recorder_layer.layer = 27
+	_area_firing_recorder_layer.visible = false
+	var host := Control.new()
+	host.name = "AreaFiringRecorderHost"
+	host.set_anchors_preset(Control.PRESET_FULL_RECT)
+	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var panel := PanelContainer.new()
+	panel.name = "AreaFiringRecorderPanel"
+	panel.focus_mode = Control.FOCUS_NONE
+	panel.anchor_left = 1.0
+	panel.anchor_top = 1.0
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = -560.0
+	panel.offset_top = -210.0
+	panel.offset_right = -18.0
+	panel.offset_bottom = -22.0
+	var content := VBoxContainer.new()
+	content.name = "AreaFiringRecorderContent"
+	content.mouse_filter = Control.MOUSE_FILTER_PASS
+	content.add_theme_constant_override(&"separation", 8)
+	content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = 10.0
+	content.offset_top = 10.0
+	content.offset_right = -10.0
+	content.offset_bottom = -10.0
+	var title_row := HBoxContainer.new()
+	title_row.name = "AreaFiringRecorderTitleRow"
+	title_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_row.add_theme_constant_override(&"separation", 8)
+	var title := Label.new()
+	title.name = "AreaFiringRecorderTitle"
+	title.text = "Area Firing Recorder"
+	title.add_theme_font_size_override(&"font_size", 18)
+	title.add_theme_color_override(&"font_color", Color(0.93, 0.97, 1.0))
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_area_firing_recorder_close_button = Button.new()
+	_area_firing_recorder_close_button.name = "AreaFiringRecorderClose"
+	_area_firing_recorder_close_button.text = "X"
+	_area_firing_recorder_close_button.tooltip_text = "Hide area firing recorder panel"
+	_area_firing_recorder_close_button.focus_mode = Control.FOCUS_NONE
+	_area_firing_recorder_close_button.custom_minimum_size = Vector2(42.0, 32.0)
+	_area_firing_recorder_close_button.pressed.connect(_on_area_firing_recorder_close_pressed)
+	title_row.add_child(title)
+	title_row.add_child(_area_firing_recorder_close_button)
+	_area_firing_recorder_areas_label = Label.new()
+	_area_firing_recorder_areas_label.name = "AreaFiringRecorderAreas"
+	_area_firing_recorder_areas_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_area_firing_recorder_areas_label.add_theme_color_override(&"font_color", Color(0.72, 0.82, 0.9))
+	_area_firing_recorder_status_label = Label.new()
+	_area_firing_recorder_status_label.name = "AreaFiringRecorderStatus"
+	_area_firing_recorder_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_area_firing_recorder_status_label.add_theme_color_override(&"font_color", Color(0.78, 0.88, 0.97))
+	var button_row := HBoxContainer.new()
+	button_row.name = "AreaFiringRecorderButtons"
+	button_row.add_theme_constant_override(&"separation", 8)
+	_area_firing_recorder_start_button = _create_camera_presentation_button(
+		"AreaFiringRecorderStart",
+		"Start Recording",
+		"Record fired voxels for selected cortical areas"
+	)
+	_area_firing_recorder_start_button.pressed.connect(_on_area_firing_recorder_start_pressed)
+	_area_firing_recorder_stop_button = _create_camera_presentation_button(
+		"AreaFiringRecorderStop",
+		"Stop + Copy",
+		"Stop recording and copy captured voxels JSON to clipboard"
+	)
+	_area_firing_recorder_stop_button.pressed.connect(_on_area_firing_recorder_stop_pressed)
+	button_row.add_child(_area_firing_recorder_start_button)
+	button_row.add_child(_area_firing_recorder_stop_button)
+	content.add_child(title_row)
+	content.add_child(_area_firing_recorder_areas_label)
+	content.add_child(_area_firing_recorder_status_label)
+	content.add_child(button_row)
+	panel.add_child(content)
+	var style_panel := StyleBoxFlat.new()
+	style_panel.bg_color = Color(0.1, 0.2, 0.3, 0.94)
+	style_panel.border_color = Color(0.38, 0.78, 0.95, 1.0)
+	style_panel.set_border_width_all(2)
+	style_panel.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override(&"panel", style_panel)
+	host.add_child(panel)
+	_area_firing_recorder_layer.add_child(host)
+	add_child(_area_firing_recorder_layer)
+	_refresh_area_firing_recorder_overlay()
+
+
+func refresh_area_firing_recorder_from_ctrl_selection() -> void:
+	_area_firing_recorder_ctrl_selection_active = true
+	var highlighted_areas: Array[AbstractCorticalArea] = _selection_system.get_highlighted_cortical_areas()
+	if highlighted_areas.is_empty():
+		_dismiss_area_firing_recorder_panel()
+		return
+	if _area_firing_recorder.is_recording():
+		return
+	_area_firing_recorder_dismissed_by_user = false
+	_area_firing_recorder.set_monitored_areas(highlighted_areas)
+	_refresh_area_firing_recorder_overlay()
+
+
+func dismiss_area_firing_recorder_for_normal_selection() -> void:
+	_dismiss_area_firing_recorder_panel()
+
+
+func _on_selection_highlighted_objects_changed(_objects: Array[GenomeObject]) -> void:
+	if not _area_firing_recorder_ctrl_selection_active:
+		return
+	var highlighted_areas: Array[AbstractCorticalArea] = _selection_system.get_highlighted_cortical_areas()
+	if highlighted_areas.is_empty():
+		_dismiss_area_firing_recorder_panel()
+		return
+	if _area_firing_recorder != null and not _area_firing_recorder.is_recording():
+		_area_firing_recorder.set_monitored_areas(highlighted_areas)
+		_refresh_area_firing_recorder_overlay()
+
+
+func _dismiss_area_firing_recorder_panel() -> void:
+	_area_firing_recorder_ctrl_selection_active = false
+	_area_firing_recorder_dismissed_by_user = false
+	if _area_firing_recorder != null:
+		_area_firing_recorder.cancel_recording()
+		_area_firing_recorder.set_monitored_areas([])
+	if _area_firing_recorder_layer != null:
+		_area_firing_recorder_layer.visible = false
+
+
+func _hide_area_firing_recorder_panel() -> void:
+	_dismiss_area_firing_recorder_panel()
+
+
+func _refresh_area_firing_recorder_overlay() -> void:
+	if _area_firing_recorder_layer == null or _area_firing_recorder == null:
+		return
+	if not _area_firing_recorder_ctrl_selection_active:
+		_area_firing_recorder_layer.visible = false
+		return
+	var area_count: int = _area_firing_recorder.get_monitored_area_count()
+	if area_count == 0:
+		_area_firing_recorder_layer.visible = false
+		return
+	if _area_firing_recorder_areas_label != null:
+		_area_firing_recorder_areas_label.text = _area_firing_recorder.get_area_summary_text()
+	if _area_firing_recorder_status_label != null:
+		_area_firing_recorder_status_label.text = _area_firing_recorder.get_status_text()
+	if _area_firing_recorder_start_button != null:
+		_area_firing_recorder_start_button.disabled = _area_firing_recorder.is_recording()
+	if _area_firing_recorder_stop_button != null:
+		_area_firing_recorder_stop_button.disabled = not _area_firing_recorder.is_recording()
+	_area_firing_recorder_layer.visible = not _area_firing_recorder_dismissed_by_user
+
+
+func _on_area_firing_recorder_start_pressed() -> void:
+	if _area_firing_recorder == null:
+		return
+	if not _area_firing_recorder.start_recording():
+		return
+	_area_firing_recorder_dismissed_by_user = false
+	_refresh_area_firing_recorder_overlay()
+
+
+func _on_area_firing_recorder_stop_pressed() -> void:
+	if _area_firing_recorder == null:
+		return
+	var payload: Dictionary = _area_firing_recorder.stop_recording()
+	var payload_json: String = JSON.stringify(payload, "\t")
+	DisplayServer.clipboard_set(payload_json)
+	if BV != null and BV.NOTIF != null:
+		var area_count: int = int(payload.get("area_count", 0))
+		var total_count: int = int(payload.get("total_voxel_count", 0))
+		BV.NOTIF.add_notification(
+			"Stopped recording. Copied %d fired voxel(s) from %d area(s) to clipboard." % [total_count, area_count]
+		)
+	_refresh_area_firing_recorder_overlay()
+
+
+func _on_area_firing_recorder_close_pressed() -> void:
+	_area_firing_recorder_dismissed_by_user = true
+	if _area_firing_recorder != null and _area_firing_recorder.is_recording():
+		_area_firing_recorder.cancel_recording()
+	if _area_firing_recorder_layer != null:
+		_area_firing_recorder_layer.visible = false
+
+
+func _on_area_firing_recorder_recording_state_changed(_is_recording: bool) -> void:
+	_refresh_area_firing_recorder_overlay()
+
+
+func _reset_area_firing_recorder_state() -> void:
+	_dismiss_area_firing_recorder_panel()
+
+
 ## Marks which brain monitor currently owns hover updates.
 func set_active_hover_bm(bm: UI_BrainMonitor_3DScene) -> void:
 	_active_hover_bm = bm
@@ -976,6 +1185,7 @@ func FEAGI_about_to_reset_genome() -> void:
 	_window_manager.force_close_all_windows()
 	if _selection_system:
 		_selection_system.clear_all_highlighted()
+	_reset_area_firing_recorder_state()
 	_root_UI_view.reset()
 	#_root_UI_view.close_all_non_root_brain_region_views()
 	#toggle_loading_screen(true)

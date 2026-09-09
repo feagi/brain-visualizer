@@ -56,6 +56,8 @@ var _bv_fast_multimeshes_by_id: Dictionary = {}
 var _bv_fast_dimensions_by_id: Dictionary = {}
 var _bv_fast_cache_last_refresh_ms: int = 0
 const _BV_FAST_CACHE_REFRESH_INTERVAL_MS: int = 1000
+# Cortical areas that need Type 11 coordinate dispatch on the desktop fast-path (e.g. firing recorder).
+var _bv_type11_bulk_dispatch_cortical_ids: Dictionary = {}
 
 # Queue Type 11 messages on Web until WASM is ready
 var _pending_type11: Array = []
@@ -391,7 +393,8 @@ func _process(_delta: float):
 									continue
 								var requires_bulk := area_obj.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 								requires_bulk = requires_bulk or area_obj.BV_requires_bulk_directpoints_updates()
-								if not requires_bulk:
+								var dispatch_for_recorder := _bv_requires_type11_bulk_dispatch(clean_id)
+								if not requires_bulk and not dispatch_for_recorder:
 									continue
 								var area_any: Variant = areas.get(cortical_id, null)
 								var area_data: Dictionary = area_any as Dictionary
@@ -400,7 +403,11 @@ func _process(_delta: float):
 								var z_array: PackedInt32Array = area_data.get("z_array", PackedInt32Array())
 								var p_array: PackedFloat32Array = area_data.get("p_array", PackedFloat32Array())
 								var n := x_array.size()
-								if n > 0:
+								if n <= 0:
+									continue
+								if dispatch_for_recorder:
+									FEAGI_sent_direct_neural_points_bulk.emit(StringName(clean_id), x_array, y_array, z_array, p_array)
+								if requires_bulk:
 									area_obj.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
 									area_obj.BV_notify_directpoints_activity(n)
 						# Optional: preserve side-effects (timers/animations) without moving arrays through signals.
@@ -875,6 +882,24 @@ func _type11_rootcause_sample_ids(ids: Array, max_n: int) -> String:
 		out.append(str(ids[i]))
 	var tail := ", ..." if ids.size() > max_n else ""
 	return "[%s]%s" % [", ".join(out), tail]
+
+
+## Register cortical areas that need Type 11 bulk coordinates on the desktop fast-path.
+func bv_set_type11_bulk_dispatch_cortical_ids(cortical_ids: Array[StringName]) -> void:
+	_bv_type11_bulk_dispatch_cortical_ids.clear()
+	for cortical_id in cortical_ids:
+		_bv_type11_bulk_dispatch_cortical_ids[String(cortical_id).to_lower()] = true
+
+
+## Clear Type 11 bulk coordinate dispatch registration.
+func bv_clear_type11_bulk_dispatch_cortical_ids() -> void:
+	_bv_type11_bulk_dispatch_cortical_ids.clear()
+
+
+func _bv_requires_type11_bulk_dispatch(clean_id: String) -> bool:
+	if _bv_type11_bulk_dispatch_cortical_ids.is_empty():
+		return false
+	return _bv_type11_bulk_dispatch_cortical_ids.has(clean_id.to_lower())
 
 
 ## Logs fast-path MultiMesh registration count (throttled). Enable with BV_TYPE11_ROOTCAUSE=1.
