@@ -2122,6 +2122,32 @@ func clear_all_selected_cortical_area_neurons() -> void:
 				cortical_area_selected_neurons_changed.emit(area.cortical_area, [])
 	requesting_to_clear_all_selected_neurons.emit()
 
+
+## Additively selects voxels in [param cortical_id] (Shift+click behavior) and emits selection signals.
+func apply_voxels_to_cortical_area_selection(cortical_id: StringName, voxels: Array[Vector3i]) -> Dictionary:
+	var result: Dictionary = {"added_count": 0, "skipped_count": 0}
+	if voxels.is_empty():
+		return result
+	var viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(String(cortical_id))
+	if viz == null or viz.cortical_area == null:
+		return result
+	var current_selection: Array[Vector3i] = viz.get_neuron_selection_states()
+	var newly_added: Array[Vector3i] = []
+	for voxel in voxels:
+		if current_selection.find(voxel) != -1:
+			result.skipped_count = int(result.skipped_count) + 1
+			continue
+		viz.set_neuron_selection_state(voxel, true)
+		newly_added.append(voxel)
+		result.added_count = int(result.added_count) + 1
+	if newly_added.is_empty():
+		return result
+	cortical_area_selected_neurons_changed.emit(viz.cortical_area, viz.get_neuron_selection_states())
+	for voxel in newly_added:
+		cortical_area_selected_neurons_changed_delta.emit(viz.cortical_area, voxel, true)
+	return result
+
+
 func set_further_neuron_selection_restriction_to_cortical_area(restrict_to: AbstractCorticalArea) -> void:
 	if restrict_to.cortical_ID in _cortical_visualizations_by_ID:
 		_restrict_neuron_selection_to = restrict_to

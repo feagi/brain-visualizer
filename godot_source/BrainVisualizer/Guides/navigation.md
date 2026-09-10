@@ -126,6 +126,98 @@ Navigate through region hierarchy:
 - Press **Escape** key
 - Select different object
 
+## Voxel Selection and Clipboard (Brain Monitor)
+
+Use these workflows in the 3D Brain Monitor to pick voxels, copy their coordinates, and reuse them for mapping or further selection.
+
+### Select Voxels (Shift + Click)
+
+1. Hold **Shift** while the mouse is over a Brain Monitor viewport
+2. **Click** individual voxels inside a cortical area to toggle them on or off
+3. Selected voxels stay highlighted until you clear them
+4. Selections can span **multiple cortical areas**
+
+This is additive selection: each Shift+click toggles that voxel without clearing others.
+
+**Related voxel shortcuts (Brain Monitor viewport):**
+- **Space**: Fire (stimulate) all currently selected voxels
+- **Delete**: Clear all selected voxels
+
+### Voxel Selection Capture Panel
+
+When you have **2 or more voxels** selected, a **Voxel Selection Capture** panel appears at the bottom-right of the view.
+
+The panel shows:
+- Total voxel count and number of source areas
+- A live JSON preview grouped by cortical area
+- **Copy JSON to clipboard** — copies the selection in a standard format for mapping workflows
+
+You can also copy at any time with **Ctrl + C** (Cmd + C on macOS) while voxels are selected. This works even when the panel is hidden, as long as a text field is not focused.
+
+You can hide the panel with **X**; it reappears when your selection changes.
+
+### Record Fired Voxels (Area Firing Recorder)
+
+Capture voxels that fire during live simulation instead of picking them manually:
+
+1. **Ctrl + Click** (Cmd + Click on macOS) one or more cortical areas to multi-select them
+2. The **Area Firing Recorder** panel opens at the bottom-right
+3. Click **Start Recording** while FEAGI is running
+4. Fired voxels accumulate for all monitored areas as activity arrives
+5. Click **Stop + Copy** to stop recording and copy the captured voxels as JSON to the clipboard
+
+The recorder deduplicates voxels per area while recording. Use **X** to hide the panel when not recording.
+
+### Paste Voxels onto a Hovered Area (Ctrl + V)
+
+Paste copied voxel JSON directly into the 3D scene:
+
+1. Copy voxels using **Voxel Selection Capture** or **Area Firing Recorder** (or any compatible JSON on the clipboard)
+2. Hover the target cortical area in Brain Monitor (aqua outline / bottom-left context label)
+3. Press **Ctrl + V** (Cmd + V on macOS)
+
+**Paste behavior:**
+- All voxels from **every area** in the clipboard JSON are **unioned** (duplicates removed by coordinate)
+- The combined set is **additively selected** in the hovered area — same as Shift+click (existing selections are kept)
+- A notification confirms how many voxels were added
+
+Paste only runs when the mouse is over a Brain Monitor viewport and a cortical area is under the cursor. It does not run while a text field has focus.
+
+### Use Copied Voxels in Quick Connect Mapping
+
+The same JSON format works in **Quick Connect Neuron** mapping workflows:
+
+1. Open Quick Connect from a cortical area's quick menu
+2. Use the **Paste** button on the source or destination side when prompted for voxel selection
+3. Clipboard JSON from manual selection or firing capture is applied to the mapping step
+
+See [Mapping Connections](mapping_connections.md) for full Quick Connect mapping details.
+
+### Clipboard JSON Format (Reference)
+
+Copied payloads share one schema. Example structure:
+
+```json
+{
+  "area_count": 2,
+  "total_voxel_count": 5,
+  "by_cortical_id": {
+    "area_id_1": [[x, y, z], [x, y, z]],
+    "area_id_2": [[x, y, z]]
+  },
+  "areas": [
+    {
+      "cortical_id": "area_id_1",
+      "friendly_name": "Visual Cortex",
+      "voxel_count": 2,
+      "voxels": [[x, y, z], [x, y, z]]
+    }
+  ]
+}
+```
+
+Coordinates are local `(x, y, z)` positions within each cortical area.
+
 ## Cross-View Navigation
 
 Selections and focus sync between views:
@@ -233,7 +325,15 @@ See [Split View](split_view.md) for more details.
 - **Home**: Reset view / Fit All
 - **Arrow Keys**: Pan (2D) or Rotate (3D)
 - **Page Up/Down**: Zoom in/out
-- **Escape**: Clear selection
+- **Escape**: Clear selection (also clears voxel selection in Brain Monitor)
+
+### Brain Monitor Voxel Shortcuts
+
+- **Shift + Click**: Toggle voxel selection (hold Shift, then click voxels)
+- **Space**: Fire selected voxels
+- **Delete**: Clear all selected voxels
+- **Ctrl + C** (Cmd + C on macOS): Copy selected voxels JSON to clipboard
+- **Ctrl + V** (Cmd + V on macOS): Paste clipboard voxels into hovered cortical area
 
 ### Mouse Shortcuts
 
@@ -241,7 +341,7 @@ See [Split View](split_view.md) for more details.
 - **Left Drag**: Rotate (3D) or Move object (2D)
 - **Middle Drag**: Pan view
 - **Wheel**: Zoom in/out
-- **Ctrl + Click**: Multi-select
+- **Ctrl + Click**: Multi-select cortical areas (opens Area Firing Recorder when used in Brain Monitor)
 
 See [Keyboard Shortcuts](keyboard_shortcuts.md) for complete list.
 
@@ -348,6 +448,7 @@ Access via **Options** → **Display** or **Developer Options**.
 - [Split View](split_view.md) - Working with multiple views
 - [Circuit Builder](circuit_builder.md) - 2D navigation and editing
 - [Brain Monitor](brain_monitor.md) - 3D visualization and navigation
+- [Mapping Connections](mapping_connections.md) - Quick Connect and mapping workflows
 - [Keyboard Shortcuts](keyboard_shortcuts.md) - Complete shortcut reference
 
 [Back to Overview](index.md)

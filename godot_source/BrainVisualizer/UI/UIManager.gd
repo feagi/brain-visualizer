@@ -741,16 +741,35 @@ func _refresh_voxel_capture_overlay() -> void:
 	_voxel_capture_layer.visible = not _voxel_capture_dismissed_by_user
 
 
-func _on_voxel_capture_copy_pressed() -> void:
-	if _voxel_capture_selected_by_area.is_empty():
-		return
+func _get_voxel_capture_total_selected_count() -> int:
 	var payload: Dictionary = _build_voxel_capture_payload()
+	return int(payload.get("total_voxel_count", 0))
+
+
+func _can_copy_voxels_from_selection() -> bool:
+	var focus_owner: Control = get_viewport().gui_get_focus_owner()
+	if focus_owner is LineEdit or focus_owner is TextEdit:
+		return false
+	return _get_voxel_capture_total_selected_count() > 0
+
+
+func _copy_selected_voxels_to_clipboard() -> bool:
+	if _voxel_capture_selected_by_area.is_empty():
+		return false
+	var payload: Dictionary = _build_voxel_capture_payload()
+	var total_count: int = int(payload.get("total_voxel_count", 0))
+	if total_count == 0:
+		return false
 	var payload_json: String = JSON.stringify(payload, "\t")
 	DisplayServer.clipboard_set(payload_json)
 	if BV != null and BV.NOTIF != null:
 		var area_count: int = int(payload.get("area_count", 0))
-		var total_count: int = int(payload.get("total_voxel_count", 0))
 		BV.NOTIF.add_notification("Copied %d voxels from %d areas to clipboard." % [total_count, area_count])
+	return true
+
+
+func _on_voxel_capture_copy_pressed() -> void:
+	_copy_selected_voxels_to_clipboard()
 
 
 func _on_voxel_capture_close_pressed() -> void:
@@ -1613,6 +1632,15 @@ func _input(event):
 	
 	if event is InputEventKey:
 		var keyboard_event: InputEventKey = event as InputEventKey
+		if keyboard_event.pressed and not keyboard_event.echo:
+			if keyboard_event.keycode == KEY_C and (keyboard_event.ctrl_pressed or keyboard_event.meta_pressed):
+				if _can_copy_voxels_from_selection() and _copy_selected_voxels_to_clipboard():
+					get_viewport().set_input_as_handled()
+					return
+			if keyboard_event.keycode == KEY_V and (keyboard_event.ctrl_pressed or keyboard_event.meta_pressed):
+				if _try_paste_clipboard_voxels_to_hovered_area():
+					get_viewport().set_input_as_handled()
+					return
 		if keyboard_event.keycode == FeagiCore.feagi_settings.developer_menu_hotkey:
 			if !keyboard_event.pressed:
 				return
@@ -2462,6 +2490,40 @@ func _find_any_brain_monitor_under_cb_holder() -> UI_BrainMonitor_3DScene:
 
 func get_active_hover_brain_monitor() -> UI_BrainMonitor_3DScene:
 	return _active_hover_bm
+
+
+func _can_paste_voxels_to_brain_monitor() -> bool:
+	var focus_owner: Control = get_viewport().gui_get_focus_owner()
+	if focus_owner is LineEdit or focus_owner is TextEdit:
+		return false
+	if _active_hover_bm == null or not is_instance_valid(_active_hover_bm):
+		return false
+	return _active_hover_bm.brain_monitor_mouse_context_cortical_id() != &""
+
+
+## Pastes union of all clipboard voxels into the cortical area currently highlighted by mouseover.
+func _try_paste_clipboard_voxels_to_hovered_area() -> bool:
+	if not _can_paste_voxels_to_brain_monitor():
+		return false
+	var bm: UI_BrainMonitor_3DScene = _active_hover_bm
+	var target_area_id: StringName = bm.brain_monitor_mouse_context_cortical_id()
+	var clipboard_payload: Dictionary = VoxelClipboardPayload.parse_from_clipboard_text(DisplayServer.clipboard_get())
+	if clipboard_payload.is_empty():
+		return false
+	var union_voxels: Array[Vector3i] = VoxelClipboardPayload.union_all_voxels(clipboard_payload)
+	if union_voxels.is_empty():
+		return false
+	var apply_result: Dictionary = bm.apply_voxels_to_cortical_area_selection(target_area_id, union_voxels)
+	var added_count: int = int(apply_result.get("added_count", 0))
+	if added_count == 0:
+		return false
+	var target_area: AbstractCorticalArea = bm.get_cortical_area_visualization(String(target_area_id)).cortical_area
+	var area_label: String = String(target_area.friendly_name) if target_area != null and not String(target_area.friendly_name).is_empty() else String(target_area_id)
+	if BV != null and BV.NOTIF != null:
+		BV.NOTIF.add_notification(
+			"Pasted %d voxel(s) into %s (union from %d source area(s))." % [added_count, area_label, clipboard_payload.size()]
+		)
+	return true
 
 ## Brain monitor to use for new-circuit preview placement: [member temp_root_bm] lives under [code]test[/code] and renders **behind** [CB_Holder], so when split (or any embedded BM) exists, prefer those instances.
 func get_brain_monitor_for_new_circuit_preview() -> UI_BrainMonitor_3DScene:

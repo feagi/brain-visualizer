@@ -38,10 +38,20 @@ Use this quick lookup for navigation and camera actions currently implemented in
 
 - **Select cortical area** -> Left Click on cortical volume
 - **Select brain region frame** -> Left Click on region frame
-- **Add/remove cortical area from multi-selection** -> Ctrl + Click on cortical area
-- **Neuron hold-to-select mode while clicking/dragging** -> Hold Shift
-- **Fire selected neurons** -> Space
-- **Clear selected neurons** -> Delete
+- **Add/remove cortical area from multi-selection** -> Ctrl + Click on cortical area (Cmd + Click on macOS)
+- **Toggle voxel selection (additive)** -> Hold Shift, then Click voxels
+- **Fire selected voxels** -> Space
+- **Clear all selected voxels** -> Delete
+
+## Brain Monitor (3D) Voxel Clipboard Actions
+
+- **Open Voxel Selection Capture panel** -> Select 2+ voxels with Shift + Click
+- **Copy selected voxels JSON to clipboard** -> Ctrl + C (Cmd + C on macOS), or Voxel Selection Capture panel -> Copy JSON to clipboard
+- **Open Area Firing Recorder panel** -> Ctrl + Click one or more cortical areas
+- **Record fired voxels during simulation** -> Area Firing Recorder -> Start Recording
+- **Stop recording and copy fired voxels JSON** -> Area Firing Recorder -> Stop + Copy
+- **Paste clipboard voxels into hovered cortical area** -> Hover target area, then Ctrl + V (Cmd + V on macOS)
+- **Paste clipboard voxels into Quick Connect mapping step** -> Quick Connect Neuron window -> Paste button on source/destination side
 
 ## Manipulation Session Shortcuts (when gizmo manipulation is active)
 
@@ -52,6 +62,9 @@ Use this quick lookup for navigation and camera actions currently implemented in
 
 - **Home** behavior can vary by context and window; for Brain Monitor camera reset, use **R**.
 - Some controls are only active when the relevant panel/viewport has focus or hover.
+- **Ctrl + C** voxel copy requires at least one selected voxel and does not run while a text field is focused.
+- **Ctrl + V** voxel paste requires a cortical area under the mouse in Brain Monitor and does not run while a text field is focused.
+- Clipboard paste into a hovered area unions voxels from all areas in the JSON and additively selects them (Shift+click behavior).
 
 For additional behavior details, see [Navigation Basics](navigation.md), [Camera Controls](camera_controls.md), and [Brain Monitor](brain_monitor.md).
 
