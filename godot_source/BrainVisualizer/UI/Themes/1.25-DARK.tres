@@ -1,7 +1,4 @@
-[gd_resource type="Theme" load_steps=29 format=3 uid="uid://e4w3qtf2gyyi"]
-
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/SplitHandleBarsVertical.svg" id="2_split_handle_v"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/SplitHandleBarsHorizontal.svg" id="3_split_handle_h"]
+[gd_resource type="Theme" load_steps=27 format=3 uid="uid://e4w3qtf2gyyi"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -117,14 +114,6 @@ SplitContainer/constants/separation = 20
 HSplitContainer/constants/separation = 20
 VSplitContainer/constants/separation = 20
 SplitContainer/constants/minimum_grab_thickness = 14
-SplitContainer/icons/h_grabber = ExtResource("2_split_handle_v")
-SplitContainer/icons/v_grabber = ExtResource("3_split_handle_h")
-SplitContainer/icons/h_touch_dragger = ExtResource("2_split_handle_v")
-SplitContainer/icons/v_touch_dragger = ExtResource("3_split_handle_h")
-HSplitContainer/icons/grabber = ExtResource("2_split_handle_v")
-VSplitContainer/icons/grabber = ExtResource("3_split_handle_h")
-HSplitContainer/icons/touch_dragger = ExtResource("2_split_handle_v")
-VSplitContainer/icons/touch_dragger = ExtResource("3_split_handle_h")
 BasePanelContainerButton/base_type = &"PanelContainer"
 BasePanelContainerButton/styles/panel = SubResource("StyleBoxFlat_8j6la")
 BasePanelContainerButton/styles/panel_disabled = SubResource("StyleBoxFlat_fesjy")
