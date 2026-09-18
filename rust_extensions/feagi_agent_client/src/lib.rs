@@ -18,8 +18,8 @@ use feagi_io::AgentID;
 use feagi_serialization::FeagiByteContainer;
 use godot::prelude::*;
 use std::collections::HashMap;
-use std::sync::mpsc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc;
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -107,12 +107,12 @@ impl FeagiAgentClient {
         let token_b64 = auth_token_b64.to_string().trim().to_string();
 
         if url.is_empty() {
-            return vdict!("success": false, "error": "registration_ws_url is empty");
+            return vdict!("success" => false, "error" => "registration_ws_url is empty");
         }
         if heartbeat_interval_s <= 0.0 {
             return vdict!(
-                "success": false,
-                "error": "heartbeat_interval_s must be > 0"
+                "success" => false,
+                "error" => "heartbeat_interval_s must be > 0"
             );
         }
 
@@ -135,31 +135,31 @@ impl FeagiAgentClient {
 
         if worker_spawn.is_err() {
             return vdict!(
-                "success": false,
-                "visualization_ws_url": "",
-                "agent_id_b64": "",
-                "error": "Failed to spawn registration worker"
+                "success" => false,
+                "visualization_ws_url" => "",
+                "agent_id_b64" => "",
+                "error" => "Failed to spawn registration worker"
             );
         }
 
         match result_rx.recv_timeout(Self::REGISTRATION_WALL_TIMEOUT) {
             Ok(Ok((viz_url, agent_id_b64))) => vdict!(
-                "success": true,
-                "visualization_ws_url": viz_url,
-                "agent_id_b64": agent_id_b64,
-                "error": ""
+                "success" => true,
+                "visualization_ws_url" => viz_url,
+                "agent_id_b64" => agent_id_b64,
+                "error" => ""
             ),
             Ok(Err(error)) => vdict!(
-                "success": false,
-                "visualization_ws_url": "",
-                "agent_id_b64": "",
-                "error": error
+                "success" => false,
+                "visualization_ws_url" => "",
+                "agent_id_b64" => "",
+                "error" => error
             ),
             Err(_) => vdict!(
-                "success": false,
-                "visualization_ws_url": "",
-                "agent_id_b64": "",
-                "error": format!(
+                "success" => false,
+                "visualization_ws_url" => "",
+                "agent_id_b64" => "",
+                "error" => format!(
                     "Registration timed out after {}s",
                     Self::REGISTRATION_WALL_TIMEOUT.as_secs()
                 )
@@ -405,11 +405,8 @@ impl FeagiAgentClient {
                 };
                 while !stop_flag.load(Ordering::Acquire) {
                     let timeout = Self::heartbeat_request_timeout(heartbeat_interval);
-                    let heartbeat_result = Self::send_single_heartbeat(
-                        &registration_ws_url,
-                        session_id,
-                        timeout,
-                    );
+                    let heartbeat_result =
+                        Self::send_single_heartbeat(&registration_ws_url, session_id, timeout);
                     let wait_interval = if heartbeat_result.is_ok() {
                         heartbeat_interval
                     } else {

@@ -5,11 +5,11 @@ This class wraps the Rust CorticalAreaType enum from feagi-data-processing
 and exposes it to GDScript with a clean, type-safe API.
 */
 
-use godot::prelude::*;
-use feagi_structures::genomic::cortical_area::{CorticalAreaType, IOCorticalAreaConfigurationFlag};
 use feagi_structures::genomic::cortical_area::io_cortical_area_configuration_flag::{
     FrameChangeHandling, PercentageNeuronPositioning,
 };
+use feagi_structures::genomic::cortical_area::{CorticalAreaType, IOCorticalAreaConfigurationFlag};
+use godot::prelude::*;
 
 // ============================================================================
 // UTILITY FUNCTIONS (minimal adapters)
@@ -52,7 +52,7 @@ fn is_custom(cortical_type: &CorticalAreaType) -> bool {
 }
 
 /// Godot-exposed cortical type wrapper
-/// 
+///
 /// Wraps the authoritative Rust CorticalAreaType from feagi-data-processing.
 /// This provides type-safe cortical type handling in GDScript.
 #[derive(GodotClass)]
@@ -60,7 +60,7 @@ fn is_custom(cortical_type: &CorticalAreaType) -> bool {
 pub struct FeagiCorticalType {
     #[base]
     base: Base<Resource>,
-    
+
     /// Internal Rust type (not directly exposed to GDScript)
     internal_type: Option<CorticalAreaType>,
 }
@@ -80,7 +80,7 @@ impl FeagiCorticalType {
     // ========================================================================
     // CATEGORY QUERIES
     // ========================================================================
-    
+
     /// Get the high-level category: "IPU", "OPU", "CORE", "MEMORY", "CUSTOM"
     #[func]
     pub fn get_category(&self) -> GString {
@@ -91,7 +91,7 @@ impl FeagiCorticalType {
             GString::from("UNKNOWN")
         }
     }
-    
+
     /// Check if this is an input area (IPU)
     #[func]
     pub fn is_input(&self) -> bool {
@@ -102,7 +102,7 @@ impl FeagiCorticalType {
             false
         }
     }
-    
+
     /// Check if this is an output area (OPU)
     #[func]
     pub fn is_output(&self) -> bool {
@@ -113,7 +113,7 @@ impl FeagiCorticalType {
             false
         }
     }
-    
+
     /// Check if this is a core area
     #[func]
     pub fn is_core(&self) -> bool {
@@ -124,7 +124,7 @@ impl FeagiCorticalType {
             false
         }
     }
-    
+
     /// Check if this is a memory area
     #[func]
     pub fn is_memory(&self) -> bool {
@@ -135,7 +135,7 @@ impl FeagiCorticalType {
             false
         }
     }
-    
+
     /// Check if this is a custom area
     #[func]
     pub fn is_custom(&self) -> bool {
@@ -146,57 +146,57 @@ impl FeagiCorticalType {
             false
         }
     }
-    
+
     // ========================================================================
     // DATA TYPE QUERIES (for IPU/OPU)
     // ========================================================================
-    
+
     /// Get the data type: "CartesianPlane", "Percentage", "SignedPercentage", etc.
     #[func]
     pub fn get_data_type(&self) -> GString {
         if let Some(ref cortical_type) = self.internal_type {
             match cortical_type {
-                CorticalAreaType::BrainInput(io_type) |
-                CorticalAreaType::BrainOutput(io_type) => {
+                CorticalAreaType::BrainInput(io_type) | CorticalAreaType::BrainOutput(io_type) => {
                     Self::io_type_to_string(io_type)
                 }
-                _ => GString::from("N/A")
+                _ => GString::from("N/A"),
             }
         } else {
             GString::from("UNKNOWN")
         }
     }
-    
+
     /// Get frame handling: "Absolute" or "Incremental"
     #[func]
     pub fn get_frame_handling(&self) -> GString {
         if let Some(ref cortical_type) = self.internal_type {
             match cortical_type {
-                CorticalAreaType::BrainInput(io_type) |
-                CorticalAreaType::BrainOutput(io_type) => {
+                CorticalAreaType::BrainInput(io_type) | CorticalAreaType::BrainOutput(io_type) => {
                     Self::get_frame_handling_from_io(io_type)
                 }
-                _ => GString::from("N/A")
+                _ => GString::from("N/A"),
             }
         } else {
             GString::from("UNKNOWN")
         }
     }
-    
+
     /// Check if this uses CartesianPlane encoding
     #[func]
     pub fn is_cartesian_plane(&self) -> bool {
         if let Some(ref cortical_type) = self.internal_type {
             matches!(
                 cortical_type,
-                CorticalAreaType::BrainInput(IOCorticalAreaConfigurationFlag::CartesianPlane(_)) |
-                CorticalAreaType::BrainOutput(IOCorticalAreaConfigurationFlag::CartesianPlane(_))
+                CorticalAreaType::BrainInput(IOCorticalAreaConfigurationFlag::CartesianPlane(_))
+                    | CorticalAreaType::BrainOutput(
+                        IOCorticalAreaConfigurationFlag::CartesianPlane(_)
+                    )
             )
         } else {
             false
         }
     }
-    
+
     /// Check if this uses percentage encoding
     #[func]
     pub fn is_percentage_encoding(&self) -> bool {
@@ -204,69 +204,66 @@ impl FeagiCorticalType {
             matches!(
                 cortical_type,
                 CorticalAreaType::BrainInput(
-                    IOCorticalAreaConfigurationFlag::Percentage(_, _) |
-                    IOCorticalAreaConfigurationFlag::Percentage2D(_, _) |
-                    IOCorticalAreaConfigurationFlag::Percentage3D(_, _) |
-                    IOCorticalAreaConfigurationFlag::Percentage4D(_, _) |
-                    IOCorticalAreaConfigurationFlag::SignedPercentage(_, _) |
-                    IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _) |
-                    IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _) |
-                    IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _)
-                ) |
-                CorticalAreaType::BrainOutput(
-                    IOCorticalAreaConfigurationFlag::Percentage(_, _) |
-                    IOCorticalAreaConfigurationFlag::Percentage2D(_, _) |
-                    IOCorticalAreaConfigurationFlag::Percentage3D(_, _) |
-                    IOCorticalAreaConfigurationFlag::Percentage4D(_, _) |
-                    IOCorticalAreaConfigurationFlag::SignedPercentage(_, _) |
-                    IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _) |
-                    IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _) |
-                    IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _)
+                    IOCorticalAreaConfigurationFlag::Percentage(_, _)
+                        | IOCorticalAreaConfigurationFlag::Percentage2D(_, _)
+                        | IOCorticalAreaConfigurationFlag::Percentage3D(_, _)
+                        | IOCorticalAreaConfigurationFlag::Percentage4D(_, _)
+                        | IOCorticalAreaConfigurationFlag::SignedPercentage(_, _)
+                        | IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _)
+                        | IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _)
+                        | IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _)
+                ) | CorticalAreaType::BrainOutput(
+                    IOCorticalAreaConfigurationFlag::Percentage(_, _)
+                        | IOCorticalAreaConfigurationFlag::Percentage2D(_, _)
+                        | IOCorticalAreaConfigurationFlag::Percentage3D(_, _)
+                        | IOCorticalAreaConfigurationFlag::Percentage4D(_, _)
+                        | IOCorticalAreaConfigurationFlag::SignedPercentage(_, _)
+                        | IOCorticalAreaConfigurationFlag::SignedPercentage2D(_, _)
+                        | IOCorticalAreaConfigurationFlag::SignedPercentage3D(_, _)
+                        | IOCorticalAreaConfigurationFlag::SignedPercentage4D(_, _)
                 )
             )
         } else {
             false
         }
     }
-    
+
     /// Check if this uses absolute frame handling
     #[func]
     pub fn uses_absolute_frames(&self) -> bool {
         if let Some(ref cortical_type) = self.internal_type {
             match cortical_type {
-                CorticalAreaType::BrainInput(io_type) |
-                CorticalAreaType::BrainOutput(io_type) => {
+                CorticalAreaType::BrainInput(io_type) | CorticalAreaType::BrainOutput(io_type) => {
                     Self::check_frame_handling(io_type, FrameChangeHandling::Absolute)
                 }
-                _ => false
+                _ => false,
             }
         } else {
             false
         }
     }
-    
+
     /// Check if this uses incremental frame handling
     #[func]
     pub fn uses_incremental_frames(&self) -> bool {
         if let Some(ref cortical_type) = self.internal_type {
             match cortical_type {
-                CorticalAreaType::BrainInput(io_type) |
-                CorticalAreaType::BrainOutput(io_type) => {
+                CorticalAreaType::BrainInput(io_type) | CorticalAreaType::BrainOutput(io_type) => {
                     Self::check_frame_handling(io_type, FrameChangeHandling::Incremental)
                 }
-                _ => false
+                _ => false,
             }
         } else {
             false
         }
     }
-    
+
     // ========================================================================
     // API SERIALIZATION
     // ========================================================================
-    
+
     /// Export to dictionary for API calls
-    /// 
+    ///
     /// Returns a dictionary matching the API's cortical_type_info format:
     /// {
     ///   "category": "IPU",
@@ -275,40 +272,38 @@ impl FeagiCorticalType {
     ///   "encoding_details": {...}
     /// }
     #[func]
-    pub fn to_api_dict(&self) -> Dictionary {
-        let mut dict = Dictionary::new();
-        
+    pub fn to_api_dict(&self) -> VarDictionary {
+        let mut dict = VarDictionary::new();
+
         if let Some(ref cortical_type) = self.internal_type {
-            dict.set("category", self.get_category());
-            
+            dict.set("category", &self.get_category());
+
             // Add data_type and frame_handling for IPU/OPU
             match cortical_type {
-                CorticalAreaType::BrainInput(io_type) |
-                CorticalAreaType::BrainOutput(io_type) => {
-                    dict.set("data_type", Self::io_type_to_string(io_type));
-                    dict.set("frame_handling", Self::get_frame_handling_from_io(io_type));
-                    
+                CorticalAreaType::BrainInput(io_type) | CorticalAreaType::BrainOutput(io_type) => {
+                    dict.set("data_type", &Self::io_type_to_string(io_type));
+                    dict.set("frame_handling", &Self::get_frame_handling_from_io(io_type));
+
                     // Add encoding details if applicable
                     if let Some(details) = Self::get_encoding_details(io_type) {
-                        dict.set("encoding_details", details);
+                        dict.set("encoding_details", &details);
                     }
                 }
                 _ => {}
             }
         }
-        
+
         dict
     }
-    
+
     /// Get human-readable description
-    /// 
+    ///
     /// Example: "IPU - CartesianPlane (Absolute)"
     #[func]
     pub fn get_description(&self) -> GString {
         if let Some(ref cortical_type) = self.internal_type {
             match cortical_type {
-                CorticalAreaType::BrainInput(io_type) |
-                CorticalAreaType::BrainOutput(io_type) => {
+                CorticalAreaType::BrainInput(io_type) | CorticalAreaType::BrainOutput(io_type) => {
                     let desc = format!(
                         "{} - {} ({})",
                         self.get_category(),
@@ -317,27 +312,27 @@ impl FeagiCorticalType {
                     );
                     GString::from(desc.as_str())
                 }
-                _ => self.get_category()
+                _ => self.get_category(),
             }
         } else {
             GString::from("UNKNOWN")
         }
     }
-    
+
     // ========================================================================
     // INTERNAL HELPERS
     // ========================================================================
-    
+
     /// Set internal type (used by factory)
     pub(crate) fn set_internal_type(&mut self, cortical_type: CorticalAreaType) {
         self.internal_type = Some(cortical_type);
     }
-    
+
     /// Get internal type (used by validator)
     pub(crate) fn get_internal_type(&self) -> Option<&CorticalAreaType> {
         self.internal_type.as_ref()
     }
-    
+
     fn io_type_to_string(io_type: &IOCorticalAreaConfigurationFlag) -> GString {
         use IOCorticalAreaConfigurationFlag::*;
         let name = match io_type {
@@ -356,7 +351,7 @@ impl FeagiCorticalType {
         };
         GString::from(name)
     }
-    
+
     fn get_frame_handling_from_io(io_type: &IOCorticalAreaConfigurationFlag) -> GString {
         use IOCorticalAreaConfigurationFlag::*;
         let handling = match io_type {
@@ -373,14 +368,17 @@ impl FeagiCorticalType {
             PoseEstimation(h, _) => h,
             Boolean => &FrameChangeHandling::Absolute, // Boolean uses absolute by default
         };
-        
+
         match handling {
             FrameChangeHandling::Absolute => GString::from("Absolute"),
             FrameChangeHandling::Incremental => GString::from("Incremental"),
         }
     }
-    
-    fn check_frame_handling(io_type: &IOCorticalAreaConfigurationFlag, target: FrameChangeHandling) -> bool {
+
+    fn check_frame_handling(
+        io_type: &IOCorticalAreaConfigurationFlag,
+        target: FrameChangeHandling,
+    ) -> bool {
         use IOCorticalAreaConfigurationFlag::*;
         let handling = match io_type {
             CartesianPlane(h) => h,
@@ -398,31 +396,42 @@ impl FeagiCorticalType {
         };
         *handling == target
     }
-    
-    fn get_encoding_details(io_type: &IOCorticalAreaConfigurationFlag) -> Option<Dictionary> {
+
+    fn get_encoding_details(io_type: &IOCorticalAreaConfigurationFlag) -> Option<VarDictionary> {
         use IOCorticalAreaConfigurationFlag::*;
-        
+
         match io_type {
-            Percentage(_, pos) | Percentage2D(_, pos) | Percentage3D(_, pos) | Percentage4D(_, pos) => {
-                let mut dict = Dictionary::new();
+            Percentage(_, pos)
+            | Percentage2D(_, pos)
+            | Percentage3D(_, pos)
+            | Percentage4D(_, pos) => {
+                let mut dict = VarDictionary::new();
                 dict.set("signed", false);
-                dict.set("positioning", match pos {
-                    PercentageNeuronPositioning::Linear => "Linear",
-                    PercentageNeuronPositioning::Fractional => "Fractional",
-                });
+                dict.set(
+                    "positioning",
+                    match pos {
+                        PercentageNeuronPositioning::Linear => "Linear",
+                        PercentageNeuronPositioning::Fractional => "Fractional",
+                    },
+                );
                 Some(dict)
             }
-            SignedPercentage(_, pos) | SignedPercentage2D(_, pos) | SignedPercentage3D(_, pos) | SignedPercentage4D(_, pos) => {
-                let mut dict = Dictionary::new();
+            SignedPercentage(_, pos)
+            | SignedPercentage2D(_, pos)
+            | SignedPercentage3D(_, pos)
+            | SignedPercentage4D(_, pos) => {
+                let mut dict = VarDictionary::new();
                 dict.set("signed", true);
-                dict.set("positioning", match pos {
-                    PercentageNeuronPositioning::Linear => "Linear",
-                    PercentageNeuronPositioning::Fractional => "Fractional",
-                });
+                dict.set(
+                    "positioning",
+                    match pos {
+                        PercentageNeuronPositioning::Linear => "Linear",
+                        PercentageNeuronPositioning::Fractional => "Fractional",
+                    },
+                );
                 Some(dict)
             }
-            _ => None
+            _ => None,
         }
     }
 }
-

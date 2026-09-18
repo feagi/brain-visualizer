@@ -5,7 +5,7 @@ edition = "2021"
 description = "FEAGI agent registration client GDExtension - uses feagi-agent SDK for standard registration and session/byte-container handling"
 
 [dependencies]
-godot = { git = "https://github.com/godot-rust/gdext", rev = "2862a25b222ee6e18dede2594617f4bf3e3d1027", features = ["experimental-wasm", "lazy-function-tables", "api-4-5"] }
+godot = { version = "0.5.5", features = ["experimental-wasm", "lazy-function-tables", "api-4-7"] }
 
 # FEAGI agent SDK (crates.io; unified feagi-core release line)
 feagi-agent = { version = "^0.0.24", default-features = false, features = ["agent-client", "agent-transport-websocket-std"] }

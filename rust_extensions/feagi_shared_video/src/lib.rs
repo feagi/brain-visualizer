@@ -1,6 +1,6 @@
-use godot::prelude::*;
-use godot::classes::{Image, ImageTexture};
 use godot::classes::image::Format;
+use godot::classes::{Image, ImageTexture};
+use godot::prelude::*;
 use memmap2::Mmap;
 use memmap2::MmapOptions;
 use std::fs::File;
@@ -39,7 +39,11 @@ pub struct SharedMemVideo {
 #[godot_api]
 impl IRefCounted for SharedMemVideo {
     fn init(base: Base<RefCounted>) -> Self {
-        Self { base, path: None, mmap: None }
+        Self {
+            base,
+            path: None,
+            mmap: None,
+        }
     }
 }
 
@@ -67,7 +71,10 @@ impl SharedMemVideo {
         };
 
         if mmap.len() < HEADER_SIZE {
-            godot_error!("SharedMemVideo: file too small to contain header: {} bytes", mmap.len());
+            godot_error!(
+                "SharedMemVideo: file too small to contain header: {} bytes",
+                mmap.len()
+            );
             return false;
         }
         // Validate magic
@@ -111,16 +118,37 @@ impl SharedMemVideo {
             return None;
         }
 
-        let width = match read_u32_le(mmap, 12) { Some(v) => v, None => return None } as i64;
-        let height = match read_u32_le(mmap, 16) { Some(v) => v, None => return None } as i64;
-        let channels = match read_u32_le(mmap, 20) { Some(v) => v, None => return None } as usize;
+        let width = match read_u32_le(mmap, 12) {
+            Some(v) => v,
+            None => return None,
+        } as i64;
+        let height = match read_u32_le(mmap, 16) {
+            Some(v) => v,
+            None => return None,
+        } as i64;
+        let channels = match read_u32_le(mmap, 20) {
+            Some(v) => v,
+            None => return None,
+        } as usize;
         if channels != 3 || width <= 0 || height <= 0 {
             return None;
         }
-        let frame_stride = match read_u64_le(mmap, 32) { Some(v) => v, None => return None } as usize;
-        let num_slots = match read_u32_le(mmap, 28) { Some(v) => v, None => return None } as usize;
-        let write_index_1 = match read_u32_le(mmap, 40) { Some(v) => v, None => return None } as usize;
-        let seq_1 = match read_u64_le(mmap, 44) { Some(v) => v, None => return None };
+        let frame_stride = match read_u64_le(mmap, 32) {
+            Some(v) => v,
+            None => return None,
+        } as usize;
+        let num_slots = match read_u32_le(mmap, 28) {
+            Some(v) => v,
+            None => return None,
+        } as usize;
+        let write_index_1 = match read_u32_le(mmap, 40) {
+            Some(v) => v,
+            None => return None,
+        } as usize;
+        let seq_1 = match read_u64_le(mmap, 44) {
+            Some(v) => v,
+            None => return None,
+        };
 
         if num_slots == 0 {
             return None;
@@ -142,8 +170,14 @@ impl SharedMemVideo {
         frame_data.extend_from_slice(&mmap[frame_offset..frame_offset + frame_stride]);
 
         // Verify sequence did not change; if changed, try one more time
-        let write_index_2 = match read_u32_le(mmap, 40) { Some(v) => v, None => return None } as usize;
-        let seq_2 = match read_u64_le(mmap, 44) { Some(v) => v, None => return None };
+        let write_index_2 = match read_u32_le(mmap, 40) {
+            Some(v) => v,
+            None => return None,
+        } as usize;
+        let seq_2 = match read_u64_le(mmap, 44) {
+            Some(v) => v,
+            None => return None,
+        };
         if seq_2 != seq_1 || write_index_2 != write_index_1 {
             let frame_offset2 = HEADER_SIZE + (write_index_2 % num_slots) * frame_stride;
             if frame_offset2 + frame_stride <= mmap.len() {
@@ -166,17 +200,31 @@ impl SharedMemVideo {
 
     /// Return current header info for debugging and UI display.
     #[func]
-    pub fn get_header_info(&self) -> Dictionary {
-        let mut d = Dictionary::new();
+    pub fn get_header_info(&self) -> VarDictionary {
+        let mut d = VarDictionary::new();
         if let Some(mmap) = self.mmap.as_ref() {
             if mmap.len() >= HEADER_SIZE && &mmap[0..8] == MAGIC {
-                if let Some(v) = read_u32_le(mmap, 12) { d.set("width", v as i64); }
-                if let Some(v) = read_u32_le(mmap, 16) { d.set("height", v as i64); }
-                if let Some(v) = read_u32_le(mmap, 20) { d.set("channels", v as i64); }
-                if let Some(v) = read_u32_le(mmap, 28) { d.set("num_slots", v as i64); }
-                if let Some(v) = read_u64_le(mmap, 32) { d.set("frame_stride", v as i64); }
-                if let Some(v) = read_u32_le(mmap, 40) { d.set("write_index", v as i64); }
-                if let Some(v) = read_u64_le(mmap, 44) { d.set("frame_seq", v as i64); }
+                if let Some(v) = read_u32_le(mmap, 12) {
+                    d.set("width", v as i64);
+                }
+                if let Some(v) = read_u32_le(mmap, 16) {
+                    d.set("height", v as i64);
+                }
+                if let Some(v) = read_u32_le(mmap, 20) {
+                    d.set("channels", v as i64);
+                }
+                if let Some(v) = read_u32_le(mmap, 28) {
+                    d.set("num_slots", v as i64);
+                }
+                if let Some(v) = read_u64_le(mmap, 32) {
+                    d.set("frame_stride", v as i64);
+                }
+                if let Some(v) = read_u32_le(mmap, 40) {
+                    d.set("write_index", v as i64);
+                }
+                if let Some(v) = read_u64_le(mmap, 44) {
+                    d.set("frame_seq", v as i64);
+                }
                 d.set("file_len", mmap.len() as i64);
                 return d;
             }
@@ -188,7 +236,8 @@ impl SharedMemVideo {
     /// Get the file path that was opened (for reopening on restart detection).
     #[func]
     pub fn get_path(&self) -> GString {
-        self.path.as_ref()
+        self.path
+            .as_ref()
             .map(|p| GString::from(p.as_str()))
             .unwrap_or_else(|| GString::from(""))
     }
@@ -198,6 +247,3 @@ struct Lib;
 
 #[gdextension]
 unsafe impl ExtensionLibrary for Lib {}
-
-
-

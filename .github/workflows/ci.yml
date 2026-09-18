@@ -185,7 +185,7 @@ jobs:
       - name: Setup Godot
         uses: lihop/setup-godot@v2
         with:
-          version: '4.2.2'
+          version: '4.7.2'
           export-templates: true
 
       - name: Verify Godot project structure
@@ -241,7 +241,7 @@ jobs:
       - name: Setup Godot
         uses: lihop/setup-godot@v2
         with:
-          version: '4.2.2'
+          version: '4.7.2'
           export-templates: true
 
       - name: Cache Rust dependencies

@@ -8,7 +8,7 @@ description = "FEAGI Embedded - GDExtension for running FEAGI in Godot applicati
 
 [dependencies]
 # Godot Rust bindings (desktop only - no WASM support for embedded FEAGI)
-godot = { git = "https://github.com/godot-rust/gdext", rev = "309881cab73255934a0c85853f4e52de278f114c", features = ["api-4-5"] }
+godot = { version = "0.5.5", features = ["api-4-7"] }
 
 # Application embedding layer: sibling feagi-rs (crate name `feagi-rs`, Rust import `feagi`).
 # feagi-* crates below resolve from crates.io (feagi-core 0.0.24 release train).

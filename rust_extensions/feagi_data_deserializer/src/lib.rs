@@ -111,7 +111,7 @@ impl FeagiDataDeserializer {
 
     /// Decode Type 11 neuron data (handles both raw Type 11 and FeagiByteContainer wrappers)
     #[func]
-    pub fn decode_type_11_data(&self, buffer: PackedByteArray) -> Dictionary {
+    pub fn decode_type_11_data(&self, buffer: PackedByteArray) -> VarDictionary {
         // Convert PackedByteArray to Vec<u8> for Rust processing
         let rust_buffer: Vec<u8> = buffer.to_vec();
 
@@ -218,7 +218,7 @@ impl FeagiDataDeserializer {
     ///   - dimensions: Cortical area dimensions (Vector3)
     ///   - max_neurons: Maximum neurons to process (0 = unlimited)
     ///
-    /// Returns: Dictionary with:
+    /// Returns: VarDictionary with:
     ///   - success: bool
     ///   - transforms: PackedFloat32Array (12 floats per transform: 3x4 matrix)
     ///   - colors: PackedFloat32Array (4 floats per color: RGBA)
@@ -231,7 +231,7 @@ impl FeagiDataDeserializer {
         buffer: PackedByteArray,
         dimensions: Vector3,
         max_neurons: i32,
-    ) -> Dictionary {
+    ) -> VarDictionary {
         let start_time = std::time::Instant::now();
 
         // Convert PackedByteArray to Vec<u8>
@@ -384,10 +384,10 @@ impl FeagiDataDeserializer {
         );
 
         // Return result dictionary
-        let mut result = Dictionary::new();
+        let mut result = VarDictionary::new();
         result.set("success", true);
-        result.set("transforms", transforms_array);
-        result.set("colors", colors_array);
+        result.set("transforms", &transforms_array);
+        result.set("colors", &colors_array);
         result.set("neuron_count", actual_count as i32);
         result.set("processing_time_us", processing_time);
         result.set("error", "");
@@ -403,7 +403,7 @@ impl FeagiDataDeserializer {
     ///   - x_array, y_array, z_array: Neuron coordinates
     ///   - dimensions: Cortical area dimensions
     ///
-    /// Returns: Dictionary with success, neuron_count, processing_time_us
+    /// Returns: VarDictionary with success, neuron_count, processing_time_us
     #[func]
     pub fn apply_arrays_to_multimesh(
         &self,
@@ -412,7 +412,7 @@ impl FeagiDataDeserializer {
         y_array: PackedInt32Array,
         z_array: PackedInt32Array,
         dimensions: Vector3,
-    ) -> Dictionary {
+    ) -> VarDictionary {
         let start_time = std::time::Instant::now();
 
         // Validate array sizes
@@ -420,7 +420,7 @@ impl FeagiDataDeserializer {
         if array_len != y_array.len() || array_len != z_array.len() {
             godot_error!("🦀 Array size mismatch");
             multi_mesh.set_instance_count(0);
-            let mut result = Dictionary::new();
+            let mut result = VarDictionary::new();
             result.set("success", false);
             result.set("error", "Array size mismatch");
             return result;
@@ -428,7 +428,7 @@ impl FeagiDataDeserializer {
 
         if array_len == 0 {
             multi_mesh.set_instance_count(0);
-            let mut result = Dictionary::new();
+            let mut result = VarDictionary::new();
             result.set("success", true);
             result.set("neuron_count", 0);
             return result;
@@ -437,7 +437,7 @@ impl FeagiDataDeserializer {
         if !dimensions_valid_for_neuron_multimesh(dimensions) {
             godot_error!("Invalid cortical dimensions for multimesh (must be finite and > 0)");
             multi_mesh.set_instance_count(0);
-            let mut result = Dictionary::new();
+            let mut result = VarDictionary::new();
             result.set("success", false);
             result.set(
                 "error",
@@ -485,7 +485,7 @@ impl FeagiDataDeserializer {
 
         let elapsed = start_time.elapsed().as_micros() as i64;
 
-        let mut result = Dictionary::new();
+        let mut result = VarDictionary::new();
         result.set("success", true);
         result.set("neuron_count", array_len as i32);
         result.set("processing_time_us", elapsed);
@@ -497,22 +497,22 @@ impl FeagiDataDeserializer {
     ///
     /// Args:
     ///  - buffer: raw WebSocket packet (LZ4 header + compressed FeagiByteContainer)
-    ///  - multimeshes_by_id: Dictionary[cortical_id -> MultiMesh]
-    ///  - dimensions_by_id: Dictionary[cortical_id -> Vector3]
+    ///  - multimeshes_by_id: VarDictionary[cortical_id -> MultiMesh]
+    ///  - dimensions_by_id: VarDictionary[cortical_id -> Vector3]
     ///  - clear_all_before_apply: if true, sets instance_count=0 on all registered MultiMeshes first
     ///
-    /// Returns Dictionary with timing breakdown (ms) and per-area neuron counts.
+    /// Returns VarDictionary with timing breakdown (ms) and per-area neuron counts.
     #[func]
     pub fn apply_type11_packet_to_multimeshes(
         &self,
         buffer: PackedByteArray,
-        multimeshes_by_id: Dictionary,
-        dimensions_by_id: Dictionary,
+        multimeshes_by_id: VarDictionary,
+        dimensions_by_id: VarDictionary,
         clear_all_before_apply: bool,
-    ) -> Dictionary {
+    ) -> VarDictionary {
         let total_start = std::time::Instant::now();
 
-        let mut out = Dictionary::new();
+        let mut out = VarDictionary::new();
         out.set("success", false);
         out.set("error", "");
         out.set("lz4_ms", 0.0);
@@ -522,7 +522,7 @@ impl FeagiDataDeserializer {
         out.set("total_ms", 0.0);
         out.set("areas_applied", 0);
         out.set("neurons_applied", 0);
-        out.set("area_counts", Dictionary::new());
+        out.set("area_counts", &VarDictionary::new());
 
         let rust_buffer: Vec<u8> = buffer.to_vec();
         if rust_buffer.is_empty() {
@@ -603,7 +603,7 @@ impl FeagiDataDeserializer {
             let apply_start = std::time::Instant::now();
             let mut areas_applied: i32 = 0;
             let mut neurons_applied: i32 = 0;
-            let mut area_counts = Dictionary::new();
+            let mut area_counts = VarDictionary::new();
 
             for (cortical_id, neuron_array) in neuron_data_ref.mappings.iter() {
                 let num_neurons = neuron_array.len();
@@ -704,7 +704,7 @@ impl FeagiDataDeserializer {
                 out.set("multimesh_apply_ms", multimesh_apply_ms);
                 out.set("areas_applied", areas_applied);
                 out.set("neurons_applied", neurons_applied);
-                out.set("area_counts", area_counts);
+                out.set("area_counts", &area_counts);
                 out.set("success", true);
             }
             Ok(Err(e)) => {
@@ -736,7 +736,7 @@ impl FeagiDataDeserializer {
         z_array: PackedInt32Array,
         dimensions: Vector3,
         max_neurons: i32,
-    ) -> Dictionary {
+    ) -> VarDictionary {
         let start_time = std::time::Instant::now();
 
         // Validate array sizes
@@ -822,10 +822,10 @@ impl FeagiDataDeserializer {
         );
 
         // Return result dictionary
-        let mut result = Dictionary::new();
+        let mut result = VarDictionary::new();
         result.set("success", true);
-        result.set("transforms", transforms_array);
-        result.set("colors", colors_array);
+        result.set("transforms", &transforms_array);
+        result.set("colors", &colors_array);
         result.set("neuron_count", process_count as i32);
         result.set("processing_time_us", processing_time);
         result.set("error", "");
@@ -840,8 +840,8 @@ impl FeagiDataDeserializer {
     ///
     /// Returns: Dictionary with {success: bool, encoding_type: String, encoding_format: String, error: String}
     #[func]
-    pub fn parse_cortical_id_encoding(&self, cortical_id: GString) -> Dictionary {
-        let mut result = Dictionary::new();
+    pub fn parse_cortical_id_encoding(&self, cortical_id: GString) -> VarDictionary {
+        let mut result = VarDictionary::new();
         let id_str = cortical_id.to_string();
 
         // Use FDP's CorticalID parser (base64 only - legacy IDs do not have binary config)
@@ -980,12 +980,12 @@ impl FeagiDataDeserializer {
         channel_dimensions_y: i32,
         channel_dimensions_z: i32,
         num_channels: i32,
-    ) -> Dictionary {
+    ) -> VarDictionary {
         use feagi_sensorimotor::single_voxel_decode::{
             decode_single_voxel, decode_single_voxel_from_encoding, ChannelDimensions,
         };
 
-        let mut result = Dictionary::new();
+        let mut result = VarDictionary::new();
 
         if voxel_x < 0 || voxel_y < 0 || voxel_z < 0 {
             result.set("success", false);
@@ -1064,7 +1064,7 @@ impl FeagiDataDeserializer {
     /// This preserves unit identifiers and updates the encoding configuration
     /// based on the selected signage/behavior/type options.
     ///
-    /// Returns: Dictionary {success: bool, cortical_id: String, error: String}
+    /// Returns: VarDictionary {success: bool, cortical_id: String, error: String}
     #[func]
     pub fn compute_io_cortical_id(
         &self,
@@ -1072,8 +1072,8 @@ impl FeagiDataDeserializer {
         coding_signage: GString,
         coding_behavior: GString,
         coding_type: GString,
-    ) -> Dictionary {
-        let mut result = Dictionary::new();
+    ) -> VarDictionary {
+        let mut result = VarDictionary::new();
         let id_str = cortical_id.to_string();
 
         let cortical_id_obj = match CorticalID::try_from_base_64(&id_str) {
@@ -1279,14 +1279,14 @@ impl FeagiDataDeserializer {
 
     /// Compute a new IO cortical ID by changing the unit index only.
     ///
-    /// Returns: Dictionary {success: bool, cortical_id: String, error: String}
+    /// Returns: VarDictionary {success: bool, cortical_id: String, error: String}
     #[func]
     pub fn compute_io_cortical_id_with_unit_index(
         &self,
         cortical_id: GString,
         unit_index: i64,
-    ) -> Dictionary {
-        let mut result = Dictionary::new();
+    ) -> VarDictionary {
+        let mut result = VarDictionary::new();
         let id_str = cortical_id.to_string();
 
         let cortical_id_obj = match CorticalID::try_from_base_64(&id_str) {
@@ -1344,20 +1344,20 @@ impl FeagiDataDeserializer {
     /// Parse `device_registrations` JSON (object with input/output unit maps) and return every
     /// declared IPU/OPU cortical ID (standard base64) that FEAGI may auto-provision from agent registration.
     ///
-    /// Returns: `Dictionary` with `success` (bool), `cortical_ids` ([PackedStringArray]), `error` (String).
+    /// Returns: `VarDictionary` with `success` (bool), `cortical_ids` ([PackedStringArray]), `error` (String).
     #[func]
     pub fn derive_io_cortical_ids_from_device_registrations_json(
         &self,
         device_registrations_json: GString,
-    ) -> Dictionary {
-        let mut result = Dictionary::new();
+    ) -> VarDictionary {
+        let mut result = VarDictionary::new();
         let text = device_registrations_json.to_string();
         let value: serde_json::Value = match serde_json::from_str(&text) {
             Ok(v) => v,
             Err(e) => {
                 result.set("success", false);
                 result.set("error", format!("Invalid device_registrations JSON: {}", e));
-                result.set("cortical_ids", PackedStringArray::new());
+                result.set("cortical_ids", &PackedStringArray::new());
                 return result;
             }
         };
@@ -1369,7 +1369,7 @@ impl FeagiDataDeserializer {
         }
         result.set("success", true);
         result.set("error", "");
-        result.set("cortical_ids", arr);
+        result.set("cortical_ids", &arr);
         result
     }
 }
@@ -1564,16 +1564,16 @@ impl FeagiDataDeserializer {
         [red_intensity, 0.0, 0.0, 1.0] // Red gradient with full alpha
     }
 
-    /// Convert official neuron data structure to Godot Dictionary
+    /// Convert official neuron data structure to Godot VarDictionary
     fn convert_neuron_data_to_godot(
         &self,
         neuron_data: &CorticalMappedXYZPNeuronVoxels,
-    ) -> Dictionary {
-        let mut result_dict = Dictionary::new();
+    ) -> VarDictionary {
+        let mut result_dict = VarDictionary::new();
         result_dict.set("success", true);
         result_dict.set("error", "");
 
-        let mut areas_dict = Dictionary::new();
+        let mut areas_dict = VarDictionary::new();
         let mut total_neurons: i32 = 0;
 
         // Iterate through each cortical area in the neuron data using 'mappings' field
@@ -1592,7 +1592,7 @@ impl FeagiDataDeserializer {
             let cortical_id_str = cortical_id.as_base_64();
 
             // Create area data dictionary
-            let mut area_dict = Dictionary::new();
+            let mut area_dict = VarDictionary::new();
 
             // Convert arrays to Godot PackedArrays
             let mut x_array = PackedInt32Array::new();
@@ -1608,26 +1608,26 @@ impl FeagiDataDeserializer {
                 p_array.push(neuron.potential);
             }
 
-            area_dict.set("x_array", x_array);
-            area_dict.set("y_array", y_array);
-            area_dict.set("z_array", z_array);
-            area_dict.set("p_array", p_array);
+            area_dict.set("x_array", &x_array);
+            area_dict.set("y_array", &y_array);
+            area_dict.set("z_array", &z_array);
+            area_dict.set("p_array", &p_array);
 
-            areas_dict.set(cortical_id_str, area_dict);
+            areas_dict.set(cortical_id_str, &area_dict);
         }
 
-        result_dict.set("areas", areas_dict);
+        result_dict.set("areas", &areas_dict);
         result_dict.set("total_neurons", total_neurons);
 
         result_dict
     }
 
     /// Create error dictionary
-    fn create_error_dict(&self, error_msg: String) -> Dictionary {
-        let mut error_dict = Dictionary::new();
+    fn create_error_dict(&self, error_msg: String) -> VarDictionary {
+        let mut error_dict = VarDictionary::new();
         error_dict.set("success", false);
         error_dict.set("error", error_msg);
-        error_dict.set("areas", Dictionary::new());
+        error_dict.set("areas", &VarDictionary::new());
         error_dict.set("total_neurons", 0);
         error_dict
     }
@@ -1637,12 +1637,12 @@ impl FeagiDataDeserializer {
         &self,
         error_msg: String,
         processing_time_us: i64,
-    ) -> Dictionary {
-        let mut error_dict = Dictionary::new();
+    ) -> VarDictionary {
+        let mut error_dict = VarDictionary::new();
         error_dict.set("success", false);
         error_dict.set("error", error_msg);
-        error_dict.set("transforms", PackedFloat32Array::new());
-        error_dict.set("colors", PackedFloat32Array::new());
+        error_dict.set("transforms", &PackedFloat32Array::new());
+        error_dict.set("colors", &PackedFloat32Array::new());
         error_dict.set("neuron_count", 0);
         error_dict.set("processing_time_us", processing_time_us);
         error_dict

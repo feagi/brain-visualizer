@@ -4,7 +4,7 @@ This document describes how to build and export Brain Visualizer for different p
 
 ## Prerequisites
 
-- **Godot 4.5+** (stable)
+- **Godot 4.7.2** (stable)
 - **Rust** (for building native extensions)
 - **Python 3.8+** (for build scripts)
 
@@ -120,15 +120,15 @@ For other CI systems:
 
 ```bash
 # Install Godot
-wget https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
-unzip Godot_v4.5-stable_macos.universal.zip
+wget https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_macos.universal.zip
+unzip Godot_v4.7.2-stable_macos.universal.zip
 GODOT_BIN="$(pwd)/Godot.app/Contents/MacOS/Godot"
 
 # Install export templates
 $GODOT_BIN --headless --quit  # First run creates config dir
-wget https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
-mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
-unzip Godot_v4.5-stable_export_templates.tpz -d "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
+wget https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.7.2.stable"
+unzip Godot_v4.7.2-stable_export_templates.tpz -d "$HOME/Library/Application Support/Godot/export_templates/4.7.2.stable"
 
 # Build Rust extensions
 cd rust_extensions

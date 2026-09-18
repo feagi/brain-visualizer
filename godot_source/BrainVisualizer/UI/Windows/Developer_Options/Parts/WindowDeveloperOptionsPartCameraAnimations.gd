@@ -24,6 +24,12 @@ var _suppress_json_cache_writes: bool = false
 
 var _animation_save: TextEdit
 var _play_button: Button
+var _cached_lin_interp: Animation.InterpolationType = Animation.INTERPOLATION_LINEAR
+var _cached_rot_interp: Animation.InterpolationType = Animation.INTERPOLATION_LINEAR
+var _has_cached_interp: bool = false
+var _presentation_prev_camera_mode: UI_BrainMonitor_PancakeCamera.MODE = UI_BrainMonitor_PancakeCamera.MODE.TANK
+var _presentation_prev_allow_user_control: bool = true
+var _camera_mode_locked_for_animation: bool = false
 
 func _ready() -> void:
 	_animation_save = $AnimationSave
@@ -150,16 +156,24 @@ func execute_json() -> void:
 	if parsed_frames.is_empty():
 		BV.NOTIF.add_notification("Camera animation has no frames!")
 		return
+	if not _cache_interpolation_settings():
+		return
 	_enter_presentation_mode(parsed_frames)
 
 
-func _build_animation_from_frames(frames: Array[Dictionary], start_index: int = 0) -> Animation:
+## Builds a position/rotation animation targeting [param track_path] from the AnimationMixer root.
+static func build_camera_transform_animation(
+	frames: Array[Dictionary],
+	start_index: int,
+	track_path: NodePath,
+	lin_interp: Animation.InterpolationType,
+	rot_interp: Animation.InterpolationType
+) -> Animation:
 	var generated_animation: Animation = Animation.new()
 	generated_animation.add_track(Animation.TrackType.TYPE_POSITION_3D, 0)
 	generated_animation.add_track(Animation.TrackType.TYPE_ROTATION_3D, 1)
-	# Target the camera node itself (AnimationPlayer will be a child of the camera)
-	generated_animation.track_set_path(0, NodePath("."))
-	generated_animation.track_set_path(1, NodePath("."))
+	generated_animation.track_set_path(0, track_path)
+	generated_animation.track_set_path(1, track_path)
 
 	var frame_time: float = 0.0
 	for i in range(start_index, frames.size()):
@@ -168,52 +182,119 @@ func _build_animation_from_frames(frames: Array[Dictionary], start_index: int = 
 		var frame_rot: Quaternion = FEAGIUtils.untyped_array_to_quaternion(frame["rotation"])
 		generated_animation.position_track_insert_key(0, frame_time, frame_pos)
 		generated_animation.rotation_track_insert_key(1, frame_time, frame_rot)
-		frame_time += frame["time"]
+		frame_time += float(frame["time"])
 
 	generated_animation.length = frame_time
-	var lin_interp_option: OptionButton = get_node("../MovementInterp/move_interp") as OptionButton
-	var rot_interp_option: OptionButton = get_node("../RotationInterp/rot_interp") as OptionButton
-	var lin_interp: Animation.InterpolationType = lin_interp_option.get_selected_id() as Animation.InterpolationType
-	var rot_interp: Animation.InterpolationType = rot_interp_option.get_selected_id() as Animation.InterpolationType
 	generated_animation.track_set_interpolation_type(0, lin_interp)
 	generated_animation.track_set_interpolation_type(1, rot_interp)
 	return generated_animation
 
 
-func _ensure_camera_animation_player() -> AnimationPlayer:
-	var player: AnimationPlayer
+## Resolves the camera path from the mixer's configured root. Empty if the root is missing.
+static func resolve_camera_track_path(player: AnimationPlayer, camera: Node3D) -> NodePath:
+	if player == null or camera == null:
+		return NodePath()
+	var root: Node = player.get_node_or_null(player.root_node)
+	if root == null:
+		return NodePath()
+	return root.get_path_to(camera)
+
+
+func _cache_interpolation_settings() -> bool:
+	var lin_interp_option: OptionButton = _find_named_option_button("MovementInterp", "move_interp")
+	var rot_interp_option: OptionButton = _find_named_option_button("RotationInterp", "rot_interp")
+	if lin_interp_option == null or rot_interp_option == null:
+		BV.NOTIF.add_notification("Developer Camera Animations: Interpolation controls not found")
+		return false
+	_cached_lin_interp = lin_interp_option.get_selected_id() as Animation.InterpolationType
+	_cached_rot_interp = rot_interp_option.get_selected_id() as Animation.InterpolationType
+	_has_cached_interp = true
+	return true
+
+
+func _find_named_option_button(container_name: String, option_name: String) -> OptionButton:
+	var walker: Node = get_parent()
+	while walker != null:
+		if walker.has_node(container_name + "/" + option_name):
+			return walker.get_node(container_name + "/" + option_name) as OptionButton
+		walker = walker.get_parent()
+	return null
+
+
+func _animation_player_host() -> Node:
+	if _camera != null and _camera.get_parent() != null:
+		return _camera.get_parent()
+	return _camera
+
+
+func _find_camera_animation_player() -> AnimationPlayer:
+	if _camera == null:
+		return null
+	var host: Node = _animation_player_host()
+	if host != null and host.has_node("AnimationPlayer"):
+		return host.get_node("AnimationPlayer") as AnimationPlayer
 	if _camera.has_node("AnimationPlayer"):
-		player = _camera.get_node("AnimationPlayer") as AnimationPlayer
-	else:
+		return _camera.get_node("AnimationPlayer") as AnimationPlayer
+	return null
+
+
+func _ensure_camera_animation_player() -> AnimationPlayer:
+	var player: AnimationPlayer = _find_camera_animation_player()
+	if player == null:
 		player = AnimationPlayer.new()
 		player.name = "AnimationPlayer"
-		_camera.add_child(player)
+		_animation_player_host().add_child(player)
 	if not player.animation_finished.is_connected(_on_animation_player_finished):
 		player.animation_finished.connect(_on_animation_player_finished)
 	player.root_node = NodePath("..")
+	player.active = true
 	return player
 
 
 func _set_player_animation(player: AnimationPlayer, anim_name: StringName, animation: Animation) -> void:
-	var default_lib_name: StringName = ""
-	var lib: AnimationLibrary
+	var default_lib_name: StringName = &""
+	var lib: AnimationLibrary = null
 	if player.has_animation_library(default_lib_name):
 		lib = player.get_animation_library(default_lib_name)
-	else:
+	if lib == null:
 		lib = AnimationLibrary.new()
 		player.add_animation_library(default_lib_name, lib)
 	if lib.has_animation(anim_name):
 		lib.remove_animation(anim_name)
 	lib.add_animation(anim_name, animation)
+	player.clear_caches()
+
+
+func _lock_camera_for_timed_playback() -> void:
+	if _camera == null or not (_camera is UI_BrainMonitor_PancakeCamera):
+		return
+	var pancake: UI_BrainMonitor_PancakeCamera = _camera as UI_BrainMonitor_PancakeCamera
+	if not _camera_mode_locked_for_animation:
+		_presentation_prev_camera_mode = pancake.movement_mode
+		_presentation_prev_allow_user_control = pancake.allow_user_control
+		_camera_mode_locked_for_animation = true
+	pancake.movement_mode = UI_BrainMonitor_PancakeCamera.MODE.ANIMATION
+	pancake.allow_user_control = false
+
+
+func _unlock_camera_from_timed_playback() -> void:
+	if not _camera_mode_locked_for_animation:
+		return
+	if _camera != null and _camera is UI_BrainMonitor_PancakeCamera:
+		var pancake: UI_BrainMonitor_PancakeCamera = _camera as UI_BrainMonitor_PancakeCamera
+		pancake.movement_mode = _presentation_prev_camera_mode
+		pancake.allow_user_control = _presentation_prev_allow_user_control
+	_camera_mode_locked_for_animation = false
 
 
 func _stop_timed_playback(stop_mode: bool = true) -> void:
-	if _camera == null or not _camera.has_node("AnimationPlayer"):
+	var player: AnimationPlayer = _find_camera_animation_player()
+	if _camera == null or player == null:
 		_presentation_is_playing_timed = false
+		_unlock_camera_from_timed_playback()
 		if stop_mode:
 			_update_presentation_overlay_state()
 		return
-	var player := _camera.get_node("AnimationPlayer") as AnimationPlayer
 	var paused_position: Vector3 = _camera.position
 	var paused_rotation: Quaternion = _camera.quaternion
 	if _presentation_is_playing_timed:
@@ -222,6 +303,7 @@ func _stop_timed_playback(stop_mode: bool = true) -> void:
 	# Always stop to reset timeline state; we restore exact pause pose below.
 	player.stop()
 	_presentation_is_playing_timed = false
+	_unlock_camera_from_timed_playback()
 	if stop_mode:
 		_camera.position = paused_position
 		_camera.quaternion = paused_rotation
@@ -298,6 +380,7 @@ func _on_animation_player_finished(anim_name: StringName) -> void:
 	if not _presentation_mode_active:
 		return
 	_presentation_is_playing_timed = false
+	_unlock_camera_from_timed_playback()
 	_presentation_current_index = _presentation_frames.size() - 1
 	_apply_presentation_frame(_presentation_current_index)
 	_update_presentation_overlay_state()
@@ -342,9 +425,25 @@ func presentation_toggle_play_pause() -> void:
 		return
 	if _presentation_current_index >= _presentation_frames.size() - 1:
 		_apply_presentation_frame(0)
+	if not _has_cached_interp and not _cache_interpolation_settings():
+		return
 	var player: AnimationPlayer = _ensure_camera_animation_player()
-	var generated_animation: Animation = _build_animation_from_frames(_presentation_frames, _presentation_current_index)
+	var track_path: NodePath = resolve_camera_track_path(player, _camera)
+	if track_path.is_empty():
+		BV.NOTIF.add_notification("Developer Camera Animations: Unable to resolve camera animation path")
+		return
+	var generated_animation: Animation = build_camera_transform_animation(
+		_presentation_frames,
+		_presentation_current_index,
+		track_path,
+		_cached_lin_interp,
+		_cached_rot_interp
+	)
 	_set_player_animation(player, _DEV_CAM_ANIMATION_NAME, generated_animation)
+	if not player.has_animation(_DEV_CAM_ANIMATION_NAME):
+		BV.NOTIF.add_notification("Developer Camera Animations: Animation failed to register")
+		return
+	_lock_camera_for_timed_playback()
 	_timed_playback_start_index = _presentation_current_index
 	_presentation_is_playing_timed = true
 	player.play(_DEV_CAM_ANIMATION_NAME)

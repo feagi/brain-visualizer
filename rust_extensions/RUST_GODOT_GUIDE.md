@@ -140,7 +140,7 @@ Files are copied to `godot_source/wasm/` for web export.
 ```ini
 [configuration]
 entry_symbol = "gdext_rust_init"
-compatibility_minimum = 4.1
+compatibility_minimum = 4.7
 reloadable = false
 
 [libraries]
@@ -161,11 +161,7 @@ web.release.wasm32 = "target/wasm32-unknown-emscripten/release/feagi_data_deseri
 
 ```toml
 [dependencies]
-godot = { 
-    git = "https://github.com/godot-rust/gdext", 
-    branch = "master", 
-    features = ["experimental-wasm", "lazy-function-tables"] 
-}
+godot = { version = "0.5.5", features = ["experimental-wasm", "lazy-function-tables", "api-4-7"] }
 feagi-serialization = "0.0.1-beta.1"
 ```
 

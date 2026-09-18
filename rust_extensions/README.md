@@ -31,9 +31,9 @@ The Rust extensions replace computationally intensive GDScript operations with n
 
 ### Prerequisites
 
-- **Rust toolchain** (pinned via `rust-toolchain.toml`: `1.93.1`)
+- **Rust toolchain** (pinned via `rust-toolchain.toml`: `1.94.0`)
 - **Python 3.6+** (for cross-platform build script)
-- **Godot 4.1+**
+- **Godot 4.7+**
 - **Git** access to FEAGI repositories
 - **macOS only**: Xcode command-line tools (for universal binaries)
 
