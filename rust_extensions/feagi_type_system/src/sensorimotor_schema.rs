@@ -2,15 +2,15 @@
 FeagiSensorimotorSchema - Parse device registrations with FEAGI core types.
 
 Uses feagi-sensorimotor JSONInputOutputDefinition to validate registration
-payloads and returns a Godot Dictionary with integer values preserved.
+payloads and returns a Godot VarDictionary with integer values preserved.
 */
 
-use godot::prelude::*;
-use godot::builtin::{Dictionary, Variant, GString, Array};
-use serde_json::Value;
-use serde_json::Deserializer;
-use serde_path_to_error;
 use feagi_sensorimotor::configuration::jsonable::JSONInputOutputDefinition;
+use godot::builtin::{Array, GString, VarDictionary, Variant};
+use godot::prelude::*;
+use serde_json::Deserializer;
+use serde_json::Value;
+use serde_path_to_error;
 
 #[derive(GodotClass)]
 #[class(base=Object)]
@@ -30,15 +30,15 @@ impl IObject for FeagiSensorimotorSchema {
 impl FeagiSensorimotorSchema {
     /// Parse agent capabilities JSON and preserve integer values.
     #[func]
-    pub fn parse_agent_capabilities(&self, json_text: GString) -> Dictionary {
+    pub fn parse_agent_capabilities(&self, json_text: GString) -> VarDictionary {
         let raw = json_text.to_string();
         let parsed: Value = match serde_json::from_str(&raw) {
             Ok(value) => value,
-            Err(_) => return Dictionary::new(),
+            Err(_) => return VarDictionary::new(),
         };
         let dict = match parsed {
             Value::Object(_) => parsed,
-            _ => return Dictionary::new(),
+            _ => return VarDictionary::new(),
         };
         self.validate_device_registrations(&dict);
         json_to_dictionary(&dict)
@@ -46,15 +46,15 @@ impl FeagiSensorimotorSchema {
 
     /// Parse device_registrations JSON and preserve integer values.
     #[func]
-    pub fn parse_device_registrations(&self, json_text: GString) -> Dictionary {
+    pub fn parse_device_registrations(&self, json_text: GString) -> VarDictionary {
         let raw = json_text.to_string();
         let parsed: Value = match serde_json::from_str(&raw) {
             Ok(value) => value,
-            Err(_) => return Dictionary::new(),
+            Err(_) => return VarDictionary::new(),
         };
         let dict = match parsed {
             Value::Object(_) => parsed,
-            _ => return Dictionary::new(),
+            _ => return VarDictionary::new(),
         };
         self.validate_device_registrations(&dict);
         json_to_dictionary(&dict)
@@ -62,13 +62,13 @@ impl FeagiSensorimotorSchema {
 
     /// Validate agent capabilities against sensorimotor schema.
     #[func]
-    pub fn validate_agent_capabilities(&self, json_text: GString) -> Dictionary {
+    pub fn validate_agent_capabilities(&self, json_text: GString) -> VarDictionary {
         let raw = json_text.to_string();
         let parsed: Value = match serde_json::from_str(&raw) {
             Ok(value) => value,
-            Err(_) => return Dictionary::new(),
+            Err(_) => return VarDictionary::new(),
         };
-        let mut output = Dictionary::new();
+        let mut output = VarDictionary::new();
         if let Value::Object(map) = parsed {
             for (agent_id, agent_entry) in map {
                 let mut errors = Array::<Variant>::new();
@@ -76,9 +76,10 @@ impl FeagiSensorimotorSchema {
                     if let Some(registrations) = agent_obj.get("device_registrations") {
                         if let Ok(serialized) = serde_json::to_string(registrations) {
                             let mut deserializer = Deserializer::from_str(&serialized);
-                            let result = serde_path_to_error::deserialize::<_, JSONInputOutputDefinition>(
-                                &mut deserializer,
-                            );
+                            let result = serde_path_to_error::deserialize::<
+                                _,
+                                JSONInputOutputDefinition,
+                            >(&mut deserializer);
                             if let Err(err) = result {
                                 let path = err.path().to_string();
                                 let location = if path.is_empty() {
@@ -94,7 +95,7 @@ impl FeagiSensorimotorSchema {
                     }
                 }
                 if errors.len() > 0 {
-                    output.set(GString::from(agent_id.as_str()), Variant::from(errors));
+                    output.set(&GString::from(agent_id.as_str()), &Variant::from(errors));
                 }
             }
         }
@@ -103,20 +104,35 @@ impl FeagiSensorimotorSchema {
 
     /// Return the full sensorimotor schema for UI typing.
     #[func]
-    pub fn get_schema(&self) -> Dictionary {
-        let mut schema = Dictionary::new();
-        schema.set("json_input_output_definition", schema_json_input_output_definition());
-        schema.set("json_unit_definition", schema_json_unit_definition());
-        schema.set("json_device_grouping", schema_json_device_grouping());
-        schema.set("json_device_property_value", schema_json_device_property_value());
-        schema.set("json_encoder_properties", schema_json_encoder_properties());
-        schema.set("json_decoder_properties", schema_json_decoder_properties());
-        schema.set("pipeline_stage_properties", schema_pipeline_stage_properties());
-        schema.set("image_frame_properties", schema_image_frame_properties());
-        schema.set("segmented_image_frame_properties", schema_segmented_image_frame_properties());
-        schema.set("gaze_properties", schema_gaze_properties());
-        schema.set("image_filtering_settings", schema_image_filtering_settings());
-        schema.set("image_frame_processor", schema_image_frame_processor());
+    pub fn get_schema(&self) -> VarDictionary {
+        let mut schema = VarDictionary::new();
+        schema.set(
+            "json_input_output_definition",
+            &schema_json_input_output_definition(),
+        );
+        schema.set("json_unit_definition", &schema_json_unit_definition());
+        schema.set("json_device_grouping", &schema_json_device_grouping());
+        schema.set(
+            "json_device_property_value",
+            &schema_json_device_property_value(),
+        );
+        schema.set("json_encoder_properties", &schema_json_encoder_properties());
+        schema.set("json_decoder_properties", &schema_json_decoder_properties());
+        schema.set(
+            "pipeline_stage_properties",
+            &schema_pipeline_stage_properties(),
+        );
+        schema.set("image_frame_properties", &schema_image_frame_properties());
+        schema.set(
+            "segmented_image_frame_properties",
+            &schema_segmented_image_frame_properties(),
+        );
+        schema.set("gaze_properties", &schema_gaze_properties());
+        schema.set(
+            "image_filtering_settings",
+            &schema_image_filtering_settings(),
+        );
+        schema.set("image_frame_processor", &schema_image_frame_processor());
         schema
     }
 
@@ -125,7 +141,9 @@ impl FeagiSensorimotorSchema {
             for (_agent_id, agent_entry) in map {
                 if let Value::Object(agent_obj) = agent_entry {
                     if let Some(registrations) = agent_obj.get("device_registrations") {
-                        let _ = serde_json::from_value::<JSONInputOutputDefinition>(registrations.clone());
+                        let _ = serde_json::from_value::<JSONInputOutputDefinition>(
+                            registrations.clone(),
+                        );
                     }
                 }
             }
@@ -133,67 +151,70 @@ impl FeagiSensorimotorSchema {
     }
 }
 
-fn schema_json_input_output_definition() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_json_input_output_definition() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "input_units_and_encoder_properties",
-        with_description(
+        &with_description(
             schema_map(
-            schema_string(),
-            schema_array(schema_tuple(array_from_dicts(&[
-                schema_json_unit_definition(),
-                schema_json_encoder_properties(),
-            ]))),
-        ),
+                schema_string(),
+                schema_array(schema_tuple(array_from_dicts(&[
+                    schema_json_unit_definition(),
+                    schema_json_encoder_properties(),
+                ]))),
+            ),
             "Map of sensory unit keys to [unit_definition, encoder_properties].",
         ),
     );
     fields.set(
         "output_units_and_decoder_properties",
-        with_description(
+        &with_description(
             schema_map(
-            schema_string(),
-            schema_array(schema_tuple(array_from_dicts(&[
-                schema_json_unit_definition(),
-                schema_json_decoder_properties(),
-            ]))),
-        ),
+                schema_string(),
+                schema_array(schema_tuple(array_from_dicts(&[
+                    schema_json_unit_definition(),
+                    schema_json_decoder_properties(),
+                ]))),
+            ),
             "Map of motor unit keys to [unit_definition, decoder_properties].",
         ),
     );
     fields.set(
         "feedbacks",
-        with_description(schema_json_value(), "Feedback channels registered by agents."),
+        &with_description(
+            schema_json_value(),
+            "Feedback channels registered by agents.",
+        ),
     );
     schema_object(fields)
 }
 
-fn schema_json_unit_definition() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_json_unit_definition() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "friendly_name",
-        with_description(
+        &with_description(
             schema_optional(schema_string()),
             "Optional display name for this unit definition.",
         ),
     );
     fields.set(
         "cortical_unit_index",
-        with_description(
+        &with_description(
             schema_int(0, 255),
             "Unit instance index for the device type.",
         ),
     );
     fields.set(
         "io_configuration_flags",
-        with_description(
+        &with_description(
             schema_map(schema_string(), schema_json_value()),
             "I/O configuration flags used to derive encoding behavior.",
         ),
     );
     fields.set(
         "device_grouping",
-        with_description(
+        &with_description(
             schema_array(schema_json_device_grouping()),
             "Per-channel device definitions for this unit.",
         ),
@@ -201,32 +222,32 @@ fn schema_json_unit_definition() -> Dictionary {
     schema_object(fields)
 }
 
-fn schema_json_device_grouping() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_json_device_grouping() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "friendly_name",
-        with_description(
+        &with_description(
             schema_optional(schema_string()),
             "Optional display name for this channel.",
         ),
     );
     fields.set(
         "device_properties",
-        with_description(
+        &with_description(
             schema_map(schema_string(), schema_json_device_property_value()),
             "Device-specific properties used by encoders/decoders.",
         ),
     );
     fields.set(
         "channel_index_override",
-        with_description(
+        &with_description(
             schema_optional(schema_int(0, 4294967295)),
             "Override the generated channel index for this device group.",
         ),
     );
     fields.set(
         "pipeline_stages",
-        with_description(
+        &with_description(
             schema_array(schema_pipeline_stage_properties()),
             "Preprocessing stages applied before encoding/decoding.",
         ),
@@ -234,20 +255,23 @@ fn schema_json_device_grouping() -> Dictionary {
     schema_object(fields)
 }
 
-fn schema_json_device_property_value() -> Dictionary {
-    let mut variants = Dictionary::new();
-    variants.set("String", with_description(schema_string(), "String value."));
+fn schema_json_device_property_value() -> VarDictionary {
+    let mut variants = VarDictionary::new();
+    variants.set(
+        "String",
+        &with_description(schema_string(), "String value."),
+    );
     variants.set(
         "Integer",
-        with_description(schema_int(i64::MIN, i64::MAX), "Integer value."),
+        &with_description(schema_int(i64::MIN, i64::MAX), "Integer value."),
     );
     variants.set(
         "Float",
-        with_description(schema_float(f64::MIN, f64::MAX), "Float value."),
+        &with_description(schema_float(f64::MIN, f64::MAX), "Float value."),
     );
     variants.set(
         "Dictionary",
-        with_description(
+        &with_description(
             schema_map(schema_string(), schema_json_value()),
             "Dictionary value.",
         ),
@@ -258,29 +282,29 @@ fn schema_json_device_property_value() -> Dictionary {
     )
 }
 
-fn schema_json_encoder_properties() -> Dictionary {
-    let mut variants = Dictionary::new();
+fn schema_json_encoder_properties() -> VarDictionary {
+    let mut variants = VarDictionary::new();
     variants.set(
         "Boolean",
-        with_description(schema_unit(), "Boolean encoder (on/off)."),
+        &with_description(schema_unit(), "Boolean encoder (on/off)."),
     );
     variants.set(
         "CartesianPlane",
-        with_description(
+        &with_description(
             schema_image_frame_properties(),
             "Image frame encoder using cartesian plane encoding.",
         ),
     );
     variants.set(
         "MiscData",
-        with_description(
+        &with_description(
             schema_misc_data_dimensions(),
             "Misc data encoder with explicit dimensions.",
         ),
     );
     variants.set(
         "Percentage",
-        with_description(
+        &with_description(
             schema_tuple(array_from_dicts(&[
                 with_description(
                     schema_neuron_depth(),
@@ -301,7 +325,7 @@ fn schema_json_encoder_properties() -> Dictionary {
     );
     variants.set(
         "SegmentedImageFrame",
-        with_description(
+        &with_description(
             schema_segmented_image_frame_properties(),
             "Segmented image frame encoder for multi-region vision.",
         ),
@@ -312,25 +336,25 @@ fn schema_json_encoder_properties() -> Dictionary {
     )
 }
 
-fn schema_json_decoder_properties() -> Dictionary {
-    let mut variants = Dictionary::new();
+fn schema_json_decoder_properties() -> VarDictionary {
+    let mut variants = VarDictionary::new();
     variants.set(
         "CartesianPlane",
-        with_description(
+        &with_description(
             schema_image_frame_properties(),
             "Image frame decoder using cartesian plane encoding.",
         ),
     );
     variants.set(
         "MiscData",
-        with_description(
+        &with_description(
             schema_misc_data_dimensions(),
             "Misc data decoder with explicit dimensions.",
         ),
     );
     variants.set(
         "Percentage",
-        with_description(
+        &with_description(
             schema_tuple(array_from_dicts(&[
                 with_description(
                     schema_neuron_depth(),
@@ -351,7 +375,7 @@ fn schema_json_decoder_properties() -> Dictionary {
     );
     variants.set(
         "GazeProperties",
-        with_description(
+        &with_description(
             schema_tuple(array_from_dicts(&[
                 with_description(schema_neuron_depth(), "Neuron depth for gaze X."),
                 with_description(schema_neuron_depth(), "Neuron depth for gaze Y."),
@@ -365,7 +389,7 @@ fn schema_json_decoder_properties() -> Dictionary {
     );
     variants.set(
         "ImageFilteringSettings",
-        with_description(
+        &with_description(
             schema_tuple(array_from_dicts(&[
                 with_description(schema_neuron_depth(), "Neuron depth for brightness."),
                 with_description(schema_neuron_depth(), "Neuron depth for contrast."),
@@ -384,11 +408,11 @@ fn schema_json_decoder_properties() -> Dictionary {
     )
 }
 
-fn schema_pipeline_stage_properties() -> Dictionary {
-    let mut variants = Dictionary::new();
+fn schema_pipeline_stage_properties() -> VarDictionary {
+    let mut variants = VarDictionary::new();
     variants.set(
         "ImageFrameProcessor",
-        with_description(
+        &with_description(
             schema_object(dictionary_from_pairs(&[(
                 "transformer_definition",
                 with_description(
@@ -401,7 +425,7 @@ fn schema_pipeline_stage_properties() -> Dictionary {
     );
     variants.set(
         "ImageFrameSegmentator",
-        with_description(
+        &with_description(
             schema_object(dictionary_from_pairs(&[
                 (
                     "input_image_properties",
@@ -430,14 +454,11 @@ fn schema_pipeline_stage_properties() -> Dictionary {
     );
     variants.set(
         "ImageQuickDiff",
-        with_description(
+        &with_description(
             schema_object(dictionary_from_pairs(&[
                 (
                     "per_pixel_allowed_range",
-                    with_description(
-                        schema_range_u8(),
-                        "Allowed per-pixel difference range.",
-                    ),
+                    with_description(schema_range_u8(), "Allowed per-pixel difference range."),
                 ),
                 (
                     "acceptable_amount_of_activity_in_image",
@@ -459,21 +480,15 @@ fn schema_pipeline_stage_properties() -> Dictionary {
     );
     variants.set(
         "ImagePixelValueCountThreshold",
-        with_description(
+        &with_description(
             schema_object(dictionary_from_pairs(&[
                 (
                     "input_definition",
-                    with_description(
-                        schema_image_frame_properties(),
-                        "Input image properties.",
-                    ),
+                    with_description(schema_image_frame_properties(), "Input image properties."),
                 ),
                 (
                     "inclusive_pixel_range",
-                    with_description(
-                        schema_range_u8(),
-                        "Pixel value range to count (inclusive).",
-                    ),
+                    with_description(schema_range_u8(), "Pixel value range to count (inclusive)."),
                 ),
                 (
                     "acceptable_amount_of_activity_in_image",
@@ -492,22 +507,25 @@ fn schema_pipeline_stage_properties() -> Dictionary {
     )
 }
 
-fn schema_image_frame_properties() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_image_frame_properties() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "image_resolution",
-        with_description(
+        &with_description(
             schema_image_xy_resolution(),
             "Width and height of the image in pixels.",
         ),
     );
     fields.set(
         "color_space",
-        with_description(schema_enum(&["Linear", "Gamma"]), "Color space for the image."),
+        &with_description(
+            schema_enum(&["Linear", "Gamma"]),
+            "Color space for the image.",
+        ),
     );
     fields.set(
         "color_channel_layout",
-        with_description(
+        &with_description(
             schema_enum(&["GrayScale", "RG", "RGB", "RGBA"]),
             "Color channel layout for the image.",
         ),
@@ -515,72 +533,75 @@ fn schema_image_frame_properties() -> Dictionary {
     schema_object(fields)
 }
 
-fn schema_segmented_image_frame_properties() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_segmented_image_frame_properties() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "segment_xy_resolutions",
-        with_description(
+        &with_description(
             schema_segmented_xy_resolutions(),
             "Resolution per segmentation tile.",
         ),
     );
     fields.set(
         "center_color_channel",
-        with_description(
+        &with_description(
             schema_enum(&["GrayScale", "RG", "RGB", "RGBA"]),
             "Color layout for the center segment.",
         ),
     );
     fields.set(
         "peripheral_color_channels",
-        with_description(
+        &with_description(
             schema_enum(&["GrayScale", "RG", "RGB", "RGBA"]),
             "Color layout for peripheral segments.",
         ),
     );
     fields.set(
         "color_space",
-        with_description(schema_enum(&["Linear", "Gamma"]), "Color space for segments."),
+        &with_description(
+            schema_enum(&["Linear", "Gamma"]),
+            "Color space for segments.",
+        ),
     );
     schema_object(fields)
 }
 
-fn schema_gaze_properties() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_gaze_properties() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "eccentricity_location_xy",
-        with_description(
+        &with_description(
             schema_percentage_2d(),
             "Normalized gaze location in the image (0..1).",
         ),
     );
     fields.set(
         "modulation_size",
-        with_description(schema_percentage(), "Normalized size of gaze modulation."),
+        &with_description(schema_percentage(), "Normalized size of gaze modulation."),
     );
     schema_object(fields)
 }
 
-fn schema_image_filtering_settings() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_image_filtering_settings() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "brightness",
-        with_description(schema_percentage(), "Brightness adjustment (0..1)."),
+        &with_description(schema_percentage(), "Brightness adjustment (0..1)."),
     );
     fields.set(
         "contrast",
-        with_description(schema_percentage(), "Contrast adjustment (0..1)."),
+        &with_description(schema_percentage(), "Contrast adjustment (0..1)."),
     );
     fields.set(
         "per_pixel_diff_threshold",
-        with_description(
+        &with_description(
             schema_percentage_2d(),
             "Per-pixel difference threshold (0..1).",
         ),
     );
     fields.set(
         "image_diff_threshold",
-        with_description(
+        &with_description(
             schema_percentage_2d(),
             "Global image difference threshold (0..1).",
         ),
@@ -588,261 +609,291 @@ fn schema_image_filtering_settings() -> Dictionary {
     schema_object(fields)
 }
 
-fn schema_image_frame_processor() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_image_frame_processor() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "input_image_properties",
-        with_description(
+        &with_description(
             schema_image_frame_properties(),
             "Input image properties before processing.",
         ),
     );
     fields.set(
         "cropping_from",
-        with_description(
+        &with_description(
             schema_optional(schema_corner_points()),
             "Optional crop region (upper_left, lower_right).",
         ),
     );
     fields.set(
         "final_resize_xy_to",
-        with_description(
+        &with_description(
             schema_optional(schema_image_xy_resolution()),
             "Optional output resolution after processing.",
         ),
     );
     fields.set(
         "convert_color_space_to",
-        with_description(
+        &with_description(
             schema_optional(schema_enum(&["Linear", "Gamma"])),
             "Optional color space conversion.",
         ),
     );
     fields.set(
         "offset_brightness_by",
-        with_description(
+        &with_description(
             schema_optional(schema_int(i64::MIN, i64::MAX)),
             "Optional brightness offset (signed).",
         ),
     );
     fields.set(
         "change_contrast_by",
-        with_description(
+        &with_description(
             schema_optional(schema_float(f64::MIN, f64::MAX)),
             "Optional contrast change factor.",
         ),
     );
     fields.set(
         "convert_to_grayscale",
-        with_description(schema_bool(), "Convert to grayscale if true."),
+        &with_description(schema_bool(), "Convert to grayscale if true."),
     );
     schema_object(fields)
 }
 
-fn schema_corner_points() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_corner_points() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "upper_left",
-        with_description(schema_image_xy_point(), "Upper-left crop corner."),
+        &with_description(schema_image_xy_point(), "Upper-left crop corner."),
     );
     fields.set(
         "lower_right",
-        with_description(schema_image_xy_point(), "Lower-right crop corner."),
+        &with_description(schema_image_xy_point(), "Lower-right crop corner."),
     );
     schema_object(fields)
 }
 
-fn schema_segmented_xy_resolutions() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_segmented_xy_resolutions() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "lower_left",
-        with_description(schema_image_xy_resolution(), "Lower-left segment resolution."),
+        &with_description(
+            schema_image_xy_resolution(),
+            "Lower-left segment resolution.",
+        ),
     );
     fields.set(
         "lower_middle",
-        with_description(schema_image_xy_resolution(), "Lower-middle segment resolution."),
+        &with_description(
+            schema_image_xy_resolution(),
+            "Lower-middle segment resolution.",
+        ),
     );
     fields.set(
         "lower_right",
-        with_description(schema_image_xy_resolution(), "Lower-right segment resolution."),
+        &with_description(
+            schema_image_xy_resolution(),
+            "Lower-right segment resolution.",
+        ),
     );
     fields.set(
         "middle_left",
-        with_description(schema_image_xy_resolution(), "Middle-left segment resolution."),
+        &with_description(
+            schema_image_xy_resolution(),
+            "Middle-left segment resolution.",
+        ),
     );
     fields.set(
         "center",
-        with_description(schema_image_xy_resolution(), "Center segment resolution."),
+        &with_description(schema_image_xy_resolution(), "Center segment resolution."),
     );
     fields.set(
         "middle_right",
-        with_description(schema_image_xy_resolution(), "Middle-right segment resolution."),
+        &with_description(
+            schema_image_xy_resolution(),
+            "Middle-right segment resolution.",
+        ),
     );
     fields.set(
         "upper_left",
-        with_description(schema_image_xy_resolution(), "Upper-left segment resolution."),
+        &with_description(
+            schema_image_xy_resolution(),
+            "Upper-left segment resolution.",
+        ),
     );
     fields.set(
         "upper_middle",
-        with_description(schema_image_xy_resolution(), "Upper-middle segment resolution."),
+        &with_description(
+            schema_image_xy_resolution(),
+            "Upper-middle segment resolution.",
+        ),
     );
     fields.set(
         "upper_right",
-        with_description(schema_image_xy_resolution(), "Upper-right segment resolution."),
+        &with_description(
+            schema_image_xy_resolution(),
+            "Upper-right segment resolution.",
+        ),
     );
     schema_object(fields)
 }
 
-fn schema_image_xy_resolution() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_image_xy_resolution() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "width",
-        with_description(schema_int(1, i64::MAX), "Image width in pixels."),
+        &with_description(schema_int(1, i64::MAX), "Image width in pixels."),
     );
     fields.set(
         "height",
-        with_description(schema_int(1, i64::MAX), "Image height in pixels."),
+        &with_description(schema_int(1, i64::MAX), "Image height in pixels."),
     );
     schema_object(fields)
 }
 
-fn schema_image_xy_point() -> Dictionary {
-    let mut fields = Dictionary::new();
-    fields.set("x", with_description(schema_int(0, i64::MAX), "X coordinate."));
-    fields.set("y", with_description(schema_int(0, i64::MAX), "Y coordinate."));
+fn schema_image_xy_point() -> VarDictionary {
+    let mut fields = VarDictionary::new();
+    fields.set(
+        "x",
+        &with_description(schema_int(0, i64::MAX), "X coordinate."),
+    );
+    fields.set(
+        "y",
+        &with_description(schema_int(0, i64::MAX), "Y coordinate."),
+    );
     schema_object(fields)
 }
 
-fn schema_misc_data_dimensions() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_misc_data_dimensions() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "width",
-        with_description(schema_int(1, i64::MAX), "Width dimension."),
+        &with_description(schema_int(1, i64::MAX), "Width dimension."),
     );
     fields.set(
         "height",
-        with_description(schema_int(1, i64::MAX), "Height dimension."),
+        &with_description(schema_int(1, i64::MAX), "Height dimension."),
     );
     fields.set(
         "depth",
-        with_description(schema_int(1, i64::MAX), "Depth dimension."),
+        &with_description(schema_int(1, i64::MAX), "Depth dimension."),
     );
     schema_object(fields)
 }
 
-fn schema_neuron_depth() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_neuron_depth() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "value",
-        with_description(schema_int(1, i64::MAX), "Neuron depth (z layers)."),
+        &with_description(schema_int(1, i64::MAX), "Neuron depth (z layers)."),
     );
     schema_object(fields)
 }
 
-fn schema_percentage_neuron_positioning() -> Dictionary {
+fn schema_percentage_neuron_positioning() -> VarDictionary {
     with_description(
         schema_enum(&["Linear", "Fractional"]),
         "Positioning strategy for percentage channels.",
     )
 }
 
-fn schema_percentage_channel_dimensionality() -> Dictionary {
+fn schema_percentage_channel_dimensionality() -> VarDictionary {
     with_description(
         schema_enum(&["D1", "D2", "D3", "D4"]),
         "Dimensionality of the percentage channel.",
     )
 }
 
-fn schema_percentage() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_percentage() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "value",
-        with_description(schema_float(0.0, 1.0), "Normalized value (0..1)."),
+        &with_description(schema_float(0.0, 1.0), "Normalized value (0..1)."),
     );
     schema_object(fields)
 }
 
-fn schema_percentage_2d() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_percentage_2d() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "a",
-        with_description(schema_percentage(), "Normalized value A (0..1)."),
+        &with_description(schema_percentage(), "Normalized value A (0..1)."),
     );
     fields.set(
         "b",
-        with_description(schema_percentage(), "Normalized value B (0..1)."),
+        &with_description(schema_percentage(), "Normalized value B (0..1)."),
     );
     schema_object(fields)
 }
 
-fn schema_range_u8() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_range_u8() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "start",
-        with_description(schema_int(0, 255), "Range start (0..255)."),
+        &with_description(schema_int(0, 255), "Range start (0..255)."),
     );
     fields.set(
         "end",
-        with_description(schema_int(0, 255), "Range end (0..255)."),
+        &with_description(schema_int(0, 255), "Range end (0..255)."),
     );
     schema_object(fields)
 }
 
-fn schema_range_percentage() -> Dictionary {
-    let mut fields = Dictionary::new();
+fn schema_range_percentage() -> VarDictionary {
+    let mut fields = VarDictionary::new();
     fields.set(
         "start",
-        with_description(schema_percentage(), "Range start (0..1)."),
+        &with_description(schema_percentage(), "Range start (0..1)."),
     );
     fields.set(
         "end",
-        with_description(schema_percentage(), "Range end (0..1)."),
+        &with_description(schema_percentage(), "Range end (0..1)."),
     );
     schema_object(fields)
 }
 
-fn schema_object(fields: Dictionary) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_object(fields: VarDictionary) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "object");
-    schema.set("fields", fields);
+    schema.set("fields", &fields);
     schema
 }
 
-fn schema_array(items: Dictionary) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_array(items: VarDictionary) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "array");
-    schema.set("items", items);
+    schema.set("items", &items);
     schema
 }
 
-fn schema_tuple(items: Array<Variant>) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_tuple(items: Array<Variant>) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "tuple");
-    schema.set("items", items);
+    schema.set("items", &items);
     schema
 }
 
-fn schema_map(key: Dictionary, value: Dictionary) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_map(key: VarDictionary, value: VarDictionary) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "map");
-    schema.set("key", key);
-    schema.set("value", value);
+    schema.set("key", &key);
+    schema.set("value", &value);
     schema
 }
 
-fn schema_externally_tagged_enum(variants: Dictionary) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_externally_tagged_enum(variants: VarDictionary) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "externally_tagged_enum");
-    schema.set("variants", variants);
+    schema.set("variants", &variants);
     schema
 }
 
-fn schema_tagged_union(tag: &str, value_key: &str, variants: Dictionary) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_tagged_union(tag: &str, value_key: &str, variants: VarDictionary) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "tagged_union");
     schema.set("tag", tag);
     schema.set("value", value_key);
-    schema.set("variants", variants);
+    schema.set("variants", &variants);
     schema.set(
         "tag_description",
         "Selects the variant type for this value.",
@@ -854,61 +905,61 @@ fn schema_tagged_union(tag: &str, value_key: &str, variants: Dictionary) -> Dict
     schema
 }
 
-fn schema_optional(item: Dictionary) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_optional(item: VarDictionary) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "optional");
-    schema.set("item", item);
+    schema.set("item", &item);
     schema
 }
 
-fn schema_unit() -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_unit() -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "unit");
     schema
 }
 
-fn schema_string() -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_string() -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "string");
     schema
 }
 
-fn schema_bool() -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_bool() -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "bool");
     schema
 }
 
-fn schema_int(min: i64, max: i64) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_int(min: i64, max: i64) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "int");
     schema.set("min", min);
     schema.set("max", max);
     schema
 }
 
-fn schema_float(min: f64, max: f64) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_float(min: f64, max: f64) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "float");
     schema.set("min", min);
     schema.set("max", max);
     schema
 }
 
-fn schema_enum(options: &[&str]) -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_enum(options: &[&str]) -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "enum");
-    schema.set("options", string_array(options));
+    schema.set("options", &string_array(options));
     schema
 }
 
-fn schema_json_value() -> Dictionary {
-    let mut schema = Dictionary::new();
+fn schema_json_value() -> VarDictionary {
+    let mut schema = VarDictionary::new();
     schema.set("kind", "json_value");
     schema
 }
 
-fn with_description(mut schema: Dictionary, description: &str) -> Dictionary {
+fn with_description(mut schema: VarDictionary, description: &str) -> VarDictionary {
     schema.set("description", description);
     schema
 }
@@ -922,7 +973,7 @@ fn string_array(values: &[&str]) -> Array<Variant> {
     array
 }
 
-fn array_from_dicts(dicts: &[Dictionary]) -> Array<Variant> {
+fn array_from_dicts(dicts: &[VarDictionary]) -> Array<Variant> {
     let mut array = Array::<Variant>::new();
     for dict in dicts {
         let entry = Variant::from(dict.clone());
@@ -931,19 +982,19 @@ fn array_from_dicts(dicts: &[Dictionary]) -> Array<Variant> {
     array
 }
 
-fn dictionary_from_pairs(pairs: &[(&str, Dictionary)]) -> Dictionary {
-    let mut dict = Dictionary::new();
+fn dictionary_from_pairs(pairs: &[(&str, VarDictionary)]) -> VarDictionary {
+    let mut dict = VarDictionary::new();
     for (key, value) in pairs {
-        dict.set(*key, value.clone());
+        dict.set(*key, &value.clone());
     }
     dict
 }
 
-fn json_to_dictionary(value: &Value) -> Dictionary {
-    let mut dict = Dictionary::new();
+fn json_to_dictionary(value: &Value) -> VarDictionary {
+    let mut dict = VarDictionary::new();
     if let Value::Object(map) = value {
         for (key, val) in map {
-            dict.set(GString::from(key.as_str()), json_to_variant(val));
+            dict.set(&GString::from(key.as_str()), &json_to_variant(val));
         }
     }
     dict
@@ -987,9 +1038,9 @@ fn push_json_value(out: &mut Array<Variant>, value: &Value) {
             out.push(&entry);
         }
         Value::Object(map) => {
-            let mut dict = Dictionary::new();
+            let mut dict = VarDictionary::new();
             for (key, val) in map {
-                dict.set(GString::from(key.as_str()), json_to_variant(val));
+                dict.set(&GString::from(key.as_str()), &json_to_variant(val));
             }
             let entry = Variant::from(dict);
             out.push(&entry);
@@ -1021,9 +1072,9 @@ fn json_to_variant(value: &Value) -> Variant {
             Variant::from(out)
         }
         Value::Object(map) => {
-            let mut dict = Dictionary::new();
+            let mut dict = VarDictionary::new();
             for (key, val) in map {
-                dict.set(GString::from(key.as_str()), json_to_variant(val));
+                dict.set(&GString::from(key.as_str()), &json_to_variant(val));
             }
             Variant::from(dict)
         }

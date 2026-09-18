@@ -28,4 +28,3 @@ struct FeagiTypeSystemExtension;
 
 #[gdextension]
 unsafe impl ExtensionLibrary for FeagiTypeSystemExtension {}
-

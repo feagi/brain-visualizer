@@ -59,7 +59,7 @@ When you push a tag, GitHub Actions automatically:
 
 ## Godot Version
 
-**Current:** Godot 4.5 stable (September 2025 release)
+**Current:** Godot 4.7.2 stable
 
 To update Godot version:
 1. Edit `.github/workflows/release.yml`
@@ -219,7 +219,7 @@ File: `.github/workflows/release.yml`
 - Repository has GitHub Actions enabled
 - No special secrets needed (uses default GITHUB_TOKEN)
 - `export_presets.cfg` must be committed with presets: "macOS", "Linux/X11", "Windows Desktop"
-- Godot project must be compatible with **Godot 4.5**
+- Godot project must be compatible with **Godot 4.7**
 - `feagi-core` crates must be available on crates.io
 
 ---
@@ -326,7 +326,7 @@ When you push a tag, GitHub Actions automatically:
 
 ## Godot Version
 
-**Current:** Godot 4.5 stable (September 2025 release)
+**Current:** Godot 4.7.2 stable
 
 To update Godot version:
 1. Edit `.github/workflows/release.yml`
@@ -486,7 +486,7 @@ File: `.github/workflows/release.yml`
 - Repository has GitHub Actions enabled
 - No special secrets needed (uses default GITHUB_TOKEN)
 - `export_presets.cfg` must be committed with presets: "macOS", "Linux/X11", "Windows Desktop"
-- Godot project must be compatible with **Godot 4.5**
+- Godot project must be compatible with **Godot 4.7**
 - `feagi-core` crates must be available on crates.io
 
 ---

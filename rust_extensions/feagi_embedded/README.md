@@ -42,7 +42,7 @@ This GDExtension allows FEAGI to run **inside** the Godot application process, e
 
 - Rust 1.70+ (`rustup install stable`)
 - C compiler (Xcode/gcc/MSVC)
-- Godot 4.1+
+- Godot 4.7+
 
 ### Quick Build
 

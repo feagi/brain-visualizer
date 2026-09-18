@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script to check Godot parser errors via CLI
 
-GODOT="/Applications/Godot45.app/Contents/MacOS/Godot"
+GODOT="/Applications/Godot 4.7.app/Contents/MacOS/Godot"
 PROJECT_PATH="/Users/nadji/code/FEAGI-2.0/brain-visualizer"
 
 echo "=== Checking Godot Parser Errors ==="

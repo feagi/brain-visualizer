@@ -54,7 +54,7 @@ FEAGI Core → Rust Parallel Processing → Godot MultiMesh
 ### Prerequisites
 
 - Rust toolchain (1.70+)
-- Godot 4.1+
+- Godot 4.7+
 - Git access to FEAGI repositories
 
 ### Build Steps

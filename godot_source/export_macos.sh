@@ -54,11 +54,13 @@ print_info() {
 find_godot_executable() {
     print_info "Looking for Godot executable..."
     
-    # Common locations for Godot 4.5 on macOS
+    # Common locations for Godot 4.7 on macOS
     # No fallbacks - project requires specific version
     local godot_locations=(
-        "/Applications/Godot45.app/Contents/MacOS/Godot"
-        "$HOME/Applications/Godot45.app/Contents/MacOS/Godot"
+        "/Applications/Godot 4.7.app/Contents/MacOS/Godot"
+        "/Applications/Godot47.app/Contents/MacOS/Godot"
+        "$HOME/Applications/Godot 4.7.app/Contents/MacOS/Godot"
+        "$HOME/Applications/Godot47.app/Contents/MacOS/Godot"
     )
     
     for location in "${godot_locations[@]}"; do
@@ -78,12 +80,12 @@ verify_godot_version() {
     local version_output
     version_output=$("$godot_bin" --headless --version 2>&1 | head -1 | tr -d '\r\n')
     
-    # Check if it's Godot 4.5 (strict version requirement)
-    if echo "$version_output" | grep -q "4\.5"; then
-        print_success "Found Godot 4.5: $version_output"
+    # Check if it's Godot 4.7 (strict version requirement)
+    if echo "$version_output" | grep -q "4\.7"; then
+        print_success "Found Godot 4.7: $version_output"
         return 0
     else
-        print_error "This project requires Godot 4.5 (found: $version_output)"
+        print_error "This project requires Godot 4.7 (found: $version_output)"
         return 1
     fi
 }

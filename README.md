@@ -106,7 +106,7 @@ pip install feagi-bv-windows  # Windows only
 
 ### Prerequisites
 
-- [Godot 4.2.2](https://godotengine.org/download/archive/4.2.2-stable/)
+- [Godot 4.7.2](https://godotengine.org/download/archive/4.7.2-stable/)
 - Rust toolchain (for Rust extensions)
 - Running FEAGI instance
 
@@ -218,7 +218,7 @@ Join our community and get help:
 We welcome contributions! See [CONTRIBUTING.md](https://github.com/feagi/feagi/blob/staging/CONTRIBUTING.md).
 
 For Brain Visualizer development:
-1. Download [Godot 4.2.2](https://godotengine.org/download/archive/4.2.2-stable/)
+1. Download [Godot 4.7.2](https://godotengine.org/download/archive/4.7.2-stable/)
 2. Clone this repository
 3. Open `godot_source/project.godot` in Godot
 4. Ensure you have a running FEAGI instance

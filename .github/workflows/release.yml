@@ -12,7 +12,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  GODOT_VERSION: 4.5.0
+  GODOT_VERSION: 4.7.2
   BV_MAJOR_VERSION: "2"
 
 jobs:
@@ -299,14 +299,14 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_macos.universal.zip
-          unzip -q Godot_v4.5-stable_macos.universal.zip
+          wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_macos.universal.zip
+          unzip -q Godot_v4.7.2-stable_macos.universal.zip
           sudo mv Godot.app /Applications/
           
-          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
-          mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.5.stable"
-          unzip -q Godot_v4.5-stable_export_templates.tpz
-          mv templates/* "$HOME/Library/Application Support/Godot/export_templates/4.5.stable/"
+          wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+          mkdir -p "$HOME/Library/Application Support/Godot/export_templates/4.7.2.stable"
+          unzip -q Godot_v4.7.2-stable_export_templates.tpz
+          mv templates/* "$HOME/Library/Application Support/Godot/export_templates/4.7.2.stable/"
           
           echo "GODOT=/Applications/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
 
@@ -314,15 +314,15 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_linux.x86_64.zip
-          unzip -q Godot_v4.5-stable_linux.x86_64.zip
-          chmod +x Godot_v4.5-stable_linux.x86_64
-          sudo mv Godot_v4.5-stable_linux.x86_64 /usr/local/bin/godot
+          wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q Godot_v4.7.2-stable_linux.x86_64.zip
+          chmod +x Godot_v4.7.2-stable_linux.x86_64
+          sudo mv Godot_v4.7.2-stable_linux.x86_64 /usr/local/bin/godot
           
-          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz
-          mkdir -p "$HOME/.local/share/godot/export_templates/4.5.stable"
-          unzip -q Godot_v4.5-stable_export_templates.tpz
-          mv templates/* "$HOME/.local/share/godot/export_templates/4.5.stable/"
+          wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          unzip -q Godot_v4.7.2-stable_export_templates.tpz
+          mv templates/* "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
           
           echo "GODOT=godot" >> $GITHUB_ENV
 
@@ -330,12 +330,12 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_win64.exe.zip" -OutFile "godot.zip"
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip" -OutFile "godot.zip"
           Expand-Archive -Path godot.zip -DestinationPath godot-install -Force
           Move-Item godot-install/Godot*.exe godot.exe -Force
           
-          $templatesPath = "$env:APPDATA\Godot\export_templates\4.5.stable"
-          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz" -OutFile "templates.tpz"
+          $templatesPath = "$env:APPDATA\Godot\export_templates\4.7.2.stable"
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz" -OutFile "templates.tpz"
           New-Item -ItemType Directory -Force -Path $templatesPath
           Expand-Archive -Path templates.tpz -DestinationPath temp-templates -Force
           Copy-Item temp-templates/templates/* $templatesPath -Force -Recurse

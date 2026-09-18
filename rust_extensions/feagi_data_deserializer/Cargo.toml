@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 # Godot Rust bindings
-godot = { git = "https://github.com/godot-rust/gdext", rev = "3416265e2f894be3c1a916f8590524f7be94ed3f", features = ["experimental-wasm", "lazy-function-tables", "api-4-5"] }
+godot = { version = "0.5.5", features = ["experimental-wasm", "lazy-function-tables", "api-4-7"] }
 
 # FEAGI data serialization (local feagi-core; CorticalUnitIndex is u16)
 feagi-serialization = { path = "../../../feagi-core/crates/feagi-serialization" }

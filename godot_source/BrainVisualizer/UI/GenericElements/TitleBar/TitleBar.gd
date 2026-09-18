@@ -37,7 +37,7 @@ signal close_pressed()
 	set(v): 
 		$HBoxContainer/Title_Text.text = v
 
-var button_ref: Button:
+var button_ref: TextureButton:
 	get: return $HBoxContainer/Close_Button
 
 var _is_dragging: bool = false
@@ -132,4 +132,3 @@ func _close_window_from_close_button() -> void:
 func set_in_bounds_with_window_size_change() -> void:
 	if !is_titlebar_within_view_bounds():
 		_window_parent.position = _window_parent.window_spawn_location
-
