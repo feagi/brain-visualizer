@@ -91,6 +91,9 @@ func _matches_axis(pv: PatternVal, coord: int, src_coord: int) -> bool:
 			var bounds: Vector2i = _extract_range(s)
 			return coord >= src_coord + bounds.x and coord <= src_coord + bounds.y
 		return true
+	if pv.isAbsoluteRange:
+		var abs_bounds: Vector2i = _extract_absolute_range(s)
+		return coord >= abs_bounds.x and coord <= abs_bounds.y
 	return true
 
 ## Extract numeric offset from "?+N" or "?-N" string.
@@ -103,6 +106,13 @@ static func _extract_range(s: String) -> Vector2i:
 	var parts: PackedStringArray = s.split(":")
 	var lo: int = _extract_offset(parts[0])
 	var hi: int = _extract_offset(parts[1])
+	return Vector2i(lo, hi)
+
+## Extract (lo, hi) from "N..M" absolute range string.
+static func _extract_absolute_range(s: String) -> Vector2i:
+	var idx: int = s.find("..")
+	var lo: int = s.substr(0, idx).to_int()
+	var hi: int = s.substr(idx + 2).to_int()
 	return Vector2i(lo, hi)
 
 ## Convert a local pixel position to grid cell coordinates (x, y).

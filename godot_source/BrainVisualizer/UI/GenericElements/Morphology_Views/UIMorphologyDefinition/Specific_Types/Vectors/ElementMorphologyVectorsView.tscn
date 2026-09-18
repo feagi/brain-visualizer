@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://d1tg3odgc36tb"]
+[gd_scene load_steps=12 format=3 uid="uid://d1tg3odgc36tb"]
 
 [ext_resource type="Script" uid="uid://cw68qeqibkye2" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.gd" id="1_5hdhx"]
 [ext_resource type="Texture2D" uid="uid://car1lnufwslyi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="2_iw5kc"]
@@ -7,6 +7,10 @@
 [ext_resource type="Texture2D" uid="uid://clqnxjuyb23y1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="4_qk7tm"]
 [ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/Prefab_VectorWithDelete.tscn" id="5_dnbvl"]
 [ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_excb5"]
+[ext_resource type="Texture2D" uid="uid://einorua52n7p" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_S.jpg" id="6_guide_s"]
+[ext_resource type="Texture2D" uid="uid://dwulffs7g3h5l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_C.jpg" id="7_guide_c"]
+[ext_resource type="Texture2D" uid="uid://c6xiogyoy4lkj" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_H.jpg" id="8_guide_h"]
+[ext_resource type="Texture2D" uid="uid://clf4jq4cjtlyf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_D.jpg" id="9_guide_d"]
 
 [node name="ElementMorphologyVectorsView" type="VBoxContainer"]
 offset_right = 172.0
@@ -22,6 +26,18 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Vector Definition:"
+
+[node name="help" type="TextureButton" parent="header"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Vector connectivity guide"
+theme_type_variation = &"TextureButton_icon"
+texture_normal = ExtResource("6_guide_s")
+texture_pressed = ExtResource("7_guide_c")
+texture_hover = ExtResource("8_guide_h")
+texture_disabled = ExtResource("9_guide_d")
+ignore_texture_size = true
+stretch_mode = 0
 
 [node name="add_vector" type="TextureButton" parent="header"]
 custom_minimum_size = Vector2(32, 32)
@@ -52,6 +68,7 @@ enable_button_notice_when_list_is_empty = true
 button_notice_text = &"   Add a vector   "
 minimum_width_to_avoid_scroll = 300
 
+[connection signal="pressed" from="header/help" to="." method="_on_help_pressed"]
 [connection signal="pressed" from="header/add_vector" to="." method="add_vector_row"]
 [connection signal="pressed" from="header/raw_edit" to="." method="_on_raw_edit_pressed"]
 [connection signal="pressed" from="header/visual_edit" to="." method="_on_visual_edit_pressed"]

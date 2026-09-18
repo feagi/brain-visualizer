@@ -20,5 +20,7 @@ brain_circuits.md
 circuit_builder.md
 mapping_connections.md
 connectivity_rules.md
+pattern_connectivity.md
+vector_connectivity.md
 brain_monitor.md
 glossary.md

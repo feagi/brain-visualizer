@@ -38,9 +38,12 @@ Markdown guides are stored in: `godot_source/BrainVisualizer/Guides/`
 The guide window is spawned via `WindowManager`:
 ```gdscript
 BV.WM.spawn_guide()
+BV.WM.spawn_guide_page("pattern_connectivity.md")
+BV.WM.spawn_guide_page("vector_connectivity.md")
 ```
 
-Called from the top bar guide icon button.
+`spawn_guide()` is the top-bar guide button. `spawn_guide_page()` is used by the
+help icons on the pattern and vector editors.
 
 ## Adding New Guide Topics
 

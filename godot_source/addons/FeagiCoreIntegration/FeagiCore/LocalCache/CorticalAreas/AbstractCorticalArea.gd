@@ -1128,7 +1128,7 @@ func get_unit_group_members(all_areas: Array) -> Array[AbstractCorticalArea]:
 	return members
 
 ## Ensures unit_id and subunit_id are derived from cortical_id when missing.
-## Uses byte layout: subunit_id = byte[6], unit_id = byte[7].
+## Unit index is little-endian u16 in bytes 6-7; subunit is flag bits 4-7 of bytes 4-5.
 func ensure_unit_subunit_ids_from_cortical_id() -> void:
 	if _unit_id >= 0 and _subunit_id >= 0:
 		return
@@ -1144,9 +1144,9 @@ func ensure_unit_subunit_ids_from_cortical_id() -> void:
 		if subtype_raw != "":
 			_cortical_subtype = subtype_raw
 	if _subunit_id < 0:
-		_subunit_id = int(raw_id[6])
+		_subunit_id = FEAGIUtils.io_cortical_sub_unit_index_from_id_bytes(raw_id)
 	if _unit_id < 0:
-		_unit_id = int(raw_id[7])
+		_unit_id = FEAGIUtils.io_cortical_unit_index_from_id_bytes(raw_id)
 
 # The following functions are often overridden in child classes
 func _get_group() -> CORTICAL_AREA_TYPE:

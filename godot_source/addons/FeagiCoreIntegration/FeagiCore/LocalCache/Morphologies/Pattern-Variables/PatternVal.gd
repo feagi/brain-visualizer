@@ -1,7 +1,7 @@
 extends RefCounted
 class_name PatternVal
 ## PatternMorphology values can be ints, or wildcards/directional patterns.
-## Supports: integers, "*", "?", "!", "?+", "?-", "?+=", "?-=", "?+N", "?-N", "?-A:?+B"
+## Supports: integers, "*", "?", "!", "?+", "?-", "?+=", "?-=", "?+N", "?-N", "?-A:?+B", "N..M"
 
 ## Single-char pattern symbols
 const SINGLE_CHAR_PATTERNS: PackedStringArray = [&"*", &"?", &"!"]
@@ -51,7 +51,11 @@ var isOffset: bool:
 var isRange: bool:
 	get: return _is_range_pattern(str(_data))
 
-## True if value is any source-relative pattern (not int, not *, not exact)
+## True if value is an absolute range like "1..98"
+var isAbsoluteRange: bool:
+	get: return _is_absolute_range_pattern(str(_data))
+
+## True if value is any source-relative pattern (not int, not *, not exact, not N..M)
 var isRelative: bool:
 	get: return isMatchingOther or isMatchingNot or isDirectional or isOffset or isRange
 
@@ -77,6 +81,8 @@ static func can_be_PatternVal(input: Variant) -> bool:
 	if _is_offset_pattern_static(s):
 		return true
 	if _is_range_pattern_static(s):
+		return true
+	if _is_absolute_range_pattern_static(s):
 		return true
 	return false
 
@@ -109,11 +115,25 @@ static func _is_range_pattern_static(s: String) -> bool:
 		return false
 	return _is_offset_pattern_static(parts[0]) and _is_offset_pattern_static(parts[1])
 
+## Check if string is an absolute range like "1..98"
+static func _is_absolute_range_pattern_static(s: String) -> bool:
+	var idx: int = s.find("..")
+	if idx < 0:
+		return false
+	if s.find("..", idx + 2) >= 0:
+		return false
+	var lo: String = s.substr(0, idx)
+	var hi: String = s.substr(idx + 2)
+	return lo.is_valid_int() and hi.is_valid_int()
+
 func _is_offset_pattern(s: String) -> bool:
 	return PatternVal._is_offset_pattern_static(s)
 
 func _is_range_pattern(s: String) -> bool:
 	return PatternVal._is_range_pattern_static(s)
+
+func _is_absolute_range_pattern(s: String) -> bool:
+	return PatternVal._is_absolute_range_pattern_static(s)
 
 func _verify(input: Variant) -> void:
 	if input is StringName:
@@ -124,7 +144,7 @@ func _verify(input: Variant) -> void:
 		if input in SINGLE_CHAR_PATTERNS or input in DIRECTION_PATTERNS:
 			_data = input
 			return
-		if _is_offset_pattern(s) or _is_range_pattern(s):
+		if _is_offset_pattern(s) or _is_range_pattern(s) or _is_absolute_range_pattern(s):
 			_data = input
 			return
 		return
@@ -136,7 +156,7 @@ func _verify(input: Variant) -> void:
 		if sn in SINGLE_CHAR_PATTERNS or sn in DIRECTION_PATTERNS:
 			_data = sn
 			return
-		if _is_offset_pattern(input) or _is_range_pattern(input):
+		if _is_offset_pattern(input) or _is_range_pattern(input) or _is_absolute_range_pattern(input):
 			_data = StringName(input)
 			return
 		return

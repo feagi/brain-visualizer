@@ -262,7 +262,7 @@ func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
 		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
 		
 		if cortical_subtype == cortical_type_key:
-			var unit_id_val: int = decoded_bytes[7]
+			var unit_id_val: int = FEAGIUtils.io_cortical_unit_index_from_id_bytes(decoded_bytes)
 			if unit_id_val > largest_unit_id:
 				largest_unit_id = unit_id_val
 
@@ -276,8 +276,8 @@ func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
 			
 			var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
 			var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
-			var unit_id_val: int = decoded_bytes[7]
-			var unit_index: int = decoded_bytes[6]
+			var unit_id_val: int = FEAGIUtils.io_cortical_unit_index_from_id_bytes(decoded_bytes)
+			var unit_index: int = FEAGIUtils.io_cortical_sub_unit_index_from_id_bytes(decoded_bytes)
 			
 			if cortical_subtype == cortical_type_key and unit_id_val == largest_unit_id:
 				var area = existing_areas[cortical_id]
@@ -304,7 +304,7 @@ func _get_existing_neurons_per_voxel(cortical_type_key: String) -> int:
 		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
 		
 		if cortical_subtype == cortical_type_key:
-			var unit_id_val: int = decoded_bytes[7]
+			var unit_id_val: int = FEAGIUtils.io_cortical_unit_index_from_id_bytes(decoded_bytes)
 			var area = existing_areas[cortical_id]
 			var area_neurons_per_voxel: int = area.cortical_neuron_per_vox_count
 			print("  Found %s unit %d with neurons_per_voxel=%d" % [cortical_subtype, unit_id_val, area_neurons_per_voxel])
@@ -421,11 +421,11 @@ func _find_first_available_unit_id(cortical_type_key: String) -> int:
 		
 		# If this matches our type, record its unit_id
 		if cortical_subtype == cortical_type_key:
-			var existing_unit_id: int = decoded_bytes[7]
+			var existing_unit_id: int = FEAGIUtils.io_cortical_unit_index_from_id_bytes(decoded_bytes)
 			used_unit_ids.append(existing_unit_id)
 	
-	# Find the first available ID (0-255)
-	for candidate_id in range(256):
+	# Find the first available ID (0-65535)
+	for candidate_id in range(65536):
 		if candidate_id not in used_unit_ids:
 			return candidate_id
 	
@@ -458,8 +458,7 @@ func _validate_unit_id() -> void:
 		
 		# Check if this matches our template ID
 		if cortical_subtype == cortical_type_key:
-			# Extract unit_id (byte 7)
-			var existing_unit_id: int = decoded_bytes[7]
+			var existing_unit_id: int = FEAGIUtils.io_cortical_unit_index_from_id_bytes(decoded_bytes)
 			
 			if existing_unit_id == selected_unit_id:
 				# Found a match - this unit ID is already used!

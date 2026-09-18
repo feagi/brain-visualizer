@@ -57,9 +57,9 @@ From context menu:
 
 1. Right-click source cortical area
 2. Select **Quick Connect**
-3. Choose destination from list
-4. Mapping Editor opens
-5. Configure and create
+3. Click the destination in the current brain monitor, or click **Edit** to open Cortical Area Explorer and pick destinations from any circuit
+4. Choose a connectivity rule
+5. Establish the connection
 
 ### Method 3: Create Multiple
 
@@ -67,7 +67,7 @@ Connect one area to many:
 
 1. Right-click source area
 2. Select **Quick Connect**
-3. Check multiple destinations
+3. Click **Edit** on the destination step and check multiple destinations in Cortical Area Explorer (or Ctrl-click visible areas)
 4. Set common connectivity rule
 5. Create all mappings at once
 
@@ -510,7 +510,9 @@ Mappings consume synapses:
 
 ## Related Topics
 
-- [Connectivity Rules](connectivity rules.md) - Connection structure templates
+- [Connectivity Rules](connectivity_rules.md) - Connection structure templates
+- [Pattern Connectivity](pattern_connectivity.md) - Pattern tokens including `N..M`
+- [Vector Connectivity](vector_connectivity.md) - Offset lists `[dx, dy, dz]`
 - [Cortical Areas](cortical_areas.md) - What gets connected
 - [Circuit Builder](circuit_builder.md) - Visual connection creation
 - [Brain Monitor](brain_monitor.md) - Visualizing active connections

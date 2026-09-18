@@ -102,6 +102,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_type_variation = &"TextureButton_icon"
+tooltip_text = "Open Cortical Area Explorer to pick one or more destinations"
 texture_normal = ExtResource("3_tq10i")
 texture_pressed = ExtResource("4_1wwy8")
 texture_hover = ExtResource("5_smclk")
@@ -170,7 +171,7 @@ text = "Establish the Connection"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/source/step1/TextureButton" to="." method="_start_edit_source_config"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/source/step1/PasteTextureButton" to="." method="_paste_source_from_clipboard"]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/destination/step2/TextureButton" to="." method="_start_edit_destination_config"]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/destination/step2/TextureButton" to="." method="_open_destination_explorer"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/destination/step2/PasteTextureButton" to="." method="_paste_destination_from_clipboard"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/confirm/step3/TextureButton" to="." method="_mapping_establish_check_pressed"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Establish" to="." method="_establish"]

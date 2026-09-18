@@ -93,11 +93,11 @@ fn collect_motor_cortical_ids_lenient(device_registrations: &serde_json::Value) 
             else {
                 continue;
             };
-            let group_u8: u8 = match group_u64.try_into() {
+            let group_u16: u16 = match group_u64.try_into() {
                 Ok(v) => v,
                 Err(_) => continue,
             };
-            let group: CorticalUnitIndex = group_u8.into();
+            let group: CorticalUnitIndex = group_u16.into();
             let device_count = unit_def
                 .get("device_grouping")
                 .and_then(|v| v.as_array())
@@ -157,11 +157,11 @@ fn collect_sensory_cortical_ids_lenient(
             else {
                 continue;
             };
-            let group_u8: u8 = match group_u64.try_into() {
+            let group_u16: u16 = match group_u64.try_into() {
                 Ok(v) => v,
                 Err(_) => continue,
             };
-            let group: CorticalUnitIndex = group_u8.into();
+            let group: CorticalUnitIndex = group_u16.into();
             let device_count = unit_def
                 .get("device_grouping")
                 .and_then(|v| v.as_array())

@@ -66,11 +66,10 @@ See [Cortical Areas](cortical_areas.md) for more details.
 
 **Workflow:**
 1. Click Quick Connect
-2. Window opens with list of destination areas
-3. Select target area(s)
+2. Window opens with source already selected
+3. Click a destination in the current brain monitor, or click **Edit** to open Cortical Area Explorer and select one or more destinations from any circuit
 4. Choose connectivity rule
-5. Configure parameters
-6. Create mapping
+5. Establish the connection
 
 **Use When:**
 - Building neural circuits

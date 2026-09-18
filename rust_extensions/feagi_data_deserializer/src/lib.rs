@@ -1261,8 +1261,8 @@ impl FeagiDataDeserializer {
         };
 
         let unit_identifier = [bytes[1], bytes[2], bytes[3]];
-        let subunit_idx = bytes[6];
-        let unit_idx = bytes[7];
+        let subunit_idx = *cortical_id_obj.io_cortical_sub_unit_index();
+        let unit_idx = *cortical_id_obj.io_cortical_unit_index();
 
         let new_id = new_flag.as_io_cortical_id(
             is_input,
@@ -1299,7 +1299,7 @@ impl FeagiDataDeserializer {
             }
         };
 
-        if unit_index < 0 || unit_index > u8::MAX as i64 {
+        if unit_index < 0 || unit_index > u16::MAX as i64 {
             result.set("success", false);
             result.set("error", "unit_index out of range");
             result.set("cortical_id", "");
@@ -1327,12 +1327,12 @@ impl FeagiDataDeserializer {
         };
 
         let unit_identifier = [bytes[1], bytes[2], bytes[3]];
-        let subunit_idx = bytes[6];
+        let subunit_idx = cortical_id_obj.io_cortical_sub_unit_index();
         let new_id = current_flag.as_io_cortical_id(
             is_input,
             unit_identifier,
-            CorticalUnitIndex::from(unit_index as u8),
-            CorticalSubUnitIndex::from(subunit_idx),
+            CorticalUnitIndex::from(unit_index as u16),
+            subunit_idx,
         );
 
         result.set("success", true);

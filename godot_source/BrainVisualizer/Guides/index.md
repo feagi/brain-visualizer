@@ -41,6 +41,8 @@ Brain Visualizer is an interactive tool that allows you to visualize, create, an
 - [Brain Circuits](brain_circuits.md) - Organizing cortical areas into hierarchies
 - [Mapping Connections](mapping_connections.md) - Connecting cortical areas together
 - [Connectivity Rules](connectivity_rules.md) - Defining connection shapes and properties
+- [Pattern Connectivity](pattern_connectivity.md) - Pattern tokens including `N..M`
+- [Vector Connectivity](vector_connectivity.md) - Offset lists `[dx, dy, dz]`
 
 ### Visualization & Monitoring
 - [Brain Monitor](brain_monitor.md) - The 3D visualization system

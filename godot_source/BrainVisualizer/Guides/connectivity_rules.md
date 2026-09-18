@@ -52,20 +52,24 @@ Choosing the right connectivity rule is crucial for your genome's function.
 - Custom mathematical patterns
 
 ### Vectors Connectivity Rule
-**Purpose**: Explicitly defined connection vectors
+**Purpose**: Per-neuron destination offset `[dx, dy, dz]`
 
 **Characteristics:**
-- Manual specification of connections
-- Exact control
-- Can represent any pattern
+- Each source neuron connects to dest at `(src + dx, src + dy, src + dz)`
+- `[0, 0, 0]` is identity (same as core `block_to_block`)
+- Out-of-bounds destinations produce no synapse
 
 **Use Cases:**
-- Specific wiring requirements
-- Unusual connection patterns
-- Precise custom connectivity
+- Uniform shifts (one voxel right, one layer forward)
+- Identity maps
+- Small sets of regular offsets
+
+See [Vector Connectivity](vector_connectivity.md) for the editor format and examples.
 
 ### Patterns Connectivity Rule
-**Purpose**: Pre-defined common patterns
+**Purpose**: Per-axis source filter and destination expansion (`*`, `N`, `N..M`, `?`, `?+N`)
+
+See [Pattern Connectivity](pattern_connectivity.md) for the full syntax table.
 
 **Characteristics:**
 - Built-in templates
@@ -110,6 +114,7 @@ These do not depend on the source neuron's position.
 |--------|------|---------|
 | `*` | Wildcard | All coordinates on this axis (0 to dimension-1) |
 | `5` | Exact | Only coordinate 5 |
+| `N..M` | Absolute range | All coordinates from N to M inclusive (for example `1..98`) |
 
 #### Source-Relative Patterns
 
@@ -216,6 +221,18 @@ the range gets clamped to valid coordinates).
 Range from src+1 to src+5. A neuron at X=7 in a 10-wide area would connect to
 X=8 and X=9 only (clamped).
 
+#### Contiguous source channels map topographically to dest Z=0
+
+```
+[["1..98", "*", "*"], ["?", "?", 0]]
+```
+
+Source: X in 1 through 98, any Y and Z. Destination: same X and Y, Z fixed at 0.
+One rule replaces 98 exact-X rows. `N..M` is an absolute filter. It is not the
+same as `?-A:?+B`, which is a source-relative destination span.
+
+In the pattern editor, click the guide icon for the full syntax table.
+
 #### Column 0 fans out to all positions in the positive X direction
 
 ```
@@ -273,7 +290,7 @@ The total destinations = (count of X values) x (count of Y values) x (count of Z
 ### Visual Editor: Hover Mode
 
 When using the visual pattern editor, if the source pattern matches multiple neurons
-(any axis uses `*` or a non-exact pattern) and the destination uses relative patterns,
+(any axis uses `*`, `N..M`, or a non-exact pattern) and the destination uses relative patterns,
 the destination grid will be blank initially. Hover your mouse over individual source
 cells to preview the destination connections for that specific source position.
 

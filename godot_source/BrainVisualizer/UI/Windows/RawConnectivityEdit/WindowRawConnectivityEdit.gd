@@ -119,7 +119,7 @@ func _validate_patterns(data: Variant) -> Dictionary:
 				return {"ok": false, "error": "Element %d vector %d: expected 3 values, got %d" % [i, j, vec_arr.size()]}
 			for k in 3:
 				if !PatternVal.can_be_PatternVal(vec_arr[k]):
-					return {"ok": false, "error": "Element %d vector %d pos %d: unsupported value '%s'. Use int, *, ?, !, ?+, ?-, ?+=, ?-=, ?+N, ?-N, or ?-A:?+B" % [i, j, k, str(vec_arr[k])]}
+					return {"ok": false, "error": "Element %d vector %d pos %d: unsupported value '%s'. Use int, *, ?, !, ?+, ?-, ?+=, ?-=, ?+N, ?-N, ?-A:?+B, or N..M" % [i, j, k, str(vec_arr[k])]}
 				var pv: PatternVal = PatternVal.new(vec_arr[k])
 				if pv.isInt and int(pv.data) < 0:
 					return {"ok": false, "error": "Element %d vector %d pos %d: absolute coordinates must be >= 0, got %d. Use ?-N for relative offsets." % [i, j, k, int(pv.data)]}

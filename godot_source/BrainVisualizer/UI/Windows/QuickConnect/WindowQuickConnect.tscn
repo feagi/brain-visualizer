@@ -86,6 +86,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_type_variation = &"TextureButton_icon"
+tooltip_text = "Open Cortical Area Explorer to pick one or more destinations"
 texture_normal = ExtResource("2_3u6kv")
 texture_pressed = ExtResource("3_atlgv")
 texture_hover = ExtResource("4_d1vcp")
@@ -177,7 +178,7 @@ disabled = true
 text = "Establish the Connection"
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step1/step1/TextureButton" to="." method="_update_current_state" binds= [0]]
-[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step2/step2/TextureButton" to="." method="_update_current_state" binds= [1]]
+[connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step2/step2/TextureButton" to="." method="_open_destination_explorer"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/step3/step3/TextureButton" to="." method="_update_current_state" binds= [3]]
 [connection signal="morphology_selected" from="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo/MorphologyScroll" to="." method="_set_morphology"]
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Establish" to="." method="establish_connection_button"]

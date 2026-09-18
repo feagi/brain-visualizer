@@ -313,3 +313,16 @@ static func string_name_array_to_CSV(arr: Array[StringName]) -> StringName:
 		output = output + arr[i] + ", "
 	output = output + arr[length - 1]
 	return output
+
+## Cortical unit (group) index packed as little-endian u16 in bytes 6-7 of an 8-byte IO cortical ID.
+static func io_cortical_unit_index_from_id_bytes(raw_id: PackedByteArray) -> int:
+	if raw_id.size() != 8:
+		return -1
+	return int(raw_id[6]) | (int(raw_id[7]) << 8)
+
+## Cortical sub-unit index packed in flag bits 4-7 of bytes 4-5 of an 8-byte IO cortical ID.
+static func io_cortical_sub_unit_index_from_id_bytes(raw_id: PackedByteArray) -> int:
+	if raw_id.size() != 8:
+		return -1
+	var flags: int = int(raw_id[4]) | (int(raw_id[5]) << 8)
+	return (flags >> 4) & 0xF

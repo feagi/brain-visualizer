@@ -222,7 +222,7 @@ func _setting_destination() -> void:
 	_clear_destination_highlights()
 	_destination = null
 	_destinations.clear()
-	_step2_label.text = " Click destination target(s) to add/remove."
+	_step2_label.text = " Click destination target(s), or Edit to browse all circuits."
 	_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	_step4_button.disabled = true
 	# Begin live 3D guide from source center to mouse tip while picking destination
@@ -575,7 +575,7 @@ func _toggle_destination(cortical_area: AbstractCorticalArea) -> void:
 	_destination = _destinations[0] if not _destinations.is_empty() else null
 	if _destinations.is_empty():
 		_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
-		_step2_label.text = " Click destination target(s) to add/remove."
+		_step2_label.text = " Click destination target(s), or Edit to browse all circuits."
 		_step3_panel.visible = false
 		_step3_morphology_container.visible = false
 		_set_core_bar_visibility(false)
@@ -600,15 +600,22 @@ func _toggle_destination(cortical_area: AbstractCorticalArea) -> void:
 		FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 
 func _sync_destinations_from_selected_objects(objects: Array[GenomeObject]) -> void:
+	_apply_destinations_from_objects(objects, _is_ctrl_modifier_held())
+
+## Applies explorer or 3D multi-select results as destination areas.
+func _apply_destinations_from_objects(objects: Array[GenomeObject], stay_in_destination_mode: bool) -> void:
 	var previous_primary: AbstractCorticalArea = _destination
+	_clear_destination_highlights()
 	_destinations.clear()
-	for obj in objects:
-		if obj is AbstractCorticalArea:
-			_destinations.append(obj as AbstractCorticalArea)
+	for area in GenomeObject.filter_cortical_areas(objects):
+		if area == null or area in _destinations:
+			continue
+		_destinations.append(area)
+		_set_destination_highlight_state(area, true)
 	_destination = _destinations[0] if not _destinations.is_empty() else null
 	if _destinations.is_empty():
 		_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
-		_step2_label.text = " Click destination target(s) to add/remove."
+		_step2_label.text = " Click destination target(s), or Edit to browse all circuits."
 		_step3_panel.visible = false
 		_step3_morphology_container.visible = false
 		_set_core_bar_visibility(false)
@@ -616,9 +623,7 @@ func _sync_destinations_from_selected_objects(objects: Array[GenomeObject]) -> v
 	else:
 		_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
 		_update_destination_label()
-		# Keep destination mode active while Ctrl is held so multi-select can continue
-		# with the live guide still visible. Transition to morphology when Ctrl is released.
-		if _is_ctrl_modifier_held():
+		if stay_in_destination_mode:
 			_step3_panel.visible = false
 			_step3_morphology_container.visible = false
 			_set_core_bar_visibility(false)
@@ -630,9 +635,31 @@ func _sync_destinations_from_selected_objects(objects: Array[GenomeObject]) -> v
 	if _source != null and _destination != null and _destination != previous_primary:
 		FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
 
+## Opens Cortical Area Explorer so destinations can be picked from any circuit.
+func _open_destination_explorer() -> void:
+	if BV == null or BV.WM == null:
+		return
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null or FeagiCore.feagi_local_cache.brain_regions == null:
+		return
+	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if root_region == null:
+		return
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_multiple_cortical_area_selection(
+		root_region,
+		_destinations,
+		[]
+	)
+	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
+	if window == null:
+		return
+	window.final_selection.connect(_on_destination_explorer_selection, CONNECT_ONE_SHOT)
+
+func _on_destination_explorer_selection(genome_objects: Array[GenomeObject]) -> void:
+	_apply_destinations_from_objects(genome_objects, false)
+
 func _update_destination_label() -> void:
 	if _destinations.is_empty():
-		_step2_label.text = " Click destination target(s) to add/remove."
+		_step2_label.text = " Click destination target(s), or Edit to browse all circuits."
 		return
 	var target_names: PackedStringArray = []
 	for area in _destinations:

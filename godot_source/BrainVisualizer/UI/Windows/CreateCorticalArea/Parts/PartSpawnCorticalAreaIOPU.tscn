@@ -86,7 +86,7 @@ theme_type_variation = &"VBoxContainer_farther"
 [node name="UnitID" type="SpinBox" parent="HBoxContainer/Fields"]
 layout_mode = 2
 min_value = 0.0
-max_value = 255.0
+max_value = 65535.0
 value = 0.0
 alignment = 1
 

@@ -43,6 +43,7 @@ var _finished_selecting: bool = false
 var _source: AbstractCorticalArea = null
 var _source_neuron_local_coords: Array[Vector3i] = []
 var _destination: AbstractCorticalArea = null
+var _destination_areas: Array[AbstractCorticalArea] = []
 var _destination_neuron_local_coords: Array[Vector3i] = []
 var _source_batch_neurons_by_area: Dictionary[StringName, Array] = {}
 var _destination_batch_neurons_by_area: Dictionary[StringName, Array] = {}
@@ -155,6 +156,7 @@ func _end_edit_source_config() -> void:
 	BV.UI.temp_root_bm.clear_all_selected_cortical_area_neurons()
 	BV.UI.temp_root_bm.remove_neuron_cortical_are_selection_restrictions()
 	_source_panel.theme_type_variation = "PanelContainer_QC_Complete"
+	_destination_edit_button.disabled = false
 	_mapping_edit_button.disabled = !_has_enough_information_for_mapping()
 	if BV.UI.temp_root_bm.cortical_area_selected_neurons_changed_delta.is_connected(_retrieved_source_neuron_list_change):
 		BV.UI.temp_root_bm.cortical_area_selected_neurons_changed_delta.disconnect(_retrieved_source_neuron_list_change)
@@ -167,6 +169,7 @@ func _start_edit_destination_config(optional_limit_to_cortical_area: AbstractCor
 		_end_edit_source_config()
 	_destination_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	_destination = null
+	_destination_areas.clear()
 	_destination_neuron_local_coords = []
 	_destination_batch_neurons_by_area.clear()
 	_mapping_edit_button.disabled = true
@@ -178,6 +181,7 @@ func _start_edit_destination_config(optional_limit_to_cortical_area: AbstractCor
 		_destination = optional_limit_to_cortical_area
 		BV.UI.temp_root_bm.set_further_neuron_selection_restriction_to_cortical_area(optional_limit_to_cortical_area)
 		if _mode == MODE.NEURONS_TO_CORTICAL_AREA:
+			_destination_areas = [_destination] if _destination != null else []
 			_update_label_of_source_or_destination(false)
 			_end_edit_destination_config()
 			_refresh_clipboard_paste_buttons()
@@ -198,6 +202,7 @@ func _retrieved_destination_neuron_list_change(area: AbstractCorticalArea, local
 		return
 	_source_edit_button.disabled = false
 	if _mode == MODE.NEURONS_TO_CORTICAL_AREA:
+		_destination_areas = [_destination] if _destination != null else []
 		_update_label_of_source_or_destination(false)
 		_end_edit_destination_config()
 		_refresh_clipboard_paste_buttons()
@@ -247,6 +252,67 @@ func _paste_destination_from_clipboard() -> void:
 	_apply_clipboard_voxel_selection(false)
 
 
+## Opens Cortical Area Explorer so destinations can be picked from any circuit.
+func _open_destination_explorer() -> void:
+	if BV == null or BV.WM == null:
+		return
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null or FeagiCore.feagi_local_cache.brain_regions == null:
+		return
+	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if root_region == null:
+		return
+	var preselected: Array[AbstractCorticalArea] = []
+	if not _destination_areas.is_empty():
+		preselected = _destination_areas.duplicate()
+	elif _destination != null:
+		preselected = [_destination]
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_multiple_cortical_area_selection(
+		root_region,
+		preselected,
+		[]
+	)
+	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
+	if window == null:
+		return
+	window.final_selection.connect(_on_destination_explorer_selection, CONNECT_ONE_SHOT)
+
+
+func _on_destination_explorer_selection(genome_objects: Array[GenomeObject]) -> void:
+	var areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(genome_objects)
+	if areas.is_empty():
+		return
+	if _mode == MODE.NEURONS_TO_CORTICAL_AREA:
+		_apply_explorer_destination_areas(areas)
+		return
+	_start_edit_destination_config(areas[0])
+
+
+## Applies whole-area destinations chosen in Cortical Area Explorer (neurons -> cortical area).
+func _apply_explorer_destination_areas(areas: Array[AbstractCorticalArea]) -> void:
+	if areas.is_empty():
+		return
+	if _source_panel.theme_type_variation == "PanelContainer_QC_waiting":
+		_end_edit_source_config()
+	_destination_areas.clear()
+	for area in areas:
+		if area == null or area in _destination_areas:
+			continue
+		_destination_areas.append(area)
+	_destination = _destination_areas[0]
+	_destination_neuron_local_coords.clear()
+	_destination_batch_neurons_by_area.clear()
+	_update_label_of_source_or_destination(false)
+	_end_edit_destination_config()
+	_source_edit_button.disabled = false
+	_mapping_edit_button.disabled = !_has_enough_information_for_mapping()
+	if _mapping_edit_button.disabled:
+		_mapping_label.text = "Waiting..."
+	else:
+		_define_pattern_morphology_label()
+		_establish_button.disabled = false
+	_refresh_clipboard_paste_buttons()
+
+
 func _update_label_of_source_or_destination(is_source: bool) -> void:
 	var text: String
 	if is_source:
@@ -277,7 +343,14 @@ func _update_label_of_source_or_destination(is_source: bool) -> void:
 		if !_destination:
 			text = "Select a destination cortical area"
 		elif _mode == MODE.NEURONS_TO_CORTICAL_AREA:
-			text = "Cortical area: %s\nMapping to all neurons!"  % _destination.friendly_name
+			if _destination_areas.size() > 1:
+				var dest_names: PackedStringArray = []
+				for dest_area in _destination_areas:
+					if dest_area != null:
+						dest_names.append(dest_area.friendly_name)
+				text = "Destination areas (%d):\n - %s\nMapping to all neurons!" % [_destination_areas.size(), "\n - ".join(dest_names)]
+			else:
+				text = "Cortical area: %s\nMapping to all neurons!"  % _destination.friendly_name
 		elif not _destination_batch_neurons_by_area.is_empty():
 			var area_count_dest: int = _destination_batch_neurons_by_area.size()
 			var voxel_count_dest: int = 0
@@ -484,6 +557,7 @@ func _apply_clipboard_voxel_selection(is_source: bool) -> void:
 			MODE.NEURONS_TO_CORTICAL_AREA:
 				_destination_batch_neurons_by_area.clear()
 				_destination_neuron_local_coords.clear()
+				_destination_areas = [_destination] if _destination != null else []
 				_update_label_of_source_or_destination(false)
 				_end_edit_destination_config()
 			MODE.NEURON_TO_NEURONS:
@@ -532,7 +606,10 @@ func _refresh_clipboard_paste_buttons() -> void:
 		_destination_paste_button.tooltip_text = "Paste voxel selection from clipboard" if has_clipboard_voxels else "Clipboard has no voxel selection payload"
 
 func _define_pattern_morphology_label() -> void:
-	var text: String = "Source: %s, Destination: %s\n" % [_source.friendly_name, _destination.friendly_name]
+	var destination_summary: String = _destination.friendly_name
+	if _destination_areas.size() > 1:
+		destination_summary = "%d areas" % _destination_areas.size()
+	var text: String = "Source: %s, Destination: %s\n" % [_source.friendly_name, destination_summary]
 	if _source is MemoryCorticalArea:
 		text += "Connectivity Rule Type: Projector\n"
 		text += "Using Default Projector Settings"
@@ -693,12 +770,20 @@ func _confirm_establish_mapping() -> void:
 						continue
 					jobs.append({"source": _source, "destination": dest_area, "source_voxels": [], "destination_voxels": dest_voxels})
 			MODE.NEURONS_TO_CORTICAL_AREA:
+				var dest_areas: Array[AbstractCorticalArea] = []
+				if not _destination_areas.is_empty():
+					dest_areas = _destination_areas.duplicate()
+				elif _destination != null:
+					dest_areas = [_destination]
 				for src_set in source_sets:
 					var src_area: AbstractCorticalArea = src_set.get("area", null) as AbstractCorticalArea
 					var src_voxels: Array[Vector3i] = src_set.get("voxels", [])
 					if src_area == null or src_voxels.is_empty():
 						continue
-					jobs.append({"source": src_area, "destination": _destination, "source_voxels": src_voxels, "destination_voxels": []})
+					for dest_area in dest_areas:
+						if dest_area == null:
+							continue
+						jobs.append({"source": src_area, "destination": dest_area, "source_voxels": src_voxels, "destination_voxels": []})
 			MODE.NEURON_TO_NEURONS:
 				if _source_neuron_local_coords.is_empty():
 					_establishing = false

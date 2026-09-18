@@ -268,6 +268,13 @@ func _on_markdown_link_clicked(target_path: String) -> void:
 	if _is_markdown_path(target_path):
 		_open_markdown(target_path)
 
+## Open a guide file by filename (e.g. ``pattern_connectivity.md``).
+func open_guide_file(guide_filename: String) -> void:
+	var file_name := guide_filename.get_file()
+	if file_name.get_extension() == "":
+		file_name = file_name + ".md"
+	_open_markdown(guides_directory.path_join(file_name))
+
 ## Load and display a markdown file.
 func _open_markdown(markdown_path: String) -> void:
 	if markdown_path == "":

@@ -69,6 +69,21 @@ static func config_for_single_cortical_area_selection(starting_region: BrainRegi
 	output.cortical_areas_to_disable = unpickable_areas
 	return output
 
+## Starts at a given region, allows picking one or more cortical areas. Regions stay expandable but not selectable.
+static func config_for_multiple_cortical_area_selection(starting_region: BrainRegion, current_selected_areas: Array[AbstractCorticalArea] = [], unpickable_areas: Array[AbstractCorticalArea] = []) -> SelectGenomeObjectSettings:
+	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()
+	output.target_type = GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS
+	output.starting_region = starting_region
+	output.pick_instructions = "Please select one or more destination Cortical Areas:"
+	var preselected: Array[GenomeObject] = []
+	for area in current_selected_areas:
+		if area != null:
+			preselected.append(area)
+	output.preselected_objects = preselected
+	output.disable_all_regions = true
+	output.cortical_areas_to_disable = unpickable_areas
+	return output
+
 ## Starts at a given region, allows for picking a single cortical area, bar the defined unpickables
 static func config_for_single_brain_region_selection(starting_region: BrainRegion, currently_picked_region: BrainRegion = null, unpickable_regions: Array[BrainRegion] = []) -> SelectGenomeObjectSettings:
 	var output: SelectGenomeObjectSettings = SelectGenomeObjectSettings.new()

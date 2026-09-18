@@ -87,6 +87,9 @@ func _set_pattern_pair_array(input_pattern_pairs: Array[PatternVector3Pairs], is
 			"vectorPair": pattern_pair
 		})
 
+func _on_help_pressed() -> void:
+	BV.WM.spawn_guide_page("pattern_connectivity.md")
+
 func _on_raw_edit_pressed() -> void:
 	var arr: Array = FEAGIUtils.array_of_PatternVector3Pairs_to_array_of_array_of_array_of_array_of_elements(get_pattern_pair_array())
 	var initial_json: String = FEAGIUtils.array_to_json_one_element_per_line(arr)

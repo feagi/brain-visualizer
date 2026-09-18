@@ -1,7 +1,7 @@
 extends AbstractLineInput
 class_name PatternValInput
 ## Text Box that user can input [PatternVal] into.
-## Accepts: integers, *, ?, !, ?+, ?-, ?+=, ?-=, ?+N, ?-N, ?-A:?+B
+## Accepts: integers, *, ?, !, ?+, ?-, ?+=, ?-=, ?+N, ?-N, ?-A:?+B, N..M
 
 # useful properties inherited
 # editable
