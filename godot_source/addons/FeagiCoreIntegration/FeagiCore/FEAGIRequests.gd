@@ -2445,6 +2445,10 @@ func add_pattern_morphology(morphology_name: StringName, patterns: Array[Pattern
 	if len(patterns) == 0:
 		push_error("FEAGI Requests: Cannot create pattern morphology of name %s with 0 vector pairs!" % morphology_name)
 		return FeagiRequestOutput.requirement_fail("0_VECTORS")
+	for pair in patterns:
+		if !pair.all_tokens_parse_valid():
+			push_error("FEAGI Requests: Refusing to create pattern morphology %s: invalid token (empty or unrecognized). N..M is not coerced to 0." % morphology_name)
+			return FeagiRequestOutput.requirement_fail(&"INVALID_PATTERN_TOKEN")
 	
 	# Define Request
 	var dict_to_send: Dictionary = {
@@ -2557,6 +2561,10 @@ func update_pattern_morphology(morphology_name: StringName, patterns: Array[Patt
 	if len(patterns) == 0:
 		push_error("FEAGI Requests: Cannot update pattern morphology of name %s with 0 vector pairs!" % morphology_name)
 		return FeagiRequestOutput.requirement_fail("0_VECTORS")
+	for pair in patterns:
+		if !pair.all_tokens_parse_valid():
+			push_error("FEAGI Requests: Refusing to update pattern morphology %s: invalid token (empty or unrecognized). N..M is not coerced to 0." % morphology_name)
+			return FeagiRequestOutput.requirement_fail(&"INVALID_PATTERN_TOKEN")
 	
 	# Define Request
 	var dict_to_send: Dictionary = {

@@ -19,7 +19,8 @@ signal patternval_confirmed(new_patternval: PatternVal)
 @export var min_int_value: int = -999999
 
 var current_patternval: PatternVal:
-	get: return PatternVal.new(previous_text)
+	get:
+		return PatternVal.new(previous_text.strip_edges())
 	set(v):
 		var val_to_set: PatternVal = v
 		if val_to_set.isInt and int(val_to_set.data) < min_int_value:

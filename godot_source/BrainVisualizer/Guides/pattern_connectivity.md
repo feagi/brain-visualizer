@@ -28,8 +28,12 @@ These do not depend on the source neuron's position.
 
 Source X 1 through 98, any Y/Z. Destination keeps X and Y, command bin Z=0.
 
-Do not write `1-98` or `1:98`. Those are not absolute ranges. Unknown strings
-are treated as `*` by FEAGI and will over-connect.
+Do not write `1-98` or `1:98`. Those are not absolute ranges.
+
+Apply writes every row, not only the cell you edited. An unrecognized or
+empty token is **rejected** and the save is aborted. It is never coerced to
+`0`. That coercion is what wiped `N..M` sit ranges when a destination edit
+was applied.
 
 ## Source-relative tokens
 

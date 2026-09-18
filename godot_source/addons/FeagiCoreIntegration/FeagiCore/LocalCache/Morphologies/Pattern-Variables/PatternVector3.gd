@@ -24,10 +24,13 @@ static func create_empty() -> PatternVector3:
 	return PatternVector3.new(PatternVal.create_empty(), PatternVal.create_empty(),
 	PatternVal.create_empty())
 
-#TODO fix
-# Do not define array type due to type mixing
+func all_tokens_parse_valid() -> bool:
+	return _data[0].is_parse_valid and _data[1].is_parse_valid and _data[2].is_parse_valid
+
+
+# Do not type the array: ints and strings are mixed on purpose.
 func to_FEAGI_array() -> Array:
-	return [x.data, y.data, z.data]
+	return [_data[0].to_feagi_token(), _data[1].to_feagi_token(), _data[2].to_feagi_token()]
 
 func duplicate() -> PatternVector3:
 	return PatternVector3.new(x.duplicate(), y.duplicate(), z.duplicate())

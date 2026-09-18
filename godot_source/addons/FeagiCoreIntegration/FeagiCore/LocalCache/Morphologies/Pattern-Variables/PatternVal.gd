@@ -62,7 +62,12 @@ var isRelative: bool:
 var as_StringName: StringName:
 	get: return str(_data)
 
+## False when construction input was not a legal token. Never coerce that to 0.
+var is_parse_valid: bool:
+	get: return _parse_ok
+
 var _data: Variant = 0 # either StringName or int
+var _parse_ok: bool = false
 
 func _init(input: Variant):
 	_verify(input)
@@ -92,6 +97,22 @@ static func are_pattern_vals_equal(A: PatternVal, B: PatternVal) -> bool:
 ## Create an empty PatternVal (default to 0)
 static func create_empty() -> PatternVal:
 	return PatternVal.new(0)
+
+
+## Explicit invalid token. Apply/create must refuse this instead of writing 0.
+static func create_invalid() -> PatternVal:
+	var invalid: PatternVal = PatternVal.new(0)
+	invalid._parse_ok = false
+	return invalid
+
+
+## JSON-safe token: ints stay ints, ranges/symbols stay String (not StringName).
+func to_feagi_token() -> Variant:
+	if !_parse_ok:
+		return null
+	if isInt:
+		return int(_data)
+	return String(as_StringName)
 
 ## Check if string is an offset pattern like "?+3" or "?-2"
 static func _is_offset_pattern_static(s: String) -> bool:
@@ -136,31 +157,48 @@ func _is_absolute_range_pattern(s: String) -> bool:
 	return PatternVal._is_absolute_range_pattern_static(s)
 
 func _verify(input: Variant) -> void:
+	_parse_ok = false
 	if input is StringName:
 		var s: String = String(input)
 		if s.is_valid_int():
 			_data = s.to_int()
+			_parse_ok = true
 			return
 		if input in SINGLE_CHAR_PATTERNS or input in DIRECTION_PATTERNS:
 			_data = input
+			_parse_ok = true
 			return
 		if _is_offset_pattern(s) or _is_range_pattern(s) or _is_absolute_range_pattern(s):
 			_data = input
+			_parse_ok = true
 			return
 		return
 	if input is String:
 		if input.is_valid_int():
 			_data = input.to_int()
+			_parse_ok = true
 			return
 		var sn: StringName = StringName(input)
 		if sn in SINGLE_CHAR_PATTERNS or sn in DIRECTION_PATTERNS:
 			_data = sn
+			_parse_ok = true
 			return
 		if _is_offset_pattern(input) or _is_range_pattern(input) or _is_absolute_range_pattern(input):
 			_data = StringName(input)
+			_parse_ok = true
 			return
 		return
-	_data = int(input)
+	if input is int:
+		_data = input
+		_parse_ok = true
+		return
+	if input is float and is_equal_approx(float(input), round(float(input))):
+		_data = int(input)
+		_parse_ok = true
+		return
+	# Do not int() arrays, null, or unknown types. That is how N..M became 0.
 
 func duplicate() -> PatternVal:
+	if !_parse_ok:
+		return PatternVal.create_invalid()
 	return PatternVal.new(_data)

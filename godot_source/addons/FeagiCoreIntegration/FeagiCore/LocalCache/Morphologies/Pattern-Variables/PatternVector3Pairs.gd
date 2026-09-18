@@ -38,6 +38,17 @@ static func raw_pattern_nested_array_to_array_of_PatternVector3s(raw_array: Arra
 static func create_empty() -> PatternVector3Pairs:
 	return PatternVector3Pairs.new(PatternVector3.create_empty(), PatternVector3.create_empty())
 
+func all_tokens_parse_valid() -> bool:
+	return _incoming.all_tokens_parse_valid() and _outgoing.all_tokens_parse_valid()
+
+
+static func reject_reason_if_any_token_invalid(patterns: Array) -> StringName:
+	for pair in patterns:
+		if !pair.all_tokens_parse_valid():
+			return &"INVALID_PATTERN_TOKEN"
+	return &""
+
+
 func to_array_of_arrays() -> Array[Array]:
 	return [_incoming.to_FEAGI_array(), _outgoing.to_FEAGI_array()]
 
