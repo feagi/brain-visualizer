@@ -2129,6 +2129,7 @@ func delete_cortical_area(deleting_area: AbstractCorticalArea) -> FeagiRequestOu
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully removed cortical area %s" % deleting_area.cortical_ID)
 	FeagiCore.feagi_local_cache.FEAGI_delete_all_mappings_involving_area_and_area(deleting_area)
+	await _synchronize_cache_after_cortical_delete()
 	return FEAGI_response_data
 
 func mass_delete_cortical_areas(deleting_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
@@ -2156,7 +2157,17 @@ func mass_delete_cortical_areas(deleting_areas: Array[AbstractCorticalArea]) -> 
 	print("FEAGI REQUEST: Successfully removed %s cortical areas" % len(deleting_areas))
 	for deleting in deleting_areas:
 		FeagiCore.feagi_local_cache.FEAGI_delete_all_mappings_involving_area_and_area(deleting)
+	await _synchronize_cache_after_cortical_delete()
 	return FEAGI_response_data
+
+## Same FEAGI pull used after mapping-created memory twins: geometry then mappings.
+func _synchronize_cache_after_cortical_delete() -> void:
+	var cortical_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
+	if cortical_refresh == null or cortical_refresh.has_errored or not cortical_refresh.success:
+		push_warning("FEAGI REQUEST: Delete succeeded, but BV could not synchronize cortical areas from FEAGI.")
+	var mappings_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
+	if mappings_refresh == null or mappings_refresh.has_errored or not mappings_refresh.success:
+		push_warning("FEAGI REQUEST: Delete succeeded, but BV could not synchronize cortical mappings from FEAGI.")
 
 # Send Request to reset cortical areas
 func mass_reset_cortical_areas(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:

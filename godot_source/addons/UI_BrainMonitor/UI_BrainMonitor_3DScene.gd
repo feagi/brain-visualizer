@@ -4,6 +4,7 @@ class_name UI_BrainMonitor_3DScene
 # Force re-parse to fix Godot parsing issues
 const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
 const ContinuousSelectedNeuronFiringLib = preload("res://addons/UI_BrainMonitor/ContinuousSelectedNeuronFiring.gd")
+const BoxSelectLib = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_BoxSelect.gd")
 
 @export var multi_select_key: Key = KEY_SHIFT
 
@@ -144,6 +145,7 @@ var _cache_rebuild_pending: bool = false
 var _active_preview_indicators: Array[Node3D] = []
 var _last_scene_center: Vector3 = Vector3.ZERO
 var _is_mouse_hovering_viewport: bool = false
+var _box_select = BoxSelectLib.new()
 var _enter_key_latched: bool = false
 var _debug_hover_identity_enabled: bool = false
 var _last_hovered_debug_path: NodePath = NodePath("")
@@ -849,6 +851,7 @@ func _on_container_mouse_exited() -> void:
 	# Reset bridge and entry tracking when leaving this viewport
 	_clear_bridge_segment()
 	_qc_last_mouse_entry_pos = Vector2.ZERO
+	_cancel_box_select()
 
 ## Enter: save. Escape: cancel (reset to original).
 func _unhandled_input(event: InputEvent) -> void:
@@ -860,7 +863,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				if _manipulation_active:
 					_cancel_manipulation()
 					return
-				# Priority 2: clear all current selection/highlights in Brain Monitor.
+				# Priority 2: cancel an in-progress Shift+drag box select.
+				if _box_select.is_active():
+					_cancel_box_select()
+					return
+				# Priority 3: clear all current selection/highlights in Brain Monitor.
 				if BV != null and BV.UI != null and BV.UI.selection_system != null:
 					BV.UI.selection_system.clear_all_highlighted()
 					clear_all_selected_cortical_area_neurons()
@@ -1829,6 +1836,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if _manipulation_active and _manipulation_dragging and UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN in bm_input_event.all_buttons_being_held:
 				_process_manipulation_drag(bm_input_event)
 				continue
+			if _box_select.is_active():
+				_update_box_select_pointer()
+				if _box_select.is_dragging():
+					continue
 			var action_body := _raycast_close_handle(bm_input_event.get_ray_query()) if _manipulation_active else null
 			var action_kind: StringName = _get_gizmo_action_kind(action_body)
 			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
@@ -2125,59 +2136,11 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button_pressed:
 					_finish_manipulation_drag_and_confirm(true)
 					continue
-			var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
-			if hit.is_empty():
-				if _UI_layer_for_BM:
-					_UI_layer_for_BM.clear_plate_hover()
+			if _try_handle_box_select_click(bm_input_event, currently_moused_over_volumes):
 				continue
-			var hit_body: StaticBody3D = hit[&"collider"] as StaticBody3D
-			
 			# Use primary ray hit only for clicks so plate / brain-region picks stay authoritative.
 			# Pass-through cortical picking is hover-only (area labels on output plates).
-			if hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
-				var cortical_renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
-				if cortical_renderer != null:
-					_handle_cortical_pick_click_event(
-						bm_input_event,
-						cortical_renderer,
-						hit["position"],
-						currently_moused_over_volumes,
-					)
-			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
-				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
-				if region_frame and bm_input_event.button_pressed:
-					# Check for left-click or right-click
-					if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
-						# Check for ctrl+click to focus camera on region
-						if bm_input_event.ctrl_pressed:
-							# Ctrl+Click: Focus camera on the region's bounding box
-							if _pancake_cam:
-								# Compute world-space AABB of the brain region frame (includes all visualizations)
-								var region_aabb = _compute_region_frame_aabb(region_frame)
-								if region_aabb.size != Vector3.ZERO and (region_aabb.size.x + region_aabb.size.y + region_aabb.size.z) > 0.01:
-									# Frame camera to show entire bounding box
-									_frame_camera_to_aabb(region_aabb)
-									print("Focused camera on brain region: %s" % region_frame.representing_region.friendly_name)
-								else:
-									# Fallback: use region frame's global position if AABB is invalid
-									_pancake_cam.teleport_to_look_at_without_changing_angle(region_frame.global_position)
-									print("Focused camera on brain region: %s (fallback)" % region_frame.representing_region.friendly_name)
-							return
-						
-						# Single left-click on brain region - select it (only for MAIN button without Ctrl)
-						if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-							BV.UI.selection_system.clear_all_highlighted()
-							BV.UI.selection_system.add_to_highlighted(region_frame.representing_region)
-							BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN)
-							print("🧠 Clicked brain region frame: %s" % region_frame.representing_region.friendly_name)
-						
-						# Check for double-click (simple implementation)
-						region_frame.handle_double_click()
-			# If clicking on a plate, clear the label on mouse up (we only show on hover)
-			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
-				if _UI_layer_for_BM and not bm_input_event.button_pressed:
-					_UI_layer_for_BM.clear_plate_hover()
-			
+			_process_scene_pick_click(bm_input_event, currently_moused_over_volumes)
 	
 	# Higlight what has been moused over (and unhighlight what hasnt) (this is slow but not really a problem right now)
 	var prev_valid_volumes: Array[UI_BrainMonitor_CorticalArea] = _previously_moused_over_volumes.filter(
@@ -2216,6 +2179,181 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	_previously_moused_over_cortical_area_neurons = currently_mousing_over_neurons
 
 #region Interaction
+
+func _get_bm_mouse_position() -> Vector2:
+	var sv: SubViewport = $SubViewport
+	return sv.get_mouse_position()
+
+
+func _box_select_is_allowed() -> bool:
+	if _manipulation_active:
+		return false
+	if _qc_guide_active:
+		return false
+	if BV != null and BV.UI != null and BV.UI.selection_system != null:
+		if BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT):
+			return false
+		if BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT_NEURON):
+			return false
+	if _should_disable_unit_group_auto_selection_for_click():
+		return false
+	if _is_quick_connect_neuron_waiting_for_entire_area_selection():
+		return false
+	return true
+
+
+func _update_box_select_pointer() -> void:
+	_box_select.update_pointer(_get_bm_mouse_position())
+	if _box_select.is_dragging() and _UI_layer_for_BM != null:
+		_UI_layer_for_BM.set_box_select_rect(_box_select.get_screen_rect())
+
+
+func _restore_tank_pan_after_box_select() -> void:
+	if _pancake_cam != null and not _manipulation_dragging:
+		_pancake_cam.set_tank_pan_enabled(true)
+
+
+func _cancel_box_select() -> void:
+	if not _box_select.is_active():
+		return
+	_box_select.reset()
+	_restore_tank_pan_after_box_select()
+	if _UI_layer_for_BM != null:
+		_UI_layer_for_BM.clear_box_select_rect()
+
+
+func _try_handle_box_select_click(
+	bm_input_event: UI_BrainMonitor_InputEvent_Click,
+	currently_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea],
+) -> bool:
+	if bm_input_event.button != UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+		return false
+	if bm_input_event.button_pressed:
+		if not Input.is_physical_key_pressed(multi_select_key) or not _box_select_is_allowed():
+			return false
+		_box_select.begin_press(_get_bm_mouse_position())
+		if _pancake_cam != null:
+			_pancake_cam.set_tank_pan_enabled(false)
+		return true
+	if not _box_select.is_active():
+		return false
+	_box_select.update_pointer(_get_bm_mouse_position())
+	var screen_rect: Rect2 = _box_select.get_screen_rect()
+	var ended_phase: int = _box_select.finish()
+	_restore_tank_pan_after_box_select()
+	if _UI_layer_for_BM != null:
+		_UI_layer_for_BM.clear_box_select_rect()
+	if ended_phase == BoxSelectLib.PHASE.DRAGGING:
+		_commit_box_select(screen_rect)
+		return true
+	_replay_deferred_shift_click(bm_input_event, currently_moused_over_volumes)
+	return true
+
+
+func _replay_deferred_shift_click(
+	release_event: UI_BrainMonitor_InputEvent_Click,
+	currently_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea],
+) -> void:
+	var press_event: UI_BrainMonitor_InputEvent_Click = UI_BrainMonitor_InputEvent_Click.new(
+		release_event.all_buttons_being_held,
+		release_event.ray_start_point,
+		release_event.ray_end_point,
+		true,
+		release_event.button_double_clicked,
+		release_event.button,
+		false,
+		release_event.ctrl_pressed,
+		release_event.shift_pressed,
+		release_event.alt_pressed,
+	)
+	_process_scene_pick_click(press_event, currently_moused_over_volumes)
+
+
+func _commit_box_select(screen_rect: Rect2) -> void:
+	if _pancake_cam == null or BV == null or BV.UI == null or BV.UI.selection_system == null:
+		return
+	var entries: Array = []
+	for viz in _cortical_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz) or viz.cortical_area == null:
+			continue
+		var target: Node = viz.renderer
+		if target == null or not is_instance_valid(target):
+			continue
+		var aabb: AABB = _compute_world_aabb(target)
+		if aabb.size == Vector3.ZERO and aabb.position.is_equal_approx(Vector3.ZERO):
+			continue
+		var points: Array[Vector2] = BoxSelectLib.project_aabb_corners(
+			aabb,
+			func(p: Vector3) -> bool: return _pancake_cam.is_position_behind(p),
+			func(p: Vector3) -> Vector2: return _pancake_cam.unproject_position(p),
+		)
+		entries.append({
+			&"object": viz.cortical_area,
+			&"bounds": BoxSelectLib.screen_bounds_from_points(points),
+		})
+	var selected_raw: Array = BoxSelectLib.collect_overlapping_objects(entries, screen_rect)
+	if selected_raw.is_empty():
+		return
+	var selected: Array[GenomeObject] = []
+	for obj in selected_raw:
+		if obj is GenomeObject:
+			selected.append(obj as GenomeObject)
+	if selected.is_empty():
+		return
+	BV.UI.dismiss_area_firing_recorder_for_normal_selection()
+	var selection_system: SelectionSystem = BV.UI.selection_system
+	selection_system.clear_all_highlighted()
+	for obj in selected:
+		selection_system.add_to_highlighted(obj)
+	selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE, selected)
+
+
+func _process_scene_pick_click(
+	bm_input_event: UI_BrainMonitor_InputEvent_Click,
+	currently_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea],
+) -> void:
+	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
+	var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
+	if hit.is_empty():
+		if _UI_layer_for_BM:
+			_UI_layer_for_BM.clear_plate_hover()
+		return
+	var hit_body: StaticBody3D = hit[&"collider"] as StaticBody3D
+	if hit_body == null:
+		return
+	if hit_body.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
+		var cortical_renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer = hit_body.get_parent()
+		if cortical_renderer != null:
+			_handle_cortical_pick_click_event(
+				bm_input_event,
+				cortical_renderer,
+				hit["position"],
+				currently_moused_over_volumes,
+			)
+	elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
+		var region_frame = hit_body.get_parent()
+		if region_frame and bm_input_event.button_pressed:
+			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+				if bm_input_event.ctrl_pressed:
+					if _pancake_cam:
+						var region_aabb = _compute_region_frame_aabb(region_frame)
+						if region_aabb.size != Vector3.ZERO and (region_aabb.size.x + region_aabb.size.y + region_aabb.size.z) > 0.01:
+							_frame_camera_to_aabb(region_aabb)
+							print("Focused camera on brain region: %s" % region_frame.representing_region.friendly_name)
+						else:
+							_pancake_cam.teleport_to_look_at_without_changing_angle(region_frame.global_position)
+							print("Focused camera on brain region: %s (fallback)" % region_frame.representing_region.friendly_name)
+					return
+				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+					BV.UI.selection_system.clear_all_highlighted()
+					BV.UI.selection_system.add_to_highlighted(region_frame.representing_region)
+					BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN)
+					print("🧠 Clicked brain region frame: %s" % region_frame.representing_region.friendly_name)
+				region_frame.handle_double_click()
+	elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
+		if _UI_layer_for_BM and not bm_input_event.button_pressed:
+			_UI_layer_for_BM.clear_plate_hover()
+
 
 func clear_all_selected_cortical_area_neurons() -> void:
 	for area: UI_BrainMonitor_CorticalArea in _cortical_visualizations_by_ID.values():
@@ -3940,6 +4078,13 @@ func _teardown_core_cluster_plate() -> void:
 
 func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalArea:
 	# print("🚨 _add_cortical_area() CALLED for area: %s in brain monitor instance %d (region: %s)" % [area.cortical_ID, get_instance_id(), _representing_region.friendly_name])  # Suppressed - causes output overflow
+	if area == null:
+		return null
+	# Rebuild iterates contained_cortical_areas / partial mappings that can still hold
+	# an instance removed from available_cortical_areas. Cache is the source of truth.
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null and FeagiCore.feagi_local_cache.cortical_areas != null:
+		if not FeagiCore.feagi_local_cache.cortical_areas.has_live_instance(area):
+			return null
 	
 	# Show call stack to find who's calling this - SUPPRESSED DUE TO OUTPUT OVERFLOW
 	# print("🚨 CALL STACK for _add_cortical_area:")
@@ -4444,6 +4589,10 @@ func _add_missing_cortical_area_visualizations() -> void:
 		# which would queue_free every cortical viz and break Type 11 / DirectPoints registration.
 		if area == null:
 			continue
+		if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.cortical_areas:
+			if not FeagiCore.feagi_local_cache.cortical_areas.has_live_instance(area):
+				_remove_cortical_area(area)
+				continue
 		var is_in_subtree = _is_area_in_representing_region_subtree_by_parent_chain(area)
 		var is_direct_member = _is_area_direct_child_of_representing_region(area)
 		var memory_hide_at_root = _brain_monitor_viewing_feagi_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY

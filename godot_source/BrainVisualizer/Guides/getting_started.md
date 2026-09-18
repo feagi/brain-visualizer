@@ -64,10 +64,12 @@ When Brain Visualizer loads, you'll see:
 - **Multi-select**: Ctrl + Click to add to selection
 
 ### In Brain Monitor (3D)
-- **Rotate**: Left mouse drag
-- **Pan**: Middle mouse drag or Shift + Left mouse drag
-- **Zoom**: Mouse wheel or Right mouse drag
-- **Focus**: Click on a cortical area to focus on it
+- **Pan**: Left mouse drag
+- **Rotate**: Right mouse drag
+- **Zoom**: Mouse wheel
+- **Select**: Left-click a cortical area
+- **Multi-select**: Ctrl + Click to add or remove an area, or **Shift + Left Drag** a rectangle around several areas
+- **Focus**: Click on a cortical area, then press F
 
 See [Navigation Basics](navigation.md) for more details.
 

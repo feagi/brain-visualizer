@@ -8,7 +8,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Jump to a circuit/region** -> Top bar Circuits dropdown -> choose circuit
 - **Jump to an output area** -> Top bar Outputs dropdown -> choose area
 - **Focus selected region/area in active views** -> Select object, then press F
-- **Clear window-level selection or close active popup/window** -> Escape (context dependent)
+- **Clear window-level selection or close active popup/window** -> Escape (context dependent; also cancels an in-progress Brain Monitor box select)
 
 ## Circuit Builder (2D) Navigation
 
@@ -39,6 +39,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Select cortical area** -> Left Click on cortical volume
 - **Select brain region frame** -> Left Click on region frame
 - **Add/remove cortical area from multi-selection** -> Ctrl + Click on cortical area (Cmd + Click on macOS)
+- **Box-select multiple cortical areas** -> Shift + Left Drag a rectangle in the 3D scene
 - **Toggle voxel selection (additive)** -> Hold Shift, then Click voxels
 - **Fire selected voxels once** -> Space (release Shift first if you were picking voxels)
 - **Start continuous fire of selected voxels** -> Shift + Space

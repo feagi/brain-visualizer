@@ -4,6 +4,11 @@ class_name UI_BrainMonitor_Overlay
 
 var _mouse_context_label: Label
 var _fdp_deserializer: Object = null
+var _box_select_rect: Rect2 = Rect2()
+var _box_select_visible: bool = false
+
+const BOX_SELECT_FILL: Color = Color(0.12, 0.85, 0.95, 0.12)
+const BOX_SELECT_BORDER: Color = Color(0.12, 0.85, 0.95, 0.9)
 
 ## Set true to log device_index resolution (coord, per, path, result) to Godot output.
 const DEBUG_DEVICE_INDEX: bool = false
@@ -53,6 +58,26 @@ func _ready() -> void:
 
 	if ClassDB.class_exists("FeagiDataDeserializer"):
 		_fdp_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
+
+
+func set_box_select_rect(rect: Rect2) -> void:
+	_box_select_rect = rect
+	_box_select_visible = rect.size.x > 0.0 and rect.size.y > 0.0
+	queue_redraw()
+
+
+func clear_box_select_rect() -> void:
+	_box_select_visible = false
+	_box_select_rect = Rect2()
+	queue_redraw()
+
+
+func _draw() -> void:
+	if not _box_select_visible:
+		return
+	draw_rect(_box_select_rect, BOX_SELECT_FILL, true)
+	draw_rect(_box_select_rect, BOX_SELECT_BORDER, false, 1.5)
+
 
 ## Clear all text
 func clear() -> void:

@@ -42,9 +42,9 @@ Neural activity is visualized through:
 - The camera orbits while keeping the center of interest in view
 
 **Pan (Move Laterally)**
-- **Middle mouse drag**: Move left/right/up/down
-- **Shift + Left mouse drag**: Alternative pan control
-- Useful for repositioning view without rotating
+- **Left mouse drag**: Move left/right/up/down (Tank mode)
+- **Middle mouse drag**: Alternative pan
+- **Shift + Left mouse drag** is box selection, not pan (see Multi-Selection below)
 
 **Zoom**
 - **Mouse wheel scroll**: Zoom in (scroll up) or out (scroll down)
@@ -65,6 +65,7 @@ Neural activity is visualized through:
 - **F**: Focus on selected object
 - **Home**: Reset to default view
 - **Shift + Click**: Toggle voxel selection inside a cortical volume
+- **Shift + Left Drag**: Draw a rectangle to select multiple cortical areas
 - **Space**: Fire (stimulate) currently selected voxels once
 - **Shift + Space**: Continuously fire selected voxels until you press **Space** again
 - **Delete**: Clear all selected voxels (also stops continuous firing)
@@ -112,10 +113,13 @@ Regions organize cortical areas spatially:
 - Properties panel updates (if visible)
 
 **Multi-Selection:**
-- **Ctrl + Click** to add to selection
-- Useful for comparing multiple areas
-- Some operations work on multiple objects
-- In 3D, **Ctrl + Click** now toggles cortical areas for shared multi-edit quick menu actions
+- **Ctrl + Click** (Cmd + Click on macOS) to add or remove a cortical area
+- **Shift + Left Drag** to draw a rectangle; every cortical area whose volume intersects that rectangle is selected
+- Camera pan is paused while the box is being drawn
+- A Shift+click that does not drag still toggles voxels (see below)
+- **Escape** cancels an in-progress box; leaving the viewport also cancels it
+- Box select replaces the current area highlight set and opens the shared multi-edit quick menu
+- Useful for comparing multiple areas and bulk operations
 
 **Plane Focus Shortcuts:**
 - **Ctrl + 1 + Click**: Focus clicked cortical area on XY plane
@@ -124,7 +128,7 @@ Regions organize cortical areas spatially:
 
 ### Selecting and Stimulating Voxels
 
-Hold **Shift** and **click** voxels inside a cortical volume to toggle them on or off. Selected voxels stay highlighted across one or more cortical areas.
+Hold **Shift** and **click** voxels inside a cortical volume to toggle them on or off. Selected voxels stay highlighted across one or more cortical areas. **Shift + Left Drag** is different: it box-selects whole cortical areas, not voxels.
 
 **One-shot fire:** Release Shift, then press **Space**. FEAGI stimulates the current selection once.
 

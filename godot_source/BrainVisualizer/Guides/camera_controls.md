@@ -100,8 +100,9 @@ Rotate camera around focus point:
 Move camera sideways without rotating:
 
 **Mouse:**
-- **Middle Mouse Drag**: Click and hold middle button, move mouse
-- **Shift + Left Mouse Drag**: Hold Shift, click and hold left button, move mouse
+- **Left Mouse Drag**: Click and hold left button, move mouse (Tank mode)
+- **Middle Mouse Drag**: Alternative pan
+- **Shift + Left Mouse Drag** draws a selection rectangle over cortical areas; it does not pan
 
 **Keyboard:**
 - **A/D**: Move left/right
@@ -111,6 +112,7 @@ Move camera sideways without rotating:
 - Use to reposition without changing angle
 - Combine with rotation for complex navigation
 - Good for framing specific views
+- To select several areas at once, hold Shift and drag a box instead of panning
 
 ### Zooming (Forward/Backward)
 
@@ -323,7 +325,8 @@ If using a touch device:
 - **Page Up/Down**: Zoom in/out
 - **Home**: Reset camera
 - **F**: Focus on selected
-- **Shift + WASD**: Free flight mode
+- **Shift + WASD**: Move faster
+- **Shift + Left Drag**: Box-select cortical areas
 
 ## Tips for Efficient Navigation
 

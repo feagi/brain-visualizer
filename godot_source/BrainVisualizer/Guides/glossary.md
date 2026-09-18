@@ -313,6 +313,13 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 
 ## S
 
+**Selection (Brain Monitor)**
+- **Click** a cortical volume to select that area
+- **Ctrl + Click** (Cmd + Click on macOS) adds or removes areas from multi-selection
+- **Shift + Left Drag** draws a rectangle and selects every cortical area whose volume intersects it
+- **Shift + Click** (no drag) toggles voxels inside a cortical volume
+- See also: [Brain Monitor](#b), [Quick Menu](#q), [Voxel](#v)
+
 **Snooze Period**
 - Rest time after a neuron reaches consecutive fire limit
 - Longer than refractory period
@@ -366,7 +373,7 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Contains one or more neurons
 - Cortical area dimensions are measured in voxels
 - Each voxel has a position (X, Y, Z) within its cortical area
-- In Brain Monitor, Shift+click selects voxels; Space / Shift+Space stimulates them
+- In Brain Monitor, Shift+click selects voxels; Shift+Left Drag box-selects cortical areas; Space / Shift+Space stimulates selected voxels
 - See also: [Dimensions](#d), [Neurons Per Voxel](#n), [Manual Stimulation](#m)
 
 ---

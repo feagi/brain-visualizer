@@ -451,6 +451,7 @@ While Quick Menu is open:
 The menu remembers where selection originated:
 - Circuit Builder click → Circuit Builder context
 - Brain Monitor click → Brain Monitor context
+- Brain Monitor **Shift + Left Drag** box select → Brain Monitor context (all areas in the rectangle)
 - Different options based on source
 
 ## Troubleshooting

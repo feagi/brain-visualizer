@@ -269,7 +269,7 @@ Select multiple areas to perform bulk operations:
 
 Circuit Builder and Brain Monitor are tightly integrated:
 
-- **Selection Sync**: Selecting in one view highlights in the other
+- **Selection Sync**: Selecting in one view highlights in the other (including Brain Monitor **Shift + Left Drag** box select)
 - **Focus Sync**: Focusing on an area in one view focuses in the other
 - **Split View**: View both simultaneously for best workflow
 

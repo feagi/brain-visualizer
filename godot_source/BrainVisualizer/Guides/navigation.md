@@ -59,10 +59,11 @@ Pan, zoom, and rotate for exploration:
 - **Reset**: Fit All (right-click → Fit All)
 
 **In Brain Monitor (3D):**
-- **Rotate**: Left-drag to orbit
-- **Pan**: Middle-drag or Shift+Left-drag
-- **Zoom**: Mouse wheel or Right-drag
-- **Reset**: Home key
+- **Pan**: Left-drag
+- **Rotate**: Right-drag
+- **Zoom**: Mouse wheel
+- **Box-select areas**: Shift+Left-drag a rectangle
+- **Reset**: R (when the mouse is over that Brain Monitor viewport)
 
 See [Camera Controls](camera_controls.md) for complete details.
 
@@ -116,14 +117,18 @@ Navigate through region hierarchy:
 - In 3D camera focus mode, use **Ctrl + 1/2/3 + Click** for plane-based focus
 - Useful for bulk operations
 
-**Box Selection:**
-- Click and drag in empty space (if enabled)
-- All objects in box are selected
+**Box Selection (Brain Monitor):**
+- **Shift + Left Drag** draws a rectangle in the 3D scene
+- All cortical areas whose volumes intersect that rectangle are selected
+- The box replaces the current area highlight set and opens the shared multi-edit quick menu
+- Camera pan is paused while the box is being drawn
+- A Shift+click that does not drag still toggles voxels (see below)
+- **Escape** or moving the mouse out of the viewport cancels an in-progress box
 
 ### Clear Selection
 
 - Click empty space
-- Press **Escape** key
+- Press **Escape** key (also cancels an in-progress box select)
 - Select different object
 
 ## Voxel Selection and Clipboard (Brain Monitor)
@@ -333,10 +338,12 @@ See [Split View](split_view.md) for more details.
 - **Home**: Reset view / Fit All
 - **Arrow Keys**: Pan (2D) or Rotate (3D)
 - **Page Up/Down**: Zoom in/out
-- **Escape**: Clear selection (also clears voxel selection in Brain Monitor)
+- **Escape**: Clear selection (cancels an in-progress box select, then clears area and voxel selection in Brain Monitor)
 
-### Brain Monitor Voxel Shortcuts
+### Brain Monitor Selection Shortcuts
 
+- **Shift + Left Drag**: Draw a rectangle to select multiple cortical areas
+- **Ctrl + Click**: Add or remove a cortical area from multi-selection
 - **Shift + Click**: Toggle voxel selection (hold Shift, then click voxels)
 - **Space**: Fire selected voxels once (release Shift first if you were picking voxels)
 - **Shift + Space**: Continuously fire selected voxels until Space
@@ -347,12 +354,13 @@ See [Split View](split_view.md) for more details.
 ### Mouse Shortcuts
 
 - **Left Click**: Select object
-- **Left Drag**: Rotate (3D) or Move object (2D)
+- **Left Drag**: Pan camera (3D) or move object (2D)
+- **Shift + Left Drag**: Box-select cortical areas (3D) or pan view (2D)
 - **Middle Drag**: Pan view
 - **Wheel**: Zoom in/out
 - **Ctrl + Click**: Multi-select cortical areas (opens Area Firing Recorder when used in Brain Monitor)
 
-See [Keyboard Shortcuts](keyboard_shortcuts.md) for complete list.
+See [Navigation Action Reference](navigation_actions_reference.md) for the complete list.
 
 ## Advanced Navigation
 

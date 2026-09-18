@@ -11,6 +11,21 @@ signal cortical_area_mass_updated(cortical_area: AbstractCorticalArea)
 var available_cortical_areas: Dictionary:
 	get: return _available_cortical_areas
 
+## True when [param area] is the live cache object for its ID.
+## Region containment and partial mappings can keep a deleted IPU/OPU instance
+## after [method remove_cortical_area]. Brain Monitor rebuild must skip those.
+func has_live_instance(area: AbstractCorticalArea) -> bool:
+	if area == null:
+		return false
+	var live: Variant = _available_cortical_areas.get(area.cortical_ID)
+	if live == null:
+		var token := String(area.cortical_ID)
+		for cache_id in _available_cortical_areas.keys():
+			if String(cache_id) == token:
+				live = _available_cortical_areas[cache_id]
+				break
+	return live != null and live == area
+
 ## When true, UI notifications for mass updates should be suppressed.
 var suppress_update_notifications: bool = false
 
