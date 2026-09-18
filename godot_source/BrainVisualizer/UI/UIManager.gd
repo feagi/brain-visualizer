@@ -1531,6 +1531,11 @@ func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[Stri
 		push_error("Manual stimulation: No neurons selected")
 		return
 	
+	# Continuous firing reuses this HTTP path once per burst. Skip while a prior
+	# stimulation call is still in flight so workers cannot accumulate.
+	if not _manual_stim_pending_workers.is_empty():
+		return
+	
 	# Check if network components are available
 	if not FeagiCore or not FeagiCore.network or not FeagiCore.network.http_API:
 		push_error("Manual stimulation: Network not available")

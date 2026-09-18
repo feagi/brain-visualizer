@@ -239,11 +239,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS)
 		
 		var bm_fire_event: UI_BrainMonitor_InputEvent_Click
+		var bm_ctrl: bool = event.ctrl_pressed or event.meta_pressed
+		var bm_shift: bool = event.shift_pressed
+		var bm_alt: bool = event.alt_pressed
 		
 		if (event.keycode == key_to_fire_selected_neurons):
-			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false)
+			# Key-repeat echoes would otherwise re-fire or re-toggle continuous activation.
+			if event.echo:
+				return
+			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false, bm_ctrl, bm_shift, bm_alt)
 		elif (event.keycode == key_to_clear_all_neurons):
-			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS, false)
+			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS, false, bm_ctrl, bm_shift, bm_alt)
 		else:
 			return
 

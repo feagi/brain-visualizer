@@ -64,8 +64,12 @@ Neural activity is visualized through:
 - **Arrow Keys**: Pan view
 - **F**: Focus on selected object
 - **Home**: Reset to default view
+- **Shift + Click**: Toggle voxel selection inside a cortical volume
+- **Space**: Fire (stimulate) currently selected voxels once
+- **Shift + Space**: Continuously fire selected voxels until you press **Space** again
+- **Delete**: Clear all selected voxels (also stops continuous firing)
 
-See [Camera Controls](camera_controls.md) for advanced navigation.
+See [Camera Controls](camera_controls.md) for advanced navigation, and [Navigation Basics](navigation.md) for the full voxel-selection workflow.
 
 ## Understanding Visual Elements
 
@@ -117,6 +121,23 @@ Regions organize cortical areas spatially:
 - **Ctrl + 1 + Click**: Focus clicked cortical area on XY plane
 - **Ctrl + 2 + Click**: Focus clicked cortical area on XZ plane
 - **Ctrl + 3 + Click**: Focus clicked cortical area on YZ plane
+
+### Selecting and Stimulating Voxels
+
+Hold **Shift** and **click** voxels inside a cortical volume to toggle them on or off. Selected voxels stay highlighted across one or more cortical areas.
+
+**One-shot fire:** Release Shift, then press **Space**. FEAGI stimulates the current selection once.
+
+**Continuous fire:** Press **Shift + Space**. FEAGI stimulates the same selection once per burst until you press **Space** again (with or without Shift). A notification confirms start and stop.
+
+**Stop continuous fire:**
+- Press **Space** (or **Shift + Space**)
+- Press **Delete** to clear the voxel selection
+- Clear the last selected voxel so nothing remains selected
+
+If you still hold Shift from voxel picking, **Space** is **Shift + Space** and starts continuous fire. Release Shift first when you want a single pulse.
+
+See [Navigation Basics](navigation.md) and [Navigation Action Reference](navigation_actions_reference.md).
 
 ### Quick Menu
 
@@ -303,6 +324,14 @@ Access via **Options** menu in top toolbar.
 4. Hover areas to see their connections
 5. Look for unexpected patterns or dead zones
 
+### Probing Voxels With Manual Stimulation
+
+1. Hold **Shift** and click the voxels you want to test
+2. Press **Space** for a single stimulation, or **Shift + Space** to keep stimulating every burst
+3. Watch downstream areas for evoked activity
+4. Press **Space** again to stop continuous stimulation
+5. Press **Delete** when you are done with the selection
+
 ### Exploring Genome Structure
 
 1. Start with overview (zoom out to see all)
@@ -381,10 +410,10 @@ Use both views to fully understand your genome's structure and behavior.
 ## Related Topics
 
 - [Circuit Builder](circuit_builder.md) - 2D graph companion view
-- [Neural Activity](neural_activity.md) - Understanding neuron firing
+- [Navigation Basics](navigation.md) - Voxel selection, Space fire, and Shift+Space continuous fire
+- [Navigation Action Reference](navigation_actions_reference.md) - Action-to-input lookup
 - [Camera Controls](camera_controls.md) - Advanced navigation
 - [Camera Animations](camera_animations.md) - Recording viewpoints
 - [Split View](split_view.md) - Side-by-side workflow
-- [Navigation Basics](navigation.md) - Basic movement controls
 
 [Back to Overview](index.md)

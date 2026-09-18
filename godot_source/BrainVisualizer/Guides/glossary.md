@@ -34,7 +34,8 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Shows cortical areas as colored 3D volumes
 - Displays real-time neural activity
 - Provides spatial understanding of genome structure
-- See also: [Circuit Builder](#c)
+- Shift+click voxels, then Space / Shift+Space to stimulate them
+- See also: [Circuit Builder](#c), [Manual Stimulation](#m)
 
 **Brain Visualizer (BV)**
 - Interactive 3D visualization and editing client for FEAGI
@@ -200,6 +201,13 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 
 ## M
 
+**Manual Stimulation**
+- Forcing selected Brain Monitor voxels to fire through FEAGI
+- **Space**: stimulate the current voxel selection once
+- **Shift + Space**: stimulate once per burst until **Space** is pressed again
+- Used to probe pathways and test downstream responses
+- See also: [Brain Monitor](#b), [Voxel](#v)
+
 **Mapping**
 - A neural connection between two cortical areas
 - Defines how neurons in source area connect to neurons in destination area
@@ -358,7 +366,8 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Contains one or more neurons
 - Cortical area dimensions are measured in voxels
 - Each voxel has a position (X, Y, Z) within its cortical area
-- See also: [Dimensions](#d), [Neurons Per Voxel](#n)
+- In Brain Monitor, Shift+click selects voxels; Space / Shift+Space stimulates them
+- See also: [Dimensions](#d), [Neurons Per Voxel](#n), [Manual Stimulation](#m)
 
 ---
 

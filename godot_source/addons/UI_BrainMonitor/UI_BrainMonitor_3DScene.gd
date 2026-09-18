@@ -3,6 +3,7 @@ class_name UI_BrainMonitor_3DScene
 ## Handles running the scene of Brain monitor, which shows a single instance of a brain region
 # Force re-parse to fix Godot parsing issues
 const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
+const ContinuousSelectedNeuronFiringLib = preload("res://addons/UI_BrainMonitor/ContinuousSelectedNeuronFiring.gd")
 
 @export var multi_select_key: Key = KEY_SHIFT
 
@@ -98,6 +99,10 @@ var _previously_moused_over_cortical_area_neurons: Dictionary[UI_BrainMonitor_Co
 
 ## Cortical ID for the bottom hover line ([method UI_BrainMonitor_Overlay.mouse_over_single_cortical_area]); 3D name labels use the same condition.
 var _mouse_context_cortical_id: StringName = &""
+
+## Shift+Space toggles repeating stimulation of currently selected voxels until Space is pressed again.
+var _continuous_selected_neuron_firing_active: bool = false
+var _continuous_selected_neuron_firing_timer: Timer = null
 
 
 func brain_monitor_sync_mouse_context_cortical_id(cortical_id: StringName) -> void:
@@ -205,6 +210,11 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED and is_visible_in_tree():
 		# Opening split view or switching tabs can leave SubViewport at 1x1 until this control is shown.
 		call_deferred("_update_subviewport_size")
+
+
+func _exit_tree() -> void:
+	_stop_continuous_selected_neuron_firing(false)
+	_disconnect_continuous_fire_timestep_signal()
 
 
 ## Ensure SubViewport matches this container size to avoid UI scale drift.
@@ -1613,6 +1623,111 @@ func _on_representing_region_friendly_name_updated(new_name: StringName) -> void
 			tab_container.set_tab_title(tab_index, new_name)
 
 
+## Handles Space (one-shot) and Shift+Space (continuous until Space).
+func _handle_fire_selected_neurons_key(shift_held: bool) -> void:
+	var action: ContinuousSelectedNeuronFiringLib.SPACE_PRESS_ACTION = ContinuousSelectedNeuronFiringLib.resolve_space_press(shift_held, _continuous_selected_neuron_firing_active)
+	match action:
+		ContinuousSelectedNeuronFiringLib.SPACE_PRESS_ACTION.STOP_CONTINUOUS:
+			_stop_continuous_selected_neuron_firing(true)
+		ContinuousSelectedNeuronFiringLib.SPACE_PRESS_ACTION.START_CONTINUOUS:
+			_start_continuous_selected_neuron_firing()
+		ContinuousSelectedNeuronFiringLib.SPACE_PRESS_ACTION.ONE_SHOT:
+			_emit_selected_neuron_firing()
+
+
+## Collects currently selected voxels across cortical visualizations in this Brain Monitor.
+func _collect_selected_neuron_coordinates_by_area() -> Dictionary[StringName, Array]:
+	var dict: Dictionary[StringName, Array] = {}
+	for BM_cortical_area in _cortical_visualizations_by_ID.values():
+		if not is_instance_valid(BM_cortical_area) or not BM_cortical_area.cortical_area:
+			continue
+		var selected_neurons: Array[Vector3i] = BM_cortical_area.get_neuron_selection_states()
+		if !selected_neurons.is_empty():
+			dict[BM_cortical_area.cortical_area.cortical_ID] = selected_neurons
+	return dict
+
+
+## Emits one manual-stimulation request for the current voxel selection.
+## Returns false when nothing is selected.
+func _emit_selected_neuron_firing() -> bool:
+	var dict: Dictionary[StringName, Array] = _collect_selected_neuron_coordinates_by_area()
+	if dict.is_empty():
+		return false
+	requesting_to_fire_selected_neurons.emit(dict)
+	return true
+
+
+## Reads FEAGI burst interval from cache. Returns 0.0 when cache is unavailable.
+func _continuous_fire_interval_seconds() -> float:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return 0.0
+	return FeagiCore.feagi_local_cache.simulation_timestep
+
+
+func _ensure_continuous_fire_timer() -> void:
+	if _continuous_selected_neuron_firing_timer != null:
+		return
+	_continuous_selected_neuron_firing_timer = Timer.new()
+	_continuous_selected_neuron_firing_timer.name = "ContinuousSelectedNeuronFiringTimer"
+	_continuous_selected_neuron_firing_timer.one_shot = false
+	_continuous_selected_neuron_firing_timer.timeout.connect(_on_continuous_selected_neuron_firing_tick)
+	add_child(_continuous_selected_neuron_firing_timer)
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		if not FeagiCore.feagi_local_cache.simulation_timestep_changed.is_connected(_on_continuous_fire_timestep_changed):
+			FeagiCore.feagi_local_cache.simulation_timestep_changed.connect(_on_continuous_fire_timestep_changed)
+
+
+func _start_continuous_selected_neuron_firing() -> void:
+	var timestep: float = _continuous_fire_interval_seconds()
+	if not ContinuousSelectedNeuronFiringLib.is_valid_interval_seconds(timestep):
+		push_error("Continuous voxel activation: simulation_timestep is not a positive interval")
+		if BV != null and BV.NOTIF != null:
+			BV.NOTIF.add_notification("Cannot start continuous voxel activation: invalid burst interval.", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+		return
+	if not _emit_selected_neuron_firing():
+		return
+	_ensure_continuous_fire_timer()
+	_continuous_selected_neuron_firing_timer.wait_time = timestep
+	_continuous_selected_neuron_firing_timer.start()
+	_continuous_selected_neuron_firing_active = true
+	if BV != null and BV.NOTIF != null:
+		BV.NOTIF.add_notification("Continuous voxel activation started. Press Space to stop.")
+
+
+func _stop_continuous_selected_neuron_firing(notify_user: bool) -> void:
+	var was_active: bool = _continuous_selected_neuron_firing_active
+	_continuous_selected_neuron_firing_active = false
+	if _continuous_selected_neuron_firing_timer != null:
+		_continuous_selected_neuron_firing_timer.stop()
+	if notify_user and was_active and BV != null and BV.NOTIF != null:
+		BV.NOTIF.add_notification("Continuous voxel activation stopped.")
+
+
+func _on_continuous_selected_neuron_firing_tick() -> void:
+	if not _continuous_selected_neuron_firing_active:
+		return
+	if not _emit_selected_neuron_firing():
+		_stop_continuous_selected_neuron_firing(true)
+
+
+func _on_continuous_fire_timestep_changed(new_timestep: float) -> void:
+	if not _continuous_selected_neuron_firing_active:
+		return
+	if not ContinuousSelectedNeuronFiringLib.is_valid_interval_seconds(new_timestep):
+		push_error("Continuous voxel activation: simulation_timestep became invalid; stopping")
+		_stop_continuous_selected_neuron_firing(true)
+		return
+	if _continuous_selected_neuron_firing_timer != null:
+		_continuous_selected_neuron_firing_timer.wait_time = new_timestep
+
+
+func _disconnect_continuous_fire_timestep_signal() -> void:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return
+	if FeagiCore.feagi_local_cache.simulation_timestep_changed.is_connected(_on_continuous_fire_timestep_changed):
+		FeagiCore.feagi_local_cache.simulation_timestep_changed.disconnect(_on_continuous_fire_timestep_changed)
+
+
 ## Click handling when the ray hits a cortical renderer collider (primary hit only).
 func _handle_cortical_pick_click_event(
 	bm_input_event: UI_BrainMonitor_InputEvent_Abstract,
@@ -1961,21 +2076,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			
 			# special cases for actions
 			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS && bm_input_event.button_pressed: # special case when firing neurons
-				# Process FIRE_SELECTED_NEURONS event
-				var dict: Dictionary[StringName, Array] = {}
-				for BM_cortical_area in _cortical_visualizations_by_ID.values():
-					# Check if the cortical area object is still valid before accessing it
-					if not is_instance_valid(BM_cortical_area) or not BM_cortical_area.cortical_area:
-						continue
-					var selected_neurons: Array[Vector3i] = BM_cortical_area.get_neuron_selection_states()
-					if !selected_neurons.is_empty():
-						dict[BM_cortical_area.cortical_area.cortical_ID] = selected_neurons
-				if dict.is_empty():
-					return
-				# Emit signal to fire selected neurons
-				requesting_to_fire_selected_neurons.emit(dict)
+				_handle_fire_selected_neurons_key(bm_input_event.shift_pressed)
 				return
 			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS && bm_input_event.button_pressed: # special case when clearing all neurons
+				_stop_continuous_selected_neuron_firing(true)
 				for bm_cortical_area in _cortical_visualizations_by_ID.values():
 					# Check if the cortical area object is still valid before accessing it
 					if not is_instance_valid(bm_cortical_area):

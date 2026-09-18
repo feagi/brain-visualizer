@@ -40,8 +40,10 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Select brain region frame** -> Left Click on region frame
 - **Add/remove cortical area from multi-selection** -> Ctrl + Click on cortical area (Cmd + Click on macOS)
 - **Toggle voxel selection (additive)** -> Hold Shift, then Click voxels
-- **Fire selected voxels** -> Space
-- **Clear all selected voxels** -> Delete
+- **Fire selected voxels once** -> Space (release Shift first if you were picking voxels)
+- **Start continuous fire of selected voxels** -> Shift + Space
+- **Stop continuous fire** -> Space (or Shift + Space)
+- **Clear all selected voxels** -> Delete (also stops continuous fire)
 
 ## Brain Monitor (3D) Voxel Clipboard Actions
 

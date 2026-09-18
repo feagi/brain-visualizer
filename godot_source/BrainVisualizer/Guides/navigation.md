@@ -139,9 +139,17 @@ Use these workflows in the 3D Brain Monitor to pick voxels, copy their coordinat
 
 This is additive selection: each Shift+click toggles that voxel without clearing others.
 
-**Related voxel shortcuts (Brain Monitor viewport):**
-- **Space**: Fire (stimulate) all currently selected voxels
-- **Delete**: Clear all selected voxels
+### Fire Selected Voxels
+
+With voxels selected in a Brain Monitor viewport:
+
+- **Space**: Stimulate the selection once
+- **Shift + Space**: Stimulate the selection once per burst until you press **Space** again
+- **Delete**: Clear all selected voxels (also stops continuous stimulation)
+
+If Shift is still held from picking voxels, **Space** is treated as **Shift + Space** and starts continuous stimulation. Release Shift first for a single pulse. Press **Space** (with or without Shift) to stop continuous stimulation.
+
+See [Brain Monitor](brain_monitor.md) for the full probing workflow.
 
 ### Voxel Selection Capture Panel
 
@@ -330,8 +338,9 @@ See [Split View](split_view.md) for more details.
 ### Brain Monitor Voxel Shortcuts
 
 - **Shift + Click**: Toggle voxel selection (hold Shift, then click voxels)
-- **Space**: Fire selected voxels
-- **Delete**: Clear all selected voxels
+- **Space**: Fire selected voxels once (release Shift first if you were picking voxels)
+- **Shift + Space**: Continuously fire selected voxels until Space
+- **Delete**: Clear all selected voxels (also stops continuous fire)
 - **Ctrl + C** (Cmd + C on macOS): Copy selected voxels JSON to clipboard
 - **Ctrl + V** (Cmd + V on macOS): Paste clipboard voxels into hovered cortical area
 
