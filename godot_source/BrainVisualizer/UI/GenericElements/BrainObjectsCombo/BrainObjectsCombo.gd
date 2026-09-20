@@ -122,7 +122,7 @@ func _apply_native_tooltips_for_combo_strip() -> void:
 	_btn_inputs_add.tooltip_text = "Add input area"
 	_btn_outputs_list.tooltip_text = "Select output area"
 	_btn_outputs_add.tooltip_text = "Add output area"
-	_btn_rearrange_layout.tooltip_text = "Rearrange Circuit Builder layout"
+	_btn_rearrange_layout.tooltip_text = "Organize areas"
 	if _activity_visualization_dropdown != null:
 		_activity_visualization_dropdown.tooltip_text = "Inspectors"
 	if _camera_animations_button != null:
@@ -170,7 +170,7 @@ func apply_custom_topbar_tooltips() -> void:
 		[_btn_inputs_add, "Add input area"],
 		[_btn_outputs_list, "View all output areas"],
 		[_btn_outputs_add, "Add output area"],
-		[_btn_rearrange_layout, "Rearrange Circuit Builder layout"],
+		[_btn_rearrange_layout, "Organize areas"],
 	]
 	if _activity_visualization_dropdown != null:
 		pairs.append([_activity_visualization_dropdown, "Inspectors"])
