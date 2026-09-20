@@ -68,17 +68,24 @@ func _ready():
 	current_vector = initial_vector
 
 	_field_x.value_changed.connect(_emit_new_vector)
-	_field_y.value_changed .connect(_emit_new_vector)
-	_field_z.value_changed .connect(_emit_new_vector)
-	
-	_field_x.value_changed .connect(_emit_user_interaction)
-	_field_y.value_changed .connect(_emit_user_interaction)
-	_field_z.value_changed .connect(_emit_user_interaction)
+	_field_y.value_changed.connect(_emit_new_vector)
+	_field_z.value_changed.connect(_emit_new_vector)
+	_connect_spin_user_interacted(_field_x)
+	_connect_spin_user_interacted(_field_y)
+	_connect_spin_user_interacted(_field_z)
 
 	editable = initial_editable
+
+func _connect_spin_user_interacted(spin: SpinBox) -> void:
+	if spin == null:
+		return
+	if spin.has_signal("user_interacted"):
+		spin.user_interacted.connect(_emit_user_interaction)
+	else:
+		spin.value_changed.connect(_emit_user_interaction)
 
 func _emit_new_vector(_dont_care: Variant) -> void:
 	user_updated_vector.emit(current_vector)
 
-func _emit_user_interaction(_dont_care: Variant):
+func _emit_user_interaction(_dont_care: Variant = null):
 	user_interacted.emit()

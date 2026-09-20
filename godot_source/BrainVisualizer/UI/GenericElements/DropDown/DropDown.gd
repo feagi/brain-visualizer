@@ -2,6 +2,7 @@ extends OptionButton
 class_name DropDown
 
 signal option_changed(index: int, option: StringName)
+signal user_interacted()
 
 @export var initial_items: Array[StringName]
 ## if the system should attempt to keep the users selection picked whenever the dropdown is updated
@@ -67,6 +68,7 @@ func _set_dropdown_via_array(input_array: Array) -> void:
 
 
 func _user_selected_item(index: int) -> void:
+	user_interacted.emit()
 	option_changed.emit(index, _DropDownItems[index])
 
 func _on_theme_change(_new_theme: Theme = null) -> void:

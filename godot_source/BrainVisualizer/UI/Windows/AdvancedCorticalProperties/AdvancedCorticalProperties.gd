@@ -535,7 +535,7 @@ func _set_control_as_conflicting_values(control: Control) -> void:
 
 func _set_control_to_value(control: Control, value: Variant) -> void:
 	if control is TextInput:
-		(control as TextInput).text = value
+		(control as TextInput).set_value_from_text(str(value))
 		return
 	if control is IntInput:
 		(control as IntInput).set_int(value)
@@ -556,13 +556,14 @@ func _set_control_to_value(control: Control, value: Variant) -> void:
 		(control as Vector3fField).current_vector = value
 		return
 	if control is IntSpinBox:
-		(control as IntSpinBox).value = value
+		(control as IntSpinBox).set_value_no_signal(float(value))
 		return
 	if control is DropDown:
 		if value != null:
 			(control as DropDown).set_option(StringName(str(value)))
 		
 
+## Wires a field to its section Apply button: typing enables immediately; confirm adds the payload.
 func _connect_control_to_update_button(control: Control, FEAGI_key_name: StringName, send_update_button: Button) -> void:
 	if control == null:
 		push_error("AdvancedCorticalProperties: Attempted to connect null control for key '%s'" % FEAGI_key_name)
@@ -632,6 +633,7 @@ func _add_to_dict_to_send(value: Variant, send_button: Button, key_name: StringN
 	send_button.disabled = false
 
 func _send_update(send_button: Button) -> void:
+	_commit_focused_editor()
 	# Check if FeagiCore and requests are available
 	if not FeagiCore or not FeagiCore.requests:
 		print("UI: Cannot send update - FeagiCore or requests not available")
@@ -906,7 +908,19 @@ func _get_unit_group_members(area: AbstractCorticalArea) -> Array[AbstractCortic
 	return area.get_unit_group_members(all_areas)
 		
 
+func _commit_focused_editor() -> void:
+	var vp: Viewport = get_viewport()
+	if vp == null:
+		return
+	var focused: Control = vp.gui_get_focus_owner()
+	if focused == null:
+		return
+	focused.release_focus()
+
+
 func _enable_button(send_button: Button) -> void:
+	if send_button == null:
+		return
 	send_button.disabled = false
 	
 	
@@ -1312,7 +1326,7 @@ func _init_summary() -> void:
 		_line_cortical_ID.text = "Multiple Selected"
 		if _line_unit_id != null:
 			_line_unit_id.editable = false
-			_line_unit_id.value = 0
+			_line_unit_id.set_value_no_signal(0)
 		if _line_subunit_id != null:
 			_line_subunit_id.text = "Multiple Selected"
 		_vector_position.editable = false # TODO show multiple values
@@ -1444,13 +1458,13 @@ func _refresh_from_cache_summary() -> void:
 		if _line_unit_code != null:
 			_line_unit_code.text = "Multiple Selected"
 		if is_all_io and _line_unit_id != null:
-			_line_unit_id.value = 0
+			_line_unit_id.set_value_no_signal(0)
 		if is_all_io and _line_subunit_id != null:
 			_line_subunit_id.text = "Multiple Selected"
 		#TODO connect size vector
 	else:
 		# single
-		_line_cortical_name.text = _cortical_area_refs[0].friendly_name
+		_line_cortical_name.set_value_from_text(_cortical_area_refs[0].friendly_name)
 		_region_button.text = _cortical_area_refs[0].current_parent_region.friendly_name
 		_line_cortical_ID.text = _cortical_area_refs[0].cortical_ID
 		if _line_unit_code != null:
@@ -1460,7 +1474,7 @@ func _refresh_from_cache_summary() -> void:
 				_line_unit_code.text = "-"
 		if _line_unit_id != null:
 			if is_all_io:
-				_line_unit_id.value = _cortical_area_refs[0].unit_id
+				_line_unit_id.set_value_no_signal(_cortical_area_refs[0].unit_id)
 		if _line_subunit_id != null:
 			if is_all_io:
 				_line_subunit_id.text = str(_cortical_area_refs[0].subunit_id)
@@ -2061,6 +2075,7 @@ func _refresh_from_cache_monitoring() -> void:
 
 
 func _montoring_update_button_pressed() -> void:
+	_commit_focused_editor()
 	# Check if FeagiCore and requests are available
 	if not FeagiCore or not FeagiCore.requests:
 		print("UI: Cannot send monitoring update - FeagiCore or requests not available")
@@ -2438,10 +2453,27 @@ func _connect_rml_ui_signals() -> void:
 	if _rml_toggle_enabled and not _rml_toggle_enabled.toggled.is_connected(_on_rml_toggled):
 		_rml_toggle_enabled.toggled.connect(_on_rml_toggled)
 	for s in _rml_spin_list():
-		if s != null and s is SpinBox and not s.value_changed.is_connected(_on_rml_spin_value_changed):
-			s.value_changed.connect(_on_rml_spin_value_changed)
+		if s != null and s is SpinBox:
+			if not s.value_changed.is_connected(_on_rml_spin_value_changed):
+				s.value_changed.connect(_on_rml_spin_value_changed)
+			_connect_spinbox_typing_to_dirty(s)
 	if _button_rml_apply and not _button_rml_apply.pressed.is_connected(_on_rml_apply_pressed):
 		_button_rml_apply.pressed.connect(_on_rml_apply_pressed)
+
+
+func _connect_spinbox_typing_to_dirty(spin: SpinBox) -> void:
+	var line: LineEdit = spin.get_line_edit()
+	if line == null:
+		return
+	if line.text_changed.is_connected(_on_rml_spin_text_changed):
+		return
+	line.text_changed.connect(_on_rml_spin_text_changed)
+
+
+func _on_rml_spin_text_changed(_text: String) -> void:
+	if _rml_suppress_change_signals:
+		return
+	_on_rml_control_changed()
 
 func _on_rml_toggled(_button_pressed: bool) -> void:
 	_on_rml_control_changed()

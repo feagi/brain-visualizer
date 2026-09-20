@@ -9,6 +9,8 @@ const TEX_MIDDLE: Texture = preload("res://BrainVisualizer/UI/GenericResources/B
 
 @export var enable_autoscaling_with_theme: bool = true
 
+signal user_interacted()
+
 var is_inbetween: bool:
 	get: return _is_inbetween
 	set(v):
@@ -27,6 +29,7 @@ var _cached_size: Vector2i
 func _ready():
 	toggle_mode = true
 	toggled.connect(_set_enable_toggle)
+	toggled.connect(_on_user_toggled)
 	_set_enable_toggle(button_pressed)
 	if enable_autoscaling_with_theme:
 		_cached_size = custom_minimum_size
@@ -38,6 +41,9 @@ func _ready():
 func set_toggle_no_signal(val: bool) -> void:
 	_set_enable_toggle(val)
 	set_pressed_no_signal(val)
+
+func _on_user_toggled(_is_press: bool) -> void:
+	user_interacted.emit()
 
 func _set_enable_toggle(is_press: bool) -> void:
 	_is_inbetween = false
