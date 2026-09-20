@@ -9,6 +9,7 @@ enum ROLE {
 	AREA_NAME,
 	REGION_TITLE,
 	PLATE_TAG,
+	REGION_DESCRIPTION,
 }
 
 const FONT_SIZE: int = 48
@@ -20,14 +21,18 @@ const OUTLINE_MODULATE: Color = Color.BLACK
 const AREA_NAME_VISUAL_SCALE: float = 512.0 * 0.005
 const REGION_TITLE_VISUAL_SCALE: float = 32.0 * 0.001
 const PLATE_TAG_VISUAL_SCALE: float = 18.0 * 0.002
+const REGION_DESCRIPTION_VISUAL_SCALE: float = 24.0 * 0.001
+const REGION_DESCRIPTION_WRAP_WIDTH_PX: float = 960.0
 
 const AREA_NAME_PIXEL_SIZE: float = AREA_NAME_VISUAL_SCALE / float(FONT_SIZE)
 const REGION_TITLE_PIXEL_SIZE: float = REGION_TITLE_VISUAL_SCALE / float(FONT_SIZE)
 const PLATE_TAG_PIXEL_SIZE: float = PLATE_TAG_VISUAL_SCALE / float(FONT_SIZE)
+const REGION_DESCRIPTION_PIXEL_SIZE: float = REGION_DESCRIPTION_VISUAL_SCALE / float(FONT_SIZE)
 
 const AREA_NAME_RENDER_PRIORITY: int = 1
 const REGION_TITLE_RENDER_PRIORITY: int = 10
 const PLATE_TAG_RENDER_PRIORITY: int = 11
+const REGION_DESCRIPTION_RENDER_PRIORITY: int = 12
 const PLATE_TAG_MODULATE: Color = Color(1.0, 1.0, 1.0, 0.9)
 
 static var _msdf_font: Font = null
@@ -50,8 +55,9 @@ static func apply(label: Label3D, role: ROLE) -> void:
 	label.outline_modulate = OUTLINE_MODULATE
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	match role:
 		ROLE.AREA_NAME:
 			label.fixed_size = false
@@ -68,6 +74,16 @@ static func apply(label: Label3D, role: ROLE) -> void:
 			label.no_depth_test = false
 			apply_render_priority(label, PLATE_TAG_RENDER_PRIORITY)
 			label.modulate = PLATE_TAG_MODULATE
+		ROLE.REGION_DESCRIPTION:
+			label.fixed_size = true
+			label.no_depth_test = true
+			label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			label.autowrap_mode = TextServer.AUTOWRAP_WORD
+			label.width = REGION_DESCRIPTION_WRAP_WIDTH_PX
+			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+			apply_render_priority(label, REGION_DESCRIPTION_RENDER_PRIORITY)
+			label.modulate = Color.WHITE
 
 
 ## Text must sort in front of its outline. Equal priorities make the black outline cover the fill.
@@ -100,9 +116,11 @@ static func pixel_size_for_role(role: ROLE) -> float:
 			return REGION_TITLE_PIXEL_SIZE
 		ROLE.PLATE_TAG:
 			return PLATE_TAG_PIXEL_SIZE
+		ROLE.REGION_DESCRIPTION:
+			return REGION_DESCRIPTION_PIXEL_SIZE
 	push_error("UI_BrainMonitor_SceneLabel3D.pixel_size_for_role: unknown role %s" % role)
 	return AREA_NAME_PIXEL_SIZE
 
 
 static func uses_fixed_size(role: ROLE) -> bool:
-	return role == ROLE.REGION_TITLE
+	return role == ROLE.REGION_TITLE or role == ROLE.REGION_DESCRIPTION

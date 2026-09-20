@@ -6,6 +6,7 @@ const BUTTON_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElem
 
 var _region_name: TextInput
 var _region_ID: TextInput
+var _region_description: MultiLineTextInput
 var _region_parent: Button
 var _region_3D_position: Vector3iSpinboxField
 var _scroll_section: ScrollSectionGeneric
@@ -17,6 +18,7 @@ func _ready() -> void:
 	super()
 	_region_name = _window_internals.get_node("HBoxContainer3/TextInput")
 	_region_ID = _window_internals.get_node("HBoxContainer/TextInput")
+	_region_description = _window_internals.get_node("DescriptionSection/DescriptionText")
 	_region_parent = _window_internals.get_node("HBoxContainer5/Button")
 	_region_3D_position = _window_internals.get_node("HBoxContainer2/Vector3fField")
 	_scroll_section = _window_internals.get_node("ScrollSectionGenericTemplate/PanelContainer/ScrollSectionGeneric")
@@ -31,6 +33,7 @@ func setup(editing_region: BrainRegion) -> void:
 	_editing_region_parent = editing_region.current_parent_region
 	_region_name.text = editing_region.friendly_name
 	_region_ID.text = editing_region.region_ID
+	_region_description.text = String(editing_region.description)
 	_region_parent.text = editing_region.current_parent_region.friendly_name
 	_region_3D_position.current_vector = editing_region.coordinates_3D
 	for areas in editing_region.contained_cortical_areas:
@@ -117,6 +120,6 @@ func _on_press_open_circuit() -> void:
 
 
 func _on_press_update():
-	FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, "", _editing_region.coordinates_2D, _region_3D_position.current_vector) # TODO description, 2d location?
+	FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, StringName(_region_description.text), _editing_region.coordinates_2D, _region_3D_position.current_vector)
 	close_window()
 

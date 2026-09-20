@@ -57,6 +57,18 @@ var _combo: BrainObjectsCombo = null
 ## Prevents duplicate CBLine / terminals for the same ConnectionChainLink (phantom overlapping connections).
 var _active_connection_link_render_ids: Dictionary = {}
 
+## Hosted [UITabContainer] owns the styled tooltip overlay used by region description hover.
+func get_custom_tooltip_manager() -> Node:
+	var current: Node = get_parent()
+	while current != null:
+		if current.has_method("get_custom_tooltip_manager") and current != self:
+			var manager: Node = current.get_custom_tooltip_manager()
+			if manager != null:
+				return manager
+		current = current.get_parent()
+	return null
+
+
 func _ready():
 	_move_timer = $Timer
 	_move_timer.wait_time = move_time_delay_before_update_FEAGI

@@ -1094,9 +1094,9 @@ func edit_region_object(brain_region: BrainRegion, parent_region: BrainRegion, r
 	var dict_to_send: Dictionary = {
 		"region_id": brain_region.region_ID,
 		"title": region_name,
+		"description": String(region_description),
 		"coordinate_2d": FEAGIUtils.vector2i_to_array(coords_2D),  # coordinates_2d → coordinate_2d
 		"coordinate_3d": FEAGIUtils.vector3i_to_array(coords_3D),  # coordinates_3d → coordinate_3d
-		# Removed unsupported keys: parent_region_id, region_description
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_region_region, dict_to_send)
 	

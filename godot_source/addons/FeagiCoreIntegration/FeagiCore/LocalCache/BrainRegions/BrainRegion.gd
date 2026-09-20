@@ -18,10 +18,13 @@ signal output_open_link_added(link: ConnectionChainLink)
 signal output_open_link_removed(link: ConnectionChainLink)
 signal partial_mappings_inputted(mappings: PartialMappingSet)
 signal partial_mappings_about_to_be_removed(mappings: PartialMappingSet)
+signal description_updated(new_description: StringName)
 
 
 var region_ID: StringName:
 	get: return _genome_ID
+var description: StringName:
+	get: return _description
 var contained_cortical_areas: Array[AbstractCorticalArea]:
 	get: return _contained_cortical_areas
 var contained_regions: Array[BrainRegion]:
@@ -45,16 +48,18 @@ var _bridge_chain_links: Array[ConnectionChainLink]
 var _input_open_chain_links: Array[ConnectionChainLink]
 var _output_open_chain_links: Array[ConnectionChainLink]
 var _partial_mappings: Array[PartialMappingSet] = []
+var _description: StringName = &""
 
 ## Spawns a [BrainRegion] from the JSON details from FEAGI, but doesn't add any children regions or areas
 static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) -> BrainRegion:
-	return BrainRegion.new(
+	var region := BrainRegion.new(
 		ID,
 		dict["title"],
 		FEAGIUtils.array_to_vector2i(dict["coordinate_2d"]),
-		FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),  # ✅ Fixed: Load actual FEAGI coordinates
-		# Vector3i(10,10,10), #TODO  ← Removed hardcoded fallback
+		FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
 	)
+	region.FEAGI_change_description(FEAGIUtils.brain_region_description_from_json(dict))
+	return region
 	
 
 ## Gets the parent region of the object (if it is capable of having one)
@@ -144,12 +149,20 @@ func FEAGI_genome_object_deregister_as_child(genome_object: GenomeObject) -> voi
 	push_error("CORE CACHE: Unknown GenomeObject type tried to be removed from region %s!" % _genome_ID)
 
 ## Called from FEAGI when we update properties of the brain region. Called by [BrainRegionCache]
-func FEAGI_edited_region(title: StringName, _description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
+func FEAGI_edited_region(title: StringName, new_description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
 	FEAGI_change_friendly_name(title)
-	#TODO description?
+	FEAGI_change_description(new_description)
 	FEAGI_change_coordinates_2D(position_2D)
 	FEAGI_change_coordinates_3D(position_3D)
 	FEAGI_change_parent_brain_region(new_parent_region)
+
+
+## Stores the region's plain-text purpose. Empty string means no description.
+func FEAGI_change_description(new_description: StringName) -> void:
+	if new_description == _description:
+		return
+	_description = new_description
+	description_updated.emit(new_description)
 
 
 ## FEAGI confirmed this region is deleted. Called by [BrainRegionCache]

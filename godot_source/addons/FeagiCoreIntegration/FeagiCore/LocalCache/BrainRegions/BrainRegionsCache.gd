@@ -202,11 +202,11 @@ func FEAGI_add_region(region_ID: StringName, parent_region: BrainRegion, region_
 func emit_region_added_signal(region: BrainRegion) -> void:
 	region_added.emit(region)
 
-func FEAGI_edit_region(editing_region: BrainRegion, title: StringName, _description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
+func FEAGI_edit_region(editing_region: BrainRegion, title: StringName, new_description: StringName, new_parent_region: BrainRegion, position_2D: Vector2i, position_3D: Vector3i) -> void:
 	if !(editing_region.region_ID in _available_brain_regions.keys()):
 		push_error("CORE CACHE: Unable to edit noncached region of the ID %s!" % editing_region.region_ID)
 		return
-	editing_region.FEAGI_edited_region(title, _description, new_parent_region, position_2D, position_3D)
+	editing_region.FEAGI_edited_region(title, new_description, new_parent_region, position_2D, position_3D)
 
 ## Applies mass update of 2d locations to cortical areas. Only call from FEAGI
 func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:

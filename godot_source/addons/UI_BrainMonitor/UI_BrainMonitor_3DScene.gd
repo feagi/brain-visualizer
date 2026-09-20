@@ -235,6 +235,139 @@ func get_pancake_camera() -> UI_BrainMonitor_PancakeCamera:
 	return _pancake_cam
 
 
+func get_node_3d_root() -> Node3D:
+	return _node_3D_root
+
+
+func is_mouse_inside_subviewport() -> bool:
+	var subviewport := $SubViewport as SubViewport
+	if subviewport == null:
+		return false
+	return Rect2(Vector2.ZERO, Vector2(subviewport.size)).has_point(subviewport.get_mouse_position())
+
+
+## Hosted [UITabContainer] owns the styled tooltip overlay used by region description hover.
+func get_custom_tooltip_manager() -> Node:
+	var current: Node = get_parent()
+	while current != null:
+		if current.has_method("get_custom_tooltip_manager") and current != self:
+			var manager: Node = current.get_custom_tooltip_manager()
+			if manager != null:
+				return manager
+		current = current.get_parent()
+	return null
+
+
+func _is_region_plate_or_label_click_area(hit_body: Node) -> bool:
+	if hit_body == null:
+		return false
+	match hit_body.name:
+		"InputPlateClickArea", "OutputPlateClickArea", "ConflictPlateClickArea", "MotherPlateClickArea", "RegionLabelClickArea":
+			return true
+		_:
+			return false
+
+
+func _is_region_description_hover_collider(hit_body: Node) -> bool:
+	if hit_body == null:
+		return false
+	return hit_body.name == "MotherPlateClickArea" or hit_body.name == "RegionLabelClickArea"
+
+
+func _show_region_description_tooltip_for_frame(region_frame: Node) -> void:
+	for region_id in _brain_region_visualizations_by_ID.keys():
+		var other: UI_BrainMonitor_BrainRegion3D = _brain_region_visualizations_by_ID[region_id] as UI_BrainMonitor_BrainRegion3D
+		if other == null or not is_instance_valid(other) or other == region_frame:
+			continue
+		other.hide_region_description_tooltip()
+	if region_frame != null and region_frame.has_method("show_region_description_tooltip"):
+		region_frame.show_region_description_tooltip()
+
+
+func _raycast_first_description_hover_region(
+	space: PhysicsDirectSpaceState3D,
+	base_query: PhysicsRayQueryParameters3D,
+) -> UI_BrainMonitor_BrainRegion3D:
+	if space == null or base_query == null:
+		return null
+	var exclude: Array[RID] = []
+	for _i in range(16):
+		var q: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(base_query.from, base_query.to)
+		q.collision_mask = base_query.collision_mask
+		q.collide_with_areas = base_query.collide_with_areas
+		q.collide_with_bodies = base_query.collide_with_bodies
+		q.exclude = exclude
+		var hit: Dictionary = space.intersect_ray(q)
+		if hit.is_empty():
+			return null
+		var body: StaticBody3D = hit.get(&"collider") as StaticBody3D
+		if body == null:
+			return null
+		if _is_region_description_hover_collider(body) and body.get_parent() is UI_BrainMonitor_BrainRegion3D:
+			return body.get_parent() as UI_BrainMonitor_BrainRegion3D
+		exclude.append(body.get_rid())
+	return null
+
+
+func _pick_region_title_at_screen(mouse_pos: Vector2) -> UI_BrainMonitor_BrainRegion3D:
+	if _pancake_cam == null:
+		return null
+	var best: UI_BrainMonitor_BrainRegion3D = null
+	var best_area: float = INF
+	for region_id in _brain_region_visualizations_by_ID.keys():
+		var region_frame: UI_BrainMonitor_BrainRegion3D = _brain_region_visualizations_by_ID[region_id] as UI_BrainMonitor_BrainRegion3D
+		if region_frame == null or not is_instance_valid(region_frame):
+			continue
+		var rect: Rect2 = region_frame.get_region_title_screen_rect(_pancake_cam)
+		if rect.size == Vector2.ZERO or not rect.has_point(mouse_pos):
+			continue
+		var area: float = rect.size.x * rect.size.y
+		if area < best_area:
+			best_area = area
+			best = region_frame
+	return best
+
+
+func _apply_region_title_or_plate_hover(region_frame: UI_BrainMonitor_BrainRegion3D) -> void:
+	if region_frame == null or region_frame.representing_region == null:
+		return
+	if _UI_layer_for_BM != null:
+		_UI_layer_for_BM.show_plate_hover(region_frame.representing_region.friendly_name, "")
+	_show_region_description_tooltip_for_frame(region_frame)
+
+
+func _hide_all_region_description_labels() -> void:
+	for region_id in _brain_region_visualizations_by_ID.keys():
+		var region_frame: UI_BrainMonitor_BrainRegion3D = _brain_region_visualizations_by_ID[region_id] as UI_BrainMonitor_BrainRegion3D
+		if region_frame != null and is_instance_valid(region_frame):
+			region_frame.hide_region_description_tooltip()
+
+
+func _activate_region_frame_click(
+	region_frame: UI_BrainMonitor_BrainRegion3D,
+	bm_input_event: UI_BrainMonitor_InputEvent_Click,
+) -> void:
+	if region_frame == null or region_frame.representing_region == null:
+		return
+	if not bm_input_event.button_pressed:
+		return
+	if bm_input_event.button != UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and bm_input_event.button != UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
+		return
+	if bm_input_event.ctrl_pressed:
+		if _pancake_cam:
+			var region_aabb = _compute_region_frame_aabb(region_frame)
+			if region_aabb.size != Vector3.ZERO and (region_aabb.size.x + region_aabb.size.y + region_aabb.size.z) > 0.01:
+				_frame_camera_to_aabb(region_aabb)
+			else:
+				_pancake_cam.teleport_to_look_at_without_changing_angle(region_frame.global_position)
+		return
+	if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+		BV.UI.selection_system.clear_all_highlighted()
+		BV.UI.selection_system.add_to_highlighted(region_frame.representing_region)
+		BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN)
+	region_frame.handle_double_click()
+
+
 ## Focus camera on a cortical area with framing when possible.
 func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
 	if area == null:
@@ -761,14 +894,21 @@ func _raycast_first_cortical_renderer_hit(space: PhysicsDirectSpaceState3D, base
 func _emit_tab_hover_event() -> void:
 	if _pancake_cam == null or BV == null or BV.UI == null:
 		return
-	if BV.UI.temp_root_bm == null or BV.UI.temp_root_bm == self:
-		return
 	var subviewport := $SubViewport as SubViewport
 	if subviewport == null:
 		return
 	var mouse_pos := subviewport.get_mouse_position()
-	var local_rect := Rect2(Vector2.ZERO, subviewport.size)
-	if not local_rect.has_point(mouse_pos):
+	var local_rect := Rect2(Vector2.ZERO, Vector2(subviewport.size))
+	var is_root_bm: bool = BV.UI.temp_root_bm == self
+	var tab_has_mouse: bool = BV.UI.is_mouse_over_tab_brain_monitor() if is_root_bm else false
+	if not FEAGIUtils.should_synthesize_brain_monitor_hover(
+		is_root_bm,
+		tab_has_mouse,
+		_is_mouse_hovering_viewport,
+		local_rect.has_point(mouse_pos)
+	):
+		if is_root_bm and tab_has_mouse:
+			_hide_all_region_description_labels()
 		return
 	
 	# Ensure overlay exists before processing hover
@@ -852,6 +992,9 @@ func _on_container_mouse_exited() -> void:
 	_clear_bridge_segment()
 	_qc_last_mouse_entry_pos = Vector2.ZERO
 	_cancel_box_select()
+	# Root BM sits behind Circuit Builder; mouse_exited fires while the 3D view is still hovered.
+	if BV == null or BV.UI == null or BV.UI.temp_root_bm != self:
+		_hide_all_region_description_labels()
 
 ## Enter: save. Escape: cancel (reset to original).
 func _unhandled_input(event: InputEvent) -> void:
@@ -1976,10 +2119,19 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					# Emit combined log once both segments are available
 					if BV.UI.qc_last_source_scene_name != "" and BV.UI.qc_last_bridge_scene_name != "":
 						BV.UI.qc_log_both()
+			var title_region: UI_BrainMonitor_BrainRegion3D = _pick_region_title_at_screen(_get_bm_mouse_position())
+			if title_region != null:
+				_apply_region_title_or_plate_hover(title_region)
+				continue
+			var plate_region: UI_BrainMonitor_BrainRegion3D = _raycast_first_description_hover_region(current_space, bm_input_event.get_ray_query())
+			if plate_region != null:
+				_apply_region_title_or_plate_hover(plate_region)
+				continue
 			if hit.is_empty():
 				# Mousing over nothing right now
 				
 				_UI_layer_for_BM.clear() # temp!
+				_hide_all_region_description_labels()
 				
 				continue
 				
@@ -1987,7 +2139,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			var cortical_hover_hit: Dictionary = _raycast_first_cortical_renderer_hit(current_space, bm_input_event.get_ray_query())
 			
 			# PRIORITY: Plate click areas first so we don't short-circuit on region frame parent
-			if hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
+			if _is_region_plate_or_label_click_area(hit_body):
 				var region_frame = hit_body.get_parent()
 				if region_frame and _UI_layer_for_BM:
 					var plate_kind := ""
@@ -1995,7 +2147,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						"InputPlateClickArea": plate_kind = "Input plate"
 						"OutputPlateClickArea": plate_kind = "Output plate"
 						"ConflictPlateClickArea": plate_kind = "Conflict plate"
-						"MotherPlateClickArea": plate_kind = ""
+						"MotherPlateClickArea", "RegionLabelClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
 					var region_name: String = "Region"
@@ -2005,6 +2157,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						if fname != null:
 							region_name = str(fname)
 					_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
+					if _is_region_description_hover_collider(hit_body):
+						_show_region_description_tooltip_for_frame(region_frame)
 			# Cortical pick: use a pass-through ray so plate pick volumes do not hide output-side areas
 			if not cortical_hover_hit.is_empty():
 				var cortical_collider: StaticBody3D = cortical_hover_hit.get(&"collider") as StaticBody3D
@@ -2024,9 +2178,10 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						
 						if _UI_layer_for_BM != null:
 							_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)
-			elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
+			elif (not _is_region_description_hover_collider(hit_body)) and hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
 				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame:
+					_hide_all_region_description_labels()
 					region_frame.set_hover_state(true)
 					print("🧠 Hovering over red line wireframe brain region: %s" % region_frame.representing_region.friendly_name)
 					# Fallback plate detection by hit position against plate meshes (in case plate colliders weren't hit)
@@ -2066,8 +2221,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 									if abs(local.x) <= half_x and abs(local.z) <= half_z:
 										_UI_layer_for_BM.show_plate_hover(region_frame.representing_region.friendly_name, plate_label)
 										break
-			# Check if we hit a plate click area (input/output/conflict/mother)
-			elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
+			# Check if we hit a plate click area (input/output/conflict/mother) or region title
+			elif _is_region_plate_or_label_click_area(hit_body):
 				var region_frame = hit_body.get_parent()
 				if region_frame and _UI_layer_for_BM:
 					var plate_kind := ""
@@ -2075,13 +2230,15 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						"InputPlateClickArea": plate_kind = "Input plate"
 						"OutputPlateClickArea": plate_kind = "Output plate"
 						"ConflictPlateClickArea": plate_kind = "Conflict plate"
-						"MotherPlateClickArea": plate_kind = ""
+						"MotherPlateClickArea", "RegionLabelClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
 					var region_name := "Region"
 					if region_frame.representing_region:
 						region_name = region_frame.representing_region.friendly_name
 					_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
+					if _is_region_description_hover_collider(hit_body):
+						_show_region_description_tooltip_for_frame(region_frame)
 			
 		elif bm_input_event is UI_BrainMonitor_InputEvent_Click:
 			
@@ -2312,6 +2469,10 @@ func _process_scene_pick_click(
 	bm_input_event: UI_BrainMonitor_InputEvent_Click,
 	currently_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea],
 ) -> void:
+	var title_region: UI_BrainMonitor_BrainRegion3D = _pick_region_title_at_screen(_get_bm_mouse_position())
+	if title_region != null:
+		_activate_region_frame_click(title_region, bm_input_event)
+		return
 	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
 	var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 	if hit.is_empty():
@@ -2331,26 +2492,8 @@ func _process_scene_pick_click(
 				currently_moused_over_volumes,
 			)
 	elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
-		var region_frame = hit_body.get_parent()
-		if region_frame and bm_input_event.button_pressed:
-			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
-				if bm_input_event.ctrl_pressed:
-					if _pancake_cam:
-						var region_aabb = _compute_region_frame_aabb(region_frame)
-						if region_aabb.size != Vector3.ZERO and (region_aabb.size.x + region_aabb.size.y + region_aabb.size.z) > 0.01:
-							_frame_camera_to_aabb(region_aabb)
-							print("Focused camera on brain region: %s" % region_frame.representing_region.friendly_name)
-						else:
-							_pancake_cam.teleport_to_look_at_without_changing_angle(region_frame.global_position)
-							print("Focused camera on brain region: %s (fallback)" % region_frame.representing_region.friendly_name)
-					return
-				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
-					BV.UI.selection_system.clear_all_highlighted()
-					BV.UI.selection_system.add_to_highlighted(region_frame.representing_region)
-					BV.UI.selection_system.select_objects(SelectionSystem.SOURCE_CONTEXT.UNKNOWN)
-					print("🧠 Clicked brain region frame: %s" % region_frame.representing_region.friendly_name)
-				region_frame.handle_double_click()
-	elif hit_body.name == "InputPlateClickArea" or hit_body.name == "OutputPlateClickArea" or hit_body.name == "ConflictPlateClickArea" or hit_body.name == "MotherPlateClickArea":
+		_activate_region_frame_click(hit_body.get_parent() as UI_BrainMonitor_BrainRegion3D, bm_input_event)
+	elif _is_region_plate_or_label_click_area(hit_body):
 		if _UI_layer_for_BM and not bm_input_event.button_pressed:
 			_UI_layer_for_BM.clear_plate_hover()
 

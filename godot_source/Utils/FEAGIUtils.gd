@@ -303,6 +303,133 @@ static func _looks_like_base64(s: String) -> bool:
 static func expand_joint_to_limb_description(joint_name: String) -> String:
 	return str(joint_name).strip_edges()
 
+## Reads genome / regions_members `description` as plain text. Null or missing is empty.
+static func brain_region_description_from_json(dict: Dictionary) -> StringName:
+	if not dict.has("description"):
+		return &""
+	var raw: Variant = dict["description"]
+	if raw == null:
+		return &""
+	return StringName(str(raw))
+
+
+## Tooltip body for a region description. Empty after trim means do not show a tooltip.
+static func brain_region_description_tooltip_text(description: StringName) -> String:
+	return String(description).strip_edges()
+
+
+## Region-description side-caret layout. Top-bar tooltips keep their own shorter defaults.
+const REGION_DESCRIPTION_TOOLTIP_MAX_LINES: int = 12
+const REGION_DESCRIPTION_TOOLTIP_WRAP_WIDTH_PX: float = 480.0
+
+
+static func region_description_tooltip_max_lines() -> int:
+	return REGION_DESCRIPTION_TOOLTIP_MAX_LINES
+
+
+static func region_description_tooltip_wrap_width_px() -> float:
+	return REGION_DESCRIPTION_TOOLTIP_WRAP_WIDTH_PX
+
+
+## True when this Brain Monitor should synthesize hover each frame (region description, plate hover).
+## Root stays active while tabs exist; it only yields when a tab viewport currently has the cursor.
+static func should_synthesize_brain_monitor_hover(
+	is_root_bm: bool,
+	tab_viewport_has_mouse: bool,
+	mouse_hovering_viewport: bool,
+	mouse_in_subviewport: bool
+) -> bool:
+	if not mouse_in_subviewport:
+		return false
+	if is_root_bm:
+		return not tab_viewport_has_mouse
+	return true
+
+
+## Gap from title baseline to description, in title font heights. Not camera distance.
+const REGION_DESCRIPTION_GAP_FONT_HEIGHTS: float = 1.0
+
+
+## Label3D pixel offset for a left-justified description under a center-aligned title.
+## Gap is [constant REGION_DESCRIPTION_GAP_FONT_HEIGHTS] times [param font_height_px].
+## [param title_pixel_size] / [param description_pixel_size] keeps that gap in title-font units
+## when the two labels use different pixel_size values.
+static func region_title_description_pixel_offset(
+	title_size_px: Vector2,
+	font_height_px: float,
+	title_pixel_size: float,
+	description_pixel_size: float
+) -> Vector2:
+	var px_scale: float = title_pixel_size / description_pixel_size
+	return Vector2(
+		-title_size_px.x * 0.5 * px_scale,
+		-(title_size_px.y * 0.5 + font_height_px * REGION_DESCRIPTION_GAP_FONT_HEIGHTS) * px_scale
+	)
+
+
+## Axis-aligned bounds of projected 2D points. Empty input is an empty rect.
+static func axis_aligned_rect_from_points(points: PackedVector2Array) -> Rect2:
+	if points.is_empty():
+		return Rect2()
+	var min_p: Vector2 = points[0]
+	var max_p: Vector2 = points[0]
+	for i in range(1, points.size()):
+		var p: Vector2 = points[i]
+		min_p.x = minf(min_p.x, p.x)
+		min_p.y = minf(min_p.y, p.y)
+		max_p.x = maxf(max_p.x, p.x)
+		max_p.y = maxf(max_p.y, p.y)
+	return Rect2(min_p, max_p - min_p)
+
+
+## Godot FLAG_FIXED_SIZE scales a billboard by camera-space depth. Corners are camera-facing.
+static func fixed_size_billboard_world_corners(
+	origin: Vector3,
+	mesh_size_xy: Vector2,
+	camera_depth: float,
+	camera_right: Vector3,
+	camera_up: Vector3
+) -> PackedVector3Array:
+	var depth: float = maxf(absf(camera_depth), 0.001)
+	var hx: float = mesh_size_xy.x * 0.5 * depth
+	var hy: float = mesh_size_xy.y * 0.5 * depth
+	var corners := PackedVector3Array()
+	corners.append(origin - (camera_right * hx) - (camera_up * hy))
+	corners.append(origin + (camera_right * hx) - (camera_up * hy))
+	corners.append(origin + (camera_right * hx) + (camera_up * hy))
+	corners.append(origin - (camera_right * hx) + (camera_up * hy))
+	return corners
+
+
+## Screen-space hit rect from projected billboard corners. Empty points stay empty.
+static func screen_rect_from_projected_corners(points: PackedVector2Array, pad_px: float) -> Rect2:
+	var rect: Rect2 = axis_aligned_rect_from_points(points)
+	if rect.size == Vector2.ZERO:
+		return Rect2()
+	return rect.grow(pad_px)
+
+
+## Maps a rect from SubViewport pixels into the container's window-space rect.
+static func scale_rect_into_container(local_rect: Rect2, source_size: Vector2, container_rect: Rect2) -> Rect2:
+	if source_size.x <= 0.0 or source_size.y <= 0.0:
+		return Rect2()
+	var scale: Vector2 = container_rect.size / source_size
+	if scale.x <= 0.0 or scale.y <= 0.0:
+		return Rect2()
+	return Rect2(container_rect.position + (local_rect.position * scale), local_rect.size * scale)
+
+
+## Maps a Brain Monitor overlay rect into root-window space for the 2D tooltip canvas.
+static func subviewport_rect_to_window_rect(
+	container: SubViewportContainer,
+	subviewport: SubViewport,
+	local_rect: Rect2
+) -> Rect2:
+	if container == null or subviewport == null:
+		return Rect2()
+	return scale_rect_into_container(local_rect, Vector2(subviewport.size), container.get_global_rect())
+
+
 ## Turn StringName Array into CSV string
 static func string_name_array_to_CSV(arr: Array[StringName]) -> StringName:
 	var output: String = ""

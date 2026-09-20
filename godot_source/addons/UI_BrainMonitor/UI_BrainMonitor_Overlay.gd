@@ -23,6 +23,13 @@ const DEBUG_JOINT_DETAILS: bool = false
 ## Temporary troubleshooting switch for IOPU channel mapping mismatches.
 const DEBUG_HOVER_MAPPING: bool = false
 
+const REGION_DESCRIPTION_TOOLTIP_DELAY_SEC: float = 0.45
+
+var _region_description_timer: Timer
+var _region_description_pending: String = ""
+var _region_description_screen_rect: Rect2 = Rect2()
+var _region_description_visible: bool = false
+
 func _process(_delta: float) -> void:
 	# Keep overlay size synced to viewport size (hover label is now global).
 	var viewport := get_parent().get_parent() as SubViewport # Overlay -> UI_Canvas -> SubViewport
@@ -58,6 +65,95 @@ func _ready() -> void:
 
 	if ClassDB.class_exists("FeagiDataDeserializer"):
 		_fdp_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
+	_setup_region_description_tooltip()
+
+
+## Styled side-caret tooltip for a brain-region description. [param screen_rect] is SubViewport pixels.
+func show_region_description_tooltip(text: String, screen_rect: Rect2) -> void:
+	var trimmed: String = FEAGIUtils.brain_region_description_tooltip_text(StringName(text))
+	if trimmed.is_empty():
+		hide_region_description_tooltip()
+		return
+	_region_description_pending = trimmed
+	_region_description_screen_rect = screen_rect
+	if _region_description_visible:
+		_update_region_description_tooltip_anchor()
+		return
+	if _region_description_timer != null and _region_description_timer.is_stopped():
+		_region_description_timer.start()
+
+
+func hide_region_description_tooltip() -> void:
+	_region_description_pending = ""
+	_region_description_visible = false
+	_region_description_screen_rect = Rect2()
+	if _region_description_timer != null:
+		_region_description_timer.stop()
+	var manager: Node = _find_region_description_tooltip_manager()
+	if manager != null and manager.has_method("hide_tooltip"):
+		manager.hide_tooltip()
+
+
+func _setup_region_description_tooltip() -> void:
+	_region_description_timer = Timer.new()
+	_region_description_timer.name = "RegionDescriptionTooltipDelay"
+	_region_description_timer.one_shot = true
+	_region_description_timer.wait_time = REGION_DESCRIPTION_TOOLTIP_DELAY_SEC
+	add_child(_region_description_timer)
+	_region_description_timer.timeout.connect(_on_region_description_tooltip_delay_timeout)
+
+
+func _on_region_description_tooltip_delay_timeout() -> void:
+	if _region_description_pending.is_empty():
+		return
+	_present_region_description_tooltip()
+
+
+func _present_region_description_tooltip() -> void:
+	var manager: Node = _find_region_description_tooltip_manager()
+	if manager == null or not manager.has_method("show_tooltip_side_caret_at_window_rect"):
+		return
+	var window_rect: Rect2 = _region_description_window_rect()
+	if window_rect.size == Vector2.ZERO:
+		return
+	_region_description_visible = true
+	manager.show_tooltip_side_caret_at_window_rect(_region_description_pending, window_rect)
+
+
+func _update_region_description_tooltip_anchor() -> void:
+	var manager: Node = _find_region_description_tooltip_manager()
+	if manager == null or not manager.has_method("update_tooltip_side_caret_window_rect"):
+		return
+	var window_rect: Rect2 = _region_description_window_rect()
+	if window_rect.size == Vector2.ZERO:
+		return
+	manager.update_tooltip_side_caret_window_rect(window_rect)
+
+
+func _region_description_window_rect() -> Rect2:
+	var bm: UI_BrainMonitor_3DScene = _get_owning_bm()
+	if bm == null:
+		return Rect2()
+	var sub: SubViewport = bm.get_node_or_null("SubViewport") as SubViewport
+	if sub == null:
+		return Rect2()
+	return FEAGIUtils.subviewport_rect_to_window_rect(bm, sub, _region_description_screen_rect)
+
+
+func _find_region_description_tooltip_manager() -> Node:
+	var bm: UI_BrainMonitor_3DScene = _get_owning_bm()
+	if bm != null and bm.has_method("get_custom_tooltip_manager"):
+		var from_bm: Node = bm.get_custom_tooltip_manager()
+		if from_bm != null:
+			return from_bm
+	var current: Node = self
+	while current != null:
+		if current != self and current.has_method("get_custom_tooltip_manager"):
+			var manager: Node = current.get_custom_tooltip_manager()
+			if manager != null:
+				return manager
+		current = current.get_parent()
+	return null
 
 
 func set_box_select_rect(rect: Rect2) -> void:
@@ -85,6 +181,7 @@ func clear() -> void:
 	if bm != null:
 		bm.brain_monitor_clear_mouse_context_cortical_id()
 	_clear_global_context()
+	hide_region_description_tooltip()
 
 ## Resolve device index for IOPU. Uses per-device dimensions for channel/device mapping.
 ## For SignedPercentage/Incremental: per.x columns per joint (pos/neg); device = floor(x / per.x).
@@ -611,6 +708,8 @@ func show_plate_hover(region_name: String, plate_kind: String) -> void:
 	if bm != null:
 		bm.brain_monitor_clear_mouse_context_cortical_id()
 	var kind := plate_kind.strip_edges()
+	if kind != "":
+		hide_region_description_tooltip()
 	if kind == "":
 		_set_global_context("Circuit - " + region_name)
 		return

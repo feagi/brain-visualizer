@@ -1,14 +1,15 @@
-[gd_scene load_steps=6 format=3 uid="uid://cav0qsdij6r3j"]
+[gd_scene load_steps=7 format=3 uid="uid://cav0qsdij6r3j"]
 
 [ext_resource type="Script" uid="uid://drb42tdubcl04" path="res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.gd" id="1_1ef3e"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_shuhl"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_x0h7e"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="5_ysyug"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="11_fciic"]
+[ext_resource type="Script" uid="uid://bdii5h3dsyuhi" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/MultiLineTextInput.gd" id="12_desc"]
 
 [node name="WindowEditRegion" type="VBoxContainer"]
 offset_right = 620.0
-offset_bottom = 560.0
+offset_bottom = 680.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
@@ -44,6 +45,23 @@ custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("4_x0h7e")
+
+[node name="DescriptionSection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/DescriptionSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Description"
+
+[node name="DescriptionText" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals/DescriptionSection"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "What this circuit is intended to do"
+wrap_mode = 1
+script = ExtResource("12_desc")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2

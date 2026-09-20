@@ -13,6 +13,7 @@ func _initialize() -> void:
 	failures += _test_apply_is_idempotent()
 	failures += _test_create_names_and_priorities()
 	failures += _test_outline_sorts_behind_fill()
+	failures += _test_region_description_role()
 	if failures == 0:
 		print("SceneLabel3D tests: PASS")
 		quit(0)
@@ -79,6 +80,9 @@ func _test_fixed_size_only_on_region_titles() -> int:
 		return 1
 	if SceneLabel3D.uses_fixed_size(SceneLabel3D.ROLE.PLATE_TAG):
 		push_error("plate tags must not use fixed_size")
+		return 1
+	if not SceneLabel3D.uses_fixed_size(SceneLabel3D.ROLE.REGION_DESCRIPTION):
+		push_error("region descriptions must use fixed_size so they stay readable")
 		return 1
 	var area: Label3D = SceneLabel3D.create(SceneLabel3D.ROLE.AREA_NAME, &"Area")
 	var region: Label3D = SceneLabel3D.create(SceneLabel3D.ROLE.REGION_TITLE, &"Region")
@@ -197,4 +201,49 @@ func _test_outline_sorts_behind_fill() -> int:
 	area.free()
 	region.free()
 	plate.free()
+	return 0
+
+
+func _test_region_description_role() -> int:
+	if not is_equal_approx(SceneLabel3D.FONT_SIZE * SceneLabel3D.REGION_DESCRIPTION_PIXEL_SIZE, SceneLabel3D.REGION_DESCRIPTION_VISUAL_SCALE):
+		push_error("region description visual scale must stay font_size * pixel_size")
+		return 1
+	var label: Label3D = SceneLabel3D.create(SceneLabel3D.ROLE.REGION_DESCRIPTION, &"RegionDescriptionLabel")
+	if label.name != "RegionDescriptionLabel":
+		push_error("description label must use the requested name")
+		label.free()
+		return 1
+	if not label.fixed_size or not label.no_depth_test:
+		push_error("description label must be fixed_size and ignore depth")
+		label.free()
+		return 1
+	if label.autowrap_mode != TextServer.AUTOWRAP_WORD:
+		push_error("description label must wrap words")
+		label.free()
+		return 1
+	if not is_equal_approx(label.width, SceneLabel3D.REGION_DESCRIPTION_WRAP_WIDTH_PX):
+		push_error("description wrap width mismatch")
+		label.free()
+		return 1
+	if label.horizontal_alignment != HORIZONTAL_ALIGNMENT_LEFT:
+		push_error("description label must be left aligned")
+		label.free()
+		return 1
+	if label.vertical_alignment != VERTICAL_ALIGNMENT_TOP:
+		push_error("description label must be top aligned so it reads as a paragraph under the title")
+		label.free()
+		return 1
+	if label.billboard != BaseMaterial3D.BILLBOARD_ENABLED:
+		push_error("description label must face the camera like the region title")
+		label.free()
+		return 1
+	if label.render_priority != SceneLabel3D.REGION_DESCRIPTION_RENDER_PRIORITY:
+		push_error("description render priority mismatch")
+		label.free()
+		return 1
+	if label.outline_render_priority >= label.render_priority:
+		push_error("description outline must stay behind fill")
+		label.free()
+		return 1
+	label.free()
 	return 0

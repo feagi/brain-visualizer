@@ -1,10 +1,13 @@
 extends CBNodeConnectableBase
 class_name CBNodeRegion
 
+const CUSTOM_TOOLTIP_TRIGGER_SCRIPT = preload("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTooltipTrigger.gd")
+
 var representing_region: BrainRegion:
 	get: return _representing_region
 
 var _representing_region: BrainRegion
+var _description_tooltip_trigger: Node
 
 
 ## Called by CB right after instantiation
@@ -21,8 +24,41 @@ func setup(region_ref: BrainRegion) -> void:
 	
 	_representing_region.friendly_name_updated.connect(CACHE_updated_region_name)
 	_representing_region.coordinates_2D_updated.connect(CACHE_updated_2D_position)
+	_representing_region.description_updated.connect(_on_region_description_updated)
 	_representing_region.UI_highlighted_state_updated.connect(func(is_highlighted: bool): if is_highlighted != selected: selected = is_highlighted)
+	_setup_description_tooltip()
 	# NOTE: Deletion of the of the region (node) is handled by CB
+
+
+## Side-caret tooltip sits to the right of the region node so it does not cover the circuit.
+func _setup_description_tooltip() -> void:
+	if get_node_or_null("DescriptionTooltipTrigger") != null:
+		_description_tooltip_trigger = get_node("DescriptionTooltipTrigger")
+	else:
+		_description_tooltip_trigger = Node.new()
+		_description_tooltip_trigger.set_script(CUSTOM_TOOLTIP_TRIGGER_SCRIPT)
+		_description_tooltip_trigger.name = "DescriptionTooltipTrigger"
+		add_child(_description_tooltip_trigger)
+	_description_tooltip_trigger.set("use_side_caret_tooltip", true)
+	_description_tooltip_trigger.set("max_visible_lines", FEAGIUtils.region_description_tooltip_max_lines())
+	_description_tooltip_trigger.set("max_wrap_width_px", FEAGIUtils.region_description_tooltip_wrap_width_px())
+	_sync_description_tooltip_text()
+
+
+func _on_region_description_updated(_new_description: StringName) -> void:
+	_sync_description_tooltip_text()
+
+
+func _sync_description_tooltip_text() -> void:
+	if _description_tooltip_trigger == null or not is_instance_valid(_description_tooltip_trigger):
+		return
+	if _representing_region == null:
+		return
+	var text: String = String(_representing_region.description).strip_edges()
+	if _description_tooltip_trigger.has_method("set_tooltip_text"):
+		_description_tooltip_trigger.set_tooltip_text(text)
+	else:
+		_description_tooltip_trigger.set("tooltip_text", text)
 
 # Responses to changes in cache directly. NOTE: Connection and creation / deletion we won't do here and instead allow CB to handle it, since they can involve interactions with connections
 #region CACHE Events and responses

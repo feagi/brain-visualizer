@@ -23,6 +23,8 @@ var _body: PanelContainer
 var _label: Label
 var _tween: Tween
 var _current_anchor: Control = null
+var _max_visible_text_lines: int = MAX_VISIBLE_TEXT_LINES
+var _max_wrap_width_base_px: float = MAX_WRAP_WIDTH_BASE_PX
 
 signal tooltip_hidden()
 
@@ -133,7 +135,7 @@ func _apply_caret_metrics() -> void:
 
 
 func _get_max_label_wrap_width() -> float:
-	return MAX_WRAP_WIDTH_BASE_PX * _ui_scale()
+	return _max_wrap_width_base_px * _ui_scale()
 
 
 func _get_min_label_width() -> float:
@@ -155,7 +157,7 @@ func _apply_label_size_for_text(text: String) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT,
 		max_w,
 		fs,
-		MAX_VISIBLE_TEXT_LINES
+		_max_visible_text_lines
 	)
 	var line_spacing: int = maxi(2, int(round(float(fs) * 0.18)))
 	_label.add_theme_constant_override("line_spacing", line_spacing)
@@ -168,7 +170,7 @@ func _apply_label_size_for_text(text: String) -> void:
 	_label.text = text
 
 
-func show_tooltip(text: String, anchor_control: Control) -> void:
+func show_tooltip(text: String, anchor_control: Control, max_lines: int = -1, wrap_width_px: float = -1.0) -> void:
 	if text.is_empty():
 		hide_tooltip()
 		return
@@ -179,6 +181,9 @@ func show_tooltip(text: String, anchor_control: Control) -> void:
 	if _label == null or not is_instance_valid(_label):
 		push_error("CustomSideCaretTooltip: Label is null or invalid")
 		return
+	_max_visible_text_lines = MAX_VISIBLE_TEXT_LINES if max_lines < 1 else max_lines
+	_max_wrap_width_base_px = MAX_WRAP_WIDTH_BASE_PX if wrap_width_px <= 0.0 else wrap_width_px
+	_label.max_lines_visible = _max_visible_text_lines
 	_current_anchor = anchor_control
 	_apply_caret_metrics()
 	_apply_tooltip_typography()

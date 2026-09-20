@@ -7,6 +7,9 @@ const SHOW_DELAY_SEC: float = 0.45
 @export var tooltip_text: String = ""
 ## When true, uses [method CustomTopBarTooltipManager.show_tooltip_side_caret] (left caret, body to the right).
 @export var use_side_caret_tooltip: bool = false
+## 0 keeps [member CustomSideCaretTooltip] defaults. Region descriptions set a larger wrap/line budget.
+@export var max_visible_lines: int = 0
+@export var max_wrap_width_px: float = 0.0
 @export var tooltip_manager_path: NodePath
 
 var _parent_control: Control
@@ -75,7 +78,7 @@ func _on_show_delay_timeout() -> void:
 	if _suppress_tooltip_while_dropdown_open():
 		return
 	if use_side_caret_tooltip and _tooltip_manager.has_method("show_tooltip_side_caret"):
-		_tooltip_manager.show_tooltip_side_caret(tooltip_text, _parent_control)
+		_tooltip_manager.show_tooltip_side_caret(tooltip_text, _parent_control, max_visible_lines, max_wrap_width_px)
 	elif _tooltip_manager.has_method("show_tooltip"):
 		_tooltip_manager.show_tooltip(tooltip_text, _parent_control)
 

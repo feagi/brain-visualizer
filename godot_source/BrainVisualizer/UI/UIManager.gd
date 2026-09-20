@@ -2497,6 +2497,18 @@ func get_active_hover_brain_monitor() -> UI_BrainMonitor_3DScene:
 	return _active_hover_bm
 
 
+## True when the cursor is inside a visible Brain Monitor tab, not [member temp_root_bm].
+func is_mouse_over_tab_brain_monitor() -> bool:
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm == null or not is_instance_valid(bm) or bm == temp_root_bm:
+			continue
+		if not bm.is_visible_in_tree():
+			continue
+		if bm.is_mouse_inside_subviewport():
+			return true
+	return false
+
+
 func _can_paste_voxels_to_brain_monitor() -> bool:
 	var focus_owner: Control = get_viewport().gui_get_focus_owner()
 	if focus_owner is LineEdit or focus_owner is TextEdit:

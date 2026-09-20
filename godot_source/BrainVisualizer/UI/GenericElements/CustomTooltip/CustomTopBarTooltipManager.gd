@@ -196,12 +196,39 @@ func show_tooltip(text: String, anchor_control: Control) -> void:
 			_tooltip.show_tooltip(text, anchor_control)
 
 
-func show_tooltip_side_caret(text: String, anchor_control: Control) -> void:
+func show_tooltip_side_caret(text: String, anchor_control: Control, max_lines: int = -1, wrap_width_px: float = -1.0) -> void:
 	if _tooltip and is_instance_valid(_tooltip):
 		_tooltip.hide_tooltip()
 	if _tooltip_side and is_instance_valid(_tooltip_side):
 		if anchor_control and is_instance_valid(anchor_control):
-			_tooltip_side.show_tooltip(text, anchor_control)
+			_tooltip_side.show_tooltip(text, anchor_control, max_lines, wrap_width_px)
+
+
+## Side-caret tooltip for a 3D hover: [param window_rect] is already in root-window space.
+func show_tooltip_side_caret_at_window_rect(text: String, window_rect: Rect2) -> void:
+	if not _place_virtual_anchor_at_window_rect(window_rect):
+		return
+	show_tooltip_side_caret(text, _virtual_tab_anchor)
+
+
+func update_tooltip_side_caret_window_rect(window_rect: Rect2) -> void:
+	if not _place_virtual_anchor_at_window_rect(window_rect):
+		return
+	if _tooltip_side != null and is_instance_valid(_tooltip_side) and _tooltip_side.has_method("update_position"):
+		_tooltip_side.update_position()
+
+
+func _place_virtual_anchor_at_window_rect(window_rect: Rect2) -> bool:
+	if _virtual_tab_anchor == null or not is_instance_valid(_virtual_tab_anchor):
+		return false
+	var r: Rect2 = window_rect
+	if r.size.x < 4.0:
+		r.size.x = 4.0
+	if r.size.y < 4.0:
+		r.size.y = 4.0
+	_virtual_tab_anchor.global_position = r.position
+	_virtual_tab_anchor.size = r.size
+	return true
 
 
 func show_tooltip_at_tab(text: String, tab_bar: Control, tab_index: int) -> void:
