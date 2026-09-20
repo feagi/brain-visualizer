@@ -17,6 +17,7 @@ class_name UI_BrainMonitor_DirectPointsCorticalAreaRenderer
 ## Renders a cortical area using direct point rendering with MultiMeshInstance3D for optimal performance
 ## This renderer processes Type 11 (Direct Neural Points) data for real-time neural visualization
 
+const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
 const NEURON_VOXEL_MESH: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/NeuronVoxel.tscn")
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
 const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/MemoryJelloMaterial.tres"
@@ -330,16 +331,10 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Individual per-area plates are disabled; use region plates only.
 	
-	# Create friendly name label with high-quality MSDF rendering
-	_friendly_name_label = Label3D.new()
-	_friendly_name_label.name = "AreaNameLabel"
-	_friendly_name_label.font_size = 512  # High resolution for crisp text at distance
-	_friendly_name_label.modulate = Color.WHITE
-	_friendly_name_label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_friendly_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
-	_friendly_name_label.alpha_scissor_threshold = 0.5  # Clean edges
-	_friendly_name_label.no_depth_test = false
-	_friendly_name_label.render_priority = 1
+	_friendly_name_label = SceneLabel3D.create(
+		SceneLabel3D.ROLE.AREA_NAME,
+		&"AreaNameLabel"
+	)
 	# Initial guess; UI_BrainMonitor_CorticalArea refreshes for genome vs plate hover rules.
 	_friendly_name_label.visible = AbstractCorticalArea.is_feagi_invariant_core_area(area)
 	# Parent to this renderer (same as power/memory) so bv_update_friendly_name_label_position()

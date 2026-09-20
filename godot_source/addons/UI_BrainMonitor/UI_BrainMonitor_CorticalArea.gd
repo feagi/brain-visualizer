@@ -3,6 +3,8 @@ class_name UI_BrainMonitor_CorticalArea
 ## Class for rendering cortical areas in the Brain monitor
 # NOTE: We will leave adding, removing, or changing parent region to the Brain Monitor itself, since those interactions affect multiple objects
 
+const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
+
 var cortical_area: AbstractCorticalArea:
 	get: return _representing_cortial_area
 
@@ -848,11 +850,11 @@ func _apply_friendly_name_label_depth_policy() -> void:
 	if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
 		var dda_lbl := _dda_renderer.get("_friendly_name_label") as Label3D
 		dda_lbl.no_depth_test = ndt
-		dda_lbl.render_priority = prio
+		SceneLabel3D.apply_render_priority(dda_lbl, prio)
 	if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:
 		var dp_lbl := _directpoints_renderer.get("_friendly_name_label") as Label3D
 		dp_lbl.no_depth_test = ndt
-		dp_lbl.render_priority = prio
+		SceneLabel3D.apply_render_priority(dp_lbl, prio)
 
 
 func set_hover_over_volume_state(is_moused_over: bool) -> void:

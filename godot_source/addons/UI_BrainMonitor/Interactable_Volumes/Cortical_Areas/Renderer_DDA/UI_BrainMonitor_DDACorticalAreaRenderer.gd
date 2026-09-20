@@ -2,6 +2,7 @@ extends UI_BrainMonitor_AbstractCorticalAreaRenderer
 class_name UI_BrainMonitor_DDACorticalAreaRenderer
 ## Renders a cortical area using the DDA Shader on a Box Mesh. Makes use of textures instead of buffers which is slower, but is supported by WebGL
 
+const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
 const PREFAB: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/CorticalArea_DDA_Body.tscn")
 const WEBGL_DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/WebGL_RayMarch.tres"
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
@@ -53,15 +54,10 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Individual per-area plates are disabled; use region plates only.
 	
-	# Create friendly name label with high-quality MSDF rendering
-	_friendly_name_label = Label3D.new()
-	_friendly_name_label.font_size = 512  # High resolution for crisp text at distance
-	_friendly_name_label.modulate = Color.WHITE
-	_friendly_name_label.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_friendly_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
-	_friendly_name_label.alpha_scissor_threshold = 0.5  # Clean edges
-	_friendly_name_label.no_depth_test = false
-	_friendly_name_label.render_priority = 1
+	_friendly_name_label = SceneLabel3D.create(
+		SceneLabel3D.ROLE.AREA_NAME,
+		&"AreaNameLabel"
+	)
 	# Visibility (always vs hover-only on brain-region plates) is set by UI_BrainMonitor_CorticalArea.
 	_friendly_name_label.visible = false
 	add_child(_friendly_name_label)

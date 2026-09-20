@@ -6,6 +6,7 @@ class_name UI_BrainMonitor_BrainRegion3D
 signal region_double_clicked(brain_region: BrainRegion)
 signal region_hover_changed(brain_region: BrainRegion, is_hovered: bool)
 
+const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
 const FRAME_THICKNESS: float = 0.2
 const FRAME_PADDING: Vector3 = Vector3(1.0, 1.0, 0.5)
 const INPUT_OUTPUT_SPACING: float = 2.0
@@ -23,9 +24,6 @@ const PLATE_COLOR_INPUT: Color = Color(0.1, 0.6, 0.4, 0.35)
 const PLATE_COLOR_OUTPUT: Color = Color(0.1, 0.35, 0.65, 0.35)
 const PLATE_COLOR_CONFLICT: Color = Color(0.85, 0.35, 0.1, 0.35)
 const PLATE_COLOR_BASE: Color = Color(0.2, 0.2, 0.24, 0.6)
-const PLATE_LABEL_COLOR: Color = Color(1.0, 1.0, 1.0, 0.9)
-const PLATE_LABEL_FONT_SIZE: int = 18
-const PLATE_LABEL_PIXEL_SIZE: float = 0.002
 const PLATE_LABEL_Y_OFFSET: float = 0.6
 const PLATE_LABEL_Z_OFFSET: float = 0.6
 const PLATE_BORDER_THICKNESS: float = 0.12
@@ -751,23 +749,7 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	
 	# 5. Ensure region label exists and update position
 	if not _region_name_label:
-		# Recreate label if it was destroyed during cleanup
-		_region_name_label = Label3D.new()
-		_region_name_label.name = "RegionNameLabel"
-		_region_name_label.text = _representing_region.friendly_name
-		_region_name_label.font_size = 32
-		_region_name_label.pixel_size = 0.001
-		_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		_region_name_label.fixed_size = true
-		_region_name_label.no_depth_test = true
-		_region_name_label.outline_render_priority = 1
-		_region_name_label.outline_size = 4
-		_region_name_label.modulate = Color.WHITE
-		_region_name_label.outline_modulate = Color.BLACK
-		_region_name_label.render_priority = 10
-		_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_region_name_label.visible = true
+		_region_name_label = _make_region_name_label()
 		_frame_container.add_child(_region_name_label)
 	
 	if _region_name_label:
@@ -947,22 +929,8 @@ func _create_3d_plate() -> void:
 	_add_plate_border(mother_plate_, mother_size_, PLATE_COLOR_BASE)
 	# print("🧪 PLATE DEBUG: MotherPlate local_pos=%s size=%s" % [mother_plate_.position, mother_size_])
 
-	# Create region name label (white, large) and place it below the bezel
-	_region_name_label = Label3D.new()
-	_region_name_label.name = "RegionNameLabel"
-	_region_name_label.text = _representing_region.friendly_name
-	_region_name_label.font_size = 32  # Higher resolution for better quality
-	_region_name_label.pixel_size = 0.001  # Small pixel size for proper visual scale
-	_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED  # Always face camera
-	_region_name_label.fixed_size = true  # Keep readable regardless of distance
-	_region_name_label.no_depth_test = true  # Always draw on top
-	_region_name_label.outline_render_priority = 1
-	_region_name_label.outline_size = 4
-	_region_name_label.modulate = Color.WHITE
-	_region_name_label.outline_modulate = Color.BLACK
-	_region_name_label.render_priority = 10
-	_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Create region name label and place it below the bezel
+	_region_name_label = _make_region_name_label()
 	
 	# Attach to frame container and position using world coordinates
 	_frame_container.add_child(_region_name_label)
@@ -1112,22 +1080,29 @@ func _attach_hover_warning(plate_node: MeshInstance3D, warning_text: String) -> 
 	warn.position = Vector3(0, 2.0, 0)
 	plate_node.add_child(warn)
 
+## Shared region-title Label3D. Callers parent and position it.
+func _make_region_name_label() -> Label3D:
+	var label := SceneLabel3D.create(
+		SceneLabel3D.ROLE.REGION_TITLE,
+		&"RegionNameLabel"
+	)
+	if _representing_region != null:
+		label.text = _representing_region.friendly_name
+	label.visible = true
+	return label
+
+
 func _add_plate_tag(plate_node: MeshInstance3D, plate_size: Vector3, label_text: String) -> void:
 	var existing = plate_node.get_node_or_null("PlateTag") as Label3D
 	if existing != null:
+		SceneLabel3D.apply(existing, SceneLabel3D.ROLE.PLATE_TAG)
 		existing.text = label_text
 		return
-	var label = Label3D.new()
-	label.name = "PlateTag"
+	var label := SceneLabel3D.create(
+		SceneLabel3D.ROLE.PLATE_TAG,
+		&"PlateTag"
+	)
 	label.text = label_text
-	label.font_size = PLATE_LABEL_FONT_SIZE
-	label.pixel_size = PLATE_LABEL_PIXEL_SIZE
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.no_depth_test = false
-	label.modulate = PLATE_LABEL_COLOR
-	label.render_priority = 11
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.position = Vector3(0.0, PLATE_LABEL_Y_OFFSET, -plate_size.z / 2.0 + PLATE_LABEL_Z_OFFSET)
 	plate_node.add_child(label)
 
@@ -2588,24 +2563,8 @@ func _update_label_position_after_refresh() -> void:
 	
 	# Ensure label exists - recreate if destroyed during cleanup
 	if not _region_name_label:
-		_region_name_label = Label3D.new()
-		_region_name_label.name = "RegionNameLabel"
-		_region_name_label.text = _representing_region.friendly_name
-		_region_name_label.font_size = 32
-		_region_name_label.pixel_size = 0.001
-		_region_name_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		_region_name_label.fixed_size = true
-		_region_name_label.no_depth_test = true
-		_region_name_label.outline_render_priority = 1
-		_region_name_label.outline_size = 4
-		_region_name_label.modulate = Color.WHITE
-		_region_name_label.outline_modulate = Color.BLACK
-		_region_name_label.render_priority = 10
-		_region_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_region_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_region_name_label.visible = true
+		_region_name_label = _make_region_name_label()
 		_frame_container.add_child(_region_name_label)
-		print("🏷️ RECREATED region label during refresh update")
 	
 	if not _region_name_label:
 		return
