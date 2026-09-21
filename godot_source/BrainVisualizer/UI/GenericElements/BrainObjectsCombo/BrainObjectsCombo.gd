@@ -17,6 +17,8 @@ var _global_topbar_mode: bool = false
 var _force_disabled_override: bool = false
 
 var _btn_connectome: BasePanelContainerButton
+var _connectome_label: Label
+var _connectome_hover_wired: bool = false
 var _connectome_menu: PopupPanel
 var _connectome_menu_items: VBoxContainer
 var _btn_brain_regions_list: BasePanelContainerButton
@@ -47,6 +49,12 @@ var _camera_animations_button: ButtonTextureRectScaling
 const HOVER_SCALE := Vector2(1.15, 1.15)
 const NORMAL_SCALE := Vector2(1.0, 1.0)
 const BACKPLATE_COLOR := Color("252525")
+## Fill of inspectors_S.jpg / camera_S.jpg so Connectome matches those icon buttons.
+const ICON_BUTTON_PLATE_COLOR := Color8(67, 67, 67)
+## Horizontal inset so "Connectome" is not flush against the plate.
+const CONNECTOME_PLATE_PAD_X: int = 12
+## In-place text pop. Scale avoids a layout resize that cancels hover.
+const CONNECTOME_HOVER_SCALE: float = 1.1
 const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
 const CUSTOM_TOOLTIP_TRIGGER_SCRIPT = preload("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTooltipTrigger.gd")
@@ -68,6 +76,11 @@ static func connectome_menu_item_ids() -> PackedStringArray:
 	])
 
 
+## Hover scale is a fixed factor. Never multiply the current scale again.
+static func connectome_hover_scale(hovered: bool) -> float:
+	return CONNECTOME_HOVER_SCALE if hovered else 1.0
+
+
 ## Scene node names under %MenuItems, same order as [method connectome_menu_item_ids].
 static func connectome_menu_row_node_names() -> PackedStringArray:
 	return PackedStringArray([
@@ -82,6 +95,7 @@ static func connectome_menu_row_node_names() -> PackedStringArray:
 func _ready() -> void:
 	_group_connectome = %ConnectomeGroup
 	_btn_connectome = %ConnectomeButton
+	_connectome_label = %ConnectomeButton/HBoxContainer/Label as Label
 	_connectome_menu = %ConnectomeMenu
 	_connectome_menu_items = %MenuItems
 	_btn_brain_regions_list = %BrainRegionsList
@@ -114,6 +128,7 @@ func _ready() -> void:
 
 	_btn_connectome.focus_mode = Control.FOCUS_ALL
 	_btn_connectome.pressed.connect(_toggle_connectome_menu)
+	_btn_connectome.pressed.connect(_reset_connectome_label_hover)
 	_btn_connectome.focus_exited.connect(_on_connectome_focus_exited)
 	_btn_brain_regions_list.pressed.connect(_open_brain_regions)
 	_btn_brain_regions_add.pressed.connect(_add_brain_region)
@@ -136,6 +151,7 @@ func _ready() -> void:
 		_camera_animations_button.pressed.connect(_on_monitor_camera_animations_pressed)
 	_apply_shared_combo_spacing_tokens()
 	_flatten_group_wrapper_panels()
+	_style_connectome_like_icon_buttons()
 	_ensure_list_popup()
 	_update_buttons_state()
 	queue_redraw()
@@ -239,6 +255,8 @@ func apply_custom_topbar_tooltips() -> void:
 		trigger.name = "TooltipTrigger"
 		ctl.add_child(trigger)
 		trigger.set("tooltip_text", txt)
+	if _btn_connectome != null:
+		_btn_connectome.mouse_filter = Control.MOUSE_FILTER_STOP
 	_hosted_styled_tooltips_applied = true
 
 
@@ -280,6 +298,7 @@ func _on_theme_changed(new_theme: Theme) -> void:
 	if _connectome_menu != null:
 		_apply_theme_sizes_recursive(_connectome_menu)
 	_apply_rearrange_button_size()
+	_style_connectome_like_icon_buttons()
 
 
 ## Current top-bar scale by usage context.
@@ -298,6 +317,75 @@ func _apply_theme_sizes_recursive(node: Node) -> void:
 			tr.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(tr, tr_fallback) * _get_context_size_scale()
 		_apply_theme_sizes_recursive(child)
 
+## Paint and size Connectome like the inspector / camera icon buttons beside it.
+func _style_connectome_like_icon_buttons() -> void:
+	if _btn_connectome == null:
+		return
+	_btn_connectome.set_meta("plate_color", ICON_BUTTON_PLATE_COLOR)
+	_btn_connectome.set_meta("plate_padding_x", CONNECTOME_PLATE_PAD_X)
+	_btn_connectome.set_meta("plate_padding_y", 0)
+	_btn_connectome.clip_contents = false
+	if _connectome_label != null:
+		_connectome_label.remove_theme_font_size_override("font_size")
+		_connectome_label.scale = Vector2.ONE
+	_btn_connectome._apply_plate_color()
+	var icon_height: float = _neighbor_icon_button_height()
+	if icon_height > 0.0:
+		_btn_connectome.custom_minimum_size.y = icon_height
+		_btn_connectome.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_wire_connectome_label_hover()
+
+
+func _wire_connectome_label_hover() -> void:
+	if _connectome_hover_wired or _btn_connectome == null:
+		return
+	if _connectome_label != null:
+		_connectome_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_connectome_label.resized.connect(_center_connectome_label_pivot)
+		_center_connectome_label_pivot()
+	_btn_connectome.mouse_entered.connect(_on_connectome_label_hover.bind(true))
+	_btn_connectome.mouse_exited.connect(_on_connectome_mouse_exited)
+	_connectome_hover_wired = true
+
+
+func _center_connectome_label_pivot() -> void:
+	if _connectome_label == null:
+		return
+	_connectome_label.pivot_offset = _connectome_label.size * 0.5
+
+
+func _on_connectome_label_hover(hovered: bool) -> void:
+	if not hovered:
+		_reset_connectome_label_hover()
+		return
+	_apply_connectome_label_scale(connectome_hover_scale(true))
+
+
+func _on_connectome_mouse_exited() -> void:
+	if _btn_connectome != null and _btn_connectome.get_global_rect().has_point(_btn_connectome.get_global_mouse_position()):
+		return
+	_reset_connectome_label_hover()
+
+
+func _reset_connectome_label_hover() -> void:
+	_apply_connectome_label_scale(connectome_hover_scale(false))
+
+
+func _apply_connectome_label_scale(scale_factor: float) -> void:
+	if _connectome_label == null:
+		return
+	_center_connectome_label_pivot()
+	_connectome_label.scale = Vector2(scale_factor, scale_factor)
+
+
+func _neighbor_icon_button_height() -> float:
+	if _activity_toggle_button != null and _activity_toggle_button.custom_minimum_size.y > 0.0:
+		return _activity_toggle_button.custom_minimum_size.y
+	if _camera_animations_button != null and _camera_animations_button.custom_minimum_size.y > 0.0:
+		return _camera_animations_button.custom_minimum_size.y
+	return 0.0
+
+
 ## Make the rearrange button slightly larger than standard.
 func _apply_rearrange_button_size() -> void:
 	if _btn_rearrange_layout == null:
@@ -307,6 +395,8 @@ func _apply_rearrange_button_size() -> void:
 	_btn_rearrange_layout.custom_minimum_size = base_size * REARRANGE_SIZE_SCALE * _get_context_size_scale()
 
 func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> void:
+	if _is_3d_context and _bm_scene == bm_scene and context_region == region and not _global_topbar_mode:
+		return
 	if not _hosted_styled_tooltips_applied:
 		_try_apply_styled_tooltips_for_current_host()
 	_is_3d_context = true
@@ -410,10 +500,9 @@ func _set_all_buttons_disabled(disabled: bool) -> void:
 ## Brain Monitor tab strip only: same controls as the main top bar, scoped to this tab's 3D scene.
 func _update_monitor_tools_visibility() -> void:
 	var show_tools := _is_3d_context and _bm_scene != null and not _global_topbar_mode
-	if _spacer_after_connectome != null and show_tools:
-		_spacer_after_connectome.visible = true
+	# Do not insert extra spacers here. Connectome / inspector / camera share the strip gap.
 	if _spacer_before_monitor_tools != null:
-		_spacer_before_monitor_tools.visible = show_tools
+		_spacer_before_monitor_tools.visible = false
 	if _activity_visualization_dropdown != null:
 		_activity_visualization_dropdown.visible = show_tools
 	if _camera_animations_button != null:
@@ -689,11 +778,11 @@ func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_l
 	if _group_rearrange:
 		_group_rearrange.visible = show_rearrange_layout
 	if _spacer_after_connectome:
-		_spacer_after_connectome.visible = show_inputs_and_outputs or show_rearrange_layout
+		_spacer_after_connectome.visible = show_inputs_and_outputs
 	if _spacer_before_rearrange:
-		_spacer_before_rearrange.visible = show_rearrange_layout
+		_spacer_before_rearrange.visible = false
 	if _spacer_after_rearrange:
-		_spacer_after_rearrange.visible = show_rearrange_layout
+		_spacer_after_rearrange.visible = false
 
 func _apply_hover_visual(button: Control, hovered: bool) -> void:
 	# Subtle scale-up on hover to match main 3D view visual feedback style
@@ -919,7 +1008,10 @@ func _collect_cortical_areas_matching_types_in_region_tree(
 	return out
 
 func _draw() -> void:
-	# Draw a stable, neutral back plate behind combo groups.
+	# Main top bar keeps a shared plate. Tab combos must not, or Connectome
+	# melts into the same color as the inspector / camera buttons.
+	if not _global_topbar_mode:
+		return
 	var back_rect: Rect2 = Rect2(Vector2.ZERO, size)
 	draw_rect(back_rect, BACKPLATE_COLOR, true)
 

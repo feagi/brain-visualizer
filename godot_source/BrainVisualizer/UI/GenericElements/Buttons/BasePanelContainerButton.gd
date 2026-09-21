@@ -73,25 +73,29 @@ func _build_plate_stylebox(style_name: StringName, plate_color: Color) -> StyleB
 		base_style = get_theme_stylebox(style_name, "BasePanelContainerButton")
 	if base_style is StyleBoxFlat:
 		var plate_style := base_style.duplicate() as StyleBoxFlat
-		plate_style.bg_color = plate_color
-		plate_style.content_margin_left = PLATE_PADDING
-		plate_style.content_margin_top = PLATE_PADDING
-		plate_style.content_margin_right = PLATE_PADDING
-		plate_style.content_margin_bottom = PLATE_PADDING
+		_apply_plate_metrics(plate_style, plate_color)
 		return plate_style
-	if base_style != null:
-		var fallback_style := StyleBoxFlat.new()
-		fallback_style.bg_color = plate_color
-		fallback_style.content_margin_left = PLATE_PADDING
-		fallback_style.content_margin_top = PLATE_PADDING
-		fallback_style.content_margin_right = PLATE_PADDING
-		fallback_style.content_margin_bottom = PLATE_PADDING
-		return fallback_style
-	return null
+	var plate_style := StyleBoxFlat.new()
+	_apply_plate_metrics(plate_style, plate_color)
+	return plate_style
+
+
+## Shared plate fill and inset so text buttons match icon-button chrome.
+func _apply_plate_metrics(plate_style: StyleBoxFlat, plate_color: Color) -> void:
+	var pad_x: int = int(get_meta("plate_padding_x")) if has_meta("plate_padding_x") else PLATE_PADDING
+	var pad_y: int = int(get_meta("plate_padding_y")) if has_meta("plate_padding_y") else PLATE_PADDING
+	plate_style.bg_color = plate_color
+	plate_style.content_margin_left = pad_x
+	plate_style.content_margin_top = pad_y
+	plate_style.content_margin_right = pad_x
+	plate_style.content_margin_bottom = pad_y
 
 
 ## Keep icon-button plates independent from top-bar panel/background styling.
+## Set metadata/plate_color to match a neighboring control (e.g. icon JPEG fill).
 func _resolve_plate_color() -> Color:
+	if has_meta("plate_color"):
+		return Color(get_meta("plate_color"))
 	return DEFAULT_PLATE_COLOR
 
 

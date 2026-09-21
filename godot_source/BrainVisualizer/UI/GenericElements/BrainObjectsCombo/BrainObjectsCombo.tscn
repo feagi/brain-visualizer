@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.gd" id="1_script"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_basebtn"]
@@ -21,6 +21,14 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="19_cam_h"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="20_cam_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="21_cam_d"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_connectome_plate"]
+bg_color = Color(0.262745, 0.262745, 0.262745, 1)
+content_margin_left = 12.0
+content_margin_top = 0.0
+content_margin_right = 12.0
+content_margin_bottom = 0.0
+
 [node name="BrainObjectsCombo" type="HBoxContainer"]
 mouse_filter = 1
 size_flags_vertical = 4
@@ -35,15 +43,22 @@ size_flags_vertical = 4
 [node name="ConnectomeButton" type="PanelContainer" parent="ConnectomeGroup"]
 unique_name_in_owner = true
 size_flags_vertical = 4
-clip_contents = true
+clip_contents = false
+theme_type_variation = &"BasePanelContainerButton"
+theme_override_styles/panel = SubResource("StyleBoxFlat_connectome_plate")
 script = ExtResource("2_basebtn")
 metadata/disable_hover_scale = true
+metadata/plate_color = Color(0.262745, 0.262745, 0.262745, 1)
+metadata/plate_padding_x = 12
+metadata/plate_padding_y = 0
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeButton"]
+alignment = 1
 theme_override_constants/separation = 6
 
 [node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeButton/HBoxContainer"]
 theme_type_variation = &"Label_Header"
+vertical_alignment = 1
 text = "Connectome"
 
 [node name="ConnectomeMenu" type="PopupPanel" parent="ConnectomeGroup"]

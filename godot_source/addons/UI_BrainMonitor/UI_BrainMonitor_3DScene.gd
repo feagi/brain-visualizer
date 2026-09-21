@@ -793,10 +793,6 @@ func _process(delta: float) -> void:
 			_debug_log_large_meshes()
 	
 	
-	# Update combo context after setup has region
-	if _combo:
-		_combo.set_3d_context(self, _representing_region)
-	
 	# Update label visibility to prevent overlaps (throttled for performance)
 	_update_label_overlap_visibility()
 	if _manipulation_active:

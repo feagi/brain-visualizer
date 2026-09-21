@@ -12,6 +12,7 @@ func _initialize() -> void:
 	failures += _test_menu_ids_are_circuit_interconnect_memory()
 	failures += _test_menu_ids_match_row_node_names()
 	failures += _test_scene_has_connectome_trigger()
+	failures += _test_connectome_button_uses_panel_plate()
 	failures += _test_scene_keeps_object_combos_inside_menu()
 	failures += _test_scene_keeps_inputs_outputs_on_strip()
 	failures += _test_scene_menu_row_order()
@@ -40,6 +41,47 @@ func _test_menu_ids_match_row_node_names() -> int:
 	var names: PackedStringArray = script.connectome_menu_row_node_names()
 	if ids.size() != names.size():
 		push_error("connectome menu ids and row node names must stay the same length")
+		return 1
+	return 0
+
+
+func _test_connectome_button_uses_panel_plate() -> int:
+	var packed: PackedScene = load(COMBO_SCENE_PATH)
+	var state: SceneState = packed.get_state()
+	var connectome_index: int = _find_node_index_by_name(state, "ConnectomeButton")
+	if connectome_index < 0:
+		push_error("ConnectomeButton missing from BrainObjectsCombo scene")
+		return 1
+	var has_button_script: bool = false
+	var has_panel_variation: bool = false
+	for i in range(state.get_node_property_count(connectome_index)):
+		var prop_name: String = str(state.get_node_property_name(connectome_index, i))
+		var prop_value: Variant = state.get_node_property_value(connectome_index, i)
+		if prop_name == "script":
+			has_button_script = str(prop_value).find("BasePanelContainerButton.gd") >= 0
+		if prop_name == "theme_type_variation" and str(prop_value) == "BasePanelContainerButton":
+			has_panel_variation = true
+	if not has_button_script:
+		push_error("ConnectomeButton must use BasePanelContainerButton so it has a button plate")
+		return 1
+	if not has_panel_variation:
+		push_error("ConnectomeButton must use the BasePanelContainerButton theme plate")
+		return 1
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	if script.ICON_BUTTON_PLATE_COLOR != Color8(67, 67, 67):
+		push_error("Connectome plate must match inspector/camera icon fill #434343")
+		return 1
+	if int(script.CONNECTOME_PLATE_PAD_X) != 12:
+		push_error("Connectome plate must keep horizontal padding")
+		return 1
+	if not is_equal_approx(float(script.CONNECTOME_HOVER_SCALE), 1.1):
+		push_error("Connectome hover must use the reduced in-place pop")
+		return 1
+	if not is_equal_approx(float(script.connectome_hover_scale(true)), 1.1):
+		push_error("hover scale must be the fixed pop factor")
+		return 1
+	if not is_equal_approx(float(script.connectome_hover_scale(false)), 1.0):
+		push_error("off-hover must return scale 1")
 		return 1
 	return 0
 
