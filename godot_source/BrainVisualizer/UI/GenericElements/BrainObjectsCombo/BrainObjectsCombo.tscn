@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.gd" id="1_script"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_basebtn"]
@@ -21,8 +21,6 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="19_cam_h"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="20_cam_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="21_cam_d"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Down_S.png" id="22_chevron"]
-
 [node name="BrainObjectsCombo" type="HBoxContainer"]
 mouse_filter = 1
 size_flags_vertical = 4
@@ -37,26 +35,16 @@ size_flags_vertical = 4
 [node name="ConnectomeButton" type="PanelContainer" parent="ConnectomeGroup"]
 unique_name_in_owner = true
 size_flags_vertical = 4
+clip_contents = true
 script = ExtResource("2_basebtn")
+metadata/disable_hover_scale = true
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeButton"]
-metadata/hover_scale_target = true
 theme_override_constants/separation = 6
-
-[node name="TextureRect" type="TextureRect" parent="ConnectomeGroup/ConnectomeButton/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
-texture = ExtResource("3_icon_region")
-expand_mode = 1
 
 [node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeButton/HBoxContainer"]
 theme_type_variation = &"Label_Header"
 text = "Connectome"
-
-[node name="Chevron" type="TextureRect" parent="ConnectomeGroup/ConnectomeButton/HBoxContainer"]
-custom_minimum_size = Vector2(24, 24)
-texture = ExtResource("22_chevron")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="ConnectomeMenu" type="PopupPanel" parent="ConnectomeGroup"]
 unique_name_in_owner = true
@@ -167,6 +155,40 @@ theme_type_variation = &"Label_Header"
 text = "Memory Areas"
 
 [node name="TextureButton_Memory" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+size_flags_horizontal = 8
+size_flags_vertical = 4
+texture_normal = ExtResource("5_plus_s")
+texture_pressed = ExtResource("5_plus_c")
+texture_hover = ExtResource("5_plus_h")
+texture_disabled = ExtResource("5_plus_d")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
+metadata/ignore_parent_press = true
+
+[node name="ClassifierList" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems"]
+unique_name_in_owner = true
+size_flags_horizontal = 3
+size_flags_vertical = 4
+script = ExtResource("2_basebtn")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/ClassifierList"]
+size_flags_horizontal = 3
+metadata/hover_scale_target = true
+theme_override_constants/separation = 6
+
+[node name="TextureRect" type="TextureRect" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/ClassifierList/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+texture = ExtResource("6_icon_memory")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/ClassifierList/HBoxContainer"]
+size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
+text = "Classifier"
+
+[node name="TextureButton_Classifier" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/ClassifierList/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
 size_flags_horizontal = 8
 size_flags_vertical = 4

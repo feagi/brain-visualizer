@@ -8,6 +8,8 @@ const ROOT_REGION_ID: StringName = "root" ## DEPRECATED: Legacy constant for old
 signal name_updated(new_name: StringName)
 signal cortical_area_added_to_region(area: AbstractCorticalArea)
 signal cortical_area_removed_from_region(area: AbstractCorticalArea)
+signal classifier_added_to_region(classifier: GenomeClassifier)
+signal classifier_removed_from_region(classifier: GenomeClassifier)
 signal subregion_added_to_region(subregion: BrainRegion)
 signal subregion_removed_from_region(subregion: BrainRegion)
 signal bridge_link_added(link: ConnectionChainLink)
@@ -29,6 +31,8 @@ var contained_cortical_areas: Array[AbstractCorticalArea]:
 	get: return _contained_cortical_areas
 var contained_regions: Array[BrainRegion]:
 	get: return _contained_regions
+var contained_classifiers: Array[GenomeClassifier]:
+	get: return _contained_classifiers
 var bridge_chain_links: Array[ConnectionChainLink]: ## Bridge links connect 2 internal members together, they do not connect to the input / output of the region
 	get: return _bridge_chain_links
 var input_open_chain_links: Array[ConnectionChainLink]: 
@@ -44,6 +48,7 @@ var designated_outputs: Array[StringName] = []
 
 var _contained_cortical_areas: Array[AbstractCorticalArea]
 var _contained_regions: Array[BrainRegion]
+var _contained_classifiers: Array[GenomeClassifier]
 var _bridge_chain_links: Array[ConnectionChainLink]
 var _input_open_chain_links: Array[ConnectionChainLink]
 var _output_open_chain_links: Array[ConnectionChainLink]
@@ -71,6 +76,8 @@ static func get_parent_region_of_object(A: GenomeObject) -> BrainRegion:
 			push_error("CORE CACHE: Unable to get parent region of the root region!")
 			return null
 		return (A as BrainRegion).current_parent_region
+	if A is GenomeClassifier:
+		return (A as GenomeClassifier).current_parent_region
 	push_error("CORE CACHE: Unable to get parent region of an object of unknown type!")
 	return null
 
@@ -124,6 +131,14 @@ func FEAGI_genome_object_register_as_child(genome_object: GenomeObject) -> void:
 		_contained_regions.append(region)
 		subregion_added_to_region.emit(region)
 		return
+	if genome_object is GenomeClassifier:
+		var classifier: GenomeClassifier = genome_object as GenomeClassifier
+		if classifier in _contained_classifiers:
+			push_error("CORE CACHE: Cannot add classifier %s to region %s that already contains it! Skipping!" % [classifier.classifier_id, _genome_ID])
+			return
+		_contained_classifiers.append(classifier)
+		classifier_added_to_region.emit(classifier)
+		return
 	push_error("CORE CACHE: Unknown GenomeObject type tried to be added to region %s!" % _genome_ID)
 
 ## When an [GenomeObject] gets a parent region set / changed, it calls this function of the old parent instance to deregister itself
@@ -145,6 +160,15 @@ func FEAGI_genome_object_deregister_as_child(genome_object: GenomeObject) -> voi
 			return
 		_contained_regions.remove_at(index)
 		subregion_removed_from_region.emit(region)
+		return
+	if genome_object is GenomeClassifier:
+		var classifier: GenomeClassifier = genome_object as GenomeClassifier
+		var classifier_index: int = _contained_classifiers.find(classifier)
+		if classifier_index == -1:
+			push_error("CORE CACHE: Cannot remove classifier %s from region %s that doesn't contains it! Skipping!" % [classifier.classifier_id, _genome_ID])
+			return
+		_contained_classifiers.remove_at(classifier_index)
+		classifier_removed_from_region.emit(classifier)
 		return
 	push_error("CORE CACHE: Unknown GenomeObject type tried to be removed from region %s!" % _genome_ID)
 
@@ -306,6 +330,8 @@ func is_genome_object_in_region_directly(object: GenomeObject) -> bool:
 		return is_cortical_area_in_region_directly(object as AbstractCorticalArea)
 	if object is BrainRegion:
 		return is_subregion_directly(object as BrainRegion)
+	if object is GenomeClassifier:
+		return object in _contained_classifiers
 	return false
 
 ## Returns if a cortical area is within this region (including within another region inside here)
@@ -347,6 +373,8 @@ func get_all_included_genome_objects() -> Array[GenomeObject]:
 		contained_objects.append(area)
 	for region in _contained_regions:
 		contained_objects.append(region)
+	for classifier in _contained_classifiers:
+		contained_objects.append(classifier)
 	return contained_objects
 
 ## Returns an vec2i of the number of objects inside this region, where the first number is the total  number of regions and the second the number of cortical areas

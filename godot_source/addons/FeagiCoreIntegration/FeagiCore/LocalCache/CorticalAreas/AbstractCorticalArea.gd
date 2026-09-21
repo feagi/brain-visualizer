@@ -229,6 +229,9 @@ var _SVO_neuron_activations: PackedByteArray = []
 var _direct_neural_points: PackedByteArray = []
 ## Parsed from flattened cortical area API (including nested [properties]).
 var _rate_modulated_leak: Variant = null
+var _scan_twin: bool = false
+var _classifier_role: StringName = &""
+var _temporal_depth: int = 0
 
 # IPU/OPU-specific decoded cortical ID fields (empty strings if not IPU/OPU)
 var _cortical_subtype: String = ""
@@ -468,6 +471,43 @@ static func core_cluster_computed_feagi_position(cortical_id: Variant, power_anc
 	var offset_x: int = (my_idx - p_idx) * CORE_CLUSTER_FEAGI_SPACING_X
 	return power_anchor_feagi + Vector3i(offset_x, 0, 0)
 
+## True when this custom area is the classifier class-map twin (field XY x class-count Z).
+func is_scan_twin() -> bool:
+	return _scan_twin and _classifier_role == &"scan_twin"
+
+
+func is_classifier_kernel_memory() -> bool:
+	if _classifier_role == &"kernel_memory":
+		return true
+	return String(friendly_name).ends_with("_kernel_mem")
+
+
+func is_classifier_class_memory() -> bool:
+	if _classifier_role == &"class_memory":
+		return true
+	return String(friendly_name).ends_with("_class_mem")
+
+
+## True for the hidden kernel/class memory internals of a classifier assembly.
+## Names are the post_classifier contract: `{name}_kernel_mem` and `{name}_class_mem`.
+func is_classifier_internal_memory() -> bool:
+	return is_classifier_kernel_memory() or is_classifier_class_memory()
+
+
+func temporal_depth() -> int:
+	return _temporal_depth
+
+
+## Auto scan twins spawned beside classifier fields (parent stripped, land in root). Hide them.
+func is_leftover_classifier_auto_twin() -> bool:
+	if is_scan_twin() or is_classifier_internal_memory():
+		return false
+	if _scan_twin:
+		return true
+	var area_name := String(friendly_name)
+	return area_name.ends_with("_scan_twin")
+
+
 ## True for FEAGI invariant core regions: explicit reserved IDs or [enum CORTICAL_AREA_TYPE.CORE] from the API/cache.
 ## Covers ID encodings the name map does not list yet while still keeping the type contract from FEAGI.
 static func is_feagi_invariant_core_area(area: AbstractCorticalArea) -> bool:
@@ -665,6 +705,20 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		var feagi_type = data["_feagi_cortical_type"]
 		if feagi_type is FeagiCorticalType:
 			_feagi_cortical_type = feagi_type
+	if "scan_twin" in data.keys():
+		_scan_twin = bool(data["scan_twin"])
+	if "classifier_role" in data.keys() and data["classifier_role"] != null:
+		_classifier_role = StringName(str(data["classifier_role"]))
+	if "temporal_depth" in data.keys() and data["temporal_depth"] != null:
+		_temporal_depth = int(data["temporal_depth"])
+	if "properties" in data.keys() and data["properties"] is Dictionary:
+		var nested_props: Dictionary = data["properties"]
+		if nested_props.get("scan_twin", false):
+			_scan_twin = true
+		if nested_props.get("classifier_role", null) != null:
+			_classifier_role = StringName(str(nested_props["classifier_role"]))
+		if nested_props.get("temporal_depth", null) != null:
+			_temporal_depth = int(nested_props["temporal_depth"])
 	
 	# Cortical Parameters
 	if "cortical_neuron_per_vox_count" in data.keys(): 

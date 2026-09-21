@@ -53,6 +53,7 @@ static func get_restrictions_between_cortical_areas(source: GenomeObject, destin
 			memory_names.append(&"associative_memory")
 		else:
 			memory_names.append(&"episodic_memory")
+			memory_names.append(&"episodic_scan")
 		memory_restriction.restricted_to_morphology_of_names = memory_names
 		return memory_restriction
 	

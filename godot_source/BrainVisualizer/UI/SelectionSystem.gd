@@ -67,7 +67,7 @@ func clear_all_highlighted() -> void:
 		highlighted_object_removed.emit(object)
 		if object is AbstractCorticalArea:
 			highlighted_cortical_area_removed.emit(object as AbstractCorticalArea)
-		else:
+		elif object is BrainRegion:
 			highlighted_region_removed.emit(object as BrainRegion)
 	highlighted_objects_changed.emit(_highlighted_genome_objects)
 
@@ -80,7 +80,7 @@ func add_to_highlighted(genome_object: GenomeObject) -> ERROR:
 	highlighted_object_added.emit(genome_object)
 	if genome_object is AbstractCorticalArea:
 		highlighted_cortical_area_added.emit(genome_object as AbstractCorticalArea)
-	else:
+	elif genome_object is BrainRegion:
 		highlighted_region_added.emit(genome_object as BrainRegion)
 	highlighted_objects_changed.emit(_highlighted_genome_objects)
 	return ERROR.NONE
@@ -95,7 +95,7 @@ func remove_from_highlighted(genome_object: GenomeObject) -> ERROR:
 	highlighted_object_removed.emit(genome_object)
 	if genome_object is AbstractCorticalArea:
 		highlighted_cortical_area_removed.emit(genome_object as AbstractCorticalArea)
-	else:
+	elif genome_object is BrainRegion:
 		highlighted_region_removed.emit(genome_object as BrainRegion)
 	highlighted_objects_changed.emit(_highlighted_genome_objects)
 	return ERROR.NONE

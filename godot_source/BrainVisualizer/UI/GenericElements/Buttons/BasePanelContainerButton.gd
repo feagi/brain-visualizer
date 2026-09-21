@@ -157,6 +157,8 @@ func _mouse_exited() -> void:
 
 ## Find a reasonable child to scale on hover.
 func _find_hover_scale_target() -> Control:
+	if has_meta("disable_hover_scale") and bool(get_meta("disable_hover_scale")):
+		return null
 	for child in get_children():
 		if child is Control and child.has_meta("hover_scale_target") and bool(child.get_meta("hover_scale_target")):
 			return child as Control

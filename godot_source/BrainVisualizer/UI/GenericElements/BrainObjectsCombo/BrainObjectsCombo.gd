@@ -6,6 +6,7 @@ class_name BrainObjectsCombo
 const CONNECTOME_MENU_ITEM_CIRCUIT: StringName = &"circuit"
 const CONNECTOME_MENU_ITEM_INTERCONNECT: StringName = &"interconnect"
 const CONNECTOME_MENU_ITEM_MEMORY: StringName = &"memory"
+const CONNECTOME_MENU_ITEM_CLASSIFIER: StringName = &"classifier"
 
 var context_region: BrainRegion = null
 
@@ -24,6 +25,8 @@ var _btn_interconnect_list: BasePanelContainerButton
 var _btn_interconnect_add: TextureButton
 var _btn_memory_list: BasePanelContainerButton
 var _btn_memory_add: TextureButton
+var _btn_classifier_list: BasePanelContainerButton
+var _btn_classifier_add: TextureButton
 var _btn_rearrange_layout: TextureButton
 var _btn_inputs_list: BasePanelContainerButton
 var _btn_inputs_add: TextureButton
@@ -55,12 +58,13 @@ var _list_popup: FilterableListPopup
 ## True after [method apply_custom_topbar_tooltips] succeeded for this instance (TopBar or tab host).
 var _hosted_styled_tooltips_applied: bool = false
 
-## Ordered ids for the Connectome hamburger rows. Classifier will append here later.
+## Ordered ids for the Connectome hamburger rows.
 static func connectome_menu_item_ids() -> PackedStringArray:
 	return PackedStringArray([
 		String(CONNECTOME_MENU_ITEM_CIRCUIT),
 		String(CONNECTOME_MENU_ITEM_INTERCONNECT),
 		String(CONNECTOME_MENU_ITEM_MEMORY),
+		String(CONNECTOME_MENU_ITEM_CLASSIFIER),
 	])
 
 
@@ -70,6 +74,7 @@ static func connectome_menu_row_node_names() -> PackedStringArray:
 		"BrainRegionsList",
 		"InterconnectAreasList",
 		"MemoryAreasList",
+		"ClassifierList",
 	])
 
 
@@ -85,6 +90,8 @@ func _ready() -> void:
 	_btn_interconnect_add = %InterconnectAreasList/HBoxContainer/TextureButton_Interconnect
 	_btn_memory_list = %MemoryAreasList
 	_btn_memory_add = %MemoryAreasList/HBoxContainer/TextureButton_Memory
+	_btn_classifier_list = %ClassifierList
+	_btn_classifier_add = %ClassifierList/HBoxContainer/TextureButton_Classifier
 	_btn_rearrange_layout = $RearrangePanel/MarginContainer/TextureButton_Rearrange
 	_btn_inputs_list = $MainGroup/MarginContainer/ButtonsRow/InputsList
 	_btn_inputs_add = $MainGroup/MarginContainer/ButtonsRow/InputsList/HBoxContainer/TextureButton_Inputs
@@ -114,6 +121,8 @@ func _ready() -> void:
 	_btn_interconnect_add.pressed.connect(_add_interconnect_area)
 	_btn_memory_list.pressed.connect(_open_memory_areas)
 	_btn_memory_add.pressed.connect(_add_memory_area)
+	_btn_classifier_list.pressed.connect(_open_classifier_areas)
+	_btn_classifier_add.pressed.connect(_add_classifier)
 	_btn_rearrange_layout.pressed.connect(_request_relayout)
 	_btn_inputs_list.pressed.connect(_open_inputs)
 	_btn_inputs_add.pressed.connect(_add_input_area)
@@ -148,6 +157,8 @@ func _apply_native_tooltips_for_combo_strip() -> void:
 	_btn_interconnect_add.tooltip_text = "Add interconnect area"
 	_btn_memory_list.tooltip_text = "Select memory area"
 	_btn_memory_add.tooltip_text = "Add memory area"
+	_btn_classifier_list.tooltip_text = "Select classifier"
+	_btn_classifier_add.tooltip_text = "Add classifier"
 	_btn_inputs_list.tooltip_text = "Select input area"
 	_btn_inputs_add.tooltip_text = "Add input area"
 	_btn_outputs_list.tooltip_text = "Select output area"
@@ -197,6 +208,8 @@ func apply_custom_topbar_tooltips() -> void:
 		[_btn_interconnect_add, "Add interconnect area"],
 		[_btn_memory_list, "View memory areas"],
 		[_btn_memory_add, "Add memory area"],
+		[_btn_classifier_list, "View classifiers"],
+		[_btn_classifier_add, "Add classifier"],
 		[_btn_inputs_list, "View all input areas"],
 		[_btn_inputs_add, "Add input area"],
 		[_btn_outputs_list, "View all output areas"],
@@ -316,13 +329,35 @@ func set_2d_context(cb_scene: CircuitBuilder, region: BrainRegion) -> void:
 
 
 ## Use this component as the shared global top-bar strip.
+## Top bar is circuits + I/O only. Connectome hamburger stays on Circuit Builder / Brain Monitor tabs.
 func set_global_topbar_mode() -> void:
 	_global_topbar_mode = true
 	_bm_scene = null
 	_cb_scene = null
 	context_region = null
+	_place_circuits_on_topbar_strip()
 	_update_buttons_state()
 	_on_theme_changed(theme)
+
+
+## Circuits sit on the main top bar strip; they stay inside the Connectome menu on tab combos.
+func _place_circuits_on_topbar_strip() -> void:
+	if _btn_brain_regions_list == null:
+		return
+	if _btn_brain_regions_list.get_parent() == self:
+		return
+	var menu_parent: Node = _btn_brain_regions_list.get_parent()
+	if menu_parent != null:
+		menu_parent.remove_child(_btn_brain_regions_list)
+	add_child(_btn_brain_regions_list)
+	move_child(_btn_brain_regions_list, 0)
+	_btn_brain_regions_list.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_btn_brain_regions_list.visible = true
+	if _group_connectome != null:
+		_group_connectome.visible = false
+	if _btn_connectome != null:
+		_btn_connectome.visible = false
+	_close_connectome_menu()
 
 
 ## Allow host containers to force-enable/disable the strip uniformly.
@@ -359,6 +394,8 @@ func _set_all_buttons_disabled(disabled: bool) -> void:
 	_btn_interconnect_add.disabled = disabled
 	_btn_memory_list.disabled = disabled
 	_btn_memory_add.disabled = disabled
+	_btn_classifier_list.disabled = disabled
+	_btn_classifier_add.disabled = disabled
 	_btn_rearrange_layout.disabled = disabled
 	_btn_inputs_list.disabled = disabled
 	_btn_inputs_add.disabled = disabled
@@ -440,7 +477,7 @@ func _open_brain_regions() -> void:
 	)
 
 func _add_brain_region() -> void:
-	var anchor := _connectome_action_anchor()
+	var anchor := _btn_brain_regions_add if _global_topbar_mode else _connectome_action_anchor()
 	if _global_topbar_mode:
 		# Top bar trigger defines context: create under main/root scene.
 		BV.WM.spawn_select_region_template(null, true, anchor)
@@ -469,6 +506,48 @@ func _open_memory_areas() -> void:
 	_open_dropdown_for_items(_btn_memory_list, items, "Filter memory areas...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
 	)
+
+func _open_classifier_areas() -> void:
+	if context_region == null and not _global_topbar_mode:
+		return
+	var items := _build_classifier_items()
+	_open_dropdown_for_items(_btn_classifier_list, items, "Filter classifiers...", func(classifier: GenomeClassifier):
+		_focus_classifier(classifier)
+	)
+
+func _add_classifier() -> void:
+	var region: BrainRegion = context_region
+	if region == null and _cb_scene != null:
+		region = _cb_scene.representing_region
+	if region == null and _bm_scene != null:
+		region = _bm_scene.representing_region
+	if region == null:
+		var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup(
+			"ERROR",
+			"Open a Circuit Builder or Brain Monitor tab, then add the classifier in that region.",
+			"OK"
+		)
+		BV.WM.spawn_popup(popup_definition)
+		return
+	_close_connectome_menu()
+	BV.WM.spawn_create_classifier_for_region(region, null)
+
+func _build_classifier_items() -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	if context_region == null:
+		return items
+	var region_id: String = String(context_region.region_ID)
+	for classifier in FeagiCore.feagi_local_cache.classifiers.values():
+		if not classifier is GenomeClassifier:
+			continue
+		var typed: GenomeClassifier = classifier as GenomeClassifier
+		if typed.current_parent_region == null or String(typed.current_parent_region.region_ID) != region_id:
+			continue
+		items.append({"label": String(typed.friendly_name), "payload": typed})
+	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return String(a.get("label", "")).to_lower() < String(b.get("label", "")).to_lower()
+	)
+	return items
 
 ## Open input areas dropdown for the current region.
 func _open_inputs() -> void:
@@ -570,13 +649,12 @@ func _is_root_region() -> bool:
 	return root_region != null and root_region == context_region
 
 func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_layout: bool) -> void:
-	# Connectome hamburger always stays on the strip; object combos live in its menu.
+	# Connectome hamburger is Circuit Builder / Brain Monitor only.
+	var show_connectome := not _global_topbar_mode
 	if _group_connectome:
-		_group_connectome.visible = true
+		_group_connectome.visible = show_connectome
 	if _btn_connectome:
-		_btn_connectome.visible = true
-	# Circuits / interconnect / memory stay available in the hamburger for every context
-	# so future connectome types (classifier) can append without per-context strip layout.
+		_btn_connectome.visible = show_connectome
 	if _btn_brain_regions_list:
 		_btn_brain_regions_list.visible = true
 	if _btn_brain_regions_add:
@@ -589,6 +667,10 @@ func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_l
 		_btn_memory_list.visible = true
 	if _btn_memory_add:
 		_btn_memory_add.visible = true
+	if _btn_classifier_list:
+		_btn_classifier_list.visible = true
+	if _btn_classifier_add:
+		_btn_classifier_add.visible = true
 	if _btn_rearrange_layout:
 		_btn_rearrange_layout.visible = show_rearrange_layout
 	# Inputs/Outputs remain on the strip (root / global top bar).
@@ -656,6 +738,8 @@ func _set_connectome_menu_row_focus_none() -> void:
 		_btn_interconnect_add,
 		_btn_memory_list,
 		_btn_memory_add,
+		_btn_classifier_list,
+		_btn_classifier_add,
 	]
 	for row in rows:
 		if row != null:
@@ -686,7 +770,6 @@ func _open_connectome_menu() -> void:
 	var anchor_screen := _get_connectome_anchor_screen_position()
 	_connectome_menu.position = Vector2i(anchor_screen + Vector2(0, _btn_connectome.size.y))
 	_connectome_menu.popup()
-	_btn_connectome.grab_focus()
 
 
 func _close_connectome_menu() -> void:
@@ -697,13 +780,32 @@ func _close_connectome_menu() -> void:
 
 ## Close the hamburger when the trigger loses focus, unless the click stayed in the menu.
 func _on_connectome_focus_exited() -> void:
+	call_deferred("_close_connectome_menu_if_focus_lost")
+
+
+func _close_connectome_menu_if_focus_lost() -> void:
 	if not is_connectome_menu_open():
 		return
-	var hovered: Control = get_viewport().gui_get_hovered_control() if get_viewport() != null else null
-	if hovered != null and _connectome_menu != null and (_connectome_menu == hovered or _connectome_menu.is_ancestor_of(hovered)):
-		_btn_connectome.grab_focus()
+	if _is_pointer_over_connectome_menu():
 		return
 	_close_connectome_menu()
+
+
+func _is_pointer_over_connectome_menu() -> bool:
+	if _connectome_menu == null:
+		return false
+	var tree := get_tree()
+	if tree != null and tree.root != null:
+		var root_hovered: Control = tree.root.gui_get_hovered_control()
+		if root_hovered != null and (_connectome_menu == root_hovered or _connectome_menu.is_ancestor_of(root_hovered)):
+			return true
+	var local_viewport := get_viewport()
+	if local_viewport != null:
+		var local_hovered: Control = local_viewport.gui_get_hovered_control()
+		if local_hovered != null and (_connectome_menu == local_hovered or _connectome_menu.is_ancestor_of(local_hovered)):
+			return true
+	# PopupPanel is a Window, not a Control.
+	return _connectome_menu.get_visible_rect().has_point(_connectome_menu.get_mouse_position())
 
 
 func _reparent_connectome_menu_to_root_viewport() -> void:
@@ -847,6 +949,22 @@ func _focus_region(region: BrainRegion) -> void:
 		var active_cb := _get_active_cb_from_ui()
 		if active_cb:
 			active_cb.focus_on_region(region)
+
+func _focus_classifier(classifier: GenomeClassifier) -> void:
+	if classifier == null:
+		return
+	if (not _is_3d_context) and _cb_scene:
+		_cb_scene.focus_on_classifier(classifier)
+		return
+	if not _is_3d_context:
+		var active_cb := _get_active_cb_from_ui()
+		if active_cb:
+			active_cb.focus_on_classifier(classifier)
+			return
+	var stamp: AbstractCorticalArea = classifier.get_stamp_area()
+	if stamp != null:
+		_focus_cortical(stamp)
+
 
 func _focus_cortical(area: AbstractCorticalArea) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():

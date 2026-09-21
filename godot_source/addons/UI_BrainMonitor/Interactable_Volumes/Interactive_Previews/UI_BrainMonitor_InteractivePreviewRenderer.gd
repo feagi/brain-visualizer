@@ -4,6 +4,7 @@ class_name UI_BrainMonitor_InteractivePreviewRenderer
 
 const PREFAB: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Interactive_Previews/Preview_Body.tscn")
 const SHADER_SIMPLE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Interactive_Previews/PreviewShaderMatSimple.tres"
+const CLASSIFIER_STAMP_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/ClassifierStampMaterial.tres"
 
 var _showing_voxels: bool
 var _static_body: StaticBody3D
@@ -110,6 +111,27 @@ func _calculate_memory_sphere_size(dimensions: Vector3i, existing_cortical_area:
 	var sphere_height = base_size * scale_factor * 1.0  # 1.0 is the base height
 	
 	return Vector2(sphere_radius, sphere_height)
+
+func apply_classifier_stamp_look(class_count: int) -> void:
+	if _static_body == null:
+		return
+	var mesh_instance = _static_body.get_node("MeshInstance3D") as MeshInstance3D
+	if mesh_instance == null:
+		return
+	_mat = load(CLASSIFIER_STAMP_MAT_PATH).duplicate() as ShaderMaterial
+	if _mat == null:
+		return
+	_mat.set_shader_parameter("class_count", float(max(class_count, 1)))
+	_mat.set_shader_parameter("hover", 1.0)
+	_mat.set_shader_parameter("activity", 0.35)
+	var stamp_mesh = BoxMesh.new()
+	stamp_mesh.size = Vector3.ONE
+	stamp_mesh.subdivide_width = 8
+	stamp_mesh.subdivide_height = 8
+	stamp_mesh.subdivide_depth = 8
+	mesh_instance.mesh = stamp_mesh
+	mesh_instance.material_override = _mat
+
 
 func set_warning_color(is_warning: bool) -> void:
 	if not _mat:

@@ -35,3 +35,8 @@ func set_new_dimensions(new_dimensions: Vector3i) -> void:
 func set_warning_state(is_warning: bool) -> void:
 	if _renderer:
 		_renderer.set_warning_color(is_warning)
+
+
+func apply_classifier_stamp_look(class_count: int) -> void:
+	if _renderer != null and _renderer.has_method("apply_classifier_stamp_look"):
+		_renderer.apply_classifier_stamp_look(class_count)

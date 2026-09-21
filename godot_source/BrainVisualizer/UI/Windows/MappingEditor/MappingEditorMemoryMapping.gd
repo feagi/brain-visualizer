@@ -86,14 +86,18 @@ func load_mappings(mappings: Array[SingleMappingDefinition]) -> void:
 	_initialize_references()
 	
 	var episodic_memory: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies.get("episodic_memory")
+	var episodic_scan: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies.get("episodic_scan")
 	if episodic_memory == null:
 		push_error("WINDOW MAPPING EDITOR: episodic_memory morphology not found!")
 		_row_container.visible = false
 		return
+	var allowed: Array[BaseMorphology] = [episodic_memory]
+	if episodic_scan != null:
+		allowed.append(episodic_scan)
 	
-	_morphologies.overwrite_morphologies([episodic_memory])
+	_morphologies.overwrite_morphologies(allowed)
 	_morphologies.set_selected_morphology(episodic_memory)
-	_morphologies.disabled = true
+	_morphologies.disabled = allowed.size() <= 1
 	
 	_scalar.editable = false
 	_PSP.editable = false
@@ -116,8 +120,9 @@ func load_mappings(mappings: Array[SingleMappingDefinition]) -> void:
 		return
 	
 	var first_mapping: SingleMappingDefinition = mappings[0]
-	if first_mapping.morphology_used.name != "episodic_memory":
-		push_error("WINDOW MAPPING EDITOR: Invalid morphology %s for memory mapping!" % first_mapping.morphology_used.name)
+	var morph_name: String = first_mapping.morphology_used.name
+	if morph_name != "episodic_memory" and morph_name != "episodic_scan":
+		push_error("WINDOW MAPPING EDITOR: Invalid morphology %s for memory mapping!" % morph_name)
 		_row_container.visible = false
 		return
 	

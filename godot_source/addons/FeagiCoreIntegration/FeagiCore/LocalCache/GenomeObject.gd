@@ -17,8 +17,10 @@ signal UI_highlighted_state_updated(is_highlighted: bool) ## UI USE, for letting
 enum ARRAY_MAKEUP {
 	SINGLE_CORTICAL_AREA,
 	SINGLE_BRAIN_REGION,
+	SINGLE_CLASSIFIER,
 	MULTIPLE_CORTICAL_AREAS,
 	MULTIPLE_BRAIN_REGIONS,
+	MULTIPLE_CLASSIFIERS,
 	VARIOUS_GENOME_OBJECTS,
 	UNKNOWN
 }
@@ -26,6 +28,7 @@ enum ARRAY_MAKEUP {
 enum SINGLE_MAKEUP {
 	SINGLE_CORTICAL_AREA,
 	SINGLE_BRAIN_REGION,
+	SINGLE_CLASSIFIER,
 	ANY_GENOME_OBJECT,
 	UNKNOWN
 }
@@ -99,9 +102,12 @@ static func get_makeup_of_array(genome_objects: Array[GenomeObject]) -> ARRAY_MA
 			return ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
 		if genome_objects[0] is BrainRegion:
 			return ARRAY_MAKEUP.SINGLE_BRAIN_REGION
+		if genome_objects[0] is GenomeClassifier:
+			return ARRAY_MAKEUP.SINGLE_CLASSIFIER
 		return ARRAY_MAKEUP.UNKNOWN
 	var br: bool
 	var ca: bool
+	var clf: bool
 	for selection in genome_objects:
 		if selection == null:
 			return ARRAY_MAKEUP.UNKNOWN
@@ -111,12 +117,24 @@ static func get_makeup_of_array(genome_objects: Array[GenomeObject]) -> ARRAY_MA
 		if selection is BrainRegion:
 			br = true
 			continue
+		if selection is GenomeClassifier:
+			clf = true
+			continue
 		return ARRAY_MAKEUP.UNKNOWN
 		
-	if br and ca:
+	var type_count: int = 0
+	if br:
+		type_count += 1
+	if ca:
+		type_count += 1
+	if clf:
+		type_count += 1
+	if type_count > 1:
 		return ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS
 	if br:
 		return ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS
+	if clf:
+		return ARRAY_MAKEUP.MULTIPLE_CLASSIFIERS
 	return ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS
 
 static func get_makeup_of_single_object(genome_object: GenomeObject) -> SINGLE_MAKEUP:
@@ -126,6 +144,8 @@ static func get_makeup_of_single_object(genome_object: GenomeObject) -> SINGLE_M
 		return SINGLE_MAKEUP.SINGLE_CORTICAL_AREA
 	if genome_object is BrainRegion:
 		return SINGLE_MAKEUP.SINGLE_BRAIN_REGION
+	if genome_object is GenomeClassifier:
+		return SINGLE_MAKEUP.SINGLE_CLASSIFIER
 	return SINGLE_MAKEUP.UNKNOWN
 
 static func is_given_object_covered_by_makeup(given: GenomeObject, makeup: SINGLE_MAKEUP) -> bool:

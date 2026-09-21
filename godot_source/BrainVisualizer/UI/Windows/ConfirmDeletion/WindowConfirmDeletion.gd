@@ -26,6 +26,9 @@ func setup(selection: Array[GenomeObject], region_deleting_internals: bool = fal
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 			_label.text = "Are you sure you wish to delete cortical area %s?" % selection[0].friendly_name
 			_scroll.visible = false
+		GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
+			_label.text = "Are you sure you wish to delete classifier %s and its owned internals?" % selection[0].friendly_name
+			_scroll.visible = false
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			var internals: Array[GenomeObject] = (selection[0] as BrainRegion).get_all_included_genome_objects()
 			if internals.is_empty():
@@ -68,6 +71,8 @@ func _yes_pressed() -> void:
 	match _mode:
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 			FeagiCore.requests.delete_cortical_area((_deletion_targets[0] as AbstractCorticalArea))
+		GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
+			FeagiCore.requests.delete_classifier(_deletion_targets[0] as GenomeClassifier)
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			if _is_deleting_internals:
 				pass #TODO

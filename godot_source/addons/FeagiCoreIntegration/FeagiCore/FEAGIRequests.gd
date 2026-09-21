@@ -870,6 +870,17 @@ func get_mapping_summary() -> FeagiRequestOutput:
 	_return_if_HTTP_failed_and_automatically_handle(mapping_data)
 	return mapping_data
 
+func get_classifiers() -> FeagiRequestOutput:
+	var network_check = _check_network_components_ready()
+	if network_check != null:
+		return network_check
+	var classifiers_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_genome_classifiers)
+	var classifiers_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(classifiers_request)
+	await classifiers_worker.worker_done
+	var classifiers_data: FeagiRequestOutput = classifiers_worker.retrieve_output_and_close()
+	_return_if_HTTP_failed_and_automatically_handle(classifiers_data)
+	return classifiers_data
+
 #endregion
 
 
@@ -1610,6 +1621,178 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 
 
 ## Adds a custom memory cortical area
+func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, parent_region: BrainRegion, kernel_area_id: StringName, class_area_id: StringName, field_area_id: StringName) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !(parent_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.keys()):
+		push_error("FEAGI Requests: Cannot create classifier inside missing region %s!" % parent_region.region_ID)
+		return FeagiRequestOutput.requirement_fail("REGION_NOT_EXISTS")
+	var dict_to_send: Dictionary = {
+		"name": classifier_name,
+		"brain_region_id": parent_region.region_ID,
+		"kernel_area_id": kernel_area_id,
+		"class_area_id": class_area_id,
+		"field_area_id": field_area_id,
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_classifier, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to create classifier %s!" % classifier_name)
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	for response_key in ["kernel_memory_id", "class_memory_id", "scan_twin_id"]:
+		if not response.has(response_key):
+			continue
+		var created_id: StringName = StringName(str(response[response_key]))
+		if created_id == &"":
+			continue
+		await get_cortical_area(created_id)
+	# Scan twin is a custom area created as a mapping side-effect; pull it into cache like memory twins.
+	var cortical_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
+	if cortical_refresh == null or cortical_refresh.has_errored or not cortical_refresh.success:
+		push_warning("FEAGI REQUEST: Classifier created, but BV could not synchronize the stamp.")
+	else:
+		var mappings_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
+		if mappings_refresh == null or mappings_refresh.has_errored or not mappings_refresh.success:
+			push_warning("FEAGI REQUEST: Classifier areas synchronized, but BV could not synchronize mappings.")
+	var regions_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_brain_regions_from_feagi()
+	if regions_refresh == null or regions_refresh.has_errored or not regions_refresh.success:
+		push_warning("FEAGI REQUEST: Classifier created, but BV could not synchronize region membership / I/O.")
+	await FeagiCore.feagi_local_cache.refresh_classifiers_from_feagi()
+	var created_id: StringName = StringName(str(response.get("classifier_id", "")))
+	var created_classifier: GenomeClassifier = FeagiCore.feagi_local_cache.classifiers.get(created_id, null)
+	if created_classifier != null:
+		_refresh_classifier_brain_monitor_visuals(created_classifier, parent_region)
+		_refresh_classifier_circuit_builder_visuals(created_classifier, parent_region)
+		if parent_region != null:
+			var cb: CircuitBuilder = BV.UI.get_circuit_builder_for_region(parent_region)
+			if cb != null and cb.has_method("focus_on_classifier"):
+				cb.focus_on_classifier(created_classifier)
+	print("FEAGI REQUEST: Successfully created classifier %s" % classifier_name)
+	return FEAGI_response_data
+
+
+## Stamp is the kernel-memory body. Twin is a separate classical cortical volume.
+func _refresh_classifier_brain_monitor_visuals(classifier: GenomeClassifier, parent_region: BrainRegion) -> void:
+	if classifier == null or parent_region == null or BV == null or BV.UI == null:
+		return
+	var stamp: AbstractCorticalArea = classifier.get_stamp_area()
+	var twin: AbstractCorticalArea = classifier.get_twin_area()
+	if stamp != null and stamp.current_parent_region != parent_region:
+		stamp.FEAGI_change_parent_brain_region(parent_region)
+	if twin != null and twin.current_parent_region != parent_region:
+		twin.FEAGI_change_parent_brain_region(parent_region)
+	var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(parent_region)
+	if bm == null:
+		return
+	if bm.has_method("strip_classifier_internal_memory_visuals"):
+		bm.strip_classifier_internal_memory_visuals()
+	if stamp != null:
+		_call_add_cortical_area(bm, stamp)
+		if bm.has_method("focus_on_cortical_area"):
+			bm.focus_on_cortical_area(stamp)
+	if twin != null:
+		_call_add_cortical_area(bm, twin)
+
+
+func _refresh_classifier_circuit_builder_visuals(classifier: GenomeClassifier, parent_region: BrainRegion) -> void:
+	if classifier == null or parent_region == null or BV == null or BV.UI == null:
+		return
+	var cb: CircuitBuilder = BV.UI.get_circuit_builder_for_region(parent_region)
+	if cb == null:
+		return
+	if cb.has_method("ensure_classifier_twin_visuals"):
+		cb.ensure_classifier_twin_visuals(classifier)
+
+
+## DELETE /v1/cortical_area/classifier/{classifier_id} — removes the record and owned internals.
+func delete_classifier(deleting_classifier: GenomeClassifier) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if deleting_classifier == null:
+		push_error("FEAGI Requests: Cannot delete a null classifier!")
+		return FeagiRequestOutput.requirement_fail("INVALID_CLASSIFIER")
+	if deleting_classifier.classifier_id == &"":
+		push_error("FEAGI Requests: Cannot delete a classifier with an empty ID!")
+		return FeagiRequestOutput.requirement_fail("INVALID_CLASSIFIER_ID")
+	if not deleting_classifier.classifier_id in FeagiCore.feagi_local_cache.classifiers:
+		push_error("FEAGI Requests: No such classifier ID %s to delete!" % deleting_classifier.classifier_id)
+		return FeagiRequestOutput.requirement_fail("ID_NOT_FOUND")
+	var delete_address: StringName = StringName(String(FeagiCore.network.http_API.address_list.DELETE_genome_classifier).replace("{classifier_id}", str(deleting_classifier.classifier_id)))
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(delete_address, {})
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to delete classifier %s!" % deleting_classifier.friendly_name)
+		return FEAGI_response_data
+	await FeagiCore.feagi_local_cache.refresh_classifiers_from_feagi()
+	await _synchronize_cache_after_cortical_delete()
+	var regions_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_brain_regions_from_feagi()
+	if regions_refresh == null or regions_refresh.has_errored or not regions_refresh.success:
+		push_warning("FEAGI REQUEST: Classifier deleted, but BV could not synchronize region membership.")
+	print("FEAGI REQUEST: Successfully deleted classifier %s" % deleting_classifier.classifier_id)
+	return FEAGI_response_data
+
+
+## PUT /v1/cortical_area/classifier/{classifier_id} — classifier assembly fields, not cortical-area neuron params.
+func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: String, coordinates_3d: Vector3i, parent_region_id: StringName, kernel_area_id: StringName, class_area_id: StringName, field_area_id: StringName) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if editing_classifier == null:
+		push_error("FEAGI Requests: Cannot edit a null classifier!")
+		return FeagiRequestOutput.requirement_fail("INVALID_CLASSIFIER")
+	var trimmed_name: String = classifier_name.strip_edges()
+	if trimmed_name.is_empty():
+		push_error("FEAGI Requests: Classifier name cannot be blank!")
+		return FeagiRequestOutput.requirement_fail("BLANK_NAME")
+	if String(parent_region_id).strip_edges().is_empty():
+		push_error("FEAGI Requests: Classifier parent circuit cannot be blank!")
+		return FeagiRequestOutput.requirement_fail("BLANK_PARENT")
+	if kernel_area_id == &"" or class_area_id == &"" or field_area_id == &"":
+		push_error("FEAGI Requests: Classifier kernel, class, and field are required!")
+		return FeagiRequestOutput.requirement_fail("BLANK_INPUTS")
+	if not editing_classifier.classifier_id in FeagiCore.feagi_local_cache.classifiers:
+		push_error("FEAGI Requests: No such classifier ID %s to edit!" % editing_classifier.classifier_id)
+		return FeagiRequestOutput.requirement_fail("ID_NOT_FOUND")
+	var edit_address: StringName = StringName(String(FeagiCore.network.http_API.address_list.PUT_genome_classifier).replace("{classifier_id}", str(editing_classifier.classifier_id)))
+	var dict_to_send: Dictionary = {
+		"name": trimmed_name,
+		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3d),
+		"parent_region_id": String(parent_region_id),
+		"kernel_area_id": String(kernel_area_id),
+		"class_area_id": String(class_area_id),
+		"field_area_id": String(field_area_id),
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(edit_address, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to edit classifier %s!" % editing_classifier.friendly_name)
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	editing_classifier.apply_feagi_dict(response)
+	var cortical_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
+	if cortical_refresh == null or cortical_refresh.has_errored or not cortical_refresh.success:
+		push_warning("FEAGI REQUEST: Classifier edited, but BV could not synchronize cortical areas.")
+	await FeagiCore.feagi_local_cache.refresh_classifiers_from_feagi()
+	var mappings_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
+	if mappings_refresh == null or mappings_refresh.has_errored or not mappings_refresh.success:
+		push_warning("FEAGI REQUEST: Classifier edited, but BV could not synchronize mappings.")
+	editing_classifier.sync_layout_from_stamp()
+	var parent_region: BrainRegion = editing_classifier.current_parent_region
+	_refresh_classifier_brain_monitor_visuals(editing_classifier, parent_region)
+	_refresh_classifier_circuit_builder_visuals(editing_classifier, parent_region)
+	print("FEAGI REQUEST: Successfully edited classifier %s" % editing_classifier.classifier_id)
+	return FEAGI_response_data
+
 func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, parent_region: BrainRegion, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0)) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():

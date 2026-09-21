@@ -2754,6 +2754,23 @@ func get_brain_monitor_for_active_tab() -> UI_BrainMonitor_3DScene:
 func get_circuit_builder_for_active_tab() -> CircuitBuilder:
 	return _find_active_tab_circuit_builder_in_view(_root_UI_view)
 
+## Circuit Builder that represents the given region, or null if that tab is not open.
+func get_circuit_builder_for_region(region: BrainRegion) -> CircuitBuilder:
+	if region == null or _root_UI_view == null:
+		return null
+	var tabs: Array[UITabContainer] = _root_UI_view.get_recursive_UITabContainer_children()
+	var fallback: CircuitBuilder = null
+	for tab_container in tabs:
+		if tab_container == null:
+			continue
+		var cb: CircuitBuilder = tab_container.return_CB_of_region(region)
+		if cb == null:
+			continue
+		if cb.is_visible_in_tree():
+			return cb
+		fallback = cb
+	return fallback
+
 ## Recursively searches a UIView for active brain monitor tabs
 func _search_for_active_brain_monitor_in_view(ui_view: UIView) -> UI_BrainMonitor_3DScene:
 	if ui_view == null:

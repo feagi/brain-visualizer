@@ -44,11 +44,16 @@ func FEAGI_add_core_cortical_area(cortical_ID: StringName, cortical_name: String
 
 ## Adds a cortical area of type custom by ID and emits a signal that this was done. Should only be called from FEAGI!
 func FEAGI_add_custom_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, brain_region: BrainRegion, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
-	var new_area: CustomCorticalArea = CustomCorticalArea.new(cortical_ID, cortical_name, dimensions, brain_region, is_visible)
+	var classifier_role := str(FEAGI_details.get("classifier_role", ""))
+	var leftover_auto_twin: bool = bool(FEAGI_details.get("scan_twin", false)) and classifier_role != "scan_twin"
+	var defer_parent: bool = leftover_auto_twin
+	var new_area: CustomCorticalArea = CustomCorticalArea.new(cortical_ID, cortical_name, dimensions, null if defer_parent else brain_region, is_visible)
 	new_area.FEAGI_change_coordinates_3D(coordinates_3D)
 	if is_coordinate_2D_defined:
 		new_area.FEAGI_change_coordinates_2D(coordinates_2D)
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
+	if defer_parent:
+		new_area.FEAGI_change_parent_brain_region(brain_region)
 	_available_cortical_areas[cortical_ID] = new_area
 	print("FEAGI CACHE: ✅ Added custom cortical area %s (cache size: %d)" % [cortical_ID, _available_cortical_areas.size()])
 	cortical_area_added.emit(new_area)
@@ -97,11 +102,13 @@ func FEAGI_add_output_cortical_area_without_template(cortical_ID: StringName, co
 
 ## Adds a cortical area of type memory by ID and emits a signal that this was done. Should only be called from FEAGI!
 func FEAGI_add_memory_cortical_area(cortical_ID: StringName, cortical_name: StringName, coordinates_3D: Vector3i, dimensions: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i, brain_region: BrainRegion, FEAGI_details: Dictionary = {}, is_visible: bool = true) -> void:
-	var new_area: MemoryCorticalArea = MemoryCorticalArea.new(cortical_ID, cortical_name, dimensions, brain_region, is_visible)
+	# Apply details before region registration so classifier internals are marked before BM/CB spawn.
+	var new_area: MemoryCorticalArea = MemoryCorticalArea.new(cortical_ID, cortical_name, dimensions, null, is_visible)
 	new_area.FEAGI_change_coordinates_3D(coordinates_3D)
 	if is_coordinate_2D_defined:
 		new_area.FEAGI_change_coordinates_2D(coordinates_2D)
 	new_area.FEAGI_apply_detail_dictionary(FEAGI_details)
+	new_area.FEAGI_change_parent_brain_region(brain_region)
 	_available_cortical_areas[cortical_ID] = new_area
 	print("FEAGI CACHE: Added memory cortical area %s" % cortical_ID)
 	cortical_area_added.emit(new_area)

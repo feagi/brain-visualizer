@@ -44,7 +44,25 @@ func setup(source_port, destination_port, link: ConnectionChainLink) -> void:
 	if link.parent_chain.is_registered_to_partial_mapping_set():
 		_on_partial_mapping(link.parent_chain.partial_mapping_set)
 		return
-	
+
+
+## Classifier → twin class-map edge. Not an NPU mapping; do not open the mapping editor.
+func setup_visual_alias(source_port, destination_port) -> void:
+	line_setup()
+	_button = $Button
+	_source_port = source_port
+	_destination_port = destination_port
+	_link = null
+	_update_line_endpoint_positions()
+	if _source_port != null and _source_port.has_signal("node_moved"):
+		_source_port.node_moved.connect(_update_line_endpoint_positions)
+	if _destination_port != null and _destination_port.has_signal("node_moved"):
+		_destination_port.node_moved.connect(_update_line_endpoint_positions)
+	_button.text = "  1  "
+	set_line_base_color(Color(LINE_COLOR_PSPP.r, LINE_COLOR_PSPP.g, LINE_COLOR_PSPP.b, LINE_COLOR_PSPP.a))
+	set_line_dashing(false)
+	if not _button.pressed.is_connected(_user_pressed_visual_alias):
+		_button.pressed.connect(_user_pressed_visual_alias)
 
 
 func _update_line_endpoint_positions() -> void:
@@ -100,6 +118,8 @@ func _finalize_dispose() -> void:
 	call_deferred("queue_free")
 
 func _proxy_mapping_change_connection() -> void:
+	if _link == null:
+		return
 	var chain := _link.parent_chain
 	if chain.is_registered_to_established_mapping_set():
 		_on_full_mapping_change(chain.mapping_set)
@@ -130,7 +150,13 @@ func _on_partial_mapping(partial_mapping: PartialMappingSet) -> void:
 		set_line_base_color(Color(LINE_COLOR_PSPP.r, LINE_COLOR_PSPP.g, LINE_COLOR_PSPP.b, LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY))
 	set_line_dashing(partial_mapping.is_any_mapping_plastic())
 
+func _user_pressed_visual_alias() -> void:
+	return
+
+
 func _user_pressed_button() -> void:
+	if _link == null or _link.parent_chain == null:
+		return
 	var source_area: AbstractCorticalArea = null
 	var destination_area: AbstractCorticalArea = null
 	if _link.parent_chain.source is AbstractCorticalArea:

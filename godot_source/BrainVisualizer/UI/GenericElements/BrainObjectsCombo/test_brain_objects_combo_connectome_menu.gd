@@ -27,9 +27,9 @@ func _initialize() -> void:
 func _test_menu_ids_are_circuit_interconnect_memory() -> int:
 	var script: Script = load(COMBO_SCRIPT_PATH)
 	var ids: PackedStringArray = script.connectome_menu_item_ids()
-	var expected := PackedStringArray(["circuit", "interconnect", "memory"])
+	var expected := PackedStringArray(["circuit", "interconnect", "memory", "classifier"])
 	if ids != expected:
-		push_error("connectome_menu_item_ids must be circuit, interconnect, memory (got %s)" % [ids])
+		push_error("connectome_menu_item_ids must be circuit, interconnect, memory, classifier (got %s)" % [ids])
 		return 1
 	return 0
 
@@ -61,6 +61,7 @@ func _test_scene_keeps_object_combos_inside_menu() -> int:
 		"ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsList",
 		"ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasList",
 		"ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasList",
+		"ConnectomeMenu/MarginContainer/MenuItems/ClassifierList",
 	]
 	for required in required_in_menu:
 		if not _has_path_containing(paths, required):

@@ -50,7 +50,7 @@ var _source: AbstractCorticalArea = null
 var _destination: AbstractCorticalArea = null
 var _destinations: Array[AbstractCorticalArea] = []
 var _selected_morphology: BaseMorphology = null
-## True when connecting a non-memory source to a memory destination: only episodic_memory applies; no rule picker/edit.
+## True when connecting a non-memory source to a memory destination with only one allowed morphology.
 var _memory_rule_locked: bool = false
 
 func _ready() -> void:
@@ -268,9 +268,11 @@ func _setting_morphology() -> void:
 	# Populate core morph icon shortcuts (respecting restrictions if any)
 	_populate_core_morphology_icons(restrictions)
 	
-	# Non-memory -> memory: single valid rule (episodic_memory). Preselect, no list/edit; enable Establish via _set_morphology.
+	# Non-memory -> memory: episodic_memory or episodic_scan. Keep the picker visible.
 	if _is_locked_episodic_memory_connection():
-		_memory_rule_locked = true
+		_memory_rule_locked = false
+		_step3_morphology_container.visible = true
+		_set_core_bar_visibility(true)
 		var locked_morph: BaseMorphology = null
 		if mapping_defaults != null:
 			locked_morph = mapping_defaults.try_get_default_morphology()
@@ -278,7 +280,6 @@ func _setting_morphology() -> void:
 			locked_morph = FeagiCore.feagi_local_cache.morphologies.try_get_morphology_object(&"episodic_memory")
 		if locked_morph != null:
 			_step3_scroll.select_morphology(locked_morph)
-			_set_morphology(locked_morph)
 		else:
 			push_warning("WindowQuickConnect: episodic_memory not in morphology cache yet; cannot enable Establish until it loads.")
 			_step3_label.text = " Connectivity rule: Episodic memory (loading...)"
@@ -366,8 +367,8 @@ func _populate_core_morphology_icons(restrictions: MappingRestrictionCorticalMor
 		total_core_seen += 1
 		print("  - CORE candidate:", morphology_name)
 		# Exclude episodic_memory morphology if destination is not a memory area
-		if not destination_is_memory and String(morphology_name).to_lower() == "episodic_memory":
-			print("    > excluded 'episodic_memory' for non-memory destination")
+		if not destination_is_memory and String(morphology_name).to_lower() in ["episodic_memory", "episodic_scan"]:
+			print("    > excluded '%s' for non-memory destination" % morphology_name)
 			continue
 		if len(allowed_names) > 0 and morphology_name not in allowed_names:
 			print("    > excluded by allowed list (not in allowed)")

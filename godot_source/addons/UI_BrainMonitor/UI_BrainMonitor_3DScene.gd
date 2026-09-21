@@ -1890,7 +1890,7 @@ func _handle_cortical_pick_click_event(
 		return
 	var neuron_coordinate_clicked: Vector3i = hit_parent.world_godot_position_to_neuron_coordinate(hit_world_location)
 	currently_moused_over_volumes.append(hit_parent_parent)
-	var arr_test: Array[GenomeObject] = [hit_parent_parent.cortical_area]
+	var arr_test: Array[GenomeObject] = [_selection_object_for_cortical_area(hit_parent_parent.cortical_area)]
 	if not bm_input_event.button_pressed:
 		return
 	var quick_connect_override_active: bool = BV != null and BV.UI != null and BV.UI.selection_system != null and BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
@@ -1928,9 +1928,12 @@ func _handle_cortical_pick_click_event(
 					if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
 						ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
 					var clicked_area: AbstractCorticalArea = hit_parent_parent.cortical_area
+					var clicked_object: GenomeObject = _selection_object_for_cortical_area(clicked_area)
 					var selection_system: SelectionSystem = BV.UI.selection_system
-					if selection_system.is_highlighted(clicked_area):
-						selection_system.remove_from_highlighted(clicked_area)
+					if selection_system.is_highlighted(clicked_object):
+						selection_system.remove_from_highlighted(clicked_object)
+					elif clicked_object is GenomeClassifier:
+						selection_system.add_to_highlighted(clicked_object)
 					else:
 						var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(clicked_area)
 						var filtered_group: Array[AbstractCorticalArea] = []
@@ -2445,7 +2448,7 @@ func _commit_box_select(screen_rect: Rect2) -> void:
 			func(p: Vector3) -> Vector2: return _pancake_cam.unproject_position(p),
 		)
 		entries.append({
-			&"object": viz.cortical_area,
+			&"object": _selection_object_for_cortical_area(viz.cortical_area),
 			&"bounds": BoxSelectLib.screen_bounds_from_points(points),
 		})
 	var selected_raw: Array = BoxSelectLib.collect_overlapping_objects(entries, screen_rect)
@@ -4223,6 +4226,9 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	# print("🚨 _add_cortical_area() CALLED for area: %s in brain monitor instance %d (region: %s)" % [area.cortical_ID, get_instance_id(), _representing_region.friendly_name])  # Suppressed - causes output overflow
 	if area == null:
 		return null
+	_strip_classifier_internal_memory_visuals()
+	if _area_hidden_as_memory_in_this_monitor(area):
+		return null
 	# Rebuild iterates contained_cortical_areas / partial mappings that can still hold
 	# an instance removed from available_cortical_areas. Cache is the source of truth.
 	if FeagiCore != null and FeagiCore.feagi_local_cache != null and FeagiCore.feagi_local_cache.cortical_areas != null:
@@ -4258,7 +4264,7 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	var is_in_represented_subtree = _is_area_in_representing_region_subtree_by_parent_chain(area)
 	var is_direct_member = _is_area_direct_child_of_representing_region(area)
 	# Product rule: MEMORY areas stay out of the *root* brain monitor (they belong in Autogen / dedicated views).
-	var memory_excluded_at_root = _brain_monitor_viewing_feagi_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+	var memory_excluded_at_root = _area_hidden_as_memory_in_this_monitor(area)
 	# Root monitor should only show direct members (plus I/O/invariant-core logic below), while
 	# non-root monitors can include descendants in their subtree view.
 	var allow_subtree_members = not _brain_monitor_viewing_feagi_root_region()
@@ -4520,6 +4526,52 @@ func _brain_monitor_viewing_feagi_root_region() -> bool:
 	return String(_representing_region.region_ID) == String(root.region_ID)
 
 
+func strip_classifier_internal_memory_visuals() -> void:
+	_strip_classifier_internal_memory_visuals()
+
+
+func _selection_object_for_cortical_area(area: AbstractCorticalArea) -> GenomeObject:
+	if area == null:
+		return null
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return area
+	var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(area.cortical_ID)
+	if owner == null:
+		return area
+	if owner.scan_twin_id == area.cortical_ID:
+		return area
+	return owner
+
+
+func _strip_classifier_internal_memory_visuals() -> void:
+	var stale_ids: Array[StringName] = []
+	for cortical_id in _cortical_visualizations_by_ID.keys():
+		var viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[cortical_id]
+		if viz == null or not is_instance_valid(viz):
+			stale_ids.append(cortical_id)
+			continue
+		var bound: AbstractCorticalArea = viz.cortical_area
+		if bound != null and GenomeClassifier.should_hide_area_in_brain_monitor(bound):
+			stale_ids.append(cortical_id)
+	for cortical_id in stale_ids:
+		var viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(cortical_id, null)
+		if viz != null and is_instance_valid(viz) and viz.cortical_area != null:
+			_remove_cortical_area(viz.cortical_area)
+		else:
+			_cortical_visualizations_by_ID.erase(cortical_id)
+
+
+## Classifier internals stay off Brain Monitor; regular memories stay off the root monitor only.
+func _area_hidden_as_memory_in_this_monitor(area: AbstractCorticalArea) -> bool:
+	if area == null:
+		return false
+	if GenomeClassifier.should_hide_area_in_brain_monitor(area):
+		return true
+	if area.is_classifier_kernel_memory():
+		return false
+	return _brain_monitor_viewing_feagi_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+
+
 func _is_area_direct_child_of_representing_region(area: AbstractCorticalArea) -> bool:
 	if area == null or _representing_region == null or area.current_parent_region == null:
 		return false
@@ -4738,7 +4790,7 @@ func _add_missing_cortical_area_visualizations() -> void:
 				continue
 		var is_in_subtree = _is_area_in_representing_region_subtree_by_parent_chain(area)
 		var is_direct_member = _is_area_direct_child_of_representing_region(area)
-		var memory_hide_at_root = _brain_monitor_viewing_feagi_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+		var memory_hide_at_root = _area_hidden_as_memory_in_this_monitor(area)
 		var allow_subtree_members = not _brain_monitor_viewing_feagi_root_region()
 		var subtree_keeps_viz = (is_direct_member or (allow_subtree_members and is_in_subtree)) and not memory_hide_at_root
 		var is_io_child = _is_area_input_output_of_child_region(area)
@@ -4792,7 +4844,7 @@ func _add_missing_cortical_area_visualizations() -> void:
 				continue
 			if not _is_area_in_representing_region_subtree_by_parent_chain(area):
 				continue
-			if _brain_monitor_viewing_feagi_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			if _area_hidden_as_memory_in_this_monitor(area):
 				continue
 			added_any = true
 			_add_cortical_area(area)

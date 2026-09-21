@@ -13,6 +13,7 @@ class_name CircuitBuilder
 
 const PREFAB_NODE_CORTICALAREA: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.tscn")
 const PREFAB_NODE_BRAINREGION: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.tscn")
+const PREFAB_NODE_CLASSIFIER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeClassifier/CBNodeClassifier.tscn")
 const PREFAB_NODE_REGIONIO: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBRegionIONode/CBRegionIONode.tscn")
 const PREFAB_NODE_TERMINAL: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBNodeTerminal/CBNodeTerminal.tscn")#WARNING DELETE ME
 const PREFAB_ENDPOINT: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CBLineEndpoint/CBLineEndPoint.tscn")
@@ -30,9 +31,13 @@ var cortical_nodes: Dictionary:## All cortical nodes on CB, key'd by their corti
 	get: return  _cortical_nodes 
 var subregion_nodes: Dictionary: ## All subregion nodes on CB, key'd by their region ID
 	get: return _subregion_nodes
+var classifier_nodes: Dictionary: ## Classifier assembly nodes, key'd by classifier ID
+	get: return _classifier_nodes
 
 var _cortical_nodes: Dictionary = {}
 var _subregion_nodes: Dictionary = {}
+var _classifier_nodes: Dictionary = {}
+var _classifier_twin_visual_ids: Dictionary = {}
 var _representing_region: BrainRegion
 var _move_timer: Timer
 var _moved_genome_objects_buffer: Dictionary = {} # Key'd by object ref, value is new vector2 position
@@ -110,6 +115,11 @@ func setup(region: BrainRegion) -> void:
 	
 	for subregion: BrainRegion in _representing_region.contained_regions:
 		_CACHE_add_subregion(subregion)
+
+	for classifier: GenomeClassifier in _representing_region.contained_classifiers:
+		_CACHE_add_classifier(classifier)
+	for classifier: GenomeClassifier in _representing_region.contained_classifiers:
+		_CACHE_add_classifier_twin_visual(classifier)
 	
 	for bridge_link: ConnectionChainLink in _representing_region.bridge_chain_links:
 		_CACHE_link_bridge_added(bridge_link)
@@ -137,6 +147,10 @@ func setup(region: BrainRegion) -> void:
 		region.subregion_added_to_region.connect(_CACHE_add_subregion)
 	if not region.subregion_removed_from_region.is_connected(_CACHE_remove_subregion):
 		region.subregion_removed_from_region.connect(_CACHE_remove_subregion)
+	if not region.classifier_added_to_region.is_connected(_CACHE_add_classifier):
+		region.classifier_added_to_region.connect(_CACHE_add_classifier)
+	if not region.classifier_removed_from_region.is_connected(_CACHE_remove_classifier):
+		region.classifier_removed_from_region.connect(_CACHE_remove_classifier)
 	if not region.bridge_link_added.is_connected(_CACHE_link_bridge_added):
 		region.bridge_link_added.connect(_CACHE_link_bridge_added)
 	if not region.input_link_added.is_connected(_CACHE_link_parent_input_added):
@@ -166,7 +180,68 @@ func _on_connection_chain_link_visual_cleared(link_id: int) -> void:
 
 #region Responses to Cache Signals
 
+## Twin is a standard interconnect node with a visual edge from the classifier.
+func ensure_classifier_twin_visuals(classifier: GenomeClassifier) -> void:
+	if classifier == null:
+		return
+	strip_hidden_classifier_areas()
+	if not classifier.classifier_id in _classifier_nodes.keys():
+		_CACHE_add_classifier(classifier)
+	_CACHE_add_classifier_twin_visual(classifier)
+
+
+func _CACHE_add_classifier_twin_visual(classifier: GenomeClassifier) -> void:
+	if classifier == null:
+		return
+	var twin: AbstractCorticalArea = classifier.get_twin_area()
+	if twin == null:
+		return
+	if GenomeClassifier.should_hide_area_in_circuit_builder(twin):
+		return
+	if not twin.cortical_ID in _cortical_nodes.keys():
+		_CACHE_add_cortical_area(twin)
+	if classifier.classifier_id in _classifier_twin_visual_ids:
+		return
+	if not classifier.classifier_id in _classifier_nodes.keys():
+		return
+	if not twin.cortical_ID in _cortical_nodes.keys():
+		return
+	var source_node: CBNodeConnectableBase = _classifier_nodes[classifier.classifier_id]
+	var destination_node: CBNodeConnectableBase = _cortical_nodes[twin.cortical_ID]
+	var source_terminal: CBNodeTerminal = source_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.OUTPUT, destination_node.title, PREFAB_NODE_TERMINAL)
+	var destination_terminal: CBNodeTerminal = destination_node.CB_add_connection_terminal(CBNodeTerminal.TYPE.INPUT, source_node.title, PREFAB_NODE_TERMINAL)
+	if source_terminal == null or destination_terminal == null:
+		return
+	var line: CBLineInterTerminal = PREFAB_NODE_PORT.instantiate()
+	add_child(line)
+	move_child(line, 0)
+	line.call_deferred("setup_visual_alias", source_terminal.active_port, destination_terminal.active_port)
+	_classifier_twin_visual_ids[classifier.classifier_id] = true
+
+
+func strip_hidden_classifier_areas() -> void:
+	var stale_ids: Array[StringName] = []
+	for cortical_id in _cortical_nodes.keys():
+		var node: CBNodeCorticalArea = _cortical_nodes[cortical_id]
+		if node == null or not is_instance_valid(node):
+			stale_ids.append(cortical_id)
+			continue
+		var area: AbstractCorticalArea = node.representing_cortical_area
+		if area != null and GenomeClassifier.should_hide_area_in_circuit_builder(area):
+			stale_ids.append(cortical_id)
+	for cortical_id in stale_ids:
+		var node: CBNodeCorticalArea = _cortical_nodes.get(cortical_id, null)
+		if node != null and is_instance_valid(node) and node.representing_cortical_area != null:
+			_CACHE_remove_cortical_area(node.representing_cortical_area)
+		else:
+			_cortical_nodes.erase(cortical_id)
+
+
 func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
+	if area != null and GenomeClassifier.should_hide_area_in_circuit_builder(area):
+		if area.cortical_ID in cortical_nodes.keys():
+			_CACHE_remove_cortical_area(area)
+		return
 	if (area.cortical_ID in cortical_nodes.keys()):
 		push_warning("UI CB: Cortical area %s node already exists; skipping duplicate add (can occur during FEAGI restart/cache resync)." % area.cortical_ID)
 		return
@@ -175,6 +250,10 @@ func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	add_child(cortical_node)
 	cortical_node.setup(area)
 	cortical_node.node_moved.connect(_genome_object_moved)
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(area.cortical_ID)
+		if owner != null and owner.scan_twin_id == area.cortical_ID:
+			_CACHE_add_classifier_twin_visual(owner)
 	if not _cb_setup_in_progress:
 		_request_auto_layout_after_topology_change()
 
@@ -185,6 +264,34 @@ func _CACHE_remove_cortical_area(area: AbstractCorticalArea) -> void:
 	BV.UI.selection_system.clear_all_highlighted()
 	var node: CBNodeCorticalArea = _cortical_nodes[area.cortical_ID]
 	_cortical_nodes.erase(area.cortical_ID)
+	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
+		_schedule_graph_node_removal(node)
+
+func _CACHE_add_classifier(classifier: GenomeClassifier) -> void:
+	if classifier == null:
+		return
+	if classifier.classifier_id in _classifier_nodes.keys():
+		push_warning("UI CB: Classifier %s node already exists; skipping duplicate add." % classifier.classifier_id)
+		return
+	var classifier_node: CBNodeClassifier = PREFAB_NODE_CLASSIFIER.instantiate()
+	_classifier_nodes[classifier.classifier_id] = classifier_node
+	add_child(classifier_node)
+	classifier_node.setup(classifier)
+	classifier_node.node_moved.connect(_genome_object_moved)
+	_CACHE_add_classifier_twin_visual(classifier)
+	if not _cb_setup_in_progress:
+		_request_auto_layout_after_topology_change()
+
+func _CACHE_remove_classifier(classifier: GenomeClassifier) -> void:
+	if classifier == null:
+		return
+	if !(classifier.classifier_id in _classifier_nodes.keys()):
+		push_error("UI CB: Unable to find classifier %s to remove node of!" % classifier.classifier_id)
+		return
+	BV.UI.selection_system.clear_all_highlighted()
+	_classifier_twin_visual_ids.erase(classifier.classifier_id)
+	var node: CBNodeClassifier = _classifier_nodes[classifier.classifier_id]
+	_classifier_nodes.erase(classifier.classifier_id)
 	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
 		_schedule_graph_node_removal(node)
 	
@@ -232,6 +339,8 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 		return
 	if link.parent_chain != null and link.parent_chain.is_registered_to_partial_mapping_set() and link.parent_chain.partial_mapping_set != null and link.parent_chain.partial_mapping_set.number_mappings == 0:
 		return
+	if _is_hidden_classifier_internal_mapping(link.source, link.destination):
+		return
 	var source_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.source)
 	var destination_node: CBNodeConnectableBase = _get_associated_connectable_graph_node(link.destination)
 
@@ -253,8 +362,8 @@ func _CACHE_link_bridge_added(link: ConnectionChainLink) -> void:
 	var source_title: StringName
 	var destination_title: StringName
 	if link.parent_chain.is_registered_to_established_mapping_set():
-		source_title = link.parent_chain.source.friendly_name
-		destination_title = link.parent_chain.destination.friendly_name
+		source_title = source_node.title
+		destination_title = destination_node.title
 	else:
 		# TODO fallback for partial mapping set
 		source_title = source_node.title
@@ -437,6 +546,10 @@ func _node_select(element: GraphElement) -> void:
 		print("CB Selected " + (element as CBNodeCorticalArea).representing_cortical_area.friendly_name)
 		BV.UI.selection_system.add_to_highlighted((element as CBNodeCorticalArea).representing_cortical_area)
 		return
+	if element is CBNodeClassifier:
+		print("CB Selected " + (element as CBNodeClassifier).representing_classifier.friendly_name)
+		BV.UI.selection_system.add_to_highlighted((element as CBNodeClassifier).representing_classifier)
+		return
 
 func _node_deselect(element: GraphElement) -> void:
 	if element is CBNodeRegion:
@@ -446,6 +559,10 @@ func _node_deselect(element: GraphElement) -> void:
 	if element is CBNodeCorticalArea:
 		print("CB Deselected " + (element as CBNodeCorticalArea).representing_cortical_area.friendly_name)
 		BV.UI.selection_system.remove_from_highlighted((element as CBNodeCorticalArea).representing_cortical_area)
+		return
+	if element is CBNodeClassifier:
+		print("CB Deselected " + (element as CBNodeClassifier).representing_classifier.friendly_name)
+		BV.UI.selection_system.remove_from_highlighted((element as CBNodeClassifier).representing_classifier)
 		return
 
 ## Ensure only the provided element remains selected in GraphEdit.
@@ -473,6 +590,11 @@ func _on_connection_request(from_node: StringName, _from_port: int, to_node: Str
 			destination = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[to_node]
 	elif to_node in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
 		destination = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[to_node]
+
+	if source is GenomeClassifier or destination is GenomeClassifier:
+		return
+	if from_node in FeagiCore.feagi_local_cache.classifiers or to_node in FeagiCore.feagi_local_cache.classifiers:
+		return
 
 	BV.UI.window_manager.spawn_mapping_editor(source, destination)
 
@@ -526,6 +648,13 @@ func _genome_object_moved(node: CBNodeConnectableBase, new_position: Vector2i) -
 		genome_object = (node as CBNodeCorticalArea).representing_cortical_area
 	elif node is CBNodeRegion:
 		genome_object = (node as CBNodeRegion).representing_region
+	elif node is CBNodeClassifier:
+		var classifier: GenomeClassifier = (node as CBNodeClassifier).representing_classifier
+		classifier.FEAGI_change_coordinates_2D(new_position)
+		var stamp: AbstractCorticalArea = classifier.get_stamp_area()
+		if stamp == null:
+			return
+		genome_object = stamp
 	else:
 		return
 	print("Buffering change in position of genome object ")
@@ -574,7 +703,7 @@ func start_multi_relocate(selection: Array[GenomeObject]) -> void:
 	_multi_relocate_nodes.clear()
 	_multi_relocate_node_start_positions.clear()
 	for obj in selection:
-		if obj is AbstractCorticalArea or obj is BrainRegion:
+		if obj is AbstractCorticalArea or obj is BrainRegion or obj is GenomeClassifier:
 			var node = _get_associated_connectable_graph_node(obj)
 			if node != null:
 				_multi_relocate_nodes.append(node)
@@ -656,17 +785,36 @@ func _commit_multi_relocate() -> void:
 
 ## Attempts to return the associated graph node for a given genome cache object. Returns null if fails
 func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNodeConnectableBase:
-	if genome_object is AbstractCorticalArea:
-		if !((genome_object as AbstractCorticalArea).cortical_ID in _cortical_nodes.keys()):
-			push_error("UI CB: Unable to find area %s node in CB for region %s" % [(genome_object as AbstractCorticalArea).cortical_ID, _representing_region.region_ID])
+	var resolved: GenomeObject = _resolve_visual_connectable(genome_object)
+	if resolved is GenomeClassifier:
+		var classifier: GenomeClassifier = resolved as GenomeClassifier
+		if !(classifier.classifier_id in _classifier_nodes.keys()):
+			push_error("UI CB: Unable to find classifier %s node in CB for region %s" % [classifier.classifier_id, _representing_region.region_ID])
 			return null
-		return _cortical_nodes[(genome_object as AbstractCorticalArea).cortical_ID]
-	else:
-		#brain region
-		if !((genome_object as BrainRegion).region_ID in _subregion_nodes.keys()):
-			push_error("UI CB: Unable to find region %s node in CB for region %s" % [(genome_object as BrainRegion).region_ID, _representing_region.region_ID])
+		return _classifier_nodes[classifier.classifier_id]
+	if resolved is AbstractCorticalArea:
+		if !((resolved as AbstractCorticalArea).cortical_ID in _cortical_nodes.keys()):
+			push_error("UI CB: Unable to find area %s node in CB for region %s" % [(resolved as AbstractCorticalArea).cortical_ID, _representing_region.region_ID])
 			return null
-		return _subregion_nodes[(genome_object as BrainRegion).region_ID]
+		return _cortical_nodes[(resolved as AbstractCorticalArea).cortical_ID]
+	if resolved is BrainRegion:
+		if !((resolved as BrainRegion).region_ID in _subregion_nodes.keys()):
+			push_error("UI CB: Unable to find region %s node in CB for region %s" % [(resolved as BrainRegion).region_ID, _representing_region.region_ID])
+			return null
+		return _subregion_nodes[(resolved as BrainRegion).region_ID]
+	return null
+
+
+func _resolve_visual_connectable(genome_object: GenomeObject) -> GenomeObject:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return genome_object
+	return FeagiCore.feagi_local_cache.resolve_visual_connectable(genome_object)
+
+
+func _is_hidden_classifier_internal_mapping(source: GenomeObject, destination: GenomeObject) -> bool:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return false
+	return GenomeClassifier.is_internal_only_classifier_mapping(source, destination, FeagiCore.feagi_local_cache.classifiers)
 
 func _spawn_and_position_region_IO_node(is_region_input: bool, target_node: CBNodeConnectableBase, y_offset_index: int) -> CBRegionIONode:
 	var IO_node: CBRegionIONode = PREFAB_NODE_REGIONIO.instantiate()
@@ -693,6 +841,12 @@ func focus_on_region(region: BrainRegion) -> void:
 
 func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
 	var node: CBNodeConnectableBase = _get_associated_connectable_graph_node(area)
+	if node == null:
+		return
+	_deferred_center_and_emphasize(node)
+
+func focus_on_classifier(classifier: GenomeClassifier) -> void:
+	var node: CBNodeConnectableBase = _get_associated_connectable_graph_node(classifier)
 	if node == null:
 		return
 	_deferred_center_and_emphasize(node)
@@ -779,6 +933,8 @@ func _compute_relayout_positions() -> Dictionary:
 	nodes.assign(_cortical_nodes.values())
 	for region_node in _subregion_nodes.values():
 		nodes.append(region_node)
+	for classifier_node in _classifier_nodes.values():
+		nodes.append(classifier_node)
 	var region_io_nodes: Array[CBAbstractNode] = _collect_region_io_nodes()
 	if nodes.is_empty() and region_io_nodes.is_empty():
 		return {}
@@ -859,9 +1015,13 @@ func _build_bridge_adjacency() -> Dictionary:
 	if _representing_region == null:
 		return adjacency
 	for link: ConnectionChainLink in _representing_region.bridge_chain_links:
+		if _is_hidden_classifier_internal_mapping(link.source, link.destination):
+			continue
 		var source_node: CBNodeConnectableBase = _node_for_genome_object(link.source)
 		var destination_node: CBNodeConnectableBase = _node_for_genome_object(link.destination)
 		if source_node == null or destination_node == null:
+			continue
+		if source_node == destination_node:
 			continue
 		if not adjacency.has(source_node):
 			adjacency[source_node] = []
@@ -873,10 +1033,13 @@ func _build_bridge_adjacency() -> Dictionary:
 
 
 func _node_for_genome_object(obj: GenomeObject) -> CBNodeConnectableBase:
-	if obj is AbstractCorticalArea:
-		return _cortical_nodes.get((obj as AbstractCorticalArea).cortical_ID, null)
-	if obj is BrainRegion:
-		return _subregion_nodes.get((obj as BrainRegion).region_ID, null)
+	var resolved: GenomeObject = _resolve_visual_connectable(obj)
+	if resolved is AbstractCorticalArea:
+		return _cortical_nodes.get((resolved as AbstractCorticalArea).cortical_ID, null)
+	if resolved is BrainRegion:
+		return _subregion_nodes.get((resolved as BrainRegion).region_ID, null)
+	if resolved is GenomeClassifier:
+		return _classifier_nodes.get((resolved as GenomeClassifier).classifier_id, null)
 	return null
 
 
@@ -886,9 +1049,13 @@ func _build_directed_middle_edges(middle_membership: Dictionary) -> Array:
 	if _representing_region == null:
 		return edges
 	for link: ConnectionChainLink in _representing_region.bridge_chain_links:
+		if _is_hidden_classifier_internal_mapping(link.source, link.destination):
+			continue
 		var sn: CBNodeConnectableBase = _node_for_genome_object(link.source)
 		var dn: CBNodeConnectableBase = _node_for_genome_object(link.destination)
 		if sn == null or dn == null:
+			continue
+		if sn == dn:
 			continue
 		if not middle_membership.has(sn) or not middle_membership.has(dn):
 			continue
@@ -1263,6 +1430,8 @@ func _log_relayout_debug(layout_positions: Dictionary) -> void:
 	all_nodes.assign(_cortical_nodes.values())
 	for region_node in _subregion_nodes.values():
 		all_nodes.append(region_node)
+	for classifier_node in _classifier_nodes.values():
+		all_nodes.append(classifier_node)
 	var region_io_nodes: Array[CBAbstractNode] = _collect_region_io_nodes()
 	for node in all_nodes:
 		var entry := _format_relayout_entry(node, layout_positions)
@@ -1310,6 +1479,9 @@ func _format_relayout_entry(node: GraphElement, layout_positions: Dictionary) ->
 	if node is CBNodeRegion:
 		var region: BrainRegion = (node as CBNodeRegion).representing_region
 		return "REGION|%s|%s|%s" % [String(region.region_ID), String(region.friendly_name), str(pos)]
+	if node is CBNodeClassifier:
+		var classifier: GenomeClassifier = (node as CBNodeClassifier).representing_classifier
+		return "CLASSIFIER|%s|%s|%s" % [String(classifier.classifier_id), String(classifier.friendly_name), str(pos)]
 	if node is CBRegionIONode:
 		var io_label := "INPUT" if _is_region_io_input(node as CBAbstractNode) else "OUTPUT"
 		return "REGION_IO|%s|%s" % [io_label, str(pos)]

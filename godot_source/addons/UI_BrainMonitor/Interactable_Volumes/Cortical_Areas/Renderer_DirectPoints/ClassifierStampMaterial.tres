@@ -1,0 +1,21 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/ClassifierStamp.gdshader" id="1"]
+
+[resource]
+shader = ExtResource("1")
+shader_parameter/band_a = Color(0.12, 0.86, 0.80, 0.78)
+shader_parameter/band_b = Color(0.64, 0.30, 0.92, 0.78)
+shader_parameter/class_count = 1.0
+shader_parameter/chamfer = 0.16
+shader_parameter/emission_energy = 1.15
+shader_parameter/roughness = 0.18
+shader_parameter/metallic = 0.22
+shader_parameter/rim_power = 2.4
+shader_parameter/rim_intensity = 0.85
+shader_parameter/activity = 0.0
+shader_parameter/hover = 0.0
+shader_parameter/wobble_strength = 0.09
+shader_parameter/wobble_frequency = 3.2
+shader_parameter/wobble_speed = 1.7
+shader_parameter/wobble_size_scale = 1.0

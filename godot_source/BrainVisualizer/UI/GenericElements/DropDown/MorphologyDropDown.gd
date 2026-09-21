@@ -22,6 +22,7 @@ var _default_width: float
 
 const MORPHOLOGY_DISPLAY_NAME_OVERRIDES := {
 	&"episodic_memory": "Episodic Memory",
+	&"episodic_scan": "Episodic Scan",
 	&"associative_memory": "Associative Memory",
 }
 

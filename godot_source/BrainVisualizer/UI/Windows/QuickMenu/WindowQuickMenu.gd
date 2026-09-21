@@ -146,6 +146,44 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			var region: BrainRegion = (_selection[0] as BrainRegion)
 			_titlebar.title = region.friendly_name
 
+		GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
+			reset_button.visible = false
+			iopu_config_button.visible = false
+			open_3d_tab_button.visible = false
+			quick_connect_button.visible = false
+			clone_button.visible = false
+			quick_connect_CA_N_button.visible = false
+			quick_connect_N_CA_button.visible = false
+			quick_connect_N_N_button.visible = false
+			# Not a circuit: FEAGI has no classifier reparent API, so do not show a dead control.
+			move_to_region_button.visible = false
+			details_button.visible = true
+			details_button.disabled = false
+			details_button.tooltip_text = "Edit classifier"
+			delete_button.visible = true
+			delete_button.disabled = false
+			delete_button.tooltip_text = "Delete this classifier..."
+			var is_circuit_builder_classifier := _selection_context in [
+				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_CLICK,
+				SelectionSystem.SOURCE_CONTEXT.FROM_CIRCUIT_BUILDER_DRAG
+			]
+			if _btn_relocate_2d != null:
+				_btn_relocate_2d.visible = is_circuit_builder_classifier
+				_btn_relocate_2d.disabled = not is_circuit_builder_classifier
+				_btn_relocate_2d.tooltip_text = "Relocate this classifier (2D)"
+			if _btn_move_3d != null:
+				_btn_move_3d.visible = not is_circuit_builder_classifier
+				if _btn_move_3d.visible:
+					_btn_move_3d.disabled = false
+					_btn_move_3d.tooltip_text = "Relocate this classifier (3D gizmo)"
+			if _btn_resize_3d != null:
+				_btn_resize_3d.visible = false
+			if _selection.size() == 0:
+				push_error("BV UI: CRITICAL - _selection became empty during classifier quick menu setup!")
+				return
+			var classifier: GenomeClassifier = (_selection[0] as GenomeClassifier)
+			_titlebar.title = classifier.friendly_name
+
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			reset_button.visible = true
 			reset_button.disabled = false
@@ -278,6 +316,8 @@ func _button_details() -> void:
 			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
 			BV.WM.spawn_edit_region((_selection[0] as BrainRegion))
+		GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
+			BV.WM.spawn_edit_classifier(_selection[0] as GenomeClassifier)
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			BV.WM.spawn_adv_cortical_properties(AbstractCorticalArea.genome_array_to_cortical_area_array(_selection))
 	_debug_selection_state("_button_details before close")
@@ -447,6 +487,30 @@ func _button_move_3d() -> void:
 		bm_multi.start_cortical_area_multi_manipulation(areas, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
 		close_window(false)
 		return
+	if _mode == GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
+		var classifier: GenomeClassifier = _selection[0] as GenomeClassifier
+		if classifier == null:
+			close_window()
+			return
+		var stamp: AbstractCorticalArea = classifier.get_stamp_area()
+		if stamp == null or stamp.current_parent_region == null:
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Move (3D) Unavailable",
+				"Cannot start 3D relocation: classifier stamp is not in a parent circuit."
+			))
+			close_window()
+			return
+		var bm_classifier: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(stamp.current_parent_region)
+		if bm_classifier == null:
+			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+				"Move (3D) Unavailable",
+				"No active 3D Brain Monitor found for this classifier.\n\nOpen a 3D tab for the parent circuit, then try again."
+			))
+			close_window()
+			return
+		bm_classifier.start_cortical_area_manipulation(stamp, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
+		close_window(false)
+		return
 	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
 		close_window()
 		return
@@ -516,6 +580,7 @@ func _button_relocate_2d() -> void:
 		return
 	if _mode not in [
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA,
+		GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER,
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS,
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS,
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS

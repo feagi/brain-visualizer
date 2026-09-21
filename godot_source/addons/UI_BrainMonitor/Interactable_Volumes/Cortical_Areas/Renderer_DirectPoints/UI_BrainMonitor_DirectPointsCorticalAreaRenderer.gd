@@ -21,6 +21,7 @@ const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_Scene
 const NEURON_VOXEL_MESH: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/NeuronVoxel.tscn")
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
 const MEMORY_JELLO_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/MemoryJelloMaterial.tres"
+const CLASSIFIER_STAMP_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/ClassifierStampMaterial.tres"
 const POWER_NEON_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonMaterial.tres"
 const TESLA_COIL_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilMaterial.tres"
 const FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE: int = 18
@@ -110,6 +111,8 @@ var _memory_inactive_rim_intensity: float
 var _memory_inactive_jello_strength: float
 var _memory_default_radius: float = 1.5
 var _memory_default_height: float = 3.0
+var _is_classifier_stamp: bool = false
+var _stamp_material: ShaderMaterial = null
 
 # Fatigue core: solid billboard (no icon texture); colors match direct-point voxel material, brighter red when firing
 var _fatigue_billboard_material: StandardMaterial3D = null
@@ -124,6 +127,21 @@ func _is_fatigue_style_core_area_by_id(cortical_id: Variant) -> bool:
 
 func _is_fatigue_style_core_area(area: AbstractCorticalArea) -> bool:
 	return _is_fatigue_style_core_area_by_id(area.cortical_ID)
+
+func _apply_stamp_class_count(class_count: int) -> void:
+	if _stamp_material == null:
+		return
+	_stamp_material.set_shader_parameter("class_count", float(maxi(class_count, 1)))
+
+func _set_stamp_activity(is_active: bool) -> void:
+	if _stamp_material == null:
+		return
+	_stamp_material.set_shader_parameter("activity", 0.85 if is_active else 0.0)
+
+func _set_stamp_hover(is_hovered: bool) -> void:
+	if _stamp_material == null:
+		return
+	_stamp_material.set_shader_parameter("hover", 1.0 if is_hovered else 0.0)
 
 ## DirectPoints indices are cell-origin based; DDA highlights are cell-center based.
 ## Apply +0.5 world correction via local offset, compensating for parent (_static_body) scale.
@@ -140,10 +158,13 @@ func _update_multimesh_origin_offset() -> void:
 	_multi_mesh_instance.position = _get_multimesh_origin_offset()
 
 func setup(area: AbstractCorticalArea) -> void:
+	if area != null and area.is_classifier_class_memory():
+		return
 	# Store cortical area properties for later use
 	_cortical_area_type = area.cortical_type
 	_cortical_area_id = area.cortical_ID
 	_cortical_area = area  # Store reference for accessing visualization_voxel_granularity
+	_is_classifier_stamp = area.is_classifier_kernel_memory()
 	
 	# Check if this area uses aggregated rendering mode
 	_visualization_voxel_granularity = area.visualization_voxel_granularity
@@ -172,7 +193,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	
 	# Create collision shape for the cortical area volume
 	var collision_shape = CollisionShape3D.new()
-	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and not _is_classifier_stamp:
 		var sphere_shape = SphereShape3D.new()
 		sphere_shape.radius = 1.5  # Match the 3x larger visual sphere
 		collision_shape.shape = sphere_shape
@@ -231,7 +252,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)
 		_multi_mesh.mesh = invisible_mesh
 		_multi_mesh_instance.visible = false
-	elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+	elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or _is_classifier_stamp:
 		# Use invisible mesh for memory areas (firing animation is on the sphere itself)
 		var invisible_mesh = BoxMesh.new()
 		invisible_mesh.size = Vector3(0.01, 0.01, 0.01)  # Tiny invisible voxels
@@ -269,7 +290,14 @@ func setup(area: AbstractCorticalArea) -> void:
 	_outline_mesh_instance.scale = Vector3.ONE
 	
 	# Use different meshes based on cortical area type/ID
-	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+	if _is_classifier_stamp:
+		var stamp_mesh = BoxMesh.new()
+		stamp_mesh.size = Vector3.ONE
+		stamp_mesh.subdivide_width = 8
+		stamp_mesh.subdivide_height = 8
+		stamp_mesh.subdivide_depth = 8
+		_outline_mesh_instance.mesh = stamp_mesh
+	elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		var sphere_mesh = SphereMesh.new()
 		sphere_mesh.radius = _memory_default_radius  # 3x larger: 0.5 * 3 = 1.5
 		sphere_mesh.height = _memory_default_height  # 3x larger: 1.0 * 3 = 3.0
@@ -289,7 +317,13 @@ func setup(area: AbstractCorticalArea) -> void:
 		box_mesh.size = Vector3.ONE
 		_outline_mesh_instance.mesh = box_mesh
 	# Use different materials based on cortical area type/ID
-	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+	if _is_classifier_stamp:
+		_stamp_material = load(CLASSIFIER_STAMP_MAT_PATH).duplicate() as ShaderMaterial
+		_outline_mesh_instance.material_override = _stamp_material
+		_outline_mesh_instance.visible = true
+		_outline_mat = null
+		_apply_stamp_class_count(_classifier_stamp_depth())
+	elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		# Create both transparent and active materials for memory spheres
 		_memory_jello_material = load(MEMORY_JELLO_MAT_PATH).duplicate() as ShaderMaterial
 		_memory_transparent_material = _create_transparent_memory_material()
@@ -352,7 +386,11 @@ func setup(area: AbstractCorticalArea) -> void:
 	area.recieved_new_direct_neural_points.connect(_on_received_direct_neural_points)  # Legacy fallback
 	
 	# Connect to memory area stats updates for dynamic sizing
-	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+	if _is_classifier_stamp:
+		FeagiCore.feagi_local_cache.memory_area_stats_updated.connect(_on_memory_area_stats_updated)
+		_apply_stamp_class_count(_classifier_stamp_depth())
+		_refresh_classifier_stamp_size()
+	elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		FeagiCore.feagi_local_cache.memory_area_stats_updated.connect(_on_memory_area_stats_updated)
 		print("   [mem]  Connected to memory area stats updates for dynamic sizing")
 		
@@ -430,9 +468,14 @@ func update_position_with_new_FEAGI_coordinate(new_FEAGI_coordinate_position: Ve
 func update_dimensions(new_dimensions: Vector3i) -> void:
 	# Memory areas are conceptually 1x1x1 (all activity maps to (0,0,0)).
 	# Force non-zero dimensions so desktop WS Type11 fast-path does not treat this as uninitialized.
-	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+	# Classifier stamp keeps a visual size from stored memory neurons x temporal depth.
+	if _is_classifier_stamp:
+		new_dimensions = _classifier_stamp_visual_dimensions()
+	elif _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		new_dimensions = Vector3i.ONE
 	super(new_dimensions)
+	if _is_classifier_stamp:
+		_apply_stamp_class_count(_classifier_stamp_depth())
 
 	# Refresh visualization_voxel_granularity from cache and update mesh if needed.
 	# (BV allows editing this at runtime; don't rely on dimension changes to refresh mesh.)
@@ -588,6 +631,7 @@ func bv_notify_activity(point_count: int) -> void:
 		# Make memory sphere fade into active state when neural activity occurs
 		if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
 			_set_memory_activity_state(true)
+		_set_stamp_activity(true)
 	else:
 		# No neurons firing - don't clear immediately, let timer handle it
 		if _visibility_timer.time_left <= 0.0:
@@ -622,6 +666,7 @@ func _on_received_direct_neural_points_bulk(x_array: PackedInt32Array, y_array: 
 		# This must be triggered on the bulk (signal) path as well as the desktop WS fast-path.
 		if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
 			_set_memory_activity_state(true)
+		_set_stamp_activity(true)
 		_fatigue_billboard_set_firing(true)
 	
 	# Validate array sizes match
@@ -913,6 +958,7 @@ func _clear_all_neurons() -> void:
 	# Fade memory sphere back to inactive state when neurons are cleared
 	if _cortical_area_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY and _memory_jello_material:
 		_set_memory_activity_state(false)
+	_set_stamp_activity(false)
 
 func _start_visibility_timer() -> void:
 	"""Start the visibility timer with buffer for smooth updates"""
@@ -1089,6 +1135,9 @@ func _update_cortical_area_outline() -> void:
 		_outline_mesh_instance.visible = true  # Always visible for memory spheres
 	elif AbstractCorticalArea.is_power_area(_cortical_area_id):
 		_outline_mesh_instance.visible = true  # Always visible for power cone
+	elif _is_classifier_stamp:
+		_outline_mesh_instance.visible = true
+		_set_stamp_hover(_is_hovered_over or _is_selected)
 	else:
 		_outline_mesh_instance.visible = false  # Outline handled by DDA renderer for others
 
@@ -1453,8 +1502,55 @@ func _create_placeholder_icon_texture(cortical_id: StringName) -> Texture2D:
 	# Debug log suppressed to reduce runtime console spam.
 	return texture
 
+func _classifier_stamp_memory_neuron_count() -> int:
+	var total: int = 0
+	var stats: Dictionary = {}
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		stats = FeagiCore.feagi_local_cache.memory_area_stats
+		var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(_cortical_area_id)
+		if owner != null:
+			for area_id in [owner.kernel_memory_id, owner.class_memory_id]:
+				if area_id != &"" and stats.has(area_id):
+					var area_stats: Dictionary = stats[area_id]
+					if area_stats.has("neuron_count"):
+						total += int(area_stats["neuron_count"])
+		elif stats.has(_cortical_area_id):
+			var own_stats: Dictionary = stats[_cortical_area_id]
+			if own_stats.has("neuron_count"):
+				total = int(own_stats["neuron_count"])
+	return maxi(total, 1)
+
+
+func _classifier_stamp_depth() -> int:
+	if _cortical_area != null:
+		if _cortical_area.has_memory_parameters:
+			var memory_depth: int = int(_cortical_area.memory_parameters.temporal_depth)
+			if memory_depth > 0:
+				return memory_depth
+		var geometry_depth: int = _cortical_area.temporal_depth()
+		if geometry_depth > 0:
+			return geometry_depth
+	return 1
+
+
+func _classifier_stamp_visual_dimensions() -> Vector3i:
+	return GenomeClassifier.stamp_visual_dimensions(
+		_classifier_stamp_memory_neuron_count(),
+		_classifier_stamp_depth()
+	)
+
+
+func _refresh_classifier_stamp_size() -> void:
+	if not _is_classifier_stamp:
+		return
+	update_dimensions(_classifier_stamp_visual_dimensions())
+
+
 func _on_memory_area_stats_updated(stats: Dictionary) -> void:
 	"""Handle memory area stats updates from health check"""
+	if _is_classifier_stamp:
+		_refresh_classifier_stamp_size()
+		return
 	if _cortical_area_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 		return
 	

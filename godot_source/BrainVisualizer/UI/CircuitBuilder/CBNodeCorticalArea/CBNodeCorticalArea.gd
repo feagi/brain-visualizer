@@ -17,7 +17,7 @@ func setup(cortical_area_ref: AbstractCorticalArea) -> void:
 	setup_base(recursive_path, input_path, output_path)
 	
 	_representing_cortical_area = cortical_area_ref
-	_setup_node_color(cortical_area_ref.cortical_type)
+	_setup_node_color(cortical_area_ref)
 	CACHE_updated_cortical_area_name(_representing_cortical_area.friendly_name)
 	CACHE_updated_2D_position(_representing_cortical_area.coordinates_2D)
 	name = cortical_area_ref.cortical_ID
@@ -77,9 +77,9 @@ const CORE_BOX_COLOR: Color = Color(0.0, 0.204, 0.384)
 ## Set the color depnding on cortical type. Both `titlebar` and `panel` styleboxes
 ## are tinted with the type color so the GraphEdit minimap (which reads
 ## `panel.bg_color`) renders nodes in their type-distinct colors.
-func _setup_node_color(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
+func _setup_node_color(area: AbstractCorticalArea) -> void:
 	var type_color: Color
-	match(cortical_type):
+	match(area.cortical_type):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			type_color = IPU_BOX_COLOR
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:

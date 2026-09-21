@@ -6,6 +6,7 @@ const _PREFAB_CREATE_MORPHOLOGY: PackedScene = preload("res://BrainVisualizer/UI
 const _PREFAB_MAPPING_EDITOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.tscn")
 const _PREFAB_MORPHOLOGY_MANAGER: PackedScene = preload("res://BrainVisualizer/UI/Windows/MorphologyManager/WindowMorphologyManager.tscn")
 const _PREFAB_CREATE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateCorticalArea/WindowCreateCorticalArea.tscn")
+const _PREFAB_CREATE_CLASSIFIER: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateClassifier/WindowCreateClassifier.tscn")
 const _PREFAB_SELECT_CORTICAL_TEMPLATE: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectCorticalTemplate/WindowSelectCorticalTemplate.tscn")
 const _PREFAB_SELECT_REGION_TEMPLATE: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectRegionTemplate/WindowSelectRegionTemplate.tscn")
 const _PREFAB_QUICK_CONNECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.tscn")
@@ -23,6 +24,7 @@ const _PREFAB_DEVELOPER_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI
 const _PREFAB_SELECT_GENOME_OBJECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.tscn")
 const _PREFAB_CREATE_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateRegion/WindowCreateRegion.tscn")
 const _PREFAB_EDIT_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.tscn")
+const _PREFAB_EDIT_CLASSIFIER: PackedScene = preload("res://BrainVisualizer/UI/Windows/EditClassifier/WindowEditClassifier.tscn")
 const _PREFAB_MOVE_TO_REGION: PackedScene = preload("res://BrainVisualizer/UI/Windows/AddToRegion/WindowAddToRegion.tscn")
 const _PREFAB_CONFIRM_DELETION: PackedScene = preload("res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.tscn")
 const _PREFAB_ADV_CORTICAL_PROPERTIES: PackedScene = preload("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.tscn")
@@ -186,6 +188,12 @@ func spawn_create_cortical_with_type_for_region(context_region: BrainRegion, cor
 	create_cortical.setup_with_type_for_region(context_region, cortical_type)
 	bring_window_to_top(create_cortical)
 
+func spawn_create_classifier_for_region(context_region: BrainRegion, placement_anchor: Control = null) -> void:
+	_close_other_add_flow_windows(WindowCreateClassifier.WINDOW_NAME)
+	var create_classifier: WindowCreateClassifier = _default_spawn_window(_PREFAB_CREATE_CLASSIFIER, WindowCreateClassifier.WINDOW_NAME, true, placement_anchor) as WindowCreateClassifier
+	create_classifier.setup_for_region(context_region)
+	bring_window_to_top(create_classifier)
+
 ## Returns false when deletion was blocked (e.g. required IO from a connected agent); caller should not close UI.
 func spawn_confirm_deletion(objects_to_delete: Array[GenomeObject], is_deleting_single_region_internals_instead_of_raising: bool = false) -> bool:
 	if FeagiCore != null and FeagiCore.requests != null:
@@ -306,6 +314,10 @@ func spawn_select_region_template(
 func spawn_edit_region(editing_region: BrainRegion) -> void:
 	var edit_region: WindowEditRegion = _default_spawn_window(_PREFAB_EDIT_REGION, WindowEditRegion.WINDOW_NAME) as WindowEditRegion
 	edit_region.setup(editing_region)
+
+func spawn_edit_classifier(editing_classifier: GenomeClassifier) -> void:
+	var edit_classifier: WindowEditClassifier = _default_spawn_window(_PREFAB_EDIT_CLASSIFIER, WindowEditClassifier.WINDOW_NAME) as WindowEditClassifier
+	edit_classifier.setup(editing_classifier)
 
 func spawn_3d_brain_monitor_tab(region: BrainRegion, force: bool = false) -> void:
 	if region == null:
@@ -495,7 +507,7 @@ func _default_spawn_window(prefab: PackedScene, window_name: StringName, force_c
 		new_window.call("set_placement_anchor", placement_anchor)
 	if placement_anchor_rect.has_area() and new_window.has_method("set_placement_anchor_rect"):
 		new_window.call("set_placement_anchor_rect", placement_anchor_rect, placement_anchor_rect_exact_top_left)
-	var use_placement: bool = placement_anchor != null or placement_anchor_rect.has_area()
+	var use_placement: bool = (placement_anchor != null and new_window.has_method("set_placement_anchor")) or placement_anchor_rect.has_area()
 	if use_placement:
 		new_window.visible = false
 	add_child(new_window)

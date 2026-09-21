@@ -101,7 +101,8 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	# Create renderers based on cortical area type
 	if (_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
 		AbstractCorticalArea.is_feagi_invariant_core_area(_representing_cortial_area) or
-		_should_use_png_icon(_representing_cortial_area)):
+		_should_use_png_icon(_representing_cortial_area) or
+		_representing_cortial_area.is_classifier_kernel_memory()):
 		# Memory, Power, Death, and PNG icon areas use only DirectPoints renderer (no DDA cube)
 		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 		add_child(_directpoints_renderer)
@@ -120,6 +121,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 		_directpoints_renderer.setup(_representing_cortial_area)
 		# print("   🎯 Using BOTH DDA and DirectPoints renderers for: ", _representing_cortial_area.cortical_ID)  # Suppressed - causes output overflow
 	
+	_bind_classifier_stamp_label(defined_cortical_area)
 	# setup signals to update properties automatically for renderers
 	if _dda_renderer != null:
 		if not defined_cortical_area.friendly_name_updated.is_connected(_dda_renderer.update_friendly_name):
@@ -972,11 +974,14 @@ func _show_neural_connections() -> void:
 	if not efferent_mappings.is_empty():
 		# Create curves to all destination cortical areas (OUTGOING)
 		for destination_area: AbstractCorticalArea in efferent_mappings.keys():
-			var destination_position = _get_cortical_area_center_position_for_area(destination_area)
+			if _is_hidden_classifier_internal_mapping(_representing_cortial_area, destination_area):
+				continue
+			var visual_dest: AbstractCorticalArea = _visual_area_for_connection(destination_area)
+			var destination_position = _get_cortical_area_center_position_for_area(visual_dest)
 			
 			if destination_position != Vector3.ZERO:  # Valid position found
 				var mapping_set: InterCorticalMappingSet = efferent_mappings[destination_area]
-				var curve_node = _create_connection_curve(source_position, destination_position, destination_area.cortical_ID, mapping_set)
+				var curve_node = _create_connection_curve(source_position, destination_position, visual_dest.cortical_ID, mapping_set)
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
@@ -987,6 +992,8 @@ func _show_neural_connections() -> void:
 	if not afferent_mappings.is_empty():
 		# Create curves from all source cortical areas (INCOMING)
 		for source_area: AbstractCorticalArea in afferent_mappings.keys():
+			if _is_hidden_classifier_internal_mapping(source_area, _representing_cortial_area):
+				continue
 			var source_area_position = _get_cortical_area_center_position_for_area(source_area)
 			
 			if source_area_position != Vector3.ZERO:  # Valid position found
@@ -995,6 +1002,8 @@ func _show_neural_connections() -> void:
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
+	curves_created += _append_classifier_inbound_visual_aliases(source_position)
+	curves_created += _append_classifier_twin_visual_alias(source_position)
 	
 	# Get all recursive (self) connections within this cortical area
 	var recursive_mappings = _representing_cortial_area.recursive_mappings
@@ -1080,7 +1089,8 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 		return Vector3.ZERO
 	
 	# Use the 3D scene's cortical area registry to find the target
-	var target_visualization = main_3d_scene.get_cortical_area_visualization(area.cortical_ID)
+	var lookup_area: AbstractCorticalArea = _visual_area_for_connection(area)
+	var target_visualization = main_3d_scene.get_cortical_area_visualization(lookup_area.cortical_ID)
 	
 	if target_visualization == null:
 		print("   ⚠️ Could not find cortical area visualization for: ", area.cortical_ID)
@@ -1088,6 +1098,122 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 	
 	# Get position from the target's renderer  
 	return target_visualization._get_cortical_area_center_position()
+
+
+## Volume center of [param area] itself. Does not remap internals onto the stamp.
+func _get_area_volume_center(area: AbstractCorticalArea) -> Vector3:
+	if area == null:
+		return Vector3.ZERO
+	var current_node = self
+	var main_3d_scene: UI_BrainMonitor_3DScene = null
+	while current_node != null:
+		current_node = current_node.get_parent()
+		if current_node is UI_BrainMonitor_3DScene:
+			main_3d_scene = current_node as UI_BrainMonitor_3DScene
+			break
+	if main_3d_scene == null:
+		return Vector3.ZERO
+	var target_visualization = main_3d_scene.get_cortical_area_visualization(area.cortical_ID)
+	if target_visualization == null:
+		return Vector3.ZERO
+	return target_visualization._get_cortical_area_center_position()
+
+
+## Stamp label follows the classifier name, not the hidden cortical-area name.
+func _bind_classifier_stamp_label(area: AbstractCorticalArea) -> void:
+	if area == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return
+	var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(area.cortical_ID)
+	if owner == null or not owner.is_stamp_host_id(area.cortical_ID):
+		return
+	if _directpoints_renderer != null:
+		_directpoints_renderer.update_friendly_name(owner.friendly_name)
+		if not owner.friendly_name_updated.is_connected(_directpoints_renderer.update_friendly_name):
+			owner.friendly_name_updated.connect(_directpoints_renderer.update_friendly_name)
+	if _dda_renderer != null:
+		_dda_renderer.update_friendly_name(owner.friendly_name)
+		if not owner.friendly_name_updated.is_connected(_dda_renderer.update_friendly_name):
+			owner.friendly_name_updated.connect(_dda_renderer.update_friendly_name)
+
+
+## Hidden internals draw on the stamp. The class-map twin stays its own volume.
+func _visual_area_for_connection(area: AbstractCorticalArea) -> AbstractCorticalArea:
+	if area == null:
+		return area
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return area
+	var resolved: GenomeObject = GenomeClassifier.resolve_visual_connectable(
+		area, FeagiCore.feagi_local_cache.classifiers
+	)
+	if resolved is AbstractCorticalArea:
+		return resolved as AbstractCorticalArea
+	if resolved is GenomeClassifier:
+		var stamp: AbstractCorticalArea = (resolved as GenomeClassifier).get_stamp_area()
+		if stamp != null:
+			return stamp
+	return area
+
+
+func _is_hidden_classifier_internal_mapping(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> bool:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return false
+	return GenomeClassifier.is_internal_only_classifier_mapping(source, destination, FeagiCore.feagi_local_cache.classifiers)
+
+
+## Stamp has no NPU afferents; draw kernel/class/field → stamp as visual aliases.
+func _append_classifier_inbound_visual_aliases(stamp_position: Vector3) -> int:
+	if _representing_cortial_area == null or not _representing_cortial_area.is_classifier_kernel_memory():
+		return 0
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return 0
+	var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(_representing_cortial_area.cortical_ID)
+	if owner == null:
+		return 0
+	var added: int = 0
+	var dest_ids: Array[StringName] = [owner.kernel_memory_id, owner.class_memory_id]
+	for source_id in owner.inbound_visual_source_ids():
+		var source_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(source_id, null)
+		if source_area == null:
+			continue
+		var source_position: Vector3 = _get_cortical_area_center_position_for_area(source_area)
+		if source_position == Vector3.ZERO:
+			continue
+		var mapping_set: InterCorticalMappingSet = null
+		for dest_id in dest_ids:
+			var dest_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(dest_id, null)
+			if dest_area != null and source_area.efferent_mappings.has(dest_area):
+				mapping_set = source_area.efferent_mappings[dest_area]
+				break
+		var curve_node = _create_connection_curve(source_position, stamp_position, source_area.cortical_ID, mapping_set)
+		_connection_curves.append(curve_node)
+		add_child(curve_node)
+		added += 1
+	return added
+
+
+## Class-map twin is a normal interconnect; draw stamp → twin when either end shows connections.
+func _append_classifier_twin_visual_alias(self_position: Vector3) -> int:
+	if _representing_cortial_area == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return 0
+	var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(_representing_cortial_area.cortical_ID)
+	if owner == null:
+		return 0
+	var stamp: AbstractCorticalArea = owner.get_stamp_area()
+	var twin: AbstractCorticalArea = owner.get_twin_area()
+	if stamp == null or twin == null:
+		return 0
+	var is_stamp: bool = owner.is_stamp_host_id(_representing_cortial_area.cortical_ID)
+	var is_twin: bool = owner.scan_twin_id == _representing_cortial_area.cortical_ID
+	if not is_stamp and not is_twin:
+		return 0
+	var stamp_position: Vector3 = self_position if is_stamp else _get_area_volume_center(stamp)
+	var twin_position: Vector3 = self_position if is_twin else _get_area_volume_center(twin)
+	if stamp_position == Vector3.ZERO or twin_position == Vector3.ZERO:
+		return 0
+	var curve_node = _create_connection_curve(stamp_position, twin_position, twin.cortical_ID, null)
+	_connection_curves.append(curve_node)
+	add_child(curve_node)
+	return 1
 
 ## World-space center of a voxel given FEAGI neuron coordinates (same convention as hover highlighting).
 func feagi_voxel_center_world_position(feagi_coord: Vector3i) -> Vector3:

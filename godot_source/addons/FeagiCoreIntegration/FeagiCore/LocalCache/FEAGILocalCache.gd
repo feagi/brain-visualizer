@@ -30,6 +30,7 @@ signal mappings_reloaded()
 signal cortical_areas_reloaded()
 signal brain_regions_reloaded()
 signal morphologies_reloaded()
+signal classifiers_reloaded()
 signal amalgamation_pending(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) # is called any time a new amalgamation is pending
 signal amalgamation_no_longer_pending(amalgamation_id: StringName) # may occur following confirmation OR deletion
 
@@ -37,6 +38,8 @@ var brain_regions: BrainRegionsCache
 var cortical_areas: CorticalAreasCache
 var morphologies: MorphologiesCache
 var mapping_data: MappingsCache
+## First-class genome classifiers keyed by classifier_id.
+var classifiers: Dictionary = {}
 
 func _init():
 	cortical_areas = CorticalAreasCache.new()
@@ -88,6 +91,7 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	
 	# Load mapping restrictions from server (async call)
 	_load_mapping_restrictions_async()
+	_refresh_classifiers_from_feagi()
 	
 	genome_cache_replaced.emit()
 
@@ -112,6 +116,10 @@ func clear_whole_genome() -> void:
 	
 	morphologies.update_morphology_cache_from_summary({})
 	clear_templates()
+	for stale in classifiers.values():
+		if stale is GenomeClassifier:
+			(stale as GenomeClassifier).FEAGI_prepare_delete()
+	classifiers.clear()
 	
 	# Clear mapping restrictions cache
 	MappingRestrictionsAPI.clear_cache()
@@ -368,6 +376,7 @@ var _previous_cortical_areas_hash: int = 0
 var _previous_brain_geometry_hash: int = 0
 var _previous_morphologies_hash: int = 0
 var _previous_cortical_mappings_hash: int = 0
+var _previous_classifiers_hash: int = 0
 var _previous_agent_data_hash: int = 0
 var _hash_refresh_in_flight: Dictionary = {}
 var _pending_hash_values: Dictionary = {}
@@ -1012,6 +1021,12 @@ func _process_hash_change_detection(health: Dictionary) -> void:
 		_previous_cortical_mappings_hash,
 		&"_refresh_mappings_from_feagi"
 	)
+	_previous_classifiers_hash = _check_hash_and_queue(
+		&"classifiers_hash",
+		health.get("classifiers_hash", null),
+		_previous_classifiers_hash,
+		&"_refresh_classifiers_from_feagi"
+	)
 	_previous_agent_data_hash = _check_agent_hash_and_queue(
 		health.get("agent_data_hash", null),
 		_previous_agent_data_hash
@@ -1126,6 +1141,8 @@ func _set_previous_hash_value(hash_key: StringName, value: int) -> void:
 			_previous_morphologies_hash = value
 		&"cortical_mappings_hash":
 			_previous_cortical_mappings_hash = value
+		&"classifiers_hash":
+			_previous_classifiers_hash = value
 		&"agent_data_hash":
 			_previous_agent_data_hash = value
 		_:
@@ -1227,9 +1244,60 @@ func refresh_mappings_from_feagi() -> FeagiRequestOutput:
 func refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
 	return await _refresh_cortical_areas_from_feagi()
 
+func refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
+	return await _refresh_brain_regions_from_feagi()
+
+func refresh_classifiers_from_feagi() -> FeagiRequestOutput:
+	return await _refresh_classifiers_from_feagi()
+
 ## Public method to refresh morphology catalog from FEAGI (e.g. after morphology rename).
 func refresh_morphologies_from_feagi() -> FeagiRequestOutput:
 	return await _refresh_morphologies_from_feagi()
+
+func _refresh_classifiers_from_feagi() -> FeagiRequestOutput:
+	var classifiers_output: FeagiRequestOutput = await FeagiCore.requests.get_classifiers()
+	if classifiers_output.has_errored or not classifiers_output.success:
+		return classifiers_output
+	var next_classifiers: Dictionary = {}
+	var decoded: Variant = classifiers_output.decode_response_as_array()
+	if decoded is Array:
+		for item in decoded:
+			if not item is Dictionary:
+				continue
+			var classifier_id: StringName = StringName(str(item.get("classifier_id", "")).strip_edges())
+			if classifier_id == &"":
+				continue
+			var parent_id: StringName = StringName(str(item.get("parent_region_id", "")).strip_edges())
+			var parent_region: BrainRegion = brain_regions.available_brain_regions.get(parent_id, null)
+			var existing: Variant = classifiers.get(classifier_id, null)
+			if existing is GenomeClassifier:
+				var existing_classifier: GenomeClassifier = existing as GenomeClassifier
+				existing_classifier.apply_feagi_dict(item)
+				if parent_region != null and existing_classifier.current_parent_region != parent_region:
+					existing_classifier.FEAGI_change_parent_brain_region(parent_region)
+				next_classifiers[classifier_id] = existing_classifier
+			else:
+				next_classifiers[classifier_id] = GenomeClassifier.from_feagi_dict(item, parent_region)
+	for stale_id in classifiers.keys():
+		if next_classifiers.has(stale_id):
+			continue
+		var stale: Variant = classifiers[stale_id]
+		if stale is GenomeClassifier:
+			(stale as GenomeClassifier).FEAGI_prepare_delete()
+	classifiers = next_classifiers
+	classifiers_reloaded.emit()
+	print("HASH REFRESH: classifiers reloaded for classifiers_hash")
+	return classifiers_output
+
+
+## Classifier that owns this area as an internal or stamp, if any.
+func get_classifier_owning_area(area_id: StringName) -> GenomeClassifier:
+	return GenomeClassifier.find_owner_of_area(area_id, classifiers)
+
+
+## Visual CB/BM endpoint: hidden internals and the stamp resolve to the classifier object.
+func resolve_visual_connectable(genome_object: GenomeObject) -> GenomeObject:
+	return GenomeClassifier.resolve_visual_connectable(genome_object, classifiers)
 
 ## Refresh cortical mappings from FEAGI
 func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
