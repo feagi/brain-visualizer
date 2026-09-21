@@ -28,7 +28,7 @@ Brain Visualizer's interface consists of several key areas:
 **Top Toolbar**
 - Connection status and genome statistics
 - Burst rate control (neural processing speed)
-- Quick access buttons for Inputs, Circuits, Outputs
+- Quick access buttons for Connectome, Inputs, Outputs
 - Connectivity Rule manager
 - Options and settings
 - Camera animations
@@ -86,9 +86,9 @@ See [Navigation Basics](navigation.md) for more details.
 
 ![Inputs Button](../UI/GenericResources/ButtonIcons/input.png)
 
-- **Circuits**: Navigate and create brain circuits
+- **Connectome**: Hamburger menu for Circuits, Interconnect Areas, and Memory Areas
 
-![Circuits Button](../UI/GenericResources/ButtonIcons/Circuit_Builder_C.png)
+![Connectome Button](../UI/GenericResources/ButtonIcons/architecture.png)
 
 - **Outputs**: Create and manage output cortical areas (OPU)
 

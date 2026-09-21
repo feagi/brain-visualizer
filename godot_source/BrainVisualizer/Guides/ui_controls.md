@@ -94,10 +94,11 @@ The main toolbar provides quick access to essential features:
 - **+** button to create new input
 - Quick navigation to any input area
 
-**Circuits Button:**
-- Dropdown showing all brain circuits
-- **+** button to create new region
-- Hierarchical region navigation
+**Connectome Button:**
+- Hamburger menu for connectome objects
+- Dropdown combo rows for **Circuits**, **Interconnect Areas**, and **Memory Areas**
+- Each row lists existing objects and has a **+** button to create one
+- Additional object types (for example Classifier) will be added to this same menu
 
 **Outputs Button:**
 - Dropdown showing all OPU areas

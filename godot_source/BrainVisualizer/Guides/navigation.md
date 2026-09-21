@@ -21,10 +21,10 @@ Use the **top toolbar dropdowns** to jump directly to any object:
 2. Select an IPU area from the list
 3. View instantly focuses on that area
 
-**Circuits Dropdown:**
-1. Click **Circuits** in top toolbar
-2. Select a brain circuit from the list
-3. Opens Circuit Builder tab for that region
+**Connectome Menu:**
+1. Click **Connectome** in the tab or top toolbar
+2. Choose **Circuits**, **Interconnect Areas**, or **Memory Areas**
+3. Select an object from that combo list to focus it
 
 **Outputs Dropdown:**
 1. Click **Outputs** in top toolbar
@@ -81,7 +81,7 @@ Some versions include a search feature:
 
 Browse organized lists in dropdowns:
 - **Inputs**: All IPU areas alphabetically
-- **Circuits**: All regions in hierarchy
+- **Connectome**: Circuits, interconnect areas, and memory areas
 - **Outputs**: All OPU areas alphabetically
 
 Click any item to navigate there.

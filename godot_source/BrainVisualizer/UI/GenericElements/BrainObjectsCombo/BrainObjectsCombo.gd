@@ -1,6 +1,12 @@
 extends HBoxContainer
 class_name BrainObjectsCombo
 
+## Ordered connectome hamburger rows. Append a new id here when adding a combo
+## (e.g. classifier) and place the matching combo button under %MenuItems.
+const CONNECTOME_MENU_ITEM_CIRCUIT: StringName = &"circuit"
+const CONNECTOME_MENU_ITEM_INTERCONNECT: StringName = &"interconnect"
+const CONNECTOME_MENU_ITEM_MEMORY: StringName = &"memory"
+
 var context_region: BrainRegion = null
 
 var _is_3d_context: bool = true
@@ -9,6 +15,9 @@ var _cb_scene: CircuitBuilder = null
 var _global_topbar_mode: bool = false
 var _force_disabled_override: bool = false
 
+var _btn_connectome: BasePanelContainerButton
+var _connectome_menu: PopupPanel
+var _connectome_menu_items: VBoxContainer
 var _btn_brain_regions_list: BasePanelContainerButton
 var _btn_brain_regions_add: TextureButton
 var _btn_interconnect_list: BasePanelContainerButton
@@ -20,15 +29,12 @@ var _btn_inputs_list: BasePanelContainerButton
 var _btn_inputs_add: TextureButton
 var _btn_outputs_list: BasePanelContainerButton
 var _btn_outputs_add: TextureButton
+var _group_connectome: HBoxContainer
 var _group_main: PanelContainer
-var _group_interconnect: PanelContainer
-var _group_memory: PanelContainer
 var _group_rearrange: PanelContainer
-var _spacer_after_main: Control
-var _spacer_after_interconnect: Control
+var _spacer_after_connectome: Control
 var _spacer_before_rearrange: Control
 var _spacer_after_rearrange: Control
-var _spacer_after_add_circuits: Control
 var _spacer_after_add_inputs: Control
 var _spacer_before_monitor_tools: Control
 var _activity_visualization_dropdown: ActivityVisualizationDropDown
@@ -49,28 +55,46 @@ var _list_popup: FilterableListPopup
 ## True after [method apply_custom_topbar_tooltips] succeeded for this instance (TopBar or tab host).
 var _hosted_styled_tooltips_applied: bool = false
 
+## Ordered ids for the Connectome hamburger rows. Classifier will append here later.
+static func connectome_menu_item_ids() -> PackedStringArray:
+	return PackedStringArray([
+		String(CONNECTOME_MENU_ITEM_CIRCUIT),
+		String(CONNECTOME_MENU_ITEM_INTERCONNECT),
+		String(CONNECTOME_MENU_ITEM_MEMORY),
+	])
+
+
+## Scene node names under %MenuItems, same order as [method connectome_menu_item_ids].
+static func connectome_menu_row_node_names() -> PackedStringArray:
+	return PackedStringArray([
+		"BrainRegionsList",
+		"InterconnectAreasList",
+		"MemoryAreasList",
+	])
+
+
 ## Wire the combo buttons and dropdown popup.
 func _ready() -> void:
-	_btn_brain_regions_list = $MainGroup/MarginContainer/ButtonsRow/BrainRegionsList
-	_btn_brain_regions_add = $MainGroup/MarginContainer/ButtonsRow/BrainRegionsList/HBoxContainer/TextureButton_BrainRegions
-	_btn_interconnect_list = $InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList
-	_btn_interconnect_add = $InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList/HBoxContainer/TextureButton_Interconnect
-	_btn_memory_list = $MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList
-	_btn_memory_add = $MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList/HBoxContainer/TextureButton_Memory
+	_group_connectome = %ConnectomeGroup
+	_btn_connectome = %ConnectomeButton
+	_connectome_menu = %ConnectomeMenu
+	_connectome_menu_items = %MenuItems
+	_btn_brain_regions_list = %BrainRegionsList
+	_btn_brain_regions_add = %BrainRegionsList/HBoxContainer/TextureButton_BrainRegions
+	_btn_interconnect_list = %InterconnectAreasList
+	_btn_interconnect_add = %InterconnectAreasList/HBoxContainer/TextureButton_Interconnect
+	_btn_memory_list = %MemoryAreasList
+	_btn_memory_add = %MemoryAreasList/HBoxContainer/TextureButton_Memory
 	_btn_rearrange_layout = $RearrangePanel/MarginContainer/TextureButton_Rearrange
 	_btn_inputs_list = $MainGroup/MarginContainer/ButtonsRow/InputsList
 	_btn_inputs_add = $MainGroup/MarginContainer/ButtonsRow/InputsList/HBoxContainer/TextureButton_Inputs
 	_btn_outputs_list = $MainGroup/MarginContainer/ButtonsRow/OutputsList
 	_btn_outputs_add = $MainGroup/MarginContainer/ButtonsRow/OutputsList/HBoxContainer/TextureButton_Outputs
 	_group_main = $MainGroup
-	_group_interconnect = $InterconnectGroup
-	_group_memory = $MemoryGroup
 	_group_rearrange = $RearrangePanel
-	_spacer_after_main = $Spacer_AfterMainGroup
-	_spacer_after_interconnect = $Spacer_AfterInterconnectGroup
+	_spacer_after_connectome = $Spacer_AfterConnectome
 	_spacer_before_rearrange = $Spacer_BeforeRearrange
 	_spacer_after_rearrange = $Spacer_AfterRearrange
-	_spacer_after_add_circuits = $MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddCircuits
 	_spacer_after_add_inputs = $MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddInputs
 	_spacer_before_monitor_tools = $Spacer_BeforeMonitorTools
 	_activity_visualization_dropdown = $ActivityVisualizationDropDown
@@ -81,6 +105,9 @@ func _ready() -> void:
 	# Ensure the combo captures events within its bounds; individual buttons will stop events
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
+	_btn_connectome.focus_mode = Control.FOCUS_ALL
+	_btn_connectome.pressed.connect(_toggle_connectome_menu)
+	_btn_connectome.focus_exited.connect(_on_connectome_focus_exited)
 	_btn_brain_regions_list.pressed.connect(_open_brain_regions)
 	_btn_brain_regions_add.pressed.connect(_add_brain_region)
 	_btn_interconnect_list.pressed.connect(_open_interconnect_areas)
@@ -92,6 +119,8 @@ func _ready() -> void:
 	_btn_inputs_add.pressed.connect(_add_input_area)
 	_btn_outputs_list.pressed.connect(_open_outputs)
 	_btn_outputs_add.pressed.connect(_add_output_area)
+	_set_connectome_menu_row_focus_none()
+	align_connectome_menu_add_buttons(_connectome_menu_items)
 	if _activity_visualization_dropdown != null:
 		_activity_visualization_dropdown.activity_mode_changed.connect(_on_monitor_activity_mode_changed)
 	if _camera_animations_button != null:
@@ -112,6 +141,7 @@ func _ready() -> void:
 
 ## Default Godot tooltips when this strip is not using the main top bar custom tooltip host.
 func _apply_native_tooltips_for_combo_strip() -> void:
+	_btn_connectome.tooltip_text = "Connectome objects"
 	_btn_brain_regions_list.tooltip_text = "Select circuit"
 	_btn_brain_regions_add.tooltip_text = "Add circuit"
 	_btn_interconnect_list.tooltip_text = "Select interconnect area"
@@ -122,7 +152,7 @@ func _apply_native_tooltips_for_combo_strip() -> void:
 	_btn_inputs_add.tooltip_text = "Add input area"
 	_btn_outputs_list.tooltip_text = "Select output area"
 	_btn_outputs_add.tooltip_text = "Add output area"
-	_btn_rearrange_layout.tooltip_text = "Organize areas"
+	_btn_rearrange_layout.tooltip_text = "Circuit organizer"
 	if _activity_visualization_dropdown != null:
 		_activity_visualization_dropdown.tooltip_text = "Inspectors"
 	if _camera_animations_button != null:
@@ -160,6 +190,7 @@ func apply_custom_topbar_tooltips() -> void:
 		CustomTopBarTooltipManager.wire_toggle_dropdown_menu_tooltips(act_toggle, true)
 	CustomTopBarTooltipManager.strip_native_tooltips_recursive(self)
 	var pairs: Array = [
+		[_btn_connectome, "Connectome objects"],
 		[_btn_brain_regions_list, "View all circuits"],
 		[_btn_brain_regions_add, "Add a new circuit"],
 		[_btn_interconnect_list, "View interconnect areas"],
@@ -170,7 +201,7 @@ func apply_custom_topbar_tooltips() -> void:
 		[_btn_inputs_add, "Add input area"],
 		[_btn_outputs_list, "View all output areas"],
 		[_btn_outputs_add, "Add output area"],
-		[_btn_rearrange_layout, "Organize areas"],
+		[_btn_rearrange_layout, "Circuit organizer"],
 	]
 	if _activity_visualization_dropdown != null:
 		pairs.append([_activity_visualization_dropdown, "Inspectors"])
@@ -201,17 +232,16 @@ func apply_custom_topbar_tooltips() -> void:
 ## Apply shared spacing tokens to keep all combo strips consistent across views.
 func _apply_shared_combo_spacing_tokens() -> void:
 	var list_hbox_paths := []
-	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/BrainRegionsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeButton/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("InterconnectGroup/MarginContainer/ButtonsRow/InterconnectAreasList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("MemoryGroup/MarginContainer/ButtonsRow/MemoryAreasList/HBoxContainer"))
 	COMBO_STYLER.apply_list_hbox_spacing(self, list_hbox_paths)
 	var spacer_paths := []
-	spacer_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddCircuits"))
+	spacer_paths.append(NodePath("Spacer_AfterConnectome"))
 	spacer_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddInputs"))
-	spacer_paths.append(NodePath("Spacer_AfterMainGroup"))
-	spacer_paths.append(NodePath("Spacer_AfterInterconnectGroup"))
 	spacer_paths.append(NodePath("Spacer_BeforeRearrange"))
 	spacer_paths.append(NodePath("Spacer_AfterRearrange"))
 	spacer_paths.append(NodePath("Spacer_BeforeMonitorTools"))
@@ -224,10 +254,6 @@ func _flatten_group_wrapper_panels() -> void:
 	var panels := []
 	if _group_main != null:
 		panels.append(_group_main)
-	if _group_interconnect != null:
-		panels.append(_group_interconnect)
-	if _group_memory != null:
-		panels.append(_group_memory)
 	if _group_rearrange != null:
 		panels.append(_group_rearrange)
 	for panel in panels:
@@ -235,7 +261,11 @@ func _flatten_group_wrapper_panels() -> void:
 
 func _on_theme_changed(new_theme: Theme) -> void:
 	theme = new_theme
+	if _connectome_menu != null:
+		_connectome_menu.theme = new_theme
 	_apply_theme_sizes_recursive(self)
+	if _connectome_menu != null:
+		_apply_theme_sizes_recursive(_connectome_menu)
 	_apply_rearrange_button_size()
 
 
@@ -304,24 +334,25 @@ func set_force_disabled(disabled: bool) -> void:
 func _update_buttons_state() -> void:
 	if _global_topbar_mode:
 		_set_all_buttons_disabled(_force_disabled_override)
-		_set_visibility_for_context(false, true, false)
+		_set_visibility_for_context(true, false)
 		_update_monitor_tools_visibility()
 		return
 	if context_region == null:
 		_set_all_buttons_disabled(true)
-		_set_visibility_for_context(false, false, false)
+		_set_visibility_for_context(false, false)
 		_update_monitor_tools_visibility()
 		return
 	# Listing is always enabled (direct-only; will be empty if none)
 	_set_all_buttons_disabled(_force_disabled_override)
-	# Root region shows Inputs/Outputs; non-root shows Interconnect/Memory
+	# Root region keeps Inputs/Outputs on the strip; connectome objects stay in the hamburger.
 	var is_root := _is_root_region()
-	_set_visibility_for_context(not is_root, is_root, not _is_3d_context)
+	_set_visibility_for_context(is_root, not _is_3d_context)
 	_update_monitor_tools_visibility()
 
 
 ## Toggle disabled state for every control in the combo strip.
 func _set_all_buttons_disabled(disabled: bool) -> void:
+	_btn_connectome.disabled = disabled
 	_btn_brain_regions_list.disabled = disabled
 	_btn_brain_regions_add.disabled = disabled
 	_btn_interconnect_list.disabled = disabled
@@ -342,6 +373,8 @@ func _set_all_buttons_disabled(disabled: bool) -> void:
 ## Brain Monitor tab strip only: same controls as the main top bar, scoped to this tab's 3D scene.
 func _update_monitor_tools_visibility() -> void:
 	var show_tools := _is_3d_context and _bm_scene != null and not _global_topbar_mode
+	if _spacer_after_connectome != null and show_tools:
+		_spacer_after_connectome.visible = true
 	if _spacer_before_monitor_tools != null:
 		_spacer_before_monitor_tools.visible = show_tools
 	if _activity_visualization_dropdown != null:
@@ -407,13 +440,14 @@ func _open_brain_regions() -> void:
 	)
 
 func _add_brain_region() -> void:
+	var anchor := _connectome_action_anchor()
 	if _global_topbar_mode:
 		# Top bar trigger defines context: create under main/root scene.
-		BV.WM.spawn_select_region_template(null, true, _btn_brain_regions_add)
+		BV.WM.spawn_select_region_template(null, true, anchor)
 		return
 	if context_region == null:
 		return
-	BV.WM.spawn_select_region_template(context_region, false, _btn_brain_regions_add)
+	BV.WM.spawn_select_region_template(context_region, false, anchor)
 
 ## Open interconnect areas dropdown for the current region.
 func _open_interconnect_areas() -> void:
@@ -455,22 +489,24 @@ func _open_outputs() -> void:
 	)
 
 func _add_interconnect_area() -> void:
+	var anchor := _connectome_action_anchor()
 	if _global_topbar_mode:
-		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, _btn_interconnect_add)
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, anchor)
 		return
 	if context_region == null:
 		return
 	print("BrainObjectsCombo: Opening create interconnect window for region:", context_region.region_ID)
-	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, _btn_interconnect_add)
+	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, anchor)
 
 func _add_memory_area() -> void:
+	var anchor := _connectome_action_anchor()
 	if _global_topbar_mode:
-		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, _btn_memory_add)
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, anchor)
 		return
 	if context_region == null:
 		return
 	print("BrainObjectsCombo: Opening create memory window for region:", context_region.region_ID)
-	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, _btn_memory_add)
+	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, anchor)
 
 func _add_input_area() -> void:
 	if _global_topbar_mode:
@@ -510,7 +546,7 @@ func _request_relayout() -> void:
 	var cancel_button := ConfigurablePopupDefinition.create_close_button("Cancel")
 	var rearrange_button := ConfigurablePopupDefinition.create_action_button(func(): cb.relayout_nodes(), "Rearrange")
 	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.new(
-		"Rearrange Circuit Builder",
+		"Circuit organizer",
 		popup_message,
 		[cancel_button, rearrange_button]
 	)
@@ -533,24 +569,29 @@ func _is_root_region() -> bool:
 	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	return root_region != null and root_region == context_region
 
-func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs_and_outputs: bool, show_rearrange_layout: bool) -> void:
-	# Circuits always visible
+func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_layout: bool) -> void:
+	# Connectome hamburger always stays on the strip; object combos live in its menu.
+	if _group_connectome:
+		_group_connectome.visible = true
+	if _btn_connectome:
+		_btn_connectome.visible = true
+	# Circuits / interconnect / memory stay available in the hamburger for every context
+	# so future connectome types (classifier) can append without per-context strip layout.
 	if _btn_brain_regions_list:
 		_btn_brain_regions_list.visible = true
 	if _btn_brain_regions_add:
 		_btn_brain_regions_add.visible = true
-	# Interconnect/Memory visibility
 	if _btn_interconnect_list:
-		_btn_interconnect_list.visible = show_interconnect_and_memory
+		_btn_interconnect_list.visible = true
 	if _btn_interconnect_add:
-		_btn_interconnect_add.visible = show_interconnect_and_memory
+		_btn_interconnect_add.visible = true
 	if _btn_memory_list:
-		_btn_memory_list.visible = show_interconnect_and_memory
+		_btn_memory_list.visible = true
 	if _btn_memory_add:
-		_btn_memory_add.visible = show_interconnect_and_memory
+		_btn_memory_add.visible = true
 	if _btn_rearrange_layout:
 		_btn_rearrange_layout.visible = show_rearrange_layout
-	# Inputs/Outputs visibility
+	# Inputs/Outputs remain on the strip (root / global top bar).
 	if _btn_inputs_list:
 		_btn_inputs_list.visible = show_inputs_and_outputs
 	if _btn_inputs_add:
@@ -559,22 +600,14 @@ func _set_visibility_for_context(show_interconnect_and_memory: bool, show_inputs
 		_btn_outputs_list.visible = show_inputs_and_outputs
 	if _btn_outputs_add:
 		_btn_outputs_add.visible = show_inputs_and_outputs
-	# Main-row internal spacers must track root/non-root visibility too.
-	if _spacer_after_add_circuits:
-		_spacer_after_add_circuits.visible = show_inputs_and_outputs
 	if _spacer_after_add_inputs:
 		_spacer_after_add_inputs.visible = show_inputs_and_outputs
-	# Group wrappers and spacers must follow visibility to avoid orphan horizontal gaps.
-	if _group_interconnect:
-		_group_interconnect.visible = show_interconnect_and_memory
-	if _group_memory:
-		_group_memory.visible = show_interconnect_and_memory
+	if _group_main:
+		_group_main.visible = show_inputs_and_outputs
 	if _group_rearrange:
 		_group_rearrange.visible = show_rearrange_layout
-	if _spacer_after_main:
-		_spacer_after_main.visible = show_interconnect_and_memory
-	if _spacer_after_interconnect:
-		_spacer_after_interconnect.visible = show_interconnect_and_memory
+	if _spacer_after_connectome:
+		_spacer_after_connectome.visible = show_inputs_and_outputs or show_rearrange_layout
 	if _spacer_before_rearrange:
 		_spacer_before_rearrange.visible = show_rearrange_layout
 	if _spacer_after_rearrange:
@@ -591,10 +624,138 @@ func _ensure_list_popup() -> void:
 	_list_popup = PREFAB_FILTERABLE_LIST_POPUP.instantiate()
 	add_child(_list_popup)
 
+
+## Stretch each hamburger row to the menu width and push + buttons to the right edge.
+## Walks %MenuItems so a later classifier row gets the same alignment automatically.
+static func align_connectome_menu_add_buttons(menu_items: VBoxContainer) -> void:
+	if menu_items == null:
+		return
+	menu_items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for child in menu_items.get_children():
+		if not child is Control:
+			continue
+		var row: Control = child as Control
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var hbox: HBoxContainer = row.get_node_or_null("HBoxContainer") as HBoxContainer
+		if hbox == null:
+			continue
+		hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		for hbox_child in hbox.get_children():
+			if hbox_child is Label:
+				(hbox_child as Label).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			elif hbox_child is TextureButton:
+				(hbox_child as TextureButton).size_flags_horizontal = Control.SIZE_SHRINK_END
+
+
+## Menu-row buttons must not steal focus or the hamburger closes before the click lands.
+func _set_connectome_menu_row_focus_none() -> void:
+	var rows: Array[Control] = [
+		_btn_brain_regions_list,
+		_btn_brain_regions_add,
+		_btn_interconnect_list,
+		_btn_interconnect_add,
+		_btn_memory_list,
+		_btn_memory_add,
+	]
+	for row in rows:
+		if row != null:
+			row.focus_mode = Control.FOCUS_NONE
+
+
+## True while the Connectome hamburger popup is visible.
+func is_connectome_menu_open() -> bool:
+	return _connectome_menu != null and _connectome_menu.visible
+
+
+## Toggle the Connectome hamburger that hosts circuit / interconnect / memory combos.
+func _toggle_connectome_menu() -> void:
+	if is_connectome_menu_open():
+		_close_connectome_menu()
+		return
+	_open_connectome_menu()
+
+
+func _open_connectome_menu() -> void:
+	if _connectome_menu == null or _btn_connectome == null:
+		return
+	if BV.UI:
+		_connectome_menu.theme = BV.UI.loaded_theme
+	_reparent_connectome_menu_to_root_viewport()
+	align_connectome_menu_add_buttons(_connectome_menu_items)
+	_connectome_menu.size = Vector2.ZERO
+	var anchor_screen := _get_connectome_anchor_screen_position()
+	_connectome_menu.position = Vector2i(anchor_screen + Vector2(0, _btn_connectome.size.y))
+	_connectome_menu.popup()
+	_btn_connectome.grab_focus()
+
+
+func _close_connectome_menu() -> void:
+	if _connectome_menu == null:
+		return
+	_connectome_menu.hide()
+
+
+## Close the hamburger when the trigger loses focus, unless the click stayed in the menu.
+func _on_connectome_focus_exited() -> void:
+	if not is_connectome_menu_open():
+		return
+	var hovered: Control = get_viewport().gui_get_hovered_control() if get_viewport() != null else null
+	if hovered != null and _connectome_menu != null and (_connectome_menu == hovered or _connectome_menu.is_ancestor_of(hovered)):
+		_btn_connectome.grab_focus()
+		return
+	_close_connectome_menu()
+
+
+func _reparent_connectome_menu_to_root_viewport() -> void:
+	if _connectome_menu == null:
+		return
+	var tree := get_tree()
+	if tree == null:
+		return
+	var root_viewport := tree.root
+	if root_viewport == null:
+		return
+	if _connectome_menu.get_parent() == root_viewport:
+		return
+	var parent := _connectome_menu.get_parent()
+	if parent != null:
+		parent.remove_child(_connectome_menu)
+	root_viewport.add_child(_connectome_menu)
+	if BV.UI:
+		_connectome_menu.theme = BV.UI.loaded_theme
+
+
+func _get_connectome_anchor_screen_position() -> Vector2:
+	var anchor_pos := _btn_connectome.get_global_position()
+	var anchor_viewport := _btn_connectome.get_viewport()
+	if anchor_viewport == null:
+		return anchor_pos
+	if anchor_viewport is SubViewport:
+		var container := anchor_viewport.get_parent()
+		if container is SubViewportContainer:
+			anchor_pos += (container as SubViewportContainer).get_global_position()
+	return anchor_pos
+
+
+## After the hamburger closes, spawn list/create UI from the still-visible Connectome button.
+func _connectome_action_anchor() -> Control:
+	_close_connectome_menu()
+	return _btn_connectome
+
+
 ## Open the dropdown with the provided items.
 func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable) -> void:
+	var anchor := anchor_button
+	if is_connectome_menu_open() or _is_connectome_menu_row(anchor_button):
+		anchor = _connectome_action_anchor()
 	_ensure_list_popup()
-	_list_popup.open_with_items(anchor_button, items, selection_handler, placeholder_text)
+	_list_popup.open_with_items(anchor, items, selection_handler, placeholder_text)
+
+
+func _is_connectome_menu_row(control: Control) -> bool:
+	if control == null or _connectome_menu_items == null:
+		return false
+	return _connectome_menu_items == control or _connectome_menu_items.is_ancestor_of(control)
 
 ## Build dropdown items for child regions.
 func _build_region_items() -> Array[Dictionary]:
