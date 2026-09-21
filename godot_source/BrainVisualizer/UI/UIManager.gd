@@ -527,7 +527,7 @@ func _setup_voxel_capture_overlay() -> void:
 	_voxel_capture_preview_text.text = "No voxels selected yet.\n\nHold Shift and click voxels to build a live selection."
 	_voxel_capture_copy_button = _create_camera_presentation_button(
 		"VoxelCaptureCopyJSON",
-		"Copy JSON to clipboard",
+		"Copy selections to clipboard",
 		"Copy selected voxels JSON to clipboard"
 	)
 	_voxel_capture_copy_button.pressed.connect(_on_voxel_capture_copy_pressed)

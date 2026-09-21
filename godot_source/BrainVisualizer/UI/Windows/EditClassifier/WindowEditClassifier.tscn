@@ -4,14 +4,14 @@
 [ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
 
 [node name="WindowEditClassifier" type="VBoxContainer"]
-offset_right = 620.0
-offset_bottom = 420.0
+offset_right = 640.0
+offset_bottom = 560.0
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
 [node name="TitleBar" parent="." instance=ExtResource("2_title")]
 layout_mode = 2
-title = "Edit Classifier"
+title = "Classifier Properties"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2

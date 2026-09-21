@@ -2,8 +2,8 @@ extends GenomeObject
 class_name GenomeClassifier
 ## First-class BV object for a genome classifier assembly.
 ## Not a [BrainRegion] and not a cortical area. Class memory stays hidden; kernel
-## memory is the wobbly stamp. The class-map twin stays a connectable cortical
-## area. Inputs stay in [member parent_region_id]. Circuit Builder treats this as
+## memory is the wobbly stamp. Each field binding has its own connectable detection
+## twin. Inputs stay in [member parent_region_id]. Circuit Builder treats this as
 ## one region-like node and draws inbound mappings as visual aliases onto it.
 
 var classifier_id: StringName:
@@ -13,21 +13,17 @@ var kernel_area_id: StringName:
 	get: return _kernel_area_id
 var class_area_id: StringName:
 	get: return _class_area_id
-var field_area_id: StringName:
-	get: return _field_area_id
 var kernel_memory_id: StringName:
 	get: return _kernel_memory_id
 var class_memory_id: StringName:
 	get: return _class_memory_id
-var scan_twin_id: StringName:
-	get: return _scan_twin_id
 
 var _kernel_area_id: StringName = &""
 var _class_area_id: StringName = &""
-var _field_area_id: StringName = &""
 var _kernel_memory_id: StringName = &""
 var _class_memory_id: StringName = &""
-var _scan_twin_id: StringName = &""
+## Each binding is {field_area_id, scan_twin_id}. One trained assembly, one twin per field.
+var _fields: Array[Dictionary] = []
 
 
 func _init(
@@ -60,10 +56,9 @@ func apply_feagi_dict(data: Dictionary) -> void:
 	FEAGI_change_coordinates_3D(_coords_3d_from_feagi(data.get("coordinates_3d", [_coordinates_3D.x, _coordinates_3D.y, _coordinates_3D.z])))
 	_kernel_area_id = _optional_id(data.get("kernel_area_id", null))
 	_class_area_id = _optional_id(data.get("class_area_id", null))
-	_field_area_id = _optional_id(data.get("field_area_id", null))
 	_kernel_memory_id = StringName(str(data.get("kernel_memory_id", "")))
 	_class_memory_id = StringName(str(data.get("class_memory_id", "")))
-	_scan_twin_id = StringName(str(data.get("scan_twin_id", "")))
+	_fields = _bindings_from_feagi(data)
 	sync_layout_from_stamp()
 
 
@@ -80,8 +75,34 @@ func get_stamp_area() -> AbstractCorticalArea:
 	return _cached_area(_kernel_memory_id)
 
 
-func get_twin_area() -> AbstractCorticalArea:
-	return _cached_area(_scan_twin_id)
+func field_bindings() -> Array[Dictionary]:
+	return _fields.duplicate(true)
+
+
+func scan_twin_ids() -> Array[StringName]:
+	var twin_ids: Array[StringName] = []
+	for binding in _fields:
+		var twin_id: StringName = binding.get("scan_twin_id", &"")
+		if twin_id != &"":
+			twin_ids.append(twin_id)
+	return twin_ids
+
+
+func is_scan_twin_id(area_id: StringName) -> bool:
+	return area_id != &"" and area_id in scan_twin_ids()
+
+
+func has_field(area_id: StringName) -> bool:
+	return _binding_for_field(area_id) != null
+
+
+func get_twin_areas() -> Array[AbstractCorticalArea]:
+	var twins: Array[AbstractCorticalArea] = []
+	for twin_id in scan_twin_ids():
+		var twin: AbstractCorticalArea = _cached_area(twin_id)
+		if twin != null:
+			twins.append(twin)
+	return twins
 
 
 func _cached_area(area_id: StringName) -> AbstractCorticalArea:
@@ -113,8 +134,8 @@ func owned_area_ids() -> Array[StringName]:
 		owned.append(_kernel_memory_id)
 	if _class_memory_id != &"":
 		owned.append(_class_memory_id)
-	if _scan_twin_id != &"":
-		owned.append(_scan_twin_id)
+	for twin_id in scan_twin_ids():
+		owned.append(twin_id)
 	return owned
 
 
@@ -131,7 +152,7 @@ func hidden_owned_area_ids() -> Array[StringName]:
 func owns_area_id(area_id: StringName) -> bool:
 	if area_id == &"":
 		return false
-	return area_id == _kernel_memory_id or area_id == _class_memory_id or area_id == _scan_twin_id
+	return area_id == _kernel_memory_id or area_id == _class_memory_id or is_scan_twin_id(area_id)
 
 
 func hides_area_id(area_id: StringName) -> bool:
@@ -154,7 +175,7 @@ static func stamp_visual_dimensions(memory_neuron_count: int, classifier_depth: 
 func references_input_id(area_id: StringName) -> bool:
 	if area_id == &"":
 		return false
-	return area_id == _kernel_area_id or area_id == _class_area_id or area_id == _field_area_id
+	return area_id == _kernel_area_id or area_id == _class_area_id or _binding_for_field(area_id) != null
 
 
 ## Kernel / class / field area IDs that should draw a visual inbound line to this object.
@@ -164,8 +185,10 @@ func inbound_visual_source_ids() -> Array[StringName]:
 		sources.append(_kernel_area_id)
 	if _class_area_id != &"":
 		sources.append(_class_area_id)
-	if _field_area_id != &"":
-		sources.append(_field_area_id)
+	for binding in _fields:
+		var field_id: StringName = binding.get("field_area_id", &"")
+		if field_id != &"":
+			sources.append(field_id)
 	return sources
 
 
@@ -181,7 +204,7 @@ func details_rows() -> Array[Dictionary]:
 	rows.append(_details_row("coordinates_3d", "3D Position", str(coordinates_3D), true))
 	rows.append(_details_row("kernel_area", "Kernel Area", _area_name(_kernel_area_id), true))
 	rows.append(_details_row("class_area", "Class Area", _area_name(_class_area_id), true))
-	rows.append(_details_row("field_area", "Field Area", _area_name(_field_area_id), true))
+	rows.append(_details_row("fields", "Fields", _field_names_text(), false))
 	rows.append(_details_row("hidden_internals", "Hidden Internals", hidden_internals_text(), false))
 	return rows
 
@@ -250,7 +273,7 @@ static func resolve_visual_connectable(genome_object: GenomeObject, classifiers:
 	var owner: GenomeClassifier = find_owner_of_area(area_id, classifiers)
 	if owner == null:
 		return genome_object
-	if owner.scan_twin_id == area_id:
+	if owner.is_scan_twin_id(area_id):
 		return genome_object
 	return owner
 
@@ -265,7 +288,7 @@ static func is_internal_only_classifier_mapping(source: GenomeObject, destinatio
 	var owner: GenomeClassifier = find_owner_of_area(src_id, classifiers)
 	if owner == null:
 		return false
-	if owner.scan_twin_id == src_id or owner.scan_twin_id == dst_id:
+	if owner.is_scan_twin_id(src_id) or owner.is_scan_twin_id(dst_id):
 		return false
 	return owner.owns_area_id(dst_id)
 
@@ -276,7 +299,7 @@ static func is_visual_twin_alias(source: GenomeObject, destination: GenomeObject
 		return false
 	var dest_id: StringName = (destination as AbstractCorticalArea).cortical_ID
 	var owner: GenomeClassifier = find_owner_of_area(dest_id, classifiers)
-	if owner == null or owner.scan_twin_id != dest_id:
+	if owner == null or not owner.is_scan_twin_id(dest_id):
 		return false
 	if source is GenomeClassifier:
 		return (source as GenomeClassifier).classifier_id == owner.classifier_id
@@ -313,6 +336,41 @@ static func find_by_id(classifier_id: StringName, classifiers: Dictionary) -> Ge
 	if found is GenomeClassifier:
 		return found as GenomeClassifier
 	return null
+
+
+func _field_names_text() -> String:
+	var names: PackedStringArray = PackedStringArray()
+	for binding in _fields:
+		names.append(_area_name(binding.get("field_area_id", &"")))
+	return ", ".join(names)
+
+
+func _binding_for_field(area_id: StringName) -> Variant:
+	for binding in _fields:
+		if binding.get("field_area_id", &"") == area_id:
+			return binding
+	return null
+
+
+## Previous genomes stored one field_area_id and scan_twin_id. Load that as one binding.
+static func _bindings_from_feagi(data: Dictionary) -> Array[Dictionary]:
+	var bindings: Array[Dictionary] = []
+	var raw: Variant = data.get("fields", [])
+	if raw is Array:
+		for item in raw:
+			if not item is Dictionary:
+				continue
+			var field_id: StringName = _optional_id((item as Dictionary).get("field_area_id", null))
+			var twin_id: StringName = StringName(str((item as Dictionary).get("scan_twin_id", "")).strip_edges())
+			if field_id != &"" and twin_id != &"":
+				bindings.append({"field_area_id": field_id, "scan_twin_id": twin_id})
+	if not bindings.is_empty():
+		return bindings
+	var singular_field: StringName = _optional_id(data.get("field_area_id", null))
+	var singular_twin: StringName = StringName(str(data.get("scan_twin_id", "")).strip_edges())
+	if singular_field != &"" and singular_twin != &"":
+		bindings.append({"field_area_id": singular_field, "scan_twin_id": singular_twin})
+	return bindings
 
 
 static func _optional_id(value: Variant) -> StringName:

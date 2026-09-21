@@ -130,7 +130,7 @@ _section_dangerzone = NodePath("WindowPanel/WindowMargin/WindowInternals/DangerZ
 
 [node name="TitleBar" parent="." instance=ExtResource("2_c4mg3")]
 layout_mode = 2
-title = "Cortical Area Details"
+title = "Cortical Area Properties"
 
 [node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2

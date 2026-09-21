@@ -84,7 +84,7 @@ alignment = 1
 [node name="Details" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-tooltip_text = "View Cortical Area Details"
+tooltip_text = "View Cortical Area Properties"
 focus_mode = 0
 theme_type_variation = &"TextureButton_Big"
 texture_normal = ExtResource("3_1l638")

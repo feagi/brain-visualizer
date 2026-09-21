@@ -1199,21 +1199,25 @@ func _append_classifier_twin_visual_alias(self_position: Vector3) -> int:
 	if owner == null:
 		return 0
 	var stamp: AbstractCorticalArea = owner.get_stamp_area()
-	var twin: AbstractCorticalArea = owner.get_twin_area()
-	if stamp == null or twin == null:
+	if stamp == null:
 		return 0
 	var is_stamp: bool = owner.is_stamp_host_id(_representing_cortial_area.cortical_ID)
-	var is_twin: bool = owner.scan_twin_id == _representing_cortial_area.cortical_ID
-	if not is_stamp and not is_twin:
-		return 0
-	var stamp_position: Vector3 = self_position if is_stamp else _get_area_volume_center(stamp)
-	var twin_position: Vector3 = self_position if is_twin else _get_area_volume_center(twin)
-	if stamp_position == Vector3.ZERO or twin_position == Vector3.ZERO:
-		return 0
-	var curve_node = _create_connection_curve(stamp_position, twin_position, twin.cortical_ID, null)
-	_connection_curves.append(curve_node)
-	add_child(curve_node)
-	return 1
+	var added: int = 0
+	for twin in owner.get_twin_areas():
+		if twin == null:
+			continue
+		var is_this_twin: bool = twin.cortical_ID == _representing_cortial_area.cortical_ID
+		if not is_stamp and not is_this_twin:
+			continue
+		var stamp_position: Vector3 = self_position if is_stamp else _get_area_volume_center(stamp)
+		var twin_position: Vector3 = self_position if is_this_twin else _get_area_volume_center(twin)
+		if stamp_position == Vector3.ZERO or twin_position == Vector3.ZERO:
+			continue
+		var curve_node = _create_connection_curve(stamp_position, twin_position, twin.cortical_ID, null)
+		_connection_curves.append(curve_node)
+		add_child(curve_node)
+		added += 1
+	return added
 
 ## World-space center of a voxel given FEAGI neuron coordinates (same convention as hover highlighting).
 func feagi_voxel_center_world_position(feagi_coord: Vector3i) -> Vector3:

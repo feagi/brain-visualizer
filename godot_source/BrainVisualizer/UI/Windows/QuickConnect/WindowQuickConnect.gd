@@ -48,6 +48,7 @@ var _finished_selecting: bool = false
 
 var _source: AbstractCorticalArea = null
 var _destination: AbstractCorticalArea = null
+var _destination_classifier: GenomeClassifier = null
 var _destinations: Array[AbstractCorticalArea] = []
 var _selected_morphology: BaseMorphology = null
 ## True when connecting a non-memory source to a memory destination with only one allowed morphology.
@@ -136,6 +137,10 @@ func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.S
 				return
 			if objects[0] is BrainRegion:
 				return
+			if objects[0] is GenomeClassifier:
+				_set_classifier_destination(objects[0] as GenomeClassifier)
+				return
+			_destination_classifier = null
 			var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea
 			_toggle_destination(cortical_area)
 		_:
@@ -144,6 +149,15 @@ func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.S
 func establish_connection_button() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Requesting quick connection...")
 	if _source == null:
+		return
+	if _destination_classifier != null:
+		var field_result: FeagiRequestOutput = await FeagiCore.requests.attach_classifier_field(
+			_destination_classifier,
+			_source.cortical_ID
+		)
+		if field_result == null or not field_result.success:
+			return
+		close_window()
 		return
 	if _selected_morphology == null:
 		return
@@ -221,6 +235,7 @@ func _setting_destination() -> void:
 	_memory_rule_locked = false
 	_clear_destination_highlights()
 	_destination = null
+	_destination_classifier = null
 	_destinations.clear()
 	_step2_label.text = " Click destination target(s), or Edit to browse all circuits."
 	_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
@@ -552,6 +567,42 @@ func _set_core_icon_selected(button: TextureButton) -> void:
 			selected_panel.add_theme_stylebox_override("panel", selected_style as StyleBox)
 	_selected_core_icon_button = button
 
+func _source_can_feed_classifier(area: AbstractCorticalArea) -> bool:
+	if area == null:
+		return false
+	if area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM and area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT:
+		return false
+	if area.is_scan_twin() or area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin():
+		return false
+	return true
+
+
+func _set_classifier_destination(classifier: GenomeClassifier) -> void:
+	if classifier == null:
+		return
+	if not _source_can_feed_classifier(_source):
+		_step2_label.text = " Classifier mappings start from an interconnect area."
+		_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
+		return
+	_clear_destination_highlights()
+	_destinations.clear()
+	_destination = null
+	_destination_classifier = classifier
+	_selected_morphology = null
+	_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
+	_step2_label.text = " Selected Classifier: [" + classifier.friendly_name + "]"
+	_step3_panel.visible = true
+	_step3_panel.theme_type_variation = "PanelContainer_QC_Complete"
+	_step3_label.text = " Connectivity Rule: Classifier"
+	_step3_morphology_container.visible = false
+	_set_core_bar_visibility(false)
+	_finished_selecting = true
+	_step4_button.disabled = false
+	current_state = POSSIBLE_STATES.IDLE
+	if BV != null and BV.UI != null and BV.UI.selection_system != null:
+		BV.UI.selection_system.add_to_highlighted(classifier)
+
+
 func _set_source(cortical_area: AbstractCorticalArea) -> void:
 	_source = cortical_area
 	_step1_label.text = " Selected Source Area: [" + cortical_area.friendly_name + "]"
@@ -606,6 +657,7 @@ func _sync_destinations_from_selected_objects(objects: Array[GenomeObject]) -> v
 ## Applies explorer or 3D multi-select results as destination areas.
 func _apply_destinations_from_objects(objects: Array[GenomeObject], stay_in_destination_mode: bool) -> void:
 	var previous_primary: AbstractCorticalArea = _destination
+	_destination_classifier = null
 	_clear_destination_highlights()
 	_destinations.clear()
 	for area in GenomeObject.filter_cortical_areas(objects):

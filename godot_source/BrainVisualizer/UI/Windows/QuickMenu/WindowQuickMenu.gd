@@ -57,7 +57,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				_btn_relocate_2d.disabled = not is_circuit_builder_context
 				_btn_relocate_2d.tooltip_text = "Relocate this cortical area (2D)" if is_circuit_builder_context else _btn_relocate_2d.tooltip_text
 			open_3d_tab_button.visible = false  # Hide 3D tab button for cortical areas
-			details_button.tooltip_text = "View Cortical Area Details"
+			details_button.tooltip_text = "View Cortical Area Properties"
 			quick_connect_button.tooltip_text = "Quick Connet: Map two areas together."
 			move_to_region_button.tooltip_text = "Add to a circuit..."
 			clone_button.tooltip_text = "Clone Cortical Area..."
@@ -159,7 +159,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			move_to_region_button.visible = false
 			details_button.visible = true
 			details_button.disabled = false
-			details_button.tooltip_text = "Edit classifier"
+			details_button.tooltip_text = "Classifier properties"
 			delete_button.visible = true
 			delete_button.disabled = false
 			delete_button.tooltip_text = "Delete this classifier..."

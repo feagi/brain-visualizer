@@ -16,6 +16,7 @@ func _initialize() -> void:
 	failures += _test_stamp_is_kernel_memory_and_twin_is_owned()
 	failures += _test_stamp_visual_dimensions()
 	failures += _test_details_rows_are_classifier_not_cortical_area()
+	failures += _test_singular_field_record_loads_as_one_binding()
 	if failures == 0:
 		print("GenomeClassifier object-model tests: PASS")
 		quit(0)
@@ -33,10 +34,12 @@ func _make_classifier() -> GenomeClassifier:
 		"coordinates_3d": [4, 5, 6],
 		"kernel_area_id": "kernel",
 		"class_area_id": "class",
-		"field_area_id": "field",
+		"fields": [
+			{"field_area_id": "field", "scan_twin_id": "stamp"},
+			{"field_area_id": "field-b", "scan_twin_id": "twin-b"},
+		],
 		"kernel_memory_id": "kmem",
 		"class_memory_id": "cmem",
-		"scan_twin_id": "stamp",
 	})
 	return classifier
 
@@ -66,19 +69,19 @@ func _test_classifier_is_not_exportable_circuit() -> int:
 	if classifier.coordinates_3D != Vector3i(4, 5, 6):
 		push_error("classifier must keep genome coordinates_3d")
 		return 1
-	if classifier.scan_twin_id != &"stamp":
-		push_error("twin id must stay on the classifier, not become a region")
+	if not classifier.is_scan_twin_id(&"stamp") or not classifier.is_scan_twin_id(&"twin-b"):
+		push_error("each field twin must stay on the classifier, not become a region")
 		return 1
 	return 0
 
 
 func _test_owns_internals_and_references_inputs() -> int:
 	var classifier: GenomeClassifier = _make_classifier()
-	if not classifier.owns_area_id(&"kmem") or not classifier.owns_area_id(&"cmem") or not classifier.owns_area_id(&"stamp"):
-		push_error("classifier must own kernel_mem, class_mem, and twin")
+	if not classifier.owns_area_id(&"kmem") or not classifier.owns_area_id(&"cmem") or not classifier.owns_area_id(&"stamp") or not classifier.owns_area_id(&"twin-b"):
+		push_error("classifier must own kernel_mem, class_mem, and each field twin")
 		return 1
-	if not classifier.references_input_id(&"kernel") or not classifier.references_input_id(&"class") or not classifier.references_input_id(&"field"):
-		push_error("classifier must reference kernel, class, and field inputs")
+	if not classifier.references_input_id(&"kernel") or not classifier.references_input_id(&"class") or not classifier.references_input_id(&"field") or not classifier.references_input_id(&"field-b"):
+		push_error("classifier must reference kernel, class, and every field input")
 		return 1
 	if classifier.owns_area_id(&"kernel") or classifier.references_input_id(&"kmem"):
 		push_error("inputs and internals must stay distinct")
@@ -89,8 +92,8 @@ func _test_owns_internals_and_references_inputs() -> int:
 func _test_owned_area_ids_match_delete_contract() -> int:
 	var classifier: GenomeClassifier = _make_classifier()
 	var owned: Array[StringName] = classifier.owned_area_ids()
-	if owned.size() != 3 or owned[0] != &"kmem" or owned[1] != &"cmem" or owned[2] != &"stamp":
-		push_error("owned_area_ids must be kernel_mem, class_mem, twin")
+	if owned.size() != 4 or owned[0] != &"kmem" or owned[1] != &"cmem" or owned[2] != &"stamp" or owned[3] != &"twin-b":
+		push_error("owned_area_ids must be kernel_mem, class_mem, then each field twin")
 		return 1
 	var delete_path := "/v1/cortical_area/classifier/{classifier_id}".replace("{classifier_id}", str(classifier.classifier_id))
 	if delete_path != "/v1/cortical_area/classifier/clf-1":
@@ -126,7 +129,7 @@ func _test_visual_inbound_aliases_and_hidden_internals() -> int:
 	if not classifier.owns_area_id(&"kmem") or not classifier.owns_area_id(&"cmem"):
 		push_error("kernel_mem → class_mem must stay hidden as an internal mapping")
 		return 1
-	if classifier.scan_twin_id == &"":
+	if not classifier.is_scan_twin_id(&"stamp"):
 		push_error("twin must remain a visible interconnect destination")
 		return 1
 	# Stamp hover outgoing: twin is not remapped onto the stamp body.
@@ -137,8 +140,8 @@ func _test_visual_inbound_aliases_and_hidden_internals() -> int:
 		push_error("stamp hover dest for twin must stay the twin id")
 		return 1
 	var inbound: Array[StringName] = classifier.inbound_visual_source_ids()
-	if inbound.size() != 3 or inbound[0] != &"kernel" or inbound[1] != &"class" or inbound[2] != &"field":
-		push_error("inbound visual sources must be kernel, class, field")
+	if inbound.size() != 4 or inbound[0] != &"kernel" or inbound[1] != &"class" or inbound[2] != &"field" or inbound[3] != &"field-b":
+		push_error("inbound visual sources must be kernel, class, and each field")
 		return 1
 	return 0
 
@@ -212,11 +215,31 @@ func _test_details_rows_are_classifier_not_cortical_area() -> int:
 	if keys.has("cortical_id"):
 		push_error("classifier details must not present a cortical_id inspector")
 		return 1
-	for required_editable in ["name", "parent_circuit", "coordinates_3d", "kernel_area", "class_area", "field_area"]:
+	for required_editable in ["name", "parent_circuit", "coordinates_3d", "kernel_area", "class_area"]:
 		if not editable_keys.has(required_editable):
 			push_error("classifier field %s must be editable" % required_editable)
 			return 1
+	if not keys.has("fields") or editable_keys.has("fields"):
+		push_error("field bindings are mapping-owned and stay read-only in the inspector")
+		return 1
 	if editable_keys.has("classifier_id") or editable_keys.has("hidden_internals"):
 		push_error("classifier id and owned internals must stay read-only")
+		return 1
+	return 0
+
+
+func _test_singular_field_record_loads_as_one_binding() -> int:
+	var classifier := GenomeClassifier.new(&"clf-old", &"Old", Vector2i.ZERO, Vector3i.ZERO)
+	classifier.apply_feagi_dict({
+		"field_area_id": "field",
+		"scan_twin_id": "stamp",
+		"kernel_memory_id": "kmem",
+		"class_memory_id": "cmem",
+	})
+	if not classifier.has_field(&"field") or not classifier.is_scan_twin_id(&"stamp"):
+		push_error("a previous singular field record must load as one binding")
+		return 1
+	if classifier.scan_twin_ids().size() != 1:
+		push_error("singular field load must not invent extra twins")
 		return 1
 	return 0

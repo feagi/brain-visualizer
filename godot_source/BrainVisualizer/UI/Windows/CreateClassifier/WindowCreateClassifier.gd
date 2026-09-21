@@ -8,7 +8,6 @@ var _name_input: LineEdit
 var _vector: Vector3iSpinboxField
 var _kernel_option: OptionButton
 var _class_option: OptionButton
-var _field_option: OptionButton
 var _validation_label: Label
 var _create_button: Button
 var _location: Vector3i
@@ -40,7 +39,7 @@ func setup_for_region(context_region: BrainRegion, coordinates_3d: Vector3i = Ve
 func _build_ui() -> void:
 	var internals: VBoxContainer = _window_internals
 	var title := Label.new()
-	title.text = "The stamp is the memory assembly. Width and height grow with stored memory neurons; depth is classifier temporal depth. A separate twin area is created beside the field."
+	title.text = "Choose a kernel area and a class area. Connect field areas to this classifier after you create it."
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	internals.add_child(title)
 
@@ -54,10 +53,8 @@ func _build_ui() -> void:
 
 	_kernel_option = OptionButton.new()
 	_class_option = OptionButton.new()
-	_field_option = OptionButton.new()
 	internals.add_child(_labeled("Kernel area", _kernel_option))
 	internals.add_child(_labeled("Class area", _class_option))
-	internals.add_child(_labeled("Field area", _field_option))
 
 	_validation_label = Label.new()
 	_validation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -83,8 +80,6 @@ func _labeled(label_text: String, control: Control) -> HBoxContainer:
 func _connect_preview_controls() -> void:
 	if _vector != null and not _vector.user_updated_vector.is_connected(_on_position_changed):
 		_vector.user_updated_vector.connect(_on_position_changed)
-	if _field_option != null and not _field_option.item_selected.is_connected(_on_area_selection_changed):
-		_field_option.item_selected.connect(_on_area_selection_changed)
 	if _class_option != null and not _class_option.item_selected.is_connected(_on_area_selection_changed):
 		_class_option.item_selected.connect(_on_area_selection_changed)
 	if not close_window_requesed_no_arg.is_connected(_cleanup_stamp_preview):
@@ -158,7 +153,6 @@ func _cleanup_stamp_preview() -> void:
 func _populate_area_options() -> void:
 	_kernel_option.clear()
 	_class_option.clear()
-	_field_option.clear()
 	_area_ids.clear()
 	for area in _candidate_areas():
 		if area == null:
@@ -171,7 +165,6 @@ func _populate_area_options() -> void:
 		var label := "%s %sx%sx%s" % [area.friendly_name, dims.x, dims.y, dims.z]
 		_kernel_option.add_item(label)
 		_class_option.add_item(label)
-		_field_option.add_item(label)
 		_area_ids.append(area.cortical_ID)
 
 
@@ -200,10 +193,10 @@ func _selected_area_id(option: OptionButton) -> StringName:
 func _apply_default_position() -> void:
 	if _vector == null:
 		return
-	_vector.current_vector = _default_placement_coordinates(_selected_area_id(_kernel_option), _selected_area_id(_field_option))
+	_vector.current_vector = _default_placement_coordinates(_selected_area_id(_kernel_option))
 
 
-func _default_placement_coordinates(kernel_id: StringName, field_id: StringName) -> Vector3i:
+func _default_placement_coordinates(kernel_id: StringName) -> Vector3i:
 	if _location != Vector3i.ZERO:
 		return _location
 	if BV.UI != null:
@@ -211,9 +204,6 @@ func _default_placement_coordinates(kernel_id: StringName, field_id: StringName)
 		var last_size: Vector3i = BV.UI.last_created_cortical_size
 		if last_pos != Vector3i.ZERO:
 			return Vector3i(last_pos.x + last_size.x + 8, last_pos.y, last_pos.z)
-	var field_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(field_id, null)
-	if field_area != null:
-		return Vector3i(field_area.coordinates_3D.x + field_area.dimensions_3D.x + 8, field_area.coordinates_3D.y, field_area.coordinates_3D.z)
 	var kernel_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(kernel_id, null)
 	if kernel_area != null:
 		return Vector3i(kernel_area.coordinates_3D.x + kernel_area.dimensions_3D.x + 8, kernel_area.coordinates_3D.y, kernel_area.coordinates_3D.z)
@@ -250,12 +240,11 @@ func _on_create_pressed() -> void:
 	if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_of_name(StringName(classifier_name + "_kernel_mem")):
 		_show_validation("A classifier using this name already exists.")
 		return
-	if _area_ids.is_empty() or _kernel_option.selected < 0 or _class_option.selected < 0 or _field_option.selected < 0:
-		_show_validation("Kernel, class, and field must be non-memory areas in this region.")
+	if _area_ids.is_empty() or _kernel_option.selected < 0 or _class_option.selected < 0:
+		_show_validation("Kernel and class must be non-memory areas in this region.")
 		return
 	var kernel_id: StringName = _area_ids[_kernel_option.selected]
 	var class_id: StringName = _area_ids[_class_option.selected]
-	var field_id: StringName = _area_ids[_field_option.selected]
 	_create_button.disabled = true
 	var coordinates_3d: Vector3i = _placement_coordinates()
 	var stamp_size: Vector3i = _stamp_preview_dimensions()
@@ -264,8 +253,7 @@ func _on_create_pressed() -> void:
 		coordinates_3d,
 		_context_region,
 		kernel_id,
-		class_id,
-		field_id
+		class_id
 	)
 	if result == null or result.has_errored or result.failed_requirement:
 		_create_button.disabled = false

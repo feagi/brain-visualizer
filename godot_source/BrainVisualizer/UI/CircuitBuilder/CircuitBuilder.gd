@@ -193,14 +193,16 @@ func ensure_classifier_twin_visuals(classifier: GenomeClassifier) -> void:
 func _CACHE_add_classifier_twin_visual(classifier: GenomeClassifier) -> void:
 	if classifier == null:
 		return
-	var twin: AbstractCorticalArea = classifier.get_twin_area()
-	if twin == null:
-		return
-	if GenomeClassifier.should_hide_area_in_circuit_builder(twin):
+	for twin in classifier.get_twin_areas():
+		_CACHE_add_one_classifier_twin_visual(classifier, twin)
+
+
+func _CACHE_add_one_classifier_twin_visual(classifier: GenomeClassifier, twin: AbstractCorticalArea) -> void:
+	if twin == null or GenomeClassifier.should_hide_area_in_circuit_builder(twin):
 		return
 	if not twin.cortical_ID in _cortical_nodes.keys():
 		_CACHE_add_cortical_area(twin)
-	if classifier.classifier_id in _classifier_twin_visual_ids:
+	if twin.cortical_ID in _classifier_twin_visual_ids:
 		return
 	if not classifier.classifier_id in _classifier_nodes.keys():
 		return
@@ -216,7 +218,7 @@ func _CACHE_add_classifier_twin_visual(classifier: GenomeClassifier) -> void:
 	add_child(line)
 	move_child(line, 0)
 	line.call_deferred("setup_visual_alias", source_terminal.active_port, destination_terminal.active_port)
-	_classifier_twin_visual_ids[classifier.classifier_id] = true
+	_classifier_twin_visual_ids[twin.cortical_ID] = true
 
 
 func strip_hidden_classifier_areas() -> void:
@@ -252,7 +254,7 @@ func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	cortical_node.node_moved.connect(_genome_object_moved)
 	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
 		var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(area.cortical_ID)
-		if owner != null and owner.scan_twin_id == area.cortical_ID:
+		if owner != null and owner.is_scan_twin_id(area.cortical_ID):
 			_CACHE_add_classifier_twin_visual(owner)
 	if not _cb_setup_in_progress:
 		_request_auto_layout_after_topology_change()
@@ -289,7 +291,8 @@ func _CACHE_remove_classifier(classifier: GenomeClassifier) -> void:
 		push_error("UI CB: Unable to find classifier %s to remove node of!" % classifier.classifier_id)
 		return
 	BV.UI.selection_system.clear_all_highlighted()
-	_classifier_twin_visual_ids.erase(classifier.classifier_id)
+	for twin_id in classifier.scan_twin_ids():
+		_classifier_twin_visual_ids.erase(twin_id)
 	var node: CBNodeClassifier = _classifier_nodes[classifier.classifier_id]
 	_classifier_nodes.erase(classifier.classifier_id)
 	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():

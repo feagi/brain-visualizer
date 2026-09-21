@@ -1532,7 +1532,9 @@ func _refresh_memory_neuron_count_breakdown_async(cortical_id: StringName, gener
 	var d: Dictionary = out.decode_response_as_dict()
 	var short_term_count: int = int(d.get("short_term_neuron_count", 0))
 	var long_term_count: int = int(d.get("long_term_neuron_count", 0))
-	_apply_neuron_count_display(_line_neuron_count.current_int, short_term_count, long_term_count)
+	# Do not use cached reported_neuron_count here; it can stay 0 after runtime
+	# memory-neuron creation. Active total is always ST + LT.
+	_apply_neuron_count_display(short_term_count + long_term_count, short_term_count, long_term_count)
 
 func _apply_min_count_field_width(field: Control) -> void:
 	if field == null:

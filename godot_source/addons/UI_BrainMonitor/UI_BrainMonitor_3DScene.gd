@@ -4538,7 +4538,7 @@ func _selection_object_for_cortical_area(area: AbstractCorticalArea) -> GenomeOb
 	var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(area.cortical_ID)
 	if owner == null:
 		return area
-	if owner.scan_twin_id == area.cortical_ID:
+	if owner.is_scan_twin_id(area.cortical_ID):
 		return area
 	return owner
 
