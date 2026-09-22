@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=29 format=3 uid="uid://cjrivk0518jvv"]
+[gd_resource type="Theme" format=3 uid="uid://cjrivk0518jvv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -162,7 +162,6 @@ HBoxContainer_fatherest/base_type = &"HBoxContainer"
 HBoxContainer_fatherest/constants/separation = 32
 HSplitContainer/constants/separation = 20
 Label/font_sizes/font_size = 16
-TooltipLabel/font_sizes/font_size = 18
 Label_Header/base_type = &"Label"
 Label_Header/font_sizes/font_size = 20
 Label_Title/base_type = &"Label"
@@ -264,6 +263,7 @@ TitleBarContainer/styles/panel = SubResource("StyleBoxFlat_i4413")
 ToggleButton/base_type = &"TextureButton"
 ToggleButton/constants/size_x = 64
 ToggleButton/constants/size_y = 32
+TooltipLabel/font_sizes/font_size = 18
 VBoxContainer/constants/separation = 4
 VBoxContainer_adjacent/base_type = &"VBoxContainer"
 VBoxContainer_adjacent/constants/separation = 0
