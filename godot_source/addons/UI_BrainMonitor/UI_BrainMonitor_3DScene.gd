@@ -196,9 +196,7 @@ func _ready() -> void:
 		
 		# Ensure SubViewport has a World3D with proper environment
 		var subviewport = $SubViewport as SubViewport
-		# Tabbed brain monitors need local input coordinates for correct hover.
-		if BV.UI.temp_root_bm != null and BV.UI.temp_root_bm != self:
-			subviewport.handle_input_locally = true
+		_apply_tab_subviewport_input_mode()
 		# Always use a dedicated World3D per SubViewport. Sharing one World3D between temp_root and tab/split
 		# monitors (previous bootstrap path) can break rendering of meshes under the second viewport — e.g. child
 		# circuit plates visible in the main monitor but missing in split view.
@@ -217,6 +215,18 @@ func _notification(what: int) -> void:
 func _exit_tree() -> void:
 	_stop_continuous_selected_neuron_firing(false)
 	_disconnect_continuous_fire_timestep_signal()
+
+
+## Tab/split monitors need SubViewport-local mouse coords so overlay buttons
+## (Connectome) receive _gui_input. temp_root_bm is often assigned after _ready.
+func _apply_tab_subviewport_input_mode() -> void:
+	var subviewport := $SubViewport as SubViewport
+	if subviewport == null:
+		return
+	if BV == null or BV.UI == null:
+		return
+	if BV.UI.temp_root_bm != null and BV.UI.temp_root_bm != self:
+		subviewport.handle_input_locally = true
 
 
 ## Ensure SubViewport matches this container size to avoid UI scale drift.
@@ -454,7 +464,9 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 			top_row_layer.add_child(_combo)
 		_combo.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		_combo.position = Vector2(8, 8)
+		_combo.z_index = BrainObjectsCombo.TAB_OVERLAY_Z_INDEX
 		_combo.mouse_filter = Control.MOUSE_FILTER_STOP
+		_apply_tab_subviewport_input_mode()
 		_combo.set_3d_context(self, _representing_region)
 	
 

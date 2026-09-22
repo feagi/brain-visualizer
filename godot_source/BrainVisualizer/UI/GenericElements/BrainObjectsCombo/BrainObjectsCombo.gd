@@ -55,6 +55,10 @@ const ICON_BUTTON_PLATE_COLOR := Color8(67, 67, 67)
 const CONNECTOME_PLATE_PAD_X: int = 12
 ## In-place text pop. Scale avoids a layout resize that cancels hover.
 const CONNECTOME_HOVER_SCALE: float = 1.1
+## Same overlay stacking as CircuitBuilder.tscn so tab chrome stays above the view.
+const TAB_OVERLAY_Z_INDEX: int = 10
+## Expander between list and + on a hamburger row. Ignores mouse so the plate is not a button.
+const COMBO_ROW_GAP_NAME: StringName = &"RowGap"
 const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
 const CUSTOM_TOOLTIP_TRIGGER_SCRIPT = preload("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTooltipTrigger.gd")
@@ -65,6 +69,7 @@ const SIZE_SCALE_2D: float = 0.8
 var _list_popup: FilterableListPopup
 ## True after [method apply_custom_topbar_tooltips] succeeded for this instance (TopBar or tab host).
 var _hosted_styled_tooltips_applied: bool = false
+var _plus_hover_tween: Tween = null
 
 ## Ordered ids for the Connectome hamburger rows.
 static func connectome_menu_item_ids() -> PackedStringArray:
@@ -84,10 +89,10 @@ static func connectome_hover_scale(hovered: bool) -> float:
 ## Scene node names under %MenuItems, same order as [method connectome_menu_item_ids].
 static func connectome_menu_row_node_names() -> PackedStringArray:
 	return PackedStringArray([
-		"BrainRegionsList",
-		"InterconnectAreasList",
-		"MemoryAreasList",
-		"ClassifierList",
+		"BrainRegionsRow",
+		"InterconnectAreasRow",
+		"MemoryAreasRow",
+		"ClassifierRow",
 	])
 
 
@@ -99,18 +104,18 @@ func _ready() -> void:
 	_connectome_menu = %ConnectomeMenu
 	_connectome_menu_items = %MenuItems
 	_btn_brain_regions_list = %BrainRegionsList
-	_btn_brain_regions_add = %BrainRegionsList/HBoxContainer/TextureButton_BrainRegions
+	_btn_brain_regions_add = %TextureButton_BrainRegions
 	_btn_interconnect_list = %InterconnectAreasList
-	_btn_interconnect_add = %InterconnectAreasList/HBoxContainer/TextureButton_Interconnect
+	_btn_interconnect_add = %TextureButton_Interconnect
 	_btn_memory_list = %MemoryAreasList
-	_btn_memory_add = %MemoryAreasList/HBoxContainer/TextureButton_Memory
+	_btn_memory_add = %TextureButton_Memory
 	_btn_classifier_list = %ClassifierList
-	_btn_classifier_add = %ClassifierList/HBoxContainer/TextureButton_Classifier
+	_btn_classifier_add = %TextureButton_Classifier
 	_btn_rearrange_layout = $RearrangePanel/MarginContainer/TextureButton_Rearrange
-	_btn_inputs_list = $MainGroup/MarginContainer/ButtonsRow/InputsList
-	_btn_inputs_add = $MainGroup/MarginContainer/ButtonsRow/InputsList/HBoxContainer/TextureButton_Inputs
-	_btn_outputs_list = $MainGroup/MarginContainer/ButtonsRow/OutputsList
-	_btn_outputs_add = $MainGroup/MarginContainer/ButtonsRow/OutputsList/HBoxContainer/TextureButton_Outputs
+	_btn_inputs_list = %InputsList
+	_btn_inputs_add = %TextureButton_Inputs
+	_btn_outputs_list = %OutputsList
+	_btn_outputs_add = %TextureButton_Outputs
 	_group_main = $MainGroup
 	_group_rearrange = $RearrangePanel
 	_spacer_after_connectome = $Spacer_AfterConnectome
@@ -144,6 +149,7 @@ func _ready() -> void:
 	_btn_outputs_list.pressed.connect(_open_outputs)
 	_btn_outputs_add.pressed.connect(_add_output_area)
 	_set_connectome_menu_row_focus_none()
+	_wire_combo_add_button_hovers()
 	align_connectome_menu_add_buttons(_connectome_menu_items)
 	if _activity_visualization_dropdown != null:
 		_activity_visualization_dropdown.activity_mode_changed.connect(_on_monitor_activity_mode_changed)
@@ -264,11 +270,18 @@ func apply_custom_topbar_tooltips() -> void:
 func _apply_shared_combo_spacing_tokens() -> void:
 	var list_hbox_paths := []
 	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeButton/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer/BrainRegionsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/ClassifierRow/HBoxContainer"))
+	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/ClassifierRow/HBoxContainer/ClassifierList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer"))
+	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer"))
+	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList/HBoxContainer"))
 	COMBO_STYLER.apply_list_hbox_spacing(self, list_hbox_paths)
 	var spacer_paths := []
 	spacer_paths.append(NodePath("Spacer_AfterConnectome"))
@@ -339,6 +352,9 @@ func _style_connectome_like_icon_buttons() -> void:
 func _wire_connectome_label_hover() -> void:
 	if _connectome_hover_wired or _btn_connectome == null:
 		return
+	var connectome_hbox: Control = _btn_connectome.get_node_or_null("HBoxContainer") as Control
+	if connectome_hbox != null:
+		connectome_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _connectome_label != null:
 		_connectome_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_connectome_label.resized.connect(_center_connectome_label_pivot)
@@ -432,17 +448,16 @@ func set_global_topbar_mode() -> void:
 
 ## Circuits sit on the main top bar strip; they stay inside the Connectome menu on tab combos.
 func _place_circuits_on_topbar_strip() -> void:
-	if _btn_brain_regions_list == null:
+	var circuits_row: Control = %BrainRegionsRow
+	if circuits_row.get_parent() == self:
 		return
-	if _btn_brain_regions_list.get_parent() == self:
-		return
-	var menu_parent: Node = _btn_brain_regions_list.get_parent()
+	var menu_parent: Node = circuits_row.get_parent()
 	if menu_parent != null:
-		menu_parent.remove_child(_btn_brain_regions_list)
-	add_child(_btn_brain_regions_list)
-	move_child(_btn_brain_regions_list, 0)
-	_btn_brain_regions_list.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_btn_brain_regions_list.visible = true
+		menu_parent.remove_child(circuits_row)
+	add_child(circuits_row)
+	move_child(circuits_row, 0)
+	circuits_row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	circuits_row.visible = true
 	if _group_connectome != null:
 		_group_connectome.visible = false
 	if _btn_connectome != null:
@@ -788,6 +803,48 @@ func _apply_hover_visual(button: Control, hovered: bool) -> void:
 	# Subtle scale-up on hover to match main 3D view visual feedback style
 	button.scale = HOVER_SCALE if hovered else NORMAL_SCALE
 
+
+## Plus is a sibling of the list button. Wire its hover pop independently.
+func _wire_combo_add_button_hovers() -> void:
+	var add_buttons: Array[TextureButton] = [
+		_btn_brain_regions_add,
+		_btn_interconnect_add,
+		_btn_memory_add,
+		_btn_classifier_add,
+		_btn_inputs_add,
+		_btn_outputs_add,
+	]
+	for plus in add_buttons:
+		_wire_combo_add_button_hover(plus)
+
+
+func _wire_combo_add_button_hover(plus: TextureButton) -> void:
+	if plus == null:
+		return
+	plus.mouse_entered.connect(_on_combo_add_hover.bind(plus, true))
+	plus.mouse_exited.connect(_on_combo_add_hover.bind(plus, false))
+	plus.resized.connect(_on_combo_add_resized.bind(plus))
+	_on_combo_add_resized(plus)
+
+
+func _on_combo_add_resized(plus: Control) -> void:
+	if plus == null:
+		return
+	plus.pivot_offset = plus.size * 0.5
+
+
+func _on_combo_add_hover(plus: Control, hovered: bool) -> void:
+	if plus == null:
+		return
+	plus.pivot_offset = plus.size * 0.5
+	if _plus_hover_tween != null and _plus_hover_tween.is_running():
+		_plus_hover_tween.kill()
+	_plus_hover_tween = create_tween()
+	_plus_hover_tween.set_trans(Tween.TRANS_SINE)
+	_plus_hover_tween.set_ease(Tween.EASE_OUT)
+	var scale_factor: float = BasePanelContainerButton.content_hover_scale(hovered, true)
+	_plus_hover_tween.tween_property(plus, "scale", Vector2(scale_factor, scale_factor), BasePanelContainerButton.HOVER_TWEEN_SECONDS)
+
 ## Create and attach the reusable list popup if needed.
 func _ensure_list_popup() -> void:
 	if _list_popup != null:
@@ -796,8 +853,8 @@ func _ensure_list_popup() -> void:
 	add_child(_list_popup)
 
 
-## Stretch each hamburger row to the menu width and push + buttons to the right edge.
-## Walks %MenuItems so a later classifier row gets the same alignment automatically.
+## Stretch each hamburger row to the menu width. List stays icon+text; the gap
+## absorbs leftover space so + sits on the shared plate at the right edge.
 static func align_connectome_menu_add_buttons(menu_items: VBoxContainer) -> void:
 	if menu_items == null:
 		return
@@ -812,10 +869,24 @@ static func align_connectome_menu_add_buttons(menu_items: VBoxContainer) -> void
 			continue
 		hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		for hbox_child in hbox.get_children():
-			if hbox_child is Label:
-				(hbox_child as Label).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			elif hbox_child is TextureButton:
+			if hbox_child is TextureButton:
 				(hbox_child as TextureButton).size_flags_horizontal = Control.SIZE_SHRINK_END
+			elif hbox_child.name == String(COMBO_ROW_GAP_NAME):
+				var gap: Control = hbox_child as Control
+				gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			else:
+				var list_btn: Control = hbox_child as Control
+				list_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+				_shrink_combo_list_labels(list_btn)
+
+
+## List labels must not expand-fill. That used to put the text hit box under +.
+static func _shrink_combo_list_labels(node: Node) -> void:
+	if node is Label:
+		(node as Label).size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	for child in node.get_children():
+		_shrink_combo_list_labels(child)
 
 
 ## Menu-row buttons must not steal focus or the hamburger closes before the click lands.
@@ -867,6 +938,12 @@ func _close_connectome_menu() -> void:
 	_connectome_menu.hide()
 
 
+## Keep the hamburger open when focus moves to the popup Window, but the
+## pointer is still on the trigger (Brain Monitor: button lives in a SubViewport).
+static func should_keep_connectome_menu_open_after_focus_lost(pointer_over_menu: bool, pointer_over_button: bool) -> bool:
+	return pointer_over_menu or pointer_over_button
+
+
 ## Close the hamburger when the trigger loses focus, unless the click stayed in the menu.
 func _on_connectome_focus_exited() -> void:
 	call_deferred("_close_connectome_menu_if_focus_lost")
@@ -875,9 +952,22 @@ func _on_connectome_focus_exited() -> void:
 func _close_connectome_menu_if_focus_lost() -> void:
 	if not is_connectome_menu_open():
 		return
-	if _is_pointer_over_connectome_menu():
+	if should_keep_connectome_menu_open_after_focus_lost(_is_pointer_over_connectome_menu(), _is_pointer_over_connectome_button()):
 		return
 	_close_connectome_menu()
+
+
+## True when the Connectome trigger owns the pointer in its own viewport.
+func _is_pointer_over_connectome_button() -> bool:
+	if _btn_connectome == null:
+		return false
+	var vp := _btn_connectome.get_viewport()
+	if vp == null:
+		return false
+	var hovered: Control = vp.gui_get_hovered_control()
+	if hovered == null:
+		return false
+	return _btn_connectome == hovered or _btn_connectome.is_ancestor_of(hovered)
 
 
 func _is_pointer_over_connectome_menu() -> bool:
