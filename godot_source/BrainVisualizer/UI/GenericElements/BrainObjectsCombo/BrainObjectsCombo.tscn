@@ -122,7 +122,7 @@ texture = ExtResource("3_icon_region")
 expand_mode = 1
 
 [node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer/BrainRegionsList/HBoxContainer"]
-mouse_filter = 0
+mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Circuits"
 metadata/hover_scale_target = true
@@ -177,7 +177,7 @@ texture = ExtResource("4_icon_interconnect")
 expand_mode = 1
 
 [node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList/HBoxContainer"]
-mouse_filter = 0
+mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Interconnect Areas"
 metadata/hover_scale_target = true
@@ -232,7 +232,7 @@ texture = ExtResource("6_icon_memory")
 expand_mode = 1
 
 [node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList/HBoxContainer"]
-mouse_filter = 0
+mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Memory Areas"
 metadata/hover_scale_target = true
@@ -287,7 +287,7 @@ texture = ExtResource("6_icon_classifier")
 expand_mode = 1
 
 [node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/ClassifierRow/HBoxContainer/ClassifierList/HBoxContainer"]
-mouse_filter = 0
+mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Classifier"
 metadata/hover_scale_target = true
@@ -359,7 +359,7 @@ texture = ExtResource("7_icon_input")
 expand_mode = 1
 
 [node name="Label" type="Label" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList/HBoxContainer"]
-mouse_filter = 0
+mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Inputs"
 metadata/hover_scale_target = true
@@ -410,7 +410,7 @@ texture = ExtResource("8_icon_output")
 expand_mode = 1
 
 [node name="Label" type="Label" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList/HBoxContainer"]
-mouse_filter = 0
+mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Outputs"
 metadata/hover_scale_target = true

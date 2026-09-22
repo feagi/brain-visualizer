@@ -60,6 +60,16 @@ static func should_scale_list_label_on_hover(pointer_over_label: bool, pointer_o
 	return pointer_over_label and not pointer_over_plus
 
 
+## Label must PASS so hover stays on the text while the parent button still gets the click.
+static func list_label_mouse_filter_for_parent_press() -> MouseFilter:
+	return MOUSE_FILTER_PASS
+
+
+## Clicking the label still counts as hovering the list button.
+static func is_list_button_press_hovered(button_hovered: bool, label_hovered: bool) -> bool:
+	return button_hovered or label_hovered
+
+
 ## Text / + pop in place. Whole-row targets (no + child) keep the smaller plate scale.
 static func content_hover_scale(hovered: bool, target_is_text_or_plus: bool) -> float:
 	if not hovered:
@@ -153,6 +163,8 @@ func _ready() -> void:
 		_center_scale_pivot(_hover_scale_target)
 		if not _hover_scale_target.resized.is_connected(_on_hover_scale_target_resized):
 			_hover_scale_target.resized.connect(_on_hover_scale_target_resized)
+		if _hover_scale_target is Label:
+			_hover_scale_target.mouse_filter = list_label_mouse_filter_for_parent_press()
 	_wire_plus_hover_scale()
 	if BV and BV.UI:
 		BV.UI.theme_changed.connect(_on_theme_changed)
@@ -250,7 +262,7 @@ func _gui_input(event: InputEvent) -> void:
 		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 			return
 		if mouse_event.pressed:
-			if not should_emit_press_for_gui_mouse_button(_disabled, _hovered, mouse_event):
+			if not should_emit_press_for_gui_mouse_button(_disabled, is_list_button_press_hovered(_hovered, _is_list_label_hovered()), mouse_event):
 				return
 			var pressed_style := _get_plate_stylebox("panel_pressed")
 			if pressed_style != null:

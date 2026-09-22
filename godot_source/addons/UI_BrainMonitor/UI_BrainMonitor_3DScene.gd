@@ -84,6 +84,12 @@ var _qc_guide_max_distance_on_target: float = 300.0
 var _qc_guide_off_target_depth: float = 60.0
 var _qc_bridge_off_target_depth: float = 150.0
 var _qc_last_mouse_entry_pos: Vector2 = Vector2.ZERO
+## Classifier destination: hold the guide end on the stamp center instead of the mouse.
+var _qc_guide_end_locked: bool = false
+var _qc_guide_locked_end: Vector3 = Vector3.ZERO
+## Split view: the scene that shows the classifier holds the bridge end on the stamp.
+var _qc_bridge_end_locked: bool = false
+var _qc_bridge_locked_end: Vector3 = Vector3.ZERO
 
 # Bridge segment for cross-view (split-screen) continuation
 var _qc_bridge_active: bool = false
@@ -897,6 +903,32 @@ func _raycast_first_cortical_renderer_hit(space: PhysicsDirectSpaceState3D, base
 			continue
 		return {}
 	return {}
+
+
+## Volume center of the classifier stamp under the ray.
+## Returns [constant Vector3.INF] when the ray is not on a stamp, so a stamp at the world origin still anchors.
+## Another cortical volume in front of the stamp keeps the original ray hit.
+func _quick_connect_classifier_stamp_anchor(space: PhysicsDirectSpaceState3D, ray_query: PhysicsRayQueryParameters3D, first_hit: Dictionary) -> Vector3:
+	var cortical_hit: Dictionary = _raycast_first_cortical_renderer_hit(space, ray_query)
+	if cortical_hit.is_empty():
+		return Vector3.INF
+	var collider: Node = cortical_hit.get(&"collider") as Node
+	if collider == null:
+		return Vector3.INF
+	var renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer = collider.get_parent() as UI_BrainMonitor_AbstractCorticalAreaRenderer
+	if renderer == null:
+		return Vector3.INF
+	var viz: UI_BrainMonitor_CorticalArea = renderer.get_parent_BM_abstraction()
+	if viz == null or viz.cortical_area == null:
+		return Vector3.INF
+	var other_cortical_in_front: bool = false
+	if not first_hit.is_empty():
+		var blocking_collider: Node = first_hit.get(&"collider") as Node
+		if blocking_collider != null and blocking_collider.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
+			other_cortical_in_front = blocking_collider.get_parent() != renderer
+	if not GenomeClassifier.quick_connect_should_anchor_on_stamp(viz.cortical_area.is_classifier_kernel_memory(), other_cortical_in_front):
+		return Vector3.INF
+	return viz.get_volume_world_center()
 
 
 func _emit_tab_hover_event() -> void:
@@ -1938,25 +1970,32 @@ func _handle_cortical_pick_click_event(
 					var clicked_area: AbstractCorticalArea = hit_parent_parent.cortical_area
 					var clicked_object: GenomeObject = _selection_object_for_cortical_area(clicked_area)
 					var selection_system: SelectionSystem = BV.UI.selection_system
-					if selection_system.is_highlighted(clicked_object):
-						selection_system.remove_from_highlighted(clicked_object)
-					elif clicked_object is GenomeClassifier:
+					# Quick connect destination is the clicked object alone. Leaving the source
+					# highlighted made the classifier click look like a multi-select and skipped Establish.
+					if quick_connect_override_active and not bm_input_event.ctrl_pressed:
+						selection_system.clear_all_highlighted()
 						selection_system.add_to_highlighted(clicked_object)
+						selection_system.select_objects(ctx, [clicked_object])
 					else:
-						var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(clicked_area)
-						var filtered_group: Array[AbstractCorticalArea] = []
-						if unit_members.size() > 1:
-							var clicked_region = clicked_area.current_parent_region
-							for m in unit_members:
-								if m.current_parent_region == clicked_region:
-									filtered_group.append(m)
-						if filtered_group.size() > 1:
-							for member in filtered_group:
-								if not selection_system.is_highlighted(member):
-									selection_system.add_to_highlighted(member)
+						if selection_system.is_highlighted(clicked_object):
+							selection_system.remove_from_highlighted(clicked_object)
+						elif clicked_object is GenomeClassifier:
+							selection_system.add_to_highlighted(clicked_object)
 						else:
-							selection_system.add_to_highlighted(clicked_area)
-					BV.UI.selection_system.select_objects(ctx)
+							var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(clicked_area)
+							var filtered_group: Array[AbstractCorticalArea] = []
+							if unit_members.size() > 1:
+								var clicked_region = clicked_area.current_parent_region
+								for m in unit_members:
+									if m.current_parent_region == clicked_region:
+										filtered_group.append(m)
+							if filtered_group.size() > 1:
+								for member in filtered_group:
+									if not selection_system.is_highlighted(member):
+										selection_system.add_to_highlighted(member)
+							else:
+								selection_system.add_to_highlighted(clicked_area)
+						BV.UI.selection_system.select_objects(ctx)
 					if BV.UI != null:
 						BV.UI.refresh_area_firing_recorder_from_ctrl_selection()
 				return
@@ -2049,9 +2088,15 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 			if need_visual:
 				var end_point: Vector3
 				var is_over_cortical: bool = false
+				var anchor_on_classifier: bool = false
 				# Default to thin guide when not over a cortical area
 				_qc_guide_current_radius = _qc_guide_radius_thin
-				if hit.is_empty():
+				if _qc_guide_active and _qc_guide_end_locked:
+					end_point = _qc_guide_locked_end
+					is_over_cortical = true
+					anchor_on_classifier = true
+					_qc_guide_current_radius = _qc_guide_radius_thick
+				elif hit.is_empty():
 					# Fallback: keep at the mouse tip but limit depth (Z) relative to camera
 					var rq: PhysicsRayQueryParameters3D = bm_input_event.get_ray_query()
 					var ray_from: Vector3 = rq.from
@@ -2074,8 +2119,15 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					is_over_cortical = collider_parent is UI_BrainMonitor_AbstractCorticalAreaRenderer
 					if is_over_cortical:
 						_qc_guide_current_radius = _qc_guide_radius_thick
-					# Cap distance when over cortical as well (using a larger cap)
-					if _qc_guide_active:
+					var stamp_anchor: Vector3 = _quick_connect_classifier_stamp_anchor(current_space, bm_input_event.get_ray_query(), hit)
+					if stamp_anchor != Vector3.INF:
+						end_point = stamp_anchor
+						is_over_cortical = true
+						anchor_on_classifier = true
+						_qc_guide_current_radius = _qc_guide_radius_thick
+					# Cap distance when over cortical as well (using a larger cap).
+					# A classifier anchor must stay on the stamp, so it is not shortened.
+					elif _qc_guide_active:
 						var vec2: Vector3 = end_point - _qc_guide_start
 						var d2: float = vec2.length()
 						if d2 > _qc_guide_max_distance_on_target:
@@ -2089,9 +2141,11 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					BV.UI.qc_last_source_scene_name = name
 					BV.UI.qc_last_source_start = _qc_guide_start
 					BV.UI.qc_last_source_end = end_point
-					update_quick_connect_guide(end_point)
-				elif source_bm != null and source_bm != self:
-					# We are a non-source BM: draw/update the bridge segment using the SAME curve logic
+					update_quick_connect_guide(end_point, anchor_on_classifier)
+				elif source_bm != null and source_bm != self and _is_mouse_hovering_viewport and GenomeClassifier.quick_connect_should_draw_cross_scene_bridge(source_bm._qc_guide_end_locked):
+					# We are a non-source BM: draw/update the bridge segment using the SAME curve logic.
+					# Skip when this viewport is not under the cursor, and once the destination end is stuck,
+					# so moving into the root scene does not grow a second line.
 					var sv: SubViewport = $SubViewport
 					var cam2: Camera3D = _pancake_cam
 					var mouse2: Vector2 = sv.get_mouse_position()
@@ -2112,11 +2166,14 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					# Small epsilon forward to avoid clipping with near plane
 					var epsilon2: float = 0.05
 					var bridge_start: Vector3 = edge_origin + edge_dir * (t2 + epsilon2)
-					# End: mouse tip in this scene (hit or forward depth), same as native logic above
+					# End: mouse tip in this scene (hit or forward depth), same as native logic above.
+					# A chosen classifier keeps the bridge on the stamp.
 					var curr_origin: Vector3 = cam2.project_ray_origin(mouse2)
 					var curr_dir: Vector3 = cam2.project_ray_normal(mouse2)
-					var bridge_end: Vector3 = end_point
-					if hit.is_empty():
+					var bridge_end: Vector3 = _qc_bridge_locked_end if _qc_bridge_end_locked else end_point
+					if _qc_bridge_end_locked:
+						is_over_cortical = true
+					elif hit.is_empty():
 						var depth2: float = _qc_bridge_off_target_depth
 						var proj2: float = max(0.0001, curr_dir.dot(forward2))
 						var scale2: float = depth2 / proj2
@@ -2130,6 +2187,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					# Emit combined log once both segments are available
 					if BV.UI.qc_last_source_scene_name != "" and BV.UI.qc_last_bridge_scene_name != "":
 						BV.UI.qc_log_both()
+				elif source_bm != null and source_bm != self:
+					_clear_bridge_segment()
 			var title_region: UI_BrainMonitor_BrainRegion3D = _pick_region_title_at_screen(_get_bm_mouse_position())
 			if title_region != null:
 				_apply_region_title_or_plate_hover(title_region)
@@ -3917,39 +3976,74 @@ func start_quick_connect_guide(source_area: AbstractCorticalArea) -> void:
 	if _qc_guide_material == null:
 		_qc_guide_material = _create_qc_guide_material()
 	_qc_guide_active = true
+	_qc_guide_end_locked = false
+	_qc_guide_locked_end = Vector3.ZERO
 	# Initialize with a tiny segment to avoid a frame of emptiness
 	update_quick_connect_guide(_qc_guide_start)
 
-## Updates the live guide's end position; call on hover world hit updates
-func update_quick_connect_guide(end_pos: Vector3) -> void:
+## Updates the live guide's end position; call on hover world hit updates.
+## [param preserve_end] keeps a classifier stamp anchor from being shortened by the distance cap.
+func update_quick_connect_guide(end_pos: Vector3, preserve_end: bool = false) -> void:
 	"""
 	Update the guide curve end point. No-ops if guide is not active.
 	"""
 	if not _qc_guide_active or _qc_guide_node == null:
 		return
-	_rebuild_qc_guide_curve(_qc_guide_start, end_pos)
+	_rebuild_qc_guide_curve(_qc_guide_start, end_pos, preserve_end or _qc_guide_end_locked)
+
+## Hold the quick-connect end on [param area]'s volume center (the classifier stamp).
+## Returns true when this scene has that volume. The source scene locks its guide;
+## a split-view scene locks the bridge that continues into it.
+func stick_quick_connect_end_to_area(area: AbstractCorticalArea) -> bool:
+	if area == null:
+		return false
+	var viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(area.cortical_ID)
+	if viz == null:
+		return false
+	var end_pos: Vector3 = viz.get_volume_world_center()
+	if not _qc_guide_active:
+		return false
+	_qc_guide_end_locked = true
+	_qc_guide_locked_end = end_pos
+	_qc_guide_current_radius = _qc_guide_radius_thick
+	_set_quick_connect_guide_color(true)
+	update_quick_connect_guide(end_pos, true)
+	return true
+
+## Drop a classifier end lock. The source guide is freed separately by [method stop_quick_connect_guide].
+func release_quick_connect_end_stick() -> void:
+	_qc_guide_end_locked = false
+	_qc_guide_locked_end = Vector3.ZERO
+	_qc_bridge_end_locked = false
+	_qc_bridge_locked_end = Vector3.ZERO
+	if not _qc_guide_active:
+		_clear_bridge_segment()
 
 ## Stops and clears the live guide curve if present
 func stop_quick_connect_guide() -> void:
 	"""
 	Stop rendering the guide and free any guide nodes.
 	"""
+	_qc_guide_end_locked = false
+	_qc_guide_locked_end = Vector3.ZERO
 	if _qc_guide_node != null:
 		_qc_guide_node.queue_free()
 		_qc_guide_node = null
 	_qc_guide_active = false
 
-## Internal: rebuilds the guide from start to end as a Bézier arc using thin cylinder segments
-func _rebuild_qc_guide_curve(start_pos: Vector3, end_pos: Vector3) -> void:
+## Internal: rebuilds the guide from start to end as a Bézier arc using thin cylinder segments.
+## [param preserve_end] leaves the endpoint on a classifier stamp instead of clamping it short.
+func _rebuild_qc_guide_curve(start_pos: Vector3, end_pos: Vector3, preserve_end: bool = false) -> void:
 	# Clear old segments
 	for child in _qc_guide_node.get_children():
 		child.queue_free()
 	# Compute a pleasing upward arc
 	var raw_direction := (end_pos - start_pos)
-	var distance := clamp(raw_direction.length(), _qc_guide_min_distance, _qc_guide_max_distance)
+	var raw_length := raw_direction.length()
+	var distance := raw_length if preserve_end else clamp(raw_length, _qc_guide_min_distance, _qc_guide_max_distance)
 	# Clamp end point to max distance to avoid runaway curves
 	var direction := raw_direction
-	if raw_direction.length() > distance:
+	if not preserve_end and raw_length > distance:
 		direction = raw_direction.normalized() * distance
 		end_pos = start_pos + direction
 	var mid := (start_pos + end_pos) / 2.0
@@ -4016,7 +4110,7 @@ func _update_or_create_bridge_segment(start_pos: Vector3, end_pos: Vector3) -> v
 		_qc_guide_material = _create_qc_guide_material()
 	_qc_bridge_active = true
 	# Rebuild curved bridge using SAME logic as main guide
-	_rebuild_qc_bridge_curve(start_pos, end_pos)
+	_rebuild_qc_bridge_curve(start_pos, end_pos, _qc_bridge_end_locked)
 
 ## Bridge: clear if exists
 func _clear_bridge_segment() -> void:
@@ -4025,16 +4119,18 @@ func _clear_bridge_segment() -> void:
 		_qc_bridge_node = null
 	_qc_bridge_active = false
 
-## Bridge: build Bezier curve identical to the main guide, but into the bridge node
-func _rebuild_qc_bridge_curve(start_pos: Vector3, end_pos: Vector3) -> void:
+## Bridge: build Bezier curve identical to the main guide, but into the bridge node.
+## [param preserve_end] keeps a locked classifier stamp from being shortened.
+func _rebuild_qc_bridge_curve(start_pos: Vector3, end_pos: Vector3, preserve_end: bool = false) -> void:
 	# Clear old segments
 	for child in _qc_bridge_node.get_children():
 		child.queue_free()
 	# Compute arc with same clamping rules
 	var raw_direction := (end_pos - start_pos)
-	var distance := clamp(raw_direction.length(), _qc_guide_min_distance, _qc_guide_max_distance)
+	var raw_length := raw_direction.length()
+	var distance := raw_length if preserve_end else clamp(raw_length, _qc_guide_min_distance, _qc_guide_max_distance)
 	var direction := raw_direction
-	if raw_direction.length() > distance:
+	if not preserve_end and raw_length > distance:
 		direction = raw_direction.normalized() * distance
 		end_pos = start_pos + direction
 	var mid := (start_pos + end_pos) / 2.0

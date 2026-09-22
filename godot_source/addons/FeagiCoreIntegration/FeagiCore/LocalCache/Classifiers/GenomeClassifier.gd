@@ -13,6 +13,12 @@ var kernel_area_id: StringName:
 	get: return _kernel_area_id
 var class_area_id: StringName:
 	get: return _class_area_id
+var training_mode: StringName:
+	get: return _training_mode
+var mask_area_id: StringName:
+	get: return _mask_area_id
+var kernel_size: Vector3i:
+	get: return _kernel_size
 var kernel_memory_id: StringName:
 	get: return _kernel_memory_id
 var class_memory_id: StringName:
@@ -20,6 +26,9 @@ var class_memory_id: StringName:
 
 var _kernel_area_id: StringName = &""
 var _class_area_id: StringName = &""
+var _training_mode: StringName = &"kernel"
+var _mask_area_id: StringName = &""
+var _kernel_size: Vector3i = Vector3i.ZERO
 var _kernel_memory_id: StringName = &""
 var _class_memory_id: StringName = &""
 ## Each binding is {field_area_id, scan_twin_id}. One trained assembly, one twin per field.
@@ -56,6 +65,10 @@ func apply_feagi_dict(data: Dictionary) -> void:
 	FEAGI_change_coordinates_3D(_coords_3d_from_feagi(data.get("coordinates_3d", [_coordinates_3D.x, _coordinates_3D.y, _coordinates_3D.z])))
 	_kernel_area_id = _optional_id(data.get("kernel_area_id", null))
 	_class_area_id = _optional_id(data.get("class_area_id", null))
+	_mask_area_id = _optional_id(data.get("mask_area_id", null))
+	var mode_text: String = str(data.get("training_mode", "kernel")).strip_edges()
+	_training_mode = &"scanner" if mode_text == "scanner" else &"kernel"
+	_kernel_size = _kernel_size_from_feagi(data.get("kernel_size", null))
 	_kernel_memory_id = StringName(str(data.get("kernel_memory_id", "")))
 	_class_memory_id = StringName(str(data.get("class_memory_id", "")))
 	_fields = _bindings_from_feagi(data)
@@ -175,7 +188,7 @@ static func stamp_visual_dimensions(memory_neuron_count: int, classifier_depth: 
 func references_input_id(area_id: StringName) -> bool:
 	if area_id == &"":
 		return false
-	return area_id == _kernel_area_id or area_id == _class_area_id or _binding_for_field(area_id) != null
+	return area_id == _kernel_area_id or area_id == _class_area_id or area_id == _mask_area_id or _binding_for_field(area_id) != null
 
 
 ## Kernel / class / field area IDs that should draw a visual inbound line to this object.
@@ -185,6 +198,8 @@ func inbound_visual_source_ids() -> Array[StringName]:
 		sources.append(_kernel_area_id)
 	if _class_area_id != &"":
 		sources.append(_class_area_id)
+	if _mask_area_id != &"":
+		sources.append(_mask_area_id)
 	for binding in _fields:
 		var field_id: StringName = binding.get("field_area_id", &"")
 		if field_id != &"":
@@ -202,8 +217,13 @@ func details_rows() -> Array[Dictionary]:
 		parent_name = String(current_parent_region.friendly_name)
 	rows.append(_details_row("parent_circuit", "Parent Circuit", parent_name, true))
 	rows.append(_details_row("coordinates_3d", "3D Position", str(coordinates_3D), true))
-	rows.append(_details_row("kernel_area", "Kernel Area", _area_name(_kernel_area_id), true))
-	rows.append(_details_row("class_area", "Class Area", _area_name(_class_area_id), true))
+	rows.append(_details_row("training_mode", "Training Mode", String(_training_mode), true))
+	if _training_mode == &"scanner":
+		rows.append(_details_row("mask_area", "Mask Area", _area_name(_mask_area_id), true))
+		rows.append(_details_row("kernel_size", "Kernel Size", "%s x %s x %s" % [_kernel_size.x, _kernel_size.y, _kernel_size.z], true))
+	else:
+		rows.append(_details_row("kernel_area", "Kernel Area", _area_name(_kernel_area_id), true))
+		rows.append(_details_row("class_area", "Class Area", _area_name(_class_area_id), true))
 	rows.append(_details_row("fields", "Fields", _field_names_text(), false))
 	rows.append(_details_row("hidden_internals", "Hidden Internals", hidden_internals_text(), false))
 	return rows
@@ -249,6 +269,28 @@ static func should_hide_area_in_circuit_builder(area: AbstractCorticalArea) -> b
 	if area == null:
 		return false
 	return area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin()
+
+
+## Quick-connect guide sticks to the classifier stamp center.
+## A different cortical volume in front of the stamp keeps the ray hit.
+static func quick_connect_should_anchor_on_stamp(is_classifier_stamp: bool, other_cortical_in_front: bool) -> bool:
+	return is_classifier_stamp and not other_cortical_in_front
+
+
+## A stuck destination owns the guide. Other viewports, including the root scene, must not grow a bridge.
+static func quick_connect_should_draw_cross_scene_bridge(destination_end_locked: bool) -> bool:
+	return not destination_end_locked
+
+
+## Destination click while the source area is still highlighted.
+## Ctrl keeps multi-select. Otherwise the classifier is the quick-connect destination.
+static func destination_classifier_from_selection(objects: Array[GenomeObject], ctrl_held: bool) -> GenomeClassifier:
+	if ctrl_held or objects == null or objects.is_empty():
+		return null
+	var classifiers: Array[GenomeClassifier] = GenomeObject.filter_classifiers(objects)
+	if classifiers.is_empty():
+		return null
+	return classifiers[0]
 
 
 ## True when Brain Monitor must not spawn this area as a sibling volume.
@@ -388,4 +430,11 @@ static func _coords_3d_from_feagi(value: Variant) -> Vector3i:
 		return Vector3i(int(arr[0]), int(arr[1]), int(arr[2]))
 	if value is Vector3i:
 		return value
+	return Vector3i.ZERO
+
+
+static func _kernel_size_from_feagi(value: Variant) -> Vector3i:
+	if value is Array and (value as Array).size() >= 3:
+		var arr: Array = value as Array
+		return Vector3i(maxi(int(arr[0]), 0), maxi(int(arr[1]), 0), maxi(int(arr[2]), 0))
 	return Vector3i.ZERO

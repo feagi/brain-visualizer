@@ -319,6 +319,17 @@ func spawn_edit_classifier(editing_classifier: GenomeClassifier) -> void:
 	var edit_classifier: WindowEditClassifier = _default_spawn_window(_PREFAB_EDIT_CLASSIFIER, WindowEditClassifier.WINDOW_NAME) as WindowEditClassifier
 	edit_classifier.setup(editing_classifier)
 
+## Clicking a classifier while its editor is open reloads that editor.
+## The same classifier refreshes live memory counts. A different classifier replaces the form.
+func refresh_open_classifier_editor(classifier: GenomeClassifier) -> void:
+	if classifier == null:
+		return
+	var existing: WindowEditClassifier = loaded_windows.get(WindowEditClassifier.WINDOW_NAME, null) as WindowEditClassifier
+	if existing == null:
+		spawn_edit_classifier(classifier)
+		return
+	existing.apply_selection(classifier)
+
 func spawn_3d_brain_monitor_tab(region: BrainRegion, force: bool = false) -> void:
 	if region == null:
 		push_error("WindowManager: spawn_3d_brain_monitor_tab called with NULL region!")

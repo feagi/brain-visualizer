@@ -1621,7 +1621,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 
 
 ## Adds a custom memory cortical area
-func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, parent_region: BrainRegion, kernel_area_id: StringName, class_area_id: StringName) -> FeagiRequestOutput:
+func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, parent_region: BrainRegion, training_mode: String, kernel_area_id: StringName, class_area_id: StringName, mask_area_id: StringName, kernel_size: Vector3i) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -1631,10 +1631,15 @@ func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, 
 	var dict_to_send: Dictionary = {
 		"name": classifier_name,
 		"brain_region_id": parent_region.region_ID,
-		"kernel_area_id": kernel_area_id,
-		"class_area_id": class_area_id,
+		"training_mode": training_mode,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 	}
+	if training_mode == "scanner":
+		dict_to_send["mask_area_id"] = String(mask_area_id)
+		dict_to_send["kernel_size"] = [kernel_size.x, kernel_size.y, kernel_size.z]
+	else:
+		dict_to_send["kernel_area_id"] = String(kernel_area_id)
+		dict_to_send["class_area_id"] = String(class_area_id)
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_genome_classifier, dict_to_send)
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
@@ -1741,7 +1746,7 @@ func delete_classifier(deleting_classifier: GenomeClassifier) -> FeagiRequestOut
 
 
 ## PUT /v1/cortical_area/classifier/{classifier_id} — classifier assembly fields, not cortical-area neuron params.
-func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: String, coordinates_3d: Vector3i, parent_region_id: StringName, kernel_area_id: StringName, class_area_id: StringName) -> FeagiRequestOutput:
+func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: String, coordinates_3d: Vector3i, parent_region_id: StringName, training_mode: String, kernel_area_id: StringName, class_area_id: StringName, mask_area_id: StringName, kernel_size: Vector3i) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -1755,7 +1760,11 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 	if String(parent_region_id).strip_edges().is_empty():
 		push_error("FEAGI Requests: Classifier parent circuit cannot be blank!")
 		return FeagiRequestOutput.requirement_fail("BLANK_PARENT")
-	if kernel_area_id == &"" or class_area_id == &"":
+	if training_mode == "scanner":
+		if mask_area_id == &"" or kernel_size.x < 1 or kernel_size.y < 1 or kernel_size.z < 1:
+			push_error("FEAGI Requests: Scanner training requires a mask and a kernel size!")
+			return FeagiRequestOutput.requirement_fail("BLANK_INPUTS")
+	elif kernel_area_id == &"" or class_area_id == &"":
 		push_error("FEAGI Requests: Classifier kernel and class are required!")
 		return FeagiRequestOutput.requirement_fail("BLANK_INPUTS")
 	if not editing_classifier.classifier_id in FeagiCore.feagi_local_cache.classifiers:
@@ -1766,9 +1775,14 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 		"name": trimmed_name,
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3d),
 		"parent_region_id": String(parent_region_id),
-		"kernel_area_id": String(kernel_area_id),
-		"class_area_id": String(class_area_id),
+		"training_mode": training_mode,
 	}
+	if training_mode == "scanner":
+		dict_to_send["mask_area_id"] = String(mask_area_id)
+		dict_to_send["kernel_size"] = [kernel_size.x, kernel_size.y, kernel_size.z]
+	else:
+		dict_to_send["kernel_area_id"] = String(kernel_area_id)
+		dict_to_send["class_area_id"] = String(class_area_id)
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(edit_address, dict_to_send)
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done
@@ -1806,11 +1820,29 @@ func attach_classifier_field(classifier: GenomeClassifier, field_area_id: String
 	await HTTP_FEAGI_request_worker.worker_done
 	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		# The field binding can already exist while the scan rule was missing.
+		# That response still means this Establish click is the one that finishes it
+		# once the server has the rule. Refresh and report success so the window closes.
+		if _classifier_field_already_mapped(FEAGI_response_data):
+			await _refresh_after_classifier_field_change(classifier)
+			print("FEAGI REQUEST: Field %s was already mapped onto classifier %s" % [field_area_id, classifier.classifier_id])
+			return FeagiRequestOutput.generic_success()
 		push_error("FEAGI Requests: Unable to map field %s onto classifier %s!" % [field_area_id, classifier.friendly_name])
 		return FEAGI_response_data
 	await _refresh_after_classifier_field_change(classifier)
 	print("FEAGI REQUEST: Mapped field %s onto classifier %s" % [field_area_id, classifier.classifier_id])
 	return FEAGI_response_data
+
+
+## True when FEAGI already has this field on the classifier.
+## Establish still completes: the scan rule is present and the window can close.
+func _classifier_field_already_mapped(output: FeagiRequestOutput) -> bool:
+	if output == null or not output.has_errored:
+		return false
+	var details: PackedStringArray = output.decode_response_as_generic_error_code()
+	if details.size() < 2:
+		return false
+	return String(details[1]).contains("already mapped to this classifier")
 
 
 ## DELETE /v1/cortical_area/classifier/{id}/field — removes that field's scan and twin only.

@@ -172,6 +172,14 @@ static func filter_cortical_areas(genome_objects: Array[GenomeObject]) -> Array[
 			output.append(object as AbstractCorticalArea)
 	return output
 
+## Given an Array of GenomeObjects, return only the classifiers.
+static func filter_classifiers(genome_objects: Array[GenomeObject]) -> Array[GenomeClassifier]:
+	var output: Array[GenomeClassifier] = []
+	for object in genome_objects:
+		if object is GenomeClassifier:
+			output.append(object as GenomeClassifier)
+	return output
+
 ## Given an Array of GenomeObjects, return only the BrainRegions
 static func filter_brain_regions(genome_objects: Array[GenomeObject]) -> Array[BrainRegion]:
 	var output: Array[BrainRegion] = []

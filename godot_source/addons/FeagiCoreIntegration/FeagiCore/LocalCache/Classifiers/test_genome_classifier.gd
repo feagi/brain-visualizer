@@ -17,6 +17,12 @@ func _initialize() -> void:
 	failures += _test_stamp_visual_dimensions()
 	failures += _test_details_rows_are_classifier_not_cortical_area()
 	failures += _test_singular_field_record_loads_as_one_binding()
+	failures += _test_missing_mode_loads_as_kernel()
+	failures += _test_scanner_mode_exposes_mask_and_kernel_size()
+	failures += _test_quick_connect_anchors_on_classifier_stamp()
+	failures += _test_quick_connect_bridge_stops_when_destination_is_stuck()
+	failures += _test_filter_classifiers_from_selection()
+	failures += _test_classifier_click_is_quick_connect_destination()
 	if failures == 0:
 		print("GenomeClassifier object-model tests: PASS")
 		quit(0)
@@ -241,5 +247,95 @@ func _test_singular_field_record_loads_as_one_binding() -> int:
 		return 1
 	if classifier.scan_twin_ids().size() != 1:
 		push_error("singular field load must not invent extra twins")
+		return 1
+	return 0
+
+
+func _test_missing_mode_loads_as_kernel() -> int:
+	var classifier: GenomeClassifier = _make_classifier()
+	if classifier.training_mode != &"kernel":
+		push_error("a classifier without training_mode must load as kernel mode")
+		return 1
+	if classifier.mask_area_id != &"":
+		push_error("kernel mode must not invent a mask")
+		return 1
+	return 0
+
+
+func _test_scanner_mode_exposes_mask_and_kernel_size() -> int:
+	var classifier := GenomeClassifier.new(&"clf-scan", &"Scan", Vector2i.ZERO, Vector3i.ZERO)
+	classifier.apply_feagi_dict({
+		"name": "Scan",
+		"training_mode": "scanner",
+		"mask_area_id": "mask",
+		"kernel_size": [8, 8, 3],
+		"kernel_memory_id": "kmem",
+		"class_memory_id": "cmem",
+	})
+	if classifier.training_mode != &"scanner":
+		push_error("scanner training_mode must load")
+		return 1
+	if classifier.mask_area_id != &"mask" or classifier.kernel_size != Vector3i(8, 8, 3):
+		push_error("scanner mode must keep the mask and kernel size")
+		return 1
+	if not classifier.references_input_id(&"mask"):
+		push_error("the mask is a referenced input")
+		return 1
+	var keys: PackedStringArray = PackedStringArray()
+	for row in classifier.details_rows():
+		keys.append(str(row.get("key", "")))
+	if not keys.has("mask_area") or not keys.has("kernel_size") or keys.has("kernel_area"):
+		push_error("scanner details must show the mask and kernel size")
+		return 1
+	return 0
+
+
+func _test_quick_connect_anchors_on_classifier_stamp() -> int:
+	if not GenomeClassifier.quick_connect_should_anchor_on_stamp(true, false):
+		push_error("quick connect must anchor on the classifier stamp")
+		return 1
+	if GenomeClassifier.quick_connect_should_anchor_on_stamp(true, true):
+		push_error("a cortical volume in front of the stamp must keep the ray hit")
+		return 1
+	if GenomeClassifier.quick_connect_should_anchor_on_stamp(false, false):
+		push_error("a normal cortical area must keep the ray hit")
+		return 1
+	return 0
+
+
+func _test_quick_connect_bridge_stops_when_destination_is_stuck() -> int:
+	if not GenomeClassifier.quick_connect_should_draw_cross_scene_bridge(false):
+		push_error("an unstuck destination may bridge into the hovered viewport")
+		return 1
+	if GenomeClassifier.quick_connect_should_draw_cross_scene_bridge(true):
+		push_error("a stuck destination must not bridge into the root scene")
+		return 1
+	return 0
+
+
+func _test_filter_classifiers_from_selection() -> int:
+	var classifier: GenomeClassifier = _make_classifier()
+	var objects: Array[GenomeObject] = [classifier]
+	var found: Array[GenomeClassifier] = GenomeObject.filter_classifiers(objects)
+	if found.size() != 1 or found[0] != classifier:
+		push_error("selection filter must keep the clicked classifier")
+		return 1
+	if not GenomeObject.filter_classifiers([]).is_empty():
+		push_error("an empty selection must not invent a classifier")
+		return 1
+	return 0
+
+
+func _test_classifier_click_is_quick_connect_destination() -> int:
+	var classifier: GenomeClassifier = _make_classifier()
+	var objects: Array[GenomeObject] = [classifier]
+	if GenomeClassifier.destination_classifier_from_selection(objects, false) != classifier:
+		push_error("a classifier click must be the quick-connect destination")
+		return 1
+	if GenomeClassifier.destination_classifier_from_selection(objects, true) != null:
+		push_error("ctrl multi-select must not force a classifier destination")
+		return 1
+	if GenomeClassifier.destination_classifier_from_selection([], false) != null:
+		push_error("an empty click must not pick a classifier destination")
 		return 1
 	return 0

@@ -17,6 +17,7 @@ func _initialize() -> void:
 	failures += _test_scene_keeps_object_combos_inside_menu()
 	failures += _test_classifier_row_uses_carbon_icon()
 	failures += _test_combo_rows_scale_label_not_hbox()
+	failures += _test_combo_list_labels_pass_mouse_to_parent()
 	failures += _test_scene_keeps_inputs_outputs_on_strip()
 	failures += _test_scene_menu_row_order()
 	failures += _test_align_connectome_menu_add_buttons_right_justifies_plus()
@@ -194,6 +195,32 @@ func _test_combo_rows_scale_label_not_hbox() -> int:
 			label_targets += 1
 	if label_targets < 6:
 		push_error("Each combo list label must be the hover scale target (found %d)" % label_targets)
+		return 1
+	return 0
+
+
+func _test_combo_list_labels_pass_mouse_to_parent() -> int:
+	var packed: PackedScene = load(COMBO_SCENE_PATH)
+	var state: SceneState = packed.get_state()
+	var passed: int = 0
+	for i in range(state.get_node_count()):
+		if str(state.get_node_name(i)) != "Label":
+			continue
+		var path_str := str(state.get_node_path(i, false))
+		if path_str.find("ConnectomeButton") >= 0:
+			continue
+		if path_str.find("List") < 0:
+			continue
+		var mouse_filter := 2
+		for p in range(state.get_node_property_count(i)):
+			if str(state.get_node_property_name(i, p)) == "mouse_filter":
+				mouse_filter = int(state.get_node_property_value(i, p))
+		if mouse_filter != 1:
+			push_error("Combo list label must PASS mouse so the list button receives the click: %s" % path_str)
+			return 1
+		passed += 1
+	if passed < 6:
+		push_error("Each combo list label must PASS mouse (found %d)" % passed)
 		return 1
 	return 0
 

@@ -50,6 +50,8 @@ var _source: AbstractCorticalArea = null
 var _destination: AbstractCorticalArea = null
 var _destination_classifier: GenomeClassifier = null
 var _destinations: Array[AbstractCorticalArea] = []
+## Brain monitor whose quick-connect end is locked onto the classifier stamp.
+var _qc_stuck_bm: UI_BrainMonitor_3DScene = null
 var _selected_morphology: BaseMorphology = null
 ## True when connecting a non-memory source to a memory destination with only one allowed morphology.
 var _memory_rule_locked: bool = false
@@ -130,15 +132,18 @@ func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.S
 			var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea
 			_set_source(cortical_area)
 		POSSIBLE_STATES.DESTINATION:
+			# The source area stays highlighted. A classifier click must still win
+			# unless Ctrl is held for multi-select.
+			var picked_classifier: GenomeClassifier = GenomeClassifier.destination_classifier_from_selection(objects, _is_ctrl_modifier_held())
+			if picked_classifier != null:
+				_set_classifier_destination(picked_classifier)
+				return
 			if _is_ctrl_modifier_held() or len(objects) != 1:
 				_sync_destinations_from_selected_objects(objects)
 				return
 			if len(objects) != 1:
 				return
 			if objects[0] is BrainRegion:
-				return
-			if objects[0] is GenomeClassifier:
-				_set_classifier_destination(objects[0] as GenomeClassifier)
 				return
 			_destination_classifier = null
 			var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea
@@ -156,6 +161,7 @@ func establish_connection_button() -> void:
 			_source.cortical_ID
 		)
 		if field_result == null or not field_result.success:
+			_notify_classifier_mapping_failed(field_result)
 			return
 		close_window()
 		return
@@ -211,11 +217,15 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			if _memory_rule_locked:
 				_step3_button.visible = false
 			_step4_button.disabled = false
-			# Keep the core morphology icon bar visible so user can reselect
-			var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
-			var source_is_memory: bool = (_source != null and _source.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
-			var allow_memory_choice: bool = destination_is_memory and source_is_memory
-			_set_core_bar_visibility((not destination_is_memory) or allow_memory_choice)
+			# A classifier destination has no morphology bar. Showing it covers Establish.
+			if _destination_classifier != null:
+				_set_core_bar_visibility(false)
+			else:
+				# Keep the core morphology icon bar visible so user can reselect
+				var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+				var source_is_memory: bool = (_source != null and _source.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
+				var allow_memory_choice: bool = destination_is_memory and source_is_memory
+				_set_core_bar_visibility((not destination_is_memory) or allow_memory_choice)
 		_:
 			push_error("UI: WINDOWS: WindowQuickConnect in unknown state!")
 	
@@ -240,9 +250,12 @@ func _setting_destination() -> void:
 	_step2_label.text = " Click destination target(s), or Edit to browse all circuits."
 	_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
 	_step4_button.disabled = true
-	# Begin live 3D guide from source center to mouse tip while picking destination
+	_release_quick_connect_stick()
+	# Begin live 3D guide from source center to mouse tip while picking destination.
+	# Use the monitor the user is in. The root scene also contains the area and must not draw a second line.
 	if _source != null:
-		var bm = BV.UI.get_brain_monitor_for_cortical_area(_source)
+		var bm: UI_BrainMonitor_3DScene = _quick_connect_scene_for(_source)
+		_stop_quick_connect_guides_outside(bm)
 		if bm != null and bm.has_method("start_quick_connect_guide"):
 			bm.start_quick_connect_guide(_source)
 			# Remember which BM started the guide; used to draw split-screen bridges later
@@ -600,7 +613,10 @@ func _set_classifier_destination(classifier: GenomeClassifier) -> void:
 	_step4_button.disabled = false
 	current_state = POSSIBLE_STATES.IDLE
 	if BV != null and BV.UI != null and BV.UI.selection_system != null:
+		BV.UI.selection_system.clear_all_highlighted()
 		BV.UI.selection_system.add_to_highlighted(classifier)
+	_stick_quick_connect_guide_to_classifier(classifier)
+	shrink_window()
 
 
 func _set_source(cortical_area: AbstractCorticalArea) -> void:
@@ -750,6 +766,7 @@ func _set_morphology(morphology: BaseMorphology) -> void:
 	current_state = POSSIBLE_STATES.IDLE
 
 func _stop_quick_connect_guide() -> void:
+	_release_quick_connect_stick()
 	if _source == null:
 		BV.UI.qc_guide_source_bm = null
 		return
@@ -757,6 +774,71 @@ func _stop_quick_connect_guide() -> void:
 	if source_bm != null and source_bm.has_method("stop_quick_connect_guide"):
 		source_bm.stop_quick_connect_guide()
 	BV.UI.qc_guide_source_bm = null
+
+
+func _notify_classifier_mapping_failed(result: FeagiRequestOutput) -> void:
+	var message := "Could not map this area onto the classifier."
+	if result != null and result.has_errored:
+		var details: PackedStringArray = result.decode_response_as_generic_error_code()
+		if details.size() > 1 and details[1] != "":
+			message = details[1]
+	push_error("UI: WINDOW: QUICKCONNECT: %s" % message)
+	if BV != null and BV.NOTIF != null:
+		BV.NOTIF.add_notification(message)
+
+
+## Scene that should draw the quick-connect line: the monitor the user is in, when it shows the area.
+func _quick_connect_scene_for(area: AbstractCorticalArea) -> UI_BrainMonitor_3DScene:
+	if area == null or BV == null or BV.UI == null:
+		return null
+	var preferred: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_new_circuit_preview()
+	if _scene_shows_area(preferred, area):
+		return preferred
+	return BV.UI.get_brain_monitor_for_cortical_area(area)
+
+
+func _scene_shows_area(bm: UI_BrainMonitor_3DScene, area: AbstractCorticalArea) -> bool:
+	return bm != null and area != null and bm.get_cortical_area_visualization(area.cortical_ID) != null
+
+
+## Drop a guide or locked bridge on every monitor except the one the user is connecting in.
+func _stop_quick_connect_guides_outside(keep: UI_BrainMonitor_3DScene) -> void:
+	if BV == null or BV.UI == null:
+		return
+	var monitors: Array[UI_BrainMonitor_3DScene] = []
+	if BV.UI.temp_root_bm != null:
+		monitors.append(BV.UI.temp_root_bm)
+	if BV.UI.qc_guide_source_bm != null and not monitors.has(BV.UI.qc_guide_source_bm):
+		monitors.append(BV.UI.qc_guide_source_bm)
+	for bm in monitors:
+		if bm == null or bm == keep:
+			continue
+		if bm.has_method("stop_quick_connect_guide"):
+			bm.stop_quick_connect_guide()
+		if bm.has_method("release_quick_connect_end_stick"):
+			bm.release_quick_connect_end_stick()
+
+
+## Lock the live guide on the classifier stamp so it stays attached after the click.
+## A normal destination stops the guide in the morphology step. A classifier skips that step.
+## Only the monitor that owns the live guide is locked, so the root scene does not keep a second line.
+func _stick_quick_connect_guide_to_classifier(classifier: GenomeClassifier) -> void:
+	_release_quick_connect_stick()
+	if classifier == null or BV == null or BV.UI == null:
+		return
+	var stamp: AbstractCorticalArea = classifier.get_stamp_area()
+	if stamp == null:
+		return
+	var source_bm: UI_BrainMonitor_3DScene = BV.UI.qc_guide_source_bm
+	if source_bm != null and source_bm.has_method("stick_quick_connect_end_to_area") and source_bm.stick_quick_connect_end_to_area(stamp):
+		_qc_stuck_bm = source_bm
+		_stop_quick_connect_guides_outside(source_bm)
+
+
+func _release_quick_connect_stick() -> void:
+	if _qc_stuck_bm != null and is_instance_valid(_qc_stuck_bm) and _qc_stuck_bm.has_method("release_quick_connect_end_stick"):
+		_qc_stuck_bm.release_quick_connect_end_stick()
+	_qc_stuck_bm = null
 
 func _is_ctrl_modifier_held() -> bool:
 	return Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_META)

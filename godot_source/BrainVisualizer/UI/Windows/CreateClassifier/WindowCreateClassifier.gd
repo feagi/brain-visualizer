@@ -6,8 +6,15 @@ const _VALIDATION_ERROR_COLOR: Color = Color(1.0, 0.35, 0.35)
 const _VECTOR_FIELD_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn")
 var _name_input: LineEdit
 var _vector: Vector3iSpinboxField
+var _mode_option: OptionButton
 var _kernel_option: OptionButton
 var _class_option: OptionButton
+var _mask_option: OptionButton
+var _kernel_size: Vector3iSpinboxField
+var _kernel_row: Control
+var _class_row: Control
+var _mask_row: Control
+var _kernel_size_row: Control
 var _validation_label: Label
 var _create_button: Button
 var _location: Vector3i
@@ -39,7 +46,7 @@ func setup_for_region(context_region: BrainRegion, coordinates_3d: Vector3i = Ve
 func _build_ui() -> void:
 	var internals: VBoxContainer = _window_internals
 	var title := Label.new()
-	title.text = "Choose a kernel area and a class area. Connect field areas to this classifier after you create it."
+	title.text = "Choose kernel training or scanner training. Connect image fields to this classifier after you create it."
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	internals.add_child(title)
 
@@ -51,10 +58,29 @@ func _build_ui() -> void:
 	_vector = _VECTOR_FIELD_PREFAB.instantiate() as Vector3iSpinboxField
 	internals.add_child(_labeled("3D Position", _vector))
 
+	_mode_option = OptionButton.new()
+	_mode_option.add_item("Kernel training")
+	_mode_option.add_item("Scanner training")
+	_mode_option.item_selected.connect(func(_index: int) -> void: _apply_training_mode_visibility())
+	internals.add_child(_labeled("Training mode", _mode_option))
+
 	_kernel_option = OptionButton.new()
 	_class_option = OptionButton.new()
-	internals.add_child(_labeled("Kernel area", _kernel_option))
-	internals.add_child(_labeled("Class area", _class_option))
+	_mask_option = OptionButton.new()
+	_kernel_size = _VECTOR_FIELD_PREFAB.instantiate() as Vector3iSpinboxField
+	_kernel_size.int_x_min = 1
+	_kernel_size.int_y_min = 1
+	_kernel_size.int_z_min = 1
+	_kernel_size.initial_vector = Vector3i(1, 1, 1)
+	_kernel_row = _labeled("Kernel area", _kernel_option)
+	_class_row = _labeled("Class area", _class_option)
+	_mask_row = _labeled("Mask area", _mask_option)
+	_kernel_size_row = _labeled("Kernel size", _kernel_size)
+	internals.add_child(_kernel_row)
+	internals.add_child(_class_row)
+	internals.add_child(_mask_row)
+	internals.add_child(_kernel_size_row)
+	_apply_training_mode_visibility()
 
 	_validation_label = Label.new()
 	_validation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -150,9 +176,27 @@ func _cleanup_stamp_preview() -> void:
 	_host_bm = null
 
 
+func _apply_training_mode_visibility() -> void:
+	var scanner: bool = _mode_option != null and _mode_option.selected == 1
+	if _kernel_row != null:
+		_kernel_row.visible = not scanner
+	if _class_row != null:
+		_class_row.visible = not scanner
+	if _mask_row != null:
+		_mask_row.visible = scanner
+	if _kernel_size_row != null:
+		_kernel_size_row.visible = scanner
+	_clear_validation()
+
+
+func _is_scanner_mode() -> bool:
+	return _mode_option != null and _mode_option.selected == 1
+
+
 func _populate_area_options() -> void:
 	_kernel_option.clear()
 	_class_option.clear()
+	_mask_option.clear()
 	_area_ids.clear()
 	for area in _candidate_areas():
 		if area == null:
@@ -165,6 +209,7 @@ func _populate_area_options() -> void:
 		var label := "%s %sx%sx%s" % [area.friendly_name, dims.x, dims.y, dims.z]
 		_kernel_option.add_item(label)
 		_class_option.add_item(label)
+		_mask_option.add_item(label)
 		_area_ids.append(area.cortical_ID)
 
 
@@ -240,6 +285,28 @@ func _on_create_pressed() -> void:
 	if FeagiCore.feagi_local_cache.cortical_areas.exist_cortical_area_of_name(StringName(classifier_name + "_kernel_mem")):
 		_show_validation("A classifier using this name already exists.")
 		return
+	if _is_scanner_mode():
+		if _area_ids.is_empty() or _mask_option.selected < 0:
+			_show_validation("Scanner training needs a mask area in this region.")
+			return
+		var kernel_size: Vector3i = _kernel_size.current_vector
+		if kernel_size.x < 1 or kernel_size.y < 1 or kernel_size.z < 1:
+			_show_validation("Kernel size axes must be greater than zero.")
+			return
+		_create_button.disabled = true
+		var scan_coordinates: Vector3i = _placement_coordinates()
+		var scan_result: FeagiRequestOutput = await FeagiCore.requests.add_classifier_assembly(
+			classifier_name,
+			scan_coordinates,
+			_context_region,
+			"scanner",
+			&"",
+			&"",
+			_selected_area_id(_mask_option),
+			kernel_size
+		)
+		_finish_create(scan_result, scan_coordinates)
+		return
 	if _area_ids.is_empty() or _kernel_option.selected < 0 or _class_option.selected < 0:
 		_show_validation("Kernel and class must be non-memory areas in this region.")
 		return
@@ -247,14 +314,21 @@ func _on_create_pressed() -> void:
 	var class_id: StringName = _area_ids[_class_option.selected]
 	_create_button.disabled = true
 	var coordinates_3d: Vector3i = _placement_coordinates()
-	var stamp_size: Vector3i = _stamp_preview_dimensions()
 	var result: FeagiRequestOutput = await FeagiCore.requests.add_classifier_assembly(
 		classifier_name,
 		coordinates_3d,
 		_context_region,
+		"kernel",
 		kernel_id,
-		class_id
+		class_id,
+		&"",
+		Vector3i.ZERO
 	)
+	_finish_create(result, coordinates_3d)
+
+
+func _finish_create(result: FeagiRequestOutput, coordinates_3d: Vector3i) -> void:
+	var stamp_size: Vector3i = _stamp_preview_dimensions()
 	if result == null or result.has_errored or result.failed_requirement:
 		_create_button.disabled = false
 		var error_text: String = "Failed to create classifier."

@@ -14,6 +14,7 @@ func _initialize() -> void:
 	failures += _test_list_hover_scales_label_not_plus_container()
 	failures += _test_plus_hover_does_not_scale_list_text()
 	failures += _test_label_hover_stays_on_text_bounds()
+	failures += _test_label_click_counts_as_list_press_hover()
 	failures += _test_label_left_clearance_matches_hover_growth()
 	failures += _test_label_hover_pivot_is_text_center()
 	if failures == 0:
@@ -106,6 +107,20 @@ func _test_label_hover_stays_on_text_bounds() -> int:
 		return 1
 	if bool(script.should_scale_list_label_on_hover(true, true)):
 		push_error("Hovering + must not enlarge the list text")
+		return 1
+	return 0
+
+
+func _test_label_click_counts_as_list_press_hover() -> int:
+	var script: Script = load(BUTTON_SCRIPT_PATH)
+	if int(script.list_label_mouse_filter_for_parent_press()) != Control.MOUSE_FILTER_PASS:
+		push_error("List label must PASS mouse so the parent button receives the click")
+		return 1
+	if not bool(script.is_list_button_press_hovered(false, true)):
+		push_error("Clicking the list text must count as a hovered press")
+		return 1
+	if bool(script.is_list_button_press_hovered(false, false)):
+		push_error("Press hover must stay false when neither the button nor the label is hovered")
 		return 1
 	return 0
 

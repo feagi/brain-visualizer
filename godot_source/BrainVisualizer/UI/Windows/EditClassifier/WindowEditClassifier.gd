@@ -11,8 +11,15 @@ const _Tunables = preload("res://BrainVisualizer/UI/Windows/EditClassifier/EditC
 var _name_input: LineEdit
 var _parent_option: OptionButton
 var _vector: Vector3iSpinboxField
+var _mode_option: OptionButton
 var _kernel_option: OptionButton
 var _class_option: OptionButton
+var _mask_option: OptionButton
+var _kernel_size: Vector3iSpinboxField
+var _kernel_row: Control
+var _class_row: Control
+var _mask_row: Control
+var _kernel_size_row: Control
 var _update_button: Button
 var _editing_classifier: GenomeClassifier
 var _area_ids: Array[StringName] = []
@@ -31,6 +38,27 @@ var _associative_apply: Button
 func _ready() -> void:
 	super()
 	visible = true
+	if BV != null and BV.UI != null and BV.UI.selection_system != null:
+		BV.UI.selection_system.add_override_usecase(SelectionSystem.OVERRIDE_USECASE.CLASSIFIER_PROPERTIES)
+
+
+func close_window() -> void:
+	super()
+	if BV != null and BV.UI != null and BV.UI.selection_system != null:
+		BV.UI.selection_system.remove_override_usecase(SelectionSystem.OVERRIDE_USECASE.CLASSIFIER_PROPERTIES)
+
+
+## Selection changed while this editor is open.
+## The same classifier keeps the form and reloads memory counts. Another classifier replaces the form.
+func apply_selection(classifier: GenomeClassifier) -> void:
+	if classifier == null:
+		return
+	var open_id: StringName = _editing_classifier.classifier_id if _editing_classifier != null else &""
+	if classifier.classifier_id == open_id:
+		_editing_classifier = classifier
+		_refresh_memory_counts()
+		return
+	setup(classifier)
 
 
 func setup(editing_classifier: GenomeClassifier) -> void:
@@ -81,11 +109,34 @@ func _build_classifier_fields() -> void:
 	_vector.initial_vector = _editing_classifier.coordinates_3D
 	form.add_child(_labeled("3D Position", _vector))
 
+	_mode_option = OptionButton.new()
+	_mode_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_mode_option.add_item("Kernel training")
+	_mode_option.add_item("Scanner training")
+	_mode_option.item_selected.connect(func(_index: int) -> void: _apply_training_mode_visibility())
+	if _editing_classifier.training_mode == &"scanner":
+		_mode_option.select(1)
+	form.add_child(_labeled("Training Mode", _mode_option))
+
 	_kernel_option = OptionButton.new()
 	_class_option = OptionButton.new()
+	_mask_option = OptionButton.new()
+	_kernel_size = _VECTOR_FIELD_PREFAB.instantiate() as Vector3iSpinboxField
+	_kernel_size.int_x_min = 1
+	_kernel_size.int_y_min = 1
+	_kernel_size.int_z_min = 1
+	var stored_size: Vector3i = _editing_classifier.kernel_size
+	_kernel_size.initial_vector = stored_size if stored_size != Vector3i.ZERO else Vector3i(1, 1, 1)
 	_populate_area_options()
-	form.add_child(_labeled("Kernel Area", _kernel_option))
-	form.add_child(_labeled("Class Area", _class_option))
+	_kernel_row = _labeled("Kernel Area", _kernel_option)
+	_class_row = _labeled("Class Area", _class_option)
+	_mask_row = _labeled("Mask Area", _mask_option)
+	_kernel_size_row = _labeled("Kernel Size", _kernel_size)
+	form.add_child(_kernel_row)
+	form.add_child(_class_row)
+	form.add_child(_mask_row)
+	form.add_child(_kernel_size_row)
+	_apply_training_mode_visibility()
 
 	_kernel_memory_count = _make_memory_count_field()
 	_class_memory_count = _make_memory_count_field()
@@ -536,6 +587,7 @@ func _populate_parent_options() -> void:
 func _populate_area_options() -> void:
 	_kernel_option.clear()
 	_class_option.clear()
+	_mask_option.clear()
 	_area_ids.clear()
 	var parent_region: BrainRegion = _editing_classifier.current_parent_region
 	var areas: Array[AbstractCorticalArea] = []
@@ -560,9 +612,27 @@ func _populate_area_options() -> void:
 		var label := "%s %sx%sx%s" % [area.friendly_name, dims.x, dims.y, dims.z]
 		_kernel_option.add_item(label)
 		_class_option.add_item(label)
+		_mask_option.add_item(label)
 		_area_ids.append(area.cortical_ID)
 	_select_area(_kernel_option, _editing_classifier.kernel_area_id)
 	_select_area(_class_option, _editing_classifier.class_area_id)
+	_select_area(_mask_option, _editing_classifier.mask_area_id)
+
+
+func _apply_training_mode_visibility() -> void:
+	var scanner: bool = _mode_option != null and _mode_option.selected == 1
+	if _kernel_row != null:
+		_kernel_row.visible = not scanner
+	if _class_row != null:
+		_class_row.visible = not scanner
+	if _mask_row != null:
+		_mask_row.visible = scanner
+	if _kernel_size_row != null:
+		_kernel_size_row.visible = scanner
+
+
+func _is_scanner_mode() -> bool:
+	return _mode_option != null and _mode_option.selected == 1
 
 
 func _select_area(option: OptionButton, area_id: StringName) -> void:
@@ -593,14 +663,28 @@ func _on_press_update() -> void:
 		return
 	var next_name: String = _name_input.text if _name_input != null else String(_editing_classifier.friendly_name)
 	var coords: Vector3i = _vector.current_vector if _vector != null else _editing_classifier.coordinates_3D
+	var training_mode: String = "scanner" if _is_scanner_mode() else "kernel"
+	if training_mode == "scanner":
+		var kernel_size: Vector3i = _kernel_size.current_vector if _kernel_size != null else Vector3i.ZERO
+		if _selected_area_id(_mask_option) == &"" or kernel_size.x < 1 or kernel_size.y < 1 or kernel_size.z < 1:
+			_update_button.disabled = false
+			_notify_failure("Scanner training needs a mask area and a kernel size.")
+			return
+	elif _selected_area_id(_kernel_option) == &"" or _selected_area_id(_class_option) == &"":
+		_update_button.disabled = false
+		_notify_failure("Kernel training needs a kernel area and a class area.")
+		return
 	_update_button.disabled = true
 	var result: FeagiRequestOutput = await FeagiCore.requests.edit_classifier(
 		_editing_classifier,
 		next_name,
 		coords,
 		_selected_region_id(),
+		training_mode,
 		_selected_area_id(_kernel_option),
-		_selected_area_id(_class_option)
+		_selected_area_id(_class_option),
+		_selected_area_id(_mask_option),
+		_kernel_size.current_vector if _kernel_size != null else Vector3i.ZERO
 	)
 	if result == null or result.has_errored or result.failed_requirement:
 		_update_button.disabled = false

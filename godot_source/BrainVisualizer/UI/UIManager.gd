@@ -1761,6 +1761,10 @@ func _selection_processing(objects: Array[GenomeObject], context: SelectionSyste
 		var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(objects)
 		if len(cortical_areas) != 0:
 			_window_manager.spawn_adv_cortical_properties(cortical_areas)
+	if SelectionSystem.OVERRIDE_USECASE.CLASSIFIER_PROPERTIES in override_usecases:
+		var classifiers: Array[GenomeClassifier] = GenomeObject.filter_classifiers(objects)
+		if not classifiers.is_empty():
+			_window_manager.refresh_open_classifier_editor(classifiers[0])
 
 #endregion
 
