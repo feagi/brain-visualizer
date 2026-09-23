@@ -9,6 +9,7 @@ const HOVER_SCALE: float = 1.03
 const CONTENT_HOVER_SCALE: float = 1.1
 const HOVER_TWEEN_SECONDS: float = 0.08
 const HOVER_CLEARANCE_NODE: StringName = &"HoverClearance"
+const HOVER_CLEARANCE_RIGHT_NODE: StringName = &"HoverClearanceRight"
 
 var disabled: bool:
 	get: return _disabled
@@ -30,6 +31,10 @@ var disabled: bool:
 
 var _disabled: bool = false
 var _hovered: bool = false
+## Label and + pointer flags. Do not poll gui_get_hovered_control for these.
+## That read is stale inside PopupPanel and SubViewport, so the pop arrives late or not at all.
+var _label_pointer_inside: bool = false
+var _plus_pointer_inside: bool = false
 var _plate_styleboxes: Dictionary = {}
 var _hover_scale_target: Control = null
 var _hover_scale_normal: Vector2 = Vector2.ONE
@@ -70,6 +75,21 @@ static func is_list_button_press_hovered(button_hovered: bool, label_hovered: bo
 	return button_hovered or label_hovered
 
 
+## Text pop follows the label pointer, not the shared plate or a deferred hover poll.
+static func list_label_hover_from_pointer(label_pointer_inside: bool, plus_pointer_inside: bool) -> bool:
+	return should_scale_list_label_on_hover(label_pointer_inside, plus_pointer_inside)
+
+
+## Hit test in the control's own viewport. Screen-space mouse position disagrees inside a SubViewport.
+static func pointer_inside_own_viewport(control: Control) -> bool:
+	if control == null or not is_instance_valid(control) or not control.is_visible_in_tree():
+		return false
+	var vp := control.get_viewport()
+	if vp == null:
+		return false
+	return control.get_global_rect().has_point(vp.get_mouse_position())
+
+
 ## Text / + pop in place. Whole-row targets (no + child) keep the smaller plate scale.
 static func content_hover_scale(hovered: bool, target_is_text_or_plus: bool) -> float:
 	if not hovered:
@@ -79,6 +99,16 @@ static func content_hover_scale(hovered: bool, target_is_text_or_plus: bool) -> 
 
 ## Left gap so a left-aligned label can pop without covering the icon.
 static func label_hover_left_clearance_px(text_width: float, hover_scale: float) -> int:
+	return label_hover_side_clearance_px(text_width, hover_scale)
+
+
+## Right gap so the last glyph can pop without covering the + button.
+## Pivot is the text center, so each side grows by half the extra width.
+static func label_hover_right_clearance_px(text_width: float, hover_scale: float) -> int:
+	return label_hover_side_clearance_px(text_width, hover_scale)
+
+
+static func label_hover_side_clearance_px(text_width: float, hover_scale: float) -> int:
 	if text_width <= 0.0:
 		return 0
 	var extra_width: float = text_width * max(hover_scale, 1.0) - text_width
@@ -165,6 +195,10 @@ func _ready() -> void:
 			_hover_scale_target.resized.connect(_on_hover_scale_target_resized)
 		if _hover_scale_target is Label:
 			_hover_scale_target.mouse_filter = list_label_mouse_filter_for_parent_press()
+			if not _hover_scale_target.mouse_entered.is_connected(_on_list_label_pointer_entered):
+				_hover_scale_target.mouse_entered.connect(_on_list_label_pointer_entered)
+			if not _hover_scale_target.mouse_exited.is_connected(_on_list_label_pointer_exited):
+				_hover_scale_target.mouse_exited.connect(_on_list_label_pointer_exited)
 	_wire_plus_hover_scale()
 	if BV and BV.UI:
 		BV.UI.theme_changed.connect(_on_theme_changed)
@@ -280,13 +314,7 @@ func _gui_input(event: InputEvent) -> void:
 
 ## True when a child marked ignore_parent_press (e.g. a + button) owns the click.
 func _is_ignore_parent_press_child_hovered() -> bool:
-	var vp := get_viewport()
-	if vp == null:
-		return false
-	var hovered := vp.gui_get_hovered_control()
-	if hovered == null or hovered == self or not is_ancestor_of(hovered):
-		return false
-	return hovered.has_meta("ignore_parent_press") and bool(hovered.get_meta("ignore_parent_press"))
+	return _plus_pointer_inside
 
 		
 func _mouse_entered() -> void:
@@ -298,9 +326,11 @@ func _mouse_entered() -> void:
 		add_theme_stylebox_override("panel", hover_style)
 	else:
 		push_error("Missing panel_hover for PanelContainerButton")
-	call_deferred("_refresh_list_hover_scale")
+	_refresh_list_hover_scale()
 
 func _mouse_exited() -> void:
+	# Do not clear the label flag here. Entering the label can emit parent mouse_exited
+	# in the same turn the label sets the flag, which would cancel the pop.
 	_hovered = false
 	if _disabled:
 		return
@@ -309,7 +339,42 @@ func _mouse_exited() -> void:
 		add_theme_stylebox_override("panel", normal_style)
 	else:
 		push_error("Missing panel for BasePanelContainerButton")
-	call_deferred("_refresh_list_hover_scale")
+	_refresh_list_hover_scale()
+
+
+## Moving from the icon onto the text does not re-enter the parent button.
+func _on_list_label_pointer_entered() -> void:
+	_label_pointer_inside = true
+	_hovered = true
+	if _disabled:
+		return
+	_refresh_list_hover_scale()
+
+
+func _on_list_label_pointer_exited() -> void:
+	_label_pointer_inside = false
+	if _disabled:
+		return
+	_refresh_list_hover_scale()
+
+
+## Catch a menu that opens under a stationary pointer. mouse_entered does not fire until the pointer moves.
+func sync_hover_to_pointer() -> void:
+	_label_pointer_inside = pointer_inside_own_viewport(_hover_scale_target if _hover_scale_target is Label else null)
+	_plus_pointer_inside = false
+	for plus in _plus_buttons:
+		if pointer_inside_own_viewport(plus):
+			_plus_pointer_inside = true
+			break
+	_hovered = pointer_inside_own_viewport(self) or _label_pointer_inside
+	if _disabled:
+		_refresh_list_hover_scale()
+		return
+	var style_name := "panel_hover" if _hovered else "panel"
+	var style := _get_plate_stylebox(style_name)
+	if style != null:
+		add_theme_stylebox_override("panel", style)
+	_refresh_list_hover_scale()
 
 
 func _wire_plus_hover_scale() -> void:
@@ -333,8 +398,9 @@ func _collect_ignore_parent_press_controls(node: Node, out: Array[Control]) -> v
 func _on_plus_hover(plus: Control, hovered: bool) -> void:
 	if plus == null or _disabled:
 		return
+	_plus_pointer_inside = hovered
 	_animate_control_scale(plus, content_hover_scale(hovered, true), true)
-	call_deferred("_refresh_list_hover_scale")
+	_refresh_list_hover_scale()
 
 
 func _on_plus_resized(plus: Control) -> void:
@@ -350,20 +416,15 @@ func _refresh_list_hover_scale() -> void:
 		_apply_list_hover_scale(false)
 		return
 	if _hover_scale_target is Label:
-		_apply_list_hover_scale(should_scale_list_label_on_hover(_is_list_label_hovered(), _is_ignore_parent_press_child_hovered()))
+		_apply_list_hover_scale(list_label_hover_from_pointer(_label_pointer_inside, _plus_pointer_inside))
 		return
-	var scale_list: bool = _hovered and should_scale_list_content_on_hover(_is_ignore_parent_press_child_hovered())
+	var scale_list: bool = _hovered and should_scale_list_content_on_hover(_plus_pointer_inside)
 	_apply_list_hover_scale(scale_list)
 
 
 ## True only while the pointer is on the label glyphs, not the icon or leftover plate.
 func _is_list_label_hovered() -> bool:
-	if not _hover_scale_target is Label:
-		return false
-	var vp := get_viewport()
-	if vp == null:
-		return false
-	return vp.gui_get_hovered_control() == _hover_scale_target
+	return _label_pointer_inside
 
 
 func _apply_list_hover_scale(hovered: bool) -> void:
@@ -381,27 +442,47 @@ func _center_scale_pivot(control: Control) -> void:
 	control.pivot_offset = hover_pivot_offset(control)
 
 
-## Insert space before the label equal to the leftward hover growth.
+## Hover only changes scale. Rebuilding spacers here slides the label and the + button.
+func _set_hover_pivot(control: Control) -> void:
+	if control == null:
+		return
+	control.pivot_offset = hover_pivot_offset(control)
+
+
+## Insert space on both sides of the label equal to the hover growth.
 func _apply_label_icon_clearance(label: Label) -> void:
 	var hbox: HBoxContainer = label.get_parent() as HBoxContainer
 	if hbox == null:
 		return
-	var clearance: int = label_hover_left_clearance_px(label_text_width_px(label), CONTENT_HOVER_SCALE)
-	var spacer: Control = hbox.get_node_or_null(NodePath(HOVER_CLEARANCE_NODE)) as Control
+	var text_width: float = label_text_width_px(label)
+	var left_clearance: int = label_hover_left_clearance_px(text_width, CONTENT_HOVER_SCALE)
+	var right_clearance: int = label_hover_right_clearance_px(text_width, CONTENT_HOVER_SCALE)
+	# Insert once, beside the label. Later calls must not move these spacers:
+	# the label index changes after the left spacer exists, and moving to it swaps the row.
+	_ensure_label_clearance_spacer(hbox, HOVER_CLEARANCE_NODE, left_clearance, label.get_index())
+	_ensure_label_clearance_spacer(hbox, HOVER_CLEARANCE_RIGHT_NODE, right_clearance, label.get_index() + 1)
+
+
+func _ensure_label_clearance_spacer(hbox: HBoxContainer, spacer_name: StringName, clearance: int, insert_index: int) -> void:
+	var spacer: Control = hbox.get_node_or_null(NodePath(spacer_name)) as Control
 	if spacer == null:
 		spacer = Control.new()
-		spacer.name = String(HOVER_CLEARANCE_NODE)
+		spacer.name = String(spacer_name)
 		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		hbox.add_child(spacer)
-		hbox.move_child(spacer, label.get_index())
-	spacer.custom_minimum_size = Vector2(float(clearance), 0.0)
+		var clamped_index: int = mini(insert_index, hbox.get_child_count() - 1)
+		if spacer.get_index() != clamped_index:
+			hbox.move_child(spacer, clamped_index)
+	var next_size := Vector2(float(clearance), 0.0)
+	if spacer.custom_minimum_size != next_size:
+		spacer.custom_minimum_size = next_size
 
 
 ## Animate hover scaling for a subtle zoom-in/out.
 func _animate_control_scale(control: Control, scale_factor: float, is_plus: bool) -> void:
 	if control == null:
 		return
-	_center_scale_pivot(control)
+	_set_hover_pivot(control)
 	if is_plus:
 		if _plus_tween != null and _plus_tween.is_running():
 			_plus_tween.kill()

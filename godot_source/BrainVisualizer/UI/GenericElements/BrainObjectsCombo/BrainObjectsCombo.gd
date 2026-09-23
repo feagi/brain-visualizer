@@ -930,6 +930,32 @@ func _open_connectome_menu() -> void:
 	var anchor_screen := _get_connectome_anchor_screen_position()
 	_connectome_menu.position = Vector2i(anchor_screen + Vector2(0, _btn_connectome.size.y))
 	_connectome_menu.popup()
+	# The menu can open under a stationary pointer. mouse_entered will not fire until it moves.
+	call_deferred("_sync_connectome_menu_hover")
+
+
+func _sync_connectome_menu_hover() -> void:
+	if not is_connectome_menu_open():
+		return
+	var rows: Array[BasePanelContainerButton] = [
+		_btn_brain_regions_list,
+		_btn_interconnect_list,
+		_btn_memory_list,
+		_btn_classifier_list,
+	]
+	for row in rows:
+		if row != null:
+			row.sync_hover_to_pointer()
+	var plus_buttons: Array[TextureButton] = [
+		_btn_brain_regions_add,
+		_btn_interconnect_add,
+		_btn_memory_add,
+		_btn_classifier_add,
+	]
+	for plus in plus_buttons:
+		if plus == null:
+			continue
+		_on_combo_add_hover(plus, BasePanelContainerButton.pointer_inside_own_viewport(plus))
 
 
 func _close_connectome_menu() -> void:

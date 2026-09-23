@@ -66,7 +66,7 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList/HBoxContainer"))
 	COMBO_STYLER.apply_list_hbox_spacing(self, list_hbox_paths)
 	var spacer_paths := []
 	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddCircuits"))
@@ -504,8 +504,8 @@ func _setup_custom_tooltips() -> void:
 	# Visible strip is [SharedBrainObjectsCombo], not the hidden legacy [HBoxContainer] row.
 	if _shared_combo != null:
 		_shared_combo.apply_custom_topbar_tooltips()
-	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList, "View connectivity rules")
-	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasList/HBoxContainer/TextureButton, "Add connectivity rule")
+	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList, "View connectivity rules")
+	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/TextureButton, "Add connectivity rule")
 	# Hover target is the toggle control; nested TextureButtons kept native-free above.
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown/ToggleImageDropDown, "Split view: Circuit Builder, Brain Monitor, or split layout")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown/ToggleImageDropDown, "Inspectors")

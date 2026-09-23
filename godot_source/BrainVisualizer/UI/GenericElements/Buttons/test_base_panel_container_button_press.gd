@@ -17,6 +17,8 @@ func _initialize() -> void:
 	failures += _test_label_click_counts_as_list_press_hover()
 	failures += _test_label_left_clearance_matches_hover_growth()
 	failures += _test_label_hover_pivot_is_text_center()
+	failures += _test_list_label_hover_from_pointer_is_immediate()
+	failures += _test_connectivity_rules_list_and_plus_are_siblings()
 	if failures == 0:
 		print("BasePanelContainerButton press tests: PASS")
 		quit(0)
@@ -136,6 +138,12 @@ func _test_label_left_clearance_matches_hover_growth() -> int:
 	if int(script.label_hover_left_clearance_px(0.0, 1.1)) != 0:
 		push_error("Empty text must not invent clearance")
 		return 1
+	if int(script.label_hover_right_clearance_px(220.0, 1.1)) != 11:
+		push_error("Right clearance must keep the last glyph off the + button")
+		return 1
+	if int(script.label_hover_right_clearance_px(220.0, 1.1)) != int(script.label_hover_left_clearance_px(220.0, 1.1)):
+		push_error("Left and right clearance must match a center pivot")
+		return 1
 	return 0
 
 
@@ -160,6 +168,70 @@ func _test_label_hover_pivot_is_text_center() -> int:
 		label.queue_free()
 		return 1
 	label.queue_free()
+	return 0
+
+
+func _test_list_label_hover_from_pointer_is_immediate() -> int:
+	var script: Script = load(BUTTON_SCRIPT_PATH)
+	if not bool(script.list_label_hover_from_pointer(true, false)):
+		push_error("Label pointer must show the text pop without polling gui hover")
+		return 1
+	if bool(script.list_label_hover_from_pointer(false, false)):
+		push_error("Icon or shared plate must not show the text pop")
+		return 1
+	if bool(script.list_label_hover_from_pointer(true, true)):
+		push_error("Plus pointer must suppress the text pop")
+		return 1
+	return 0
+
+
+func _test_connectivity_rules_list_and_plus_are_siblings() -> int:
+	var packed: PackedScene = load("res://BrainVisualizer/UI/Top_Bar/TopBar.tscn")
+	var state: SceneState = packed.get_state()
+	var list_parent := ""
+	var plus_parent := ""
+	var row_has_plate := false
+	var list_is_flat := false
+	var label_is_hover_target := false
+	for i in range(state.get_node_count()):
+		var node_name := str(state.get_node_name(i))
+		var path_str := str(state.get_node_path(i, false))
+		if path_str.find("HBoxContainer3") < 0:
+			continue
+		if node_name == "BrainAreasList":
+			list_parent = path_str.get_base_dir()
+			for p in range(state.get_node_property_count(i)):
+				if str(state.get_node_property_name(i, p)) != "metadata/flat_on_backdrop":
+					continue
+				list_is_flat = bool(state.get_node_property_value(i, p))
+		elif node_name == "TextureButton" and path_str.find("BrainAreasRow") >= 0:
+			plus_parent = path_str.get_base_dir()
+			if path_str.find("BrainAreasList") >= 0:
+				push_error("Connectivity rules + must be a sibling of the text button")
+				return 1
+		elif node_name == "BrainAreasRow":
+			for p in range(state.get_node_property_count(i)):
+				if str(state.get_node_property_name(i, p)) == "theme_override_styles/panel":
+					row_has_plate = true
+		elif node_name == "Label" and path_str.find("BrainAreasList") >= 0:
+			for p in range(state.get_node_property_count(i)):
+				if str(state.get_node_property_name(i, p)) == "metadata/hover_scale_target":
+					label_is_hover_target = bool(state.get_node_property_value(i, p))
+	if list_parent == "" or plus_parent == "":
+		push_error("Connectivity rules list and + must exist on the top bar")
+		return 1
+	if list_parent != plus_parent:
+		push_error("Connectivity rules list and + must share the row plate")
+		return 1
+	if not row_has_plate:
+		push_error("Connectivity rules row must paint the same plate as Inputs and Outputs")
+		return 1
+	if not list_is_flat:
+		push_error("Connectivity rules text button must be flat on the shared row plate")
+		return 1
+	if not label_is_hover_target:
+		push_error("Connectivity rules hover must target the label, not the row")
+		return 1
 	return 0
 
 
