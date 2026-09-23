@@ -13,8 +13,8 @@ crate-type = ["cdylib"]
 godot = { version = "0.5.5", features = ["serde", "api-4-7"] }
 
 # FEAGI core dependencies (crates.io; unified feagi-core release line)
-feagi-structures = { version = "^0.0.31" }
-feagi-sensorimotor = { version = "^0.0.31" }
+feagi-structures = { version = "^0.0.35" }
+feagi-sensorimotor = { version = "^0.0.35" }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
