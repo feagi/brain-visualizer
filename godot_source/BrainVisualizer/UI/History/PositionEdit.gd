@@ -1,4 +1,4 @@
-extends RefCounted
+extends GenomeEdit
 class_name PositionEdit
 ## One positional gesture. Stores ids and the coordinates before and after the change.
 ## Undo and redo send those coordinates back through the same FEAGI calls that saved the gesture.
@@ -8,8 +8,11 @@ const KIND_BRAIN_REGION: int = 1
 const SPACE_3D: int = 0
 const SPACE_2D: int = 1
 
-var label: String = "Move"
 var _entries: Array[Dictionary] = []
+
+
+func _init() -> void:
+	label = "Move"
 
 
 func is_empty() -> bool:

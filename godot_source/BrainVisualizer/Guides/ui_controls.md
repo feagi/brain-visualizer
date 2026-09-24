@@ -99,6 +99,7 @@ The main toolbar provides quick access to essential features:
 ![Connectivity Rules Icon](../UI/GenericResources/ButtonIcons/neuron.png)
 
 **Circuit Builder and Brain Monitor tab bars:**
+- Shown only while the pointer is on that tab. Hidden when the pointer is elsewhere. A menu opened from the bar stays up until it closes.
 - Circuits, Interconnect Areas, and Memory Areas, in that order
 - The whole tab bar is two UI sizes smaller than the root scene top bar
 - Hover a title to open its list. There is no Elements menu and no list icon.

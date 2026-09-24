@@ -97,10 +97,34 @@ func _ready():
 		_combo = $BrainObjectsCombo
 		if _representing_region != null:
 			_combo.set_2d_context(self, _representing_region)
+		_sync_tab_menu_visibility()
+	set_process(is_visible_in_tree())
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_VISIBILITY_CHANGED and is_visible_in_tree():
+	if what != NOTIFICATION_VISIBILITY_CHANGED:
+		return
+	set_process(is_visible_in_tree())
+	_sync_tab_menu_visibility()
+	if is_visible_in_tree():
 		request_initial_fit()
+
+
+## Show this tab's menu only while the pointer is on this Circuit Builder.
+func _process(_delta: float) -> void:
+	_sync_tab_menu_visibility()
+
+
+## Hide the strip when the pointer leaves. Keep it while a menu from the strip is open.
+func _sync_tab_menu_visibility() -> void:
+	if _combo == null or not is_instance_valid(_combo):
+		return
+	_combo.sync_tab_strip_visibility(_pointer_inside_this_tab())
+
+
+func _pointer_inside_this_tab() -> bool:
+	if not is_visible_in_tree():
+		return false
+	return get_global_rect().has_point(get_global_mouse_position())
 
 
 

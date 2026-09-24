@@ -1683,8 +1683,12 @@ func _input(event):
 var _is_in_advanced_mode: bool = false
 
 
-func record_position_edit(edit: PositionEdit) -> void:
+func record_genome_edit(edit: GenomeEdit) -> void:
 	genome_history.record(edit)
+
+
+func record_position_edit(edit: PositionEdit) -> void:
+	record_genome_edit(edit)
 
 
 func _position_history_shortcut_blocked_by_text() -> bool:
@@ -1702,7 +1706,7 @@ func _any_transform_manipulation_active() -> bool:
 
 
 func _run_position_history(forward: bool) -> void:
-	var edit: PositionEdit = genome_history.peek_redo() if forward else genome_history.peek_undo()
+	var edit: GenomeEdit = genome_history.peek_redo() if forward else genome_history.peek_undo()
 	if edit == null:
 		var empty_message: StringName = "Nothing to redo" if forward else "Nothing to undo"
 		_notification_system.add_notification(empty_message)
@@ -1710,7 +1714,7 @@ func _run_position_history(forward: bool) -> void:
 	_position_history_busy = true
 	var was_accepting := genome_history.is_accepting()
 	genome_history.set_accepting(false)
-	var outcome: Dictionary = await GenomePositionApplier.apply(edit, forward)
+	var outcome: Dictionary = await GenomeEditApplier.apply(edit, forward)
 	genome_history.set_accepting(was_accepting)
 	_position_history_busy = false
 	if not bool(outcome.get("ok", false)):
@@ -1725,7 +1729,7 @@ func _run_position_history(forward: bool) -> void:
 	_notification_system.add_notification("%s %s." % [verb, edit.label.to_lower()])
 	if bool(outcome.get("save_failed", false)):
 		_notification_system.add_notification(
-			"Position was updated but the genome save failed.",
+			"The change was applied but the genome save failed.",
 			NotificationSystemNotification.NOTIFICATION_TYPE.WARNING
 		)
 

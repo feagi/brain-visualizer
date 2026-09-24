@@ -213,7 +213,10 @@ func _ready() -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_VISIBILITY_CHANGED and is_visible_in_tree():
+	if what != NOTIFICATION_VISIBILITY_CHANGED:
+		return
+	_sync_tab_menu_visibility()
+	if is_visible_in_tree():
 		# Opening split view or switching tabs can leave SubViewport at 1x1 until this control is shown.
 		call_deferred("_update_subviewport_size")
 
@@ -260,6 +263,19 @@ func is_mouse_inside_subviewport() -> bool:
 	if subviewport == null:
 		return false
 	return Rect2(Vector2.ZERO, Vector2(subviewport.size)).has_point(subviewport.get_mouse_position())
+
+
+## Show this tab's menu only while the pointer is on this Brain Monitor.
+func _sync_tab_menu_visibility() -> void:
+	if _combo == null or not is_instance_valid(_combo):
+		return
+	_combo.sync_tab_strip_visibility(_pointer_inside_this_tab())
+
+
+func _pointer_inside_this_tab() -> bool:
+	if not is_visible_in_tree():
+		return false
+	return get_global_rect().has_point(get_global_mouse_position())
 
 
 ## Hosted [UITabContainer] owns the styled tooltip overlay used by region description hover.
@@ -490,6 +506,7 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 		_combo.mouse_filter = Control.MOUSE_FILTER_STOP
 		_apply_tab_subviewport_input_mode()
 		_combo.set_3d_context(self, _representing_region)
+		_sync_tab_menu_visibility()
 	
 
 	
@@ -814,6 +831,7 @@ func _compute_world_aabb(node: Node) -> AABB:
 
 ## While the intro is running, keep the camera aimed at the scene center as it moves
 func _process(delta: float) -> void:
+	_sync_tab_menu_visibility()
 	if _startup_intro_animating and _pancake_cam != null:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
 	var has_preview := _manipulation_preview != null or (_manipulation_region_preview != null and is_instance_valid(_manipulation_region_preview))
@@ -4419,22 +4437,17 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 		_cortical_visualizations_by_ID.erase(area.cortical_ID)
 	
 	# Check if this area should be created.
-	# Use parent-chain membership as source-of-truth to avoid stale region containment arrays
-	# after cache replacement/reload.
-	var is_in_represented_subtree = _is_area_in_representing_region_subtree_by_parent_chain(area)
+	# Direct parent is the source of truth. A child circuit's areas stay in that circuit.
 	var is_direct_member = _is_area_direct_child_of_representing_region(area)
 	# Product rule: MEMORY areas stay out of the *root* brain monitor (they belong in Autogen / dedicated views).
 	var memory_excluded_at_root = _area_hidden_as_memory_in_this_monitor(area)
-	# Root monitor should only show direct members (plus I/O/invariant-core logic below), while
-	# non-root monitors can include descendants in their subtree view.
-	var allow_subtree_members = not _brain_monitor_viewing_feagi_root_region()
-	var is_subtree_ok = (is_direct_member or (allow_subtree_members and is_in_represented_subtree)) and not memory_excluded_at_root
+	var is_subtree_ok = is_direct_member and not memory_excluded_at_root
 	var is_io_of_child_region = _is_area_input_output_of_child_region(area)
 	var is_io_of_this_region = _is_area_input_output_of_region(area)
 	# Reserved system core areas (power, death, fatigue, ...) when parented under FEAGI root or monitor shows root plate.
 	var is_special_invariant_core: bool = _should_show_feagi_invariant_core_in_this_monitor(area)
 
-	# Create if: anywhere under this region's subtree (non-memory at root), direct member, I/O bridge, or invariant core under FEAGI root.
+	# Create if: direct member of this circuit, an I/O bridge, or an invariant core on the root monitor.
 	if not is_subtree_ok and not is_io_of_child_region and not is_io_of_this_region and not is_special_invariant_core:
 		return null
 
@@ -4738,17 +4751,6 @@ func _is_area_direct_child_of_representing_region(area: AbstractCorticalArea) ->
 	return String(area.current_parent_region.region_ID) == String(_representing_region.region_ID)
 
 
-func _is_area_in_representing_region_subtree_by_parent_chain(area: AbstractCorticalArea) -> bool:
-	if area == null or _representing_region == null:
-		return false
-	var cursor: BrainRegion = area.current_parent_region
-	while cursor != null:
-		if String(cursor.region_ID) == String(_representing_region.region_ID):
-			return true
-		cursor = cursor.current_parent_region
-	return false
-
-
 ## True for power/death/fatigue (etc.) when they should get a volume on this monitor. After region diffs the
 ## Circuit Builder may still reference a child region UUID while FEAGI root is a different id; cores stay under
 ## the genome root, so use [method BrainRegion.is_cortical_area_in_region_recursive] from FEAGI root, not only
@@ -4948,11 +4950,9 @@ func _add_missing_cortical_area_visualizations() -> void:
 			if not FeagiCore.feagi_local_cache.cortical_areas.has_live_instance(area):
 				_remove_cortical_area(area)
 				continue
-		var is_in_subtree = _is_area_in_representing_region_subtree_by_parent_chain(area)
 		var is_direct_member = _is_area_direct_child_of_representing_region(area)
 		var memory_hide_at_root = _area_hidden_as_memory_in_this_monitor(area)
-		var allow_subtree_members = not _brain_monitor_viewing_feagi_root_region()
-		var subtree_keeps_viz = (is_direct_member or (allow_subtree_members and is_in_subtree)) and not memory_hide_at_root
+		var subtree_keeps_viz = is_direct_member and not memory_hide_at_root
 		var is_io_child = _is_area_input_output_of_child_region(area)
 		var is_io_self = _is_area_input_output_of_region(area)
 		var is_reserved_core: bool = _should_show_feagi_invariant_core_in_this_monitor(area)
@@ -4997,12 +4997,12 @@ func _add_missing_cortical_area_visualizations() -> void:
 					added_any = true
 				_add_cortical_area(area)
 
-	# Catch-all: any cache area under this region's subtree not yet visualized (handles reparenting + hash refresh ordering).
+	# Areas parented here whose containment list is stale after a cache refresh.
 	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.cortical_areas:
 		for area in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
 			if area.cortical_ID in _cortical_visualizations_by_ID:
 				continue
-			if not _is_area_in_representing_region_subtree_by_parent_chain(area):
+			if not _is_area_direct_child_of_representing_region(area):
 				continue
 			if _area_hidden_as_memory_in_this_monitor(area):
 				continue

@@ -4,8 +4,8 @@ class_name GenomeHistory
 
 const HISTORY_LIMIT: int = 50
 
-var _undo: Array[PositionEdit] = []
-var _redo: Array[PositionEdit] = []
+var _undo: Array[GenomeEdit] = []
+var _redo: Array[GenomeEdit] = []
 var _accepting: bool = false
 
 
@@ -17,7 +17,7 @@ func is_accepting() -> bool:
 	return _accepting
 
 
-func record(edit: PositionEdit) -> void:
+func record(edit: GenomeEdit) -> void:
 	if not _accepting or edit == null or edit.is_empty():
 		return
 	_undo.append(edit)
@@ -47,13 +47,13 @@ func redo_count() -> int:
 	return _redo.size()
 
 
-func peek_undo() -> PositionEdit:
+func peek_undo() -> GenomeEdit:
 	if _undo.is_empty():
 		return null
 	return _undo[_undo.size() - 1]
 
 
-func peek_redo() -> PositionEdit:
+func peek_redo() -> GenomeEdit:
 	if _redo.is_empty():
 		return null
 	return _redo[_redo.size() - 1]

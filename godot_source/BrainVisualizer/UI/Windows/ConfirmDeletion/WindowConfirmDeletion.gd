@@ -8,6 +8,7 @@ var _deletion_targets: Array[GenomeObject]
 var _is_deleting_internals: bool
 var _mode: GenomeObject.ARRAY_MAKEUP
 var _scroll: ScrollSectionGeneric
+var _delete_in_progress: bool = false
 
 ## Configure confirmation dialog text and targets.
 func setup(selection: Array[GenomeObject], region_deleting_internals: bool = false) -> void:
@@ -68,9 +69,13 @@ func _scroll_show_objects(objects: Array[GenomeObject]) -> void:
 		_scroll.add_text_button(object, object.friendly_name, Callable())
 
 func _yes_pressed() -> void:
+	if _delete_in_progress:
+		return
+	_delete_in_progress = true
+	var deleted := true
 	match _mode:
-		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
-			FeagiCore.requests.delete_cortical_area((_deletion_targets[0] as AbstractCorticalArea))
+		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA, GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
+			deleted = await _delete_areas_with_history(GenomeObject.filter_cortical_areas(_deletion_targets))
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
 			FeagiCore.requests.delete_classifier(_deletion_targets[0] as GenomeClassifier)
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
@@ -78,22 +83,42 @@ func _yes_pressed() -> void:
 				pass #TODO
 			else:
 				FeagiCore.requests.delete_regions_and_raise_internals(_deletion_targets[0] as BrainRegion)
-		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
-			FeagiCore.requests.mass_delete_cortical_areas(GenomeObject.filter_cortical_areas(_deletion_targets)) #idc
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
 			# Backend exposes single-region delete for "raise internals", so batch via iteration.
 			for region in GenomeObject.filter_brain_regions(_deletion_targets):
 				FeagiCore.requests.delete_regions_and_raise_internals(region)
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
-			# Mixed selections can include both cortical areas and regions.
 			var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(_deletion_targets)
 			if not cortical_areas.is_empty():
-				FeagiCore.requests.mass_delete_cortical_areas(cortical_areas)
-			for region in GenomeObject.filter_brain_regions(_deletion_targets):
-				FeagiCore.requests.delete_regions_and_raise_internals(region)
+				deleted = await _delete_areas_with_history(cortical_areas)
+			if deleted:
+				for region in GenomeObject.filter_brain_regions(_deletion_targets):
+					FeagiCore.requests.delete_regions_and_raise_internals(region)
 		_:
 			push_warning("UI: ConfirmDeletion received unsupported mode %s." % _mode)
-	close_window()
+	_delete_in_progress = false
+	if deleted:
+		close_window()
+
+
+## Snapshots restorable areas, deletes them, and records one undo step when FEAGI accepts the delete.
+func _delete_areas_with_history(areas: Array[AbstractCorticalArea]) -> bool:
+	var edit: DeleteAreaEdit = await DeleteAreaApplier.capture(areas)
+	if edit == null:
+		BV.NOTIF.add_notification("Could not read the area before deleting it.", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+		return false
+	if edit.area_count() < areas.size():
+		BV.NOTIF.add_notification("Some deleted areas cannot be recreated, so they were left out of undo.")
+	var result: FeagiRequestOutput
+	if areas.size() == 1:
+		result = await FeagiCore.requests.delete_cortical_area(areas[0])
+	else:
+		result = await FeagiCore.requests.mass_delete_cortical_areas(areas)
+	if result == null or result.has_errored or not result.success or result.failed_requirement:
+		BV.NOTIF.add_notification("Delete failed", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+		return false
+	BV.UI.record_genome_edit(edit)
+	return true
 
 func _no_pressed() -> void:
 	close_window()

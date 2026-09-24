@@ -18,6 +18,7 @@ func _initialize() -> void:
 	failures += _test_elements_menu_opens_on_hover_for_tab_strips()
 	failures += _test_root_bar_category_lists_open_on_title_hover()
 	failures += _test_tab_strip_is_two_theme_steps_smaller()
+	failures += _test_tab_strip_shows_only_while_pointer_is_on_tab()
 	failures += _test_input_output_lists_share_cortical_focus()
 	failures += _test_circuits_title_does_not_paint_its_own_plate()
 	failures += _test_connectome_inner_hbox_ignores_mouse()
@@ -189,6 +190,23 @@ func _test_tab_strip_is_two_theme_steps_smaller() -> int:
 		return 1
 	if not is_equal_approx(float(script.scale_steps_below(scales, 0.5, 2)), 0.5):
 		push_error("The smallest UI scale must stay on the smallest theme")
+		return 1
+	return 0
+
+
+func _test_tab_strip_shows_only_while_pointer_is_on_tab() -> int:
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	if not bool(script.tab_strip_should_be_visible(true, false)):
+		push_error("A tab strip must show while the pointer is on that tab")
+		return 1
+	if bool(script.tab_strip_should_be_visible(false, false)):
+		push_error("A tab strip must hide when the pointer leaves that tab")
+		return 1
+	if not bool(script.tab_strip_should_be_visible(false, true)):
+		push_error("A tab strip must stay up while a menu opened from it is still open")
+		return 1
+	if not bool(script.tab_strip_should_be_visible(true, true)):
+		push_error("A tab strip must stay up when the pointer is on the tab and a menu is open")
 		return 1
 	return 0
 

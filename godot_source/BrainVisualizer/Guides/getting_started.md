@@ -29,7 +29,7 @@ Brain Visualizer's interface consists of several key areas:
 - Connection status and genome statistics
 - Burst rate control (neural processing speed)
 - Root scene bar: Circuits, Inputs, Outputs, and Connectivity Rules. Hover a title to list them. **+** creates one.
-- Circuit Builder and Brain Monitor tab bars: Circuits, Interconnect Areas, and Memory Areas. Those bars are two UI sizes smaller. Hover a title to list them. **+** creates one.
+- Circuit Builder and Brain Monitor tab bars: shown only while the pointer is on that tab. Circuits, Interconnect Areas, and Memory Areas. Those bars are two UI sizes smaller. Hover a title to list them. **+** creates one.
 - Split view, inspectors, camera animations, this guide, and settings
 
 **Circuit Builder (2D View)**
@@ -83,7 +83,7 @@ See [Navigation Basics](navigation.md) for more details.
 
 ![Circuits](../UI/GenericResources/ButtonIcons/architecture.png) ![Inputs](../UI/GenericResources/ButtonIcons/input.png) ![Outputs](../UI/GenericResources/ButtonIcons/output.png) ![Connectivity Rules](../UI/GenericResources/ButtonIcons/neuron.png)
 
-- **Circuit Builder and Brain Monitor tab bars:** Circuits, Interconnect Areas, and Memory Areas, in that order. The whole tab bar is two UI sizes smaller than the root bar. Hover a title to open its list. **+** creates one. Choosing an entry moves the view to it. A tab opened on the main circuit also shows Inputs and Outputs. There is no Elements menu and no separate list icon.
+- **Circuit Builder and Brain Monitor tab bars:** Shown only while the pointer is on that tab. Circuits, Interconnect Areas, and Memory Areas, in that order. The whole tab bar is two UI sizes smaller than the root bar. Hover a title to open its list. **+** creates one. Choosing an entry moves the view to it. A tab opened on the main circuit also shows Inputs and Outputs. There is no Elements menu and no separate list icon.
 - **Add Circuit** (the Circuits **+**) includes Create New, packaged genomes or connectomes such as Logic AND and Logic OR, and Classifier. Classifier is an integrated circuit, marked by a gold IC chip on the top-right of its image. See [Integrated Circuits](integrated_circuits.md).
 
 ### Right Section (Tools)

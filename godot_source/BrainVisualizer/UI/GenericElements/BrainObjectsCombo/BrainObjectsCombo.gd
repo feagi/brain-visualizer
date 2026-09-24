@@ -120,6 +120,33 @@ static func should_show_tab_category_rows_on_strip(global_topbar_mode: bool) -> 
 	return not global_topbar_mode
 
 
+## Tab strips show while the pointer is on that tab, and while one of their menus is still open.
+static func tab_strip_should_be_visible(pointer_inside_tab: bool, popup_holding_open: bool) -> bool:
+	return pointer_inside_tab or popup_holding_open
+
+
+## Apply [method tab_strip_should_be_visible] for a Circuit Builder or Brain Monitor strip.
+## The root scene bar is left alone.
+func sync_tab_strip_visibility(pointer_inside_tab: bool) -> void:
+	if _global_topbar_mode:
+		return
+	var show_strip := tab_strip_should_be_visible(pointer_inside_tab, is_holding_tab_strip_open())
+	if visible != show_strip:
+		visible = show_strip
+
+
+## True while a menu opened from this strip is still up.
+## Those menus are separate windows, so the pointer can leave the tab without leaving the menu.
+func is_holding_tab_strip_open() -> bool:
+	if _list_popup != null and is_instance_valid(_list_popup) and _list_popup.visible:
+		return true
+	if is_connectome_menu_open():
+		return true
+	if _activity_visualization_dropdown != null and _activity_visualization_dropdown.is_inspector_dropdown_menu_open():
+		return true
+	return false
+
+
 ## Move [param node] under [param host].
 ## Adding a node directly onto its current owner makes that owner inconsistent, and later % lookups fail.
 static func reparent_under_host(host: Node, node: Node) -> void:

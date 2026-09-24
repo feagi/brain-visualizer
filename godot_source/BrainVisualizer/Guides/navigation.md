@@ -22,6 +22,7 @@ Use the **top bar lists** to jump directly to an object. Hover the title. The li
 3. A circuit, input, or output is shown in the current view. A connectivity rule opens the Connectivity Rules Manager on that rule.
 
 **Circuit Builder and Brain Monitor tab bars:**
+The bar is shown only while the pointer is on that tab.
 1. Hover **Circuits**, **Interconnect Areas**, or **Memory Areas**
 2. Select an entry
 3. The current view moves to that object
@@ -128,10 +129,12 @@ Navigate through region hierarchy:
 - **Distribute X, Y, or Z** keeps the outermost areas fixed and spaces the others evenly along that axis
 - Distribute needs at least 3 areas. Every selected area must be in the same circuit
 
-**Undo position changes:**
-- **Ctrl+Z** (Cmd+Z on macOS) reverses the last saved position change
+**Undo position and area deletes:**
+- **Ctrl+Z** (Cmd+Z on macOS) reverses the last saved position change or cortical-area delete
 - **Shift+Ctrl+Z** (Shift+Cmd+Z) applies it again
-- One drag, Arrange, circuit-builder move, or layout save is one step
+- One drag, Arrange, circuit-builder move, layout save, or area delete is one step
+- Undoing a delete creates the area again and restores its properties and mappings. The new area receives a new id
+- Circuit, classifier, core, and interconnect deletes are not undone
 - The history lasts for this genome session and clears when another genome loads
 
 ### Clear Selection
