@@ -59,7 +59,8 @@ From context menu:
 2. Select **Quick Connect**
 3. Click the destination in the current brain monitor, or click **Edit** to open Cortical Area Explorer and pick destinations from any circuit
 4. Choose a connectivity rule. An interconnect area mapped into a memory area has one qualified rule, Episodic Memory, so Quick Connect shows that rule only and skips the rule picker.
-5. Establish the connection
+5. Optionally enable **Advanced**, above Establish, to set PSP multiplier, inhibitory, synaptic delay, and STDP plasticity. Episodic Memory and classifier destinations do not show Advanced. Reward-modulated plasticity stays in the mapping editor.
+6. Establish the connection
 
 ### Method 3: Create Multiple
 
@@ -69,7 +70,7 @@ Connect one area to many:
 2. Select **Quick Connect**
 3. Click **Edit** on the destination step and check multiple destinations in Cortical Area Explorer (or Ctrl-click visible areas)
 4. Set common connectivity rule
-5. Create all mappings at once
+5. Create all mappings at once. If Advanced is enabled, those parameters apply to every destination.
 
 ### Method 4: Bidirectional
 

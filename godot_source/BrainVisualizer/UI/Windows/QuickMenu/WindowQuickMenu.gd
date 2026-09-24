@@ -15,6 +15,16 @@ var _close_requested_during_arrange: bool = false
 var _close_requested_clear_selection: bool = true
 
 
+func _ready() -> void:
+	var grid := get_node_or_null("WindowPanel/WindowMargin/WindowInternals/ToolbarGrid")
+	if grid != null and grid not in theme_scalar_nodes_to_not_include_or_search:
+		theme_scalar_nodes_to_not_include_or_search.append(grid)
+	super._ready()
+	_apply_toolbar_icon_size()
+	if BV.UI != null and not BV.UI.theme_changed.is_connected(_apply_toolbar_icon_size):
+		BV.UI.theme_changed.connect(_apply_toolbar_icon_size)
+
+
 func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.UNKNOWN) -> void:
 	print("🔍 QuickMenu: setup() called with %d objects" % selection.size())
 	_mode = GenomeObject.get_makeup_of_array(selection)
@@ -302,7 +312,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				delete_button.tooltip_text = mix_reason if not mix_reason.is_empty() else "One or more of the selected objects cannot be deleted."
 			
 	# Position after mode-specific visibility/layout changes so vertical distance is consistent.
-	_fit_toolbar_to_one_row()
+	_fit_toolbar()
 	call_deferred("_reposition_near_mouse_after_layout")
 
 
@@ -892,15 +902,60 @@ func _refresh_multi_cortical_controls() -> void:
 				if not rfr_reason.is_empty():
 					break
 		delete_button.tooltip_text = rfr_reason if not rfr_reason.is_empty() else "One or more of the selected areas cannot be deleted."
-	_fit_toolbar_to_one_row()
+	_fit_toolbar()
 
 
-## Visible actions stay on one row. Hidden actions do not reserve a cell.
-func _fit_toolbar_to_one_row() -> void:
+## Cortical-area popups wrap actions onto two rows. Brain-region popups stay on one row.
+## Hidden actions do not reserve a cell.
+func _fit_toolbar() -> void:
+	_apply_toolbar_icon_size()
 	var grid: GridContainer = _window_internals.get_node("ToolbarGrid") as GridContainer
 	var visible_count: int = 0
 	for child in grid.get_children():
 		var control := child as Control
 		if control != null and control.visible:
 			visible_count += 1
-	grid.columns = maxi(visible_count, 1)
+	var cortical_area_popup: bool = _mode in [
+		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA,
+		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS,
+	]
+	grid.columns = toolbar_column_count(visible_count, cortical_area_popup)
+
+
+## Column count for the quick-menu icon grid. Two rows only for cortical-area popups.
+static func toolbar_column_count(visible_count: int, cortical_area_popup: bool) -> int:
+	var count: int = maxi(visible_count, 1)
+	if cortical_area_popup:
+		return maxi((count + 1) / 2, 1)
+	return count
+
+
+## Popup icons use the same size as the top-bar icon buttons on this view.
+func _apply_toolbar_icon_size(_theme: Theme = null) -> void:
+	if _window_internals == null:
+		return
+	var grid := _window_internals.get_node_or_null("ToolbarGrid") as GridContainer
+	if grid == null:
+		return
+	var icon_size := _top_bar_icon_size()
+	for child in grid.get_children():
+		var button := child as TextureButton
+		if button == null:
+			continue
+		button.custom_minimum_size = icon_size
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+func _top_bar_icon_size() -> Vector2:
+	var element := ComboButtonStripStyler.TOP_BAR_CONTROL_THEME
+	var strip_scale: float = BrainObjectsCombo.scale_steps_below(
+		BV.UI.possible_UI_scales,
+		BV.UI.loaded_theme_scale.x,
+		BrainObjectsCombo.TAB_STRIP_SCALE_STEPS_SMALLER
+	)
+	var strip_theme: Theme = BV.UI.load_theme_resource(strip_scale, UIManager.THEME_COLORS.DARK)
+	if strip_theme != null and strip_theme.has_constant("size_x", element) and strip_theme.has_constant("size_y", element):
+		return Vector2(strip_theme.get_constant("size_x", element), strip_theme.get_constant("size_y", element))
+	push_error("Quick menu could not load the top-bar icon size at scale %s" % strip_scale)
+	return Vector2(BV.UI.get_minimum_size_from_loaded_theme(element))

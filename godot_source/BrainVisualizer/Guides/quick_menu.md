@@ -69,7 +69,8 @@ See [Cortical Areas](cortical_areas.md) for more details.
 2. Window opens with source already selected
 3. Click a destination in the current brain monitor, or click **Edit** to open Cortical Area Explorer and select one or more destinations from any circuit
 4. Choose connectivity rule
-5. Establish the connection
+5. Optionally enable **Advanced** to set PSP multiplier, inhibitory, synaptic delay, and plasticity. Episodic Memory and classifier destinations do not show Advanced.
+6. Establish the connection
 
 **Use When:**
 - Building neural circuits

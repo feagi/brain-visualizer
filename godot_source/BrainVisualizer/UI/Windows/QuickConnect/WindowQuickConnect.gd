@@ -35,6 +35,7 @@ var _step3_morphology_container: PanelContainer
 var _step3_morphology_view: UIMorphologyDefinition
 var _step3_morphology_details: MorphologyGenericDetails
 var _step4_button: Button
+var _advanced_mapping: QuickConnectAdvancedMapping
 
 # Horizontal icon shortcut bar for Core (system) morphologies
 var _core_bar_label: Label
@@ -72,6 +73,9 @@ func _ready() -> void:
 	_step3_morphology_view = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/SmartMorphologyView")
 	_step3_morphology_details = _window_internals.get_node("MorphologyInfoContainer/MorphologyInfo/MorphologyGenericDetails")
 	_step4_button = _window_internals.get_node("Establish")
+	_advanced_mapping = _window_internals.get_node("QuickConnectAdvancedMapping")
+	if not _advanced_mapping.layout_changed.is_connected(shrink_window):
+		_advanced_mapping.layout_changed.connect(shrink_window)
 	_core_bar_label = _window_internals.get_node_or_null("CoreConnectivityRulesLabel")
 	_core_bar = _window_internals.get_node("CoreMorphologiesBar")
 	_core_icons = _window_internals.get_node("CoreMorphologiesBar/Icons")
@@ -172,14 +176,26 @@ func establish_connection_button() -> void:
 	# Await each mapping so designation-conflict popups and update_region_designated_io complete before
 	# the next call. Without await, the first await inside set_mappings_between_corticals would yield
 	# and this function would hit close_window() immediately — breaking confirm/cancel and causing 500s.
+	var use_advanced: bool = _advanced_mapping != null and _advanced_mapping.visible and _advanced_mapping.is_advanced_enabled()
 	for destination_area in _destinations:
 		if destination_area == null:
 			continue
-		var out: FeagiRequestOutput = await FeagiCore.requests.append_default_mapping_between_corticals(
-			_source,
-			destination_area,
-			_selected_morphology,
-		)
+		var out: FeagiRequestOutput
+		if use_advanced:
+			var mapping: SingleMappingDefinition = _advanced_mapping.export_mapping(_selected_morphology)
+			if mapping == null:
+				return
+			out = await FeagiCore.requests.append_mapping_between_corticals(
+				_source,
+				destination_area,
+				mapping,
+			)
+		else:
+			out = await FeagiCore.requests.append_default_mapping_between_corticals(
+				_source,
+				destination_area,
+				_selected_morphology,
+			)
 		if out.failed_requirement and out.failed_requirement_key in [
 			&"USER_CANCELLED_DESIGNATION",
 			&"USER_CANCELLED_ALL_TO_ALL",
@@ -231,6 +247,7 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			push_error("UI: WINDOWS: WindowQuickConnect in unknown state!")
 	
 	_current_state = new_state
+	_sync_advanced_mapping()
 
 
 
@@ -376,6 +393,29 @@ func _on_morphology_cache_changed(_m: BaseMorphology) -> void:
 		return
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
 	_populate_core_morphology_icons(restrictions)
+
+## True when Quick Connect should offer PSP, inhibitory, delay, and plasticity.
+## Episodic Memory and classifier destinations keep the default mapping parameters.
+static func shows_advanced_mapping(morphology: BaseMorphology, classifier_destination: bool) -> bool:
+	if classifier_destination or morphology == null:
+		return false
+	return morphology.name != &"episodic_memory"
+
+
+## Shows the compact parameter form only after a connectivity rule is chosen.
+func _sync_advanced_mapping() -> void:
+	if _advanced_mapping == null:
+		return
+	var show: bool = _current_state == POSSIBLE_STATES.IDLE and shows_advanced_mapping(_selected_morphology, _destination_classifier != null)
+	var was_visible: bool = _advanced_mapping.visible
+	_advanced_mapping.visible = show
+	if show:
+		_advanced_mapping.load_for_morphology(_selected_morphology)
+		var restrictions: MappingRestrictionCorticalMorphology = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
+		_advanced_mapping.apply_restrictions(restrictions)
+	if was_visible != show:
+		shrink_window()
+
 
 func _set_core_bar_visibility(visible: bool) -> void:
 	_core_bar.visible = visible
@@ -525,7 +565,7 @@ func _create_icon_widget_for_morphology(morphology_id: StringName, morphology: B
 	selected_border_style.border_color = Color(0.2, 0.8, 0.45, 1)
 	selected_border_style.bg_color = Color(0, 0, 0, 0)
 	var border_panel := PanelContainer.new()
-	border_panel.custom_minimum_size = Vector2(320, 240) # tighter vertical footprint so label sits closer
+	border_panel.custom_minimum_size = Vector2(256, 192) # 20% smaller than the previous 320x240 tile
 	border_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	border_panel.add_theme_stylebox_override("panel", border_style)
 	border_panel.set_meta("border_normal", border_style)

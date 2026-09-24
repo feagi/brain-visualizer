@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://cflmy4e5hfxah"]
+[gd_scene load_steps=11 format=3 uid="uid://cflmy4e5hfxah"]
 
 [ext_resource type="Script" uid="uid://h7g0chyq5drw" path="res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="2_3u6kv"]
@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="5_udoep"]
 [ext_resource type="PackedScene" uid="uid://c8gpa1figwpvw" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.tscn" id="8_i85u6"]
 [ext_resource type="PackedScene" uid="uid://geytg8x6c7no" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/GenericDetails/MorphologyGenericDetails.tscn" id="9_fi7li"]
+[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectAdvancedMapping.tscn" id="10_adv"]
 
 [node name="WindowQuickConnect" type="VBoxContainer"]
 offset_right = 126.0
@@ -139,7 +140,7 @@ text = "Core connectivity rules"
 
 [node name="CoreMorphologiesBar" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false
-custom_minimum_size = Vector2(0, 280)
+custom_minimum_size = Vector2(0, 232)
 layout_mode = 2
 horizontal_scroll_mode = 2
 vertical_scroll_mode = 0
@@ -169,6 +170,10 @@ layout_mode = 2
 
 [node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="QuickConnectAdvancedMapping" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("10_adv")]
+visible = false
 layout_mode = 2
 
 [node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]

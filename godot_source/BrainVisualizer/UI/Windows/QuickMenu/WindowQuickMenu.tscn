@@ -83,7 +83,7 @@ layout_mode = 2
 
 [node name="ToolbarGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
-columns = 6
+columns = 8
 alignment = 1
 
 [node name="Details" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
