@@ -45,7 +45,7 @@ var _plus_buttons: Array[Control] = []
 
 ## Godot already delivered this event to the control. Do not re-test with
 ## get_global_rect()/get_global_mouse_position(); those spaces diverge inside
-## a SubViewport (Brain Monitor) and drop the Connectome press.
+## a SubViewport (Brain Monitor) and drop the Elements press.
 static func should_emit_press_for_gui_mouse_button(disabled: bool, hovered: bool, event: InputEvent) -> bool:
 	if disabled or not hovered:
 		return false

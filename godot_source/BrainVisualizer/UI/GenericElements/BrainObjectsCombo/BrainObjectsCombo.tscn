@@ -32,16 +32,16 @@ content_margin_bottom = 0.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_combo_row"]
 bg_color = Color(0.262745, 0.262745, 0.262745, 1)
-content_margin_left = 0.0
+content_margin_left = 12.0
 content_margin_top = 0.0
-content_margin_right = 0.0
+content_margin_right = 12.0
 content_margin_bottom = 0.0
 
 [node name="BrainObjectsCombo" type="HBoxContainer"]
 mouse_filter = 1
 size_flags_vertical = 4
 theme_type_variation = &"HBoxContainer_far"
-theme_override_constants/separation = 8
+theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
 [node name="ConnectomeGroup" type="HBoxContainer" parent="."]
@@ -68,7 +68,7 @@ theme_override_constants/separation = 6
 [node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeButton/HBoxContainer"]
 theme_type_variation = &"Label_Header"
 vertical_alignment = 1
-text = "Connectome"
+text = "Elements"
 
 [node name="ConnectomeMenu" type="PopupPanel" parent="ConnectomeGroup"]
 unique_name_in_owner = true
@@ -327,7 +327,7 @@ theme_override_constants/margin_bottom = 0
 [node name="ButtonsRow" type="HBoxContainer" parent="MainGroup/MarginContainer"]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_farther"
-theme_override_constants/separation = 6
+theme_override_constants/separation = 0
 
 [node name="InputsRow" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow"]
 unique_name_in_owner = true

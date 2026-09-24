@@ -1,5 +1,5 @@
 extends SceneTree
-## Connectome hamburger contract for BrainObjectsCombo.
+## Elements menu contract for BrainObjectsCombo.
 ## Does not instantiate the combo (BV autoload is unavailable under `godot -s`).
 ## Run: godot --headless -s res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/test_brain_objects_combo_connectome_menu.gd
 
@@ -13,6 +13,9 @@ func _initialize() -> void:
 	failures += _test_menu_ids_match_row_node_names()
 	failures += _test_scene_has_connectome_trigger()
 	failures += _test_connectome_button_uses_panel_plate()
+	failures += _test_elements_button_label()
+	failures += _test_elements_button_tooltip_copy()
+	failures += _test_elements_menu_opens_on_hover_for_tab_strips()
 	failures += _test_connectome_inner_hbox_ignores_mouse()
 	failures += _test_scene_keeps_object_combos_inside_menu()
 	failures += _test_classifier_row_uses_carbon_icon()
@@ -25,10 +28,10 @@ func _initialize() -> void:
 	failures += _test_keep_menu_open_when_pointer_still_on_trigger()
 	failures += _test_tab_overlay_z_index_matches_circuit_builder()
 	if failures == 0:
-		print("BrainObjectsCombo connectome menu tests: PASS")
+		print("BrainObjectsCombo Elements menu tests: PASS")
 		quit(0)
 	else:
-		push_error("BrainObjectsCombo connectome menu tests: FAIL (%d)" % failures)
+		push_error("BrainObjectsCombo Elements menu tests: FAIL (%d)" % failures)
 		quit(1)
 
 
@@ -89,6 +92,57 @@ func _test_connectome_button_uses_panel_plate() -> int:
 		return 1
 	if not is_equal_approx(float(script.connectome_hover_scale(false)), 1.0):
 		push_error("off-hover must return scale 1")
+		return 1
+	return 0
+
+
+func _test_elements_button_label() -> int:
+	var packed: PackedScene = load(COMBO_SCENE_PATH)
+	var state: SceneState = packed.get_state()
+	for i in range(state.get_node_count()):
+		if str(state.get_node_name(i)) != "Label":
+			continue
+		var path_str := str(state.get_node_path(i, false))
+		if path_str.find("ConnectomeButton") < 0 or path_str.find("ConnectomeMenu") >= 0:
+			continue
+		for p in range(state.get_node_property_count(i)):
+			if str(state.get_node_property_name(i, p)) != "text":
+				continue
+			if str(state.get_node_property_value(i, p)) != "Elements":
+				push_error("Elements button label must read Elements (got %s)" % [state.get_node_property_value(i, p)])
+				return 1
+			return 0
+	push_error("Elements button label missing from BrainObjectsCombo scene")
+	return 1
+
+
+func _test_elements_button_tooltip_copy() -> int:
+	var source := FileAccess.get_file_as_string(COMBO_SCRIPT_PATH)
+	if source.find("Connectome objects") >= 0:
+		push_error("Elements button tooltip must not say Connectome objects")
+		return 1
+	if source.find("Circuits, areas, memory, and classifiers") < 0:
+		push_error("Elements button tooltip must list circuits, areas, memory, and classifiers")
+		return 1
+	return 0
+
+
+func _test_elements_menu_opens_on_hover_for_tab_strips() -> int:
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	if not bool(script.should_open_elements_menu_on_hover(false, false)):
+		push_error("Elements menu must open on hover on Circuit Builder and Brain Monitor tabs")
+		return 1
+	if bool(script.should_open_elements_menu_on_hover(true, false)):
+		push_error("Elements menu must not open on hover on the main top bar")
+		return 1
+	if bool(script.should_open_elements_menu_on_hover(false, true)):
+		push_error("Elements menu must not open on hover when the button is disabled")
+		return 1
+	if int(script.ELEMENTS_MENU_ANCHOR_OVERLAP_PX) <= 0:
+		push_error("Elements menu must overlap the button so the pointer can move into it")
+		return 1
+	if float(script.ELEMENTS_MENU_HOVER_CLOSE_DELAY_SEC) <= 0.0:
+		push_error("Elements menu hover close delay must be positive")
 		return 1
 	return 0
 

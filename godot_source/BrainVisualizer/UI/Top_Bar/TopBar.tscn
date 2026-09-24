@@ -40,9 +40,9 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_combo_row"]
 bg_color = Color(0.262745, 0.262745, 0.262745, 1)
-content_margin_left = 0.0
+content_margin_left = 12.0
 content_margin_top = 0.0
-content_margin_right = 0.0
+content_margin_right = 12.0
 content_margin_bottom = 0.0
 
 
@@ -66,6 +66,7 @@ theme_type_variation = &"MarginContainer_far"
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer"]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_farther"
+theme_override_constants/separation = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 visible = false
@@ -194,6 +195,7 @@ size_flags_horizontal = 4
 
 [node name="HBoxContainer3" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
 layout_mode = 2
+theme_override_constants/separation = 0
 
 [node name="BrainAreasRow" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
 mouse_filter = 2
@@ -252,7 +254,7 @@ focus_mode = 0
 metadata/ignore_parent_press = true
 
 [node name="Spacer_AfterAddBrainAreas" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
-custom_minimum_size = Vector2(18, 0)
+custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 

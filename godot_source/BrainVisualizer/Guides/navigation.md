@@ -21,9 +21,9 @@ Use the **top toolbar dropdowns** to jump directly to any object:
 2. Select an IPU area from the list
 3. View instantly focuses on that area
 
-**Connectome Menu:**
-1. Click **Connectome** in the tab or top toolbar
-2. Choose **Circuits**, **Interconnect Areas**, or **Memory Areas**
+**Elements Menu:**
+1. Hover **Elements** on the Circuit Builder or Brain Monitor tab bar
+2. Choose **Circuits**, **Interconnect Areas**, **Memory Areas**, or **Classifiers**
 3. Select an object from that combo list to focus it
 
 **Outputs Dropdown:**
@@ -81,7 +81,7 @@ Some versions include a search feature:
 
 Browse organized lists in dropdowns:
 - **Inputs**: All IPU areas alphabetically
-- **Connectome**: Circuits, interconnect areas, and memory areas
+- **Elements**: Circuits, interconnect areas, memory areas, and classifiers
 - **Outputs**: All OPU areas alphabetically
 
 Click any item to navigate there.

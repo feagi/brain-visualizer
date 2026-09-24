@@ -26,6 +26,8 @@ script = ExtResource("1_henmy")
 layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
 initial_index = 1
+select_on_press = true
+open_on_hover = true
 tooltip_text = "Split view options"
 
 [node name="Circuit Builder" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]

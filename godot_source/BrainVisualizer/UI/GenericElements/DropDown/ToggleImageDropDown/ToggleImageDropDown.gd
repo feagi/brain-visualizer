@@ -8,10 +8,18 @@ signal user_change_option(label: StringName, index: int)
 @export var fade_out_selected_option: bool = true
 ## When false, option presses act like menu actions (emit + close) without changing trigger icon/selection state.
 @export var select_on_press: bool = true
+## Open the menu while the pointer is over the trigger. Used by the Inspectors dropdown.
+@export var open_on_hover: bool = false
+
+## Overlap so the pointer can move from the trigger into the menu without a gap.
+const MENU_ANCHOR_OVERLAP_PX: int = 4
+## Grace period while the pointer crosses from the trigger into the menu.
+const MENU_HOVER_CLOSE_DELAY_SEC: float = 0.15
 
 var _panel: PopupPanel
 var _button_holder: BoxContainer
 var _current_setting_index: int = -2 # start withs omething invalid that the initial index overrides on start
+var _menu_close_timer: Timer = null
 
 func _ready() -> void:
 	_panel = $PanelContainer
@@ -29,7 +37,14 @@ func _ready() -> void:
 	if select_on_press:
 		set_option(initial_index, false)
 	_toggle_menu(false)
-	focus_exited.connect(_toggle_menu.bind(false))
+	focus_exited.connect(_on_trigger_focus_exited)
+	if open_on_hover:
+		mouse_entered.connect(_open_menu_from_pointer)
+		mouse_exited.connect(_schedule_menu_close)
+		if not _panel.mouse_entered.is_connected(_cancel_menu_close):
+			_panel.mouse_entered.connect(_cancel_menu_close)
+		if not _panel.mouse_exited.is_connected(_schedule_menu_close):
+			_panel.mouse_exited.connect(_schedule_menu_close)
 
 ## Sets the selected button for the dropdown
 func set_option(option: int, should_emit_signal: bool = true, close_dropdown_menu: bool = true) -> void:
@@ -60,10 +75,23 @@ func set_option(option: int, should_emit_signal: bool = true, close_dropdown_men
 		user_change_option.emit(new_button.name, option)
 
 func dropdown_toggle() -> void:
+	if open_on_hover:
+		_open_menu_from_pointer()
+		return
 	if _is_menu_shown():
 		_toggle_menu(false)
 		return
 	_toggle_menu(true)
+
+
+## Hover-open is opt-in. A disabled trigger must stay closed.
+static func should_open_menu_on_hover(open_on_hover_enabled: bool, button_disabled: bool) -> bool:
+	return open_on_hover_enabled and not button_disabled
+
+
+## Keep the menu open while the pointer is on the trigger or the popup.
+static func should_keep_menu_open_while_pointer_inside(pointer_over_menu: bool, pointer_over_button: bool) -> bool:
+	return pointer_over_menu or pointer_over_button
 
 func get_number_of_buttons() -> int:
 	return _button_holder.get_child_count()
@@ -84,7 +112,10 @@ func _toggle_menu(show_menu: bool) -> void:
 		# reparent the panel to the root viewport and use screen-space anchor so the menu sits under the button.
 		_reparent_panel_to_root_viewport()
 		var anchor_screen := _get_anchor_screen_position()
-		_panel.position = anchor_screen + Vector2(0, size.y)
+		var menu_y: float = size.y
+		if open_on_hover:
+			menu_y -= float(MENU_ANCHOR_OVERLAP_PX)
+		_panel.position = anchor_screen + Vector2(0, menu_y)
 		_panel.popup()
 		grab_focus()
 	else:
@@ -176,6 +207,79 @@ func _emit_action_option(index: int) -> void:
 	var button := _get_texture_button(index)
 	user_change_option.emit(button.name, index)
 	_toggle_menu(false)
+
+func _on_trigger_focus_exited() -> void:
+	if open_on_hover:
+		call_deferred("_close_menu_if_pointer_left")
+		return
+	_toggle_menu(false)
+
+
+## Open from a hover or click. A second press does not close the menu.
+func _open_menu_from_pointer() -> void:
+	if not should_open_menu_on_hover(open_on_hover, disabled):
+		return
+	_cancel_menu_close()
+	if _is_menu_shown():
+		return
+	_toggle_menu(true)
+
+
+func _ensure_menu_close_timer() -> Timer:
+	if _menu_close_timer != null:
+		return _menu_close_timer
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.timeout.connect(_close_menu_if_pointer_left)
+	add_child(timer)
+	_menu_close_timer = timer
+	return timer
+
+
+func _schedule_menu_close() -> void:
+	if not _is_menu_shown():
+		return
+	_ensure_menu_close_timer().start(MENU_HOVER_CLOSE_DELAY_SEC)
+
+
+func _cancel_menu_close() -> void:
+	if _menu_close_timer != null:
+		_menu_close_timer.stop()
+
+
+func _close_menu_if_pointer_left() -> void:
+	if not _is_menu_shown():
+		return
+	if should_keep_menu_open_while_pointer_inside(_is_pointer_over_menu(), _is_pointer_over_trigger()):
+		return
+	_toggle_menu(false)
+
+
+func _is_pointer_over_trigger() -> bool:
+	var vp := get_viewport()
+	if vp == null:
+		return false
+	var hovered: Control = vp.gui_get_hovered_control()
+	if hovered == null:
+		return false
+	return self == hovered or is_ancestor_of(hovered)
+
+
+func _is_pointer_over_menu() -> bool:
+	if _panel == null:
+		return false
+	var tree := get_tree()
+	if tree != null and tree.root != null:
+		var root_hovered: Control = tree.root.gui_get_hovered_control()
+		if root_hovered != null and (_panel == root_hovered or _panel.is_ancestor_of(root_hovered)):
+			return true
+	var local_viewport := get_viewport()
+	if local_viewport != null:
+		var local_hovered: Control = local_viewport.gui_get_hovered_control()
+		if local_hovered != null and (_panel == local_hovered or _panel.is_ancestor_of(local_hovered)):
+			return true
+	return _panel.get_visible_rect().has_point(_panel.get_mouse_position())
+
 
 func _set_empty() -> void:
 	texture_normal = null

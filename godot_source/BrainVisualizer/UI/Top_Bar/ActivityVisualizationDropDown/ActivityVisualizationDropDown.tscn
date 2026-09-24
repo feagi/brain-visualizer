@@ -27,6 +27,7 @@ layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
 initial_index = -1
 select_on_press = false
+open_on_hover = true
 tooltip_text = "Inspectors"
 texture_normal = ExtResource("15_insp_s")
 texture_pressed = ExtResource("16_insp_c")

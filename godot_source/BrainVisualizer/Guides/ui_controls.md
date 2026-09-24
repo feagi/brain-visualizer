@@ -94,11 +94,12 @@ The main toolbar provides quick access to essential features:
 - **+** button to create new input
 - Quick navigation to any input area
 
-**Connectome Button:**
-- Hamburger menu for connectome objects
-- Dropdown combo rows for **Circuits**, **Interconnect Areas**, and **Memory Areas**
+**Elements Button:**
+- On the Circuit Builder and Brain Monitor tab bars
+- Opens on hover
+- Menu for circuits, interconnect areas, memory areas, and classifiers
+- Dropdown rows for **Circuits**, **Interconnect Areas**, **Memory Areas**, and **Classifiers**
 - Each row lists existing objects and has a **+** button to create one
-- Additional object types (for example Classifier) will be added to this same menu
 
 **Outputs Button:**
 - Dropdown showing all OPU areas
@@ -134,6 +135,16 @@ The main toolbar provides quick access to essential features:
 - Opens this help system
 - Search and browse topics
 - Quick reference
+
+**Split View Button:**
+- On the root scene top bar
+- Opens on hover
+- Circuit Builder, Brain Monitor, vertical split, and horizontal split
+
+**Inspectors Button:**
+- On the root scene top bar and the Brain Monitor tab bar
+- Opens on hover
+- Connection inspector, voxel inspector, and memory inspector
 
 **Activity Rendering Toggle:**
 - Show/hide global neural connections

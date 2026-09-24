@@ -224,7 +224,7 @@ func _exit_tree() -> void:
 
 
 ## Tab/split monitors need SubViewport-local mouse coords so overlay buttons
-## (Connectome) receive _gui_input. temp_root_bm is often assigned after _ready.
+## (Elements) receive _gui_input. temp_root_bm is often assigned after _ready.
 func _apply_tab_subviewport_input_mode() -> void:
 	var subviewport := $SubViewport as SubViewport
 	if subviewport == null:

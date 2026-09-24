@@ -1,7 +1,7 @@
 extends HBoxContainer
 class_name BrainObjectsCombo
 
-## Ordered connectome hamburger rows. Append a new id here when adding a combo
+## Ordered Elements menu rows. Append a new id here when adding a combo
 ## (e.g. classifier) and place the matching combo button under %MenuItems.
 const CONNECTOME_MENU_ITEM_CIRCUIT: StringName = &"circuit"
 const CONNECTOME_MENU_ITEM_INTERCONNECT: StringName = &"interconnect"
@@ -19,6 +19,7 @@ var _force_disabled_override: bool = false
 var _btn_connectome: BasePanelContainerButton
 var _connectome_label: Label
 var _connectome_hover_wired: bool = false
+var _elements_menu_close_timer: Timer = null
 var _connectome_menu: PopupPanel
 var _connectome_menu_items: VBoxContainer
 var _btn_brain_regions_list: BasePanelContainerButton
@@ -49,12 +50,16 @@ var _camera_animations_button: ButtonTextureRectScaling
 const HOVER_SCALE := Vector2(1.15, 1.15)
 const NORMAL_SCALE := Vector2(1.0, 1.0)
 const BACKPLATE_COLOR := Color("252525")
-## Fill of inspectors_S.jpg / camera_S.jpg so Connectome matches those icon buttons.
+## Fill of inspectors_S.jpg / camera_S.jpg so Elements matches those icon buttons.
 const ICON_BUTTON_PLATE_COLOR := Color8(67, 67, 67)
-## Horizontal inset so "Connectome" is not flush against the plate.
+## Horizontal inset so "Elements" is not flush against the plate.
 const CONNECTOME_PLATE_PAD_X: int = 12
 ## In-place text pop. Scale avoids a layout resize that cancels hover.
 const CONNECTOME_HOVER_SCALE: float = 1.1
+## Overlap so the pointer can move from Elements into the menu without a gap.
+const ELEMENTS_MENU_ANCHOR_OVERLAP_PX: int = 4
+## Grace period while the pointer crosses from the button into the menu.
+const ELEMENTS_MENU_HOVER_CLOSE_DELAY_SEC: float = 0.15
 ## Same overlay stacking as CircuitBuilder.tscn so tab chrome stays above the view.
 const TAB_OVERLAY_Z_INDEX: int = 10
 ## Expander between list and + on a hamburger row. Ignores mouse so the plate is not a button.
@@ -71,7 +76,7 @@ var _list_popup: FilterableListPopup
 var _hosted_styled_tooltips_applied: bool = false
 var _plus_hover_tween: Tween = null
 
-## Ordered ids for the Connectome hamburger rows.
+## Ordered ids for the Elements menu rows.
 static func connectome_menu_item_ids() -> PackedStringArray:
 	return PackedStringArray([
 		String(CONNECTOME_MENU_ITEM_CIRCUIT),
@@ -84,6 +89,11 @@ static func connectome_menu_item_ids() -> PackedStringArray:
 ## Hover scale is a fixed factor. Never multiply the current scale again.
 static func connectome_hover_scale(hovered: bool) -> float:
 	return CONNECTOME_HOVER_SCALE if hovered else 1.0
+
+
+## Tab strips open Elements on hover. The main top bar has no Elements button.
+static func should_open_elements_menu_on_hover(global_topbar_mode: bool, button_disabled: bool) -> bool:
+	return not global_topbar_mode and not button_disabled
 
 
 ## Scene node names under %MenuItems, same order as [method connectome_menu_item_ids].
@@ -132,9 +142,12 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
 	_btn_connectome.focus_mode = Control.FOCUS_ALL
-	_btn_connectome.pressed.connect(_toggle_connectome_menu)
-	_btn_connectome.pressed.connect(_reset_connectome_label_hover)
+	_btn_connectome.pressed.connect(_open_elements_menu_from_pointer)
 	_btn_connectome.focus_exited.connect(_on_connectome_focus_exited)
+	if not _connectome_menu.mouse_entered.is_connected(_cancel_elements_menu_close):
+		_connectome_menu.mouse_entered.connect(_cancel_elements_menu_close)
+	if not _connectome_menu.mouse_exited.is_connected(_schedule_elements_menu_close):
+		_connectome_menu.mouse_exited.connect(_schedule_elements_menu_close)
 	_btn_brain_regions_list.pressed.connect(_open_brain_regions)
 	_btn_brain_regions_add.pressed.connect(_add_brain_region)
 	_btn_interconnect_list.pressed.connect(_open_interconnect_areas)
@@ -172,7 +185,7 @@ func _ready() -> void:
 
 ## Default Godot tooltips when this strip is not using the main top bar custom tooltip host.
 func _apply_native_tooltips_for_combo_strip() -> void:
-	_btn_connectome.tooltip_text = "Connectome objects"
+	_btn_connectome.tooltip_text = "Circuits, areas, memory, and classifiers"
 	_btn_brain_regions_list.tooltip_text = "Select circuit"
 	_btn_brain_regions_add.tooltip_text = "Add circuit"
 	_btn_interconnect_list.tooltip_text = "Select interconnect area"
@@ -223,7 +236,7 @@ func apply_custom_topbar_tooltips() -> void:
 		CustomTopBarTooltipManager.wire_toggle_dropdown_menu_tooltips(act_toggle, true)
 	CustomTopBarTooltipManager.strip_native_tooltips_recursive(self)
 	var pairs: Array = [
-		[_btn_connectome, "Connectome objects"],
+		[_btn_connectome, "Circuits, areas, memory, and classifiers"],
 		[_btn_brain_regions_list, "View all circuits"],
 		[_btn_brain_regions_add, "Add a new circuit"],
 		[_btn_interconnect_list, "View interconnect areas"],
@@ -283,13 +296,30 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer"))
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList/HBoxContainer"))
 	COMBO_STYLER.apply_list_hbox_spacing(self, list_hbox_paths)
+	add_theme_constant_override("separation", 0)
+	var buttons_row := $MainGroup/MarginContainer/ButtonsRow as HBoxContainer
+	if buttons_row != null:
+		buttons_row.add_theme_constant_override("separation", 0)
+	var plate_gap_paths := [
+		NodePath("Spacer_AfterConnectome"),
+		NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddInputs"),
+	]
+	COMBO_STYLER.apply_spacer_width(self, plate_gap_paths, COMBO_STYLER.COMBO_PLATE_GAP)
 	var spacer_paths := []
-	spacer_paths.append(NodePath("Spacer_AfterConnectome"))
-	spacer_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddInputs"))
 	spacer_paths.append(NodePath("Spacer_BeforeRearrange"))
 	spacer_paths.append(NodePath("Spacer_AfterRearrange"))
 	spacer_paths.append(NodePath("Spacer_BeforeMonitorTools"))
 	COMBO_STYLER.apply_spacer_width(self, spacer_paths)
+	var combo_rows: Array[PanelContainer] = [
+		%BrainRegionsRow,
+		%InterconnectAreasRow,
+		%MemoryAreasRow,
+		%ClassifierRow,
+		%InputsRow,
+		%OutputsRow,
+	]
+	for combo_row in combo_rows:
+		COMBO_STYLER.apply_combo_row_plate_padding(combo_row)
 
 
 ## Remove per-group wrapper plates so all contexts read as one cohesive strip.
@@ -314,23 +344,26 @@ func _on_theme_changed(new_theme: Theme) -> void:
 	_style_connectome_like_icon_buttons()
 
 
-## Current top-bar scale by usage context.
+## Current top-bar scale by usage context. The root bar matches the icon strip at full size.
 func _get_context_size_scale() -> float:
+	if _global_topbar_mode:
+		return 1.0
 	return SIZE_SCALE_3D if _is_3d_context else SIZE_SCALE_2D
 
 func _apply_theme_sizes_recursive(node: Node) -> void:
-	for child in node.get_children():
-		if child is TextureButton:
-			var tb := child as TextureButton
-			var tb_fallback: StringName = StringName(tb.theme_type_variation) if String(tb.theme_type_variation) != "" else &"TextureButton"
-			tb.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(tb, tb_fallback) * _get_context_size_scale()
-		elif child is TextureRect:
-			var tr := child as TextureRect
-			var tr_fallback: StringName = StringName(tr.theme_type_variation) if String(tr.theme_type_variation) != "" else &"TextureRect"
-			tr.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(tr, tr_fallback) * _get_context_size_scale()
-		_apply_theme_sizes_recursive(child)
+	var top_bar_size := BV.UI.get_minimum_size_from_loaded_theme(ComboButtonStripStyler.TOP_BAR_CONTROL_THEME)
+	var scaled_size := Vector2(top_bar_size) * _get_context_size_scale()
+	_apply_uniform_control_size(node, scaled_size)
 
-## Paint and size Connectome like the inspector / camera icon buttons beside it.
+
+## Icons and plus buttons share the icon-strip height so every top-bar segment is one size.
+func _apply_uniform_control_size(node: Node, control_size: Vector2) -> void:
+	for child in node.get_children():
+		if child is TextureButton or child is TextureRect:
+			(child as Control).custom_minimum_size = control_size
+		_apply_uniform_control_size(child, control_size)
+
+## Paint and size Elements like the inspector / camera icon buttons beside it.
 func _style_connectome_like_icon_buttons() -> void:
 	if _btn_connectome == null:
 		return
@@ -375,10 +408,12 @@ func _on_connectome_label_hover(hovered: bool) -> void:
 		_reset_connectome_label_hover()
 		return
 	_apply_connectome_label_scale(connectome_hover_scale(true))
+	_open_elements_menu_from_pointer()
 
 
 func _on_connectome_mouse_exited() -> void:
-	if _btn_connectome != null and _btn_connectome.get_global_rect().has_point(_btn_connectome.get_global_mouse_position()):
+	_schedule_elements_menu_close()
+	if _is_pointer_over_connectome_button():
 		return
 	_reset_connectome_label_hover()
 
@@ -435,7 +470,7 @@ func set_2d_context(cb_scene: CircuitBuilder, region: BrainRegion) -> void:
 
 
 ## Use this component as the shared global top-bar strip.
-## Top bar is circuits + I/O only. Connectome hamburger stays on Circuit Builder / Brain Monitor tabs.
+## Top bar is circuits + I/O only. Elements menu stays on Circuit Builder / Brain Monitor tabs.
 func set_global_topbar_mode() -> void:
 	_global_topbar_mode = true
 	_bm_scene = null
@@ -446,7 +481,7 @@ func set_global_topbar_mode() -> void:
 	_on_theme_changed(theme)
 
 
-## Circuits sit on the main top bar strip; they stay inside the Connectome menu on tab combos.
+## Circuits sit on the main top bar strip; they stay inside the Elements menu on tab combos.
 func _place_circuits_on_topbar_strip() -> void:
 	var circuits_row: Control = %BrainRegionsRow
 	if circuits_row.get_parent() == self:
@@ -484,7 +519,7 @@ func _update_buttons_state() -> void:
 		return
 	# Listing is always enabled (direct-only; will be empty if none)
 	_set_all_buttons_disabled(_force_disabled_override)
-	# Root region keeps Inputs/Outputs on the strip; connectome objects stay in the hamburger.
+	# Root region keeps Inputs/Outputs on the strip; elements stay in the menu.
 	var is_root := _is_root_region()
 	_set_visibility_for_context(is_root, not _is_3d_context)
 	_update_monitor_tools_visibility()
@@ -515,7 +550,7 @@ func _set_all_buttons_disabled(disabled: bool) -> void:
 ## Brain Monitor tab strip only: same controls as the main top bar, scoped to this tab's 3D scene.
 func _update_monitor_tools_visibility() -> void:
 	var show_tools := _is_3d_context and _bm_scene != null and not _global_topbar_mode
-	# Do not insert extra spacers here. Connectome / inspector / camera share the strip gap.
+	# Do not insert extra spacers here. Elements / inspector / camera share the strip gap.
 	if _spacer_before_monitor_tools != null:
 		_spacer_before_monitor_tools.visible = false
 	if _activity_visualization_dropdown != null:
@@ -753,7 +788,7 @@ func _is_root_region() -> bool:
 	return root_region != null and root_region == context_region
 
 func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_layout: bool) -> void:
-	# Connectome hamburger is Circuit Builder / Brain Monitor only.
+	# Elements menu is Circuit Builder / Brain Monitor only.
 	var show_connectome := not _global_topbar_mode
 	if _group_connectome:
 		_group_connectome.visible = show_connectome
@@ -906,17 +941,53 @@ func _set_connectome_menu_row_focus_none() -> void:
 			row.focus_mode = Control.FOCUS_NONE
 
 
-## True while the Connectome hamburger popup is visible.
+## True while the Elements menu popup is visible.
 func is_connectome_menu_open() -> bool:
 	return _connectome_menu != null and _connectome_menu.visible
 
 
-## Toggle the Connectome hamburger that hosts circuit / interconnect / memory combos.
-func _toggle_connectome_menu() -> void:
+## Open the Elements menu from a hover or click on the Circuit Builder / Brain Monitor tab strip.
+func _open_elements_menu_from_pointer() -> void:
+	if _btn_connectome == null:
+		return
+	if not should_open_elements_menu_on_hover(_global_topbar_mode, _btn_connectome.disabled):
+		return
+	_cancel_elements_menu_close()
 	if is_connectome_menu_open():
-		_close_connectome_menu()
 		return
 	_open_connectome_menu()
+
+
+func _ensure_elements_menu_close_timer() -> Timer:
+	if _elements_menu_close_timer != null:
+		return _elements_menu_close_timer
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.timeout.connect(_close_elements_menu_if_pointer_left)
+	add_child(timer)
+	_elements_menu_close_timer = timer
+	return timer
+
+
+func _schedule_elements_menu_close() -> void:
+	if not is_connectome_menu_open():
+		return
+	_ensure_elements_menu_close_timer().start(ELEMENTS_MENU_HOVER_CLOSE_DELAY_SEC)
+
+
+func _cancel_elements_menu_close() -> void:
+	if _elements_menu_close_timer != null:
+		_elements_menu_close_timer.stop()
+
+
+func _close_elements_menu_if_pointer_left() -> void:
+	if not is_connectome_menu_open():
+		return
+	if should_keep_connectome_menu_open_after_focus_lost(_is_pointer_over_connectome_menu(), _is_pointer_over_connectome_button()):
+		return
+	_close_connectome_menu()
+	if not _is_pointer_over_connectome_button():
+		_reset_connectome_label_hover()
 
 
 func _open_connectome_menu() -> void:
@@ -928,7 +999,8 @@ func _open_connectome_menu() -> void:
 	align_connectome_menu_add_buttons(_connectome_menu_items)
 	_connectome_menu.size = Vector2.ZERO
 	var anchor_screen := _get_connectome_anchor_screen_position()
-	_connectome_menu.position = Vector2i(anchor_screen + Vector2(0, _btn_connectome.size.y))
+	var menu_y: float = _btn_connectome.size.y - float(ELEMENTS_MENU_ANCHOR_OVERLAP_PX)
+	_connectome_menu.position = Vector2i(anchor_screen + Vector2(0, menu_y))
 	_connectome_menu.popup()
 	# The menu can open under a stationary pointer. mouse_entered will not fire until it moves.
 	call_deferred("_sync_connectome_menu_hover")
@@ -983,7 +1055,7 @@ func _close_connectome_menu_if_focus_lost() -> void:
 	_close_connectome_menu()
 
 
-## True when the Connectome trigger owns the pointer in its own viewport.
+## True when the Elements trigger owns the pointer in its own viewport.
 func _is_pointer_over_connectome_button() -> bool:
 	if _btn_connectome == null:
 		return false
@@ -1044,7 +1116,7 @@ func _get_connectome_anchor_screen_position() -> Vector2:
 	return anchor_pos
 
 
-## After the hamburger closes, spawn list/create UI from the still-visible Connectome button.
+## After the menu closes, spawn list/create UI from the still-visible Elements button.
 func _connectome_action_anchor() -> Control:
 	_close_connectome_menu()
 	return _btn_connectome
@@ -1124,7 +1196,7 @@ func _collect_cortical_areas_matching_types_in_region_tree(
 	return out
 
 func _draw() -> void:
-	# Main top bar keeps a shared plate. Tab combos must not, or Connectome
+	# Main top bar keeps a shared plate. Tab combos must not, or Elements
 	# melts into the same color as the inspector / camera buttons.
 	if not _global_topbar_mode:
 		return

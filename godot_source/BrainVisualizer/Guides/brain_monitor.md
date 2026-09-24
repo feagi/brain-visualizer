@@ -188,7 +188,7 @@ Neural activity can be visualized in different ways:
 
 ### Global Neural Connections Toggle
 
-Use the **Activity Rendering Toggle** in the top toolbar:
+Hover **Inspectors** on the main top bar or the Brain Monitor tab bar, then choose the connection inspector:
 - **Enable**: Show all connections globally
 - **Disable**: Show connections only on hover
 - Useful for understanding overall architecture

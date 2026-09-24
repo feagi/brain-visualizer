@@ -72,8 +72,17 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddCircuits"))
 	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddInputs"))
 	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddOutputs"))
-	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/Spacer_AfterAddBrainAreas"))
 	COMBO_STYLER.apply_spacer_width(self, spacer_paths)
+	# The rules plate is the last combo button. No extra spacer after it.
+	var rules_tail := get_node_or_null("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/Spacer_AfterAddBrainAreas") as Control
+	if rules_tail != null:
+		rules_tail.custom_minimum_size = Vector2.ZERO
+	var rules_host := $Buttons/MarginContainer/HBoxContainer/HBoxContainer3 as HBoxContainer
+	rules_host.add_theme_constant_override("separation", 0)
+	var combo_host := $Buttons/MarginContainer/HBoxContainer as HBoxContainer
+	combo_host.add_theme_constant_override("separation", COMBO_STYLER.COMBO_PLATE_GAP)
+	var rules_row := $Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow as PanelContainer
+	COMBO_STYLER.apply_combo_row_plate_padding(rules_row)
 
 
 ## Mount the shared combo implementation used across Circuit Builder and Brain Monitor.
@@ -522,7 +531,11 @@ func _add_tooltip_to_control(control: Control, tooltip_text: String) -> void:
 		return
 	CustomTopBarTooltipManager.strip_native_tooltips_recursive(control)
 	control.tooltip_text = ""
-	control.mouse_filter = Control.MOUSE_FILTER_PASS
+	# Dropdown triggers must keep mouse events. PASS lets the plate behind them take the hover.
+	if control is ToggleImageDropDown:
+		control.mouse_filter = Control.MOUSE_FILTER_STOP
+	else:
+		control.mouse_filter = Control.MOUSE_FILTER_PASS
 	if control.get_node_or_null("TooltipTrigger") != null:
 		var existing: Node = control.get_node("TooltipTrigger")
 		if existing.has_method("set_tooltip_text"):

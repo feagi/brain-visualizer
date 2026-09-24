@@ -66,10 +66,8 @@ Both panels show the same region from different perspectives.
 
 Create split view manually:
 
-1. Look for Split View toggle or controls
-2. Usually in top-left of Circuit Builder area
-3. Click to activate split mode
-4. Choose orientation (horizontal/vertical)
+1. Hover **Split view** on the root scene top bar
+2. Choose Circuit Builder, Brain Monitor, vertical split, or horizontal split
 
 ### Method 3: View Controls
 
@@ -282,7 +280,7 @@ For genomes with many areas:
 ### Return to Single View
 
 **Method 1:**
-- Click split view toggle to disable
+- Hover **Split view** on the root scene top bar and choose Circuit Builder or Brain Monitor
 - Returns to Circuit Builder only
 - Or Brain Monitor only (depending on last active)
 
