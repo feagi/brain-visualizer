@@ -28,12 +28,9 @@ Brain Visualizer's interface consists of several key areas:
 **Top Toolbar**
 - Connection status and genome statistics
 - Burst rate control (neural processing speed)
-- Quick access on the Circuit Builder and Brain Monitor tab bars for Circuits, Interconnect Areas, and Memory Areas. Hover a title to list existing ones. **+** creates one.
-- Connectivity Rule manager
-- Options and settings
-- Camera animations
-- UI scale controls
-- This guide
+- Root scene bar: Circuits, Inputs, Outputs, and Connectivity Rules. Hover a title to list them. **+** creates one.
+- Circuit Builder and Brain Monitor tab bars: Circuits, Interconnect Areas, and Memory Areas. Those bars are two UI sizes smaller. Hover a title to list them. **+** creates one.
+- Split view, inspectors, camera animations, this guide, and settings
 
 **Circuit Builder (2D View)**
 - Node-based graph showing your cortical areas as boxes
@@ -82,22 +79,12 @@ See [Navigation Basics](navigation.md) for more details.
 
 ### Middle Section (Quick Access)
 
-- **Circuits, Inputs, and Outputs** on the root scene top bar: hover the title to list existing ones. **+** creates one.
-- **Inputs**: Create and manage input cortical areas (IPU)
+- **Root scene top bar:** Circuits, Inputs, Outputs, and Connectivity Rules. Hover a title to open its list. **+** creates one. Choosing a circuit, input, or output moves the view to it. Choosing a connectivity rule opens the Connectivity Rules Manager on that rule.
 
-![Inputs Button](../UI/GenericResources/ButtonIcons/input.png)
+![Circuits](../UI/GenericResources/ButtonIcons/architecture.png) ![Inputs](../UI/GenericResources/ButtonIcons/input.png) ![Outputs](../UI/GenericResources/ButtonIcons/output.png) ![Connectivity Rules](../UI/GenericResources/ButtonIcons/neuron.png)
 
-- **Circuits, Interconnect Areas, and Memory Areas** on the Circuit Builder and Brain Monitor tab bars: hover the title to list existing ones. **+** creates one. Add a classifier from **Add Circuit**; it is marked as an Integrated Circuit.
-
-![Elements Button](../UI/GenericResources/ButtonIcons/architecture.png)
-
-- **Outputs**: Create and manage output cortical areas (OPU)
-
-![Outputs Button](../UI/GenericResources/ButtonIcons/output.png)
-
-- **Connectivity Rules**: Hover the title to list connection templates. Select one to open it in the Connectivity Rules Manager. **+** creates one.
-
-![Connectivity Rules Button](../UI/GenericResources/ButtonIcons/Gear_C.png)
+- **Circuit Builder and Brain Monitor tab bars:** Circuits, Interconnect Areas, and Memory Areas, in that order. The whole tab bar is two UI sizes smaller than the root bar. Hover a title to open its list. **+** creates one. Choosing an entry moves the view to it. A tab opened on the main circuit also shows Inputs and Outputs. There is no Elements menu and no separate list icon.
+- **Add Circuit** (the Circuits **+**) includes Create New, packaged genomes or connectomes such as Logic AND and Logic OR, and Classifier. Classifier is an integrated circuit, marked by a gold IC chip on the top-right of its image. See [Integrated Circuits](integrated_circuits.md).
 
 ### Right Section (Tools)
 - **Options**: Application settings and preferences

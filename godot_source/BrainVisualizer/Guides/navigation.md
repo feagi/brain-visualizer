@@ -14,22 +14,18 @@ Each has its own navigation system optimized for its purpose.
 
 ### Direct Navigation (Fastest)
 
-Use the **top toolbar dropdowns** to jump directly to any object:
+Use the **top bar lists** to jump directly to an object. Hover the title. The list opens. There is no separate list icon.
 
-**Circuits, Inputs, and Outputs (root scene top bar):**
-1. Hover **Circuits**, **Inputs**, or **Outputs**
-2. Select an object from the list
-3. View instantly focuses on that object
+**Root scene top bar:**
+1. Hover **Circuits**, **Inputs**, **Outputs**, or **Connectivity Rules**
+2. Select an entry
+3. A circuit, input, or output is shown in the current view. A connectivity rule opens the Connectivity Rules Manager on that rule.
 
-**Connectivity Rules (root scene top bar):**
-1. Hover **Connectivity Rules**
-2. Select a rule from the list
-3. The Connectivity Rules Manager opens with that rule shown
-
-**Circuits, Interconnect Areas, and Memory Areas (tab bars):**
-1. Hover **Circuits**, **Interconnect Areas**, or **Memory Areas** on the Circuit Builder or Brain Monitor tab bar
-2. Select an object from the list
-3. View instantly focuses on that object
+**Circuit Builder and Brain Monitor tab bars:**
+1. Hover **Circuits**, **Interconnect Areas**, or **Memory Areas**
+2. Select an entry
+3. The current view moves to that object
+4. A tab opened on the main circuit also lists Inputs and Outputs the same way
 
 This method works from anywhere and is the fastest way to navigate.
 
@@ -46,8 +42,8 @@ Jump to selected objects:
 1. Right-click object
 2. Select **Focus** (if available)
 
-**Method 3 - Dropdown Selection:**
-- Selecting from dropdowns automatically focuses
+**Method 3 - Top bar list:**
+- Hover a category title and select an entry. The current view focuses on it. Connectivity Rules is the exception: that selection opens the manager.
 
 ### Manual Navigation
 
@@ -79,13 +75,13 @@ Some versions include a search feature:
 
 ### Using Lists
 
-Browse organized lists in dropdowns:
-- **Inputs**: All IPU areas alphabetically
-- **Circuits, Interconnect Areas, and Memory Areas**: on the Circuit Builder and Brain Monitor tab bars. Hover the title. Classifiers are added from **Add Circuit** as Integrated Circuits.
-- **Outputs**: All OPU areas alphabetically
-- **Connectivity Rules**: Every connectivity rule, in the same order as the manager's left list. Selecting one opens that rule in the manager.
+Browse the hover lists:
+- **Inputs** and **Outputs** on the root scene top bar, and on a tab opened on the main circuit: areas of that type, by name
+- **Circuits** on the root scene top bar: every circuit under the main circuit, by name. On a tab bar, Circuits lists the circuits directly inside the open region.
+- **Interconnect Areas** and **Memory Areas**: on Circuit Builder and Brain Monitor tab bars
+- **Connectivity Rules** on the root scene top bar: the same rows as the manager's left list. Selecting one opens that rule in the manager.
 
-Click any cortical area or circuit to navigate there.
+Selecting a circuit or cortical area moves the current view to it. It does not open a new tab.
 
 ### Using Hierarchy
 
@@ -275,7 +271,7 @@ Understanding flow helps navigate purposefully.
 Navigate hierarchically:
 1. View Main Circuit (top level)
 2. Identify major regions
-3. Double-click or use dropdown to enter
+3. Double-click a circuit, or hover **Circuits** and select it, to focus it
 4. Explore contents
 5. Return to parent as needed
 
@@ -285,7 +281,7 @@ Navigate hierarchically:
 
 **Finding Lost Objects:**
 - Right-click → Fit All to see everything
-- Use dropdowns to jump directly
+- Hover a top bar title and select the object
 - Check you're in the correct region
 
 **Organizing for Navigation:**
@@ -412,13 +408,13 @@ Access via **Options** → **Display** or **Developer Options**.
 ### For Medium Genomes (20-100 areas)
 
 - Use regions to organize
-- Combine manual and dropdown navigation
+- Combine manual navigation with the top bar lists
 - Split view for efficiency
 
 ### For Large Genomes (100+ areas)
 
 - Heavy use of regions and hierarchy
-- Primarily dropdown navigation
+- Primarily the top bar lists
 - Region-specific tabs
 - Camera animations for presentations
 
@@ -426,16 +422,16 @@ Access via **Options** → **Display** or **Developer Options**.
 
 **"I'm lost and can't find anything"**
 - Press Home or Fit All
-- Use Circuits dropdown to go to Main Circuit
+- Close the region tab, or open the main circuit from its parent view. The Circuits list does not include the main circuit itself.
 - Close all tabs and start over
 
 **"Object isn't where I expected"**
-- Check which region it's in (use dropdowns)
+- Check which region it is in. Hover **Circuits** to list circuits by name.
 - Verify you're viewing correct region
 - Use global search if available
 
 **"Navigation is too slow"**
-- Use dropdowns instead of manual panning
+- Hover a top bar title instead of panning across the genome
 - Learn and use keyboard shortcuts
 - Increase camera speed in Options
 
@@ -452,8 +448,8 @@ Access via **Options** → **Display** or **Developer Options**.
 ## Best Practices
 
 1. **Learn Keyboard Shortcuts**: Much faster than mouse-only
-2. **Use Dropdowns for Long Distances**: Don't manually pan across large circuits
-3. **Name Objects Clearly**: Makes navigation via dropdowns much easier
+2. **Use the Top Bar Lists for Long Distances**: Don't manually pan across large circuits
+3. **Name Objects Clearly**: Makes the hover lists easier to scan
 4. **Organize with Regions**: Essential for large genomes
 5. **Use Split View**: Best for understanding structure + activity
 6. **Save Important Views**: Camera animations preserve your work

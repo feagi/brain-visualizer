@@ -301,8 +301,9 @@ cells to preview the destination connections for that specific source position.
 Access via top toolbar:
 
 1. Hover **Connectivity Rules** on the root scene top bar
-2. Select a rule, or open the manager and view the list of all connectivity rules
-3. See details:
+2. The list is the same set of rules as the left side of the Connectivity Rules Manager
+3. Select a rule to open the manager with that rule shown
+4. See details:
    - Name
    - Type
    - Usage count (how many mappings use it)
@@ -318,16 +319,21 @@ Click a connectivity rule to view:
 
 ## Creating Connectivity Rules
 
-### Method 1: Via Connectivity Rule Manager
+### Method 1: From the root scene top bar
 
-1. Open the Connectivity Rules Manager by selecting a rule from the top bar list
-2. Click **+ Create New** button
+1. Click **+** beside **Connectivity Rules**
+2. Choose the connectivity rule type
+
+### Method 2: Via Connectivity Rule Manager
+
+1. Hover **Connectivity Rules** and select any rule to open the manager
+2. Click **+ Create New**
 3. Choose connectivity rule type
 4. Configure parameters
 5. Name the connectivity rule
 6. Click **Create**
 
-### Method 2: During Mapping Creation
+### Method 3: During Mapping Creation
 
 When connecting cortical areas:
 1. Open Mapping Editor
@@ -335,7 +341,7 @@ When connecting cortical areas:
 3. Configure and create inline
 4. Apply to the mapping
 
-### Method 3: Clone Existing
+### Method 4: Clone Existing
 
 Duplicate and modify:
 1. Open Connectivity Rule Manager

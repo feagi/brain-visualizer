@@ -52,6 +52,11 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 
 ## C
 
+**Classifier**
+- Integrated circuit that learns a correspondence between a pattern and a label
+- Built from kernel memory, class memory, the areas you select, and one detection area per connected field
+- See also: [Integrated Circuit](#i)
+
 **Circuit Builder**
 - The 2D node-based graph editor in Brain Visualizer
 - Displays cortical areas as colored boxes with connection lines
@@ -166,6 +171,12 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 ---
 
 ## I
+
+**Integrated Circuit**
+- A circuit you configure in Brain Visualizer, marked by the gold IC chip on Add Circuit
+- Distinct from a packaged genome or connectome, and from a brain circuit, which only organizes other objects
+- The classifier is the integrated circuit you can add
+- See also: [Classifier](#c), [Brain Circuit](#b)
 
 **InfluxDB**
 - Time-series database for logging neural activity

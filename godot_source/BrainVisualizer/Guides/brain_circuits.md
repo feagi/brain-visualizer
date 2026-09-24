@@ -74,8 +74,8 @@ Add areas later using "Add to Region" operation.
 
 Quick access from anywhere:
 
-1. Click **Circuits** in top toolbar
-2. Click **+** button
+1. Hover **Circuits** on the top bar
+2. Click **+**
 3. Configure region properties
 4. Choose parent circuit
 5. Click **Create**
@@ -88,10 +88,10 @@ Quick access from anywhere:
 - In Circuit Builder, double-click a circuit node
 - The view switches to show that region's contents
 
-**Method 2: Dropdown Menu**
-- Click **Circuits** in top toolbar
-- Select region from the list
-- Opens in new Circuit Builder tab
+**Method 2: Circuits list**
+- Hover **Circuits** on the top bar
+- Select a circuit from the list
+- The current view focuses on that circuit. This does not open a new tab.
 
 **Method 3: Quick Menu**
 - Right-click region node
@@ -101,15 +101,15 @@ Quick access from anywhere:
 
 To return to parent circuit:
 - Use the navigation breadcrumbs (if visible)
-- Click **Circuits** dropdown and select parent circuit
+- Hover **Circuits** and select the parent circuit
 - Close the current region tab
 
 ### Viewing Hierarchy
 
-The **Circuits** dropdown shows:
-- All regions in hierarchical tree structure
-- Current region highlighted
-- Quick navigation to any region
+The **Circuits** list is a flat name list, not a tree:
+- On the root scene top bar, every circuit under the main circuit
+- On a tab bar, the circuits directly inside the open region
+- The main circuit itself is not in the list
 
 ## Region Structure
 
@@ -284,9 +284,9 @@ Each region can open in its own Circuit Builder tab:
 - Maintain context while navigating
 
 **Opening Tabs:**
-- Use **Circuits** dropdown
-- Each selection opens new tab
-- Switch tabs using tab bar
+- Right-click a circuit and choose **Open 3D Tab**
+- Hover **Circuits** and select an entry to focus it in the current view
+- Switch tabs using the tab bar
 
 **Closing Tabs:**
 - Click **X** on tab
@@ -487,7 +487,7 @@ For genomes with 100+ cortical areas:
 - Check which region it's in
 - Use global search (if available)
 - Navigate through region hierarchy
-- Use Circuits dropdown to view all regions
+- Hover **Circuits** on the root scene top bar to list circuits under the main circuit
 
 **"Region appears empty"**
 - Ensure you've navigated into it (double-click or open)
@@ -500,7 +500,7 @@ For genomes with 100+ cortical areas:
 - Ensure no references elsewhere
 
 **"Lost in hierarchy"**
-- Use Circuits dropdown to see structure
+- Hover **Circuits** to list circuits by name. The list is not a tree of the whole hierarchy.
 - Click on parent circuits to go up
 - Open Main Circuit to start over
 
@@ -512,6 +512,7 @@ For genomes with 100+ cortical areas:
 
 ## Related Topics
 
+- [Integrated Circuits](integrated_circuits.md) - Custom circuits you configure, including the classifier
 - [Circuit Builder](circuit_builder.md) - Navigating and editing regions
 - [Cortical Areas](cortical_areas.md) - The contents of regions
 - [Split View](split_view.md) - Viewing regions in dedicated tabs

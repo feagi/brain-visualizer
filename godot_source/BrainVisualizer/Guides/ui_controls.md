@@ -89,34 +89,22 @@ The main toolbar provides quick access to essential features:
 
 ### Middle Section (Quick Access)
 
-**Circuits, Inputs, and Outputs (root scene top bar):**
-- Hover the title to list existing circuits, input areas, or output areas
+**Root scene top bar:**
+- Circuits, Inputs, Outputs, then Connectivity Rules
+- Hover a title to open its list. There is no list icon.
 - **+** creates one
+- Choosing a circuit, input, or output moves the view to it
+- Choosing a connectivity rule opens the Connectivity Rules Manager with that rule shown
 
-**Inputs Button:**
-- Dropdown showing all IPU areas
-- **+** button to create new input
-- Quick navigation to any input area
+![Connectivity Rules Icon](../UI/GenericResources/ButtonIcons/neuron.png)
 
-**Circuits, Interconnect Areas, and Memory Areas (tab bars):**
-- On the Circuit Builder and Brain Monitor tab bars
+**Circuit Builder and Brain Monitor tab bars:**
+- Circuits, Interconnect Areas, and Memory Areas, in that order
 - The whole tab bar is two UI sizes smaller than the root scene top bar
-- Hover the title to list existing objects
-- **+** creates one
-- **Classifier** is added from **Add Circuit**. It is an Integrated Circuit. Logic AND and Logic OR stay packaged circuits on that same window.
-
-**Outputs Button:**
-- Dropdown showing all OPU areas
-- **+** button to create new output
-- Quick navigation to any output area
-
-**Connectivity Rules Button:**
-
-![Connectivity Rules Icon](../UI/GenericResources/ButtonIcons/Gear_C.png)
-
-- Hover the title to list every connectivity rule, the same list as the left side of the Connectivity Rules Manager
-- Select a rule to open the manager with that rule shown
-- **+** creates a new connectivity rule
+- Hover a title to open its list. There is no Elements menu and no list icon.
+- **+** creates one. Choosing an entry moves the view to it.
+- A tab opened on the main circuit also shows Inputs and Outputs. Other region tabs do not.
+- **Classifier** is added from **Add Circuit** (the Circuits **+**). It is an integrated circuit: a gold **IC** chip hangs off the top-right corner of its image. See [Integrated Circuits](integrated_circuits.md). Logic AND and Logic OR stay genomes or connectomes on that same window.
 
 ### Right Section (Tools and Settings)
 
@@ -328,7 +316,7 @@ See [Split View](split_view.md) for details.
 - Small UI scale to maximize content
 - Single view or heavily asymmetric split
 - Minimize open windows
-- Use dropdowns for navigation
+- Use the top bar hover lists for navigation
 
 ### For Presentations
 

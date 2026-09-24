@@ -17,6 +17,7 @@ quick_menu.md
 cortical_areas.md
 cortical_area_details.md
 brain_circuits.md
+integrated_circuits.md
 circuit_builder.md
 mapping_connections.md
 connectivity_rules.md

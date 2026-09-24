@@ -106,7 +106,7 @@ Brain Visualizer supports several types of cortical areas, each with specific pu
 
 For input and output areas:
 
-1. Click **Inputs** or **Outputs** in the top toolbar
+1. Hover **Inputs** or **Outputs** on the root scene top bar
 2. Click the **+** button
 3. Select a template (e.g., Vision, Motor)
 4. Configure:
@@ -478,7 +478,7 @@ Before creating areas:
 
 **"Area not visible"**
 - Use Fit All in Circuit Builder
-- Focus using top toolbar dropdowns
+- Hover **Inputs**, **Outputs**, or **Circuits** and select the area
 - Check area is in expected region
 
 **"No activity showing"**

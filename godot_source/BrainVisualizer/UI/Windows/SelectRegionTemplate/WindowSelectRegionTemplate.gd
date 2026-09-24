@@ -5,7 +5,12 @@ const WINDOW_NAME: StringName = "select_region_template"
 const CREATE_REGION_LABEL: StringName = "Create New Circuit"
 const CIRCUIT_ICON: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png")
 const CLASSIFIER_TITLE: StringName = "Classifier"
-const INTEGRATED_CIRCUIT_BADGE: StringName = "Integrated Circuit"
+const INTEGRATED_CIRCUIT_MARK: String = "IC"
+const INTEGRATED_CIRCUIT_TOOLTIP: String = "Integrated Circuit. A custom circuit you configure. The others are genomes or connectomes."
+const IC_CHIP_PAD_PX: int = 4
+const IC_CHIP_OVERHANG_PX: int = 12
+const IC_CHIP_BACKGROUND: Color = Color(0.92, 0.72, 0.16, 1)
+const IC_CHIP_TEXT: Color = Color(0, 0, 0, 1)
 const CLASSIFIER_ICON: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/carbon.png")
 const CIRCUITS_DIR_NAME: StringName = "circuits"
 const MANIFEST_FILENAME: StringName = "manifest.json"
@@ -247,30 +252,92 @@ func _add_classifier_tile() -> void:
 	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	name_label.max_lines_visible = 2
 
-	tile.add_child(button)
+	# Same draw order as the other tiles. A raised z_index is added to the window and paints over every other window.
+	tile.clip_contents = false
+	tile.add_child(_make_classifier_icon_with_chip(button))
 	tile.add_child(name_label)
-	tile.add_child(_make_integrated_circuit_badge())
 	_icon_grid.add_child(tile)
+	_reserve_room_for_ic_chip_overhang()
 
 
-## Small label under an integrated-circuit tile. Logic-gate tiles do not use this.
+## Image with the IC chip pinned to the top-right corner.
+func _make_classifier_icon_with_chip(button: TextureButton) -> Control:
+	var host := Control.new()
+	host.custom_minimum_size = button.custom_minimum_size
+	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	host.clip_contents = false
+	button.set_anchors_preset(Control.PRESET_FULL_RECT)
+	button.offset_left = 0
+	button.offset_top = 0
+	button.offset_right = 0
+	button.offset_bottom = 0
+	host.add_child(button)
+	var chip := _make_integrated_circuit_badge()
+	host.add_child(chip)
+	host.resized.connect(_place_ic_chip_on_icon.bind(host, chip))
+	chip.resized.connect(_place_ic_chip_on_icon.bind(host, chip))
+	return host
+
+
+## Hang the chip off the image corner so part of it sits outside the picture.
+func _place_ic_chip_on_icon(host: Control, chip: Control) -> void:
+	var chip_size := chip.get_combined_minimum_size()
+	var overhang := float(IC_CHIP_OVERHANG_PX)
+	var next_position := Vector2(host.size.x - chip_size.x + overhang, -overhang)
+	if chip.size != chip_size:
+		chip.size = chip_size
+	if chip.position != next_position:
+		chip.position = next_position
+
+
+## The scroll pane clips anything above the grid. Leave room for the chip that hangs off the image.
+func _reserve_room_for_ic_chip_overhang() -> void:
+	var margin := _icon_grid.get_parent() as MarginContainer
+	if margin == null:
+		push_error("Add Circuit grid has no margin to clear the IC chip")
+		return
+	var top := int(margin.get_theme_constant("margin_top"))
+	if top < IC_CHIP_OVERHANG_PX:
+		margin.add_theme_constant_override("margin_top", IC_CHIP_OVERHANG_PX)
+
+
+## High-contrast IC mark on the circuit image. The tooltip carries the full name.
 func _make_integrated_circuit_badge() -> PanelContainer:
 	var badge := PanelContainer.new()
-	badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	badge.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	badge.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	badge.mouse_filter = Control.MOUSE_FILTER_STOP
+	badge.tooltip_text = INTEGRATED_CIRCUIT_TOOLTIP
 	var plate := StyleBoxFlat.new()
-	plate.bg_color = Color(0.262745, 0.262745, 0.262745, 1)
-	plate.content_margin_left = 8
-	plate.content_margin_right = 8
-	plate.content_margin_top = 2
-	plate.content_margin_bottom = 2
-	plate.set_corner_radius_all(6)
+	plate.bg_color = IC_CHIP_BACKGROUND
+	plate.content_margin_left = IC_CHIP_PAD_PX
+	plate.content_margin_right = IC_CHIP_PAD_PX
+	plate.content_margin_top = 0
+	plate.content_margin_bottom = 0
+	plate.set_corner_radius_all(3)
+	plate.border_width_left = 1
+	plate.border_width_top = 1
+	plate.border_width_right = 1
+	plate.border_width_bottom = 1
+	plate.border_color = IC_CHIP_TEXT
 	badge.add_theme_stylebox_override("panel", plate)
 	var label := Label.new()
-	label.text = INTEGRATED_CIRCUIT_BADGE
+	label.text = INTEGRATED_CIRCUIT_MARK
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.theme_type_variation = &"Label_Small"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_color_override("font_color", IC_CHIP_TEXT)
 	badge.add_child(label)
+	badge.gui_input.connect(_on_ic_chip_gui_input)
 	return badge
+
+
+func _on_ic_chip_gui_input(event: InputEvent) -> void:
+	if not event is InputEventMouseButton:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
+		return
+	_open_create_classifier()
 
 
 ## Open the classifier editor for the same region this Add Circuit window was opened on.

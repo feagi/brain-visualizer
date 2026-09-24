@@ -4,9 +4,11 @@ Use this quick lookup for navigation and camera actions currently implemented in
 
 ## Global Navigation Actions
 
-- **Jump to an input area** -> Top bar Inputs dropdown -> choose area
-- **Jump to a circuit/region** -> Top bar Circuits dropdown -> choose circuit
-- **Jump to an output area** -> Top bar Outputs dropdown -> choose area
+- **Jump to an input area** -> Hover Inputs on the root scene top bar (or on a main-circuit tab) -> choose area
+- **Jump to a circuit** -> Hover Circuits -> choose circuit. The current view focuses on it. This does not open a new tab.
+- **Jump to an output area** -> Hover Outputs on the root scene top bar (or on a main-circuit tab) -> choose area
+- **Jump to an interconnect or memory area** -> Hover that title on a Circuit Builder or Brain Monitor tab bar -> choose area
+- **Open one connectivity rule** -> Hover Connectivity Rules on the root scene top bar -> choose rule. The manager opens on that rule.
 - **Focus selected region/area in active views** -> Select object, then press F
 - **Clear window-level selection or close active popup/window** -> Escape (context dependent; also cancels an in-progress Brain Monitor box select)
 

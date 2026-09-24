@@ -65,9 +65,9 @@ Center view on specific object:
 2. Press **F** key
 
 **Method 2:**
-1. Use top toolbar dropdowns (Inputs/Circuits/Outputs)
-2. Select area from list
-3. View auto-focuses
+1. Hover **Circuits**, **Inputs**, or **Outputs** on the root scene top bar, or **Circuits**, **Interconnect Areas**, or **Memory Areas** on a tab bar
+2. Select an entry from the list
+3. The current view focuses on it
 
 **Method 3:**
 - Right-click object → **Focus**
@@ -146,9 +146,9 @@ Auto-frame cortical areas or regions:
 3. Both views focus
 
 **Method 3:**
-1. Use top toolbar dropdowns
-2. Select area or region
-3. Camera focuses and flashes indicator
+1. Hover the matching title on the root scene top bar or on a tab bar
+2. Select the area or circuit
+3. The camera focuses on it and flashes an indicator
 
 **Transition:**
 - Smooth animation to target
@@ -268,13 +268,13 @@ Use split views on multiple screens:
 
 1. **Start zoomed out**: Get overview with Fit All
 2. **Identify regions**: Note spatial organization
-3. **Focus on region**: Use dropdowns to navigate
+3. **Focus on a circuit**: Hover **Circuits** and select it
 4. **Explore details**: Zoom in on specific areas
 5. **Return to overview**: Press Home or Fit All
 
 ### Working on Specific Area
 
-1. **Use dropdowns**: Navigate directly to area
+1. **Use a top bar list**: Hover the matching title and select the area
 2. **Focus (F key)**: Frame the area
 3. **Zoom in**: Get close for details
 4. **Isolate in tab**: Open region in dedicated 3D tab
@@ -332,7 +332,7 @@ If using a touch device:
 
 ### In Circuit Builder
 
-1. **Use dropdowns for long distances**: Faster than panning
+1. **Use a top bar list for long distances**: Faster than panning
 2. **Fit All frequently**: Regain orientation
 3. **Focus shortcuts**: Quick navigation to specific objects
 4. **Tabs**: Keep important views open
@@ -361,13 +361,13 @@ If using a touch device:
 **"Lost my position"**
 - Press Home to reset
 - Use Focus (F) on any object
-- Use dropdowns to navigate to known regions
+- Hover **Circuits** and select a known circuit
 
 **"Can't see what I'm looking for"**
 - Use Fit All to see everything
 - Try different zoom levels
 - Check you're in the correct region/tab
-- Use Search or dropdowns to find objects
+- Use Search, or hover a top bar title, to find objects
 
 **"Camera feels sluggish"**
 - Disable inertia in Options

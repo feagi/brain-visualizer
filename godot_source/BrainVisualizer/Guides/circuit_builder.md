@@ -58,10 +58,10 @@ Lines between nodes represent neural mappings:
 ### Creating Cortical Areas
 
 **Quick Method:**
-1. Click **Inputs**, **Circuits**, or **Outputs** in the top toolbar
-2. Click the **+** button
-3. Configure the area properties
-4. Click **Add**
+1. On the root scene top bar, hover **Inputs**, **Outputs**, or **Circuits**, then click **+**
+2. On a Circuit Builder tab bar, hover **Circuits**, **Interconnect Areas**, or **Memory Areas**, then click **+**. A tab on the main circuit also shows Inputs and Outputs.
+3. Circuits **+** opens Add Circuit. Classifier is an integrated circuit: a gold IC chip hangs off the top-right corner of its image. See [Integrated Circuits](integrated_circuits.md). Logic AND and Logic OR are genomes or connectomes on that same window.
+4. Configure the area and confirm
 
 **From Circuit Builder:**
 1. Right-click empty space
@@ -124,9 +124,9 @@ See [Mapping Connections](mapping_connections.md) for more details.
    
 OR
 
-1. Click **Inputs/Circuits/Outputs** in top bar
-2. Select an area from the dropdown
-3. The view automatically focuses on it
+1. Hover **Circuits**, **Inputs**, or **Outputs** on the root scene top bar, or **Circuits**, **Interconnect Areas**, or **Memory Areas** on the tab bar
+2. Select an entry from the list
+3. The current view focuses on it
 
 ## Working with Regions
 
@@ -135,10 +135,10 @@ OR
 **Method 1: Double-click**
 - Double-click a brain circuit node to open it
 
-**Method 2: Dropdown Menu**
-- Click **Circuits** in the top toolbar
+**Method 2: Circuits list**
+- Hover **Circuits** on the top bar
 - Select a circuit from the list
-- A new tab opens showing that region's contents
+- The current view focuses on that circuit. This does not open a new tab.
 
 ### Creating Regions
 
@@ -164,12 +164,9 @@ See [Brain Circuits](brain_circuits.md) for more details.
 You can open multiple Circuit Builder tabs to view different regions simultaneously:
 
 1. Right-click a circuit node
-2. Select **Open in New Tab** (if available)
+2. Select **Open 3D Tab**
 
-OR
-
-1. Use the **Circuits** dropdown in the top bar
-2. Each selection opens a new tab
+Hover **Circuits** and select an entry when you only need the current view to focus on it. That selection does not open a new tab.
 
 Switch between tabs using the tab bar at the top of the Circuit Builder area.
 
@@ -319,13 +316,14 @@ Use [Split View](split_view.md) to work with both views at once.
 - Wait a few seconds for the update to complete
 
 **"Lost my place after double-clicking"**
-- Use the Circuits dropdown to navigate back
+- Hover **Circuits** and select the parent circuit to focus it in the current view
 - Use browser-style back button (if available)
 - Click parent circuit to go up one level
 
 ## Related Topics
 
 - [Brain Circuits](brain_circuits.md) - Organizing circuits into hierarchies
+- [Integrated Circuits](integrated_circuits.md) - Custom circuits you configure, including the classifier
 - [Cortical Areas](cortical_areas.md) - Creating and managing areas
 - [Mapping Connections](mapping_connections.md) - Connecting areas together
 - [Brain Monitor](brain_monitor.md) - 3D visualization companion

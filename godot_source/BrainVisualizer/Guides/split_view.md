@@ -183,9 +183,9 @@ Each panel can have multiple tabs:
 ### Managing Tabs
 
 **Opening Tabs:**
-- Use Circuits dropdown to open more regions
-- Each opens new tab in respective panel
-- Switch using tab bar
+- Right-click a circuit and choose **Open 3D Tab**
+- Hover **Circuits** and select an entry to focus it in the current view
+- Switch using the tab bar
 
 **Closing Tabs:**
 - Click **X** on tab

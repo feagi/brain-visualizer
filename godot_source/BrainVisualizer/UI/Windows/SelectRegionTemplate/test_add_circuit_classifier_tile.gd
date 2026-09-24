@@ -8,11 +8,23 @@ const SCRIPT_PATH := "res://BrainVisualizer/UI/Windows/SelectRegionTemplate/Wind
 func _initialize() -> void:
 	var source := FileAccess.get_file_as_string(SCRIPT_PATH)
 	var failures: int = 0
-	if source.find("const INTEGRATED_CIRCUIT_BADGE") < 0 or source.find("Integrated Circuit") < 0:
-		push_error("Classifier tile must carry an Integrated Circuit badge")
+	if source.find("const INTEGRATED_CIRCUIT_MARK") < 0 or source.find("\"IC\"") < 0:
+		push_error("Classifier tile must carry a compact IC chip")
+		failures += 1
+	if source.find("A custom circuit you configure") < 0 or source.find("genomes or connectomes") < 0:
+		push_error("The IC chip tooltip must say you configure it, and that the others are genomes or connectomes")
+		failures += 1
+	if source.find("host.size.x - chip_size.x + overhang") < 0 or source.find("-overhang") < 0:
+		push_error("The IC chip must hang off the top-right corner of the circuit image")
+		failures += 1
+	if source.find("IC_CHIP_BACKGROUND: Color = Color(0.92, 0.72, 0.16, 1)") < 0 or source.find("IC_CHIP_TEXT: Color = Color(0, 0, 0, 1)") < 0:
+		push_error("The IC chip must use a gold plate and dark text")
 		failures += 1
 	if source.find("carbon.png") < 0:
 		push_error("Classifier tile must use the carbon icon")
+		failures += 1
+	if source.find(".z_index") >= 0:
+		push_error("Classifier tile must stay in the window draw order")
 		failures += 1
 	var populate_at: int = source.find("func _populate_grid")
 	var manifest_at: int = source.find("_add_manifest_tiles()", populate_at)

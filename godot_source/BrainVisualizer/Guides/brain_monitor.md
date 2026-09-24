@@ -217,13 +217,13 @@ Quickly return to important views:
 
 **Focus on Cortical Area:**
 1. Select area in Circuit Builder OR Brain Monitor
-2. Press **F** key OR use dropdown in top toolbar
+2. Press **F**, or hover a top bar title and select the area
 3. Camera smoothly frames the object
 
 **Focus on Brain Circuit:**
-1. Use **Circuits** dropdown in top toolbar
+1. Hover **Circuits** on the top bar
 2. Select a circuit
-3. Camera focuses on that region's contents
+3. The camera focuses on that circuit. This does not open a new tab.
 
 ## Advanced Features
 
@@ -251,7 +251,7 @@ Manipulate objects directly in 3D space:
 
 ### Indicator Flashing
 
-When navigating from top toolbar dropdowns:
+When navigating from a top bar list:
 - Selected object flashes briefly
 - Helps locate object in busy scenes
 - Visual confirmation of focus target
@@ -370,7 +370,7 @@ Access via **Options** menu in top toolbar.
 
 **"Can't see my cortical areas"**
 - Zoom out to get overview
-- Use Circuits dropdown to focus on regions
+- Hover **Circuits** and select a circuit to focus it
 - Check you're in correct region tab
 - Verify areas exist in FEAGI
 
@@ -388,7 +388,7 @@ Access via **Options** menu in top toolbar.
 **"Lost my position"**
 - Use camera animations to save important views
 - Use Focus (F key) to return to selected object
-- Use Circuits dropdown for quick navigation
+- Hover **Circuits** and select a circuit for quick navigation
 
 ## Tips for Effective Monitoring
 

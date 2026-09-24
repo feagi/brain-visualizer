@@ -17,6 +17,7 @@ Brain Visualizer is an interactive tool that allows you to visualize, create, an
 
 - **Cortical Areas**: The building blocks of your genome. These are volumes of neurons that process information
 - **Brain Circuits**: Organizational containers that group related cortical areas and sub-circuits
+- **Integrated Circuits**: Custom circuits you configure, such as a classifier. Packaged tiles on Add Circuit are genomes or connectomes.
 - **Connectivity Rules**: Define the shape and properties of neural connections
 - **Mappings**: Connections between cortical areas that use specific connectivity rules
 - **IPU/OPU**: Input and Output Processing Units - how your genome interacts with the world
@@ -39,6 +40,7 @@ Brain Visualizer is an interactive tool that allows you to visualize, create, an
 ### Building Neural Circuits
 - [Circuit Builder](circuit_builder.md) - The 2D graph editor for neural circuits
 - [Brain Circuits](brain_circuits.md) - Organizing cortical areas into hierarchies
+- [Integrated Circuits](integrated_circuits.md) - Custom circuits you configure, including the classifier
 - [Mapping Connections](mapping_connections.md) - Connecting cortical areas together
 - [Connectivity Rules](connectivity_rules.md) - Defining connection shapes and properties
 - [Pattern Connectivity](pattern_connectivity.md) - Pattern tokens including `N..M`
