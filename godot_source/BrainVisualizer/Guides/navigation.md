@@ -122,6 +122,12 @@ Navigate through region hierarchy:
 - A Shift+click that does not drag still toggles voxels (see below)
 - **Escape** or moving the mouse out of the viewport cancels an in-progress box
 
+**Arrange (multi-area quick menu):**
+- The **Arrange** button opens a menu with **Align** and **Distribute**
+- **Align X, Y, or Z** moves every selected area so that axis matches the lowest value in the selection
+- **Distribute X, Y, or Z** keeps the outermost areas fixed and spaces the others evenly along that axis
+- Distribute needs at least 3 areas. Every selected area must be in the same circuit
+
 ### Clear Selection
 
 - Click empty space

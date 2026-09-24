@@ -53,7 +53,7 @@ var _destinations: Array[AbstractCorticalArea] = []
 ## Brain monitor whose quick-connect end is locked onto the classifier stamp.
 var _qc_stuck_bm: UI_BrainMonitor_3DScene = null
 var _selected_morphology: BaseMorphology = null
-## True when connecting a non-memory source to a memory destination with only one allowed morphology.
+## True when an interconnect source maps into memory. That pair has one rule, so the morphology editor stays closed.
 var _memory_rule_locked: bool = false
 
 func _ready() -> void:
@@ -214,11 +214,12 @@ func _update_current_state(new_state: POSSIBLE_STATES) -> void:
 			shrink_window()
 		POSSIBLE_STATES.IDLE:
 			_toggle_add_buttons(true)
-			if _memory_rule_locked:
-				_step3_button.visible = false
 			_step4_button.disabled = false
-			# A classifier destination has no morphology bar. Showing it covers Establish.
-			if _destination_classifier != null:
+			# Classifier and locked episodic memory have one rule. The icon bar and morphology editor cover Establish.
+			if _destination_classifier != null or _memory_rule_locked:
+				if _memory_rule_locked:
+					_step3_button.visible = false
+				_step3_morphology_container.visible = false
 				_set_core_bar_visibility(false)
 			else:
 				# Keep the core morphology icon bar visible so user can reselect
@@ -261,17 +262,65 @@ func _setting_destination() -> void:
 			# Remember which BM started the guide; used to draw split-screen bridges later
 			BV.UI.qc_guide_source_bm = bm
 
-## Non-memory cortical area mapping into memory: FEAGI allows only episodic_memory; no picker or morphology edit.
+## Interconnect areas are stored as custom cortical areas. The interconnect enum is the same product type.
+func _is_interconnect_area(area: AbstractCorticalArea) -> bool:
+	if area == null:
+		return false
+	return area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM or area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT
+
+## Interconnect into memory qualifies for episodic_memory only. Show that single rule, same as a classifier destination.
 func _is_locked_episodic_memory_connection() -> bool:
+	if not _is_interconnect_area(_source) or _destination == null:
+		return false
+	if _destination.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+		return false
+	for area in _destinations:
+		if area != null and area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			return false
+	return true
+
+## Other non-memory sources into memory may use episodic_memory or episodic_scan, so the picker stays open.
+func _memory_destination_keeps_rule_picker() -> bool:
 	if _source == null or _destination == null:
 		return false
 	var destination_is_memory: bool = _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	var source_is_memory: bool = _source.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 	return destination_is_memory and not source_is_memory
 
+## One-line connectivity step. Does not open the morphology list, icon bar, or editor.
+func _apply_locked_episodic_memory_rule() -> void:
+	_memory_rule_locked = true
+	_step3_panel.visible = true
+	_step3_morphology_container.visible = false
+	_set_core_bar_visibility(false)
+	var locked_morph: BaseMorphology = FeagiCore.feagi_local_cache.morphologies.try_get_morphology_object(&"episodic_memory")
+	if locked_morph == null:
+		var mapping_defaults: MappingRestrictionDefault = MappingRestrictionsAPI.get_defaults_between_cortical_areas(_source, _destination)
+		if mapping_defaults != null:
+			locked_morph = mapping_defaults.try_get_default_morphology()
+	if locked_morph == null:
+		push_warning("WindowQuickConnect: episodic_memory not in morphology cache yet; cannot enable Establish until it loads.")
+		_selected_morphology = null
+		_step3_label.text = " Connectivity Rule: Episodic Memory (loading...)"
+		_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
+		_step4_button.disabled = true
+		shrink_window()
+		return
+	_selected_morphology = locked_morph
+	_step3_label.text = " Connectivity Rule: Episodic Memory"
+	_step3_panel.theme_type_variation = "PanelContainer_QC_Complete"
+	_finished_selecting = true
+	_step4_button.disabled = false
+	current_state = POSSIBLE_STATES.IDLE
+	shrink_window()
+
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
 	_stop_quick_connect_guide()
+	if _is_locked_episodic_memory_connection():
+		_apply_locked_episodic_memory_rule()
+		return
+	_memory_rule_locked = false
 	var mapping_defaults: MappingRestrictionDefault = MappingRestrictionsAPI.get_defaults_between_cortical_areas(_source, _destination)
 	var destination_is_memory: bool = (_destination != null and _destination.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
 	var source_is_memory: bool = (_source != null and _source.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY)
@@ -296,9 +345,8 @@ func _setting_morphology() -> void:
 	# Populate core morph icon shortcuts (respecting restrictions if any)
 	_populate_core_morphology_icons(restrictions)
 	
-	# Non-memory -> memory: episodic_memory or episodic_scan. Keep the picker visible.
-	if _is_locked_episodic_memory_connection():
-		_memory_rule_locked = false
+	# Non-interconnect into memory: episodic_memory or episodic_scan. Keep the picker visible.
+	if _memory_destination_keeps_rule_picker():
 		_step3_morphology_container.visible = true
 		_set_core_bar_visibility(true)
 		var locked_morph: BaseMorphology = null
@@ -314,7 +362,6 @@ func _setting_morphology() -> void:
 			_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
 			_step4_button.disabled = true
 	else:
-		_memory_rule_locked = false
 		# Auto-select default morphology if available
 		var default_morphology: BaseMorphology = mapping_defaults.try_get_default_morphology() if mapping_defaults != null else null
 		if default_morphology != null:

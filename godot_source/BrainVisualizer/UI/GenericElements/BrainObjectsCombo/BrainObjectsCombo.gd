@@ -72,6 +72,11 @@ const REARRANGE_SIZE_SCALE: float = 1.0
 const TAB_STRIP_SCALE_STEPS_SMALLER: int = 2
 
 var _list_popup: FilterableListPopup
+var _circuits_row: PanelContainer
+var _interconnect_row: PanelContainer
+var _memory_row: PanelContainer
+var _inputs_row: PanelContainer
+var _outputs_row: PanelContainer
 var _root_hover_list_anchor: Control = null
 var _root_open_list_id: StringName = &""
 var _root_list_hover_close_timer: Timer = null
@@ -113,6 +118,22 @@ static func should_show_category_list_button() -> bool:
 ## Circuit Builder and Brain Monitor show Circuits, Interconnect Areas, and Memory Areas on the strip.
 static func should_show_tab_category_rows_on_strip(global_topbar_mode: bool) -> bool:
 	return not global_topbar_mode
+
+
+## Move [param node] under [param host].
+## Adding a node directly onto its current owner makes that owner inconsistent, and later % lookups fail.
+static func reparent_under_host(host: Node, node: Node) -> void:
+	if node == null or host == null or node.get_parent() == host:
+		return
+	var keep_unique := node.unique_name_in_owner
+	var parent := node.get_parent()
+	if parent != null:
+		parent.remove_child(node)
+	node.owner = null
+	host.add_child(node)
+	if keep_unique:
+		node.owner = host
+		node.unique_name_in_owner = true
 
 
 ## Title hover opens the category list on the root bar and on tab bars.
@@ -176,13 +197,18 @@ func _ready() -> void:
 	_connectome_menu = %ConnectomeMenu
 	_connectome_menu_items = %MenuItems
 	_btn_brain_regions_list = %TextureButton_BrainRegionsList
-	_circuits_title = %BrainRegionsRow.get_node("HBoxContainer/BrainRegionsList") as Control
+	_circuits_row = %BrainRegionsRow
+	_interconnect_row = %InterconnectAreasRow
+	_memory_row = %MemoryAreasRow
+	_inputs_row = %InputsRow
+	_outputs_row = %OutputsRow
+	_circuits_title = _circuits_row.get_node("HBoxContainer/BrainRegionsList") as Control
 	_btn_brain_regions_add = %TextureButton_BrainRegions
 	_btn_interconnect_list = %TextureButton_InterconnectList
-	_interconnect_title = %InterconnectAreasRow.get_node("HBoxContainer/InterconnectAreasList") as Control
+	_interconnect_title = _interconnect_row.get_node("HBoxContainer/InterconnectAreasList") as Control
 	_btn_interconnect_add = %TextureButton_Interconnect
 	_btn_memory_list = %TextureButton_MemoryList
-	_memory_title = %MemoryAreasRow.get_node("HBoxContainer/MemoryAreasList") as Control
+	_memory_title = _memory_row.get_node("HBoxContainer/MemoryAreasList") as Control
 	_btn_memory_add = %TextureButton_Memory
 	_btn_rearrange_layout = $RearrangePanel/MarginContainer/TextureButton_Rearrange
 	_btn_inputs_list = %InputsList
@@ -340,18 +366,13 @@ func apply_custom_topbar_tooltips() -> void:
 func _apply_shared_combo_spacing_tokens() -> void:
 	var list_hbox_paths := []
 	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeButton/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer/BrainRegionsList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer"))
-	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer"))
-	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList/HBoxContainer"))
 	var proportion := _strip_proportion()
 	var content_separation := int(round(float(COMBO_STYLER.INNER_CONTENT_SEPARATION) * proportion))
+	_space_row_content(_circuits_row, "BrainRegionsList", content_separation)
+	_space_row_content(_interconnect_row, "InterconnectAreasList", content_separation)
+	_space_row_content(_memory_row, "MemoryAreasList", content_separation)
+	_space_row_content(_inputs_row, "InputsList", content_separation)
+	_space_row_content(_outputs_row, "OutputsList", content_separation)
 	var plate_gap := int(round(float(COMBO_STYLER.COMBO_PLATE_GAP) * proportion))
 	var pad_x := int(round(float(COMBO_STYLER.ROW_PAD_X) * proportion))
 	var pad_y := int(round(float(COMBO_STYLER.ROW_PAD_Y) * proportion))
@@ -372,14 +393,27 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	if _spacer_after_rearrange != null:
 		_spacer_after_rearrange.custom_minimum_size = Vector2.ZERO
 	var combo_rows: Array[PanelContainer] = [
-		%BrainRegionsRow,
-		%InterconnectAreasRow,
-		%MemoryAreasRow,
-		%InputsRow,
-		%OutputsRow,
+		_circuits_row,
+		_interconnect_row,
+		_memory_row,
+		_inputs_row,
+		_outputs_row,
 	]
 	for combo_row in combo_rows:
 		COMBO_STYLER.apply_combo_row_plate_padding(combo_row, pad_x, pad_y)
+
+
+## Space a category row from the row node, so it still works after the row leaves the Elements menu.
+func _space_row_content(row: Node, list_name: String, separation: int) -> void:
+	if row == null:
+		return
+	var boxes: Array[Node] = [
+		row.get_node_or_null("HBoxContainer"),
+		row.get_node_or_null("HBoxContainer/%s/HBoxContainer" % list_name),
+	]
+	for box in boxes:
+		if box is HBoxContainer:
+			(box as HBoxContainer).add_theme_constant_override("separation", separation)
 
 
 ## Remove per-group wrapper plates so all contexts read as one cohesive strip.
@@ -584,11 +618,11 @@ func _place_category_rows_on_tab_strip() -> void:
 	if not should_show_tab_category_rows_on_strip(_global_topbar_mode):
 		return
 	var sequence: Array[Control] = [
-		%BrainRegionsRow,
+		_circuits_row,
 		_ensure_category_row_spacer(TAB_ROW_SPACER_AFTER_CIRCUITS),
-		%InterconnectAreasRow,
+		_interconnect_row,
 		_ensure_category_row_spacer(TAB_ROW_SPACER_AFTER_INTERCONNECT),
-		%MemoryAreasRow,
+		_memory_row,
 	]
 	for i in range(sequence.size()):
 		var node := sequence[i]
@@ -601,12 +635,10 @@ func _place_category_rows_on_tab_strip() -> void:
 
 
 func _reparent_onto_strip(node: Control, index: int) -> void:
-	if node.get_parent() != self:
-		var parent := node.get_parent()
-		if parent != null:
-			parent.remove_child(node)
-		add_child(node)
-	move_child(node, index)
+	if node == null:
+		return
+	reparent_under_host(self, node)
+	move_child(node, mini(index, get_child_count() - 1))
 
 
 func _ensure_category_row_spacer(spacer_name: StringName) -> Control:
@@ -632,13 +664,10 @@ func _hide_elements_controls() -> void:
 
 ## Circuits sit on the main top bar strip. Interconnect and memory stay off that bar.
 func _place_circuits_on_topbar_strip() -> void:
-	var circuits_row: Control = %BrainRegionsRow
-	if circuits_row.get_parent() == self:
+	var circuits_row: Control = _circuits_row
+	if circuits_row == null or circuits_row.get_parent() == self:
 		return
-	var menu_parent: Node = circuits_row.get_parent()
-	if menu_parent != null:
-		menu_parent.remove_child(circuits_row)
-	add_child(circuits_row)
+	reparent_under_host(self, circuits_row)
 	move_child(circuits_row, 0)
 	circuits_row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	circuits_row.visible = true
@@ -1030,12 +1059,10 @@ func _is_root_region() -> bool:
 func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_layout: bool) -> void:
 	_hide_elements_controls()
 	var show_tab_categories := should_show_tab_category_rows_on_strip(_global_topbar_mode)
-	var interconnect_row := get_node_or_null("%InterconnectAreasRow") as Control
-	var memory_row := get_node_or_null("%MemoryAreasRow") as Control
-	if interconnect_row != null:
-		interconnect_row.visible = show_tab_categories
-	if memory_row != null:
-		memory_row.visible = show_tab_categories
+	if _interconnect_row != null:
+		_interconnect_row.visible = show_tab_categories
+	if _memory_row != null:
+		_memory_row.visible = show_tab_categories
 	if _btn_brain_regions_list:
 		_btn_brain_regions_list.visible = should_show_category_list_button()
 	if _btn_interconnect_list:

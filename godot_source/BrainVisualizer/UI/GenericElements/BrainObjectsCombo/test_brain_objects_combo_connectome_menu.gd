@@ -34,6 +34,7 @@ func _initialize() -> void:
 	failures += _test_keep_menu_open_when_pointer_still_on_trigger()
 	failures += _test_tab_overlay_z_index_matches_circuit_builder()
 	failures += _test_add_buttons_use_texture_hover_without_scale()
+	failures += _test_reparent_onto_owner_keeps_unique_name()
 	if failures == 0:
 		print("BrainObjectsCombo Elements menu tests: PASS")
 		quit(0)
@@ -676,6 +677,32 @@ func _make_combo_row(label_text: String) -> PanelContainer:
 	hbox.add_child(plus)
 	row.add_child(hbox)
 	return row
+
+
+func _test_reparent_onto_owner_keeps_unique_name() -> int:
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	var combo: Node = load(COMBO_SCENE_PATH).instantiate()
+	_strip_scripts(combo)
+	root.add_child(combo)
+	var row: Node = combo.get_node_or_null("%BrainRegionsRow")
+	if row == null:
+		push_error("BrainRegionsRow must be a unique node before tab-strip reparent")
+		combo.queue_free()
+		return 1
+	script.reparent_under_host(combo, row)
+	var found: Node = combo.get_node_or_null("%BrainRegionsRow")
+	if found != row:
+		push_error("Reparenting a category row onto the combo must keep %BrainRegionsRow")
+		combo.queue_free()
+		return 1
+	combo.queue_free()
+	return 0
+
+
+func _strip_scripts(node: Node) -> void:
+	node.set_script(null)
+	for child in node.get_children():
+		_strip_scripts(child)
 
 
 func _collect_scene_node_paths() -> PackedStringArray:

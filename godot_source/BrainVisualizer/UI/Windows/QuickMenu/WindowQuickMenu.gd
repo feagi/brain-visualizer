@@ -9,6 +9,10 @@ var _selection_context: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_
 var _btn_move_3d: TextureButton
 var _btn_resize_3d: TextureButton
 var _btn_relocate_2d: TextureButton
+var _btn_arrange: ArrangeDropDown
+var _arrange_in_progress: bool = false
+var _close_requested_during_arrange: bool = false
+var _close_requested_clear_selection: bool = true
 
 
 func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.UNKNOWN) -> void:
@@ -29,6 +33,11 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 	_btn_relocate_2d = _window_internals.get_node_or_null("ToolbarGrid/Relocate2D") as TextureButton
 	_btn_move_3d = _window_internals.get_node_or_null("ToolbarGrid/Move3D") as TextureButton
 	_btn_resize_3d = _window_internals.get_node_or_null("ToolbarGrid/Resize3D") as TextureButton
+	_btn_arrange = _window_internals.get_node_or_null("ToolbarGrid/Arrange") as ArrangeDropDown
+	if _btn_arrange != null:
+		_btn_arrange.visible = false
+		if not _btn_arrange.arrange_requested.is_connected(_button_arrange):
+			_btn_arrange.arrange_requested.connect(_button_arrange)
 	var iopu_config_button: TextureButton = _window_internals.get_node('ToolbarGrid/SetupIOPU')
 	var reset_button: TextureButton = _window_internals.get_node('ToolbarGrid/Reset')
 	var delete_button: TextureButton = _window_internals.get_node('ToolbarGrid/Delete')
@@ -231,6 +240,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 						if not multi_reason.is_empty():
 							break
 				delete_button.tooltip_text = multi_reason if not multi_reason.is_empty() else "One or more of the selected areas cannot be deleted."
+			_sync_arrange_button(areas)
 			_refresh_multi_cortical_controls()
 				
 			
@@ -658,9 +668,122 @@ func _search_for_active_cb_in_view(ui_view: UIView) -> CircuitBuilder:
 					return active_control2 as CircuitBuilder
 	return null
 
+## Shows Arrange only for a multi-area selection in one circuit, with no reserved core areas.
+func _sync_arrange_button(areas: Array[AbstractCorticalArea]) -> void:
+	if _btn_arrange == null:
+		return
+	var block_reason := _arrange_block_reason(areas)
+	_btn_arrange.visible = true
+	_btn_arrange.disabled = not block_reason.is_empty()
+	_btn_arrange.tooltip_text = block_reason if not block_reason.is_empty() else "Arrange"
+	_btn_arrange.set_action_availability(
+		areas.size() >= SelectionArrange.ALIGN_MINIMUM_COUNT,
+		areas.size() >= SelectionArrange.DISTRIBUTE_MINIMUM_COUNT and block_reason.is_empty()
+	)
+
+
+func _arrange_block_reason(areas: Array[AbstractCorticalArea]) -> String:
+	if areas.size() < SelectionArrange.ALIGN_MINIMUM_COUNT:
+		return "Select at least 2 areas to arrange them."
+	var parent_region: BrainRegion = areas[0].current_parent_region
+	if parent_region == null:
+		return "Arrange requires every selected area to belong to a circuit."
+	for area in areas:
+		if area == null:
+			return "Arrange requires every selected area to belong to a circuit."
+		if AbstractCorticalArea.is_reserved_system_core_area(area.cortical_ID):
+			return "Reserved core areas cannot be arranged."
+		if area.current_parent_region != parent_region:
+			return "Arrange requires all selected areas to be in the same circuit."
+	return ""
+
+
+## Align or distribute the current multi-area selection on one axis, then save the genome once.
+func _button_arrange(action: StringName, axis: int) -> void:
+	if _btn_arrange != null:
+		_btn_arrange.close_menu()
+	if _arrange_in_progress:
+		return
+	var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+	var block_reason := _arrange_block_reason(areas)
+	if not block_reason.is_empty():
+		BV.NOTIF.add_notification(block_reason)
+		return
+	if action == SelectionArrange.ACTION_DISTRIBUTE and areas.size() < SelectionArrange.DISTRIBUTE_MINIMUM_COUNT:
+		BV.NOTIF.add_notification("Select at least 3 areas to distribute them.")
+		return
+	if not SelectionArrange.is_axis(axis):
+		return
+	var current: Array[Vector3i] = []
+	for area in areas:
+		current.append(area.coordinates_3D)
+	var planned: Array[Vector3i] = SelectionArrange.plan_positions(action, current, axis)
+	var axis_label := SelectionArrange.axis_label(axis)
+	var pending_areas: Array[AbstractCorticalArea] = []
+	var pending_positions: Array[Vector3i] = []
+	for index in areas.size():
+		if current[index] == planned[index]:
+			continue
+		pending_areas.append(areas[index])
+		pending_positions.append(planned[index])
+	if pending_areas.is_empty():
+		var already := "aligned" if action == SelectionArrange.ACTION_ALIGN else "distributed"
+		BV.NOTIF.add_notification("Selected areas are already %s on %s." % [already, axis_label])
+		return
+	if FeagiCore == null or FeagiCore.requests == null:
+		BV.NOTIF.add_notification("Arrange unavailable: FEAGI is not ready.")
+		return
+	_arrange_in_progress = true
+	var failed: Array[String] = []
+	for index in pending_areas.size():
+		var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(pending_positions[index])}
+		var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(pending_areas[index].cortical_ID, payload)
+		if not is_instance_valid(self):
+			return
+		if result.has_errored:
+			failed.append(String(pending_areas[index].cortical_ID))
+			continue
+		if is_instance_valid(pending_areas[index]):
+			pending_areas[index].FEAGI_change_coordinates_3D(pending_positions[index])
+	if not failed.is_empty():
+		_finish_arrange_request()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Arrange failed",
+			"FEAGI rejected %d of %d position updates.\n\n%s" % [failed.size(), pending_areas.size(), ", ".join(failed)]
+		))
+		return
+	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
+	if not is_instance_valid(self):
+		return
+	_finish_arrange_request()
+	if save_result.has_errored:
+		var save_details = save_result.decode_response_as_generic_error_code()
+		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
+			"Save failed",
+			"Saved positions but failed to save genome.\n\n%s\n%s" % [save_details[0], save_details[1]]
+		))
+		return
+	var done := "Aligned" if action == SelectionArrange.ACTION_ALIGN else "Distributed"
+	BV.NOTIF.add_notification("%s %d areas on %s." % [done, areas.size(), axis_label])
+
+
+func _finish_arrange_request() -> void:
+	_arrange_in_progress = false
+	if not _close_requested_during_arrange:
+		return
+	var clear_selection := _close_requested_clear_selection
+	_close_requested_during_arrange = false
+	close_window(clear_selection)
+
+
 func _on_focus_lost() -> void:
 	# Do not clear active scene selection when this utility window loses focus.
 	# Scene clicks (including additive multi-select) naturally move focus away.
+	# The Arrange popup is a separate window; opening it must not dismiss this menu.
+	if _arrange_in_progress:
+		return
+	if _btn_arrange != null and _btn_arrange.is_menu_open():
+		return
 	close_window(false)
 
 # Debug function to check selection state
@@ -670,6 +793,12 @@ func _debug_selection_state(context: String) -> void:
 # Override close_window to add safety debugging
 # clear_selection: when true (Escape, X button, focus loss), clears selection. When false (Move 3D, etc.), keeps it.
 func close_window(clear_selection: bool = true) -> void:
+	if _arrange_in_progress:
+		_close_requested_during_arrange = true
+		_close_requested_clear_selection = clear_selection
+		return
+	if _btn_arrange != null:
+		_btn_arrange.close_menu()
 	_debug_selection_state("close_window")
 	if clear_selection and BV != null and BV.UI != null and BV.UI.selection_system != null:
 		BV.UI.selection_system.clear_all_highlighted()
@@ -734,6 +863,7 @@ func _refresh_multi_cortical_controls() -> void:
 		_btn_relocate_2d.visible = true
 		_btn_relocate_2d.disabled = false
 		_btn_relocate_2d.tooltip_text = "Relocate selected areas (2D)" if is_circuit_builder_context else "Relocate selected areas (3D gizmo)"
+	_sync_arrange_button(areas)
 	if !AbstractCorticalArea.can_all_areas_exist_in_subregion(areas):
 		move_to_region_button.disabled = true
 		move_to_region_button.tooltip_text = "One of the selected areas is of Input, Output, or Core type which is not allowed inside a neural circuit."

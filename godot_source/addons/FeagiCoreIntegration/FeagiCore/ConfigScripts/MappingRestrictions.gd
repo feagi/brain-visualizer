@@ -51,6 +51,8 @@ static func get_restrictions_between_cortical_areas(source: GenomeObject, destin
 			memory_names.append(&"associative_memory")
 		elif source_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			memory_names.append(&"associative_memory")
+		elif _is_interconnect_type(source_area.cortical_type):
+			memory_names.append(&"episodic_memory")
 		else:
 			memory_names.append(&"episodic_memory")
 			memory_names.append(&"episodic_scan")
@@ -87,6 +89,10 @@ static func get_defaults_between_cortical_areas(source: GenomeObject, destinatio
 	
 	# No specific defaults found
 	return null
+
+## Custom cortical areas are the interconnect product type. INTERCONNECT is the same contract.
+static func _is_interconnect_type(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> bool:
+	return cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM or cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT
 
 ## Generate cache key for cortical area type pair
 static func _get_cache_key(source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> String:

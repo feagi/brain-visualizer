@@ -58,7 +58,7 @@ From context menu:
 1. Right-click source cortical area
 2. Select **Quick Connect**
 3. Click the destination in the current brain monitor, or click **Edit** to open Cortical Area Explorer and pick destinations from any circuit
-4. Choose a connectivity rule
+4. Choose a connectivity rule. An interconnect area mapped into a memory area has one qualified rule, Episodic Memory, so Quick Connect shows that rule only and skips the rule picker.
 5. Establish the connection
 
 ### Method 3: Create Multiple
