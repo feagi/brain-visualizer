@@ -47,6 +47,7 @@ script = ExtResource("1_script")
 [node name="ConnectomeGroup" type="HBoxContainer" parent="."]
 unique_name_in_owner = true
 size_flags_vertical = 4
+theme_override_constants/separation = 0
 
 [node name="ConnectomeButton" type="PanelContainer" parent="ConnectomeGroup"]
 unique_name_in_owner = true
@@ -428,7 +429,7 @@ stretch_mode = 0
 focus_mode = 0
 
 [node name="Spacer_BeforeRearrange" type="Control" parent="."]
-custom_minimum_size = Vector2(5, 0)
+custom_minimum_size = Vector2(2, 0)
 size_flags_horizontal = 0
 
 [node name="RearrangePanel" type="PanelContainer" parent="."]
@@ -462,7 +463,7 @@ size_flags_horizontal = 0
 
 [node name="Spacer_BeforeMonitorTools" type="Control" parent="."]
 visible = false
-custom_minimum_size = Vector2(5, 0)
+custom_minimum_size = Vector2(2, 0)
 size_flags_horizontal = 0
 
 [node name="ActivityVisualizationDropDown" parent="." instance=ExtResource("16_activity_dd")]

@@ -303,13 +303,12 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	var plate_gap_paths := [
 		NodePath("Spacer_AfterConnectome"),
 		NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddInputs"),
+		NodePath("Spacer_BeforeRearrange"),
+		NodePath("Spacer_BeforeMonitorTools"),
 	]
 	COMBO_STYLER.apply_spacer_width(self, plate_gap_paths, COMBO_STYLER.COMBO_PLATE_GAP)
-	var spacer_paths := []
-	spacer_paths.append(NodePath("Spacer_BeforeRearrange"))
-	spacer_paths.append(NodePath("Spacer_AfterRearrange"))
-	spacer_paths.append(NodePath("Spacer_BeforeMonitorTools"))
-	COMBO_STYLER.apply_spacer_width(self, spacer_paths)
+	if _spacer_after_rearrange != null:
+		_spacer_after_rearrange.custom_minimum_size = Vector2.ZERO
 	var combo_rows: Array[PanelContainer] = [
 		%BrainRegionsRow,
 		%InterconnectAreasRow,
@@ -550,9 +549,8 @@ func _set_all_buttons_disabled(disabled: bool) -> void:
 ## Brain Monitor tab strip only: same controls as the main top bar, scoped to this tab's 3D scene.
 func _update_monitor_tools_visibility() -> void:
 	var show_tools := _is_3d_context and _bm_scene != null and not _global_topbar_mode
-	# Do not insert extra spacers here. Elements / inspector / camera share the strip gap.
 	if _spacer_before_monitor_tools != null:
-		_spacer_before_monitor_tools.visible = false
+		_spacer_before_monitor_tools.visible = show_tools
 	if _activity_visualization_dropdown != null:
 		_activity_visualization_dropdown.visible = show_tools
 	if _camera_animations_button != null:
@@ -830,7 +828,7 @@ func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_l
 	if _spacer_after_connectome:
 		_spacer_after_connectome.visible = show_inputs_and_outputs
 	if _spacer_before_rearrange:
-		_spacer_before_rearrange.visible = false
+		_spacer_before_rearrange.visible = show_rearrange_layout
 	if _spacer_after_rearrange:
 		_spacer_after_rearrange.visible = false
 

@@ -3,9 +3,7 @@ class_name ComboButtonStripStyler
 
 ## Shared spacing tokens for combo button strips.
 const INNER_CONTENT_SEPARATION: int = 8
-## Gap before rearrange / monitor tools. Not the gap between combo plates.
-const INTER_BUTTON_GAP: float = 8.0
-## Divider between combo plates. One pixel wider than a bare seam so it matches the icon-strip buttons.
+## One gap for every strip: root bar, Circuit Builder, and Brain Monitor.
 const COMBO_PLATE_GAP: int = 2
 ## Side inset only. Vertical inset would make combo plates taller than the icon buttons.
 const ROW_PAD_X: int = 12
@@ -24,7 +22,7 @@ static func apply_list_hbox_spacing(root: Node, list_hbox_paths: Array, separati
 
 
 ## Apply a consistent fixed width to spacer controls between combo buttons.
-static func apply_spacer_width(root: Node, spacer_paths: Array, width: float = INTER_BUTTON_GAP) -> void:
+static func apply_spacer_width(root: Node, spacer_paths: Array, width: float = COMBO_PLATE_GAP) -> void:
 	for path in spacer_paths:
 		var spacer := root.get_node_or_null(path) as Control
 		if spacer == null:
