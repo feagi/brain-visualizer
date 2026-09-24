@@ -25,8 +25,10 @@ var _btn_brain_regions_list: TextureButton
 var _circuits_title: Control
 var _btn_brain_regions_add: TextureButton
 var _btn_interconnect_list: TextureButton
+var _interconnect_title: Control
 var _btn_interconnect_add: TextureButton
 var _btn_memory_list: TextureButton
+var _memory_title: Control
 var _btn_memory_add: TextureButton
 var _btn_rearrange_layout: TextureButton
 var _btn_inputs_list: BasePanelContainerButton
@@ -72,8 +74,12 @@ var _root_hover_list_anchor: Control = null
 var _root_open_list_id: StringName = &""
 var _root_list_hover_close_timer: Timer = null
 const ROOT_LIST_CIRCUITS: StringName = &"circuits"
+const ROOT_LIST_INTERCONNECT: StringName = &"interconnect"
+const ROOT_LIST_MEMORY: StringName = &"memory"
 const ROOT_LIST_INPUTS: StringName = &"inputs"
 const ROOT_LIST_OUTPUTS: StringName = &"outputs"
+const TAB_ROW_SPACER_AFTER_CIRCUITS: StringName = &"Spacer_AfterCircuitsRow"
+const TAB_ROW_SPACER_AFTER_INTERCONNECT: StringName = &"Spacer_AfterInterconnectRow"
 ## True after [method apply_custom_topbar_tooltips] succeeded for this instance (TopBar or tab host).
 var _hosted_styled_tooltips_applied: bool = false
 var _plus_hover_tween: Tween = null
@@ -92,19 +98,24 @@ static func connectome_hover_scale(hovered: bool) -> float:
 	return CONNECTOME_HOVER_SCALE if hovered else 1.0
 
 
-## Tab strips open Elements on hover. The main top bar has no Elements button.
-static func should_open_elements_menu_on_hover(global_topbar_mode: bool, button_disabled: bool) -> bool:
-	return not global_topbar_mode and not button_disabled
+## The Elements dropdown is not used. Category chips sit on the strip.
+static func should_open_elements_menu_on_hover(_global_topbar_mode: bool, _button_disabled: bool) -> bool:
+	return false
 
 
-## The Circuits list button stays on tab Elements rows. The root bar opens that list from the title.
-static func should_show_circuits_list_button_on_strip(global_topbar_mode: bool) -> bool:
+## List icons are not used. Hovering the title opens the list.
+static func should_show_category_list_button() -> bool:
+	return false
+
+
+## Circuit Builder and Brain Monitor show Circuits, Interconnect Areas, and Memory Areas on the strip.
+static func should_show_tab_category_rows_on_strip(global_topbar_mode: bool) -> bool:
 	return not global_topbar_mode
 
 
-## Root bar titles open Circuits, Inputs, and Outputs on hover. Tab titles stay labels.
-static func should_open_root_category_list_on_hover(global_topbar_mode: bool, strip_disabled: bool) -> bool:
-	return global_topbar_mode and not strip_disabled
+## Title hover opens the category list on the root bar and on tab bars.
+static func should_open_category_list_on_title_hover(strip_disabled: bool) -> bool:
+	return not strip_disabled
 
 
 ## Scene node names under %MenuItems, same order as [method connectome_menu_item_ids].
@@ -127,8 +138,10 @@ func _ready() -> void:
 	_circuits_title = %BrainRegionsRow.get_node("HBoxContainer/BrainRegionsList") as Control
 	_btn_brain_regions_add = %TextureButton_BrainRegions
 	_btn_interconnect_list = %TextureButton_InterconnectList
+	_interconnect_title = %InterconnectAreasRow.get_node("HBoxContainer/InterconnectAreasList") as Control
 	_btn_interconnect_add = %TextureButton_Interconnect
 	_btn_memory_list = %TextureButton_MemoryList
+	_memory_title = %MemoryAreasRow.get_node("HBoxContainer/MemoryAreasList") as Control
 	_btn_memory_add = %TextureButton_Memory
 	_btn_rearrange_layout = $RearrangePanel/MarginContainer/TextureButton_Rearrange
 	_btn_inputs_list = %InputsList
@@ -459,6 +472,7 @@ func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> v
 	_global_topbar_mode = false
 	_bm_scene = bm_scene
 	context_region = region
+	_place_category_rows_on_tab_strip()
 	_update_buttons_state()
 	_on_theme_changed(theme)
 
@@ -468,6 +482,7 @@ func set_2d_context(cb_scene: CircuitBuilder, region: BrainRegion) -> void:
 	_global_topbar_mode = false
 	_cb_scene = cb_scene
 	context_region = region
+	_place_category_rows_on_tab_strip()
 	_update_buttons_state()
 	_on_theme_changed(theme)
 	if not _hosted_styled_tooltips_applied:
@@ -475,7 +490,7 @@ func set_2d_context(cb_scene: CircuitBuilder, region: BrainRegion) -> void:
 
 
 ## Use this component as the shared global top-bar strip.
-## Top bar is circuits + I/O only. Elements menu stays on Circuit Builder / Brain Monitor tabs.
+## Root bar is circuits + I/O. Tab bars list circuits, interconnect areas, and memory areas inline.
 func set_global_topbar_mode() -> void:
 	_global_topbar_mode = true
 	_bm_scene = null
@@ -486,7 +501,57 @@ func set_global_topbar_mode() -> void:
 	_on_theme_changed(theme)
 
 
-## Circuits sit on the main top bar strip; they stay inside the Elements menu on tab combos.
+## Tab bars use the root-bar pattern: category chips on the strip, no Elements menu.
+func _place_category_rows_on_tab_strip() -> void:
+	if not should_show_tab_category_rows_on_strip(_global_topbar_mode):
+		return
+	var sequence: Array[Control] = [
+		%BrainRegionsRow,
+		_ensure_category_row_spacer(TAB_ROW_SPACER_AFTER_CIRCUITS),
+		%InterconnectAreasRow,
+		_ensure_category_row_spacer(TAB_ROW_SPACER_AFTER_INTERCONNECT),
+		%MemoryAreasRow,
+	]
+	for i in range(sequence.size()):
+		var node := sequence[i]
+		_reparent_onto_strip(node, i)
+		if node is PanelContainer:
+			node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			node.visible = true
+	_hide_elements_controls()
+
+
+func _reparent_onto_strip(node: Control, index: int) -> void:
+	if node.get_parent() != self:
+		var parent := node.get_parent()
+		if parent != null:
+			parent.remove_child(node)
+		add_child(node)
+	move_child(node, index)
+
+
+func _ensure_category_row_spacer(spacer_name: StringName) -> Control:
+	var spacer := get_node_or_null(NodePath(String(spacer_name))) as Control
+	if spacer == null:
+		spacer = Control.new()
+		spacer.name = spacer_name
+		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(spacer)
+	spacer.size_flags_horizontal = 0
+	spacer.custom_minimum_size = Vector2(COMBO_STYLER.COMBO_PLATE_GAP, 0)
+	return spacer
+
+
+func _hide_elements_controls() -> void:
+	if _group_connectome != null:
+		_group_connectome.visible = false
+	if _btn_connectome != null:
+		_btn_connectome.visible = false
+	_close_connectome_menu()
+
+
+## Circuits sit on the main top bar strip. Interconnect and memory stay off that bar.
 func _place_circuits_on_topbar_strip() -> void:
 	var circuits_row: Control = %BrainRegionsRow
 	if circuits_row.get_parent() == self:
@@ -498,11 +563,7 @@ func _place_circuits_on_topbar_strip() -> void:
 	move_child(circuits_row, 0)
 	circuits_row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	circuits_row.visible = true
-	if _group_connectome != null:
-		_group_connectome.visible = false
-	if _btn_connectome != null:
-		_btn_connectome.visible = false
-	_close_connectome_menu()
+	_hide_elements_controls()
 
 
 ## Allow host containers to force-enable/disable the strip uniformly.
@@ -608,31 +669,42 @@ func _on_monitor_camera_animations_pressed() -> void:
 		BV.WM.spawn_camera_animations(_bm_scene)
 
 
-## Root bar: Circuits, Inputs, and Outputs titles open their lists on hover. Tab rows keep the list button.
+## Category titles open their lists on hover on the root bar and on tab bars.
 func _wire_root_category_title_hover() -> void:
-	_circuits_title.mouse_entered.connect(_on_root_category_title_entered.bind(_circuits_title, ROOT_LIST_CIRCUITS, _open_brain_regions))
-	_circuits_title.mouse_exited.connect(_on_root_category_title_exited.bind(_circuits_title))
-	_circuits_title.gui_input.connect(_on_circuits_title_gui_input)
+	_wire_category_title(_circuits_title, ROOT_LIST_CIRCUITS, _open_brain_regions)
+	_wire_category_title(_interconnect_title, ROOT_LIST_INTERCONNECT, _open_interconnect_areas)
+	_wire_category_title(_memory_title, ROOT_LIST_MEMORY, _open_memory_areas)
 	_btn_inputs_list.mouse_entered.connect(_on_root_category_title_entered.bind(_btn_inputs_list, ROOT_LIST_INPUTS, _open_inputs))
 	_btn_inputs_list.mouse_exited.connect(_on_root_category_title_exited.bind(_btn_inputs_list))
 	_btn_outputs_list.mouse_entered.connect(_on_root_category_title_entered.bind(_btn_outputs_list, ROOT_LIST_OUTPUTS, _open_outputs))
 	_btn_outputs_list.mouse_exited.connect(_on_root_category_title_exited.bind(_btn_outputs_list))
 
 
-## The Circuits title accepts the pointer only on the root bar, where it replaces the list button.
-func _apply_root_category_title_hover() -> void:
-	if _circuits_title == null:
+func _wire_category_title(title: Control, list_id: StringName, opener: Callable) -> void:
+	if title == null:
 		return
-	if _global_topbar_mode:
-		_circuits_title.mouse_filter = Control.MOUSE_FILTER_STOP
-		_circuits_title.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		return
-	_circuits_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_circuits_title.mouse_default_cursor_shape = Control.CURSOR_ARROW
+	title.mouse_entered.connect(_on_root_category_title_entered.bind(title, list_id, opener))
+	title.mouse_exited.connect(_on_root_category_title_exited.bind(title))
+	title.gui_input.connect(_on_category_title_gui_input.bind(title, list_id, opener))
+
+
+## Titles accept the pointer because the list icon is not shown.
+func _apply_category_title_pointer() -> void:
+	for title in [_circuits_title, _interconnect_title, _memory_title]:
+		if title == null:
+			continue
+		title.mouse_filter = Control.MOUSE_FILTER_STOP
+		title.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+
+func _category_strip_is_disabled() -> bool:
+	if _force_disabled_override:
+		return true
+	return _btn_brain_regions_add != null and _btn_brain_regions_add.disabled
 
 
 func _on_root_category_title_entered(title: Control, list_id: StringName, opener: Callable) -> void:
-	if not should_open_root_category_list_on_hover(_global_topbar_mode, _force_disabled_override):
+	if not should_open_category_list_on_title_hover(_category_strip_is_disabled()):
 		return
 	_root_hover_list_anchor = title
 	_cancel_root_list_hover_close()
@@ -649,19 +721,19 @@ func _on_root_category_title_exited(title: Control) -> void:
 	_schedule_root_list_hover_close()
 
 
-## Click still opens Circuits after the root-bar list button is hidden.
-func _on_circuits_title_gui_input(event: InputEvent) -> void:
-	if not should_open_root_category_list_on_hover(_global_topbar_mode, _force_disabled_override):
+## Click still opens a category list after the list icon is hidden.
+func _on_category_title_gui_input(event: InputEvent, title: Control, list_id: StringName, opener: Callable) -> void:
+	if not should_open_category_list_on_title_hover(_category_strip_is_disabled()):
 		return
-	if not event is InputEventMouseButton:
+	if title == null or not event is InputEventMouseButton:
 		return
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
 		return
-	_root_hover_list_anchor = _circuits_title
-	_root_open_list_id = ROOT_LIST_CIRCUITS
-	_open_brain_regions()
-	_circuits_title.accept_event()
+	_root_hover_list_anchor = title
+	_root_open_list_id = list_id
+	opener.call()
+	title.accept_event()
 
 
 func _ensure_list_popup_hover_hooks() -> void:
@@ -684,8 +756,6 @@ func _ensure_root_list_hover_close_timer() -> Timer:
 
 
 func _schedule_root_list_hover_close() -> void:
-	if not _global_topbar_mode:
-		return
 	if _list_popup == null or not _list_popup.visible:
 		return
 	_ensure_root_list_hover_close_timer().start(ELEMENTS_MENU_HOVER_CLOSE_DELAY_SEC)
@@ -697,8 +767,6 @@ func _cancel_root_list_hover_close() -> void:
 
 
 func _close_root_list_if_pointer_left() -> void:
-	if not _global_topbar_mode:
-		return
 	if _list_popup == null or not _list_popup.visible:
 		return
 	if _is_pointer_over_control(_root_hover_list_anchor) or _is_pointer_over_list_popup():
@@ -736,13 +804,12 @@ func _open_brain_regions() -> void:
 	if context_region == null and not _global_topbar_mode:
 		return
 	var items := _build_region_items()
-	var anchor: Control = _circuits_title if _global_topbar_mode else _btn_brain_regions_list
-	_open_dropdown_for_items(anchor, items, "Filter circuits...", func(region: BrainRegion):
+	_open_dropdown_for_items(_circuits_title, items, "Filter circuits...", func(region: BrainRegion):
 		_focus_region(region)
 	)
 
 func _add_brain_region() -> void:
-	var anchor := _btn_brain_regions_add if _global_topbar_mode else _connectome_action_anchor()
+	var anchor := _btn_brain_regions_add
 	if _global_topbar_mode:
 		# Top bar trigger defines context: create under main/root scene.
 		BV.WM.spawn_select_region_template(null, true, anchor)
@@ -759,7 +826,7 @@ func _open_interconnect_areas() -> void:
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM,
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT,
 	])
-	_open_dropdown_for_items(_btn_interconnect_list, items, "Filter interconnect areas...", func(area: AbstractCorticalArea):
+	_open_dropdown_for_items(_interconnect_title, items, "Filter interconnect areas...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
 	)
 
@@ -768,7 +835,7 @@ func _open_memory_areas() -> void:
 	if context_region == null and not _global_topbar_mode:
 		return
 	var items := _build_cortical_items_for_types([AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY])
-	_open_dropdown_for_items(_btn_memory_list, items, "Filter memory areas...", func(area: AbstractCorticalArea):
+	_open_dropdown_for_items(_memory_title, items, "Filter memory areas...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
 	)
 
@@ -791,7 +858,7 @@ func _open_outputs() -> void:
 	)
 
 func _add_interconnect_area() -> void:
-	var anchor := _connectome_action_anchor()
+	var anchor := _btn_interconnect_add
 	if _global_topbar_mode:
 		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, anchor)
 		return
@@ -801,7 +868,7 @@ func _add_interconnect_area() -> void:
 	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, anchor)
 
 func _add_memory_area() -> void:
-	var anchor := _connectome_action_anchor()
+	var anchor := _btn_memory_add
 	if _global_topbar_mode:
 		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, anchor)
 		return
@@ -872,23 +939,25 @@ func _is_root_region() -> bool:
 	return root_region != null and root_region == context_region
 
 func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_layout: bool) -> void:
-	# Elements menu is Circuit Builder / Brain Monitor only.
-	var show_connectome := not _global_topbar_mode
-	if _group_connectome:
-		_group_connectome.visible = show_connectome
-	if _btn_connectome:
-		_btn_connectome.visible = show_connectome
+	_hide_elements_controls()
+	var show_tab_categories := should_show_tab_category_rows_on_strip(_global_topbar_mode)
+	var interconnect_row := get_node_or_null("%InterconnectAreasRow") as Control
+	var memory_row := get_node_or_null("%MemoryAreasRow") as Control
+	if interconnect_row != null:
+		interconnect_row.visible = show_tab_categories
+	if memory_row != null:
+		memory_row.visible = show_tab_categories
 	if _btn_brain_regions_list:
-		_btn_brain_regions_list.visible = should_show_circuits_list_button_on_strip(_global_topbar_mode)
-	_apply_root_category_title_hover()
+		_btn_brain_regions_list.visible = should_show_category_list_button()
+	if _btn_interconnect_list:
+		_btn_interconnect_list.visible = should_show_category_list_button()
+	if _btn_memory_list:
+		_btn_memory_list.visible = should_show_category_list_button()
+	_apply_category_title_pointer()
 	if _btn_brain_regions_add:
 		_btn_brain_regions_add.visible = true
-	if _btn_interconnect_list:
-		_btn_interconnect_list.visible = true
 	if _btn_interconnect_add:
 		_btn_interconnect_add.visible = true
-	if _btn_memory_list:
-		_btn_memory_list.visible = true
 	if _btn_memory_add:
 		_btn_memory_add.visible = true
 	if _btn_rearrange_layout:
@@ -1202,10 +1271,8 @@ func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], 
 	if is_connectome_menu_open() or _is_connectome_menu_row(anchor_button):
 		anchor = _connectome_action_anchor()
 	_ensure_list_popup()
-	if _global_topbar_mode:
-		_ensure_list_popup_hover_hooks()
-	var overlap := ELEMENTS_MENU_ANCHOR_OVERLAP_PX if _global_topbar_mode else 0
-	_list_popup.open_with_items(anchor, items, selection_handler, placeholder_text, overlap)
+	_ensure_list_popup_hover_hooks()
+	_list_popup.open_with_items(anchor, items, selection_handler, placeholder_text, ELEMENTS_MENU_ANCHOR_OVERLAP_PX)
 
 
 func _is_connectome_menu_row(control: Control) -> bool:

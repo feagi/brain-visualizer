@@ -28,7 +28,7 @@ Brain Visualizer's interface consists of several key areas:
 **Top Toolbar**
 - Connection status and genome statistics
 - Burst rate control (neural processing speed)
-- Quick access buttons for Elements, Inputs, and Outputs on the Circuit Builder and Brain Monitor tab bars
+- Quick access on the Circuit Builder and Brain Monitor tab bars for Circuits, Interconnect Areas, and Memory Areas. Hover a title to list existing ones. **+** creates one.
 - Connectivity Rule manager
 - Options and settings
 - Camera animations
@@ -82,12 +82,12 @@ See [Navigation Basics](navigation.md) for more details.
 
 ### Middle Section (Quick Access)
 
-- **Circuits, Inputs, and Outputs** on the root scene top bar: hover the title to list existing ones. **+** creates one. The Circuits list button stays on the Circuit Builder and Brain Monitor Elements menu.
+- **Circuits, Inputs, and Outputs** on the root scene top bar: hover the title to list existing ones. **+** creates one.
 - **Inputs**: Create and manage input cortical areas (IPU)
 
 ![Inputs Button](../UI/GenericResources/ButtonIcons/input.png)
 
-- **Elements**: Hover on the Circuit Builder and Brain Monitor tab bars to open Circuits, Interconnect Areas, and Memory Areas. The row title is a label. Use the list button beside **+** to open existing elements, and **+** to create one. Add a classifier from **Add Circuit**; it is marked as an Integrated Circuit.
+- **Circuits, Interconnect Areas, and Memory Areas** on the Circuit Builder and Brain Monitor tab bars: hover the title to list existing ones. **+** creates one. Add a classifier from **Add Circuit**; it is marked as an Integrated Circuit.
 
 ![Elements Button](../UI/GenericResources/ButtonIcons/architecture.png)
 

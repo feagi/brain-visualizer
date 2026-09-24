@@ -21,10 +21,10 @@ Use the **top toolbar dropdowns** to jump directly to any object:
 2. Select an object from the list
 3. View instantly focuses on that object
 
-**Elements Menu:**
-1. Hover **Elements** on the Circuit Builder or Brain Monitor tab bar
-2. On **Circuits**, **Interconnect Areas**, or **Memory Areas**, click the list button beside **+**
-3. Select an object from that list to focus it
+**Circuits, Interconnect Areas, and Memory Areas (tab bars):**
+1. Hover **Circuits**, **Interconnect Areas**, or **Memory Areas** on the Circuit Builder or Brain Monitor tab bar
+2. Select an object from the list
+3. View instantly focuses on that object
 
 This method works from anywhere and is the fastest way to navigate.
 
@@ -76,7 +76,7 @@ Some versions include a search feature:
 
 Browse organized lists in dropdowns:
 - **Inputs**: All IPU areas alphabetically
-- **Elements**: Circuits, interconnect areas, and memory areas. Classifiers are added from **Add Circuit** as Integrated Circuits.
+- **Circuits, Interconnect Areas, and Memory Areas**: on the Circuit Builder and Brain Monitor tab bars. Hover the title. Classifiers are added from **Add Circuit** as Integrated Circuits.
 - **Outputs**: All OPU areas alphabetically
 
 Click any item to navigate there.

@@ -176,6 +176,7 @@ mouse_filter = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 clip_contents = false
+theme_override_styles/panel = SubResource("StyleBoxEmpty_title")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList"]
 mouse_filter = 2
@@ -240,6 +241,7 @@ mouse_filter = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 clip_contents = false
+theme_override_styles/panel = SubResource("StyleBoxEmpty_title")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList"]
 mouse_filter = 2

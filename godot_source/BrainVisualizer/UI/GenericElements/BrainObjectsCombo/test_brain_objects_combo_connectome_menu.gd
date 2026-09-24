@@ -133,40 +133,37 @@ func _test_elements_button_tooltip_copy() -> int:
 
 func _test_elements_menu_opens_on_hover_for_tab_strips() -> int:
 	var script: Script = load(COMBO_SCRIPT_PATH)
-	if not bool(script.should_open_elements_menu_on_hover(false, false)):
-		push_error("Elements menu must open on hover on Circuit Builder and Brain Monitor tabs")
+	if bool(script.should_open_elements_menu_on_hover(false, false)):
+		push_error("Tab bars must not open an Elements menu")
 		return 1
 	if bool(script.should_open_elements_menu_on_hover(true, false)):
-		push_error("Elements menu must not open on hover on the main top bar")
+		push_error("Root bar must not open an Elements menu")
 		return 1
-	if bool(script.should_open_elements_menu_on_hover(false, true)):
-		push_error("Elements menu must not open on hover when the button is disabled")
+	if not bool(script.should_show_tab_category_rows_on_strip(false)):
+		push_error("Circuit Builder and Brain Monitor must list Circuits, Interconnect Areas, and Memory Areas on the strip")
+		return 1
+	if bool(script.should_show_tab_category_rows_on_strip(true)):
+		push_error("Root bar must not add Interconnect Areas and Memory Areas beside Circuits")
 		return 1
 	if int(script.ELEMENTS_MENU_ANCHOR_OVERLAP_PX) <= 0:
-		push_error("Elements menu must overlap the button so the pointer can move into it")
+		push_error("Category lists must overlap the title so the pointer can move into them")
 		return 1
 	if float(script.ELEMENTS_MENU_HOVER_CLOSE_DELAY_SEC) <= 0.0:
-		push_error("Elements menu hover close delay must be positive")
+		push_error("Category list hover close delay must be positive")
 		return 1
 	return 0
 
 
 func _test_root_bar_category_lists_open_on_title_hover() -> int:
 	var script: Script = load(COMBO_SCRIPT_PATH)
-	if script.should_show_circuits_list_button_on_strip(true):
-		push_error("Root top bar must hide the Circuits list button")
+	if script.should_show_category_list_button():
+		push_error("Category rows must not show a list button")
 		return 1
-	if not script.should_show_circuits_list_button_on_strip(false):
-		push_error("Circuit Builder and Brain Monitor must keep the Circuits list button")
+	if not script.should_open_category_list_on_title_hover(false):
+		push_error("Hovering a category title must open its list")
 		return 1
-	if not script.should_open_root_category_list_on_hover(true, false):
-		push_error("Root top bar must open Circuits, Inputs, and Outputs when the title is hovered")
-		return 1
-	if script.should_open_root_category_list_on_hover(false, false):
-		push_error("Tab strips must keep category lists on the list button, not title hover")
-		return 1
-	if script.should_open_root_category_list_on_hover(true, true):
-		push_error("A disabled root top bar must not open category lists on hover")
+	if script.should_open_category_list_on_title_hover(true):
+		push_error("A disabled strip must not open category lists on hover")
 		return 1
 	return 0
 
@@ -174,17 +171,25 @@ func _test_root_bar_category_lists_open_on_title_hover() -> int:
 func _test_circuits_title_does_not_paint_its_own_plate() -> int:
 	var packed: PackedScene = load(COMBO_SCENE_PATH)
 	var state: SceneState = packed.get_state()
-	var index := _find_node_index_by_name(state, "BrainRegionsList")
-	if index < 0:
-		push_error("Circuits title is missing")
-		return 1
-	for p in range(state.get_node_property_count(index)):
-		if str(state.get_node_property_name(index, p)) != "theme_override_styles/panel":
-			continue
-		if state.get_node_property_value(index, p) is StyleBoxEmpty:
-			return 0
-	push_error("Circuits title must not paint the theme panel behind the icon")
-	return 1
+	var titles: PackedStringArray = PackedStringArray([
+		"BrainRegionsList",
+		"InterconnectAreasList",
+		"MemoryAreasList",
+	])
+	for title_name in titles:
+		var index := _find_node_index_by_name(state, title_name)
+		if index < 0:
+			push_error("Elements row title is missing: %s" % title_name)
+			return 1
+		var paints_empty := false
+		for p in range(state.get_node_property_count(index)):
+			if str(state.get_node_property_name(index, p)) != "theme_override_styles/panel":
+				continue
+			paints_empty = state.get_node_property_value(index, p) is StyleBoxEmpty
+		if not paints_empty:
+			push_error("Elements row title must not paint the theme panel: %s" % title_name)
+			return 1
+	return 0
 
 
 func _test_connectome_inner_hbox_ignores_mouse() -> int:
