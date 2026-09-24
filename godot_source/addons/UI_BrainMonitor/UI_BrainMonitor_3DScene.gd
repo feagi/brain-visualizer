@@ -1052,6 +1052,16 @@ func _on_container_mouse_exited() -> void:
 	if BV == null or BV.UI == null or BV.UI.temp_root_bm != self:
 		_hide_all_region_description_labels()
 
+func is_transform_manipulation_active() -> bool:
+	return _manipulation_active
+
+
+func _record_position_edit(edit: PositionEdit) -> void:
+	if BV == null or BV.UI == null:
+		return
+	BV.UI.record_position_edit(edit)
+
+
 ## Enter: save. Escape: cancel (reset to original).
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -3576,8 +3586,10 @@ func _apply_move(new_pos: Vector3i) -> void:
 	if selected_members.size() > 1:
 		await _apply_group_move(selected_members, new_pos)
 		return
+	var before_pos: Vector3i = _manipulation_area.coordinates_3D
+	var moved_id: StringName = _manipulation_area.cortical_ID
 	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
-	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
+	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(moved_id, payload)
 	if result.has_errored:
 		var details = result.decode_response_as_generic_error_code()
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
@@ -3597,12 +3609,20 @@ func _apply_move(new_pos: Vector3i) -> void:
 	if _manipulation_area != null:
 		_manipulation_area.FEAGI_change_coordinates_3D(new_pos)
 		_manipulation_area.FEAGI_change_dimensions_3D(_manipulation_current_dims)
+		_record_position_edit(PositionEdit.cortical_3d_moves(
+			"Move",
+			[moved_id] as Array[StringName],
+			[before_pos] as Array[Vector3i],
+			[new_pos] as Array[Vector3i]
+		))
 	_end_manipulation_session(true)
 
 func _apply_region_move(new_pos: Vector3i) -> void:
 	if _manipulation_region == null or _manipulation_region.current_parent_region == null:
 		_end_manipulation_session(true)
 		return
+	var before_pos: Vector3i = _manipulation_region.coordinates_3D
+	var region_id: StringName = _manipulation_region.region_ID
 	var result: FeagiRequestOutput = await FeagiCore.requests.edit_region_object(
 		_manipulation_region,
 		_manipulation_region.current_parent_region,
@@ -3628,6 +3648,10 @@ func _apply_region_move(new_pos: Vector3i) -> void:
 		))
 	if _manipulation_region != null:
 		_manipulation_region.FEAGI_change_coordinates_3D(new_pos)
+		var region_edit := PositionEdit.new()
+		region_edit.label = "Move"
+		region_edit.add_region_3d(region_id, before_pos, new_pos)
+		_record_position_edit(region_edit)
 	_end_manipulation_session(true)
 
 ## Persists only the power core position; slaved cores follow via [_refresh_core_cluster_layout].
@@ -3635,8 +3659,10 @@ func _apply_core_cluster_move(new_pos: Vector3i) -> void:
 	if _manipulation_area == null or not AbstractCorticalArea.is_power_area(_manipulation_area.cortical_ID):
 		_end_manipulation_session(true)
 		return
+	var before_pos: Vector3i = _manipulation_area.coordinates_3D
+	var moved_id: StringName = _manipulation_area.cortical_ID
 	var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(new_pos)}
-	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(_manipulation_area.cortical_ID, payload)
+	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(moved_id, payload)
 	if result.has_errored:
 		var details = result.decode_response_as_generic_error_code()
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
@@ -3654,6 +3680,12 @@ func _apply_core_cluster_move(new_pos: Vector3i) -> void:
 		return
 	_manipulation_area.FEAGI_change_coordinates_3D(new_pos)
 	_manipulation_area.FEAGI_change_dimensions_3D(_manipulation_current_dims)
+	_record_position_edit(PositionEdit.cortical_3d_moves(
+		"Move",
+		[_manipulation_area.cortical_ID] as Array[StringName],
+		[before_pos] as Array[Vector3i],
+		[new_pos] as Array[Vector3i]
+	))
 	_refresh_core_cluster_layout()
 	_end_manipulation_session(true)
 
@@ -3708,14 +3740,22 @@ func _apply_group_move(members: Array[AbstractCorticalArea], new_pos: Vector3i) 
 	var base_pos = _manipulation_area.coordinates_3D
 	var delta = new_pos - base_pos
 	var failed: Array[StringName] = []
+	var moved_ids: Array[StringName] = []
+	var moved_befores: Array[Vector3i] = []
+	var moved_afters: Array[Vector3i] = []
 	for area in members:
-		var target_pos = area.coordinates_3D + delta
+		var before_pos: Vector3i = area.coordinates_3D
+		var target_pos: Vector3i = before_pos + delta
 		var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(target_pos)}
 		var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(area.cortical_ID, payload)
 		if result.has_errored:
 			failed.append(area.cortical_ID)
 			continue
 		area.FEAGI_change_coordinates_3D(target_pos)
+		moved_ids.append(area.cortical_ID)
+		moved_befores.append(before_pos)
+		moved_afters.append(target_pos)
+	_record_position_edit(PositionEdit.cortical_3d_moves("Move", moved_ids, moved_befores, moved_afters))
 	if not failed.is_empty():
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
 			"Move failed",

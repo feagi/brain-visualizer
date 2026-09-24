@@ -41,6 +41,10 @@ var _classifier_twin_visual_ids: Dictionary = {}
 var _representing_region: BrainRegion
 var _move_timer: Timer
 var _moved_genome_objects_buffer: Dictionary = {} # Key'd by object ref, value is new vector2 position
+## First 2D coordinate of each object in the current drag flush. Captured before FEAGI accepts the move.
+var _move_origin_2d: Dictionary = {}
+## Model coordinates at the start of a multi-relocate gesture.
+var _multi_relocate_model_starts: Dictionary = {}
 var _move_flush_pending: bool = false
 var _multi_relocate_active: bool = false
 var _multi_relocate_anchor_mouse: Vector2 = Vector2.ZERO
@@ -661,6 +665,8 @@ func _genome_object_moved(node: CBNodeConnectableBase, new_position: Vector2i) -
 	else:
 		return
 	print("Buffering change in position of genome object ")
+	if not _move_origin_2d.has(genome_object):
+		_move_origin_2d[genome_object] = genome_object.coordinates_2D
 	_moved_genome_objects_buffer[genome_object] = new_position
 	_request_immediate_move_flush()
 
@@ -680,6 +686,9 @@ func _flush_move_buffer() -> void:
 		return
 	var payload := _moved_genome_objects_buffer
 	_moved_genome_objects_buffer = {}
+	var position_edit := _position_edit_for_2d_payload("Move", payload, _move_origin_2d)
+	for genome_object in payload.keys():
+		_move_origin_2d.erase(genome_object)
 	print("Sending change of 2D positions for %d objects(s)" % len(payload.keys()))
 	var result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(payload)
 	if result.has_errored:
@@ -689,6 +698,7 @@ func _flush_move_buffer() -> void:
 			NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
 		)
 		return
+	_record_position_edit(position_edit)
 	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
 	if save_result.has_errored:
 		print("CB_RELAYOUT_DEBUG: genome save failed -> ", save_result.decode_response_as_generic_error_code())
@@ -705,12 +715,16 @@ func _flush_move_buffer() -> void:
 func start_multi_relocate(selection: Array[GenomeObject]) -> void:
 	_multi_relocate_nodes.clear()
 	_multi_relocate_node_start_positions.clear()
+	_multi_relocate_model_starts.clear()
 	for obj in selection:
 		if obj is AbstractCorticalArea or obj is BrainRegion or obj is GenomeClassifier:
 			var node = _get_associated_connectable_graph_node(obj)
 			if node != null:
 				_multi_relocate_nodes.append(node)
 				_multi_relocate_node_start_positions[node] = node.position_offset
+				var model: GenomeObject = _relocate_model_object(node)
+				if model != null:
+					_multi_relocate_model_starts[model] = model.coordinates_2D
 	if _multi_relocate_nodes.is_empty():
 		BV.NOTIF.add_notification("No selectable areas found for relocate.")
 		return
@@ -742,6 +756,8 @@ func _end_multi_relocate(commit: bool) -> void:
 	call_deferred("_commit_multi_relocate")
 
 func _commit_multi_relocate() -> void:
+	var relocate_origins: Dictionary = _multi_relocate_model_starts.duplicate()
+	_multi_relocate_model_starts.clear()
 	if _multi_relocate_nodes.is_empty():
 		return
 	var cortical_payload: Dictionary = {}
@@ -753,6 +769,8 @@ func _commit_multi_relocate() -> void:
 			region_payload[(node as CBNodeRegion).representing_region] = Vector2i(node.position_offset)
 	if cortical_payload.is_empty() and region_payload.is_empty():
 		return
+	var position_edit := PositionEdit.new()
+	position_edit.label = "Move"
 	if not cortical_payload.is_empty():
 		print("Sending change of 2D positions for %d cortical area(s)" % len(cortical_payload.keys()))
 		var cortical_result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(cortical_payload)
@@ -763,6 +781,7 @@ func _commit_multi_relocate() -> void:
 				NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
 			)
 			return
+		position_edit.append_2d_moves(relocate_origins, cortical_payload)
 	if not region_payload.is_empty():
 		print("Sending change of 2D positions for %d region(s)" % len(region_payload.keys()))
 		var region_result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(region_payload)
@@ -772,7 +791,10 @@ func _commit_multi_relocate() -> void:
 				"Relocate failed to save regions.",
 				NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
 			)
+			_record_position_edit(position_edit)
 			return
+		position_edit.append_2d_moves(relocate_origins, region_payload)
+	_record_position_edit(position_edit)
 	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
 	if save_result.has_errored:
 		print("CB_RELAYOUT_DEBUG: genome save failed -> ", save_result.decode_response_as_generic_error_code())
@@ -785,6 +807,29 @@ func _commit_multi_relocate() -> void:
 		"Relocate saved positions to genome.",
 		NotificationSystemNotification.NOTIFICATION_TYPE.INFO
 	)
+
+func _relocate_model_object(node: CBNodeConnectableBase) -> GenomeObject:
+	if node is CBNodeCorticalArea:
+		return (node as CBNodeCorticalArea).representing_cortical_area
+	if node is CBNodeRegion:
+		return (node as CBNodeRegion).representing_region
+	if node is CBNodeClassifier:
+		var classifier: GenomeClassifier = (node as CBNodeClassifier).representing_classifier
+		if classifier == null:
+			return null
+		return classifier.get_stamp_area()
+	return null
+
+
+func _position_edit_for_2d_payload(move_label: String, destinations: Dictionary, origins: Dictionary) -> PositionEdit:
+	return PositionEdit.from_2d_moves(move_label, origins, destinations)
+
+
+func _record_position_edit(edit: PositionEdit) -> void:
+	if BV == null or BV.UI == null:
+		return
+	BV.UI.record_position_edit(edit)
+
 
 ## Attempts to return the associated graph node for a given genome cache object. Returns null if fails
 func _get_associated_connectable_graph_node(genome_object: GenomeObject) -> CBNodeConnectableBase:
@@ -888,6 +933,11 @@ func apply_hierarchical_layout(show_success_notification: bool = true) -> void:
 			update_payload[(node as CBNodeRegion).representing_region] = Vector2i(new_pos)
 	if update_payload.is_empty():
 		return
+	var layout_origins: Dictionary = {}
+	for genome_object in update_payload.keys():
+		if genome_object is GenomeObject:
+			layout_origins[genome_object] = (genome_object as GenomeObject).coordinates_2D
+	var position_edit := PositionEdit.from_2d_moves("Arrange", layout_origins, update_payload)
 	print("CB_RELAYOUT_DEBUG: saving %d objects to FEAGI" % update_payload.size())
 	var result: FeagiRequestOutput = await FeagiCore.requests.mass_move_genome_objects_2D(update_payload)
 	if result.has_errored:
@@ -897,6 +947,7 @@ func apply_hierarchical_layout(show_success_notification: bool = true) -> void:
 			NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
 		)
 		return
+	_record_position_edit(position_edit)
 	print("CB_RELAYOUT_DEBUG: saving genome after relayout")
 	var save_result: FeagiRequestOutput = await FeagiCore.requests.save_genome()
 	if save_result.has_errored:

@@ -26,6 +26,8 @@ var root_UI_view: UIView:
 	get: return _root_UI_view
 var selection_system: SelectionSystem:
 	get: return _selection_system
+var genome_history: GenomeHistory = GenomeHistory.new()
+var _position_history_busy: bool = false
 # Main brain monitor instance - public access
 var temp_root_bm: UI_BrainMonitor_3DScene = null
 var qc_guide_source_bm: UI_BrainMonitor_3DScene = null
@@ -205,6 +207,7 @@ func _ready():
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
 	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(_on_websocket_health_changed)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_load_state_changed)
+	_sync_position_history_acceptance(FeagiCore.genome_load_state)
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
 
 	_setup_visible_caret_style_globally()
@@ -1250,11 +1253,20 @@ func _on_genome_availability_changed(available: bool) -> void:
 
 ## Handle completed genome cache replacement events
 func _on_genome_cache_replaced() -> void:
+	genome_history.clear()
 	update_loading_status("Updating brain visualizer cache...")
 
 ## Handle genome load state changes to show/hide loading screen
-func _on_genome_load_state_changed(_current_state: FeagiCore.GENOME_LOAD_STATE, _prev_state: FeagiCore.GENOME_LOAD_STATE) -> void:
+func _on_genome_load_state_changed(current_state: FeagiCore.GENOME_LOAD_STATE, _prev_state: FeagiCore.GENOME_LOAD_STATE) -> void:
+	_sync_position_history_acceptance(current_state)
 	_update_loading_screen_visibility()
+
+
+func _sync_position_history_acceptance(state: FeagiCore.GENOME_LOAD_STATE) -> void:
+	var ready := state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY
+	if not ready and state != FeagiCore.GENOME_LOAD_STATE.GENOME_PROCESSING:
+		genome_history.clear()
+	genome_history.set_accepting(ready)
 
 ## Handle websocket health changes to show/hide loading screen
 func _on_websocket_health_changed(_prev_health, _current_health) -> void:
@@ -1646,6 +1658,21 @@ func _input(event):
 				if _try_paste_clipboard_voxels_to_hovered_area():
 					get_viewport().set_input_as_handled()
 					return
+			var history_shortcut: StringName = GenomeHistory.history_shortcut(
+				keyboard_event.keycode,
+				keyboard_event.ctrl_pressed or keyboard_event.meta_pressed,
+				keyboard_event.shift_pressed,
+				keyboard_event.alt_pressed,
+				true,
+				false
+			)
+			if history_shortcut != &"":
+				if _position_history_shortcut_blocked_by_text():
+					return
+				get_viewport().set_input_as_handled()
+				if _position_history_busy or _any_transform_manipulation_active():
+					return
+				_run_position_history(history_shortcut == &"redo")
 		if keyboard_event.keycode == FeagiCore.feagi_settings.developer_menu_hotkey:
 			if !keyboard_event.pressed:
 				return
@@ -1654,6 +1681,53 @@ func _input(event):
 			show_developer_menu()
 
 var _is_in_advanced_mode: bool = false
+
+
+func record_position_edit(edit: PositionEdit) -> void:
+	genome_history.record(edit)
+
+
+func _position_history_shortcut_blocked_by_text() -> bool:
+	var viewport := get_viewport()
+	if viewport == null:
+		return false
+	return GenomeHistory.focus_blocks_history_shortcut(viewport.gui_get_focus_owner())
+
+
+func _any_transform_manipulation_active() -> bool:
+	for brain_monitor in _find_all_brain_monitors_in_scene_tree():
+		if brain_monitor.is_transform_manipulation_active():
+			return true
+	return false
+
+
+func _run_position_history(forward: bool) -> void:
+	var edit: PositionEdit = genome_history.peek_redo() if forward else genome_history.peek_undo()
+	if edit == null:
+		var empty_message: StringName = "Nothing to redo" if forward else "Nothing to undo"
+		_notification_system.add_notification(empty_message)
+		return
+	_position_history_busy = true
+	var was_accepting := genome_history.is_accepting()
+	genome_history.set_accepting(false)
+	var outcome: Dictionary = await GenomePositionApplier.apply(edit, forward)
+	genome_history.set_accepting(was_accepting)
+	_position_history_busy = false
+	if not bool(outcome.get("ok", false)):
+		var failed_message: StringName = "Redo failed" if forward else "Undo failed"
+		_notification_system.add_notification(failed_message, NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+		return
+	if forward:
+		genome_history.confirm_redo()
+	else:
+		genome_history.confirm_undo()
+	var verb := "Redid" if forward else "Undid"
+	_notification_system.add_notification("%s %s." % [verb, edit.label.to_lower()])
+	if bool(outcome.get("save_failed", false)):
+		_notification_system.add_notification(
+			"Position was updated but the genome save failed.",
+			NotificationSystemNotification.NOTIFICATION_TYPE.WARNING
+		)
 
 func set_advanced_mode(is_advanced_mode: bool) -> void:
 	if is_advanced_mode == _is_in_advanced_mode:

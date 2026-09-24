@@ -698,6 +698,12 @@ func _arrange_block_reason(areas: Array[AbstractCorticalArea]) -> String:
 	return ""
 
 
+func _record_position_edit(edit: PositionEdit) -> void:
+	if BV == null or BV.UI == null:
+		return
+	BV.UI.record_position_edit(edit)
+
+
 ## Align or distribute the current multi-area selection on one axis, then save the genome once.
 func _button_arrange(action: StringName, axis: int) -> void:
 	if _btn_arrange != null:
@@ -721,11 +727,13 @@ func _button_arrange(action: StringName, axis: int) -> void:
 	var axis_label := SelectionArrange.axis_label(axis)
 	var pending_areas: Array[AbstractCorticalArea] = []
 	var pending_positions: Array[Vector3i] = []
+	var pending_befores: Array[Vector3i] = []
 	for index in areas.size():
 		if current[index] == planned[index]:
 			continue
 		pending_areas.append(areas[index])
 		pending_positions.append(planned[index])
+		pending_befores.append(current[index])
 	if pending_areas.is_empty():
 		var already := "aligned" if action == SelectionArrange.ACTION_ALIGN else "distributed"
 		BV.NOTIF.add_notification("Selected areas are already %s on %s." % [already, axis_label])
@@ -735,6 +743,9 @@ func _button_arrange(action: StringName, axis: int) -> void:
 		return
 	_arrange_in_progress = true
 	var failed: Array[String] = []
+	var moved_ids: Array[StringName] = []
+	var moved_befores: Array[Vector3i] = []
+	var moved_afters: Array[Vector3i] = []
 	for index in pending_areas.size():
 		var payload := {"coordinates_3d": FEAGIUtils.vector3i_to_array(pending_positions[index])}
 		var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(pending_areas[index].cortical_ID, payload)
@@ -743,8 +754,12 @@ func _button_arrange(action: StringName, axis: int) -> void:
 		if result.has_errored:
 			failed.append(String(pending_areas[index].cortical_ID))
 			continue
+		moved_ids.append(pending_areas[index].cortical_ID)
+		moved_befores.append(pending_befores[index])
+		moved_afters.append(pending_positions[index])
 		if is_instance_valid(pending_areas[index]):
 			pending_areas[index].FEAGI_change_coordinates_3D(pending_positions[index])
+	_record_position_edit(PositionEdit.cortical_3d_moves("Arrange", moved_ids, moved_befores, moved_afters))
 	if not failed.is_empty():
 		_finish_arrange_request()
 		BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(

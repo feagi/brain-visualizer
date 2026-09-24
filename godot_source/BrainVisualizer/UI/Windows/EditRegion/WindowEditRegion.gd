@@ -119,7 +119,19 @@ func _on_press_open_circuit() -> void:
 	root_UI_view.show_or_create_BM_of_region(_editing_region, secondary_tab_container)
 
 
-func _on_press_update():
-	FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, StringName(_region_description.text), _editing_region.coordinates_2D, _region_3D_position.current_vector)
+func _on_press_update() -> void:
+	var before_pos: Vector3i = _editing_region.coordinates_3D
+	var after_pos: Vector3i = _region_3D_position.current_vector
+	var region_id: StringName = _editing_region.region_ID
+	var result: FeagiRequestOutput = await FeagiCore.requests.edit_region_object(_editing_region, _editing_region_parent, _region_name.text, StringName(_region_description.text), _editing_region.coordinates_2D, after_pos)
+	if result == null or result.has_errored:
+		if BV != null and BV.NOTIF != null:
+			BV.NOTIF.add_notification("Circuit update failed", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+		return
+	if before_pos != after_pos and BV != null and BV.UI != null:
+		var edit := PositionEdit.new()
+		edit.label = "Move"
+		edit.add_region_3d(region_id, before_pos, after_pos)
+		BV.UI.record_position_edit(edit)
 	close_window()
 

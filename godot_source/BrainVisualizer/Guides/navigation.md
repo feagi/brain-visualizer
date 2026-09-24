@@ -128,6 +128,12 @@ Navigate through region hierarchy:
 - **Distribute X, Y, or Z** keeps the outermost areas fixed and spaces the others evenly along that axis
 - Distribute needs at least 3 areas. Every selected area must be in the same circuit
 
+**Undo position changes:**
+- **Ctrl+Z** (Cmd+Z on macOS) reverses the last saved position change
+- **Shift+Ctrl+Z** (Shift+Cmd+Z) applies it again
+- One drag, Arrange, circuit-builder move, or layout save is one step
+- The history lasts for this genome session and clears when another genome loads
+
 ### Clear Selection
 
 - Click empty space

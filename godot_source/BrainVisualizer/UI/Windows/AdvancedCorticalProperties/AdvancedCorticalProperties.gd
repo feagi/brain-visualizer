@@ -662,7 +662,7 @@ func _send_update(send_button: Button) -> void:
 				area_names.append(area.cortical_ID)
 			var area_names_str = ", ".join(area_names)  # Join array elements with commas
 			print("UI: Attempting to update %d cortical areas %s with data: %s" % [len(_cortical_area_refs), area_names_str, update_data])
-			
+			var position_edit := _position_edit_from_shared_payload(_cortical_area_refs, update_data)
 			var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_areas(_cortical_area_refs, update_data)
 			if result.has_errored:
 				# Get detailed error information
@@ -683,6 +683,7 @@ func _send_update(send_button: Button) -> void:
 				BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message, "OK", UPDATE_FAILED_POPUP_MIN_SIZE))
 				close_window()
 			else:
+				_record_position_edit(position_edit)
 				print("✅ UI: Successfully updated cortical areas %s" % area_names_str)
 				print("🔵 UI: Refreshing UI from cache to show updated values...")
 				# Refresh UI from cache to show updated values
@@ -695,6 +696,8 @@ func _send_update(send_button: Button) -> void:
 				
 				var success_count = 0
 				var failed_areas = []
+				var position_edit := PositionEdit.new()
+				position_edit.label = "Move"
 				
 				# Send updates for all segments that have changes
 				for segment in _isvi_all_segments:
@@ -708,18 +711,22 @@ func _send_update(send_button: Button) -> void:
 					
 					if segment_update_data.is_empty():
 						continue
-					
+					var before_pos: Vector3i = segment.coordinates_3D
+					var parsed_position: Dictionary = PositionEdit.parse_vector3i(segment_update_data.get("coordinates_3d", null))
 					var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(segment.cortical_ID, segment_update_data)
 					if result.has_errored:
 						failed_areas.append(segment.cortical_ID)
 					else:
 						success_count += 1
+						if bool(parsed_position.get("ok", false)):
+							position_edit.add_cortical_3d(segment.cortical_ID, before_pos, parsed_position["value"])
 				
 				if len(failed_areas) > 0:
 					var error_message = "Failed to update %d/%d isvi segments: %s" % [len(failed_areas), len(_isvi_all_segments), ", ".join(failed_areas)]
 					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Partial Update Failure", error_message))
 				else:
 					print("UI: Successfully updated all %d isvi segments" % success_count)
+				_record_position_edit(position_edit)
 				# Refresh UI from cache to show updated values
 				_refresh_all_relevant()
 			else:
@@ -748,7 +755,7 @@ func _send_update(send_button: Button) -> void:
 					_growing_cortical_update.clear()
 					return
 				print("UI: Attempting to update cortical area '%s' with data: %s" % [cortical_id, remaining_update_data])
-				
+				var position_edit := _position_edit_from_shared_payload(_cortical_area_refs, remaining_update_data)
 				var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(cortical_id, remaining_update_data)
 				if result.has_errored:
 					# Get detailed error information
@@ -769,6 +776,7 @@ func _send_update(send_button: Button) -> void:
 					BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup("Update Failed", detailed_popup_message, "OK", UPDATE_FAILED_POPUP_MIN_SIZE))
 					close_window()
 				else:
+					_record_position_edit(position_edit)
 					print("✅ UI: Successfully updated cortical area '%s'" % cortical_id)
 					print("🔵 UI: Refreshing UI from cache to show updated values...")
 					# Refresh UI from cache to show updated values
@@ -778,6 +786,27 @@ func _send_update(send_button: Button) -> void:
 		
 		# Clear the update dictionary
 		_growing_cortical_update.clear()
+
+
+func _position_edit_from_shared_payload(areas: Array, payload: Dictionary) -> PositionEdit:
+	var edit := PositionEdit.new()
+	edit.label = "Move"
+	var parsed: Dictionary = PositionEdit.parse_vector3i(payload.get("coordinates_3d", null))
+	if not bool(parsed.get("ok", false)):
+		return edit
+	var after_pos: Vector3i = parsed["value"]
+	for area in areas:
+		if area is AbstractCorticalArea:
+			var cortical := area as AbstractCorticalArea
+			edit.add_cortical_3d(cortical.cortical_ID, cortical.coordinates_3D, after_pos)
+	return edit
+
+
+func _record_position_edit(edit: PositionEdit) -> void:
+	if BV == null or BV.UI == null:
+		return
+	BV.UI.record_position_edit(edit)
+
 
 func _should_confirm_unit_id_update(update_data: Dictionary) -> bool:
 	if _skip_unit_id_confirmation:
