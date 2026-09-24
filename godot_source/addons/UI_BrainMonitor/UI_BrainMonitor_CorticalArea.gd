@@ -949,6 +949,8 @@ func _create_renderer_depending_on_cortical_area_type(defined_cortical_area: Abs
 
 ## Show 3D curves connecting this cortical area to all its destinations
 func _show_neural_connections() -> void:
+	if _cortical_mapping_blocked_by_live_synapse_inspector():
+		return
 	if _are_connections_visible:
 		return  # Already showing connections
 	
@@ -1038,6 +1040,12 @@ func _hide_neural_connections() -> void:
 	
 	_connection_curves.clear()
 	_are_connections_visible = false
+
+
+## Live synapse inspector uses the same view, so area-to-area mapping curves stay hidden.
+func _cortical_mapping_blocked_by_live_synapse_inspector() -> bool:
+	return BV != null and BV.UI != null and BV.UI.cortical_mapping_suppressed_for_live_synapse_inspector()
+
 
 ## World-space center of this cortical volume (renderer [StaticBody3D]). [UI_BrainMonitor_CorticalArea] is a [Node], not [Node3D], so use this instead of [member Node3D.global_position].
 func get_volume_world_center() -> Vector3:

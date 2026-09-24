@@ -112,6 +112,22 @@ var _continuous_selected_neuron_firing_active: bool = false
 var _continuous_selected_neuron_firing_timer: Timer = null
 
 
+func hide_live_voxel_inspector() -> void:
+	if _UI_layer_for_BM != null:
+		_UI_layer_for_BM.hide_live_inspector()
+
+
+## Hides area-to-area mapping curves, or restores them on areas that are still hovered.
+func set_cortical_mapping_curves_suppressed(suppressed: bool) -> void:
+	for cortical_viz in _cortical_visualizations_by_ID.values():
+		if cortical_viz == null or not is_instance_valid(cortical_viz):
+			continue
+		if suppressed:
+			cortical_viz._hide_neural_connections()
+		elif cortical_viz._is_volume_moused_over:
+			cortical_viz._show_neural_connections()
+
+
 func brain_monitor_sync_mouse_context_cortical_id(cortical_id: StringName) -> void:
 	_mouse_context_cortical_id = cortical_id
 
@@ -1078,6 +1094,8 @@ func _on_container_mouse_exited() -> void:
 	# Root BM sits behind Circuit Builder; mouse_exited fires while the 3D view is still hovered.
 	if BV == null or BV.UI == null or BV.UI.temp_root_bm != self:
 		_hide_all_region_description_labels()
+		if BV != null and BV.UI != null:
+			BV.UI.end_live_voxel_inspector_hover(_UI_layer_for_BM)
 
 func is_transform_manipulation_active() -> bool:
 	return _manipulation_active
@@ -2242,14 +2260,19 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						BV.UI.qc_log_both()
 				elif source_bm != null and source_bm != self:
 					_clear_bridge_segment()
-			var title_region: UI_BrainMonitor_BrainRegion3D = _pick_region_title_at_screen(_get_bm_mouse_position())
-			if title_region != null:
-				_apply_region_title_or_plate_hover(title_region)
-				continue
-			var plate_region: UI_BrainMonitor_BrainRegion3D = _raycast_first_description_hover_region(current_space, bm_input_event.get_ray_query())
-			if plate_region != null:
-				_apply_region_title_or_plate_hover(plate_region)
-				continue
+			# Plate volumes sit in front of neurons mounted on a region. Do not let that hover
+			# swallow the neuron; live neuron and synapse inspectors use the cortical hit.
+			var cortical_hover_hit: Dictionary = _raycast_first_cortical_renderer_hit(current_space, bm_input_event.get_ray_query())
+			var neuron_under_cursor: bool = not cortical_hover_hit.is_empty()
+			if not VoxelInspectorSummary.plate_hover_defers_to_neuron(neuron_under_cursor):
+				var title_region: UI_BrainMonitor_BrainRegion3D = _pick_region_title_at_screen(_get_bm_mouse_position())
+				if title_region != null:
+					_apply_region_title_or_plate_hover(title_region)
+					continue
+				var plate_region: UI_BrainMonitor_BrainRegion3D = _raycast_first_description_hover_region(current_space, bm_input_event.get_ray_query())
+				if plate_region != null:
+					_apply_region_title_or_plate_hover(plate_region)
+					continue
 			if hit.is_empty():
 				# Mousing over nothing right now
 				
@@ -2259,7 +2282,6 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				continue
 				
 			var hit_body: StaticBody3D = hit[&"collider"]
-			var cortical_hover_hit: Dictionary = _raycast_first_cortical_renderer_hit(current_space, bm_input_event.get_ray_query())
 			
 			# PRIORITY: Plate click areas first so we don't short-circuit on region frame parent
 			if _is_region_plate_or_label_click_area(hit_body):
@@ -2283,6 +2305,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					if _is_region_description_hover_collider(hit_body):
 						_show_region_description_tooltip_for_frame(region_frame)
 			# Cortical pick: use a pass-through ray so plate pick volumes do not hide output-side areas
+			var showed_live_voxel_inspector := false
 			if not cortical_hover_hit.is_empty():
 				var cortical_collider: StaticBody3D = cortical_hover_hit.get(&"collider") as StaticBody3D
 				if cortical_collider != null and cortical_collider.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
@@ -2301,6 +2324,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						
 						if _UI_layer_for_BM != null:
 							_UI_layer_for_BM.mouse_over_single_cortical_area(hit_parent_parent.cortical_area, neuron_coordinate_mousing_over)
+							if BV != null and BV.UI != null:
+								BV.UI.request_live_voxel_inspector(_UI_layer_for_BM, hit_parent_parent.cortical_area, neuron_coordinate_mousing_over, _get_bm_mouse_position())
+								showed_live_voxel_inspector = true
 			elif (not _is_region_description_hover_collider(hit_body)) and hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
 				var region_frame = hit_body.get_parent()  # UI_BrainMonitor_BrainRegion3D
 				if region_frame:
@@ -2362,6 +2388,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
 					if _is_region_description_hover_collider(hit_body):
 						_show_region_description_tooltip_for_frame(region_frame)
+			if not showed_live_voxel_inspector and BV != null and BV.UI != null:
+				BV.UI.end_live_voxel_inspector_hover(_UI_layer_for_BM)
 			
 		elif bm_input_event is UI_BrainMonitor_InputEvent_Click:
 			
@@ -4501,6 +4529,13 @@ func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_Cor
 	if viz == null or not is_instance_valid(viz):
 		if _cortical_visualizations_by_ID.has(cortical_id):
 			_cortical_visualizations_by_ID.erase(cortical_id)
+		var want: String = cortical_id.strip_edges().to_lower()
+		for key in _cortical_visualizations_by_ID.keys():
+			if str(key).strip_edges().to_lower() != want:
+				continue
+			var matched: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[key]
+			if matched != null and is_instance_valid(matched):
+				return matched
 		return null
 	return viz
 

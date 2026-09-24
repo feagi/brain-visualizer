@@ -40,9 +40,12 @@ size_flags_vertical = 3
 theme_override_constants/separation = 18
 
 [node name="HintLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" index="0"]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
-text = "Pick a cortical area and voxel, then click Inspect.\nUse Previous/Next to browse synapse pages."
+text = "Pick a cortical area and voxel, then click Inspect.
+Use Previous/Next to browse synapse pages.
+Live neuron inspector shows the summary above the cursor while hovering voxels.
+Live synapse inspector draws that voxel's synapses while hovering."
 autowrap_mode = 3
 
 [node name="InspectorControls" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
@@ -82,6 +85,42 @@ mouse_filter = 1
 text = "Show voxel synapse connections (3D)"
 
 [node name="VoxelSynapseToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+texture_normal = ExtResource("5_toggle_off")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("6_toggle_btn")
+
+[node name="LiveInspectorRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LiveInspectorLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveInspectorRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+text = "Live neuron inspector"
+
+[node name="LiveInspectorToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveInspectorRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+texture_normal = ExtResource("5_toggle_off")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("6_toggle_btn")
+
+[node name="LiveSynapseInspectorRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LiveSynapseInspectorLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveSynapseInspectorRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+text = "Live synapse inspector"
+
+[node name="LiveSynapseInspectorToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveSynapseInspectorRow"]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 texture_normal = ExtResource("5_toggle_off")

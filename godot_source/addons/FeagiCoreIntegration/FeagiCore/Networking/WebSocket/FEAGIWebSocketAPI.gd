@@ -218,6 +218,7 @@ func _process(_delta: float):
 			var qbytes: PackedByteArray = _pending_type11[i]
 			var decoded_result: Dictionary = WASMDecoder.decode_type_11(qbytes)
 			if decoded_result and decoded_result.has("success") and decoded_result.success == true:
+				_note_live_inspector_firing_frame(decoded_result.areas)
 				for cortical_id in decoded_result.areas.keys():
 					# Filter out _death area (non-visualizable), but allow _power (has custom cone animation)
 					if AbstractCorticalArea.is_death_area(cortical_id):
@@ -386,6 +387,7 @@ func _process(_delta: float):
 						if areas_any is Dictionary:
 							areas = areas_any
 						if ok and areas_any is Dictionary:
+							_note_live_inspector_firing_frame(areas)
 							for cortical_id in areas.keys():
 								var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
 								var area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
@@ -431,6 +433,7 @@ func _process(_delta: float):
 							var error_msg := decoded_result.get("error", "unknown error")
 							push_error("❌ [WS] Decode failed: %s" % error_msg)
 						else:
+							_note_live_inspector_firing_frame(decoded_result.areas)
 							for cortical_id in decoded_result.areas.keys():
 								var area_data = decoded_result.areas[cortical_id]
 								# Perf: Rust deserializer already returns PackedArrays; avoid repacking/copying here.
@@ -756,6 +759,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 					print("   ❌ ERROR: Type 11 WASM decode failed: ", err)
 					return
 				# Process each decoded cortical area with DIRECT bulk arrays
+				_note_live_inspector_firing_frame(decoded_result.areas)
 				for cortical_id in decoded_result.areas.keys():
 					var area_data = decoded_result.areas[cortical_id]
 					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
@@ -801,6 +805,7 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 						print("[SHM-APPLY] ok=true areas=%d power_points=%d" % [area_count, power_points])
 
 				# Process each decoded cortical area with DIRECT bulk arrays (no conversion loops!)
+				_note_live_inspector_firing_frame(decoded_result.areas)
 				for cortical_id in decoded_result.areas.keys():
 					var area_data = decoded_result.areas[cortical_id]
 					# Strip quotes that Rust may add
@@ -1345,6 +1350,15 @@ func _fetch_missing_cortical_area_async(cortical_id: StringName) -> void:
 		print("   ❌ Failed to fetch cortical area '", clean_id, "' from FEAGI - this may be expected if the area doesn't exist")
 		# Don't retry immediately for areas that return 400 errors
 		_missing_cortical_areas.erase(clean_id)
+
+## Fire-time membrane potentials for the voxel under the live inspector cursor.
+## The neuron array resets membrane potential to 0 when a neuron spikes; the visualization
+## frame still carries the potential from the moment of firing.
+func _note_live_inspector_firing_frame(areas: Dictionary) -> void:
+	if BV == null or BV.UI == null:
+		return
+	BV.UI.note_live_inspector_firing_frame(areas)
+
 
 func _get_cortical_area_case_insensitive(cortical_id: StringName) -> AbstractCorticalArea:
 	# First try exact match (most common case)

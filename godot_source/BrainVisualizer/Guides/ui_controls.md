@@ -138,6 +138,7 @@ The main toolbar provides quick access to essential features:
 - On the root scene top bar and the Brain Monitor tab bar
 - Opens on hover
 - Connection inspector, voxel inspector, and memory inspector
+- Voxel inspector: Live neuron inspector shows the summary above the cursor while hovering voxels in the 3D view. Live synapse inspector draws that voxel's synapses, the same arcs as Inspect, and hides cortical mapping curves while it is on. Stop Inspector, at the bottom right, turns both off.
 
 **Activity Rendering Toggle:**
 - Show/hide global neural connections

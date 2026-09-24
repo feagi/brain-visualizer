@@ -32,6 +32,8 @@ var _page_prev_btn: Button
 var _page_next_btn: Button
 var _page_value_label: Label
 var _voxel_synapse_toggle: ToggleButton
+var _live_inspector_toggle: ToggleButton
+var _live_synapse_inspector_toggle: ToggleButton
 
 ## Last decoded `voxel_neurons` response (for 3D synapse overlay when the toggle is on).
 var _last_successful_voxel_payload: Dictionary = {}
@@ -97,6 +99,8 @@ func setup() -> void:
 	_page_next_btn = $WindowPanel/WindowMargin/WindowInternals/PaginationRow/PageNextButton
 	_page_value_label = $WindowPanel/WindowMargin/WindowInternals/PaginationRow/PageValueLabel
 	_voxel_synapse_toggle = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow/VoxelSynapseToggle
+	_live_inspector_toggle = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveInspectorRow/LiveInspectorToggle
+	_live_synapse_inspector_toggle = $WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveSynapseInspectorRow/LiveSynapseInspectorToggle
 	_json_text.editable = false
 	custom_minimum_size = DEFAULT_WINDOW_SIZE
 	size = DEFAULT_WINDOW_SIZE
@@ -108,6 +112,11 @@ func setup() -> void:
 	_page_next_btn.pressed.connect(_on_page_next_pressed)
 	if _voxel_synapse_toggle != null:
 		_voxel_synapse_toggle.toggled.connect(_on_voxel_synapse_toggle_toggled)
+	if _live_inspector_toggle != null:
+		_live_inspector_toggle.toggled.connect(_on_live_inspector_toggle_toggled)
+	if _live_synapse_inspector_toggle != null:
+		_live_synapse_inspector_toggle.toggled.connect(_on_live_synapse_inspector_toggle_toggled)
+	tree_exiting.connect(_on_live_inspector_window_closing)
 	set_empty_state()
 	# IntInput/FloatInput _ready() runs after setup and applies initial_int/initial_float; re-apply empty placeholders.
 	call_deferred("_clear_summary_display")
@@ -226,13 +235,62 @@ func _on_page_next_pressed() -> void:
 	BV.UI.request_voxel_inspector_fetch(_last_query_cortical_id, _last_query_coord, _displayed_synapse_page + 1)
 
 
-func _on_voxel_synapse_toggle_toggled(enabled: bool) -> void:
+func _on_live_inspector_toggle_toggled(enabled: bool) -> void:
 	if BV == null or BV.UI == null:
 		return
 	if enabled:
-		BV.UI.request_voxel_synapse_visualization_rebuild()
-	else:
-		BV.UI.clear_voxel_synapse_visualization_all_brain_monitors()
+		BV.UI.set_live_inspector_stop_overlay(true)
+		return
+	BV.UI.on_live_neuron_inspector_disabled()
+
+
+## Sets the Live neuron inspector toggle. Emits [signal ToggleButton.toggled] when the state changes.
+func set_live_inspector_enabled(enabled: bool) -> void:
+	if _live_inspector_toggle == null:
+		return
+	if _live_inspector_toggle.button_pressed == enabled:
+		return
+	_live_inspector_toggle.button_pressed = enabled
+
+
+func _on_live_synapse_inspector_toggle_toggled(enabled: bool) -> void:
+	if BV == null or BV.UI == null:
+		return
+	BV.UI.on_live_synapse_inspector_toggled(enabled)
+
+
+## Sets the Live synapse inspector toggle. Emits [signal ToggleButton.toggled] when the state changes.
+func set_live_synapse_inspector_enabled(enabled: bool) -> void:
+	if _live_synapse_inspector_toggle == null:
+		return
+	if _live_synapse_inspector_toggle.button_pressed == enabled:
+		return
+	_live_synapse_inspector_toggle.button_pressed = enabled
+
+
+func _on_live_inspector_window_closing() -> void:
+	if _live_inspector_toggle != null:
+		_live_inspector_toggle.set_toggle_no_signal(false)
+	if _live_synapse_inspector_toggle != null:
+		_live_synapse_inspector_toggle.set_toggle_no_signal(false)
+	if BV != null and BV.UI != null:
+		BV.UI.clear_live_voxel_inspector()
+
+
+## Whether hover should show the voxel summary above the cursor.
+func is_live_inspector_enabled() -> bool:
+	return _live_inspector_toggle != null and _live_inspector_toggle.button_pressed
+
+
+## Whether hover should draw the same 3D synapse arcs as Inspect.
+func is_live_synapse_inspector_enabled() -> bool:
+	return _live_synapse_inspector_toggle != null and _live_synapse_inspector_toggle.button_pressed
+
+
+func _on_voxel_synapse_toggle_toggled(enabled: bool) -> void:
+	if BV == null or BV.UI == null:
+		return
+	BV.UI.on_voxel_synapse_visualization_toggled(enabled)
 
 
 ## When the Inspect response arrives, UIManager stores the payload here for the 3D overlay.
@@ -288,8 +346,13 @@ func set_empty_state() -> void:
 	_last_successful_voxel_payload.clear()
 	if _voxel_synapse_toggle != null:
 		_voxel_synapse_toggle.set_toggle_no_signal(false)
+	if _live_inspector_toggle != null:
+		_live_inspector_toggle.set_toggle_no_signal(false)
+	if _live_synapse_inspector_toggle != null:
+		_live_synapse_inspector_toggle.set_toggle_no_signal(false)
 	if BV != null and BV.UI != null:
 		BV.UI.clear_voxel_synapse_visualization_all_brain_monitors()
+		BV.UI.clear_live_voxel_inspector()
 	_last_query_cortical_id = &""
 	_last_query_coord = Vector3i.ZERO
 	_displayed_synapse_page = 0
@@ -347,9 +410,9 @@ func _clear_summary_display() -> void:
 
 ## Read-only placeholder (em dash) without going through Int/Float validation (same LineEdit pattern as Cortical Area Details).
 func _set_summary_lineedit_placeholder(ctrl: LineEdit) -> void:
-	ctrl.text = "—"
+	ctrl.text = VoxelInspectorSummary.EMPTY_METRIC
 	if ctrl is AbstractLineInput:
-		(ctrl as AbstractLineInput).previous_text = "—"
+		(ctrl as AbstractLineInput).previous_text = VoxelInspectorSummary.EMPTY_METRIC
 
 
 func _reset_summary_metric_names() -> void:
@@ -367,46 +430,6 @@ func _reset_summary_metric_names() -> void:
 		_summary_consecutive_name.text = "Consecutive Fires"
 
 
-func _set_average_metric_names() -> void:
-	if _summary_membrane_name != null:
-		_summary_membrane_name.text = "Average Membrane Potential"
-	if _summary_incoming_name != null:
-		_summary_incoming_name.text = "Average Incoming Synapse Count"
-	if _summary_outgoing_name != null:
-		_summary_outgoing_name.text = "Average Outgoing Synapse Count"
-	if _summary_firing_name != null:
-		_summary_firing_name.text = "Average Firing Threshold"
-	if _summary_refractory_name != null:
-		_summary_refractory_name.text = "Average Refractory Countdown"
-	if _summary_consecutive_name != null:
-		_summary_consecutive_name.text = "Average Consecutive Fires"
-
-
-func _variant_to_float(v: Variant) -> float:
-	if v == null:
-		return 0.0
-	var t: int = typeof(v)
-	if t == TYPE_FLOAT:
-		return v as float
-	if t == TYPE_INT:
-		return float(v as int)
-	return 0.0
-
-
-func _format_membrane_for_display(v: float) -> String:
-	return String.num(v, 4)
-
-
-## Maps API `neuron` dict fields to a float for threshold (key `threshold`).
-func _neuron_firing_threshold(nd: Dictionary) -> float:
-	return _variant_to_float(nd.get("threshold", 0.0))
-
-
-## Integer runtime fields: `refractory_countdown`, `consecutive_fire_count`.
-func _neuron_int_metric(nd: Dictionary, key: StringName) -> int:
-	return int(round(_variant_to_float(nd.get(key, 0))))
-
-
 func _clear_dynamics_summary_display() -> void:
 	for k in _dynamics_value_by_key:
 		var le: LineEdit = _dynamics_value_by_key[k] as LineEdit
@@ -418,7 +441,7 @@ func _neuron_bool_field(nd: Dictionary, key: String) -> bool:
 	var v: Variant = nd.get(key, false)
 	if v is bool:
 		return v as bool
-	return bool(_variant_to_float(v) != 0.0)
+	return bool(VoxelInspectorSummary.variant_to_float(v) != 0.0)
 
 
 func _format_dynamics_float(v: float) -> String:
@@ -452,9 +475,9 @@ func _update_dynamics_summary_from_neurons(neurons: Array) -> void:
 				"bool":
 					le.text = "true" if _neuron_bool_field(nd, key) else "false"
 				"float":
-					le.text = _format_dynamics_float(_variant_to_float(nd.get(key, 0.0)))
+					le.text = _format_dynamics_float(VoxelInspectorSummary.variant_to_float(nd.get(key, 0.0)))
 				"int":
-					le.text = str(_neuron_int_metric(nd, StringName(key)))
+					le.text = str(VoxelInspectorSummary.neuron_int_metric(nd, StringName(key)))
 				_:
 					_set_summary_lineedit_placeholder(le)
 			continue
@@ -483,7 +506,7 @@ func _update_dynamics_summary_from_neurons(neurons: Array) -> void:
 				var c: int = 0
 				for item in neurons:
 					if item is Dictionary:
-						sumf += _variant_to_float((item as Dictionary).get(key, 0.0))
+						sumf += VoxelInspectorSummary.variant_to_float((item as Dictionary).get(key, 0.0))
 						c += 1
 				if c > 0:
 					le.text = _format_dynamics_float(sumf / float(c))
@@ -494,7 +517,7 @@ func _update_dynamics_summary_from_neurons(neurons: Array) -> void:
 				var c2: int = 0
 				for item in neurons:
 					if item is Dictionary:
-						sumi += float(_neuron_int_metric(item as Dictionary, StringName(key)))
+						sumi += float(VoxelInspectorSummary.neuron_int_metric(item as Dictionary, StringName(key)))
 						c2 += 1
 				if c2 > 0:
 					le.text = str(int(round(sumi / float(c2))))
@@ -508,62 +531,28 @@ func _update_dynamics_summary_from_neurons(neurons: Array) -> void:
 func update_summary_from_response(d: Dictionary) -> void:
 	if _summary_neuron_count_value == null:
 		return
-	var neurons_raw: Variant = d.get("neurons", [])
+	var summary: Dictionary = VoxelInspectorSummary.summarize_voxel_neurons(d)
+	_summary_neuron_count_value.set_value_from_text(str(summary["neuron_count"]))
+	_apply_named_metric(_summary_membrane_name, _summary_membrane_value, str(summary["membrane_label"]), str(summary["membrane"]))
+	_apply_named_metric(_summary_incoming_name, _summary_incoming_value, str(summary["incoming_label"]), str(summary["incoming"]))
+	_apply_named_metric(_summary_outgoing_name, _summary_outgoing_value, str(summary["outgoing_label"]), str(summary["outgoing"]))
+	_apply_named_metric(_summary_firing_name, _summary_firing_value, str(summary["firing_label"]), str(summary["firing"]))
+	_apply_named_metric(_summary_refractory_name, _summary_refractory_value, str(summary["refractory_label"]), str(summary["refractory"]))
+	_apply_named_metric(_summary_consecutive_name, _summary_consecutive_value, str(summary["consecutive_label"]), str(summary["consecutive"]))
 	var neurons: Array = []
+	var neurons_raw: Variant = d.get("neurons", [])
 	if neurons_raw is Array:
 		neurons = neurons_raw
-	var n: int = neurons.size()
-	var reported: int = int(d.get("neuron_count", n))
-	_summary_neuron_count_value.set_value_from_text(str(reported))
-	if n == 0:
-		_reset_summary_metric_names()
-		_set_summary_lineedit_placeholder(_summary_membrane_value)
-		_set_summary_lineedit_placeholder(_summary_incoming_value)
-		_set_summary_lineedit_placeholder(_summary_outgoing_value)
-		_set_summary_lineedit_placeholder(_summary_firing_value)
-		_set_summary_lineedit_placeholder(_summary_refractory_value)
-		_set_summary_lineedit_placeholder(_summary_consecutive_value)
-		_clear_dynamics_summary_display()
-		return
-	if n == 1:
-		_reset_summary_metric_names()
-		var nd: Dictionary = {}
-		if neurons[0] is Dictionary:
-			nd = neurons[0]
-		var mp: float = _variant_to_float(nd.get("membrane_potential", 0.0))
-		var inc_n: float = _variant_to_float(nd.get("incoming_synapse_count", 0))
-		var out_n: float = _variant_to_float(nd.get("outgoing_synapse_count", 0))
-		_summary_membrane_value.set_value_from_text(_format_membrane_for_display(mp))
-		_summary_incoming_value.set_value_from_text(str(int(round(inc_n))))
-		_summary_outgoing_value.set_value_from_text(str(int(round(out_n))))
-		_summary_firing_value.set_value_from_text(_format_membrane_for_display(_neuron_firing_threshold(nd)))
-		_summary_refractory_value.set_value_from_text(str(_neuron_int_metric(nd, &"refractory_countdown")))
-		_summary_consecutive_value.set_value_from_text(str(_neuron_int_metric(nd, &"consecutive_fire_count")))
-		_update_dynamics_summary_from_neurons(neurons)
-		return
-	_set_average_metric_names()
-	var sum_mp: float = 0.0
-	var sum_in: float = 0.0
-	var sum_out: float = 0.0
-	var sum_thr: float = 0.0
-	var sum_refr: float = 0.0
-	var sum_consec: float = 0.0
-	for item in neurons:
-		if item is Dictionary:
-			var nd2: Dictionary = item
-			sum_mp += _variant_to_float(nd2.get("membrane_potential", 0.0))
-			sum_in += _variant_to_float(nd2.get("incoming_synapse_count", 0))
-			sum_out += _variant_to_float(nd2.get("outgoing_synapse_count", 0))
-			sum_thr += _neuron_firing_threshold(nd2)
-			sum_refr += float(_neuron_int_metric(nd2, &"refractory_countdown"))
-			sum_consec += float(_neuron_int_metric(nd2, &"consecutive_fire_count"))
-	var nf: float = float(n)
-	_summary_membrane_value.set_value_from_text(_format_membrane_for_display(sum_mp / nf))
-	var avg_in: int = int(round(sum_in / nf))
-	var avg_out: int = int(round(sum_out / nf))
-	_summary_incoming_value.set_value_from_text(str(avg_in))
-	_summary_outgoing_value.set_value_from_text(str(avg_out))
-	_summary_firing_value.set_value_from_text(_format_membrane_for_display(sum_thr / nf))
-	_summary_refractory_value.set_value_from_text(str(int(round(sum_refr / nf))))
-	_summary_consecutive_value.set_value_from_text(str(int(round(sum_consec / nf))))
 	_update_dynamics_summary_from_neurons(neurons)
+
+
+func _apply_named_metric(name_label: Label, value_ctrl: AbstractLineInput, label_text: String, value_text: String) -> void:
+	if name_label != null:
+		name_label.text = label_text
+	if value_ctrl == null:
+		return
+	if value_text == VoxelInspectorSummary.EMPTY_METRIC:
+		_set_summary_lineedit_placeholder(value_ctrl)
+		return
+	value_ctrl.set_value_from_text(value_text)
+

@@ -108,10 +108,17 @@ func spawn_voxel_inspector() -> WindowVoxelInspector:
 		var existing: WindowVoxelInspector = loaded_windows[WindowVoxelInspector.WINDOW_NAME] as WindowVoxelInspector
 		if existing != null:
 			bring_window_to_top(existing)
+			_sync_live_synapse_cortical_mapping()
 			return existing
 	var w: WindowVoxelInspector = _default_spawn_window(_PREFAB_VOXEL_INSPECTOR, WindowVoxelInspector.WINDOW_NAME) as WindowVoxelInspector
 	w.setup()
+	_sync_live_synapse_cortical_mapping()
 	return w
+
+
+func _sync_live_synapse_cortical_mapping() -> void:
+	if BV != null and BV.UI != null:
+		BV.UI.sync_cortical_mapping_for_live_synapse_inspector()
 
 
 ## Opens or focuses the memory inspector panel (JSON from `/v1/cortical_area/memory` and `/v1/connectome/memory_neuron`).

@@ -74,6 +74,10 @@ var _startup_scale_locked_by_endpoint: bool = false
 
 var _connection_inspector_stop_layer: CanvasLayer
 var _connection_inspector_stop_button: Button
+## True while the shared bottom-right Stop Inspector button belongs to live voxel inspector.
+var _stop_overlay_for_live_inspector: bool = false
+## True while live synapse inspector owns the view and area-to-area mapping curves must stay hidden.
+var _suppress_cortical_mapping_for_live_synapse: bool = false
 var _camera_presentation_layer: CanvasLayer
 var _camera_presentation_reset_button: Button
 var _camera_presentation_prev_button: Button
@@ -123,6 +127,24 @@ enum BRAIN_MONITOR_ACTIVITY_MODE { GLOBAL_NEURAL_CONNECTIONS = 0, VOXEL_INSPECTO
 
 var brain_monitor_activity_mode: BRAIN_MONITOR_ACTIVITY_MODE = BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
 var _voxel_inspector_fetch_generation: int = 0
+var _live_voxel_inspector_generation: int = 0
+var _live_voxel_key: String = ""
+var _live_voxel_text: String = ""
+var _live_voxel_inflight: bool = false
+var _live_voxel_hovering: bool = false
+var _live_voxel_mouse_pos: Vector2 = Vector2.ZERO
+var _live_voxel_overlay: UI_BrainMonitor_Overlay = null
+## Brain monitor under the cursor. Synapse arcs are drawn here so plate and off-plate areas share one view.
+var _live_voxel_brain_monitor: UI_BrainMonitor_3DScene = null
+var _live_voxel_cortical_id: String = ""
+var _live_voxel_coord: Vector3i = Vector3i.ZERO
+var _live_voxel_area_name: String = ""
+var _live_voxel_payload: Dictionary = {}
+## True while the 3D synapse arcs were drawn for the hovered voxel, not the Inspect payload.
+var _live_synapse_viz_active: bool = false
+var _live_synapse_drawn_key: String = ""
+## Fire-time membrane sample for the hovered voxel. Null until a visualization frame includes it.
+var _live_firing_sample: Variant = null
 var _memory_inspector_fetch_generation: int = 0
 var _memory_neuron_fetch_generation: int = 0
 
@@ -318,12 +340,35 @@ func set_connection_inspector_stop_overlay_visible(visible: bool) -> void:
 
 
 func _on_connection_inspector_stop_pressed() -> void:
+	if _stop_overlay_for_live_inspector:
+		var win := _voxel_inspector_window()
+		if win != null:
+			win.set_live_inspector_enabled(false)
+			win.set_live_synapse_inspector_enabled(false)
+		if _stop_overlay_for_live_inspector:
+			set_live_inspector_stop_overlay(false)
+		return
 	stop_connection_inspector()
+
+
+## Shows the shared Stop Inspector button while live neuron or live synapse inspection is on.
+func set_live_inspector_stop_overlay(enabled: bool) -> void:
+	_stop_overlay_for_live_inspector = enabled
+	if _connection_inspector_stop_button != null:
+		var win := _voxel_inspector_window()
+		var neuron_on: bool = win != null and win.is_live_inspector_enabled()
+		var synapse_on: bool = win != null and win.is_live_synapse_inspector_enabled()
+		_connection_inspector_stop_button.tooltip_text = VoxelInspectorSummary.live_stop_tooltip(neuron_on, synapse_on, enabled)
+	if enabled:
+		set_connection_inspector_stop_overlay_visible(true)
+		return
+	set_connection_inspector_stop_overlay_visible(false)
 
 
 ## Hard-stops Connection inspector regardless of which toolbar instance enabled it.
 ## This is used by the floating stop button to reliably clear inspector arcs in the active monitor tab.
 func stop_connection_inspector() -> void:
+	clear_live_voxel_inspector()
 	brain_monitor_activity_mode = BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
 	_set_connection_inspector_enabled_for_all_brain_monitors(false)
 	_sync_connection_inspector_toggle_visuals(false)
@@ -1048,11 +1093,293 @@ func _voxel_inspector_query_async(cortical_id: StringName, coord: Vector3i, syna
 		win.update_summary_from_response(d)
 		win.set_last_successful_voxel_payload(d)
 		win.update_synapse_pagination_from_response(d)
-		if win.is_voxel_synapse_visualization_enabled():
+		if win.is_voxel_synapse_visualization_enabled() and not _live_synapse_viz_active:
 			_voxel_inspector_apply_synapse_visualization(d)
 	else:
 		win.set_error_line(out.decode_response_as_string())
 		win.restore_pagination_after_failed_fetch()
+
+
+func _live_neuron_inspector_enabled() -> bool:
+	var win := _voxel_inspector_window()
+	return win != null and win.is_live_inspector_enabled()
+
+
+func _live_synapse_inspector_enabled() -> bool:
+	var win := _voxel_inspector_window()
+	return win != null and win.is_live_synapse_inspector_enabled()
+
+
+func _live_voxel_inspector_allowed() -> bool:
+	if brain_monitor_activity_mode != BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR:
+		return false
+	return VoxelInspectorSummary.live_hover_should_fetch(_live_neuron_inspector_enabled(), _live_synapse_inspector_enabled())
+
+
+## Hover readout for voxel inspector. Does not replace the Inspect panel contents.
+## Live neuron inspector shows the summary. Live synapse inspector draws the same arcs as Inspect.
+func request_live_voxel_inspector(overlay: UI_BrainMonitor_Overlay, cortical_area: AbstractCorticalArea, coord: Vector3i, mouse_pos: Vector2) -> void:
+	if overlay == null or cortical_area == null or not _live_voxel_inspector_allowed():
+		end_live_voxel_inspector_hover(overlay)
+		return
+	_ensure_live_inspector_stop_overlay()
+	var key: String = "%s:%d,%d,%d" % [cortical_area.cortical_ID, coord.x, coord.y, coord.z]
+	var voxel_changed: bool = key != _live_voxel_key
+	_live_voxel_hovering = true
+	_live_voxel_mouse_pos = mouse_pos
+	_live_voxel_overlay = overlay
+	_live_voxel_brain_monitor = overlay.owning_brain_monitor()
+	_live_voxel_cortical_id = str(cortical_area.cortical_ID)
+	_live_voxel_coord = coord
+	_live_voxel_area_name = cortical_area.friendly_name
+	if voxel_changed:
+		_live_voxel_payload = {}
+		_live_firing_sample = null
+		_release_live_synapse_visualization(false)
+	if key == _live_voxel_key and not _live_voxel_payload.is_empty():
+		_present_live_inspector_hover()
+		return
+	if VoxelInspectorSummary.live_hover_shows_summary(_live_neuron_inspector_enabled()):
+		var loading: String = VoxelInspectorSummary.format_live_inspector_status(cortical_area.friendly_name, coord, "Loading…")
+		overlay.show_live_inspector(loading, mouse_pos)
+	else:
+		overlay.hide_live_inspector()
+	if key == _live_voxel_key and _live_voxel_inflight:
+		return
+	if not FeagiCore.can_interact_with_feagi():
+		_live_voxel_key = key
+		_live_voxel_inflight = false
+		if VoxelInspectorSummary.live_hover_shows_summary(_live_neuron_inspector_enabled()):
+			_live_voxel_text = VoxelInspectorSummary.format_live_inspector_status(cortical_area.friendly_name, coord, "FEAGI is not ready.")
+			overlay.show_live_inspector(_live_voxel_text, mouse_pos)
+		else:
+			_live_voxel_text = ""
+			overlay.hide_live_inspector()
+		return
+	_live_voxel_key = key
+	_live_voxel_text = ""
+	_live_voxel_inspector_generation += 1
+	_live_voxel_inflight = true
+	_live_voxel_query_async(cortical_area.friendly_name, cortical_area.cortical_ID, coord, key, _live_voxel_inspector_generation)
+
+
+func _live_voxel_query_async(area_name: String, cortical_id: StringName, coord: Vector3i, key: String, gen: int) -> void:
+	var out: FeagiRequestOutput = await FeagiCore.requests.get_voxel_neurons(str(cortical_id), coord.x, coord.y, coord.z, 0)
+	if gen != _live_voxel_inspector_generation:
+		return
+	_live_voxel_inflight = false
+	if key != _live_voxel_key or not _live_voxel_hovering:
+		return
+	if out.success:
+		_live_voxel_payload = out.decode_response_as_dict()
+		_live_voxel_area_name = area_name
+		_live_voxel_coord = coord
+		_present_live_inspector_hover()
+		return
+	_release_live_synapse_visualization(true)
+	if not VoxelInspectorSummary.live_hover_shows_summary(_live_neuron_inspector_enabled()):
+		_live_voxel_text = ""
+		if _live_voxel_overlay != null and is_instance_valid(_live_voxel_overlay):
+			_live_voxel_overlay.hide_live_inspector()
+		return
+	var text: String = VoxelInspectorSummary.format_live_inspector_status(area_name, coord, out.decode_response_as_string())
+	_live_voxel_text = text
+	if _live_voxel_overlay != null and is_instance_valid(_live_voxel_overlay):
+		_live_voxel_overlay.show_live_inspector(text, _live_voxel_mouse_pos)
+
+
+## Latest visualization frame. Firing neurons report membrane potential at spike time;
+## the neuron array itself is already reset to 0.
+func note_live_inspector_firing_frame(areas: Dictionary) -> void:
+	if not _live_voxel_hovering or _live_voxel_cortical_id.is_empty():
+		return
+	var sample: Dictionary = _firing_sample_for_hovered_voxel(areas)
+	if _firing_samples_match(_live_firing_sample, sample):
+		return
+	_live_firing_sample = sample
+	if _live_voxel_payload.is_empty():
+		return
+	_publish_live_inspector_text()
+
+
+func _firing_sample_for_hovered_voxel(areas: Dictionary) -> Dictionary:
+	var want: String = _live_voxel_cortical_id.to_lower()
+	for cortical_id in areas.keys():
+		var clean: String = String(cortical_id).strip_edges().replace("'", "").replace('"', "")
+		if clean.to_lower() != want:
+			continue
+		var area_any: Variant = areas.get(cortical_id, null)
+		if not (area_any is Dictionary):
+			break
+		var area_data: Dictionary = area_any
+		var x_array: PackedInt32Array = area_data.get("x_array", PackedInt32Array()) as PackedInt32Array
+		var y_array: PackedInt32Array = area_data.get("y_array", PackedInt32Array()) as PackedInt32Array
+		var z_array: PackedInt32Array = area_data.get("z_array", PackedInt32Array()) as PackedInt32Array
+		var p_array: PackedFloat32Array = area_data.get("p_array", PackedFloat32Array()) as PackedFloat32Array
+		return VoxelInspectorSummary.firing_membrane_at_coordinate(x_array, y_array, z_array, p_array, _live_voxel_coord)
+	return {"found": false, "value": 0.0, "count": 0}
+
+
+func _firing_samples_match(current: Variant, next: Dictionary) -> bool:
+	var current_found: bool = current is Dictionary and bool((current as Dictionary).get("found", false))
+	var next_found: bool = bool(next.get("found", false))
+	if current_found != next_found:
+		return false
+	if not next_found:
+		return true
+	return int((current as Dictionary).get("count", 0)) == int(next.get("count", 0)) and is_equal_approx(float((current as Dictionary).get("value", 0.0)), float(next.get("value", 0.0)))
+
+
+func _publish_live_inspector_text() -> void:
+	if _live_voxel_overlay == null or not is_instance_valid(_live_voxel_overlay):
+		return
+	if not VoxelInspectorSummary.live_hover_shows_summary(_live_neuron_inspector_enabled()):
+		_live_voxel_text = ""
+		_live_voxel_overlay.hide_live_inspector()
+		return
+	var firing_sample: Variant = _live_firing_sample if _live_firing_sample is Dictionary and bool((_live_firing_sample as Dictionary).get("found", false)) else null
+	var text: String = VoxelInspectorSummary.format_live_inspector_text(_live_voxel_area_name, _live_voxel_coord, _live_voxel_payload, firing_sample)
+	if text == _live_voxel_text:
+		_live_voxel_overlay.show_live_inspector(text, _live_voxel_mouse_pos)
+		return
+	_live_voxel_text = text
+	_live_voxel_overlay.show_live_inspector(text, _live_voxel_mouse_pos)
+
+
+## Summary box and/or synapse arcs for the voxel currently under the cursor.
+func _present_live_inspector_hover() -> void:
+	_publish_live_inspector_text()
+	if not VoxelInspectorSummary.live_hover_shows_synapses(_live_synapse_inspector_enabled()):
+		_release_live_synapse_visualization(true)
+		return
+	if _live_voxel_payload.is_empty() or _live_synapse_drawn_key == _live_voxel_key:
+		return
+	_live_synapse_viz_active = true
+	_live_synapse_drawn_key = _live_voxel_key
+	_voxel_inspector_apply_synapse_visualization(_live_voxel_payload)
+
+
+func _ensure_live_inspector_stop_overlay() -> void:
+	if brain_monitor_activity_mode != BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR:
+		return
+	if VoxelInspectorSummary.live_hover_should_fetch(_live_neuron_inspector_enabled(), _live_synapse_inspector_enabled()):
+		set_live_inspector_stop_overlay(true)
+
+
+## Live neuron inspector was turned off. Synapse hover keeps running when that toggle is still on.
+func on_live_neuron_inspector_disabled() -> void:
+	_live_voxel_text = ""
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm != null and is_instance_valid(bm):
+			bm.hide_live_voxel_inspector()
+	if _live_synapse_inspector_enabled():
+		_ensure_live_inspector_stop_overlay()
+		return
+	clear_live_voxel_inspector()
+
+
+## Live synapse inspector toggled. Hover arcs use the same payload shape as Inspect.
+func on_live_synapse_inspector_toggled(enabled: bool) -> void:
+	if enabled:
+		_set_cortical_mapping_suppressed_for_live_synapse(true)
+		_ensure_live_inspector_stop_overlay()
+		if _live_voxel_hovering and not _live_voxel_payload.is_empty():
+			_present_live_inspector_hover()
+		return
+	_release_live_synapse_visualization(true)
+	_set_cortical_mapping_suppressed_for_live_synapse(false)
+	if _live_neuron_inspector_enabled():
+		_ensure_live_inspector_stop_overlay()
+		return
+	clear_live_voxel_inspector()
+
+
+func cortical_mapping_suppressed_for_live_synapse_inspector() -> bool:
+	return _suppress_cortical_mapping_for_live_synapse
+
+
+## Re-applies mapping suppression when the voxel inspector is opened with the synapse toggle still on.
+func sync_cortical_mapping_for_live_synapse_inspector() -> void:
+	if brain_monitor_activity_mode != BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR:
+		return
+	if not VoxelInspectorSummary.suppress_cortical_mapping(_live_synapse_inspector_enabled()):
+		return
+	_set_cortical_mapping_suppressed_for_live_synapse(true)
+
+
+func _set_cortical_mapping_suppressed_for_live_synapse(suppressed: bool) -> void:
+	_suppress_cortical_mapping_for_live_synapse = suppressed
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm != null and is_instance_valid(bm):
+			bm.set_cortical_mapping_curves_suppressed(suppressed)
+
+
+## Inspect's 3D synapse toggle. Live hover arcs take priority until the pointer leaves the voxel.
+func on_voxel_synapse_visualization_toggled(enabled: bool) -> void:
+	if enabled:
+		if not _live_synapse_viz_active:
+			request_voxel_synapse_visualization_rebuild()
+		return
+	clear_voxel_synapse_visualization_all_brain_monitors()
+	_live_synapse_viz_active = false
+	_live_synapse_drawn_key = ""
+	if _live_synapse_inspector_enabled() and _live_voxel_hovering and not _live_voxel_payload.is_empty():
+		_live_synapse_viz_active = true
+		_live_synapse_drawn_key = _live_voxel_key
+		_voxel_inspector_apply_synapse_visualization(_live_voxel_payload)
+
+
+func _release_live_synapse_visualization(restore_static: bool) -> void:
+	var was_active: bool = _live_synapse_viz_active
+	_live_synapse_viz_active = false
+	_live_synapse_drawn_key = ""
+	if not was_active:
+		return
+	clear_voxel_synapse_visualization_all_brain_monitors()
+	if not restore_static:
+		return
+	var win := _voxel_inspector_window()
+	if win != null and win.is_voxel_synapse_visualization_enabled():
+		request_voxel_synapse_visualization_rebuild()
+
+
+## Drops the hover box and cancels an in-flight live fetch. Safe to call when the pointer leaves a voxel.
+func end_live_voxel_inspector_hover(overlay: UI_BrainMonitor_Overlay) -> void:
+	_live_voxel_hovering = false
+	_live_voxel_inspector_generation += 1
+	_live_voxel_inflight = false
+	_live_voxel_key = ""
+	_live_voxel_text = ""
+	_live_voxel_overlay = null
+	_live_voxel_brain_monitor = null
+	_live_voxel_payload = {}
+	_live_firing_sample = null
+	_live_voxel_cortical_id = ""
+	_release_live_synapse_visualization(true)
+	if overlay != null and is_instance_valid(overlay):
+		overlay.hide_live_inspector()
+
+
+## Hides the hover box on every brain monitor and drops live synapse arcs.
+func clear_live_voxel_inspector() -> void:
+	if _stop_overlay_for_live_inspector:
+		set_live_inspector_stop_overlay(false)
+	_release_live_synapse_visualization(true)
+	if _suppress_cortical_mapping_for_live_synapse:
+		_set_cortical_mapping_suppressed_for_live_synapse(false)
+	_live_voxel_hovering = false
+	_live_voxel_inspector_generation += 1
+	_live_voxel_inflight = false
+	_live_voxel_key = ""
+	_live_voxel_text = ""
+	_live_voxel_overlay = null
+	_live_voxel_brain_monitor = null
+	_live_voxel_payload = {}
+	_live_firing_sample = null
+	_live_voxel_cortical_id = ""
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm != null and is_instance_valid(bm):
+			bm.hide_live_voxel_inspector()
 
 
 ## Rebuild 3D voxel synapse arcs from the last successful Inspect payload (toggle on).
@@ -1076,11 +1403,34 @@ func _voxel_inspector_apply_synapse_visualization(d: Dictionary) -> void:
 	)
 	if area == null:
 		return
-	var bm: UI_BrainMonitor_3DScene = get_brain_monitor_for_cortical_area(area)
+	var bm: UI_BrainMonitor_3DScene = _brain_monitor_for_voxel_synapse_draw(str(area.cortical_ID))
+	if bm == null:
+		bm = get_brain_monitor_for_cortical_area(area)
 	if bm == null:
 		return
 	clear_voxel_synapse_visualization_all_brain_monitors()
 	bm.rebuild_voxel_synapse_visualization_from_api_payload(d)
+
+
+## Prefer the hovered view when it actually displays the area, so arcs to off-plate areas stay in that view.
+func _brain_monitor_for_voxel_synapse_draw(cortical_id: String) -> UI_BrainMonitor_3DScene:
+	var hovered_hosts: bool = (
+		_live_voxel_brain_monitor != null
+		and is_instance_valid(_live_voxel_brain_monitor)
+		and _live_voxel_brain_monitor.has_cortical_area_visualization(cortical_id)
+	)
+	if VoxelInspectorSummary.prefer_hovered_monitor_for_synapses(hovered_hosts):
+		return _live_voxel_brain_monitor
+	var fallback: UI_BrainMonitor_3DScene = null
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm == null or not is_instance_valid(bm):
+			continue
+		if not bm.has_cortical_area_visualization(cortical_id):
+			continue
+		if bm.is_visible_in_tree():
+			return bm
+		fallback = bm
+	return fallback
 
 
 func clear_voxel_synapse_visualization_all_brain_monitors() -> void:

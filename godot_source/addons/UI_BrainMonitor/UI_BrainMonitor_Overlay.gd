@@ -10,6 +10,12 @@ var _box_select_visible: bool = false
 const BOX_SELECT_FILL: Color = Color(0.12, 0.85, 0.95, 0.12)
 const BOX_SELECT_BORDER: Color = Color(0.12, 0.85, 0.95, 0.9)
 
+## Gap between the cursor and the bottom of the live voxel inspector box, in overlay pixels.
+const LIVE_INSPECTOR_CURSOR_GAP_PX: float = 14.0
+
+var _live_inspector_panel: PanelContainer
+var _live_inspector_label: Label
+
 ## Set true to log device_index resolution (coord, per, path, result) to Godot output.
 const DEBUG_DEVICE_INDEX: bool = false
 
@@ -66,6 +72,7 @@ func _ready() -> void:
 	if ClassDB.class_exists("FeagiDataDeserializer"):
 		_fdp_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
 	_setup_region_description_tooltip()
+	_setup_live_inspector_panel()
 
 
 ## Styled side-caret tooltip for a brain-region description. [param screen_rect] is SubViewport pixels.
@@ -92,6 +99,50 @@ func hide_region_description_tooltip() -> void:
 	var manager: Node = _find_region_description_tooltip_manager()
 	if manager != null and manager.has_method("hide_tooltip"):
 		manager.hide_tooltip()
+
+
+func _setup_live_inspector_panel() -> void:
+	_live_inspector_panel = PanelContainer.new()
+	_live_inspector_panel.name = "LiveVoxelInspector"
+	_live_inspector_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_live_inspector_panel.visible = false
+	_live_inspector_panel.z_index = 20
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.1, 0.14, 0.94)
+	style.border_color = Color(0.75, 0.82, 0.9, 0.9)
+	style.set_border_width_all(1)
+	style.set_content_margin_all(8)
+	style.set_corner_radius_all(4)
+	_live_inspector_panel.add_theme_stylebox_override(&"panel", style)
+	_live_inspector_label = Label.new()
+	_live_inspector_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_live_inspector_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_live_inspector_label.custom_minimum_size = Vector2(240, 0)
+	_live_inspector_label.add_theme_color_override(&"font_color", Color.WHITE)
+	_live_inspector_panel.add_child(_live_inspector_label)
+	add_child(_live_inspector_panel)
+
+
+## Places the voxel summary box above the cursor. [param mouse_pos] is overlay-local pixels.
+func show_live_inspector(text: String, mouse_pos: Vector2) -> void:
+	if _live_inspector_panel == null or _live_inspector_label == null:
+		return
+	_live_inspector_label.text = text
+	_live_inspector_panel.visible = true
+	_live_inspector_panel.reset_size()
+	var panel_size: Vector2 = _live_inspector_panel.size
+	var pos := Vector2(
+		mouse_pos.x - panel_size.x * 0.5,
+		mouse_pos.y - panel_size.y - LIVE_INSPECTOR_CURSOR_GAP_PX
+	)
+	pos.x = clampf(pos.x, 0.0, maxf(0.0, size.x - panel_size.x))
+	pos.y = clampf(pos.y, 0.0, maxf(0.0, size.y - panel_size.y))
+	_live_inspector_panel.position = pos
+
+
+func hide_live_inspector() -> void:
+	if _live_inspector_panel != null:
+		_live_inspector_panel.visible = false
 
 
 func _setup_region_description_tooltip() -> void:
@@ -182,6 +233,10 @@ func clear() -> void:
 		bm.brain_monitor_clear_mouse_context_cortical_id()
 	_clear_global_context()
 	hide_region_description_tooltip()
+	if BV != null and BV.UI != null:
+		BV.UI.end_live_voxel_inspector_hover(self)
+	else:
+		hide_live_inspector()
 
 ## Resolve device index for IOPU. Uses per-device dimensions for channel/device mapping.
 ## For SignedPercentage/Incremental: per.x columns per joint (pos/neg); device = floor(x / per.x).
@@ -468,6 +523,11 @@ func _log_hover_mapping_diagnostics(
 		label_matches,
 		matched_indices
 	])
+
+## Brain monitor whose 3D scene this overlay covers.
+func owning_brain_monitor() -> UI_BrainMonitor_3DScene:
+	return _get_owning_bm()
+
 
 ## Returns the owning brain monitor for this overlay.
 func _get_owning_bm() -> UI_BrainMonitor_3DScene:

@@ -760,6 +760,8 @@ func _update_monitor_tools_visibility() -> void:
 func _on_monitor_activity_mode_changed(action: StringName, enabled: bool) -> void:
 	if _bm_scene == null:
 		return
+	if action != ActivityVisualizationDropDown.ACTION_VOXEL_INSPECTOR:
+		BV.UI.clear_live_voxel_inspector()
 	if action == ActivityVisualizationDropDown.ACTION_GLOBAL_NEURAL_CONNECTIONS:
 		_toggle_global_neural_connections_for_scene(_bm_scene, enabled)
 		BV.UI.set_connection_inspector_stop_overlay_visible(enabled)
