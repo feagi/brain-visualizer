@@ -60,7 +60,7 @@ func search_for_matching_children(starting_node: Node) -> void:
 ## Applies custom data changes from new theme to all cached references
 func update_theme_customs(_updated_theme: Theme) -> void:
 	
-	# TextureButton
+	# TextureButton. Size comes from the control's theme type, TextureButton_TopBar on the top bar.
 	for tb: TextureButton in _texture_buttons:
 		if tb == null:
 			continue
@@ -71,7 +71,14 @@ func update_theme_customs(_updated_theme: Theme) -> void:
 			continue
 		but.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(but, "Button")
 		
+	var theme_button_size := Vector2(BV.UI.get_minimum_size_from_loaded_theme(ComboButtonStripStyler.TOP_BAR_CONTROL_THEME))
 	for te: TextureRect in _texture_rects:
 		if te == null:
+			continue
+		if bool(te.get_meta("category_icon", false)):
+			var full_bleed := bool(te.get_meta("full_bleed_icon", false))
+			te.custom_minimum_size = ComboButtonStripStyler.category_icon_size(theme_button_size, full_bleed)
+			te.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			te.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			continue
 		te.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(te, "TextureRect")

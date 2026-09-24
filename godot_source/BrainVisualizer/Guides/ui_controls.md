@@ -89,6 +89,11 @@ The main toolbar provides quick access to essential features:
 
 ### Middle Section (Quick Access)
 
+**Circuits, Inputs, and Outputs (root scene top bar):**
+- Hover the title to list existing circuits, input areas, or output areas
+- **+** creates one
+- The Circuits list button is not on this bar
+
 **Inputs Button:**
 - Dropdown showing all IPU areas
 - **+** button to create new input
@@ -97,9 +102,10 @@ The main toolbar provides quick access to essential features:
 **Elements Button:**
 - On the Circuit Builder and Brain Monitor tab bars
 - Opens on hover
-- Menu for circuits, interconnect areas, memory areas, and classifiers
-- Dropdown rows for **Circuits**, **Interconnect Areas**, **Memory Areas**, and **Classifiers**
-- Each row lists existing objects and has a **+** button to create one
+- Menu for circuits, interconnect areas, and memory areas
+- Dropdown rows for **Circuits**, **Interconnect Areas**, and **Memory Areas**
+- Each row title is a label. The list button beside **+** opens existing objects. **+** creates one.
+- **Classifier** is added from **Add Circuit**, not from this menu. It is an Integrated Circuit. Logic AND and Logic OR stay packaged circuits on that same window.
 
 **Outputs Button:**
 - Dropdown showing all OPU areas

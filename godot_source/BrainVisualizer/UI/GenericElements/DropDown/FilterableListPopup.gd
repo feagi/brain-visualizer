@@ -13,6 +13,8 @@ var _item_list: ItemList
 var _items: Array[Dictionary] = []
 var _filtered_item_indices: Array[int] = []
 var _selection_handler: Callable
+## Pulls the popup up over the anchor so a hover can cross into the list.
+var _anchor_overlap_px: int = 0
 ## List ItemList base size from theme; filter uses the same scale so the bar matches the list body.
 var _base_list_font_size: int = 0
 
@@ -29,9 +31,10 @@ func _ready() -> void:
 	_on_theme_changed(BV.UI.loaded_theme)
 
 ## Populate and open the popup anchored to a control.
-func open_with_items(anchor_control: Control, items: Array[Dictionary], selection_handler: Callable, placeholder_text: String) -> void:
+func open_with_items(anchor_control: Control, items: Array[Dictionary], selection_handler: Callable, placeholder_text: String, anchor_overlap_px: int = 0) -> void:
 	_items = items
 	_selection_handler = selection_handler
+	_anchor_overlap_px = anchor_overlap_px
 	_filter_line.placeholder_text = placeholder_text
 	_filter_line.text = ""
 	_apply_filter("")
@@ -58,7 +61,7 @@ func _popup_at_control(anchor_control: Control) -> void:
 	var popup_size := _get_scaled_popup_size()
 	var anchor_pos := _get_anchor_screen_position(anchor_control)
 	var anchor_size := anchor_control.size
-	var popup_pos := Vector2(anchor_pos.x, anchor_pos.y + anchor_size.y)
+	var popup_pos := Vector2(anchor_pos.x, anchor_pos.y + anchor_size.y - float(_anchor_overlap_px))
 	if popup_pos.x + popup_size.x > viewport_rect.end.x:
 		popup_pos.x = viewport_rect.end.x - popup_size.x
 	if popup_pos.y + popup_size.y > viewport_rect.end.y:

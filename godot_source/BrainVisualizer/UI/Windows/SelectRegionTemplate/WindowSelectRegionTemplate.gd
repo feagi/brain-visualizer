@@ -4,6 +4,9 @@ class_name WindowSelectRegionTemplate
 const WINDOW_NAME: StringName = "select_region_template"
 const CREATE_REGION_LABEL: StringName = "Create New Circuit"
 const CIRCUIT_ICON: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png")
+const CLASSIFIER_TITLE: StringName = "Classifier"
+const INTEGRATED_CIRCUIT_BADGE: StringName = "Integrated Circuit"
+const CLASSIFIER_ICON: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/carbon.png")
 const CIRCUITS_DIR_NAME: StringName = "circuits"
 const MANIFEST_FILENAME: StringName = "manifest.json"
 const GENOME_FILENAME: StringName = "genome.genome"
@@ -85,6 +88,7 @@ func _populate_grid() -> void:
 		scroll.custom_minimum_size.y = 720.0
 	_add_locked_create_region_tile()
 	_add_manifest_tiles()
+	_add_classifier_tile()
 
 
 ## Add the first tile that opens the Create Brain Region window.
@@ -214,6 +218,74 @@ func _add_circuit_tile(circuit_folder: String, metadata: Dictionary) -> void:
 	tile.add_child(button)
 	tile.add_child(name_label)
 	_icon_grid.add_child(tile)
+
+
+## Classifier is created in the current region. It is not a packaged genome like the logic gates.
+func _add_classifier_tile() -> void:
+	var tile := VBoxContainer.new()
+	tile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tile.custom_minimum_size.x = 128
+	tile.alignment = BoxContainer.ALIGNMENT_BEGIN
+
+	var button := TextureButton.new()
+	button.custom_minimum_size = Vector2(128, 128)
+	button.ignore_texture_size = true
+	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	button.texture_normal = CLASSIFIER_ICON
+	button.texture_hover = CLASSIFIER_ICON
+	button.texture_pressed = CLASSIFIER_ICON
+	button.pressed.connect(_open_create_classifier)
+
+	var name_label := Label.new()
+	name_label.text = CLASSIFIER_TITLE
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	name_label.custom_minimum_size.x = 128
+	name_label.custom_minimum_size.y = 40
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	name_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	name_label.max_lines_visible = 2
+
+	tile.add_child(button)
+	tile.add_child(name_label)
+	tile.add_child(_make_integrated_circuit_badge())
+	_icon_grid.add_child(tile)
+
+
+## Small label under an integrated-circuit tile. Logic-gate tiles do not use this.
+func _make_integrated_circuit_badge() -> PanelContainer:
+	var badge := PanelContainer.new()
+	badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var plate := StyleBoxFlat.new()
+	plate.bg_color = Color(0.262745, 0.262745, 0.262745, 1)
+	plate.content_margin_left = 8
+	plate.content_margin_right = 8
+	plate.content_margin_top = 2
+	plate.content_margin_bottom = 2
+	plate.set_corner_radius_all(6)
+	badge.add_theme_stylebox_override("panel", plate)
+	var label := Label.new()
+	label.text = INTEGRATED_CIRCUIT_BADGE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.theme_type_variation = &"Label_Small"
+	badge.add_child(label)
+	return badge
+
+
+## Open the classifier editor for the same region this Add Circuit window was opened on.
+func _open_create_classifier() -> void:
+	var parent_region: BrainRegion = _parent_region
+	if parent_region == null and FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		parent_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if parent_region == null:
+		BV.NOTIF.add_notification(
+			"Open a circuit before adding a classifier",
+			NotificationSystemNotification.NOTIFICATION_TYPE.ERROR
+		)
+		return
+	BV.WM.spawn_create_classifier_for_region(parent_region, null)
+	close_window()
 
 
 ## Upload the selected circuit genome to FEAGI.

@@ -16,15 +16,19 @@ func _initialize() -> void:
 	failures += _test_elements_button_label()
 	failures += _test_elements_button_tooltip_copy()
 	failures += _test_elements_menu_opens_on_hover_for_tab_strips()
+	failures += _test_root_bar_category_lists_open_on_title_hover()
+	failures += _test_circuits_title_does_not_paint_its_own_plate()
 	failures += _test_connectome_inner_hbox_ignores_mouse()
 	failures += _test_scene_keeps_object_combos_inside_menu()
-	failures += _test_classifier_row_uses_carbon_icon()
+	failures += _test_scene_has_no_classifier_row()
 	failures += _test_combo_rows_scale_label_not_hbox()
 	failures += _test_combo_list_labels_pass_mouse_to_parent()
 	failures += _test_scene_keeps_inputs_outputs_on_strip()
 	failures += _test_scene_menu_row_order()
 	failures += _test_align_connectome_menu_add_buttons_right_justifies_plus()
 	failures += _test_list_and_plus_are_siblings_on_shared_plate()
+	failures += _test_elements_menu_titles_are_not_links()
+	failures += _test_category_icons_are_twenty_percent_smaller()
 	failures += _test_keep_menu_open_when_pointer_still_on_trigger()
 	failures += _test_tab_overlay_z_index_matches_circuit_builder()
 	if failures == 0:
@@ -38,9 +42,9 @@ func _initialize() -> void:
 func _test_menu_ids_are_circuit_interconnect_memory() -> int:
 	var script: Script = load(COMBO_SCRIPT_PATH)
 	var ids: PackedStringArray = script.connectome_menu_item_ids()
-	var expected := PackedStringArray(["circuit", "interconnect", "memory", "classifier"])
+	var expected := PackedStringArray(["circuit", "interconnect", "memory"])
 	if ids != expected:
-		push_error("connectome_menu_item_ids must be circuit, interconnect, memory, classifier (got %s)" % [ids])
+		push_error("connectome_menu_item_ids must be circuit, interconnect, memory (got %s)" % [ids])
 		return 1
 	return 0
 
@@ -121,8 +125,8 @@ func _test_elements_button_tooltip_copy() -> int:
 	if source.find("Connectome objects") >= 0:
 		push_error("Elements button tooltip must not say Connectome objects")
 		return 1
-	if source.find("Circuits, areas, memory, and classifiers") < 0:
-		push_error("Elements button tooltip must list circuits, areas, memory, and classifiers")
+	if source.find("Circuits, areas, and memory") < 0:
+		push_error("Elements button tooltip must list circuits, areas, and memory")
 		return 1
 	return 0
 
@@ -145,6 +149,42 @@ func _test_elements_menu_opens_on_hover_for_tab_strips() -> int:
 		push_error("Elements menu hover close delay must be positive")
 		return 1
 	return 0
+
+
+func _test_root_bar_category_lists_open_on_title_hover() -> int:
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	if script.should_show_circuits_list_button_on_strip(true):
+		push_error("Root top bar must hide the Circuits list button")
+		return 1
+	if not script.should_show_circuits_list_button_on_strip(false):
+		push_error("Circuit Builder and Brain Monitor must keep the Circuits list button")
+		return 1
+	if not script.should_open_root_category_list_on_hover(true, false):
+		push_error("Root top bar must open Circuits, Inputs, and Outputs when the title is hovered")
+		return 1
+	if script.should_open_root_category_list_on_hover(false, false):
+		push_error("Tab strips must keep category lists on the list button, not title hover")
+		return 1
+	if script.should_open_root_category_list_on_hover(true, true):
+		push_error("A disabled root top bar must not open category lists on hover")
+		return 1
+	return 0
+
+
+func _test_circuits_title_does_not_paint_its_own_plate() -> int:
+	var packed: PackedScene = load(COMBO_SCENE_PATH)
+	var state: SceneState = packed.get_state()
+	var index := _find_node_index_by_name(state, "BrainRegionsList")
+	if index < 0:
+		push_error("Circuits title is missing")
+		return 1
+	for p in range(state.get_node_property_count(index)):
+		if str(state.get_node_property_name(index, p)) != "theme_override_styles/panel":
+			continue
+		if state.get_node_property_value(index, p) is StyleBoxEmpty:
+			return 0
+	push_error("Circuits title must not paint the theme panel behind the icon")
+	return 1
 
 
 func _test_connectome_inner_hbox_ignores_mouse() -> int:
@@ -188,7 +228,6 @@ func _test_scene_keeps_object_combos_inside_menu() -> int:
 		"ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow",
 		"ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow",
 		"ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow",
-		"ConnectomeMenu/MarginContainer/MenuItems/ClassifierRow",
 	]
 	for required in required_in_menu:
 		if not _has_path_containing(paths, required):
@@ -200,30 +239,12 @@ func _test_scene_keeps_object_combos_inside_menu() -> int:
 	return 0
 
 
-func _test_classifier_row_uses_carbon_icon() -> int:
-	var packed: PackedScene = load(COMBO_SCENE_PATH)
-	var state: SceneState = packed.get_state()
-	var tex_index: int = -1
-	for i in range(state.get_node_count()):
-		if state.get_node_name(i) != "TextureRect":
-			continue
-		var path_str := str(state.get_node_path(i, false))
-		if path_str.find("ClassifierList") >= 0:
-			tex_index = i
-			break
-	if tex_index < 0:
-		push_error("ClassifierList TextureRect missing from BrainObjectsCombo scene")
+func _test_scene_has_no_classifier_row() -> int:
+	var paths := _collect_scene_node_paths()
+	if _has_path_containing(paths, "ClassifierRow") or _has_path_containing(paths, "ClassifierList"):
+		push_error("Classifier must be added from Add Circuit, not the Elements menu")
 		return 1
-	for i in range(state.get_node_property_count(tex_index)):
-		if str(state.get_node_property_name(tex_index, i)) != "texture":
-			continue
-		var tex_value := str(state.get_node_property_value(tex_index, i))
-		if tex_value.find("carbon.png") < 0:
-			push_error("Classifier icon must be carbon.png (got %s)" % tex_value)
-			return 1
-		return 0
-	push_error("Classifier TextureRect must set the carbon.png texture")
-	return 1
+	return 0
 
 
 func _test_combo_rows_scale_label_not_hbox() -> int:
@@ -234,6 +255,12 @@ func _test_combo_rows_scale_label_not_hbox() -> int:
 		var node_name := str(state.get_node_name(i))
 		var path_str := str(state.get_node_path(i, false))
 		if path_str.find("ConnectomeButton") >= 0:
+			continue
+		if path_str.find("ConnectomeMenu") >= 0:
+			for p in range(state.get_node_property_count(i)):
+				if str(state.get_node_property_name(i, p)) == "metadata/hover_scale_target":
+					push_error("Elements menu titles must not scale like links: %s" % path_str)
+					return 1
 			continue
 		var has_scale_meta := false
 		for p in range(state.get_node_property_count(i)):
@@ -247,8 +274,8 @@ func _test_combo_rows_scale_label_not_hbox() -> int:
 			return 1
 		if node_name == "Label":
 			label_targets += 1
-	if label_targets < 6:
-		push_error("Each combo list label must be the hover scale target (found %d)" % label_targets)
+	if label_targets < 2:
+		push_error("Inputs and Outputs labels must stay the hover scale target (found %d)" % label_targets)
 		return 1
 	return 0
 
@@ -269,12 +296,17 @@ func _test_combo_list_labels_pass_mouse_to_parent() -> int:
 		for p in range(state.get_node_property_count(i)):
 			if str(state.get_node_property_name(i, p)) == "mouse_filter":
 				mouse_filter = int(state.get_node_property_value(i, p))
+		if path_str.find("ConnectomeMenu") >= 0:
+			if mouse_filter != 2:
+				push_error("Elements menu titles must ignore mouse so the text is not a link: %s" % path_str)
+				return 1
+			continue
 		if mouse_filter != 1:
 			push_error("Combo list label must PASS mouse so the list button receives the click: %s" % path_str)
 			return 1
 		passed += 1
-	if passed < 6:
-		push_error("Each combo list label must PASS mouse (found %d)" % passed)
+	if passed < 2:
+		push_error("Inputs and Outputs labels must PASS mouse (found %d)" % passed)
 		return 1
 	return 0
 
@@ -328,6 +360,7 @@ func _test_align_connectome_menu_add_buttons_right_justifies_plus() -> int:
 	var long_label: Label = long_row.get_node("HBoxContainer/List/HBoxContainer/Label")
 	var short_plus: TextureButton = short_row.get_node("HBoxContainer/Plus")
 	var long_plus: TextureButton = long_row.get_node("HBoxContainer/Plus")
+	var short_list_button: TextureButton = short_row.get_node("HBoxContainer/ListButton")
 	var failed: int = 0
 	if short_row.size_flags_horizontal != Control.SIZE_EXPAND_FILL:
 		push_error("Connectome menu rows must expand to the menu width")
@@ -346,6 +379,9 @@ func _test_align_connectome_menu_add_buttons_right_justifies_plus() -> int:
 		failed = 1
 	if long_label.size_flags_horizontal != Control.SIZE_SHRINK_BEGIN:
 		push_error("Long connectome menu labels must shrink to the text bounds")
+		failed = 1
+	if short_list_button.size_flags_horizontal != Control.SIZE_SHRINK_END:
+		push_error("Elements list buttons must shrink-end beside +")
 		failed = 1
 	if short_plus.size_flags_horizontal != Control.SIZE_SHRINK_END:
 		push_error("Connectome + buttons must shrink-end (right justify)")
@@ -389,6 +425,50 @@ func _test_list_and_plus_are_siblings_on_shared_plate() -> int:
 	return 0
 
 
+func _test_elements_menu_titles_are_not_links() -> int:
+	var packed: PackedScene = load(COMBO_SCENE_PATH)
+	var state: SceneState = packed.get_state()
+	var titles: PackedStringArray = PackedStringArray([
+		"BrainRegionsList",
+		"InterconnectAreasList",
+		"MemoryAreasList",
+	])
+	var list_buttons: PackedStringArray = PackedStringArray([
+		"TextureButton_BrainRegionsList",
+		"TextureButton_InterconnectList",
+		"TextureButton_MemoryList",
+	])
+	var plus_buttons: PackedStringArray = PackedStringArray([
+		"TextureButton_BrainRegions",
+		"TextureButton_Interconnect",
+		"TextureButton_Memory",
+	])
+	for title_name in titles:
+		var index := _find_node_index_by_name(state, title_name)
+		if index < 0:
+			push_error("Elements row title missing: %s" % title_name)
+			return 1
+		for p in range(state.get_node_property_count(index)):
+			if str(state.get_node_property_name(index, p)) == "script":
+				push_error("Elements row title must not be a button: %s" % title_name)
+				return 1
+	for i in range(list_buttons.size()):
+		var list_index := _find_node_index_by_name(state, list_buttons[i])
+		var plus_index := _find_node_index_by_name(state, plus_buttons[i])
+		if list_index < 0 or plus_index < 0:
+			push_error("Elements list button must sit beside +: %s" % list_buttons[i])
+			return 1
+		var list_parent := str(state.get_node_path(list_index, false)).get_base_dir()
+		var plus_parent := str(state.get_node_path(plus_index, false)).get_base_dir()
+		if list_parent != plus_parent:
+			push_error("Elements list button and + must share a row: %s" % list_buttons[i])
+			return 1
+		if list_index > plus_index:
+			push_error("Elements list button must come before + in the row: %s" % list_buttons[i])
+			return 1
+	return 0
+
+
 func _test_keep_menu_open_when_pointer_still_on_trigger() -> int:
 	var script: Script = load(COMBO_SCRIPT_PATH)
 	if not bool(script.should_keep_connectome_menu_open_after_focus_lost(false, true)):
@@ -411,6 +491,83 @@ func _test_tab_overlay_z_index_matches_circuit_builder() -> int:
 	return 0
 
 
+func _test_category_icons_are_twenty_percent_smaller() -> int:
+	var styler: Script = load("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
+	if not is_equal_approx(float(styler.CATEGORY_ICON_SCALE), 0.8):
+		push_error("Category icons must be 80 percent of the control size")
+		return 1
+	var scaled: Vector2 = styler.category_icon_size(Vector2(64, 64))
+	if not is_equal_approx(scaled.x, 51.2) or not is_equal_approx(scaled.y, 51.2):
+		push_error("Category icon size must be control size times 0.8")
+		return 1
+	var interconnect_scaled: Vector2 = styler.category_icon_size(Vector2(64, 64), true)
+	if not is_equal_approx(interconnect_scaled.x, 40.96) or not is_equal_approx(interconnect_scaled.y, 40.96):
+		push_error("Interconnect icon must be smaller because its artwork has no margin")
+		return 1
+	var packed: PackedScene = load(COMBO_SCENE_PATH)
+	var state: SceneState = packed.get_state()
+	var marked: PackedStringArray = PackedStringArray()
+	for i in range(state.get_node_count()):
+		var is_category := false
+		for p in range(state.get_node_property_count(i)):
+			if str(state.get_node_property_name(i, p)) == "metadata/category_icon" and bool(state.get_node_property_value(i, p)):
+				is_category = true
+		if is_category:
+			marked.append(str(state.get_node_path(i, false)))
+	var required: PackedStringArray = PackedStringArray([
+		"BrainRegionsList",
+		"InterconnectAreasList",
+		"MemoryAreasList",
+		"InputsList",
+		"OutputsList",
+	])
+	if marked.size() != required.size():
+		push_error("Expected 5 category icons, found %d" % marked.size())
+		return 1
+	var interconnect_is_full_bleed := false
+	for i in range(state.get_node_count()):
+		var path_str := str(state.get_node_path(i, false))
+		if path_str.find("InterconnectAreasList") < 0 or str(state.get_node_name(i)) != "TextureRect":
+			continue
+		for p in range(state.get_node_property_count(i)):
+			if str(state.get_node_property_name(i, p)) == "metadata/full_bleed_icon" and bool(state.get_node_property_value(i, p)):
+				interconnect_is_full_bleed = true
+	if not interconnect_is_full_bleed:
+		push_error("Interconnect icon must be marked full-bleed so it scales below the other category icons")
+		return 1
+	for fragment in required:
+		var found := false
+		for path in marked:
+			if String(path).find(fragment) >= 0:
+				found = true
+		if not found:
+			push_error("Category icon missing for %s" % fragment)
+			return 1
+	var combo_source := FileAccess.get_file_as_string(COMBO_SCRIPT_PATH)
+	if combo_source.find("theme_type_variation = COMBO_STYLER.TOP_BAR_CONTROL_THEME") < 0:
+		push_error("Combo buttons must take their size from TextureButton_TopBar")
+		return 1
+	var top_bar_source := FileAccess.get_file_as_string("res://BrainVisualizer/UI/Top_Bar/TopBar.tscn")
+	if top_bar_source.find("theme_type_variation = &\"TextureButton_TopBar\"") < 0:
+		push_error("Connectivity Rules + must use TextureButton_TopBar")
+		return 1
+	var top_bar_scene: PackedScene = load("res://BrainVisualizer/UI/Top_Bar/TopBar.tscn")
+	var top_bar_state: SceneState = top_bar_scene.get_state()
+	var rules_icon_is_category := false
+	for i in range(top_bar_state.get_node_count()):
+		if str(top_bar_state.get_node_path(i, false)).find("BrainAreasList") < 0:
+			continue
+		if str(top_bar_state.get_node_name(i)) != "TextureRect":
+			continue
+		for p in range(top_bar_state.get_node_property_count(i)):
+			if str(top_bar_state.get_node_property_name(i, p)) == "metadata/category_icon" and bool(top_bar_state.get_node_property_value(i, p)):
+				rules_icon_is_category = true
+	if not rules_icon_is_category:
+		push_error("Connectivity Rules icon must use the same category icon size as Circuits, Inputs, and Outputs")
+		return 1
+	return 0
+
+
 func _make_combo_row(label_text: String) -> PanelContainer:
 	var row := PanelContainer.new()
 	var hbox := HBoxContainer.new()
@@ -426,10 +583,13 @@ func _make_combo_row(label_text: String) -> PanelContainer:
 	list.add_child(inner)
 	var gap := Control.new()
 	gap.name = "RowGap"
+	var list_button := TextureButton.new()
+	list_button.name = "ListButton"
 	var plus := TextureButton.new()
 	plus.name = "Plus"
 	hbox.add_child(list)
 	hbox.add_child(gap)
+	hbox.add_child(list_button)
 	hbox.add_child(plus)
 	row.add_child(hbox)
 	return row

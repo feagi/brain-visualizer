@@ -10,6 +10,16 @@ const ROW_PAD_X: int = 12
 const ROW_PAD_Y: int = 0
 ## Theme type whose size_x/size_y is the shared top-bar control height.
 const TOP_BAR_CONTROL_THEME: StringName = &"TextureButton_TopBar"
+## Category icons are smaller than TextureButton_TopBar. The button size itself stays in the theme.
+const CATEGORY_ICON_SCALE: float = 0.8
+## interconnected.png has no transparent margin, so the shared category box still looks full size.
+const FULL_BLEED_ICON_SCALE: float = 0.64
+
+
+## Size of a category icon. [param theme_button_size] is TextureButton_TopBar from the loaded theme.
+static func category_icon_size(theme_button_size: Vector2, full_bleed: bool = false) -> Vector2:
+	var factor: float = FULL_BLEED_ICON_SCALE if full_bleed else CATEGORY_ICON_SCALE
+	return theme_button_size * factor
 
 
 ## Apply a consistent icon/label separation to list button content rows.

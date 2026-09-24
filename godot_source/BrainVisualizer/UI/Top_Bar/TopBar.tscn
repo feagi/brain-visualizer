@@ -230,6 +230,7 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 texture = ExtResource("8_cdeim")
 expand_mode = 1
+metadata/category_icon = true
 
 [node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList/HBoxContainer"]
 mouse_filter = 1
@@ -240,6 +241,7 @@ metadata/hover_scale_target = true
 
 [node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer"]
 custom_minimum_size = Vector2(48, 48)
+theme_type_variation = &"TextureButton_TopBar"
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4

@@ -39,6 +39,10 @@ func _ready():
 	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
 	_mount_shared_combo_strip()
+	# The combo sizes its own icons, including the 20% category-icon reduction.
+	# The root-bar theme scaler would otherwise set those TextureRects back to full size.
+	if _shared_combo != null and not theme_scalar_nodes_to_not_include_or_search.has(_shared_combo):
+		theme_scalar_nodes_to_not_include_or_search.append(_shared_combo)
 	_apply_shared_combo_spacing_tokens()
 	
 	_setup_custom_tooltips()

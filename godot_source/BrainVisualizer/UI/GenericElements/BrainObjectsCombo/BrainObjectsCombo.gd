@@ -2,11 +2,10 @@ extends HBoxContainer
 class_name BrainObjectsCombo
 
 ## Ordered Elements menu rows. Append a new id here when adding a combo
-## (e.g. classifier) and place the matching combo button under %MenuItems.
+## and place the matching combo button under %MenuItems.
 const CONNECTOME_MENU_ITEM_CIRCUIT: StringName = &"circuit"
 const CONNECTOME_MENU_ITEM_INTERCONNECT: StringName = &"interconnect"
 const CONNECTOME_MENU_ITEM_MEMORY: StringName = &"memory"
-const CONNECTOME_MENU_ITEM_CLASSIFIER: StringName = &"classifier"
 
 var context_region: BrainRegion = null
 
@@ -22,14 +21,13 @@ var _connectome_hover_wired: bool = false
 var _elements_menu_close_timer: Timer = null
 var _connectome_menu: PopupPanel
 var _connectome_menu_items: VBoxContainer
-var _btn_brain_regions_list: BasePanelContainerButton
+var _btn_brain_regions_list: TextureButton
+var _circuits_title: Control
 var _btn_brain_regions_add: TextureButton
-var _btn_interconnect_list: BasePanelContainerButton
+var _btn_interconnect_list: TextureButton
 var _btn_interconnect_add: TextureButton
-var _btn_memory_list: BasePanelContainerButton
+var _btn_memory_list: TextureButton
 var _btn_memory_add: TextureButton
-var _btn_classifier_list: BasePanelContainerButton
-var _btn_classifier_add: TextureButton
 var _btn_rearrange_layout: TextureButton
 var _btn_inputs_list: BasePanelContainerButton
 var _btn_inputs_add: TextureButton
@@ -68,10 +66,14 @@ const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
 const CUSTOM_TOOLTIP_TRIGGER_SCRIPT = preload("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTooltipTrigger.gd")
 const REARRANGE_SIZE_SCALE: float = 1.0
-const SIZE_SCALE_3D: float = 0.8
-const SIZE_SCALE_2D: float = 0.8
 
 var _list_popup: FilterableListPopup
+var _root_hover_list_anchor: Control = null
+var _root_open_list_id: StringName = &""
+var _root_list_hover_close_timer: Timer = null
+const ROOT_LIST_CIRCUITS: StringName = &"circuits"
+const ROOT_LIST_INPUTS: StringName = &"inputs"
+const ROOT_LIST_OUTPUTS: StringName = &"outputs"
 ## True after [method apply_custom_topbar_tooltips] succeeded for this instance (TopBar or tab host).
 var _hosted_styled_tooltips_applied: bool = false
 var _plus_hover_tween: Tween = null
@@ -82,7 +84,6 @@ static func connectome_menu_item_ids() -> PackedStringArray:
 		String(CONNECTOME_MENU_ITEM_CIRCUIT),
 		String(CONNECTOME_MENU_ITEM_INTERCONNECT),
 		String(CONNECTOME_MENU_ITEM_MEMORY),
-		String(CONNECTOME_MENU_ITEM_CLASSIFIER),
 	])
 
 
@@ -96,13 +97,22 @@ static func should_open_elements_menu_on_hover(global_topbar_mode: bool, button_
 	return not global_topbar_mode and not button_disabled
 
 
+## The Circuits list button stays on tab Elements rows. The root bar opens that list from the title.
+static func should_show_circuits_list_button_on_strip(global_topbar_mode: bool) -> bool:
+	return not global_topbar_mode
+
+
+## Root bar titles open Circuits, Inputs, and Outputs on hover. Tab titles stay labels.
+static func should_open_root_category_list_on_hover(global_topbar_mode: bool, strip_disabled: bool) -> bool:
+	return global_topbar_mode and not strip_disabled
+
+
 ## Scene node names under %MenuItems, same order as [method connectome_menu_item_ids].
 static func connectome_menu_row_node_names() -> PackedStringArray:
 	return PackedStringArray([
 		"BrainRegionsRow",
 		"InterconnectAreasRow",
 		"MemoryAreasRow",
-		"ClassifierRow",
 	])
 
 
@@ -113,14 +123,13 @@ func _ready() -> void:
 	_connectome_label = %ConnectomeButton/HBoxContainer/Label as Label
 	_connectome_menu = %ConnectomeMenu
 	_connectome_menu_items = %MenuItems
-	_btn_brain_regions_list = %BrainRegionsList
+	_btn_brain_regions_list = %TextureButton_BrainRegionsList
+	_circuits_title = %BrainRegionsRow.get_node("HBoxContainer/BrainRegionsList") as Control
 	_btn_brain_regions_add = %TextureButton_BrainRegions
-	_btn_interconnect_list = %InterconnectAreasList
+	_btn_interconnect_list = %TextureButton_InterconnectList
 	_btn_interconnect_add = %TextureButton_Interconnect
-	_btn_memory_list = %MemoryAreasList
+	_btn_memory_list = %TextureButton_MemoryList
 	_btn_memory_add = %TextureButton_Memory
-	_btn_classifier_list = %ClassifierList
-	_btn_classifier_add = %TextureButton_Classifier
 	_btn_rearrange_layout = $RearrangePanel/MarginContainer/TextureButton_Rearrange
 	_btn_inputs_list = %InputsList
 	_btn_inputs_add = %TextureButton_Inputs
@@ -150,12 +159,11 @@ func _ready() -> void:
 		_connectome_menu.mouse_exited.connect(_schedule_elements_menu_close)
 	_btn_brain_regions_list.pressed.connect(_open_brain_regions)
 	_btn_brain_regions_add.pressed.connect(_add_brain_region)
+	_wire_root_category_title_hover()
 	_btn_interconnect_list.pressed.connect(_open_interconnect_areas)
 	_btn_interconnect_add.pressed.connect(_add_interconnect_area)
 	_btn_memory_list.pressed.connect(_open_memory_areas)
 	_btn_memory_add.pressed.connect(_add_memory_area)
-	_btn_classifier_list.pressed.connect(_open_classifier_areas)
-	_btn_classifier_add.pressed.connect(_add_classifier)
 	_btn_rearrange_layout.pressed.connect(_request_relayout)
 	_btn_inputs_list.pressed.connect(_open_inputs)
 	_btn_inputs_add.pressed.connect(_add_input_area)
@@ -185,15 +193,13 @@ func _ready() -> void:
 
 ## Default Godot tooltips when this strip is not using the main top bar custom tooltip host.
 func _apply_native_tooltips_for_combo_strip() -> void:
-	_btn_connectome.tooltip_text = "Circuits, areas, memory, and classifiers"
+	_btn_connectome.tooltip_text = "Circuits, areas, and memory"
 	_btn_brain_regions_list.tooltip_text = "Select circuit"
 	_btn_brain_regions_add.tooltip_text = "Add circuit"
 	_btn_interconnect_list.tooltip_text = "Select interconnect area"
 	_btn_interconnect_add.tooltip_text = "Add interconnect area"
 	_btn_memory_list.tooltip_text = "Select memory area"
 	_btn_memory_add.tooltip_text = "Add memory area"
-	_btn_classifier_list.tooltip_text = "Select classifier"
-	_btn_classifier_add.tooltip_text = "Add classifier"
 	_btn_inputs_list.tooltip_text = "Select input area"
 	_btn_inputs_add.tooltip_text = "Add input area"
 	_btn_outputs_list.tooltip_text = "Select output area"
@@ -236,15 +242,13 @@ func apply_custom_topbar_tooltips() -> void:
 		CustomTopBarTooltipManager.wire_toggle_dropdown_menu_tooltips(act_toggle, true)
 	CustomTopBarTooltipManager.strip_native_tooltips_recursive(self)
 	var pairs: Array = [
-		[_btn_connectome, "Circuits, areas, memory, and classifiers"],
+		[_btn_connectome, "Circuits, areas, and memory"],
 		[_btn_brain_regions_list, "View all circuits"],
 		[_btn_brain_regions_add, "Add a new circuit"],
 		[_btn_interconnect_list, "View interconnect areas"],
 		[_btn_interconnect_add, "Add interconnect area"],
 		[_btn_memory_list, "View memory areas"],
 		[_btn_memory_add, "Add memory area"],
-		[_btn_classifier_list, "View classifiers"],
-		[_btn_classifier_add, "Add classifier"],
 		[_btn_inputs_list, "View all input areas"],
 		[_btn_inputs_add, "Add input area"],
 		[_btn_outputs_list, "View all output areas"],
@@ -289,8 +293,6 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer"))
 	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/ClassifierRow/HBoxContainer"))
-	list_hbox_paths.append(NodePath("ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/ClassifierRow/HBoxContainer/ClassifierList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer"))
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer"))
@@ -313,7 +315,6 @@ func _apply_shared_combo_spacing_tokens() -> void:
 		%BrainRegionsRow,
 		%InterconnectAreasRow,
 		%MemoryAreasRow,
-		%ClassifierRow,
 		%InputsRow,
 		%OutputsRow,
 	]
@@ -343,24 +344,29 @@ func _on_theme_changed(new_theme: Theme) -> void:
 	_style_connectome_like_icon_buttons()
 
 
-## Current top-bar scale by usage context. The root bar matches the icon strip at full size.
-func _get_context_size_scale() -> float:
-	if _global_topbar_mode:
-		return 1.0
-	return SIZE_SCALE_3D if _is_3d_context else SIZE_SCALE_2D
-
 func _apply_theme_sizes_recursive(node: Node) -> void:
-	var top_bar_size := BV.UI.get_minimum_size_from_loaded_theme(ComboButtonStripStyler.TOP_BAR_CONTROL_THEME)
-	var scaled_size := Vector2(top_bar_size) * _get_context_size_scale()
-	_apply_uniform_control_size(node, scaled_size)
+	var theme_button_size := Vector2(BV.UI.get_minimum_size_from_loaded_theme(ComboButtonStripStyler.TOP_BAR_CONTROL_THEME))
+	_apply_uniform_control_size(node, theme_button_size)
 
 
-## Icons and plus buttons share the icon-strip height so every top-bar segment is one size.
-func _apply_uniform_control_size(node: Node, control_size: Vector2) -> void:
+## Buttons use TextureButton_TopBar from the loaded theme. Category icons are a fraction of that size.
+func _apply_uniform_control_size(node: Node, theme_button_size: Vector2) -> void:
 	for child in node.get_children():
-		if child is TextureButton or child is TextureRect:
-			(child as Control).custom_minimum_size = control_size
-		_apply_uniform_control_size(child, control_size)
+		if child is TextureRect and bool(child.get_meta("category_icon", false)):
+			var icon := child as Control
+			var full_bleed := bool(child.get_meta("full_bleed_icon", false))
+			icon.custom_minimum_size = COMBO_STYLER.category_icon_size(theme_button_size, full_bleed)
+			icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		elif child is TextureButton:
+			var button := child as TextureButton
+			button.theme_type_variation = COMBO_STYLER.TOP_BAR_CONTROL_THEME
+			button.custom_minimum_size = theme_button_size
+			button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		elif child is TextureRect:
+			(child as Control).custom_minimum_size = theme_button_size
+		_apply_uniform_control_size(child, theme_button_size)
 
 ## Paint and size Elements like the inspector / camera icon buttons beside it.
 func _style_connectome_like_icon_buttons() -> void:
@@ -440,9 +446,9 @@ func _neighbor_icon_button_height() -> float:
 func _apply_rearrange_button_size() -> void:
 	if _btn_rearrange_layout == null:
 		return
-	var fallback: StringName = StringName(_btn_rearrange_layout.theme_type_variation) if String(_btn_rearrange_layout.theme_type_variation) != "" else &"TextureButton"
-	var base_size := BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(_btn_rearrange_layout, fallback)
-	_btn_rearrange_layout.custom_minimum_size = base_size * REARRANGE_SIZE_SCALE * _get_context_size_scale()
+	_btn_rearrange_layout.theme_type_variation = COMBO_STYLER.TOP_BAR_CONTROL_THEME
+	var base_size := Vector2(BV.UI.get_minimum_size_from_loaded_theme(COMBO_STYLER.TOP_BAR_CONTROL_THEME))
+	_btn_rearrange_layout.custom_minimum_size = base_size * REARRANGE_SIZE_SCALE
 
 func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> void:
 	if _is_3d_context and _bm_scene == bm_scene and context_region == region and not _global_topbar_mode:
@@ -533,8 +539,6 @@ func _set_all_buttons_disabled(disabled: bool) -> void:
 	_btn_interconnect_add.disabled = disabled
 	_btn_memory_list.disabled = disabled
 	_btn_memory_add.disabled = disabled
-	_btn_classifier_list.disabled = disabled
-	_btn_classifier_add.disabled = disabled
 	_btn_rearrange_layout.disabled = disabled
 	_btn_inputs_list.disabled = disabled
 	_btn_inputs_add.disabled = disabled
@@ -604,12 +608,136 @@ func _on_monitor_camera_animations_pressed() -> void:
 		BV.WM.spawn_camera_animations(_bm_scene)
 
 
+## Root bar: Circuits, Inputs, and Outputs titles open their lists on hover. Tab rows keep the list button.
+func _wire_root_category_title_hover() -> void:
+	_circuits_title.mouse_entered.connect(_on_root_category_title_entered.bind(_circuits_title, ROOT_LIST_CIRCUITS, _open_brain_regions))
+	_circuits_title.mouse_exited.connect(_on_root_category_title_exited.bind(_circuits_title))
+	_circuits_title.gui_input.connect(_on_circuits_title_gui_input)
+	_btn_inputs_list.mouse_entered.connect(_on_root_category_title_entered.bind(_btn_inputs_list, ROOT_LIST_INPUTS, _open_inputs))
+	_btn_inputs_list.mouse_exited.connect(_on_root_category_title_exited.bind(_btn_inputs_list))
+	_btn_outputs_list.mouse_entered.connect(_on_root_category_title_entered.bind(_btn_outputs_list, ROOT_LIST_OUTPUTS, _open_outputs))
+	_btn_outputs_list.mouse_exited.connect(_on_root_category_title_exited.bind(_btn_outputs_list))
+
+
+## The Circuits title accepts the pointer only on the root bar, where it replaces the list button.
+func _apply_root_category_title_hover() -> void:
+	if _circuits_title == null:
+		return
+	if _global_topbar_mode:
+		_circuits_title.mouse_filter = Control.MOUSE_FILTER_STOP
+		_circuits_title.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		return
+	_circuits_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_circuits_title.mouse_default_cursor_shape = Control.CURSOR_ARROW
+
+
+func _on_root_category_title_entered(title: Control, list_id: StringName, opener: Callable) -> void:
+	if not should_open_root_category_list_on_hover(_global_topbar_mode, _force_disabled_override):
+		return
+	_root_hover_list_anchor = title
+	_cancel_root_list_hover_close()
+	_ensure_list_popup_hover_hooks()
+	if _list_popup != null and _list_popup.visible and _root_open_list_id == list_id:
+		return
+	_root_open_list_id = list_id
+	opener.call()
+
+
+func _on_root_category_title_exited(title: Control) -> void:
+	if _root_hover_list_anchor != title:
+		return
+	_schedule_root_list_hover_close()
+
+
+## Click still opens Circuits after the root-bar list button is hidden.
+func _on_circuits_title_gui_input(event: InputEvent) -> void:
+	if not should_open_root_category_list_on_hover(_global_topbar_mode, _force_disabled_override):
+		return
+	if not event is InputEventMouseButton:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
+		return
+	_root_hover_list_anchor = _circuits_title
+	_root_open_list_id = ROOT_LIST_CIRCUITS
+	_open_brain_regions()
+	_circuits_title.accept_event()
+
+
+func _ensure_list_popup_hover_hooks() -> void:
+	_ensure_list_popup()
+	if _list_popup.mouse_entered.is_connected(_cancel_root_list_hover_close):
+		return
+	_list_popup.mouse_entered.connect(_cancel_root_list_hover_close)
+	_list_popup.mouse_exited.connect(_schedule_root_list_hover_close)
+
+
+func _ensure_root_list_hover_close_timer() -> Timer:
+	if _root_list_hover_close_timer != null:
+		return _root_list_hover_close_timer
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.timeout.connect(_close_root_list_if_pointer_left)
+	add_child(timer)
+	_root_list_hover_close_timer = timer
+	return timer
+
+
+func _schedule_root_list_hover_close() -> void:
+	if not _global_topbar_mode:
+		return
+	if _list_popup == null or not _list_popup.visible:
+		return
+	_ensure_root_list_hover_close_timer().start(ELEMENTS_MENU_HOVER_CLOSE_DELAY_SEC)
+
+
+func _cancel_root_list_hover_close() -> void:
+	if _root_list_hover_close_timer != null:
+		_root_list_hover_close_timer.stop()
+
+
+func _close_root_list_if_pointer_left() -> void:
+	if not _global_topbar_mode:
+		return
+	if _list_popup == null or not _list_popup.visible:
+		return
+	if _is_pointer_over_control(_root_hover_list_anchor) or _is_pointer_over_list_popup():
+		return
+	_list_popup.hide()
+	_root_open_list_id = &""
+	_root_hover_list_anchor = null
+
+
+func _is_pointer_over_control(control: Control) -> bool:
+	if control == null or not is_instance_valid(control):
+		return false
+	var vp := control.get_viewport()
+	if vp == null:
+		return false
+	var hovered: Control = vp.gui_get_hovered_control()
+	if hovered == null:
+		return false
+	return control == hovered or control.is_ancestor_of(hovered)
+
+
+func _is_pointer_over_list_popup() -> bool:
+	if _list_popup == null or not _list_popup.visible:
+		return false
+	var tree := get_tree()
+	if tree != null and tree.root != null:
+		var root_hovered: Control = tree.root.gui_get_hovered_control()
+		if root_hovered != null and (_list_popup == root_hovered or _list_popup.is_ancestor_of(root_hovered)):
+			return true
+	return _list_popup.get_visible_rect().has_point(_list_popup.get_mouse_position())
+
+
 ## Open circuits dropdown for the current region.
 func _open_brain_regions() -> void:
 	if context_region == null and not _global_topbar_mode:
 		return
 	var items := _build_region_items()
-	_open_dropdown_for_items(_btn_brain_regions_list, items, "Filter circuits...", func(region: BrainRegion):
+	var anchor: Control = _circuits_title if _global_topbar_mode else _btn_brain_regions_list
+	_open_dropdown_for_items(anchor, items, "Filter circuits...", func(region: BrainRegion):
 		_focus_region(region)
 	)
 
@@ -643,48 +771,6 @@ func _open_memory_areas() -> void:
 	_open_dropdown_for_items(_btn_memory_list, items, "Filter memory areas...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
 	)
-
-func _open_classifier_areas() -> void:
-	if context_region == null and not _global_topbar_mode:
-		return
-	var items := _build_classifier_items()
-	_open_dropdown_for_items(_btn_classifier_list, items, "Filter classifiers...", func(classifier: GenomeClassifier):
-		_focus_classifier(classifier)
-	)
-
-func _add_classifier() -> void:
-	var region: BrainRegion = context_region
-	if region == null and _cb_scene != null:
-		region = _cb_scene.representing_region
-	if region == null and _bm_scene != null:
-		region = _bm_scene.representing_region
-	if region == null:
-		var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup(
-			"ERROR",
-			"Open a Circuit Builder or Brain Monitor tab, then add the classifier in that region.",
-			"OK"
-		)
-		BV.WM.spawn_popup(popup_definition)
-		return
-	_close_connectome_menu()
-	BV.WM.spawn_create_classifier_for_region(region, null)
-
-func _build_classifier_items() -> Array[Dictionary]:
-	var items: Array[Dictionary] = []
-	if context_region == null:
-		return items
-	var region_id: String = String(context_region.region_ID)
-	for classifier in FeagiCore.feagi_local_cache.classifiers.values():
-		if not classifier is GenomeClassifier:
-			continue
-		var typed: GenomeClassifier = classifier as GenomeClassifier
-		if typed.current_parent_region == null or String(typed.current_parent_region.region_ID) != region_id:
-			continue
-		items.append({"label": String(typed.friendly_name), "payload": typed})
-	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return String(a.get("label", "")).to_lower() < String(b.get("label", "")).to_lower()
-	)
-	return items
 
 ## Open input areas dropdown for the current region.
 func _open_inputs() -> void:
@@ -793,7 +879,8 @@ func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_l
 	if _btn_connectome:
 		_btn_connectome.visible = show_connectome
 	if _btn_brain_regions_list:
-		_btn_brain_regions_list.visible = true
+		_btn_brain_regions_list.visible = should_show_circuits_list_button_on_strip(_global_topbar_mode)
+	_apply_root_category_title_hover()
 	if _btn_brain_regions_add:
 		_btn_brain_regions_add.visible = true
 	if _btn_interconnect_list:
@@ -804,10 +891,6 @@ func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_l
 		_btn_memory_list.visible = true
 	if _btn_memory_add:
 		_btn_memory_add.visible = true
-	if _btn_classifier_list:
-		_btn_classifier_list.visible = true
-	if _btn_classifier_add:
-		_btn_classifier_add.visible = true
 	if _btn_rearrange_layout:
 		_btn_rearrange_layout.visible = show_rearrange_layout
 	# Inputs/Outputs remain on the strip (root / global top bar).
@@ -837,13 +920,15 @@ func _apply_hover_visual(button: Control, hovered: bool) -> void:
 	button.scale = HOVER_SCALE if hovered else NORMAL_SCALE
 
 
-## Plus is a sibling of the list button. Wire its hover pop independently.
+## List and + are icon buttons. Wire their hover pop independently of the row title.
 func _wire_combo_add_button_hovers() -> void:
 	var add_buttons: Array[TextureButton] = [
+		_btn_brain_regions_list,
 		_btn_brain_regions_add,
+		_btn_interconnect_list,
 		_btn_interconnect_add,
+		_btn_memory_list,
 		_btn_memory_add,
-		_btn_classifier_add,
 		_btn_inputs_add,
 		_btn_outputs_add,
 	]
@@ -886,8 +971,8 @@ func _ensure_list_popup() -> void:
 	add_child(_list_popup)
 
 
-## Stretch each hamburger row to the menu width. List stays icon+text; the gap
-## absorbs leftover space so + sits on the shared plate at the right edge.
+## Stretch each Elements row to the menu width. The title stays icon+text.
+## The gap absorbs leftover space so the list button and + sit at the right edge.
 static func align_connectome_menu_add_buttons(menu_items: VBoxContainer) -> void:
 	if menu_items == null:
 		return
@@ -931,8 +1016,6 @@ func _set_connectome_menu_row_focus_none() -> void:
 		_btn_interconnect_add,
 		_btn_memory_list,
 		_btn_memory_add,
-		_btn_classifier_list,
-		_btn_classifier_add,
 	]
 	for row in rows:
 		if row != null:
@@ -1007,20 +1090,13 @@ func _open_connectome_menu() -> void:
 func _sync_connectome_menu_hover() -> void:
 	if not is_connectome_menu_open():
 		return
-	var rows: Array[BasePanelContainerButton] = [
-		_btn_brain_regions_list,
-		_btn_interconnect_list,
-		_btn_memory_list,
-		_btn_classifier_list,
-	]
-	for row in rows:
-		if row != null:
-			row.sync_hover_to_pointer()
 	var plus_buttons: Array[TextureButton] = [
+		_btn_brain_regions_list,
 		_btn_brain_regions_add,
+		_btn_interconnect_list,
 		_btn_interconnect_add,
+		_btn_memory_list,
 		_btn_memory_add,
-		_btn_classifier_add,
 	]
 	for plus in plus_buttons:
 		if plus == null:
@@ -1126,7 +1202,10 @@ func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], 
 	if is_connectome_menu_open() or _is_connectome_menu_row(anchor_button):
 		anchor = _connectome_action_anchor()
 	_ensure_list_popup()
-	_list_popup.open_with_items(anchor, items, selection_handler, placeholder_text)
+	if _global_topbar_mode:
+		_ensure_list_popup_hover_hooks()
+	var overlap := ELEMENTS_MENU_ANCHOR_OVERLAP_PX if _global_topbar_mode else 0
+	_list_popup.open_with_items(anchor, items, selection_handler, placeholder_text, overlap)
 
 
 func _is_connectome_menu_row(control: Control) -> bool:
@@ -1227,22 +1306,6 @@ func _focus_region(region: BrainRegion) -> void:
 		var active_cb := _get_active_cb_from_ui()
 		if active_cb:
 			active_cb.focus_on_region(region)
-
-func _focus_classifier(classifier: GenomeClassifier) -> void:
-	if classifier == null:
-		return
-	if (not _is_3d_context) and _cb_scene:
-		_cb_scene.focus_on_classifier(classifier)
-		return
-	if not _is_3d_context:
-		var active_cb := _get_active_cb_from_ui()
-		if active_cb:
-			active_cb.focus_on_classifier(classifier)
-			return
-	var stamp: AbstractCorticalArea = classifier.get_stamp_area()
-	if stamp != null:
-		_focus_cortical(stamp)
-
 
 func _focus_cortical(area: AbstractCorticalArea) -> void:
 	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
