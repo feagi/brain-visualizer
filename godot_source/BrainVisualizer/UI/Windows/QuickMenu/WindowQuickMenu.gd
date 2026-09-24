@@ -302,6 +302,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 				delete_button.tooltip_text = mix_reason if not mix_reason.is_empty() else "One or more of the selected objects cannot be deleted."
 			
 	# Position after mode-specific visibility/layout changes so vertical distance is consistent.
+	_fit_toolbar_to_one_row()
 	call_deferred("_reposition_near_mouse_after_layout")
 
 
@@ -891,3 +892,15 @@ func _refresh_multi_cortical_controls() -> void:
 				if not rfr_reason.is_empty():
 					break
 		delete_button.tooltip_text = rfr_reason if not rfr_reason.is_empty() else "One or more of the selected areas cannot be deleted."
+	_fit_toolbar_to_one_row()
+
+
+## Visible actions stay on one row. Hidden actions do not reserve a cell.
+func _fit_toolbar_to_one_row() -> void:
+	var grid: GridContainer = _window_internals.get_node("ToolbarGrid") as GridContainer
+	var visible_count: int = 0
+	for child in grid.get_children():
+		var control := child as Control
+		if control != null and control.visible:
+			visible_count += 1
+	grid.columns = maxi(visible_count, 1)

@@ -26,6 +26,7 @@ The Circuit Builder uses a 2D camera for navigating the node graph.
 **Mouse:**
 - **Scroll Wheel Up**: Zoom in (get closer)
 - **Scroll Wheel Down**: Zoom out (see more)
+- **Shift + Scroll Wheel or trackpad scroll**: Move closer or farther at double speed
 
 **Keyboard:**
 - **Page Up**: Zoom in
@@ -121,6 +122,7 @@ Move camera closer or farther:
 **Mouse:**
 - **Scroll Wheel Up**: Move forward (zoom in)
 - **Scroll Wheel Down**: Move backward (zoom out)
+- **Shift + Scroll Wheel or trackpad scroll**: Move closer or farther at double speed
 - **Right Mouse Drag**: Drag up to zoom in, down to zoom out
 
 **Keyboard:**

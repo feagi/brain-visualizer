@@ -124,18 +124,30 @@ Navigate through region hierarchy:
 - **Escape** or moving the mouse out of the viewport cancels an in-progress box
 
 **Arrange (multi-area quick menu):**
-- The **Arrange** button opens a menu with **Align** and **Distribute**
-- **Align X, Y, or Z** moves every selected area so that axis matches the lowest value in the selection
-- **Distribute X, Y, or Z** keeps the outermost areas fixed and spaces the others evenly along that axis
-- Distribute needs at least 3 areas. Every selected area must be in the same circuit
+- Select at least 2 cortical areas in the same circuit. The quick menu shows **Arrange**
+- Hover or click **Arrange** to open **Align** and **Distribute**. Each has **X**, **Y**, and **Z**
+- **Align** moves every selected area so the chosen axis matches the lowest value in the selection. The other two axes stay put
+- **Distribute** needs at least 3 areas. The outermost areas stay fixed, and the areas between them are spaced evenly on that axis. Spacing uses whole voxels, so neighboring gaps differ by at most one
+- Reserved core areas cannot be arranged. If the selection mixes circuits, or includes a reserved core area, Arrange stays disabled
+- The quick menu stays open after a successful arrange
+- Arrange is one undo step
 
-**Undo position and area deletes:**
-- **Ctrl+Z** (Cmd+Z on macOS) reverses the last saved position change or cortical-area delete
-- **Shift+Ctrl+Z** (Shift+Cmd+Z) applies it again
-- One drag, Arrange, circuit-builder move, layout save, or area delete is one step
-- Undoing a delete creates the area again and restores its properties and mappings. The new area receives a new id
-- Circuit, classifier, core, and interconnect deletes are not undone
+**Undo and redo:**
+- **Ctrl+Z** (Cmd+Z on macOS) reverses the last saved step
+- **Shift+Ctrl+Z** (Shift+Cmd+Z) applies that step again
+- You can step backward through several changes, then forward again
+- One step is one 3D drag, Arrange, Circuit Builder move, automatic layout, circuit position edit, area position edit, or area delete
+- A text field keeps its own undo. Ctrl+Z there does not change the genome
+- Ctrl+Z is ignored while a 3D move is still being dragged
 - The history lasts for this genome session and clears when another genome loads
+
+**Undoing an area delete:**
+- The area is created again with its properties and its mappings in and out
+- FEAGI assigns a new id. A memory area's replay target is created again from those mappings
+- Learned synapse weights are not restored
+- One multi-select delete is one step. Only the areas FEAGI deleted are in that step
+- Custom areas, memory areas, and input/output areas can be restored. Input and output areas need their device type to still be available
+- Circuit deletes, classifier deletes, core-area deletes, and interconnect deletes are not undone
 
 ### Clear Selection
 
@@ -351,6 +363,8 @@ See [Split View](split_view.md) for more details.
 - **Arrow Keys**: Pan (2D) or Rotate (3D)
 - **Page Up/Down**: Zoom in/out
 - **Escape**: Clear selection (cancels an in-progress box select, then clears area and voxel selection in Brain Monitor)
+- **Ctrl+Z** (Cmd+Z on macOS): Undo the last saved move or area delete
+- **Shift+Ctrl+Z** (Shift+Cmd+Z): Redo that step
 
 ### Brain Monitor Selection Shortcuts
 

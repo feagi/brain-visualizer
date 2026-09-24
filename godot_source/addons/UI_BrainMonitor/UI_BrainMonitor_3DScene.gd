@@ -829,8 +829,17 @@ func _compute_world_aabb(node: Node) -> AABB:
 			return AABB(Vector3.ZERO, Vector3.ZERO)
 	return aabb
 
+var _scroll_fast_modifier_held: bool = false
+
+
+## Shift held in the main window. The 3D view's own input state does not see that key.
+func is_scroll_fast_modifier_held() -> bool:
+	return _scroll_fast_modifier_held
+
+
 ## While the intro is running, keep the camera aimed at the scene center as it moves
 func _process(delta: float) -> void:
+	_scroll_fast_modifier_held = Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_SHIFT)
 	_sync_tab_menu_visibility()
 	if _startup_intro_animating and _pancake_cam != null:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)

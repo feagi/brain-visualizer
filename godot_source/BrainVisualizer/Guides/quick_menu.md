@@ -247,15 +247,17 @@ See [Brain Circuits](brain_circuits.md) for more details.
 
 **Result:**
 - Cortical area removed from genome
-- All connections to/from it deleted
-- Cannot be undone
+- Mappings to and from it are removed with it
+- **Ctrl+Z** (Cmd+Z on macOS) puts the area and those mappings back. The restored area gets a new id
+- Learned synapse weights are not restored
+- Core areas, interconnect areas, classifiers, and circuits are not restored this way
 
 **Use When:**
 - Removing unused areas
 - Simplifying circuits
 - Major restructuring
 
-**Caution:** This is permanent. Consider disconnecting first to test impact.
+**Caution:** Confirm before deleting. Undo is available for this genome session only.
 
 ## Quick Menu for Brain Circuits
 
@@ -353,16 +355,24 @@ When multiple cortical areas are selected:
 
 **Available Operations:**
 - **Details**: View properties of all selected
+- **Arrange**: Align or distribute the selection on X, Y, or Z. See [Navigation Basics](navigation.md)
 - **Add to Region**: Move all to same region
-- **Delete**: Remove all selected areas
+- **Delete**: Remove all selected areas. One delete is one **Ctrl+Z** step
+
+**Arrange:**
+- Shown when at least 2 selected areas are in the same circuit
+- **Align X, Y, or Z** snaps that axis to the lowest value in the selection
+- **Distribute X, Y, or Z** needs at least 3 areas, keeps the outermost areas fixed, and spaces the others evenly
+- Disabled when the selection includes a reserved core area or areas from more than one circuit
+- The menu stays open after Arrange runs
 
 **Unavailable:**
-- Operations requiring single target
+- Operations requiring a single target
 - Type-specific operations
 
 **Use When:**
 - Bulk operations needed
-- Reorganizing multiple areas
+- Lining areas up or spacing them in 3D
 - Cleaning up circuits
 
 ## Quick Menu in Empty Space

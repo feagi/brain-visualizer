@@ -119,7 +119,9 @@ Regions organize cortical areas spatially:
 - A Shift+click that does not drag still toggles voxels (see below)
 - **Escape** cancels an in-progress box; leaving the viewport also cancels it
 - Box select replaces the current area highlight set and opens the shared multi-edit quick menu
+- With 2 or more areas from the same circuit selected, that menu includes **Arrange** (Align and Distribute on X, Y, or Z)
 - Useful for comparing multiple areas and bulk operations
+- **Ctrl+Z** (Cmd+Z on macOS) undoes the last saved 3D move, Arrange, or area delete. **Shift+Ctrl+Z** (Shift+Cmd+Z) redoes it. See [Navigation Basics](navigation.md)
 
 **Plane Focus Shortcuts:**
 - **Ctrl + 1 + Click**: Focus clicked cortical area on XY plane
@@ -153,7 +155,7 @@ See [Navigation Basics](navigation.md) and [Navigation Action Reference](navigat
 - Resize 3D - Activate 3D gizmo for resizing
 - Add to Region - Move to different region
 - Reset - Clear neural state
-- Delete - Remove area
+- Delete - Remove area (Ctrl+Z restores custom, memory, and input/output areas)
 
 See [Quick Menu](quick_menu.md) for complete details.
 

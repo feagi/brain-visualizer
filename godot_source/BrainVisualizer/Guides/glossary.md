@@ -18,6 +18,14 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Stays disabled until changes are made
 - See also: [Cortical Area Details](#c)
 
+**Arrange**
+- Quick Menu action for 2 or more cortical areas in the same circuit
+- **Align** snaps the chosen axis (X, Y, or Z) to the lowest value in the selection
+- **Distribute** needs 3 or more areas, keeps the outermost areas fixed, and spaces the others evenly on that axis
+- Reserved core areas cannot be arranged
+- One Arrange is one undo step
+- See also: [Quick Menu](#q), [Undo](#u)
+
 ---
 
 ## B
@@ -301,7 +309,7 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Context-sensitive right-click menu in Brain Visualizer
 - Shows different options based on what's selected
 - Provides quick access to common operations
-- Options include: Details, Quick Connect, Clone, Delete, etc.
+- Options include: Details, Quick Connect, Clone, Arrange, Delete, etc.
 
 ---
 
@@ -367,6 +375,19 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Larger values = longer temporal window
 - Affects sequence learning capacity
 - Measured in bursts
+
+---
+
+## U
+
+**Undo**
+- **Ctrl+Z** (Cmd+Z on macOS) reverses the last saved move or cortical-area delete
+- **Shift+Ctrl+Z** (Shift+Cmd+Z) applies that step again
+- Covers 3D drags, Arrange, Circuit Builder moves, layout, and area position edits
+- Undoing a delete recreates the area and its mappings. The area gets a new id. Learned synapse weights are not restored
+- Circuit, classifier, core, and interconnect deletes are not undone
+- Cleared when another genome loads
+- See also: [Arrange](#a), [Quick Menu](#q)
 
 ---
 

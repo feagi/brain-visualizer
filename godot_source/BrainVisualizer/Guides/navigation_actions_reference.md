@@ -25,6 +25,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Pan camera** -> Left Drag
 - **Rotate camera** -> Right Drag
 - **Zoom camera** -> Mouse Wheel Up/Down
+- **Zoom camera at double speed** -> Shift + mouse wheel, or Shift + trackpad scroll
 - **Move camera in X/Z plane** -> W/A/S/D or Arrow Keys
 - **Move camera faster** -> Hold Shift while moving (speed boost)
 - **Reset camera framing** -> R (when mouse is over that Brain Monitor viewport)
@@ -57,6 +58,15 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Stop recording and copy fired voxels JSON** -> Area Firing Recorder -> Stop + Copy
 - **Paste clipboard voxels into hovered cortical area** -> Hover target area, then Ctrl + V (Cmd + V on macOS)
 - **Paste clipboard voxels into Quick Connect mapping step** -> Quick Connect Neuron window -> Paste button on source/destination side
+
+## Arrange, Undo, and Redo
+
+- **Align selected areas on X, Y, or Z** -> Multi-select 2 or more areas in one circuit -> Quick Menu -> Arrange -> Align
+- **Distribute selected areas on X, Y, or Z** -> Multi-select 3 or more areas in one circuit -> Quick Menu -> Arrange -> Distribute
+- **Undo last saved move or area delete** -> Ctrl+Z (Cmd+Z on macOS)
+- **Redo that step** -> Shift+Ctrl+Z (Shift+Cmd+Z)
+
+Align snaps the chosen axis to the lowest value in the selection. Distribute keeps the outermost areas fixed. Reserved core areas cannot be arranged. Text fields keep their own undo. History clears when another genome loads. See [Navigation Basics](navigation.md).
 
 ## Manipulation Session Shortcuts (when gizmo manipulation is active)
 

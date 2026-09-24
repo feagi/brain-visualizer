@@ -87,7 +87,7 @@ columns = 6
 alignment = 1
 
 [node name="Details" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "View Cortical Area Properties"
 focus_mode = 0
@@ -100,7 +100,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="Open3DTab" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Open Circuit in 3D Tab"
 focus_mode = 0
@@ -113,7 +113,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="QuickConnect" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Quick Connect: Mapping two areas together."
 focus_mode = 0
@@ -126,7 +126,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="QuickConnect_CA_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Map entire cortical area to a specific neuron block."
 focus_mode = 0
@@ -139,7 +139,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="QuickConnect_N_CA" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Map specific neuron block to an entire cortical area."
 focus_mode = 0
@@ -152,7 +152,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="QuickConnect_N_N" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Map a specific neuron block to another."
 focus_mode = 0
@@ -165,7 +165,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="AddToRegion" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add to a circuit..."
 focus_mode = 0
@@ -178,7 +178,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="Clone" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Clone Cortical Area..."
 focus_mode = 0
@@ -191,7 +191,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="Relocate2D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Relocate selected areas (2D)"
 focus_mode = 0
@@ -204,7 +204,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="Move3D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Move Cortical Area (3D)"
 focus_mode = 0
@@ -217,7 +217,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="Resize3D" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Resize Cortical Area (3D)"
 focus_mode = 0
@@ -231,7 +231,7 @@ stretch_mode = 5
 
 [node name="Arrange" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
 visible = false
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Arrange"
 focus_mode = 0
@@ -245,7 +245,7 @@ stretch_mode = 5
 script = ExtResource("43_arrange")
 
 [node name="SetupIOPU" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Open IPU/OPU configuration"
 focus_mode = 0
@@ -258,7 +258,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="Reset" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Reset selected cortical areas to default values"
 focus_mode = 0
@@ -271,7 +271,7 @@ ignore_texture_size = true
 stretch_mode = 5
 
 [node name="Delete" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/ToolbarGrid"]
-custom_minimum_size = Vector2(40, 40)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Delete this Cortical Area..."
 focus_mode = 0

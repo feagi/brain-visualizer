@@ -99,8 +99,10 @@ func _build_action_row(action: StringName, title: String, bucket: Array[Button])
 	row.add_theme_constant_override("separation", 6)
 	var label := Label.new()
 	label.text = title
-	label.custom_minimum_size = Vector2(120, 0)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(label)
 	for axis in [SelectionArrange.Axis.X, SelectionArrange.Axis.Y, SelectionArrange.Axis.Z]:
 		var button := Button.new()

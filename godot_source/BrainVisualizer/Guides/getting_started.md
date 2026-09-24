@@ -118,9 +118,10 @@ Right-click any cortical area or region to open the **Quick Menu**, which provid
 - **Move/Relocate**: Reposition in 2D or 3D
 - **Add to Region**: Move into a different brain circuit
 - **Reset**: Clear neural state
-- **Delete**: Remove the object
+- **Delete**: Remove the object. A cortical-area delete can be reversed with **Ctrl+Z** (Cmd+Z on macOS) until another genome loads
+- **Arrange**: With 2 or more areas in the same circuit selected, align or distribute them on X, Y, or Z
 
-See [Quick Menu](quick_menu.md) for complete details.
+See [Quick Menu](quick_menu.md) and [Navigation Basics](navigation.md) for complete details.
 
 ## Viewing Neural Activity
 

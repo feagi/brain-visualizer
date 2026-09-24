@@ -18,6 +18,7 @@ const TANK_CAMERA_MOVEMENT_SPEED: float =  2.0
 const TANK_CAMERA_PAN_SPEED: float = 0.1
 const TANK_CAMERA_ROTATION_SPEED: float = 0.001
 const TANK_CAMERA_FAST_MULTIPLIER: float = 3.0
+const TANK_CAMERA_SCROLL_FAST_MULTIPLIER: float = 2.0
 
 const CAMERA_ANIMATION_NAME: StringName = "CAMERA_PATH"
 const CAMERA_LIBRARY_NAME: StringName = "CAMERA_ANIM_LIB"
@@ -126,14 +127,7 @@ func _unhandled_input(event: InputEvent) -> void:
 						var move: Vector3 = Vector3(event.relative.x * -TANK_CAMERA_PAN_SPEED, event.relative.y * TANK_CAMERA_PAN_SPEED, 0)
 						translate(move)
 				elif event is InputEventMouseButton:
-					var zoom_step: float = TANK_CAMERA_MOVEMENT_SPEED
-					if Input.is_key_pressed(key_tank_fast_camera):
-						zoom_step *= TANK_CAMERA_FAST_MULTIPLIER
-					match event.button_index:
-						MOUSE_BUTTON_WHEEL_DOWN:
-							translate(Vector3(0,0,zoom_step))
-						MOUSE_BUTTON_WHEEL_UP:
-							translate(Vector3(0,0,-zoom_step))
+					_apply_mouse_wheel_zoom(event as InputEventMouseButton)
 
 		# BM Interactions
 		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(event.button_mask)
@@ -266,7 +260,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				pass
 			MODE.TANK:
 				if allow_tank_pan:
-					translate(Vector3(event.delta.x,0, event.delta.y)) # why doesnt this inherit from mouse?
+					_apply_trackpad_scroll(event as InputEventPanGesture)
 
 
 func _process(delta):
@@ -305,6 +299,48 @@ func _process(delta):
 				translate(direction * _fps_velocity * delta * FPS_BOOST_MULTIPLIER)
 			else:
 				translate(direction * _fps_velocity * delta)
+
+## Mouse wheel notches. Shift also accepts the horizontal wheel macOS reports for Shift+scroll.
+func _apply_mouse_wheel_zoom(wheel_event: InputEventMouseButton) -> void:
+	var button := wheel_event.button_index
+	var vertical := button == MOUSE_BUTTON_WHEEL_UP or button == MOUSE_BUTTON_WHEEL_DOWN
+	var horizontal := button == MOUSE_BUTTON_WHEEL_LEFT or button == MOUSE_BUTTON_WHEEL_RIGHT
+	if not vertical and not horizontal:
+		return
+	var fast := _scroll_is_fast(wheel_event)
+	if horizontal and not fast:
+		return
+	var zoom_step: float = TANK_CAMERA_MOVEMENT_SPEED
+	if fast:
+		zoom_step *= TANK_CAMERA_SCROLL_FAST_MULTIPLIER
+	var move_away := button == MOUSE_BUTTON_WHEEL_DOWN or button == MOUSE_BUTTON_WHEEL_RIGHT
+	translate(Vector3(0, 0, zoom_step if move_away else -zoom_step))
+
+
+## Trackpad scroll. Shift keeps the motion close or far and doubles it, including when macOS reports that scroll on X.
+func _apply_trackpad_scroll(pan_event: InputEventPanGesture) -> void:
+	var pan_delta: Vector2 = pan_event.delta
+	if not _scroll_is_fast(pan_event):
+		translate(Vector3(pan_delta.x, 0, pan_delta.y))
+		return
+	var along_view: float = pan_delta.y
+	if absf(pan_delta.x) > absf(pan_delta.y):
+		along_view = pan_delta.x
+	translate(Vector3(0, 0, along_view * TANK_CAMERA_SCROLL_FAST_MULTIPLIER))
+
+
+func _scroll_is_fast(event: InputEvent) -> bool:
+	if event != null and event.shift_pressed:
+		return true
+	if Input.is_key_pressed(KEY_SHIFT) or Input.is_physical_key_pressed(KEY_SHIFT):
+		return true
+	var node: Node = self
+	while node != null:
+		if node.has_method(&"is_scroll_fast_modifier_held"):
+			return bool(node.call(&"is_scroll_fast_modifier_held"))
+		node = node.get_parent()
+	return false
+
 
 func point_camera_at(position_to_look_at: Vector3) -> void:
 	look_at(position_to_look_at, Vector3.UP)

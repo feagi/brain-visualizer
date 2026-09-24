@@ -235,10 +235,11 @@ Some cortical areas can connect to themselves:
 ### Multi-Selection Operations
 
 Select multiple areas to perform bulk operations:
-- Move them together
-- Delete multiple areas at once
+- Move them together. That move is one **Ctrl+Z** step
+- Delete multiple areas at once. That delete is one **Ctrl+Z** step
 - View combined properties
 - Add all to a circuit at once
+- In the 3D quick menu, **Arrange** aligns or distributes areas that share one circuit. See [Navigation Basics](navigation.md)
 
 ## Keyboard Shortcuts
 
@@ -248,7 +249,8 @@ Select multiple areas to perform bulk operations:
 - **Delete**: Delete selected objects (with confirmation)
 - **Ctrl + C**: Copy selected objects
 - **Ctrl + V**: Paste objects
-- **Ctrl + Z**: Undo last operation
+- **Ctrl + Z** (Cmd + Z on macOS): Undo the last saved move or area delete
+- **Shift + Ctrl + Z** (Shift + Cmd + Z): Redo that step
 - **Ctrl + A**: Select all in current view
 
 ## Tips for Effective Circuit Building

@@ -416,7 +416,7 @@ Remove a cortical area permanently:
 2. Review confirmation (shows affected connections)
 3. Confirm deletion
 
-**Warning:** This removes all connections to/from the area. Cannot be undone.
+**Warning:** This removes the mappings to and from the area. **Ctrl+Z** (Cmd+Z on macOS) restores the area and those mappings for this genome session. The restored area gets a new id. Learned synapse weights are not restored. Core areas, interconnect areas, classifiers, and circuits cannot be restored this way.
 
 ## Monitoring Cortical Area Activity
 

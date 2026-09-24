@@ -466,7 +466,7 @@ Permanently removes the cortical area:
    - Deletes all efferent connections (outputs)
    - Clean removal with no orphaned connections
 
-**Cannot be undone** - Exercise caution!
+**Ctrl+Z** (Cmd+Z on macOS) restores a deleted custom, memory, or input/output area and its mappings. The restored area gets a new id. Learned synapse weights are not restored. This lasts for the current genome session.
 
 **Note:** Core areas have this button disabled - they cannot be deleted.
 
