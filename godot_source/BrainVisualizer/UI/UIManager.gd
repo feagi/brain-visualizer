@@ -1883,6 +1883,15 @@ func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> voi
 			]
 	print("UIMANAGER: [SCALE_TRACE] request_switch_to_theme called: requested_scale=%s color=%s caller=%s current_loaded_scale=%s" % [requested_scale, THEME_COLORS.keys()[color], caller_info, _loaded_theme_scale.x])
 
+	var theme_file: Theme = load_theme_resource(requested_scale, color)
+	if theme_file == null:
+		return
+	print("THEME: Loading theme scale %s..." % requested_scale)
+	_load_new_theme(theme_file)
+
+
+## Load a theme file without switching the active UI theme.
+func load_theme_resource(requested_scale: float, color: THEME_COLORS) -> Theme:
 	var file_list: PackedStringArray = DirAccess.get_files_at(THEME_FOLDER)
 	var color_suffix: StringName = "-" + THEME_COLORS.keys()[color] + ".tres"
 	var guessing_file: StringName = ""
@@ -1895,13 +1904,12 @@ func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> voi
 			break
 	if guessing_file == "":
 		push_error("THEME: Unable to find theme file matching scale %s and color %s!" % [requested_scale, THEME_COLORS.keys()[color]])
-		return
+		return null
 	var theme_file: Theme = load(THEME_FOLDER + guessing_file)
 	if theme_file == null:
 		push_error("THEME:  Found theme file %s but unable to parse file as a theme!" % guessing_file)
-		return
-	print("THEME: Loading theme %s..." % guessing_file)
-	_load_new_theme(theme_file)
+		return null
+	return theme_file
 
 
 ## Updates the screensize 
@@ -2310,6 +2318,19 @@ static func get_icon_texture_by_ID(cortical_ID: StringName, fallback_is_input: b
 		return  (load(ICON_CUSTOM_INPUT) as Texture)
 	else:
 		return  (load(ICON_CUSTOM_OUTPUT) as Texture)
+
+## Visible brain monitor that is drawing this cortical area, if one exists.
+func find_visible_brain_monitor_with_cortical_area(cortical_id: String) -> UI_BrainMonitor_3DScene:
+	var hidden_match: UI_BrainMonitor_3DScene = null
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm == null or not bm.has_cortical_area_visualization(cortical_id):
+			continue
+		if bm.is_visible_in_tree():
+			return bm
+		if hidden_match == null:
+			hidden_match = bm
+	return hidden_match
+
 
 ## Gets the currently active brain monitor (either main or currently focused tab)
 func get_active_brain_monitor() -> UI_BrainMonitor_3DScene:

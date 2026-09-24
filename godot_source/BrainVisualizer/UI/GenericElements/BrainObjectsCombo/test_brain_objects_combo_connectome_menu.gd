@@ -17,6 +17,8 @@ func _initialize() -> void:
 	failures += _test_elements_button_tooltip_copy()
 	failures += _test_elements_menu_opens_on_hover_for_tab_strips()
 	failures += _test_root_bar_category_lists_open_on_title_hover()
+	failures += _test_tab_strip_is_two_theme_steps_smaller()
+	failures += _test_input_output_lists_share_cortical_focus()
 	failures += _test_circuits_title_does_not_paint_its_own_plate()
 	failures += _test_connectome_inner_hbox_ignores_mouse()
 	failures += _test_scene_keeps_object_combos_inside_menu()
@@ -31,6 +33,7 @@ func _initialize() -> void:
 	failures += _test_category_icons_are_twenty_percent_smaller()
 	failures += _test_keep_menu_open_when_pointer_still_on_trigger()
 	failures += _test_tab_overlay_z_index_matches_circuit_builder()
+	failures += _test_add_buttons_use_texture_hover_without_scale()
 	if failures == 0:
 		print("BrainObjectsCombo Elements menu tests: PASS")
 		quit(0)
@@ -164,6 +167,51 @@ func _test_root_bar_category_lists_open_on_title_hover() -> int:
 		return 1
 	if script.should_open_category_list_on_title_hover(true):
 		push_error("A disabled strip must not open category lists on hover")
+		return 1
+	return 0
+
+
+func _test_tab_strip_is_two_theme_steps_smaller() -> int:
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	if int(script.TAB_STRIP_SCALE_STEPS_SMALLER) != 2:
+		push_error("Circuit Builder and Brain Monitor strips must be two UI sizes smaller")
+		return 1
+	var scales: Array = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+	if not is_equal_approx(float(script.scale_steps_below(scales, 1.0, 2)), 0.5):
+		push_error("UI scale 1.0 must drop tab strips to 0.5")
+		return 1
+	if not is_equal_approx(float(script.scale_steps_below(scales, 1.25, 2)), 0.75):
+		push_error("UI scale 1.25 must drop tab strips to 0.75")
+		return 1
+	if not is_equal_approx(float(script.scale_steps_below(scales, 2.0, 2)), 1.25):
+		push_error("UI scale 2.0 must drop tab strips to 1.25")
+		return 1
+	if not is_equal_approx(float(script.scale_steps_below(scales, 0.5, 2)), 0.5):
+		push_error("The smallest UI scale must stay on the smallest theme")
+		return 1
+	return 0
+
+
+func _test_input_output_lists_share_cortical_focus() -> int:
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	if script.cortical_list_focus_target(true, false, false, true, true) != script.CORTICAL_FOCUS_MONITOR:
+		push_error("A Brain Monitor tab list must focus that monitor")
+		return 1
+	if script.cortical_list_focus_target(false, true, true, true, true) != script.CORTICAL_FOCUS_BUILDER:
+		push_error("A Circuit Builder tab list must focus that builder")
+		return 1
+	if script.cortical_list_focus_target(false, false, true, true, true) != script.CORTICAL_FOCUS_MONITOR:
+		push_error("Root bar input and output lists must frame the monitor that shows the area")
+		return 1
+	if script.cortical_list_focus_target(false, false, false, true, false) != script.CORTICAL_FOCUS_BUILDER:
+		push_error("Root bar lists must focus Circuit Builder when that tab is showing the area")
+		return 1
+	var source := FileAccess.get_file_as_string(COMBO_SCRIPT_PATH)
+	if source.find("_open_inputs") < 0 or source.find("_open_outputs") < 0 or source.find("_open_interconnect_areas") < 0:
+		push_error("Category lists must stay on the shared combo")
+		return 1
+	if source.count("_focus_cortical(area)") < 4:
+		push_error("Inputs, outputs, interconnect, and memory lists must call the same focus function")
 		return 1
 	return 0
 
@@ -484,6 +532,36 @@ func _test_keep_menu_open_when_pointer_still_on_trigger() -> int:
 		return 1
 	if bool(script.should_keep_connectome_menu_open_after_focus_lost(false, false)):
 		push_error("Connectome menu must close when the pointer is on neither the menu nor the button")
+		return 1
+	return 0
+
+
+func _test_add_buttons_use_texture_hover_without_scale() -> int:
+	var source := FileAccess.get_file_as_string(COMBO_SCRIPT_PATH)
+	if source.find("tween_property(plus") >= 0 or source.find("_on_combo_add_hover") >= 0:
+		push_error("Circuits, Inputs, and Outputs + must not scale on hover")
+		return 1
+	var packed: PackedScene = load(COMBO_SCENE_PATH)
+	var state: SceneState = packed.get_state()
+	var plus_names: PackedStringArray = PackedStringArray([
+		"TextureButton_BrainRegions",
+		"TextureButton_Inputs",
+		"TextureButton_Outputs",
+	])
+	var found: int = 0
+	for i in range(state.get_node_count()):
+		if plus_names.find(str(state.get_node_name(i))) < 0:
+			continue
+		found += 1
+		var has_hover_texture := false
+		for p in range(state.get_node_property_count(i)):
+			if str(state.get_node_property_name(i, p)) == "texture_hover":
+				has_hover_texture = true
+		if not has_hover_texture:
+			push_error("Add button must use the same hover icon as Connectivity Rules: %s" % state.get_node_name(i))
+			return 1
+	if found != plus_names.size():
+		push_error("Expected Circuits, Inputs, and Outputs add buttons")
 		return 1
 	return 0
 

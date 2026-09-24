@@ -386,16 +386,32 @@ func _activate_region_frame_click(
 
 ## Focus camera on a cortical area with framing when possible.
 func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
-	if area == null:
+	if area == null or _pancake_cam == null:
 		return
-	var viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(area.cortical_ID, null)
-	if viz != null and is_instance_valid(viz):
-		var aabb := _compute_world_aabb(viz)
-		if aabb.size != Vector3.ZERO:
-			_frame_camera_to_aabb(aabb)
-			return
+	var viz := get_cortical_area_visualization(String(area.cortical_ID))
+	if viz != null:
+		_frame_camera_to_aabb(_aabb_for_cortical_focus(viz))
+		return
 	var center_pos := Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
 	_pancake_cam.teleport_to_look_at_without_changing_angle(center_pos)
+
+
+## World bounds used to place the camera in front of a cortical visualization.
+func _aabb_for_cortical_focus(viz: Node) -> AABB:
+	var aabb := _compute_world_aabb(viz)
+	if aabb.size != Vector3.ZERO and (aabb.size.x + aabb.size.y + aabb.size.z) >= 0.01:
+		return aabb
+	var anchor := _cortical_focus_anchor(viz)
+	return AABB(anchor - Vector3.ONE, Vector3.ONE * 2.0)
+
+
+func _cortical_focus_anchor(viz: Node) -> Vector3:
+	if viz is Node3D:
+		return (viz as Node3D).global_position
+	for child in viz.get_children():
+		if child is Node3D:
+			return (child as Node3D).global_position
+	return Vector3.ZERO
 
 
 ## Focus camera on a brain region with framing when possible.
@@ -4428,7 +4444,7 @@ func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_Cor
 
 ## Check if this brain monitor is currently visualizing a specific cortical area
 func has_cortical_area_visualization(cortical_id: String) -> bool:
-	return cortical_id in _cortical_visualizations_by_ID
+	return get_cortical_area_visualization(cortical_id) != null
 
 
 ## TypedArray.erase / Dictionary.erase validate object arguments; a freed UI_BrainMonitor_CorticalArea

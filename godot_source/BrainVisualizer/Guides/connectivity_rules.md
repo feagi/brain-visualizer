@@ -300,8 +300,8 @@ cells to preview the destination connections for that specific source position.
 
 Access via top toolbar:
 
-1. Click **Connectivity Rules** button (gear icon)
-2. View list of all connectivity rules
+1. Hover **Connectivity Rules** on the root scene top bar
+2. Select a rule, or open the manager and view the list of all connectivity rules
 3. See details:
    - Name
    - Type
@@ -320,7 +320,7 @@ Click a connectivity rule to view:
 
 ### Method 1: Via Connectivity Rule Manager
 
-1. Click **Connectivity Rules** in top toolbar
+1. Open the Connectivity Rules Manager by selecting a rule from the top bar list
 2. Click **+ Create New** button
 3. Choose connectivity rule type
 4. Configure parameters

@@ -100,6 +100,7 @@ The main toolbar provides quick access to essential features:
 
 **Circuits, Interconnect Areas, and Memory Areas (tab bars):**
 - On the Circuit Builder and Brain Monitor tab bars
+- The whole tab bar is two UI sizes smaller than the root scene top bar
 - Hover the title to list existing objects
 - **+** creates one
 - **Classifier** is added from **Add Circuit**. It is an Integrated Circuit. Logic AND and Logic OR stay packaged circuits on that same window.
@@ -113,9 +114,9 @@ The main toolbar provides quick access to essential features:
 
 ![Connectivity Rules Icon](../UI/GenericResources/ButtonIcons/Gear_C.png)
 
-- Opens Connectivity Rules Manager
-- View and edit all connectivity rules
-- Create new connectivity rules
+- Hover the title to list every connectivity rule, the same list as the left side of the Connectivity Rules Manager
+- Select a rule to open the manager with that rule shown
+- **+** creates a new connectivity rule
 
 ### Right Section (Tools and Settings)
 

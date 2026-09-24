@@ -68,6 +68,8 @@ const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
 const CUSTOM_TOOLTIP_TRIGGER_SCRIPT = preload("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTooltipTrigger.gd")
 const REARRANGE_SIZE_SCALE: float = 1.0
+## Circuit Builder and Brain Monitor strips use the UI theme two steps below the root bar.
+const TAB_STRIP_SCALE_STEPS_SMALLER: int = 2
 
 var _list_popup: FilterableListPopup
 var _root_hover_list_anchor: Control = null
@@ -78,11 +80,11 @@ const ROOT_LIST_INTERCONNECT: StringName = &"interconnect"
 const ROOT_LIST_MEMORY: StringName = &"memory"
 const ROOT_LIST_INPUTS: StringName = &"inputs"
 const ROOT_LIST_OUTPUTS: StringName = &"outputs"
+const ROOT_LIST_CONNECTIVITY_RULES: StringName = &"connectivity_rules"
 const TAB_ROW_SPACER_AFTER_CIRCUITS: StringName = &"Spacer_AfterCircuitsRow"
 const TAB_ROW_SPACER_AFTER_INTERCONNECT: StringName = &"Spacer_AfterInterconnectRow"
 ## True after [method apply_custom_topbar_tooltips] succeeded for this instance (TopBar or tab host).
 var _hosted_styled_tooltips_applied: bool = false
-var _plus_hover_tween: Tween = null
 
 ## Ordered ids for the Elements menu rows.
 static func connectome_menu_item_ids() -> PackedStringArray:
@@ -116,6 +118,45 @@ static func should_show_tab_category_rows_on_strip(global_topbar_mode: bool) -> 
 ## Title hover opens the category list on the root bar and on tab bars.
 static func should_open_category_list_on_title_hover(strip_disabled: bool) -> bool:
 	return not strip_disabled
+
+
+const CORTICAL_FOCUS_MONITOR: StringName = &"monitor"
+const CORTICAL_FOCUS_BUILDER: StringName = &"builder"
+const CORTICAL_FOCUS_NONE: StringName = &"none"
+
+
+## Which view receives a list click. Bound tab scenes win. The root bar uses the view that shows the area.
+static func cortical_list_focus_target(
+	has_bound_monitor: bool,
+	has_bound_builder: bool,
+	active_monitor_has_area: bool,
+	has_active_builder: bool,
+	visible_monitor_has_area: bool
+) -> StringName:
+	if has_bound_monitor:
+		return CORTICAL_FOCUS_MONITOR
+	if has_bound_builder:
+		return CORTICAL_FOCUS_BUILDER
+	if active_monitor_has_area:
+		return CORTICAL_FOCUS_MONITOR
+	if has_active_builder:
+		return CORTICAL_FOCUS_BUILDER
+	if visible_monitor_has_area:
+		return CORTICAL_FOCUS_MONITOR
+	return CORTICAL_FOCUS_NONE
+
+
+## Theme step two sizes below [param current_scale]. Stays on the smallest theme when already there.
+static func scale_steps_below(scales: Array, current_scale: float, steps: int) -> float:
+	var index := -1
+	for i in range(scales.size()):
+		if abs(float(scales[i]) - current_scale) < 0.0001:
+			index = i
+			break
+	if index < 0:
+		push_error("UI scale %s is not in the theme scale list" % current_scale)
+		return current_scale
+	return float(scales[maxi(0, index - steps)])
 
 
 ## Scene node names under %MenuItems, same order as [method connectome_menu_item_ids].
@@ -183,7 +224,6 @@ func _ready() -> void:
 	_btn_outputs_list.pressed.connect(_open_outputs)
 	_btn_outputs_add.pressed.connect(_add_output_area)
 	_set_connectome_menu_row_focus_none()
-	_wire_combo_add_button_hovers()
 	align_connectome_menu_add_buttons(_connectome_menu_items)
 	if _activity_visualization_dropdown != null:
 		_activity_visualization_dropdown.activity_mode_changed.connect(_on_monitor_activity_mode_changed)
@@ -310,7 +350,12 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer"))
 	list_hbox_paths.append(NodePath("MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList/HBoxContainer"))
-	COMBO_STYLER.apply_list_hbox_spacing(self, list_hbox_paths)
+	var proportion := _strip_proportion()
+	var content_separation := int(round(float(COMBO_STYLER.INNER_CONTENT_SEPARATION) * proportion))
+	var plate_gap := int(round(float(COMBO_STYLER.COMBO_PLATE_GAP) * proportion))
+	var pad_x := int(round(float(COMBO_STYLER.ROW_PAD_X) * proportion))
+	var pad_y := int(round(float(COMBO_STYLER.ROW_PAD_Y) * proportion))
+	COMBO_STYLER.apply_list_hbox_spacing(self, list_hbox_paths, content_separation)
 	add_theme_constant_override("separation", 0)
 	var buttons_row := $MainGroup/MarginContainer/ButtonsRow as HBoxContainer
 	if buttons_row != null:
@@ -320,8 +365,10 @@ func _apply_shared_combo_spacing_tokens() -> void:
 		NodePath("MainGroup/MarginContainer/ButtonsRow/Spacer_AfterAddInputs"),
 		NodePath("Spacer_BeforeRearrange"),
 		NodePath("Spacer_BeforeMonitorTools"),
+		NodePath(String(TAB_ROW_SPACER_AFTER_CIRCUITS)),
+		NodePath(String(TAB_ROW_SPACER_AFTER_INTERCONNECT)),
 	]
-	COMBO_STYLER.apply_spacer_width(self, plate_gap_paths, COMBO_STYLER.COMBO_PLATE_GAP)
+	COMBO_STYLER.apply_spacer_width(self, plate_gap_paths, plate_gap)
 	if _spacer_after_rearrange != null:
 		_spacer_after_rearrange.custom_minimum_size = Vector2.ZERO
 	var combo_rows: Array[PanelContainer] = [
@@ -332,7 +379,7 @@ func _apply_shared_combo_spacing_tokens() -> void:
 		%OutputsRow,
 	]
 	for combo_row in combo_rows:
-		COMBO_STYLER.apply_combo_row_plate_padding(combo_row)
+		COMBO_STYLER.apply_combo_row_plate_padding(combo_row, pad_x, pad_y)
 
 
 ## Remove per-group wrapper plates so all contexts read as one cohesive strip.
@@ -346,20 +393,52 @@ func _flatten_group_wrapper_panels() -> void:
 	for panel in panels:
 		panel.add_theme_stylebox_override("panel", empty_style)
 
-func _on_theme_changed(new_theme: Theme) -> void:
-	theme = new_theme
+func _on_theme_changed(_new_theme: Theme) -> void:
+	var strip_theme := _theme_for_this_strip()
+	theme = strip_theme
 	if _connectome_menu != null:
-		_connectome_menu.theme = new_theme
-	_apply_theme_sizes_recursive(self)
+		_connectome_menu.theme = strip_theme
+	var button_size := _control_size_from_theme(strip_theme)
+	_apply_uniform_control_size(self, button_size)
 	if _connectome_menu != null:
-		_apply_theme_sizes_recursive(_connectome_menu)
-	_apply_rearrange_button_size()
+		_apply_uniform_control_size(_connectome_menu, button_size)
+	_apply_rearrange_button_size(button_size)
+	_apply_shared_combo_spacing_tokens()
 	_style_connectome_like_icon_buttons()
 
 
-func _apply_theme_sizes_recursive(node: Node) -> void:
-	var theme_button_size := Vector2(BV.UI.get_minimum_size_from_loaded_theme(ComboButtonStripStyler.TOP_BAR_CONTROL_THEME))
-	_apply_uniform_control_size(node, theme_button_size)
+## Root bar uses the active theme. Tab bars use the theme two steps smaller.
+func _theme_for_this_strip() -> Theme:
+	var loaded: Theme = BV.UI.loaded_theme
+	if _global_topbar_mode:
+		return loaded
+	var target_scale := scale_steps_below(BV.UI.possible_UI_scales, BV.UI.loaded_theme_scale.x, TAB_STRIP_SCALE_STEPS_SMALLER)
+	if is_equal_approx(target_scale, BV.UI.loaded_theme_scale.x):
+		return loaded
+	var smaller: Theme = BV.UI.load_theme_resource(target_scale, UIManager.THEME_COLORS.DARK)
+	if smaller == null:
+		push_error("Tab strip could not load UI theme scale %s" % target_scale)
+		return loaded
+	return smaller
+
+
+func _control_size_from_theme(source: Theme) -> Vector2:
+	var element := COMBO_STYLER.TOP_BAR_CONTROL_THEME
+	if source != null and source.has_constant("size_x", element) and source.has_constant("size_y", element):
+		return Vector2(source.get_constant("size_x", element), source.get_constant("size_y", element))
+	push_error("Theme is missing TextureButton_TopBar size")
+	return Vector2(BV.UI.get_minimum_size_from_loaded_theme(element))
+
+
+## 1.0 on the root bar. Tab bars shrink with the two-step-smaller theme.
+func _strip_proportion() -> float:
+	if _global_topbar_mode:
+		return 1.0
+	var loaded_width := float(BV.UI.get_minimum_size_from_loaded_theme(COMBO_STYLER.TOP_BAR_CONTROL_THEME).x)
+	if loaded_width <= 0.0:
+		push_error("Loaded top-bar control width is missing")
+		return 1.0
+	return _control_size_from_theme(_theme_for_this_strip()).x / loaded_width
 
 
 ## Buttons use TextureButton_TopBar from the loaded theme. Category icons are a fraction of that size.
@@ -455,12 +534,11 @@ func _neighbor_icon_button_height() -> float:
 	return 0.0
 
 
-## Make the rearrange button slightly larger than standard.
-func _apply_rearrange_button_size() -> void:
+## Make the rearrange button match the strip's TextureButton_TopBar size.
+func _apply_rearrange_button_size(base_size: Vector2) -> void:
 	if _btn_rearrange_layout == null:
 		return
 	_btn_rearrange_layout.theme_type_variation = COMBO_STYLER.TOP_BAR_CONTROL_THEME
-	var base_size := Vector2(BV.UI.get_minimum_size_from_loaded_theme(COMBO_STYLER.TOP_BAR_CONTROL_THEME))
 	_btn_rearrange_layout.custom_minimum_size = base_size * REARRANGE_SIZE_SCALE
 
 func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> void:
@@ -539,7 +617,8 @@ func _ensure_category_row_spacer(spacer_name: StringName) -> Control:
 		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(spacer)
 	spacer.size_flags_horizontal = 0
-	spacer.custom_minimum_size = Vector2(COMBO_STYLER.COMBO_PLATE_GAP, 0)
+	var gap := int(round(float(COMBO_STYLER.COMBO_PLATE_GAP) * _strip_proportion()))
+	spacer.custom_minimum_size = Vector2(gap, 0)
 	return spacer
 
 
@@ -678,6 +757,16 @@ func _wire_root_category_title_hover() -> void:
 	_btn_inputs_list.mouse_exited.connect(_on_root_category_title_exited.bind(_btn_inputs_list))
 	_btn_outputs_list.mouse_entered.connect(_on_root_category_title_entered.bind(_btn_outputs_list, ROOT_LIST_OUTPUTS, _open_outputs))
 	_btn_outputs_list.mouse_exited.connect(_on_root_category_title_exited.bind(_btn_outputs_list))
+
+
+## Root-bar controls outside this strip, such as Connectivity Rules, use the same hover list.
+func attach_category_list_hover(title: Control, list_id: StringName, opener: Callable) -> void:
+	_wire_category_title(title, list_id, opener)
+
+
+## Open the shared filter list under [param anchor].
+func open_category_list(anchor: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable) -> void:
+	_open_dropdown_for_items(anchor, items, placeholder_text, selection_handler)
 
 
 func _wire_category_title(title: Control, list_id: StringName, opener: Callable) -> void:
@@ -989,49 +1078,6 @@ func _apply_hover_visual(button: Control, hovered: bool) -> void:
 	button.scale = HOVER_SCALE if hovered else NORMAL_SCALE
 
 
-## List and + are icon buttons. Wire their hover pop independently of the row title.
-func _wire_combo_add_button_hovers() -> void:
-	var add_buttons: Array[TextureButton] = [
-		_btn_brain_regions_list,
-		_btn_brain_regions_add,
-		_btn_interconnect_list,
-		_btn_interconnect_add,
-		_btn_memory_list,
-		_btn_memory_add,
-		_btn_inputs_add,
-		_btn_outputs_add,
-	]
-	for plus in add_buttons:
-		_wire_combo_add_button_hover(plus)
-
-
-func _wire_combo_add_button_hover(plus: TextureButton) -> void:
-	if plus == null:
-		return
-	plus.mouse_entered.connect(_on_combo_add_hover.bind(plus, true))
-	plus.mouse_exited.connect(_on_combo_add_hover.bind(plus, false))
-	plus.resized.connect(_on_combo_add_resized.bind(plus))
-	_on_combo_add_resized(plus)
-
-
-func _on_combo_add_resized(plus: Control) -> void:
-	if plus == null:
-		return
-	plus.pivot_offset = plus.size * 0.5
-
-
-func _on_combo_add_hover(plus: Control, hovered: bool) -> void:
-	if plus == null:
-		return
-	plus.pivot_offset = plus.size * 0.5
-	if _plus_hover_tween != null and _plus_hover_tween.is_running():
-		_plus_hover_tween.kill()
-	_plus_hover_tween = create_tween()
-	_plus_hover_tween.set_trans(Tween.TRANS_SINE)
-	_plus_hover_tween.set_ease(Tween.EASE_OUT)
-	var scale_factor: float = BasePanelContainerButton.content_hover_scale(hovered, true)
-	_plus_hover_tween.tween_property(plus, "scale", Vector2(scale_factor, scale_factor), BasePanelContainerButton.HOVER_TWEEN_SECONDS)
-
 ## Create and attach the reusable list popup if needed.
 func _ensure_list_popup() -> void:
 	if _list_popup != null:
@@ -1152,25 +1198,6 @@ func _open_connectome_menu() -> void:
 	var menu_y: float = _btn_connectome.size.y - float(ELEMENTS_MENU_ANCHOR_OVERLAP_PX)
 	_connectome_menu.position = Vector2i(anchor_screen + Vector2(0, menu_y))
 	_connectome_menu.popup()
-	# The menu can open under a stationary pointer. mouse_entered will not fire until it moves.
-	call_deferred("_sync_connectome_menu_hover")
-
-
-func _sync_connectome_menu_hover() -> void:
-	if not is_connectome_menu_open():
-		return
-	var plus_buttons: Array[TextureButton] = [
-		_btn_brain_regions_list,
-		_btn_brain_regions_add,
-		_btn_interconnect_list,
-		_btn_interconnect_add,
-		_btn_memory_list,
-		_btn_memory_add,
-	]
-	for plus in plus_buttons:
-		if plus == null:
-			continue
-		_on_combo_add_hover(plus, BasePanelContainerButton.pointer_inside_own_viewport(plus))
 
 
 func _close_connectome_menu() -> void:
@@ -1375,33 +1402,38 @@ func _focus_region(region: BrainRegion) -> void:
 			active_cb.focus_on_region(region)
 
 func _focus_cortical(area: AbstractCorticalArea) -> void:
-	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
-		if _bm_scene.has_method("focus_on_cortical_area"):
-			_bm_scene.focus_on_cortical_area(area)
-			if _bm_scene.has_method("flash_indicator_for_cortical_area"):
-				_bm_scene.flash_indicator_for_cortical_area(area)
-		else:
-			var center_pos = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
-			_bm_scene.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos)
+	if area == null:
 		return
-	if _is_3d_context:
-		var active_bm := BV.UI.get_active_brain_monitor()
-		if active_bm and active_bm.get_pancake_camera():
-			if active_bm.has_method("focus_on_cortical_area"):
-				active_bm.focus_on_cortical_area(area)
-				if active_bm.has_method("flash_indicator_for_cortical_area"):
-					active_bm.flash_indicator_for_cortical_area(area)
-			else:
-				var center_pos2 = Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
-				active_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(center_pos2)
-			return
-	if (not _is_3d_context) and _cb_scene:
-		_cb_scene.focus_on_cortical_area(area)
+	var cortical_id := String(area.cortical_ID)
+	var active_bm := BV.UI.get_brain_monitor_for_active_tab()
+	var active_cb := BV.UI.get_circuit_builder_for_active_tab()
+	var visible_bm := BV.UI.find_visible_brain_monitor_with_cortical_area(cortical_id)
+	var target := cortical_list_focus_target(
+		_bm_scene != null,
+		_cb_scene != null,
+		active_bm != null and active_bm.has_cortical_area_visualization(cortical_id),
+		active_cb != null,
+		visible_bm != null
+	)
+	if target == CORTICAL_FOCUS_MONITOR:
+		var monitor := _bm_scene
+		if monitor == null and active_bm != null and active_bm.has_cortical_area_visualization(cortical_id):
+			monitor = active_bm
+		if monitor == null:
+			monitor = visible_bm
+		_focus_cortical_on_monitor(monitor, area)
 		return
-	if not _is_3d_context:
-		var active_cb := _get_active_cb_from_ui()
-		if active_cb:
-			active_cb.focus_on_cortical_area(area)
+	if target == CORTICAL_FOCUS_BUILDER:
+		var builder := _cb_scene if _cb_scene != null else active_cb
+		if builder != null:
+			builder.focus_on_cortical_area(area)
+
+
+func _focus_cortical_on_monitor(monitor: UI_BrainMonitor_3DScene, area: AbstractCorticalArea) -> void:
+	if monitor == null or monitor.get_pancake_camera() == null:
+		return
+	monitor.focus_on_cortical_area(area)
+	monitor.flash_indicator_for_cortical_area(area)
 
 
 ## Find the active Circuit Builder tab if needed.

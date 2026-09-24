@@ -21,6 +21,11 @@ Use the **top toolbar dropdowns** to jump directly to any object:
 2. Select an object from the list
 3. View instantly focuses on that object
 
+**Connectivity Rules (root scene top bar):**
+1. Hover **Connectivity Rules**
+2. Select a rule from the list
+3. The Connectivity Rules Manager opens with that rule shown
+
 **Circuits, Interconnect Areas, and Memory Areas (tab bars):**
 1. Hover **Circuits**, **Interconnect Areas**, or **Memory Areas** on the Circuit Builder or Brain Monitor tab bar
 2. Select an object from the list
@@ -78,8 +83,9 @@ Browse organized lists in dropdowns:
 - **Inputs**: All IPU areas alphabetically
 - **Circuits, Interconnect Areas, and Memory Areas**: on the Circuit Builder and Brain Monitor tab bars. Hover the title. Classifiers are added from **Add Circuit** as Integrated Circuits.
 - **Outputs**: All OPU areas alphabetically
+- **Connectivity Rules**: Every connectivity rule, in the same order as the manager's left list. Selecting one opens that rule in the manager.
 
-Click any item to navigate there.
+Click any cortical area or circuit to navigate there.
 
 ### Using Hierarchy
 

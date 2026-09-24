@@ -46,6 +46,7 @@ func _ready():
 	_apply_shared_combo_spacing_tokens()
 	
 	_setup_custom_tooltips()
+	_wire_connectivity_rules_list()
 	
 	# FEAGI data
 	# Burst rate
@@ -205,6 +206,35 @@ func _open_create_output() -> void:
 		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU, _shared_combo.get_outputs_add_button())
 		return
 	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
+
+func _wire_connectivity_rules_list() -> void:
+	if _shared_combo == null:
+		push_error("TopBar: Connectivity Rules list needs the shared category hover list")
+		return
+	var title := _connectivity_rules_title()
+	title.mouse_filter = Control.MOUSE_FILTER_STOP
+	_shared_combo.attach_category_list_hover(title, BrainObjectsCombo.ROOT_LIST_CONNECTIVITY_RULES, _open_connectivity_rules_list)
+
+
+func _open_connectivity_rules_list() -> void:
+	var items := MorphologyScroll.items_from_morphology_map(FeagiCore.feagi_local_cache.morphologies.available_morphologies)
+	_shared_combo.open_category_list(
+		_connectivity_rules_title(),
+		items,
+		MorphologyScroll.FILTER_PLACEHOLDER,
+		_open_selected_connectivity_rule
+	)
+
+
+func _open_selected_connectivity_rule(morphology: BaseMorphology) -> void:
+	if morphology == null:
+		return
+	BV.WM.spawn_manager_morphology(morphology)
+
+
+func _connectivity_rules_title() -> BasePanelContainerButton:
+	return $Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList as BasePanelContainerButton
+
 
 func _open_neuron_morphologies() -> void:
 	BV.WM.spawn_manager_morphology()
@@ -517,7 +547,7 @@ func _setup_custom_tooltips() -> void:
 	# Visible strip is [SharedBrainObjectsCombo], not the hidden legacy [HBoxContainer] row.
 	if _shared_combo != null:
 		_shared_combo.apply_custom_topbar_tooltips()
-	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList, "View connectivity rules")
+	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList, "View all connectivity rules")
 	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/TextureButton, "Add connectivity rule")
 	# Hover target is the toggle control; nested TextureButtons kept native-free above.
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown/ToggleImageDropDown, "Split view: Circuit Builder, Brain Monitor, or split layout")

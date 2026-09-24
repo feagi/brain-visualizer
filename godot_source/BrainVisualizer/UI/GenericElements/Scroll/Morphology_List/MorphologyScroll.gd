@@ -8,6 +8,7 @@ signal morphology_selected(morphology:BaseMorphology) # Mostly  proxy of item_se
 @export var refresh_morphology_from_FEAGI_on_select = true
 
 const BASE_FONT_SIZE: int = 14
+const FILTER_PLACEHOLDER: String = "Filter rules"
 
 var selected_morphology: BaseMorphology:
 	get: return _selected_morphology
@@ -23,7 +24,7 @@ var _base_list_font_size: int = 0
 func _ready() -> void:
 	_filter_line = $MarginContainer/VBoxContainer/FilterLine
 	_item_list = $MarginContainer/VBoxContainer/ItemList
-	_filter_line.placeholder_text = "Filter rules"
+	_filter_line.placeholder_text = FILTER_PLACEHOLDER
 	_filter_line.text_changed.connect(_on_filter_changed)
 	_item_list.item_selected.connect(_on_item_selected)
 	_item_list.item_clicked.connect(_on_item_clicked)
@@ -41,10 +42,9 @@ func _ready() -> void:
 	if not FeagiCore.feagi_local_cache.morphologies_reloaded.is_connected(_on_morphologies_reloaded):
 		FeagiCore.feagi_local_cache.morphologies_reloaded.connect(_on_morphologies_reloaded)
 
-## Clears list, then loads morphology list from FeagiCache
-func repopulate_from_cache() -> void:
-	_items.clear()
-	var morphologies_cache := FeagiCore.feagi_local_cache.morphologies.available_morphologies
+## Same rows as the connectivity rule manager's left list, sorted by name.
+static func items_from_morphology_map(morphologies_cache: Dictionary) -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
 	var morphology_names: Array = morphologies_cache.keys()
 	morphology_names.sort_custom(func(a: StringName, b: StringName) -> bool:
 		return String(a).to_lower() < String(b).to_lower()
@@ -53,7 +53,13 @@ func repopulate_from_cache() -> void:
 		var morphology: BaseMorphology = morphologies_cache[morphology_name]
 		if morphology == null:
 			continue
-		_items.append({"label": String(morphology.name), "payload": morphology})
+		items.append({"label": String(morphology.name), "payload": morphology})
+	return items
+
+
+## Clears list, then loads morphology list from FeagiCache
+func repopulate_from_cache() -> void:
+	_items = items_from_morphology_map(FeagiCore.feagi_local_cache.morphologies.available_morphologies)
 	_apply_filter(_filter_line.text)
 
 ## Sets the morphologies from a manual list

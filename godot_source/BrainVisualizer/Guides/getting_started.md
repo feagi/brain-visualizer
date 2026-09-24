@@ -95,7 +95,7 @@ See [Navigation Basics](navigation.md) for more details.
 
 ![Outputs Button](../UI/GenericResources/ButtonIcons/output.png)
 
-- **Connectivity Rules**: Manage connection templates
+- **Connectivity Rules**: Hover the title to list connection templates. Select one to open it in the Connectivity Rules Manager. **+** creates one.
 
 ![Connectivity Rules Button](../UI/GenericResources/ButtonIcons/Gear_C.png)
 

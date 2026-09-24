@@ -41,15 +41,15 @@ static func apply_spacer_width(root: Node, spacer_paths: Array, width: float = C
 
 
 ## Inset a combo-row plate. Shared by the root top bar and the tab strips.
-static func apply_combo_row_plate_padding(row: PanelContainer) -> void:
+static func apply_combo_row_plate_padding(row: PanelContainer, pad_x: int = ROW_PAD_X, pad_y: int = ROW_PAD_Y) -> void:
 	if row == null:
 		return
 	var current: StyleBox = row.get_theme_stylebox("panel")
 	if not current is StyleBoxFlat:
 		return
 	var plate := (current as StyleBoxFlat).duplicate() as StyleBoxFlat
-	plate.content_margin_left = ROW_PAD_X
-	plate.content_margin_right = ROW_PAD_X
-	plate.content_margin_top = ROW_PAD_Y
-	plate.content_margin_bottom = ROW_PAD_Y
+	plate.content_margin_left = pad_x
+	plate.content_margin_right = pad_x
+	plate.content_margin_top = pad_y
+	plate.content_margin_bottom = pad_y
 	row.add_theme_stylebox_override("panel", plate)
