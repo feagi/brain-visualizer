@@ -9,8 +9,9 @@ const _PLASTICITY_MODE_STDP: String = "stdp"
 const _ASSOCIATIVE_MEMORY_NAME: StringName = &"associative_memory"
 const _DEFAULT_SCALAR: Vector3i = Vector3i(1, 1, 1)
 
-var _advanced_toggle: ToggleButton
-var _fields: Control
+const _ROWS: NodePath = ^"AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows"
+
+var _section: VerticalCollapsibleHiding
 var _plasticity_rows: Control
 var _psp: FloatInput
 var _inhibitory: ToggleButton
@@ -25,32 +26,53 @@ var _associative_memory: bool = false
 
 
 func _ready() -> void:
-	_advanced_toggle = $AdvancedRow/AdvancedToggle
-	_fields = $Fields
-	_plasticity_rows = $Fields/Rows/PlasticityRows
-	_psp = $Fields/Rows/Primary/PSP
-	_inhibitory = $Fields/Rows/Primary/Inhibitory
-	_synaptic_delay = $Fields/Rows/Primary/SynapticDelay
-	_plasticity = $Fields/Rows/Primary/Plasticity
-	_plasticity_constant = $Fields/Rows/PlasticityRows/PlasticityConstant
-	_plasticity_window = $Fields/Rows/PlasticityRows/PlasticityWindow
-	_ltp_multiplier = $Fields/Rows/PlasticityRows/LTP
-	_ltd_multiplier = $Fields/Rows/PlasticityRows/LTD
-	_advanced_toggle.toggled.connect(_on_advanced_toggled)
+	_section = $AdvancedSection
+	var title_label: Label = _section.get_node("VerticalCollapsible/HBoxContainer/Section_Title")
+	title_label.text = "Advanced"
+	title_label.theme_type_variation = &"Label_Header"
+	var body: CanvasItem = _section.get_node("VerticalCollapsible/PanelContainer")
+	body.visibility_changed.connect(func() -> void: layout_changed.emit())
+	_plasticity_rows = get_node(NodePath(str(_ROWS) + "/PlasticityRows"))
+	_psp = get_node(NodePath(str(_ROWS) + "/Primary/PSP"))
+	_inhibitory = get_node(NodePath(str(_ROWS) + "/Primary/Inhibitory"))
+	_synaptic_delay = get_node(NodePath(str(_ROWS) + "/Primary/SynapticDelay"))
+	_plasticity = get_node(NodePath(str(_ROWS) + "/Primary/Plasticity"))
+	_plasticity_constant = get_node(NodePath(str(_ROWS) + "/PlasticityRows/PlasticityConstant"))
+	_plasticity_window = get_node(NodePath(str(_ROWS) + "/PlasticityRows/PlasticityWindow"))
+	_ltp_multiplier = get_node(NodePath(str(_ROWS) + "/PlasticityRows/LTP"))
+	_ltd_multiplier = get_node(NodePath(str(_ROWS) + "/PlasticityRows/LTD"))
 	_plasticity.toggled.connect(_on_plasticity_toggled)
-	_fields.visible = _advanced_toggle.button_pressed
+	_apply_toggle_theme_size(_inhibitory)
+	_apply_toggle_theme_size(_plasticity)
+	if BV != null and BV.UI != null and not BV.UI.theme_changed.is_connected(_on_ui_theme_changed):
+		BV.UI.theme_changed.connect(_on_ui_theme_changed)
 	_refresh_plasticity_rows()
 
 
-## True when the user wants these values sent instead of mapping defaults.
+func _on_ui_theme_changed(_theme: Theme) -> void:
+	_apply_toggle_theme_size(_inhibitory)
+	_apply_toggle_theme_size(_plasticity)
+
+
+## Uses the loaded theme's ToggleButton size so the switch stays visible at every UI scale.
+func _apply_toggle_theme_size(toggle: ToggleButton) -> void:
+	if BV == null or BV.UI == null:
+		return
+	var theme_size: Vector2 = BV.UI.get_minimum_size_from_loaded_theme(&"ToggleButton")
+	if theme_size.x <= 0.0 or theme_size.y <= 0.0:
+		return
+	toggle.enable_autoscaling_with_theme = false
+	toggle.custom_minimum_size = theme_size
+
+
+## True when the section is expanded and these values should be sent instead of mapping defaults.
 func is_advanced_enabled() -> bool:
-	return _advanced_toggle.button_pressed
+	return _section.is_open
 
 
-## Sets the disclosure checkbox and shows or hides the field list.
+## Opens or closes the Advanced section.
 func set_advanced_enabled(enabled: bool) -> void:
-	_advanced_toggle.set_toggle_no_signal(enabled)
-	_fields.visible = enabled
+	_section.is_open = enabled
 	_refresh_plasticity_rows()
 	layout_changed.emit()
 
@@ -123,12 +145,6 @@ func export_mapping(morphology: BaseMorphology) -> SingleMappingDefinition:
 		maxi(1, _synaptic_delay.current_int),
 		mode,
 	)
-
-
-func _on_advanced_toggled(pressed: bool) -> void:
-	_fields.visible = pressed
-	_refresh_plasticity_rows()
-	layout_changed.emit()
 
 
 func _on_plasticity_toggled(pressed: bool) -> void:

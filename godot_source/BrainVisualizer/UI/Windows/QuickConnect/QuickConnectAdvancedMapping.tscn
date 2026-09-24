@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectAdvancedMapping.gd" id="1_script"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="2_float"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_int"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="4_toggle"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="5_toggle_script"]
+[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn" id="6_section"]
 
 [node name="QuickConnectAdvancedMapping" type="VBoxContainer"]
 size_flags_horizontal = 3
@@ -12,49 +13,29 @@ size_flags_vertical = 0
 theme_override_constants/separation = 6
 script = ExtResource("1_script")
 
-[node name="AdvancedRow" type="HBoxContainer" parent="."]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="AdvancedLabel" type="Label" parent="AdvancedRow"]
-layout_mode = 2
-size_flags_vertical = 4
-text = "Advanced"
-
-[node name="AdvancedToggle" type="TextureButton" parent="AdvancedRow"]
-custom_minimum_size = Vector2(60, 0)
-layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Show mapping parameters for this connection. Off keeps the default PSP, delay, and plasticity."
-theme_type_variation = &"ToggleButton"
-texture_normal = ExtResource("4_toggle")
-ignore_texture_size = true
-stretch_mode = 0
-script = ExtResource("5_toggle_script")
-
-[node name="Fields" type="MarginContainer" parent="."]
-visible = false
+[node name="AdvancedSection" parent="." instance=ExtResource("6_section")]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_right = 4
+tooltip_text = "Show mapping parameters for this connection. Closed keeps the default PSP, delay, and plasticity."
+start_open = false
+section_text = &"Advanced"
 
-[node name="Rows" type="VBoxContainer" parent="Fields"]
+[node name="Rows" type="VBoxContainer" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Primary" type="GridContainer" parent="Fields/Rows"]
+[node name="Primary" type="GridContainer" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows"]
 layout_mode = 2
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 6
 columns = 4
 
-[node name="PSPLabel" type="Label" parent="Fields/Rows/Primary"]
+[node name="PSPLabel" type="Label" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary"]
 layout_mode = 2
 size_flags_vertical = 4
 text = "PSP multiplier"
 
-[node name="PSP" type="LineEdit" parent="Fields/Rows/Primary"]
+[node name="PSP" type="LineEdit" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary"]
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -66,28 +47,30 @@ min_value = 0.0
 max_value = 9999999999.0
 number_decimal_places = 4
 
-[node name="InhibitoryLabel" type="Label" parent="Fields/Rows/Primary"]
+[node name="InhibitoryLabel" type="Label" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary"]
 layout_mode = 2
 size_flags_vertical = 4
 text = "Inhibitory"
 
-[node name="Inhibitory" type="TextureButton" parent="Fields/Rows/Primary"]
-custom_minimum_size = Vector2(60, 0)
+[node name="Inhibitory" type="TextureButton" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary"]
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
+size_flags_horizontal = 0
 size_flags_vertical = 4
 tooltip_text = "Inhibitory connection. Stored as a negative PSP multiplier."
 theme_type_variation = &"ToggleButton"
 texture_normal = ExtResource("4_toggle")
 ignore_texture_size = true
-stretch_mode = 0
+stretch_mode = 5
 script = ExtResource("5_toggle_script")
+enable_autoscaling_with_theme = false
 
-[node name="DelayLabel" type="Label" parent="Fields/Rows/Primary"]
+[node name="DelayLabel" type="Label" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary"]
 layout_mode = 2
 size_flags_vertical = 4
 text = "Synaptic delay"
 
-[node name="SynapticDelay" type="LineEdit" parent="Fields/Rows/Primary"]
+[node name="SynapticDelay" type="LineEdit" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary"]
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -98,35 +81,37 @@ initial_int = 1
 min_value = 1
 max_value = 255
 
-[node name="PlasticityLabel" type="Label" parent="Fields/Rows/Primary"]
+[node name="PlasticityLabel" type="Label" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary"]
 layout_mode = 2
 size_flags_vertical = 4
 text = "Plasticity"
 
-[node name="Plasticity" type="TextureButton" parent="Fields/Rows/Primary"]
-custom_minimum_size = Vector2(60, 0)
+[node name="Plasticity" type="TextureButton" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary"]
+custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
+size_flags_horizontal = 0
 size_flags_vertical = 4
 tooltip_text = "STDP. Weights change with spike timing. Reward-modulated plasticity is set in the mapping editor."
 theme_type_variation = &"ToggleButton"
 texture_normal = ExtResource("4_toggle")
 ignore_texture_size = true
-stretch_mode = 0
+stretch_mode = 5
 script = ExtResource("5_toggle_script")
+enable_autoscaling_with_theme = false
 
-[node name="PlasticityRows" type="GridContainer" parent="Fields/Rows"]
+[node name="PlasticityRows" type="GridContainer" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows"]
 visible = false
 layout_mode = 2
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 6
 columns = 4
 
-[node name="ConstantLabel" type="Label" parent="Fields/Rows/PlasticityRows"]
+[node name="ConstantLabel" type="Label" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows"]
 layout_mode = 2
 size_flags_vertical = 4
 text = "Constant"
 
-[node name="PlasticityConstant" type="LineEdit" parent="Fields/Rows/PlasticityRows"]
+[node name="PlasticityConstant" type="LineEdit" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows"]
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -135,12 +120,12 @@ alignment = 1
 script = ExtResource("2_float")
 initial_float = 1.0
 
-[node name="WindowLabel" type="Label" parent="Fields/Rows/PlasticityRows"]
+[node name="WindowLabel" type="Label" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows"]
 layout_mode = 2
 size_flags_vertical = 4
 text = "Window"
 
-[node name="PlasticityWindow" type="LineEdit" parent="Fields/Rows/PlasticityRows"]
+[node name="PlasticityWindow" type="LineEdit" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows"]
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -149,12 +134,12 @@ alignment = 1
 script = ExtResource("3_int")
 initial_int = 3
 
-[node name="LTPLabel" type="Label" parent="Fields/Rows/PlasticityRows"]
+[node name="LTPLabel" type="Label" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows"]
 layout_mode = 2
 size_flags_vertical = 4
 text = "LTP"
 
-[node name="LTP" type="LineEdit" parent="Fields/Rows/PlasticityRows"]
+[node name="LTP" type="LineEdit" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows"]
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -163,12 +148,12 @@ alignment = 1
 script = ExtResource("2_float")
 initial_float = 1.0
 
-[node name="LTDLabel" type="Label" parent="Fields/Rows/PlasticityRows"]
+[node name="LTDLabel" type="Label" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows"]
 layout_mode = 2
 size_flags_vertical = 4
 text = "LTD"
 
-[node name="LTD" type="LineEdit" parent="Fields/Rows/PlasticityRows"]
+[node name="LTD" type="LineEdit" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows"]
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 size_flags_horizontal = 3

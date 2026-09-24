@@ -41,21 +41,30 @@ func _test_advanced_starts_collapsed() -> int:
 		push_error("advanced toggle must start off")
 		panel.queue_free()
 		return 1
-	for toggle_path in ["AdvancedRow/AdvancedToggle", "Fields/Rows/Primary/Inhibitory", "Fields/Rows/Primary/Plasticity"]:
-		if not panel.get_node(toggle_path) is ToggleButton:
+	var section: VerticalCollapsibleHiding = panel.get_node("AdvancedSection")
+	if not section is VerticalCollapsibleHiding or section.is_open:
+		push_error("Advanced must be a collapsed cortical-details section")
+		panel.queue_free()
+		return 1
+	if section.get_node("VerticalCollapsible/HBoxContainer/Section_Title").text != "Advanced":
+		push_error("Advanced section title was not set")
+		panel.queue_free()
+		return 1
+	for toggle_path in ["Primary/Inhibitory", "Primary/Plasticity"]:
+		if not panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/" + toggle_path) is ToggleButton:
 			push_error("expected ToggleButton at %s" % toggle_path)
 			panel.queue_free()
 			return 1
-	if panel.get_node("Fields").visible:
-		push_error("field list must stay hidden until Advanced is enabled")
+	if section.get_node("VerticalCollapsible/PanelContainer").visible:
+		push_error("field list must stay hidden until Advanced is expanded")
 		panel.queue_free()
 		return 1
 	panel.set_advanced_enabled(true)
-	if not panel.get_node("Fields").visible:
-		push_error("enabling Advanced must show the field list")
+	if not section.is_open or not section.get_node("VerticalCollapsible/PanelContainer").visible:
+		push_error("expanding Advanced must show the field list")
 		panel.queue_free()
 		return 1
-	if panel.get_node("Fields/Rows/PlasticityRows").visible:
+	if panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows").visible:
 		push_error("plasticity details must stay hidden until plasticity is on")
 		panel.queue_free()
 		return 1
@@ -67,14 +76,14 @@ func _test_inhibitory_negates_psp_and_plasticity_exports_stdp() -> int:
 	var panel: QuickConnectAdvancedMapping = await _spawn_panel()
 	var morphology: BaseMorphology = BaseMorphology.new(&"block_to_block", true, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE)
 	panel.load_for_morphology(morphology)
-	panel.get_node("Fields/Rows/Primary/PSP").current_float = 2.5
-	panel.get_node("Fields/Rows/Primary/Inhibitory").button_pressed = true
-	panel.get_node("Fields/Rows/Primary/SynapticDelay").current_int = 4
-	panel.get_node("Fields/Rows/Primary/Plasticity").button_pressed = true
-	panel.get_node("Fields/Rows/PlasticityRows/PlasticityConstant").current_float = 0.25
-	panel.get_node("Fields/Rows/PlasticityRows/PlasticityWindow").current_int = 6
-	panel.get_node("Fields/Rows/PlasticityRows/LTP").current_float = 1.5
-	panel.get_node("Fields/Rows/PlasticityRows/LTD").current_float = 0.5
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/PSP").current_float = 2.5
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/Inhibitory").button_pressed = true
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/SynapticDelay").current_int = 4
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/Plasticity").button_pressed = true
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows/PlasticityConstant").current_float = 0.25
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows/PlasticityWindow").current_int = 6
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows/LTP").current_float = 1.5
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows/LTD").current_float = 0.5
 	var mapping: SingleMappingDefinition = panel.export_mapping(morphology)
 	var payload: Dictionary = mapping.to_FEAGI_JSON()
 	if payload["postSynapticCurrent_multiplier"] != -2.5:
@@ -126,12 +135,12 @@ func _test_associative_memory_stays_plastic() -> int:
 	var panel: QuickConnectAdvancedMapping = await _spawn_panel()
 	var morphology: BaseMorphology = BaseMorphology.new(&"associative_memory", true, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE)
 	panel.load_for_morphology(morphology)
-	var plasticity: ToggleButton = panel.get_node("Fields/Rows/Primary/Plasticity")
+	var plasticity: ToggleButton = panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/Plasticity")
 	if not plasticity.button_pressed or not plasticity.disabled:
 		push_error("associative memory must lock plasticity on")
 		panel.queue_free()
 		return 1
-	if not panel.get_node("Fields/Rows/PlasticityRows").visible:
+	if not panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows").visible:
 		push_error("associative memory must show plasticity details")
 		panel.queue_free()
 		return 1
@@ -149,15 +158,15 @@ func _test_same_rule_keeps_edits() -> int:
 	var panel: QuickConnectAdvancedMapping = await _spawn_panel()
 	var morphology: BaseMorphology = BaseMorphology.new(&"block_to_block", true, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE)
 	panel.load_for_morphology(morphology)
-	panel.get_node("Fields/Rows/Primary/PSP").current_float = 3.0
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/PSP").current_float = 3.0
 	panel.load_for_morphology(morphology)
-	if panel.get_node("Fields/Rows/Primary/PSP").current_float != 3.0:
+	if panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/PSP").current_float != 3.0:
 		push_error("reloading the same rule must keep the edited PSP multiplier")
 		panel.queue_free()
 		return 1
 	var other: BaseMorphology = BaseMorphology.new(&"projector", true, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE)
 	panel.load_for_morphology(other)
-	if panel.get_node("Fields/Rows/Primary/PSP").current_float != 1.0:
+	if panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/PSP").current_float != 1.0:
 		push_error("a new rule must restore the default PSP multiplier")
 		panel.queue_free()
 		return 1
@@ -174,19 +183,19 @@ func _test_restrictions_disable_fields() -> int:
 	restrictions.allow_changing_inhibitory = false
 	restrictions.allow_changing_plasticity = false
 	panel.apply_restrictions(restrictions)
-	if panel.get_node("Fields/Rows/Primary/PSP").editable:
+	if panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/PSP").editable:
 		push_error("PSP multiplier must honor allow_changing_PSP")
 		panel.queue_free()
 		return 1
-	if panel.get_node("Fields/Rows/Primary/SynapticDelay").editable:
+	if panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/SynapticDelay").editable:
 		push_error("synaptic delay must follow the PSP edit restriction")
 		panel.queue_free()
 		return 1
-	if not panel.get_node("Fields/Rows/Primary/Inhibitory").disabled:
+	if not panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/Inhibitory").disabled:
 		push_error("inhibitory must honor allow_changing_inhibitory")
 		panel.queue_free()
 		return 1
-	if not panel.get_node("Fields/Rows/Primary/Plasticity").disabled:
+	if not panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/Plasticity").disabled:
 		push_error("plasticity must honor allow_changing_plasticity")
 		panel.queue_free()
 		return 1
