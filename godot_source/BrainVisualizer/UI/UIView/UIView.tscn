@@ -17,7 +17,9 @@ vertical = true
 [node name="Primary" type="MarginContainer" parent="SplitContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
 
 [node name="Secondary" type="MarginContainer" parent="SplitContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0

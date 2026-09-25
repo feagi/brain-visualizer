@@ -2,7 +2,7 @@
 
 An integrated circuit is a circuit you configure in Brain Visualizer. On **Add Circuit**, it is the tile with a gold **IC** chip on the top-right corner of its image. Hover the chip for the short explanation. Click the image or the chip to open its configuration window.
 
-The other tiles on that window, such as Logic AND and Logic OR, are genomes or connectomes. Choosing one of those uploads the packaged circuit. Choosing an integrated circuit does not. You set it up for the brain circuit you already have open.
+The other tiles on that window, such as Logic AND and Logic OR, are genomes or connectomes. Choosing one of those uploads the packaged circuit. The placement shadow is drawn on the brain monitor of the circuit you opened Add Circuit from. The top bar Circuits + uses the root scene. Choosing an integrated circuit does not upload a genome. You set it up for the brain circuit you already have open.
 
 A [brain circuit](brain_circuits.md) is the container: a named place that holds cortical areas and smaller circuits. An integrated circuit is something you build inside that container. The integrated circuit available now is the **Classifier**.
 

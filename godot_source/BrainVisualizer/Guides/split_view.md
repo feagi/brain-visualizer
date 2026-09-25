@@ -57,8 +57,8 @@ The easiest way to enter split view:
 1. In Circuit Builder, right-click a **brain circuit** node
 2. Select **Open 3D Tab** from Quick Menu
 3. Split View automatically activates:
-   - Circuit Builder for that region (primary panel)
-   - Brain Monitor for that region (secondary panel)
+   - Circuit Builder for that region (primary panel, 40%)
+   - Brain Monitor for that region (secondary panel, 60%)
 
 Both panels show the same region from different perspectives.
 

@@ -9,6 +9,11 @@ enum MODE {
 	TAB
 }
 
+## Region split: circuit builder (primary) 40%, brain monitor tabs (secondary) 60%.
+## Godot sizes two expanded children by stretch ratio; 2:3 is 40:60.
+const REGION_SPLIT_CIRCUIT_BUILDER_STRETCH: float = 2.0
+const REGION_SPLIT_BRAIN_MONITOR_STRETCH: float = 3.0
+
 var is_root_view: bool: ## Is this the top layer [UIView]
 	get: return _is_root_view
 var mode: MODE: ## Is this [UIView] acting as a split container holding 2 [UIView]s or holding a tab container?
@@ -41,9 +46,12 @@ func setup_as_single_tab(tabs: Array[Control]) -> void:
 	new_tab.requested_view_region_as_CB.connect(show_or_create_CB_of_region)
 	new_tab.requested_view_region_as_BM.connect(show_or_create_BM_of_region)
 
-## Sets up the UIView as a split view with secondary container visible  
+## Sets up the UIView as a split view with secondary container visible.
+## Opening a region puts Circuit Builder in the primary pane and Brain Monitor tabs in the secondary pane.
 func setup_as_split() -> void:
 	_mode = MODE.SPLIT
+	_primary_container.size_flags_stretch_ratio = REGION_SPLIT_CIRCUIT_BUILDER_STRETCH
+	_secondary_container.size_flags_stretch_ratio = REGION_SPLIT_BRAIN_MONITOR_STRETCH
 	_secondary_container.visible = true
 	_split_container.collapsed = false
 	_split_container.dragger_visibility = SplitContainer.DRAGGER_VISIBLE

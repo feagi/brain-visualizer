@@ -43,6 +43,13 @@ var _window_memory_states: Dictionary = {
 }
 var _suppress_auto_open_3d_tabs: bool = false
 var _suppress_auto_open_reset_token: int = 0
+## Parent circuit for the next packaged-circuit placement window.
+## Set when Add Circuit uploads a genome from inside a brain circuit tab.
+var _amalgamation_placement_region: BrainRegion = null
+## Pending import held until the root circuit exists. A genome reload closes the window without cancelling FEAGI.
+var _deferred_amalgamation_id: StringName = &""
+var _deferred_amalgamation_title: StringName = &""
+var _deferred_amalgamation_size: Vector3i = Vector3i.ZERO
 const _ADD_FLOW_WINDOW_NAMES: Array[StringName] = [
 	"create_region",
 	"select_region_template",
@@ -401,11 +408,44 @@ func spawn_view_previews() -> void:
 	var view_previews: WindowViewPreviews = _default_spawn_window(_PREFAB_VIEW_PREVIEWS, WindowViewPreviews.WINDOW_NAME) as WindowViewPreviews
 	view_previews.setup()
 
+## Remember the brain circuit that started a packaged-circuit upload (Logic AND, Logic OR, and the other genomes).
+## The placement window is opened later, when FEAGI reports the pending amalgamation.
+func note_amalgamation_placement_region(region: BrainRegion) -> void:
+	_amalgamation_placement_region = region
+
+func clear_amalgamation_placement_region() -> void:
+	_amalgamation_placement_region = null
+
 func spawn_amalgamation_window(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
+	_deferred_amalgamation_id = amalgamation_ID
+	_deferred_amalgamation_title = genome_title
+	_deferred_amalgamation_size = circuit_size
 	if "import_amalgamation" in loaded_windows:
 		return # no need to keep opening this window
+	# The first health check can report a pending import before any circuit is cached.
+	if not _is_root_region_ready_for_amalgamation():
+		return
+	var placement_region: BrainRegion = _amalgamation_placement_region
+	_amalgamation_placement_region = null
 	var import_amalgamation: WindowAmalgamationRequest = _default_spawn_window(_PREFAB_IMPORT_AMALGAMATION, WindowAmalgamationRequest.WINDOW_NAME) as WindowAmalgamationRequest
-	import_amalgamation.setup(amalgamation_ID, genome_title, circuit_size)
+	import_amalgamation.setup(amalgamation_ID, genome_title, circuit_size, placement_region)
+
+## Opens an import that arrived before the root circuit was loaded.
+func open_deferred_amalgamation_window() -> void:
+	if _deferred_amalgamation_id == &"":
+		return
+	spawn_amalgamation_window(_deferred_amalgamation_id, _deferred_amalgamation_title, _deferred_amalgamation_size)
+
+## Drops a held import after the user closes the placement window. Genome reload does not call this.
+func forget_deferred_amalgamation_window() -> void:
+	_deferred_amalgamation_id = &""
+	_deferred_amalgamation_title = &""
+	_deferred_amalgamation_size = Vector3i.ZERO
+
+func _is_root_region_ready_for_amalgamation() -> bool:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null or FeagiCore.feagi_local_cache.brain_regions == null:
+		return false
+	return FeagiCore.feagi_local_cache.brain_regions.is_root_available()
 
 func force_close_window(window_name: StringName) -> void:
 	if window_name in loaded_windows.keys():

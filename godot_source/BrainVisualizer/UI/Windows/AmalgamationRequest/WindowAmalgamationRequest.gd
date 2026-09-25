@@ -38,13 +38,22 @@ func _ready() -> void:
 	_cancel_button = _window_internals.get_node('HBoxContainer3/cancel')
 
 
-func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i) -> void:
+func setup(amalgamation_ID: StringName, genome_title: StringName, circuit_size: Vector3i, parent_region: BrainRegion = null) -> void:
 	_setup_base_window(WINDOW_NAME)
 	_amalgamation_ID = amalgamation_ID
 	_circuit_size = circuit_size
 	_field_title.text = genome_title
-	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	_region_button.setup(root_region, GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION)
+	# Packaged circuits opened from a brain-circuit tab place into that circuit.
+	# The top bar leaves parent_region empty, which stays on the root scene.
+	var placement_region: BrainRegion = parent_region
+	if placement_region == null:
+		var regions = FeagiCore.feagi_local_cache.brain_regions if FeagiCore != null and FeagiCore.feagi_local_cache != null else null
+		if regions == null or not regions.is_root_available():
+			return
+		placement_region = regions.get_root_region()
+	if placement_region == null:
+		return
+	_region_button.setup(placement_region, GenomeObject.SINGLE_MAKEUP.SINGLE_BRAIN_REGION, placement_region)
 	_connect_parent_circuit_selection()
 	await _attach_placement_preview()
 
@@ -148,15 +157,32 @@ func _attach_placement_preview() -> void:
 			bm.start_brain_region_preview_relocation(
 				_region_preview,
 				_field_3d_location.current_vector,
-				Callable(self, "_on_clone_preview_moved_via_gizmo")
+				Callable(self, "_on_preview_moved_via_gizmo")
 			)
 	else:
-		_interactive_preview = bm.create_preview(Vector3i(0,0,0), _circuit_size, false)
+		_preview_host_bm = bm
+		var placement: Vector3i = _field_3d_location.current_vector if _field_3d_location != null else Vector3i.ZERO
+		# Do not auto-frame: reframing zooms the camera and hides the relocate gizmo.
+		_interactive_preview = bm.create_preview(
+			placement,
+			_circuit_size,
+			false,
+			AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN,
+			null,
+			false,
+			false
+		)
 		_interactive_preview.connect_UI_signals(move_signals, resize_signals, closed_signals)
+		if bm.has_method("start_cortical_preview_relocation"):
+			bm.start_cortical_preview_relocation(
+				_interactive_preview,
+				placement,
+				Callable(self, "_on_preview_moved_via_gizmo")
+			)
 
 
-## Keeps the clone window coordinates matched to a gizmo drag.
-func _on_clone_preview_moved_via_gizmo(new_coords: Vector3i) -> void:
+## Keeps the import window coordinates matched to a gizmo drag.
+func _on_preview_moved_via_gizmo(new_coords: Vector3i) -> void:
 	if _field_3d_location == null:
 		return
 	_field_3d_location.current_vector = new_coords
@@ -168,10 +194,12 @@ func _cleanup_placement_previews() -> void:
 			_preview_host_bm.stop_brain_region_preview_relocation(_region_preview)
 		_region_preview.cleanup()
 	_region_preview = null
-	_preview_host_bm = null
 	if _interactive_preview != null and is_instance_valid(_interactive_preview):
+		if _preview_host_bm != null and is_instance_valid(_preview_host_bm) and _preview_host_bm.has_method("stop_cortical_preview_relocation"):
+			_preview_host_bm.stop_cortical_preview_relocation(_interactive_preview)
 		_interactive_preview.queue_free()
 		_interactive_preview = null
+	_preview_host_bm = null
 
 
 func _import_pressed():
@@ -279,6 +307,8 @@ func _import_pressed():
 
 #OVERRIDE
 func close_window(request_cancel: bool = true) -> void:
+	if not _is_pre_submit_clone and BV != null and BV.WM != null and BV.WM.has_method("forget_deferred_amalgamation_window"):
+		BV.WM.forget_deferred_amalgamation_window()
 	if request_cancel and _amalgamation_ID != &"":
 		FeagiCore.requests.cancel_pending_amalgamation(_amalgamation_ID)
 	_cleanup_placement_previews()

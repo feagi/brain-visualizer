@@ -1752,6 +1752,8 @@ func FEAGI_confirmed_genome() -> void:
 	
 	# ADDITIONAL: Also schedule a deferred update to catch any regions that might be added after this
 	brain_monitor.call_deferred("_create_missing_brain_region_visualizations")
+	if _window_manager != null and _window_manager.has_method("open_deferred_amalgamation_window"):
+		_window_manager.open_deferred_amalgamation_window()
 	
 	if _temp_bm_camera_pos.length() > 0.01:
 		temp_root_bm.get_node("SubViewport/Center/PancakeCam").position = _temp_bm_camera_pos

@@ -358,15 +358,33 @@ func _open_create_classifier() -> void:
 ## Upload the selected circuit genome to FEAGI.
 func _upload_circuit(button: TextureButton, title: String, genome_path: String) -> void:
 	button.disabled = true
+	_remember_packaged_circuit_placement_region()
 	var result: FeagiRequestOutput = await FeagiCore.requests.request_amalgamation_by_upload(genome_path)
 	button.disabled = false
 	
 	if result.has_timed_out or result.has_errored or result.failed_requirement:
+		_forget_packaged_circuit_placement_region()
 		BV.NOTIF.add_notification("Failed to load circuit '%s'" % title, NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
 		return
 	
 	BV.NOTIF.add_notification("Circuit '%s' uploaded. Waiting for placement..." % title, NotificationSystemNotification.NOTIFICATION_TYPE.INFO)
 	close_window()
+
+
+## The placement window opens later from the health check, so the initiating circuit has to be stored first.
+## Top-bar Add Circuit forces the root scene and does not store a circuit.
+func _remember_packaged_circuit_placement_region() -> void:
+	if _force_main_scene_context or _parent_region == null:
+		return
+	if BV == null or BV.WM == null:
+		return
+	BV.WM.note_amalgamation_placement_region(_parent_region)
+
+
+func _forget_packaged_circuit_placement_region() -> void:
+	if BV == null or BV.WM == null:
+		return
+	BV.WM.clear_amalgamation_placement_region()
 
 
 ## Read circuits manifest from disk.

@@ -51,12 +51,12 @@ func set_notification(message: StringName, notification_type: NOTIFICATION_TYPE)
 			else:
 				push_error("Unable to locate theme variation 'NotificationSystemNotification_Warning'! Notification colors may be wrong!")
 		NOTIFICATION_TYPE.ERROR:
-			if has_theme_stylebox("panel", "NotificationSystemNotification_ERROR"):
-				theme_type_variation = "NotificationSystemNotification_ERROR"
+			if has_theme_stylebox("panel", "NotificationSystemNotification_Error"):
+				theme_type_variation = "NotificationSystemNotification_Error"
 				_icon.texture = load(ERROR_ICON_PATH)
 				_timer.start(FeagiCore.feagi_settings.seconds_error_notification)
 			else:
-				push_error("Unable to locate theme variation 'NotificationSystemNotification_ERROR'! Notification colors may be wrong!")
+				push_error("Unable to locate theme variation 'NotificationSystemNotification_Error'! Notification colors may be wrong!")
 	call_deferred("_refresh_row_minimum_size")
 
 ## Recalculate and pin minimum row height so stacked notifications do not overlap.
