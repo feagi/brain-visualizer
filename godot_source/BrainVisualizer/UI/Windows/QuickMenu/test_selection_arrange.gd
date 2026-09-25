@@ -16,6 +16,7 @@ func _initialize() -> void:
 	failures += _test_distribute_zero_span_and_short_selection()
 	failures += _test_negative_axis_values()
 	failures += _test_quick_menu_scene_has_hidden_arrange_button()
+	failures += _test_quick_menu_icons_have_tooltips()
 	failures += _test_quick_menu_script_compiles()
 	failures += _test_arrange_dropdown_actions()
 	if failures == 0:
@@ -145,6 +146,28 @@ func _test_quick_menu_scene_has_hidden_arrange_button() -> int:
 		return 0
 	push_error("Quick menu is missing the Arrange button")
 	return 1
+
+
+func _test_quick_menu_icons_have_tooltips() -> int:
+	var packed: PackedScene = load(QUICK_MENU_SCENE)
+	var state: SceneState = packed.get_state()
+	var missing: PackedStringArray = []
+	for index in range(state.get_node_count()):
+		var node_path := str(state.get_node_path(index))
+		if not node_path.begins_with("WindowPanel/WindowMargin/WindowInternals/ToolbarGrid/"):
+			continue
+		if str(state.get_node_type(index)) != "TextureButton":
+			continue
+		var tooltip := ""
+		for property_index in range(state.get_node_property_count(index)):
+			if str(state.get_node_property_name(index, property_index)) == "tooltip_text":
+				tooltip = str(state.get_node_property_value(index, property_index)).strip_edges()
+		if tooltip.is_empty():
+			missing.append(str(state.get_node_name(index)))
+	if not missing.is_empty():
+		push_error("Quick menu icons missing tooltips: %s" % ", ".join(missing))
+		return 1
+	return 0
 
 
 func _test_quick_menu_script_compiles() -> int:

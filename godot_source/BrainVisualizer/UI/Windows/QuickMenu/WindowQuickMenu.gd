@@ -2,6 +2,9 @@ extends BaseDraggableWindow
 class_name QuickCorticalMenu
 
 const WINDOW_NAME: StringName = "quick_menu"
+const _ICON_TOOLTIP_TRIGGER_SCRIPT: Script = preload("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTooltipTrigger.gd")
+## Native tooltips draw under FloatingWindowsLayer. This manager draws above it.
+const _TOP_BAR_TOOLTIP_MANAGER_PATH: NodePath = ^"/root/BrainVisualizer/UIManager/TopBar/CustomTooltipManager"
 const SPAWN_DISTANCE_PX: float = 50.0
 var _mode: GenomeObject.ARRAY_MAKEUP
 var _selection: Array[GenomeObject]
@@ -156,6 +159,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			details_button.tooltip_text = "View Circuit Details"
 			open_3d_tab_button.tooltip_text = "Open Circuit in 3D Tab"
 			move_to_region_button.tooltip_text = "Add to a circuit..."
+			clone_button.tooltip_text = "Clone this circuit..."
 			delete_button.tooltip_text = "Delete this Circuit..."
 			
 			# 🚨 SAFETY CHECK: This should never happen due to earlier check, but be defensive
@@ -274,6 +278,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
 			move_to_region_button.tooltip_text = "Add to a circuit..."
+			delete_button.tooltip_text = "Delete selected circuits..."
 			_titlebar.title = "Selected multiple circuits"
 
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
@@ -295,6 +300,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
 			move_to_region_button.tooltip_text = "Add to a circuit..."
+			delete_button.tooltip_text = "Delete selected objects..."
 			_titlebar.title = "Selected multiple objects"
 			
 			var filtered_areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(selection)
@@ -313,6 +319,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			
 	# Position after mode-specific visibility/layout changes so vertical distance is consistent.
 	_fit_toolbar()
+	_apply_icon_tooltips()
 	call_deferred("_reposition_near_mouse_after_layout")
 
 
@@ -868,7 +875,11 @@ func _refresh_multi_cortical_controls() -> void:
 	var move_to_region_button: TextureButton = _window_internals.get_node('ToolbarGrid/AddToRegion')
 	var delete_button: TextureButton = _window_internals.get_node('ToolbarGrid/Delete')
 	var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+	var details_button: TextureButton = _window_internals.get_node("ToolbarGrid/Details")
+	var reset_button: TextureButton = _window_internals.get_node("ToolbarGrid/Reset")
 	_titlebar.title = "Selected multiple areas"
+	details_button.tooltip_text = "View Details of these Cortical Areas"
+	reset_button.tooltip_text = "Reset selected cortical areas..."
 	move_to_region_button.disabled = false
 	move_to_region_button.tooltip_text = "Add to a circuit..."
 	delete_button.disabled = false
@@ -902,10 +913,44 @@ func _refresh_multi_cortical_controls() -> void:
 				if not rfr_reason.is_empty():
 					break
 		delete_button.tooltip_text = rfr_reason if not rfr_reason.is_empty() else "One or more of the selected areas cannot be deleted."
+	_apply_icon_tooltips()
 	_fit_toolbar()
 
 
-## Cortical-area popups wrap actions onto two rows. Brain-region popups stay on one row.
+## Floating-window icons use the theme tooltip. Built-in tips draw under this layer.
+func _apply_icon_tooltips() -> void:
+	if _window_internals == null:
+		return
+	if get_node_or_null(_TOP_BAR_TOOLTIP_MANAGER_PATH) == null:
+		return
+	var grid := _window_internals.get_node_or_null("ToolbarGrid") as GridContainer
+	if grid == null:
+		return
+	for child in grid.get_children():
+		var button := child as Control
+		if button == null or not button.visible:
+			continue
+		var text := button.tooltip_text.strip_edges()
+		if text.is_empty():
+			continue
+		button.mouse_filter = Control.MOUSE_FILTER_STOP
+		var trigger := button.get_node_or_null("TooltipTrigger")
+		if trigger == null:
+			trigger = Node.new()
+			trigger.set_script(_ICON_TOOLTIP_TRIGGER_SCRIPT)
+			trigger.name = "TooltipTrigger"
+			trigger.set("tooltip_manager_path", _TOP_BAR_TOOLTIP_MANAGER_PATH)
+			button.add_child(trigger)
+		trigger.set("show_full_text", true)
+		if trigger.has_method("set_tooltip_text"):
+			trigger.call("set_tooltip_text", text)
+		else:
+			trigger.set("tooltip_text", text)
+		button.tooltip_text = ""
+
+
+## Single cortical-area popups wrap actions onto two rows.
+## The "Selected multiple areas" popup and every other quick menu stay on one row.
 ## Hidden actions do not reserve a cell.
 func _fit_toolbar() -> void:
 	_apply_toolbar_icon_size()
@@ -915,17 +960,37 @@ func _fit_toolbar() -> void:
 		var control := child as Control
 		if control != null and control.visible:
 			visible_count += 1
-	var cortical_area_popup: bool = _mode in [
-		GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA,
-		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS,
-	]
-	grid.columns = toolbar_column_count(visible_count, cortical_area_popup)
+	grid.columns = toolbar_column_count(visible_count, toolbar_wraps_two_rows(_mode))
+	if toolbar_packs_icons_flush(_mode):
+		grid.add_theme_constant_override("h_separation", 0)
+	else:
+		grid.remove_theme_constant_override("h_separation")
+	if _titlebar != null:
+		_titlebar.set_close_button_balanced(not toolbar_matches_icon_row(_mode))
+	if toolbar_matches_icon_row(_mode):
+		shrink_window()
 
 
-## Column count for the quick-menu icon grid. Two rows only for cortical-area popups.
-static func toolbar_column_count(visible_count: int, cortical_area_popup: bool) -> int:
+## True only for the single cortical-area quick menu.
+static func toolbar_wraps_two_rows(mode: GenomeObject.ARRAY_MAKEUP) -> bool:
+	return mode == GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA
+
+
+## The multi-area popup packs its icons together. Other quick menus keep theme spacing.
+static func toolbar_packs_icons_flush(mode: GenomeObject.ARRAY_MAKEUP) -> bool:
+	return mode == GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS
+
+
+## The multi-area popup sizes to the icon row. Its title does not keep the window wider.
+static func toolbar_matches_icon_row(mode: GenomeObject.ARRAY_MAKEUP) -> bool:
+	return mode == GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS
+
+
+## Column count for the quick-menu icon grid.
+## wrap_two_rows is true only for the single cortical-area popup.
+static func toolbar_column_count(visible_count: int, wrap_two_rows: bool) -> int:
 	var count: int = maxi(visible_count, 1)
-	if cortical_area_popup:
+	if wrap_two_rows:
 		return maxi((count + 1) / 2, 1)
 	return count
 

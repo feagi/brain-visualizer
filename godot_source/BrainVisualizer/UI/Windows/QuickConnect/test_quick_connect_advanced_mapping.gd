@@ -223,9 +223,39 @@ func _test_episodic_memory_and_classifier_hide_advanced() -> int:
 
 func _test_quick_menu_two_rows_only_for_cortical_areas() -> int:
 	if QuickCorticalMenu.toolbar_column_count(14, true) != 7:
-		push_error("cortical area popup must split its actions across two rows")
+		push_error("single cortical area popup must split its actions across two rows")
 		return 1
 	if QuickCorticalMenu.toolbar_column_count(14, false) != 14:
-		push_error("brain region popup must keep its actions on one row")
+		push_error("one-row popups must keep their actions on one row")
+		return 1
+	if not QuickCorticalMenu.toolbar_wraps_two_rows(GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA):
+		push_error("single cortical area popup must wrap onto two rows")
+		return 1
+	if QuickCorticalMenu.toolbar_wraps_two_rows(GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS):
+		push_error("selected multiple areas popup must stay on one row")
+		return 1
+	if QuickCorticalMenu.toolbar_wraps_two_rows(GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION):
+		push_error("brain region popup must stay on one row")
+		return 1
+	if QuickCorticalMenu.toolbar_wraps_two_rows(GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS):
+		push_error("multiple circuits popup must stay on one row")
+		return 1
+	if not QuickCorticalMenu.toolbar_packs_icons_flush(GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS):
+		push_error("selected multiple areas popup must pack its icons with no gap")
+		return 1
+	if QuickCorticalMenu.toolbar_packs_icons_flush(GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA):
+		push_error("single cortical area popup must keep its theme spacing")
+		return 1
+	if QuickCorticalMenu.toolbar_packs_icons_flush(GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION):
+		push_error("brain region popup must keep its theme spacing")
+		return 1
+	if not QuickCorticalMenu.toolbar_matches_icon_row(GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS):
+		push_error("selected multiple areas popup must size to its icon row")
+		return 1
+	if QuickCorticalMenu.toolbar_matches_icon_row(GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA):
+		push_error("single cortical area popup must keep its title width")
+		return 1
+	if QuickCorticalMenu.toolbar_matches_icon_row(GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS):
+		push_error("multiple circuits popup must keep its title width")
 		return 1
 	return 0

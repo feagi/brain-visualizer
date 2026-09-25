@@ -15,8 +15,7 @@ const TRIANGLE_WIDTH_BASE_PX: float = 12.0
 const BODY_BG_COLOR: Color = Color(0, 0, 0, 0.78)
 const BODY_EDGE_COLOR: Color = Color(1, 1, 1, 0.14)
 
-const TOOLTIP_FONT_SCALE_FACTOR: float = 0.65
-const TOOLTIP_FONT_MIN_PX: int = 10
+const TOOLTIP_THEME_TYPE: StringName = &"TooltipLabel"
 
 var _caret: TooltipCaretLeft
 var _body: PanelContainer
@@ -57,7 +56,7 @@ func _ready() -> void:
 	_body.add_child(margin)
 	
 	_label = Label.new()
-	_label.theme_type_variation = &"Label"
+	_label.theme_type_variation = TOOLTIP_THEME_TYPE
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -107,19 +106,31 @@ func _ui_scale() -> float:
 
 
 func _resolve_theme_font_size_px() -> int:
-	var base_px: int = 14
+	_apply_tooltip_theme()
+	if _label != null and is_instance_valid(_label):
+		var label_sz: int = _label.get_theme_font_size("font_size")
+		if label_sz > 0:
+			return label_sz
 	if is_instance_valid(BV) and BV.UI != null and BV.UI.loaded_theme != null:
-		var sz: int = BV.UI.loaded_theme.get_font_size("font_size", "Label")
-		if sz > 0:
-			base_px = sz
-	var scaled: float = float(base_px) * TOOLTIP_FONT_SCALE_FACTOR * _ui_scale()
-	return maxi(TOOLTIP_FONT_MIN_PX, int(round(scaled)))
+		var theme_sz: int = BV.UI.loaded_theme.get_font_size("font_size", TOOLTIP_THEME_TYPE)
+		if theme_sz > 0:
+			return theme_sz
+	return 0
+
+
+func _apply_tooltip_theme() -> void:
+	if _label == null or not is_instance_valid(_label):
+		return
+	_label.remove_theme_font_size_override("font_size")
+	if is_instance_valid(BV) and BV.UI != null and BV.UI.loaded_theme != null:
+		_label.theme = BV.UI.loaded_theme
+	_label.theme_type_variation = TOOLTIP_THEME_TYPE
 
 
 func _apply_tooltip_typography() -> void:
 	if _label == null or not is_instance_valid(_label):
 		return
-	_label.add_theme_font_size_override("font_size", _resolve_theme_font_size_px())
+	_apply_tooltip_theme()
 	_label.add_theme_color_override("font_color", Color.WHITE)
 
 

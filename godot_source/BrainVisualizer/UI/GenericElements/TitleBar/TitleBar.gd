@@ -47,6 +47,9 @@ var _viewport: Viewport
 var _title: Label
 var _tex_button: TextureButton
 var _left_gap: Control
+## When false, the left spacer that mirrors the close button is removed so the
+## window can be only as wide as its content. Other windows keep the spacer.
+var _balance_close_button: bool = true
 
 func _ready() -> void:
 	_viewport = get_viewport()
@@ -94,14 +97,38 @@ func is_titlebar_within_view_bounds() -> bool:
 	return true
 
 func get_minimum_width() -> int:
-	var minimum_width: int = 2 * int(_tex_button.size_x ) # size of the close button and left gap
-	minimum_width += _title.get_theme_font(&"font").get_string_size(_title.text, HORIZONTAL_ALIGNMENT_CENTER, -1, _title.get_theme_font_size(&"font_size")).x
+	var close_width: int = int(_tex_button.custom_minimum_size.x)
+	var minimum_width: int = close_width
+	if _balance_close_button:
+		minimum_width += close_width
+	minimum_width += int(_title.get_theme_font(&"font").get_string_size(_title.text, HORIZONTAL_ALIGNMENT_CENTER, -1, _title.get_theme_font_size(&"font_size")).x)
 	return minimum_width
 
+
+## Collapse the centering spacer so this window can match a narrower content row.
+## Other title bars stay balanced.
+func set_close_button_balanced(balanced: bool) -> void:
+	_balance_close_button = balanced
+	_apply_title_width()
+
+
 func _on_theme_change(_new_theme: Theme = null) -> void:
+	_apply_title_width()
+
+
+func _apply_title_width() -> void:
+	if _tex_button == null or _left_gap == null or _title == null:
+		return
 	var min_size: Vector2i = BV.UI.get_minimum_size_from_loaded_theme("TextureButton_WindowClose")
 	_tex_button.custom_minimum_size = min_size
-	_left_gap.custom_minimum_size = min_size
+	if _balance_close_button:
+		_left_gap.visible = true
+		_left_gap.custom_minimum_size = min_size
+		_title.clip_text = false
+		return
+	_left_gap.visible = false
+	_left_gap.custom_minimum_size = Vector2i.ZERO
+	_title.clip_text = true
 
 
 ## Processes Mouse clicks on the title bar

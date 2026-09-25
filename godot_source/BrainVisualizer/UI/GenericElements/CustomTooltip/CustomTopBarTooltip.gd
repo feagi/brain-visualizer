@@ -18,15 +18,16 @@ const TRIANGLE_BASE_WIDTH_BASE_PX: float = 20.0
 const BODY_BG_COLOR: Color = Color(0, 0, 0, 0.78)
 const BODY_EDGE_COLOR: Color = Color(1, 1, 1, 0.14)
 
-## Smaller than top-bar button labels ([Label_Header]); scales with theme [Label] + UI zoom.
-const TOOLTIP_FONT_SCALE_FACTOR: float = 0.65
-const TOOLTIP_FONT_MIN_PX: int = 10
+## Smaller than top-bar button labels ([Label_Header]). Size comes from theme type TooltipLabel.
+const TOOLTIP_THEME_TYPE: StringName = &"TooltipLabel"
 
 var _caret: TooltipCaret
 var _body: PanelContainer
 var _label: Label
 var _tween: Tween
 var _current_anchor: Control = null
+var _active_max_lines: int = MAX_VISIBLE_TEXT_LINES
+var _show_all_lines: bool = false
 
 signal tooltip_hidden()
 
@@ -58,7 +59,7 @@ func _ready() -> void:
 	_body.add_child(margin)
 	
 	_label = Label.new()
-	_label.theme_type_variation = &"Label"
+	_label.theme_type_variation = TOOLTIP_THEME_TYPE
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -109,20 +110,32 @@ func _ui_scale() -> float:
 
 
 func _resolve_theme_font_size_px() -> int:
-	# Use base [Label] size (not [Label_Header] on buttons), then shrink so tooltips read as secondary.
-	var base_px: int = 14
+	_apply_tooltip_theme()
+	if _label != null and is_instance_valid(_label):
+		var label_sz: int = _label.get_theme_font_size("font_size")
+		if label_sz > 0:
+			return label_sz
 	if is_instance_valid(BV) and BV.UI != null and BV.UI.loaded_theme != null:
-		var sz: int = BV.UI.loaded_theme.get_font_size("font_size", "Label")
-		if sz > 0:
-			base_px = sz
-	var scaled: float = float(base_px) * TOOLTIP_FONT_SCALE_FACTOR * _ui_scale()
-	return maxi(TOOLTIP_FONT_MIN_PX, int(round(scaled)))
+		var theme_sz: int = BV.UI.loaded_theme.get_font_size("font_size", TOOLTIP_THEME_TYPE)
+		if theme_sz > 0:
+			return theme_sz
+	return 0
+
+
+func _apply_tooltip_theme() -> void:
+	if _label == null or not is_instance_valid(_label):
+		return
+	_label.label_settings = null
+	_label.remove_theme_font_size_override("font_size")
+	if is_instance_valid(BV) and BV.UI != null and BV.UI.loaded_theme != null:
+		_label.theme = BV.UI.loaded_theme
+	_label.theme_type_variation = TOOLTIP_THEME_TYPE
 
 
 func _apply_tooltip_typography() -> void:
 	if _label == null or not is_instance_valid(_label):
 		return
-	_label.add_theme_font_size_override("font_size", _resolve_theme_font_size_px())
+	_apply_tooltip_theme()
 	_label.add_theme_color_override("font_color", Color.WHITE)
 
 
@@ -156,12 +169,13 @@ func _apply_label_size_for_text(text: String) -> void:
 	if font == null:
 		font = ThemeDB.fallback_font
 	var measure_text: String = text if not text.is_empty() else " "
+	var line_limit: int = -1 if _show_all_lines else _active_max_lines
 	var block: Vector2 = font.get_multiline_string_size(
 		measure_text,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		max_w,
 		fs,
-		MAX_VISIBLE_TEXT_LINES
+		line_limit
 	)
 	var line_spacing: int = maxi(2, int(round(float(fs) * 0.18)))
 	_label.add_theme_constant_override("line_spacing", line_spacing)
@@ -175,7 +189,8 @@ func _apply_label_size_for_text(text: String) -> void:
 	_label.text = text
 
 
-func show_tooltip(text: String, anchor_control: Control) -> void:
+## max_lines: negative keeps the shared two-line cap. Zero shows every line.
+func show_tooltip(text: String, anchor_control: Control, max_lines: int = -1) -> void:
 	if text.is_empty():
 		hide_tooltip()
 		return
@@ -190,6 +205,16 @@ func show_tooltip(text: String, anchor_control: Control) -> void:
 		return
 	
 	_current_anchor = anchor_control
+	_show_all_lines = max_lines == 0
+	_active_max_lines = MAX_VISIBLE_TEXT_LINES if max_lines < 1 else max_lines
+	if _show_all_lines:
+		_label.max_lines_visible = -1
+		_label.clip_text = false
+		_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	else:
+		_label.max_lines_visible = _active_max_lines
+		_label.clip_text = true
+		_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_apply_caret_metrics()
 	_apply_tooltip_typography()
 	_apply_label_size_for_text(text)

@@ -10,6 +10,8 @@ const SHOW_DELAY_SEC: float = 0.45
 ## 0 keeps [member CustomSideCaretTooltip] defaults. Region descriptions set a larger wrap/line budget.
 @export var max_visible_lines: int = 0
 @export var max_wrap_width_px: float = 0.0
+## Downward tooltips. False keeps the shared two-line cap. True shows the full string.
+@export var show_full_text: bool = false
 @export var tooltip_manager_path: NodePath
 
 var _parent_control: Control
@@ -50,6 +52,8 @@ func _suppress_tooltip_while_dropdown_open() -> bool:
 		return (_parent_control as ToggleImageDropDown).is_menu_open()
 	if _parent_control is ActivityVisualizationDropDown:
 		return (_parent_control as ActivityVisualizationDropDown).is_inspector_dropdown_menu_open()
+	if _parent_control is ArrangeDropDown:
+		return (_parent_control as ArrangeDropDown).is_menu_open()
 	return false
 
 
@@ -80,7 +84,8 @@ func _on_show_delay_timeout() -> void:
 	if use_side_caret_tooltip and _tooltip_manager.has_method("show_tooltip_side_caret"):
 		_tooltip_manager.show_tooltip_side_caret(tooltip_text, _parent_control, max_visible_lines, max_wrap_width_px)
 	elif _tooltip_manager.has_method("show_tooltip"):
-		_tooltip_manager.show_tooltip(tooltip_text, _parent_control)
+		var line_cap: int = 0 if show_full_text else -1
+		_tooltip_manager.show_tooltip(tooltip_text, _parent_control, line_cap)
 
 func _on_mouse_exited() -> void:
 	_is_hovering = false

@@ -188,12 +188,13 @@ static func strip_native_tooltips_recursive(node: Node) -> void:
 	for child in node.get_children():
 		strip_native_tooltips_recursive(child)
 
-func show_tooltip(text: String, anchor_control: Control) -> void:
+## max_lines: negative keeps the shared two-line cap. Zero shows every line.
+func show_tooltip(text: String, anchor_control: Control, max_lines: int = -1) -> void:
 	if _tooltip_side and is_instance_valid(_tooltip_side):
 		_tooltip_side.hide_tooltip()
 	if _tooltip and is_instance_valid(_tooltip):
 		if anchor_control and is_instance_valid(anchor_control):
-			_tooltip.show_tooltip(text, anchor_control)
+			_tooltip.show_tooltip(text, anchor_control, max_lines)
 
 
 func show_tooltip_side_caret(text: String, anchor_control: Control, max_lines: int = -1, wrap_width_px: float = -1.0) -> void:
