@@ -2,7 +2,9 @@ extends BaseDraggableWindow
 class_name WindowQuickConnect
 
 const WINDOW_NAME: StringName = "quick_connect"
+const DestinationPick = preload("res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectDestinationPick.gd")
 
+# Ordinals match QuickConnectDestinationPick.STEP.
 enum POSSIBLE_STATES {
 	SOURCE,
 	DESTINATION,
@@ -135,9 +137,10 @@ func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.S
 				return
 			var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea
 			_set_source(cortical_area)
-		POSSIBLE_STATES.DESTINATION:
-			# The source area stays highlighted. A classifier click must still win
-			# unless Ctrl is held for multi-select.
+		POSSIBLE_STATES.DESTINATION, POSSIBLE_STATES.MORPHOLOGY, POSSIBLE_STATES.IDLE:
+			# Mouse clicks keep choosing the destination. Edit still opens Cortical Area Explorer.
+			if not DestinationPick.accepts_mouse_destination_click(_current_state):
+				return
 			var picked_classifier: GenomeClassifier = GenomeClassifier.destination_classifier_from_selection(objects, _is_ctrl_modifier_held())
 			if picked_classifier != null:
 				_set_classifier_destination(picked_classifier)
@@ -148,6 +151,8 @@ func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.S
 			if len(objects) != 1:
 				return
 			if objects[0] is BrainRegion:
+				return
+			if not (objects[0] is AbstractCorticalArea):
 				return
 			_destination_classifier = null
 			var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea

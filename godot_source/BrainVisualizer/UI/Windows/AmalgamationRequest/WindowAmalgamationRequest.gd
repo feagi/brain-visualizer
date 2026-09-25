@@ -17,6 +17,7 @@ var _circuit_size: Vector3i
 var _is_pre_submit_clone: bool = false
 var _source_region_for_clone: BrainRegion = null
 var _region_preview: UI_BrainMonitor_BrainRegionPreview = null
+var _preview_host_bm: UI_BrainMonitor_3DScene = null
 var _interactive_preview: UI_BrainMonitor_InteractivePreview = null
 var _preview_refresh_generation: int = 0
 
@@ -135,16 +136,39 @@ func _attach_placement_preview() -> void:
 	var move_signals: Array[Signal] = [_field_3d_location.user_updated_vector]
 	var resize_signals: Array[Signal] = [null_dimchange_signal]
 	if _is_pre_submit_clone:
-		_region_preview = bm.create_brain_region_preview(_source_region_for_clone, _field_3d_location.current_vector)
+		_preview_host_bm = bm
+		# Do not auto-frame: reframing zooms the camera and hides the relocate gizmo.
+		_region_preview = bm.create_brain_region_preview(
+			_source_region_for_clone,
+			_field_3d_location.current_vector,
+			false,
+			false
+		)
+		if bm.has_method("start_brain_region_preview_relocation"):
+			bm.start_brain_region_preview_relocation(
+				_region_preview,
+				_field_3d_location.current_vector,
+				Callable(self, "_on_clone_preview_moved_via_gizmo")
+			)
 	else:
 		_interactive_preview = bm.create_preview(Vector3i(0,0,0), _circuit_size, false)
 		_interactive_preview.connect_UI_signals(move_signals, resize_signals, closed_signals)
 
 
+## Keeps the clone window coordinates matched to a gizmo drag.
+func _on_clone_preview_moved_via_gizmo(new_coords: Vector3i) -> void:
+	if _field_3d_location == null:
+		return
+	_field_3d_location.current_vector = new_coords
+
+
 func _cleanup_placement_previews() -> void:
-	if _region_preview != null:
+	if _region_preview != null and is_instance_valid(_region_preview):
+		if _preview_host_bm != null and is_instance_valid(_preview_host_bm) and _preview_host_bm.has_method("stop_brain_region_preview_relocation"):
+			_preview_host_bm.stop_brain_region_preview_relocation(_region_preview)
 		_region_preview.cleanup()
-		_region_preview = null
+	_region_preview = null
+	_preview_host_bm = null
 	if _interactive_preview != null and is_instance_valid(_interactive_preview):
 		_interactive_preview.queue_free()
 		_interactive_preview = null

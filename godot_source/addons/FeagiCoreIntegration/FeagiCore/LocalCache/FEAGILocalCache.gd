@@ -1068,7 +1068,6 @@ func _check_hash_and_queue(hash_key: StringName, current_value: Variant, previou
 		return current_hash
 	
 	if current_hash != previous_value:
-		print("HASH CHANGE DETECTED: %s %d -> %d (refresh=%s)" % [hash_key, previous_value, current_hash, refresh_method])
 		_queue_hash_refresh(hash_key, current_hash, refresh_method)
 	
 	return previous_value
@@ -1080,11 +1079,9 @@ func _check_agent_hash_and_queue(current_value: Variant, previous_value: int) ->
 	var current_hash: int = int(current_value)
 	if previous_value == 0:
 		if current_hash != 0 and agent_capabilities_map.is_empty():
-			print("HASH CHANGE DETECTED: agent_data_hash 0 -> %d (refresh=_refresh_agent_data_from_feagi)" % current_hash)
 			_queue_hash_refresh(&"agent_data_hash", current_hash, &"_refresh_agent_data_from_feagi")
 		return current_hash
 	if current_hash != previous_value:
-		print("HASH CHANGE DETECTED: agent_data_hash %d -> %d (refresh=_refresh_agent_data_from_feagi)" % [previous_value, current_hash])
 		_queue_hash_refresh(&"agent_data_hash", current_hash, &"_refresh_agent_data_from_feagi")
 	return previous_value
 

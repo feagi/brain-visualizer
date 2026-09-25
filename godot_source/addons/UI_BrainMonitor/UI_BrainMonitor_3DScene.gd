@@ -5,6 +5,7 @@ class_name UI_BrainMonitor_3DScene
 const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
 const ContinuousSelectedNeuronFiringLib = preload("res://addons/UI_BrainMonitor/ContinuousSelectedNeuronFiring.gd")
 const BoxSelectLib = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_BoxSelect.gd")
+const QuickConnectDestinationPickLib = preload("res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectDestinationPick.gd")
 
 @export var multi_select_key: Key = KEY_SHIFT
 
@@ -2017,6 +2018,20 @@ func _handle_cortical_pick_click_event(
 		if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY:
 			if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
 				return
+			# Quick Connect destination is the clicked area alone. Ctrl still multi-selects.
+			if quick_connect_override_active and not bm_input_event.ctrl_pressed:
+				var qc_ctx: SelectionSystem.SOURCE_CONTEXT = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE
+				if hit_parent_parent.cortical_area.current_parent_region != _representing_region:
+					qc_ctx = SelectionSystem.SOURCE_CONTEXT.FROM_3D_SCENE_ON_PLATE
+				var qc_clicked: AbstractCorticalArea = hit_parent_parent.cortical_area
+				var qc_object: GenomeObject = _selection_object_for_cortical_area(qc_clicked)
+				var qc_selection: SelectionSystem = BV.UI.selection_system
+				qc_selection.clear_all_highlighted()
+				qc_selection.add_to_highlighted(qc_object)
+				qc_selection.select_objects(qc_ctx, [qc_object])
+				if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN and _is_quick_connect_neuron_waiting_for_entire_area_selection():
+					cortical_area_selected_neurons_changed_delta.emit(qc_clicked, neuron_coordinate_clicked, true)
+				return
 			if bm_input_event.ctrl_pressed:
 				var focus_plane: StringName = &""
 				if Input.is_physical_key_pressed(KEY_1):
@@ -2041,32 +2056,25 @@ func _handle_cortical_pick_click_event(
 					var clicked_area: AbstractCorticalArea = hit_parent_parent.cortical_area
 					var clicked_object: GenomeObject = _selection_object_for_cortical_area(clicked_area)
 					var selection_system: SelectionSystem = BV.UI.selection_system
-					# Quick connect destination is the clicked object alone. Leaving the source
-					# highlighted made the classifier click look like a multi-select and skipped Establish.
-					if quick_connect_override_active and not bm_input_event.ctrl_pressed:
-						selection_system.clear_all_highlighted()
+					if selection_system.is_highlighted(clicked_object):
+						selection_system.remove_from_highlighted(clicked_object)
+					elif clicked_object is GenomeClassifier:
 						selection_system.add_to_highlighted(clicked_object)
-						selection_system.select_objects(ctx, [clicked_object])
 					else:
-						if selection_system.is_highlighted(clicked_object):
-							selection_system.remove_from_highlighted(clicked_object)
-						elif clicked_object is GenomeClassifier:
-							selection_system.add_to_highlighted(clicked_object)
+						var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(clicked_area)
+						var filtered_group: Array[AbstractCorticalArea] = []
+						if unit_members.size() > 1:
+							var clicked_region = clicked_area.current_parent_region
+							for m in unit_members:
+								if m.current_parent_region == clicked_region:
+									filtered_group.append(m)
+						if filtered_group.size() > 1:
+							for member in filtered_group:
+								if not selection_system.is_highlighted(member):
+									selection_system.add_to_highlighted(member)
 						else:
-							var unit_members: Array[AbstractCorticalArea] = _get_unit_group_members(clicked_area)
-							var filtered_group: Array[AbstractCorticalArea] = []
-							if unit_members.size() > 1:
-								var clicked_region = clicked_area.current_parent_region
-								for m in unit_members:
-									if m.current_parent_region == clicked_region:
-										filtered_group.append(m)
-							if filtered_group.size() > 1:
-								for member in filtered_group:
-									if not selection_system.is_highlighted(member):
-										selection_system.add_to_highlighted(member)
-							else:
-								selection_system.add_to_highlighted(clicked_area)
-						BV.UI.selection_system.select_objects(ctx)
+							selection_system.add_to_highlighted(clicked_area)
+					BV.UI.selection_system.select_objects(ctx)
 					if BV.UI != null:
 						BV.UI.refresh_area_firing_recorder_from_ctrl_selection()
 				return
@@ -2332,7 +2340,6 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				if region_frame:
 					_hide_all_region_description_labels()
 					region_frame.set_hover_state(true)
-					print("🧠 Hovering over red line wireframe brain region: %s" % region_frame.representing_region.friendly_name)
 					# Fallback plate detection by hit position against plate meshes (in case plate colliders weren't hit)
 					if _UI_layer_for_BM:
 						var hit_pos: Vector3 = hit["position"]
@@ -2493,6 +2500,16 @@ func _get_bm_mouse_position() -> Vector2:
 	return sv.get_mouse_position()
 
 
+func _quick_connect_click_prefers_cortical_volume() -> bool:
+	if BV == null or BV.UI == null or BV.UI.selection_system == null:
+		return false
+	var selection: SelectionSystem = BV.UI.selection_system
+	return QuickConnectDestinationPickLib.click_prefers_cortical_volume(
+		selection.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT),
+		selection.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT_NEURON),
+	)
+
+
 func _box_select_is_allowed() -> bool:
 	if _manipulation_active:
 		return false
@@ -2620,11 +2637,24 @@ func _process_scene_pick_click(
 	bm_input_event: UI_BrainMonitor_InputEvent_Click,
 	currently_moused_over_volumes: Array[UI_BrainMonitor_CorticalArea],
 ) -> void:
+	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
+	# Plate pick volumes sit in front of areas. Quick Connect must still receive the area click.
+	if _quick_connect_click_prefers_cortical_volume():
+		var cortical_hit: Dictionary = _raycast_first_cortical_renderer_hit(current_space, bm_input_event.get_ray_query())
+		if not cortical_hit.is_empty():
+			var cortical_collider: Node = cortical_hit.get(&"collider") as Node
+			if cortical_collider != null and cortical_collider.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
+				_handle_cortical_pick_click_event(
+					bm_input_event,
+					cortical_collider.get_parent() as UI_BrainMonitor_AbstractCorticalAreaRenderer,
+					cortical_hit["position"],
+					currently_moused_over_volumes,
+				)
+				return
 	var title_region: UI_BrainMonitor_BrainRegion3D = _pick_region_title_at_screen(_get_bm_mouse_position())
 	if title_region != null:
 		_activate_region_frame_click(title_region, bm_input_event)
 		return
-	var current_space: PhysicsDirectSpaceState3D = _world_3D.direct_space_state
 	var hit: Dictionary = current_space.intersect_ray(bm_input_event.get_ray_query())
 	if hit.is_empty():
 		if _UI_layer_for_BM:
@@ -4456,13 +4486,12 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	# cache refresh, AbstractCorticalArea objects are recreated with the same ID; returning the old viz
 	# skips setup() and BV neuron-activity registration.
 	if area.cortical_ID in _cortical_visualizations_by_ID:
-		var existing_viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[area.cortical_ID]
-		if existing_viz != null and is_instance_valid(existing_viz):
+		var existing_viz: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(area.cortical_ID)
+		if existing_viz != null:
 			var bound: AbstractCorticalArea = existing_viz.cortical_area
 			if bound != null and bound == area:
 				return existing_viz
-		# Drop stale visualization for this cortical ID, then create a fresh one below.
-		if existing_viz != null and is_instance_valid(existing_viz):
+			# Drop stale visualization for this cortical ID, then create a fresh one below.
 			var old_area: AbstractCorticalArea = existing_viz.cortical_area
 			if old_area != null:
 				var rm := Callable(self, "_remove_cortical_area").bind(old_area)
@@ -4523,21 +4552,33 @@ func add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalAr
 
 ## Gets an existing cortical area visualization by ID (used by brain region frames)
 func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
-	var viz = _cortical_visualizations_by_ID.get(cortical_id, null)
+	var viz: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(cortical_id)
 	if viz == null:
-		viz = _cortical_visualizations_by_ID.get(StringName(cortical_id), null)
-	if viz == null or not is_instance_valid(viz):
-		if _cortical_visualizations_by_ID.has(cortical_id):
-			_cortical_visualizations_by_ID.erase(cortical_id)
-		var want: String = cortical_id.strip_edges().to_lower()
-		for key in _cortical_visualizations_by_ID.keys():
-			if str(key).strip_edges().to_lower() != want:
-				continue
-			var matched: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[key]
-			if matched != null and is_instance_valid(matched):
-				return matched
+		viz = _read_cortical_visualization(StringName(cortical_id))
+	if viz != null:
+		return viz
+	if _cortical_visualizations_by_ID.has(cortical_id):
+		_cortical_visualizations_by_ID.erase(cortical_id)
+	if _cortical_visualizations_by_ID.has(StringName(cortical_id)):
+		_cortical_visualizations_by_ID.erase(StringName(cortical_id))
+	var want: String = cortical_id.strip_edges().to_lower()
+	for key in _cortical_visualizations_by_ID.keys():
+		if str(key).strip_edges().to_lower() != want:
+			continue
+		var matched: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(key)
+		if matched != null:
+			return matched
+		_cortical_visualizations_by_ID.erase(key)
+	return null
+
+
+## Read one cortical volume without throwing when the stored node was already freed.
+## Godot 4.5 typed Dictionary assignment errors with "previously freed instance".
+func _read_cortical_visualization(cortical_id: Variant) -> UI_BrainMonitor_CorticalArea:
+	var v_raw: Variant = _cortical_visualizations_by_ID.get(cortical_id)
+	if v_raw == null or not is_instance_valid(v_raw):
 		return null
-	return viz
+	return v_raw as UI_BrainMonitor_CorticalArea
 
 ## Check if this brain monitor is currently visualizing a specific cortical area
 func has_cortical_area_visualization(cortical_id: String) -> bool:
@@ -4562,17 +4603,17 @@ func _prune_invalid_cortical_refs_from_mouse_tracking() -> void:
 
 
 func _remove_cortical_area(area: AbstractCorticalArea) -> void:
-	if area.cortical_ID not in _cortical_visualizations_by_ID:
-		push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)
+	if area == null or area.cortical_ID not in _cortical_visualizations_by_ID:
+		if area != null:
+			push_warning("Unable to remove from BM nonexistant cortical area of ID %s!" % area.cortical_ID)
 		return
-	var rendering_area: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[area.cortical_ID]
-	if is_instance_valid(rendering_area):
+	var rendering_area: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(area.cortical_ID)
+	if rendering_area != null:
 		_previously_moused_over_volumes.erase(rendering_area)
 		_previously_moused_over_cortical_area_neurons.erase(rendering_area)
+		rendering_area.queue_free()
 	else:
 		_prune_invalid_cortical_refs_from_mouse_tracking()
-	if is_instance_valid(rendering_area):
-		rendering_area.queue_free()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
 
 func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_BrainRegion3D
@@ -4608,7 +4649,10 @@ func _remove_brain_region_frame(brain_region: BrainRegion) -> void:
 		push_warning("Unable to remove from BM nonexistant brain region of ID %s!" % brain_region.region_ID)
 		return
 	var region_frame = _brain_region_visualizations_by_ID[brain_region.region_ID]  # UI_BrainMonitor_BrainRegion3D
-	region_frame.queue_free()
+	if region_frame != null and is_instance_valid(region_frame):
+		if region_frame.has_method("detach_shared_cortical_visualizations"):
+			region_frame.detach_shared_cortical_visualizations()
+		region_frame.queue_free()
 	_brain_region_visualizations_by_ID.erase(brain_region.region_ID)
 
 func _on_brain_region_double_clicked(brain_region: BrainRegion) -> void:
@@ -4761,21 +4805,27 @@ func _selection_object_for_cortical_area(area: AbstractCorticalArea) -> GenomeOb
 
 
 func _strip_classifier_internal_memory_visuals() -> void:
-	var stale_ids: Array[StringName] = []
-	for cortical_id in _cortical_visualizations_by_ID.keys():
-		var viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID[cortical_id]
-		if viz == null or not is_instance_valid(viz):
-			stale_ids.append(cortical_id)
+	# Snapshot keys. Do not assign dict values to typed vars: Godot 4.5 throws
+	# "Trying to assign invalid previously freed instance" after a plate teardown.
+	var ids_snapshot: Array = _cortical_visualizations_by_ID.keys()
+	var hide_ids: Array = []
+	var dead_ids: Array = []
+	for cortical_id in ids_snapshot:
+		var viz: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(cortical_id)
+		if viz == null:
+			dead_ids.append(cortical_id)
 			continue
 		var bound: AbstractCorticalArea = viz.cortical_area
 		if bound != null and GenomeClassifier.should_hide_area_in_brain_monitor(bound):
-			stale_ids.append(cortical_id)
-	for cortical_id in stale_ids:
-		var viz: UI_BrainMonitor_CorticalArea = _cortical_visualizations_by_ID.get(cortical_id, null)
-		if viz != null and is_instance_valid(viz) and viz.cortical_area != null:
-			_remove_cortical_area(viz.cortical_area)
-		else:
+			hide_ids.append(cortical_id)
+	for cortical_id in dead_ids:
+		_cortical_visualizations_by_ID.erase(cortical_id)
+	for cortical_id in hide_ids:
+		var viz: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(cortical_id)
+		if viz == null or viz.cortical_area == null:
 			_cortical_visualizations_by_ID.erase(cortical_id)
+			continue
+		_remove_cortical_area(viz.cortical_area)
 
 
 ## Classifier internals stay off Brain Monitor; regular memories stay off the root monitor only.

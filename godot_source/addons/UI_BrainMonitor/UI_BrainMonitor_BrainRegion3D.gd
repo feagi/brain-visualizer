@@ -438,19 +438,23 @@ func _deferred_io_verification_and_hydration() -> void:
 		for area in updated_output_areas:
 			updated_io_ids.append(area.cortical_ID)
 		
-		# Only clear visualizations that are no longer I/O areas
+		# Only clear visualizations that are no longer I/O areas.
+		# Volumes stay alive; the 3D scene owns them.
+		var scene_root: Node = get_parent()
 		for child in _input_areas_container.get_children():
 			var area_id = child.name.replace("CA_", "")  # Extract cortical ID from node name
 			if area_id not in updated_io_ids:
 				# print("    🧹 HYDRATION: Removing outdated input visualization: %s" % area_id)
-				child.queue_free()
+				if scene_root != null and child is UI_BrainMonitor_CorticalArea:
+					_return_cortical_visualization_to_scene_root(child as UI_BrainMonitor_CorticalArea, scene_root)
 				_cortical_area_visualizations.erase(area_id)
 		
 		for child in _output_areas_container.get_children():
 			var area_id = child.name.replace("CA_", "")  # Extract cortical ID from node name  
 			if area_id not in updated_io_ids:
 				# print("    🧹 HYDRATION: Removing outdated output visualization: %s" % area_id)
-				child.queue_free()
+				if scene_root != null and child is UI_BrainMonitor_CorticalArea:
+					_return_cortical_visualization_to_scene_root(child as UI_BrainMonitor_CorticalArea, scene_root)
 				_cortical_area_visualizations.erase(area_id)
 		
 		# print("    🔄 HYDRATION: Selective cleanup complete - keeping valid I/O visualizations")
@@ -2516,8 +2520,8 @@ func _on_cortical_area_added(area: AbstractCorticalArea) -> void:
 
 func _on_cortical_area_removed(area: AbstractCorticalArea) -> void:
 	# print("🧠 BrainRegion3D: Cortical area removed from region, refreshing frame")
-	if area.cortical_ID in _cortical_area_visualizations:
-		_cortical_area_visualizations[area.cortical_ID].queue_free()
+	# The 3D scene owns the volume node. Drop only this plate's tracking entry.
+	if area != null and area.cortical_ID in _cortical_area_visualizations:
 		_cortical_area_visualizations.erase(area.cortical_ID)
 	_refresh_frame_contents()
 
@@ -2700,10 +2704,14 @@ func _refresh_frame_contents() -> void:
 			visualizations_to_remove.append(area_id)
 		# print("🧹 REFRESH: Removing visualization for area %s (no longer I/O for this region)" % area_id)
 	
-	# Remove outdated visualizations
+	# Return outdated I/O volumes to the 3D scene. They are not owned by this plate.
 	for area_id in visualizations_to_remove:
 		if area_id in _cortical_area_visualizations:
-			_cortical_area_visualizations[area_id].queue_free()
+			var stale_viz: Variant = _cortical_area_visualizations[area_id]
+			if stale_viz != null and is_instance_valid(stale_viz) and stale_viz is UI_BrainMonitor_CorticalArea:
+				var scene_root: Node = get_parent()
+				if scene_root != null:
+					_return_cortical_visualization_to_scene_root(stale_viz as UI_BrainMonitor_CorticalArea, scene_root)
 			_cortical_area_visualizations.erase(area_id)
 	
 	# print("🔄 REFRESH: Keeping %d existing I/O visualizations, removed %d outdated ones" % [current_io_ids.size() - visualizations_to_remove.size(), visualizations_to_remove.size()])
@@ -2831,9 +2839,63 @@ func handle_double_click() -> void:
 	region_double_clicked.emit(_representing_region)
 	# print("🧠 BrainRegion3D: Double-clicked region '%s' - ready for dive-in navigation" % _representing_region.friendly_name)
 
+## Pull cortical volumes off this plate before plate nodes are freed.
+## Those nodes are owned by UI_BrainMonitor_3DScene._cortical_visualizations_by_ID.
+func detach_shared_cortical_visualizations() -> void:
+	var scene_root: Node = get_parent()
+	if scene_root == null or not is_instance_valid(scene_root):
+		return
+	_detach_cortical_visualizations_under(self, scene_root)
+
+
+func _detach_cortical_visualizations_under(node: Node, scene_root: Node) -> void:
+	var children: Array = node.get_children()
+	for child in children:
+		if child == null or not is_instance_valid(child):
+			continue
+		if child is UI_BrainMonitor_CorticalArea:
+			_return_cortical_visualization_to_scene_root(child as UI_BrainMonitor_CorticalArea, scene_root)
+			continue
+		_detach_cortical_visualizations_under(child, scene_root)
+
+
+## Move a plate-hosted volume back to the scene root and restore FEAGI-driven placement.
+func _return_cortical_visualization_to_scene_root(viz: UI_BrainMonitor_CorticalArea, scene_root: Node) -> void:
+	if viz == null or not is_instance_valid(viz) or viz.is_queued_for_deletion():
+		return
+	if scene_root == null or not is_instance_valid(scene_root):
+		return
+	var area: AbstractCorticalArea = viz.cortical_area
+	if area != null:
+		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
+		if area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.disconnect(dimensions_cb)
+		var slaved_to_power: bool = AbstractCorticalArea.is_core_cluster_slaved_to_power_layout(area.cortical_ID)
+		if not slaved_to_power and not area.coordinates_3D_updated.is_connected(viz.set_new_position):
+			area.coordinates_3D_updated.connect(viz.set_new_position)
+		if viz._dda_renderer != null and is_instance_valid(viz._dda_renderer):
+			if not area.coordinates_3D_updated.is_connected(viz._dda_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.connect(viz._dda_renderer.update_position_with_new_FEAGI_coordinate)
+			if not area.dimensions_3D_updated.is_connected(viz._dda_renderer.update_dimensions):
+				area.dimensions_3D_updated.connect(viz._dda_renderer.update_dimensions)
+		if viz._directpoints_renderer != null and is_instance_valid(viz._directpoints_renderer):
+			if not slaved_to_power and not area.coordinates_3D_updated.is_connected(viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate):
+				area.coordinates_3D_updated.connect(viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
+			if not area.dimensions_3D_updated.is_connected(viz._directpoints_renderer.update_dimensions):
+				area.dimensions_3D_updated.connect(viz._directpoints_renderer.update_dimensions)
+	var parent_node: Node = viz.get_parent()
+	if parent_node != scene_root:
+		if parent_node != null:
+			parent_node.remove_child(viz)
+		scene_root.add_child(viz)
+	if area != null and not AbstractCorticalArea.is_core_cluster_slaved_to_power_layout(area.cortical_ID):
+		viz.set_new_position(area.coordinates_3D)
+
+
 ## CRITICAL: Cleans up ALL children to prevent node duplication during refresh
 func _cleanup_all_children() -> void:
 	# print("🧹 CLEANUP: Removing all children from region '%s' to prevent duplication" % _representing_region.friendly_name)
+	detach_shared_cortical_visualizations()
 	var children_count = get_child_count()
 	# print("  📦 Removing %d children..." % children_count)
 	
@@ -2849,6 +2911,8 @@ func _cleanup_all_children() -> void:
 	# Remove all children
 	for child in get_children():
 		if child.name in keep_names:
+			continue
+		if child is UI_BrainMonitor_CorticalArea:
 			continue
 		# print("    🗑️ Removing child: %s (%s)" % [child.name, child.get_class()])
 		remove_child(child)
