@@ -109,7 +109,6 @@ func toggle_buttons_interactability(pressable: bool) -> void:
 	if _refresh_rate_field == null:
 		push_error("Too early to call for toggle_buttons_interactability! Skipping!")
 		return
-	print("TOPBAR: Setting pressability to %s" % pressable)
 	_refresh_rate_field.editable = pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_BrainRegions.disabled = !pressable
@@ -134,35 +133,28 @@ func _set_scale(index_movement: int) -> void:
 
 
 func _FEAGI_on_burst_delay_change(new_delay_between_bursts_seconds: float) -> void:
-	print("🔥 TOPBAR: FEAGI updated delay to %s seconds" % new_delay_between_bursts_seconds)
 	
 	# Don't disable the field based on FEAGI data - let the genome state control editability
 	# _refresh_rate_field.editable = new_delay_between_bursts_seconds != 0.0
 	
 	if new_delay_between_bursts_seconds == 0.0:
-		print("🔥 TOPBAR: FEAGI sent 0.0 delay - setting display to 0.0 Hz")
 		_refresh_rate_field.current_float = 0.0
 		return
 	
 	var frequency_hz = 1.0 / new_delay_between_bursts_seconds
-	print("🔥 TOPBAR: Converting %s seconds delay to %s Hz display" % [new_delay_between_bursts_seconds, frequency_hz])
 	_refresh_rate_field.current_float = frequency_hz
 
 func _user_on_burst_delay_change(new_refresh_rate_hz: float) -> void:
-	print("🔥 TOPBAR: User changed refresh rate to %s Hz" % new_refresh_rate_hz)
 	
 	if new_refresh_rate_hz <= 0.0:
-		print("🔥 TOPBAR: Invalid refresh rate (<= 0), resetting to current value")
 		_refresh_rate_field.current_float = 1.0 / FeagiCore.delay_between_bursts
 		return
 	
 	# Convert frequency (Hz) to delay (seconds) and send to FEAGI
 	var delay_seconds = 1.0 / new_refresh_rate_hz
-	print("🔥 TOPBAR: Converting %s Hz to %s seconds delay, calling API..." % [new_refresh_rate_hz, delay_seconds])
 	
 	# Check if FeagiCore.requests is available
 	if not FeagiCore or not FeagiCore.requests:
-		print("🔥 TOPBAR: ERROR - FeagiCore.requests not available!")
 		return
 		
 	FeagiCore.requests.update_burst_delay(delay_seconds)
@@ -290,7 +282,6 @@ func _toggle_global_neural_connections(enabled: bool) -> void:
 		print("🔗 ❌ No cortical area objects found in brain monitor")
 		return
 	
-	print("🔗 Found ", cortical_area_objects.size(), " cortical area objects")
 	
 	# Toggle connections for all cortical areas
 	for cortical_area_obj in cortical_area_objects:
@@ -348,9 +339,6 @@ func _recursive_find_cortical_areas(node: Node, cortical_areas: Array) -> void:
 	# Check if current node is a cortical area
 	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
 		cortical_areas.append(node)
-		# Debug: Check if this is a memory area
-		if node._representing_cortial_area and node._representing_cortial_area.cortical_type == 1:  # MEMORY type
-			print("🔗 Found MEMORY cortical area in global toggle: ", node._representing_cortial_area.cortical_ID)
 	
 	# Check children recursively
 	for child in node.get_children():

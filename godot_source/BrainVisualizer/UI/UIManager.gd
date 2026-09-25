@@ -161,16 +161,13 @@ func _enter_tree():
 
 func _apply_startup_scale_from_display_metrics() -> void:
 	var startup_scale: float = _select_startup_scale_from_display_metrics()
-	print("UIMANAGER: [SCALE_TRACE] Applying startup scale from display metrics: %s" % startup_scale)
 	request_switch_to_theme(startup_scale, UIManager.THEME_COLORS.DARK)
 
 func _reapply_startup_scale_after_window_settle() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	if _startup_scale_locked_by_endpoint:
-		print("UIMANAGER: [SCALE_TRACE] Skipping settled startup reapply because endpoint theme is locked")
 		return
-	print("UIMANAGER: [SCALE_TRACE] Reapplying startup scale after window settle")
 	_apply_startup_scale_from_display_metrics()
 
 func _process(_delta: float):
@@ -1552,7 +1549,6 @@ func _memory_neuron_query_async(neuron_id: int, gen: int) -> void:
 #region FEAGI Interactions
 ## Called from above when we are about to reset genome, may want to clear some things...
 func FEAGI_about_to_reset_genome() -> void:
-	print("UIMANAGER: [3D_SCENE_DEBUG] FEAGI_about_to_reset_genome() called - preparing for genome reload")
 	_notification_system.add_notification("Reloading Genome...", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 	_window_manager.force_close_all_windows()
 	if _selection_system:
@@ -1562,29 +1558,22 @@ func FEAGI_about_to_reset_genome() -> void:
 	#_root_UI_view.close_all_non_root_brain_region_views()
 	#toggle_loading_screen(true)
 	if _temp_bm_holder:
-		print("UIMANAGER: [3D_SCENE_DEBUG] Clearing existing 3D scene and saving camera position")
 		(_temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene).clear_all_open_previews()
 		_temp_bm_camera_pos = temp_root_bm.get_node("SubViewport/Center/PancakeCam").position
 		_temp_bm_camera_rot = temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation
-		print("UIMANAGER: [3D_SCENE_DEBUG] Saved camera position: ", _temp_bm_camera_pos, " rotation: ", _temp_bm_camera_rot)
 		_temp_bm_holder.queue_free()
-		print("UIMANAGER: [3D_SCENE_DEBUG] 3D scene cleared and queued for deletion")
 	
 
 
 ## Called from above when we have no genome, disable UI elements that connect to it
 func FEAGI_no_genome() -> void:
-	print("UIMANAGER: [3D_SCENE_DEBUG] FEAGI_no_genome() called - disabling 3D scene")
-	print("UIMANAGER: [3D_SCENE_DEBUG] Disabling FEAGI UI elements due to no genome")
 	window_manager.force_close_all_windows()
 	top_bar.toggle_buttons_interactability(false)
 	
 	# CRITICAL: Mark 3D scene as not instantiated when genome is lost
-	print("UIMANAGER: [3D_SCENE_DEBUG] Marking _3d_scene_instantiated = false (genome lost)")
 	_3d_scene_instantiated = false
 	
 	# Force loading screen check to show loading screen again
-	print("UIMANAGER: [3D_SCENE_DEBUG] Forcing loading screen to show since genome lost")
 	_update_loading_screen_visibility()
 
 
@@ -1624,7 +1613,6 @@ func _on_websocket_health_changed(_prev_health, _current_health) -> void:
 
 ## Handle connection state changes to show/hide loading screen
 func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE, new_state: FEAGINetworking.CONNECTION_STATE) -> void:
-	print("UIMANAGER: Connection state changed to: ", FEAGINetworking.CONNECTION_STATE.keys()[new_state])
 	
 	# Update loading status based on connection state
 	match new_state:
@@ -1663,14 +1651,6 @@ func _update_loading_screen_visibility() -> void:
 	if FeagiCore.network._transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
 		websocket_ok = FeagiCore.network.websocket_API.socket_health == FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.CONNECTED
 	
-	print("UIMANAGER: Loading screen visibility check:")
-	print("  - Connection healthy: %s (state: %s)" % [connection_healthy, FEAGINetworking.CONNECTION_STATE.keys()[FeagiCore.network.connection_state]])
-	print("  - Brain ready: %s" % brain_ready)
-	print("  - Genome loading (FEAGI health): %s" % FeagiCore.feagi_local_cache.genome_loading)
-	print("  - Genome available: %s" % genome_available)
-	print("  - Genome scene ready: %s (state: %s)" % [genome_scene_ready, FeagiCore.GENOME_LOAD_STATE.keys()[FeagiCore.genome_load_state]])
-	print("  - 3D scene instantiated: %s" % _3d_scene_instantiated)
-	print("  - Websocket OK: %s (transport: %s)" % [websocket_ok, FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]])
 	
 	# CRITICAL: Only hide loading screen when 3D scene is ACTUALLY instantiated
 	# This prevents hiding the loading screen during the gap between genome_load_state becoming GENOME_READY
@@ -1678,23 +1658,9 @@ func _update_loading_screen_visibility() -> void:
 	var should_hide_loading_screen = connection_healthy and brain_ready and genome_available and genome_scene_ready and _3d_scene_instantiated and websocket_ok
 	
 	if should_hide_loading_screen:
-		print("UIMANAGER: ✅ All conditions met - hiding loading screen")
 		update_loading_status("Ready!")
 		toggle_loading_screen(false)
 	else:
-		var reasons = []
-		if not connection_healthy:
-			reasons.append("connection not healthy")
-		if not brain_ready:
-			reasons.append("brain not ready")
-		if not genome_available:
-			reasons.append("no genome available")
-		if not genome_scene_ready:
-			reasons.append("3D scene loading")
-		if genome_scene_ready and not _3d_scene_instantiated:
-			reasons.append("3D scene instantiating")
-		if not websocket_ok:
-			reasons.append("websocket not connected")
 		# Status line (bottom of flashing-lights overlay): last writer wins unless ordered by priority below.
 		# Genome loading message: set in UIManager._update_loading_screen_visibility when FEAGI health_check
 		# reports genome_loading (see FEAGILocalCache.genome_loading). Show whenever that flag is true and
@@ -1710,23 +1676,13 @@ func _update_loading_screen_visibility() -> void:
 				update_loading_status("Loading 3D scene...")
 		elif genome_scene_ready and not _3d_scene_instantiated:
 			update_loading_status("Initializing 3D scene...")
-		print("UIMANAGER: ❌ Showing loading screen - reasons: %s" % ", ".join(reasons))
 		toggle_loading_screen(true)
 
 ## Called from above when we confirmed genome to feagi, enable UI elements that connect to it
 func FEAGI_confirmed_genome() -> void:
-	print("UIMANAGER: [3D_SCENE_DEBUG] FEAGI_confirmed_genome() called - starting 3D scene initialization")
-	print("UIMANAGER: [3D_SCENE_DEBUG] Enabling FEAGI UI elements now that genome is confirmed")
 	top_bar.toggle_buttons_interactability(true)
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] Checking if Main circuit is available...")
-	print("UIMANAGER: [DEBUG] Brain regions cache state:")
-	print("  - available_brain_regions count: ", FeagiCore.feagi_local_cache.brain_regions._available_brain_regions.size())
-	print("  - available_brain_regions keys: ", FeagiCore.feagi_local_cache.brain_regions._available_brain_regions.keys())
-	print("  - is_root_available(): ", FeagiCore.feagi_local_cache.brain_regions.is_root_available())
-	print("  - ROOT_REGION_ID constant: ", FeagiCore.feagi_local_cache.brain_regions._get_configured_root_id())
 	if !FeagiCore.feagi_local_cache.brain_regions.is_root_available():
-		print("UIMANAGER: [3D_SCENE_DEBUG] ⚠️ Main circuit not available yet - deferring 3D scene initialization retry")
 		update_loading_status("Waiting for Main circuit data...")
 		if not _genome_confirm_retry_in_flight:
 			_genome_confirm_retry_in_flight = true
@@ -1740,41 +1696,32 @@ func FEAGI_confirmed_genome() -> void:
 		return
 	_genome_confirm_retry_in_flight = false
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Main circuit available - proceeding with initialization")
 	var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-	print("UIMANAGER: [3D_SCENE_DEBUG] Main circuit details: ", root_region)
 	
 	var initial_tabs: Array[Control]
-	print("UIMANAGER: [3D_SCENE_DEBUG] Creating Circuit Builder...")
 	#TODO need a better function to add CB in general
 	var cb: CircuitBuilder = PREFAB_CB.instantiate()
 	initial_tabs = [cb]
-	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up Main circuit UI view...")
 	_root_UI_view.reset()
 	_root_UI_view.set_this_as_root_view()
 	# CircuitBuilder must be in the scene tree before setup(): GraphEdit only wires item_rect_changed to
 	# _connection_layer when that layer is in-tree at GraphElement add_child_notify time.
 	_root_UI_view.setup_as_single_tab(initial_tabs)
 	cb.setup(root_region)
-	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Circuit Builder setup complete")
 	
 	# temp BM
-	print("UIMANAGER: [3D_SCENE_DEBUG] Creating Brain Monitor 3D scene...")
 	_temp_bm_holder = UI_Capsules_Capsule.spawn_uninitialized_UI_in_capsule(UI_Capsules_Capsule.HELD_TYPE.BRAIN_MONITOR)
 	if _temp_bm_holder == null:
 		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: Failed to create brain monitor capsule!")
 		return
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] Adding brain monitor to scene tree...")
 	$test.add_child(_temp_bm_holder)
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] Getting brain monitor UI component...")
 	var brain_monitor: UI_BrainMonitor_3DScene = _temp_bm_holder.get_holding_UI() as UI_BrainMonitor_3DScene
 	if brain_monitor == null:
 		print("UIMANAGER: [3D_SCENE_DEBUG] ❌ CRITICAL: Failed to get brain monitor UI component!")
 		return
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] Setting up brain monitor with Main circuit...")
 	brain_monitor.setup(root_region, false)  # false = don't show combo buttons in main scene
 	brain_monitor.requesting_to_fire_selected_neurons.connect(_send_activations_to_FEAGI)
 	brain_monitor.requesting_to_clear_all_selected_neurons.connect(_handle_voxel_selection_cleared)
@@ -1792,49 +1739,34 @@ func FEAGI_confirmed_genome() -> void:
 	
 	# CRITICAL: Mark 3D scene as fully instantiated BEFORE checking loading screen
 	# This ensures loading screen is only hidden when 3D scene is actually visible
-	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Marking _3d_scene_instantiated = true")
 	_3d_scene_instantiated = true
 	
 	# CRITICAL: Force loading screen visibility check NOW that 3D scene is actually ready
 	# This is the ONLY safe time to hide the loading screen - after all 3D elements exist
-	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene fully initialized - triggering final loading screen check")
 	_update_loading_screen_visibility()
 	
 	# CRITICAL: Create visualizations for any missing child regions (e.g., after cloning)
 	# This ensures cloned regions appear immediately after genome reload
 	# NOTE: Root region is explicitly excluded - only child regions get plate visualizations
-	print("UIMANAGER: [3D_SCENE_DEBUG] Creating visualizations for any missing child regions...")
-	print("UIMANAGER: [3D_SCENE_DEBUG] About to call _create_missing_brain_region_visualizations() on brain_monitor instance %d" % brain_monitor.get_instance_id())
 	brain_monitor._create_missing_brain_region_visualizations()
-	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Missing child region visualizations created")
 	
 	# ADDITIONAL: Also schedule a deferred update to catch any regions that might be added after this
-	print("UIMANAGER: [3D_SCENE_DEBUG] Scheduling deferred region visualization update...")
 	brain_monitor.call_deferred("_create_missing_brain_region_visualizations")
-	print("UIMANAGER: [3D_SCENE_DEBUG] Deferred update scheduled")
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] Restoring camera position if available...")
 	if _temp_bm_camera_pos.length() > 0.01:
-		print("UIMANAGER: [3D_SCENE_DEBUG] Restoring camera position: ", _temp_bm_camera_pos, " rotation: ", _temp_bm_camera_rot)
 		temp_root_bm.get_node("SubViewport/Center/PancakeCam").position = _temp_bm_camera_pos
 		temp_root_bm.get_node("SubViewport/Center/PancakeCam").rotation = _temp_bm_camera_rot
 		# Clear saved camera markers so next fresh init can play intro again if desired
 		_temp_bm_camera_pos = Vector3(0,0,0)
 		_temp_bm_camera_rot = Vector3(0,0,0)
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ Brain Monitor 3D scene setup complete")
 	
 	# This is utter cancer
-	print("UIMANAGER: [3D_SCENE_DEBUG] Applying advanced mode and theme settings...")
 	set_advanced_mode(FeagiCore._in_use_endpoint_details.is_advanced_mode)
 	var option_string: String = FeagiCore._in_use_endpoint_details.theme_string
-	print("UIMANAGER: [SCALE_TRACE] Endpoint theme_string received: '%s'" % option_string)
 	if option_string == "":
-		print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE - no theme to apply")
 		return
 	if _is_compact_effective_window():
-		print("UIMANAGER: [SCALE_TRACE] Ignoring endpoint theme override on compact effective window to preserve startup matrix scale")
-		print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE - compact window startup scale preserved")
 		return
 	_startup_scale_locked_by_endpoint = true
 	var split_strings: PackedStringArray = option_string.split(" ")
@@ -1842,10 +1774,8 @@ func FEAGI_confirmed_genome() -> void:
 	if split_strings[0] == "Dark":
 		color_setting = UIManager.THEME_COLORS.DARK
 	var zoom_value: float = split_strings[1].to_float()
-	print("UIMANAGER: [SCALE_TRACE] Applying endpoint theme override scale=%s color=%s" % [zoom_value, THEME_COLORS.keys()[color_setting]])
 	BV.UI.request_switch_to_theme(zoom_value, color_setting)
 	
-	print("UIMANAGER: [3D_SCENE_DEBUG] ✅ 3D scene initialization COMPLETE with theme applied")
 
 func _retry_confirmed_genome_init() -> void:
 	_genome_confirm_retry_in_flight = false
@@ -2107,7 +2037,6 @@ func update_loading_status(message: String) -> void:
 		_loading_status_label.text = message
 		_loading_status_label.mouse_filter = Control.MOUSE_FILTER_STOP
 		_loading_status_label.tooltip_text = _build_loading_status_tooltip()
-		print("UIMANAGER: Loading status: %s" % message)
 
 ## Builds the loading status tooltip (connection + failure details).
 func _build_loading_status_tooltip() -> String:
@@ -2299,22 +2228,9 @@ func get_minimum_size_from_loaded_theme(element: StringName) -> Vector2i:
 
 ## Attempts to switch toa  theme file with the given scale and color. If it doesnt exist, will do nothing
 func request_switch_to_theme(requested_scale: float, color: THEME_COLORS) -> void:
-	var stack_info: Array = get_stack()
-	var caller_info: Variant = "<unknown>"
-	if stack_info.size() > 1:
-		var frame: Variant = stack_info[1]
-		if frame is Dictionary and frame.has("function"):
-			caller_info = "%s (%s:%s)" % [
-				str(frame.get("function", "<fn>")),
-				str(frame.get("source", "<source>")),
-				str(frame.get("line", "?"))
-			]
-	print("UIMANAGER: [SCALE_TRACE] request_switch_to_theme called: requested_scale=%s color=%s caller=%s current_loaded_scale=%s" % [requested_scale, THEME_COLORS.keys()[color], caller_info, _loaded_theme_scale.x])
-
 	var theme_file: Theme = load_theme_resource(requested_scale, color)
 	if theme_file == null:
 		return
-	print("THEME: Loading theme scale %s..." % requested_scale)
 	_load_new_theme(theme_file)
 
 
@@ -2385,7 +2301,6 @@ func _load_new_theme(theme: Theme) -> void:
 		push_error("UI: Unable to find size_y under the generic_scale type of the newely loaded theme! There will be scaling issues!")
 	
 	_loaded_theme_scale = scalar
-	print("UIMANAGER: [SCALE_TRACE] Theme loaded, resulting UI scale=%s" % _loaded_theme_scale.x)
 
 	# IMPORTANT: Ensure the theme is actually applied to the active UI Control tree.
 	# Many BV widgets opt-in to theme_changed and set their own theme, but core containers
@@ -2427,13 +2342,7 @@ func _select_startup_scale_from_display_metrics() -> float:
 	var dpi: int = DisplayServer.screen_get_dpi(current_screen)
 	var window_size: Vector2i = window.size
 	var effective_sizes: Dictionary = _compute_effective_sizes(current_screen, screen_size, window_size, dpi)
-	var effective_screen_size: Vector2i = effective_sizes.get("effective_screen_size", screen_size)
-	var effective_window_size: Vector2i = effective_sizes.get("effective_window_size", window_size)
-	var screen_scale: float = effective_sizes.get("engine_scale", 1.0)
-	var content_scale_factor: float = effective_sizes.get("content_scale_factor", 1.0)
-	var inferred_scale: float = effective_sizes.get("inferred_scale", 1.0)
 	var normalization_scale: float = effective_sizes.get("normalization_scale", 1.0)
-	var fullscreen_hidpi_fallback_used: bool = effective_sizes.get("fullscreen_hidpi_fallback_used", false)
 	var dpi_tier: int = _classify_startup_dpi_tier(dpi)
 	var viewport_rect_size: Vector2 = get_viewport().get_visible_rect().size
 	var raw_viewport_size: Vector2i = Vector2i(
@@ -2446,26 +2355,6 @@ func _select_startup_scale_from_display_metrics() -> float:
 	)
 	var resolution_tier: int = _classify_startup_resolution_tier(resolution_input_size)
 	var selected_scale: float = _select_scale_from_startup_matrix(dpi_tier, resolution_tier)
-	
-	print("UIMANAGER: Startup display metrics -> screen=%d raw_size=%s effective_size=%s dpi=%d dpi_tier=%s engine_scale=%s content_scale_factor=%s inferred_scale=%s normalization_scale=%s fullscreen_hidpi_fallback_used=%s raw_window_size=%s effective_window_size=%s raw_viewport_size=%s resolution_input_size=%s resolution_tier=%s selected_scale=%s window_pos=%s" % [
-		current_screen,
-		screen_size,
-		effective_screen_size,
-		dpi,
-		STARTUP_DPI_TIER.keys()[dpi_tier],
-		screen_scale,
-		content_scale_factor,
-		inferred_scale,
-		normalization_scale,
-		fullscreen_hidpi_fallback_used,
-		window_size,
-		effective_window_size,
-		raw_viewport_size,
-		resolution_input_size,
-		STARTUP_RES_TIER.keys()[resolution_tier],
-		selected_scale,
-		window.position
-	])
 	return selected_scale
 
 ## Classifies display DPI into startup scale tiers.

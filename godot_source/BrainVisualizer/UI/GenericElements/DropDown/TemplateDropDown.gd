@@ -30,7 +30,6 @@ func load_cortical_type_options(type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -
 	match(type):
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
 			var ipu_templates = FeagiCore.feagi_local_cache.IPU_templates
-			print("🔍 TEMPLATE DROPDOWN: Found %d IPU templates in cache" % ipu_templates.size())
 			
 			for template: CorticalTemplate in ipu_templates.values():
 				print("🔍 TEMPLATE DROPDOWN: IPU template '%s' - enabled: %s" % [template.cortical_name, template.is_enabled])
@@ -41,7 +40,6 @@ func load_cortical_type_options(type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -
 				
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			var opu_templates = FeagiCore.feagi_local_cache.OPU_templates
-			print("🔍 TEMPLATE DROPDOWN: Found %d OPU templates in cache" % opu_templates.size())
 			
 			for template: CorticalTemplate in opu_templates.values():
 				print("🔍 TEMPLATE DROPDOWN: OPU template '%s' - enabled: %s" % [template.cortical_name, template.is_enabled])

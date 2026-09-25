@@ -66,7 +66,6 @@ static func from_FEAGI_JSON_array(hints: Array, is_input: bool, brain_region: Br
 			# Create a simple partial mapping set with no actual mapping data
 			# This allows I/O detection to work (log suppressed during clone)
 			output.append(PartialMappingSet.new(is_input, [], area, brain_region, ""))
-		print("📋 PARTIAL MAPPING: Created %d partial mappings out of %d requested" % [output.size(), hints.size()])
 		return output
 	
 	# Complex format: dictionary with mapping details

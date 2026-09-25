@@ -58,7 +58,6 @@ func _ready() -> void:
 			_initialize_feagi_embedded()
 	else:
 		# HTML5 or remote desktop mode
-		print("🌐 [BV] Remote mode - connecting to external FEAGI...")
 		
 		var env_api_url = OS.get_environment("FEAGI_API_URL")
 		var env_ws_host = OS.get_environment("FEAGI_WS_HOST")
@@ -139,19 +138,16 @@ func _on_genome_reloading() -> void:
 	_UI_manager.FEAGI_about_to_reset_genome()
 
 func _on_genome_state_change(current_state: FeagiCore.GENOME_LOAD_STATE, prev_state: FeagiCore.GENOME_LOAD_STATE) -> void:
-	print("BRAINVISUALIZER: [3D_SCENE_DEBUG] Received genome state change: ", FeagiCore.GENOME_LOAD_STATE.keys()[prev_state], " -> ", FeagiCore.GENOME_LOAD_STATE.keys()[current_state])
 	
 	match(current_state):
 		FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 			# Connected and ready to go
-			print("BRAINVISUALIZER: [3D_SCENE_DEBUG] ✅ GENOME_READY received - calling UI manager to initialize 3D scene")
 			_UI_manager.FEAGI_confirmed_genome()
 			if !FeagiCore.about_to_reload_genome.is_connected(_on_genome_reloading):
 				FeagiCore.about_to_reload_genome.connect(_on_genome_reloading)
 		_:
 			if prev_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 				# had genome but now dont
-				print("BRAINVISUALIZER: [3D_SCENE_DEBUG] ⚠️ Lost genome readiness - calling UI manager to disable 3D scene")
 				_UI_manager.FEAGI_no_genome()
 
 func _on_amalgamation_request(amalgamation_id: StringName, genome_title: StringName, dimensions: Vector3i) -> void:
@@ -320,7 +316,6 @@ func _initialize_feagi_embedded():
 	print("✅ [BV] FEAGI embedded extension initialized and started!")
 	var api_url = _feagi_embedded.get_api_url()
 	print("   HTTP API: ", api_url)
-	print("   WebSocket: ws://127.0.0.1:9050")
 	
 	# Wait for HTTP server to be ready before connecting
 	_UI_manager.update_loading_status("Waiting for FEAGI HTTP server...")

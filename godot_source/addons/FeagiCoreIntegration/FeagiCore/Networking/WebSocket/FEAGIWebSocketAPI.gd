@@ -161,7 +161,6 @@ func _init_rust_deserializer() -> void:
 	if ClassDB.class_exists("FeagiDataDeserializer"):
 		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
 		if _rust_deserializer:
-			print("🦀 FEAGI Rust deserializer initialized successfully!")
 			return
 		else:
 			push_error("🦀 CRITICAL: Failed to instantiate FEAGI Rust deserializer!")
@@ -206,10 +205,6 @@ func _process(_delta: float):
 		# Print once to make it obvious we're on WS path, but only after a brief delay
 		# and not while we are actively trying to initialize SHM
 		if not _ws_notice_printed and _pending_shm_path == "" and not _shm_attempting and Time.get_ticks_msec() >= _ws_notice_deadline_ms:
-			if _shm_last_error != "":
-				print("[FEAGI] [WS] Neuron visualization using WebSocket (SHM disabled); last_shm_error=", _shm_last_error)
-			else:
-				print("[FEAGI] [WS] Neuron visualization using WebSocket (SHM disabled)")
 			_ws_notice_printed = true
 	# On Web, flush queued Type 11 packets once WASM is ready
 	if OS.has_feature("web") and WASMDecoder.is_wasm_ready() and _pending_type11.size() > 0:
@@ -274,8 +269,6 @@ func _process(_delta: float):
 				if _retry_count != 0:
 					print("[%s] ✅ [WS] Recovered from retrying state after %d attempts!" % [_get_timestamp(), _retry_count])
 					_retry_count = 0
-				print("[%s] ✅ [WS] STATE_OPEN detected - current _socket_health: %s" % [_get_timestamp(), WEBSOCKET_HEALTH.keys()[_socket_health]])
-				print("[%s] ✅ [WS] Transitioning to CONNECTED state - notifying network layer" % _get_timestamp())
 				_set_socket_health(WEBSOCKET_HEALTH.CONNECTED)
 			
 			var backlog_start := _socket.get_available_packet_count()

@@ -66,7 +66,6 @@ func replace_whole_genome(cortical_area_summary: Dictionary, morphologies_summar
 	var _caller: String = "unknown"
 	if _stack.size() > 1 and _stack[1] is Dictionary and (_stack[1] as Dictionary).has("source"):
 		_caller = String((_stack[1] as Dictionary)["source"])
-	print("FEAGI CACHE: Replacing genome from %s" % _caller)
 	cache_about_to_reload.emit()
 	clear_whole_genome()
 	
@@ -166,13 +165,11 @@ var _OPU_templates: Dictionary = {}
 
 ## Retrieved template updats from FEAGI
 func update_templates_from_FEAGI(dict: Dictionary) -> void:
-	print("🔍 TEMPLATE CACHE: Updating templates from FEAGI")
 	
 	# Handle nested structure: data might be under "types" key
 	var template_data: Dictionary = dict
 	if dict.has("types") and dict["types"] is Dictionary:
 		template_data = dict["types"]
-		print("🔍 TEMPLATE CACHE: Found nested 'types' structure, using nested data")
 	
 	# Safely access IPU devices
 	if template_data.has("IPU") and template_data["IPU"] is Dictionary and template_data["IPU"].has("supported_devices"):
@@ -222,7 +219,6 @@ func update_templates_from_FEAGI(dict: Dictionary) -> void:
 	else:
 		push_warning("FEAGI LOCAL CACHE: OPU templates data not found or invalid in update dictionary")
 	
-	print("🔍 TEMPLATE CACHE: Final template counts - IPU: %d, OPU: %d" % [_IPU_templates.size(), _OPU_templates.size()])
 	templates_updated.emit()
 	
 	# Safely access name to ID mappings
@@ -1180,7 +1176,6 @@ func _refresh_brain_regions_from_feagi() -> FeagiRequestOutput:
 			brain_regions.available_brain_regions.size(),
 			cortical_areas.available_cortical_areas.size(),
 		])
-	print("HASH REFRESH: brain_regions_reloaded emitted for brain_regions_hash")
 	brain_regions_reloaded.emit()
 	cortical_areas_reloaded.emit()
 	_emit_new_region_added_signals(prior_region_ids)
@@ -1283,7 +1278,6 @@ func _refresh_classifiers_from_feagi() -> FeagiRequestOutput:
 			(stale as GenomeClassifier).FEAGI_prepare_delete()
 	classifiers = next_classifiers
 	classifiers_reloaded.emit()
-	print("HASH REFRESH: classifiers reloaded for classifiers_hash")
 	return classifiers_output
 
 
@@ -1303,7 +1297,6 @@ func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
 		return mappings_output
 	
 	mapping_data.FEAGI_apply_mapping_summary_diff(mappings_output.decode_response_as_dict())
-	print("HASH REFRESH: mappings_reloaded emitted for cortical_mappings_hash")
 	mappings_reloaded.emit()
 	return mappings_output
 
@@ -1312,7 +1305,6 @@ func _refresh_agent_data_from_feagi() -> FeagiRequestOutput:
 	var agent_output: FeagiRequestOutput = await FeagiCore.requests.refresh_agent_capabilities_cache(true)
 	if agent_output.has_errored or not agent_output.success:
 		return agent_output
-	print("HASH REFRESH: agent_capabilities_reloaded emitted for agent_data_hash")
 	return agent_output
 
 ## True if geometry summary includes this cortical id (HTTP JSON keys may be String vs Godot StringName).

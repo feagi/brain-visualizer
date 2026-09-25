@@ -484,7 +484,6 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	_representing_region = region
 	name = "BM_" + region.region_ID
 	
-	print("BrainMonitor 3D Scene: SETUP STARTED for region: %s" % region.friendly_name)
 	
 	# Add the context-aware brain objects combo to the overlay top-left
 	if _UI_layer_for_BM and _should_show_combo_buttons:
@@ -4670,7 +4669,6 @@ func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, 
 	# Checking input chain links - debug output suppressed
 	for link: ConnectionChainLink in child_region.input_open_chain_links:
 		if link.destination == area:
-			print("        ✅ Found as INPUT via chain link!")
 			return true
 	
 	# print("        📤 Checking %d output_open_chain_links..." % child_region.output_open_chain_links.size())  # Suppressed - too spammy

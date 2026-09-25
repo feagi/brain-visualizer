@@ -610,7 +610,6 @@ func _calculate_region_rightmost_x(region: BrainRegion) -> int:
 	const PLATE_GAP = 2.0
 	const PLACEHOLDER_PLATE_SIZE = Vector3(5.0, 1.0, 5.0)
 	
-	print("  📊 Found %d inputs, %d outputs, %d conflicts" % [input_areas.size(), output_areas.size(), conflict_areas.size()])
 	
 	var input_plate_size = _calculate_plate_size_for_areas_helper(input_areas)
 	var output_plate_size = _calculate_plate_size_for_areas_helper(output_areas)

@@ -31,7 +31,6 @@ func register_embedded_instance(instance) -> void:
 ## Call this from BrainVisualizer.gd during initialization
 func register_ui_manager(ui_manager) -> void:
 	_ui_manager = ui_manager
-	print("🖥️ [ShutdownManager] Registered UIManager for shutdown screen")
 
 ## Request a graceful shutdown (async version for UI updates)
 ## This is the main entry point for shutdown

@@ -33,49 +33,17 @@ func _enter_tree():
 
 func detect_and_configure_mode():
 	"""Detect platform, check extensions, determine mode, and apply configuration"""
-	print("\n" + "=".repeat(60))
-	print("🔍 FEAGI Mode Detector")
-	print("=".repeat(60))
-	
-	# Step 1: Platform detection
 	var platform = _detect_platform()
-	print("Platform: %s" % platform)
-	
-	# Step 2: Extension availability
 	embedded_extension_available = ClassDB.class_exists("FeagiEmbedded")
-	if embedded_extension_available:
-		print("FEAGI Embedded Extension: ✅ Available")
-	else:
-		print("FEAGI Embedded Extension: ❌ Not available")
-	
-	# Step 3: Check if launched from FEAGI Desktop (takes absolute priority)
 	var launched_from_desktop = OS.get_environment("LAUNCHED_FROM_FEAGI_DESKTOP").to_lower()
 	if launched_from_desktop == "true":
-		print("🖥️  Launched from FEAGI Desktop - using remote mode (FEAGI already running)")
 		mode = FEAGI_MODE.REMOTE_DESKTOP
 		_apply_configuration()
-		print("\n📋 Selected Mode: %s" % _mode_to_string(mode))
-		print("=".repeat(60) + "\n")
 		return
-	
-	# Step 4: Check environment override
 	var env_mode = OS.get_environment("FEAGI_MODE").to_lower()
-	if env_mode:
-		print("Environment Override: FEAGI_MODE=%s" % env_mode)
-	
-	# Step 5: Check user settings
 	var user_preference = _load_user_preference()
-	if user_preference:
-		print("User Preference: %s" % user_preference)
-	
-	# Step 6: Determine mode
 	mode = _determine_mode(platform, env_mode, user_preference)
-	
-	# Step 7: Apply configuration
 	_apply_configuration()
-	
-	print("\n📋 Selected Mode: %s" % _mode_to_string(mode))
-	print("=".repeat(60) + "\n")
 
 func _detect_platform() -> String:
 	"""Detect platform: web, desktop, mobile, unknown"""
@@ -217,11 +185,6 @@ func _apply_configuration():
 				"latency_class": "network",
 				"description": "Remote FEAGI server (flexible, multi-client)"
 			}
-			print("\nConfiguration: Remote Desktop")
-			print("  API: %s" % config["api_url"])
-			print("  WebSocket: ws://%s:%d" % [config["ws_host"], config["ws_viz_port"]])
-			print("  Transport: WebSocket + HTTP")
-			print("  Performance: Network latency (~100μs - 10ms)")
 		
 		FEAGI_MODE.REMOTE_WEB:
 			config = {
@@ -233,10 +196,6 @@ func _apply_configuration():
 				"latency_class": "internet",
 				"description": "Cloud FEAGI server (accessible anywhere)"
 			}
-			print("\nConfiguration: Remote Web")
-			print("  API: Will be loaded from URL parameters")
-			print("  Transport: WebSocket + HTTP")
-			print("  Performance: Internet latency (~10-100ms)")
 
 #
 # ============ PUBLIC API ============

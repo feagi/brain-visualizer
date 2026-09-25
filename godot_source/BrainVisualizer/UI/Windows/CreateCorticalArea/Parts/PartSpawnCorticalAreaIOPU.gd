@@ -307,7 +307,6 @@ func _get_existing_neurons_per_voxel(cortical_type_key: String) -> int:
 			var unit_id_val: int = FEAGIUtils.io_cortical_unit_index_from_id_bytes(decoded_bytes)
 			var area = existing_areas[cortical_id]
 			var area_neurons_per_voxel: int = area.cortical_neuron_per_vox_count
-			print("  Found %s unit %d with neurons_per_voxel=%d" % [cortical_subtype, unit_id_val, area_neurons_per_voxel])
 			
 			if unit_id_val > largest_unit_id:
 				largest_unit_id = unit_id_val
@@ -917,7 +916,6 @@ func _update_selected_config_value() -> void:
 		var key: String = "%s|%s|%s" % [variant_text, frame_text, pos_text]
 		if key in config_map:
 			_selected_data_type_config = config_map[key]
-			print("PartSpawnCorticalAreaIOPU: Found config_value=%d for key='%s'" % [_selected_data_type_config, key])
 			return
 		else:
 			# Config map lookup failed - this is a critical error

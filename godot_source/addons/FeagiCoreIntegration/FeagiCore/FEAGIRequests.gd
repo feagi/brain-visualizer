@@ -168,7 +168,6 @@ func request_amalgamation_by_upload(genome_path: String) -> FeagiRequestOutput:
 	return FeagiRequestOutput.response_success(response_body, false, response_code)
 
 func reload_genome() -> FeagiRequestOutput:
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] reload_genome() called - starting genome data retrieval...")
 	
 	# Network component checks
 	var network_check = _check_network_components_ready()
@@ -184,17 +183,13 @@ func reload_genome() -> FeagiRequestOutput:
 	var opu_types_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_corticalAreas_opu_types)
 	
 	# Get Cortical Area Data
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 1/7: Requesting cortical area data...")
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 Making HTTP call to: %s" % FeagiCore.network.http_API.address_list.GET_corticalArea_corticalArea_geometry)
 	var cortical_data: FeagiRequestOutput = await _request_with_retry_for_reload_step1(cortical_area_request)
 	if _return_if_HTTP_failed_and_automatically_handle(cortical_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 1: Cortical area data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI cortical summary data!")
 		return cortical_data
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 1 complete: Cortical area data retrieved")
 
 	# Get Morphologies
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 2/7: Requesting morphology data...")
 	var morphologies_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(morphologies_request)
 	await morphologies_worker.worker_done
 	var morphologies_data: FeagiRequestOutput = morphologies_worker.retrieve_output_and_close()
@@ -202,10 +197,8 @@ func reload_genome() -> FeagiRequestOutput:
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 2: Morphology data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI morphology summary data!")
 		return morphologies_data
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 2 complete: Morphology data retrieved")
 
 	# Get Mapping Data
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 3/7: Requesting mapping data...")
 	var mapping_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(mappings_request)
 	await mapping_worker.worker_done
 	var mapping_data: FeagiRequestOutput = mapping_worker.retrieve_output_and_close()
@@ -213,10 +206,8 @@ func reload_genome() -> FeagiRequestOutput:
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 3: Mapping data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI mapping summary data!")
 		return mapping_data
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 3 complete: Mapping data retrieved")
 	
 	# Get Region Data
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 4/7: Requesting region data...")
 	var region_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(region_request)
 	await region_worker.worker_done
 	var region_data: FeagiRequestOutput = region_worker.retrieve_output_and_close()
@@ -224,27 +215,21 @@ func reload_genome() -> FeagiRequestOutput:
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 4: Region data request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI region data!")
 		return region_data
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 4 complete: Region data retrieved")
 	
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 5/7: Replacing genome cache with new data...")
 	FeagiCore.feagi_local_cache.replace_whole_genome(
 		cortical_data.decode_response_as_dict(),
 		morphologies_data.decode_response_as_dict(),
 		mapping_data.decode_response_as_dict(),
 		region_data.decode_response_as_dict()
 	)
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 5 complete: Genome cache updated")
 	
 	# Get Template Data from dedicated IPU/OPU endpoints
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 6/7: Requesting template data...")
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG]   6a: Requesting IPU types...")
 	var ipu_types_data: FeagiRequestOutput = await _request_with_retry_for_reload_stage(ipu_types_request, "Step 6a IPU types")
 	if _return_if_HTTP_failed_and_automatically_handle(ipu_types_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6a: IPU types request failed!")
 		push_error("FEAGI Requests: Unable to grab FEAGI IPU types data!")
 		return ipu_types_data
 	
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG]   6b: Requesting OPU types...")
 	var opu_types_data: FeagiRequestOutput = await _request_with_retry_for_reload_stage(opu_types_request, "Step 6b OPU types")
 	if _return_if_HTTP_failed_and_automatically_handle(opu_types_data):
 		print("FEAGI REQUEST: [3D_SCENE_DEBUG] ❌ FAILED at Step 6b: OPU types request failed!")
@@ -277,27 +262,21 @@ func reload_genome() -> FeagiRequestOutput:
 	
 	# Template data loaded successfully
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(aggregated_templates)
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 6 complete: Template data retrieved")
 	
 	# Other stuff (asyncronous)
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Starting asynchronous requests for burst settings...")
 	get_burst_delay()
 	get_supression_threshold()
 	get_skip_rate()
 	get_plasticity_queue_depth()
 	
 	# Get agent list
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] Step 7/7: Processing agent data...")
 	await refresh_agent_capabilities_cache(true)
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ Step 7 complete: Agent data processed")
 	
-	print("FEAGI REQUEST: [3D_SCENE_DEBUG] ✅ ALL STEPS COMPLETE: Genome reload finished successfully!")
 	return FeagiRequestOutput.generic_success() # use generic success since we made multiple calls
 	
 
 ## Retrieves FEAGIs Burst Rate
 func get_burst_delay() -> FeagiRequestOutput:
-	print("FEAGI REQUEST: Request getting delay between bursts")
 	
 	# Define Request
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_burstEngine_simulationTimestep)
@@ -310,7 +289,6 @@ func get_burst_delay() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to grab FEAGI Burst rate delay!")
 		return FEAGI_response_data
 	var response: String = FEAGI_response_data.decode_response_as_string()
-	print("FEAGI REQUEST: Successfully retrieved delay between bursts as %f" % response.to_float())
 	FeagiCore.feagi_retrieved_burst_rate(response.to_float())
 	return FEAGI_response_data
 
@@ -491,7 +469,6 @@ func refresh_agent_capabilities_cache(include_device_registrations: bool = true)
 	else:
 		agent_caps_map = agent_caps_data.decode_response_as_dict()
 	var filtered_caps_map: Dictionary = {}
-	print("FEAGI REQUEST: Found ", agent_caps_map.size(), " agents, processing capability data...")
 	for agent_id in agent_caps_map.keys():
 		if str(agent_id).begins_with("bv_"):
 			continue
@@ -648,7 +625,6 @@ func update_burst_delay(new_delay_between_bursts: float) -> FeagiRequestOutput:
 
 ## Retrieves plasticity queue depth
 func get_plasticity_queue_depth() -> FeagiRequestOutput:
-	print("FEAGI REQUEST: Request getting plasticity queue depth")
 	
 	# Define Request
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_neuroplasticity_plasticityQueueDepth)
@@ -661,7 +637,6 @@ func get_plasticity_queue_depth() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to grab FEAGI plasticity queue depth!")
 		return FEAGI_response_data
 	var response: String = FEAGI_response_data.decode_response_as_string()
-	print("FEAGI REQUEST: Successfully retrieved plasticity queue depth as %d" % response.to_int())
 	
 	FeagiCore.feagi_local_cache.update_plasticity_queue_depth(response.to_int())
 	return FEAGI_response_data
@@ -694,7 +669,6 @@ func update_plasticity_queue_depth(new_depth: int) -> FeagiRequestOutput:
 
 ## Retrieves FEAGIs Skip Rate
 func get_skip_rate() -> FeagiRequestOutput:
-	print("FEAGI REQUEST: Request getting skip_rate")
 	
 	# Define Request
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_corticalAreaVisualizationSkipRate)
@@ -707,7 +681,6 @@ func get_skip_rate() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to grab FEAGI skip rate!")
 		return FEAGI_response_data
 	var response: String = FEAGI_response_data.decode_response_as_string()
-	print("FEAGI REQUEST: Successfully retrieved skip rate as %d" % response.to_int())
 	FeagiCore.feagi_recieved_skip_rate(response.to_int())
 	return FEAGI_response_data
 
@@ -736,7 +709,6 @@ func change_skip_rate(new_skip_rate: int) -> FeagiRequestOutput:
 
 ## Retrieves FEAGIs Skip Rate
 func get_supression_threshold() -> FeagiRequestOutput:
-	print("FEAGI REQUEST: Request getting supression threshold")
 	
 	# Define Request
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_system_corticalAreaVisualizationSupressionThreshold)
@@ -749,7 +721,6 @@ func get_supression_threshold() -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to grab FEAGI supression threshold!")
 		return FEAGI_response_data
 	var response: String = FEAGI_response_data.decode_response_as_string()
-	print("FEAGI REQUEST: Successfully retrieved skip rate as %d" % response.to_int())
 	FeagiCore.feagi_recieved_supression_threshold(response.to_int())
 	return FEAGI_response_data
 
@@ -2511,7 +2482,6 @@ func get_cortical_templates() -> FeagiRequestOutput:
 		}
 	}
 	
-	print("FEAGI REQUEST: Successfully retrieved cortical template data!")
 	FeagiCore.feagi_local_cache.update_templates_from_FEAGI(aggregated)
 	return ipu_data  # Return successful result
 
@@ -2532,7 +2502,6 @@ func get_cortical_template_metadata() -> FeagiRequestOutput:
 	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
 		push_error("FEAGI Requests: Unable to get cortical template metadata!")
 		return FEAGI_response_data
-	print("FEAGI REQUEST: Successfully retrieved cortical template metadata!")
 	return FEAGI_response_data
 
 ## Toggle the synaptic activity monitoring of cortical areas
@@ -2644,7 +2613,6 @@ func get_morphology(morphology_name: StringName) -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to get morphology details of name %s!" % morphology_name)
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
-	print("FEAGI REQUEST: Successfully retrieved morphology properties of %s" % morphology_name)
 	FeagiCore.feagi_local_cache.morphologies.update_morphology_by_dict(response)
 	return FEAGI_response_data
 
@@ -2671,7 +2639,6 @@ func get_morphology_usage(morphology_name: StringName) -> FeagiRequestOutput:
 		push_error("FEAGI Requests: Unable to get morphology usage of name %s!" % morphology_name)
 		return FEAGI_response_data
 	var response: Array = FEAGI_response_data.decode_response_as_array()
-	print("FEAGI REQUEST: Successfully retrieved morphology usage of %s" % morphology_name)
 	var output: Array[Array] = [] # Why can't godot figure out these types?
 	output.assign(response)
 	FeagiCore.feagi_local_cache.morphologies.available_morphologies[morphology_name].feagi_update_usage(output)
@@ -3264,7 +3231,6 @@ func get_mappings_between_2_cortical_areas(source_cortical_ID: StringName, desti
 	var raw_dicts: Array = []
 	raw_dicts.assign(response)
 	
-	print("FEAGI REQUEST: Successfully retrieved mappings of %s toward %s" % [source_cortical_ID, destination_cortical_ID])
 	FeagiCore.feagi_local_cache.mapping_data.FEAGI_set_mapping_JSON(source_area, destination_area, raw_dicts)
 
 	# CRITICAL NEW FEATURE: Process brain region I/O data from response if available (robust extraction)
@@ -3664,7 +3630,6 @@ func _refresh_regions_containing_areas(areas: Array[AbstractCorticalArea]) -> vo
 			if area in region.contained_cortical_areas:
 				if region_id not in regions_to_refresh:
 					regions_to_refresh.append(region_id)
-					print("    📍 Found in region: %s" % region.friendly_name)
 	
 	# Refresh all affected regions
 	if regions_to_refresh.is_empty():
@@ -3786,7 +3751,6 @@ func _trigger_immediate_region_visualization_update() -> void:
 	
 	# Find all brain monitor 3D scenes
 	var brain_monitor_scenes = scene_tree.root.find_children("*", "UI_BrainMonitor_3DScene", true, false)
-	print("🎯 IMMEDIATE UPDATE: Found %d brain monitor scenes" % brain_monitor_scenes.size())
 	
 	for scene in brain_monitor_scenes:
 		if scene is UI_BrainMonitor_3DScene:
@@ -3813,7 +3777,6 @@ func _stop_all_flashing_previews() -> void:
 	
 	# Find all amalgamation request windows
 	var amalgamation_windows = scene_tree.root.find_children("*", "WindowAmalgamationRequest", true, false)
-	print("🔄 FLASH: Found %d amalgamation windows" % amalgamation_windows.size())
 	
 	for window in amalgamation_windows:
 		if window.has_method("_stop_flashing_preview"):
@@ -3966,7 +3929,6 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 		print("FEAGI REQUEST: 🔍 Response message: %s" % response_dict["message"])
 	
 	if response_dict.has("brain_regions"):
-		print("FEAGI REQUEST: 🔍 Found brain_regions in response, updating cache...")
 		
 		# Update the brain regions cache with the fresh data from FEAGI
 		var brain_regions_list = response_dict["brain_regions"]
@@ -4055,7 +4017,6 @@ func request_import_amalgamation(position: Vector3i, amalgamation_ID: StringName
 		# Now trigger visualization creation with the updated cache
 		if BV.UI and BV.UI.temp_root_bm:
 			var brain_monitor = BV.UI.temp_root_bm
-			print("FEAGI REQUEST: 🔍 Found brain monitor: %s" % brain_monitor.name)
 			print("FEAGI REQUEST: 🔍 Brain monitor represents region: %s" % (brain_monitor._representing_region.friendly_name if brain_monitor._representing_region else "null"))
 			
 			# CRITICAL FIX: Update the brain monitor's _representing_region reference 
@@ -4203,14 +4164,11 @@ func _request_with_retry_for_reload_stage(request_definition: APIRequestWorkerDe
 		var worker: APIRequestWorker = _make_safe_http_call(request_definition)
 		if worker == null:
 			return FeagiRequestOutput.requirement_fail("HTTP_WORKER_NULL")
-		print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call initiated, waiting for response...")
 		await worker.worker_done
-		print("FEAGI REQUEST: [3D_SCENE_DEBUG] 🌐 HTTP call completed, retrieving data...")
 		output = worker.retrieve_output_and_close()
 		if not _return_if_HTTP_failed_and_automatically_handle(output):
 			return output
 		if attempt_index < max_attempts - 1:
-			print("FEAGI REQUEST: [3D_SCENE_DEBUG] Retrying %s (%d/%d)..." % [stage_label, attempt_index + 2, max_attempts])
 			if retry_spacing_seconds > 0.0:
 				await FeagiCore.get_tree().create_timer(retry_spacing_seconds).timeout
 	return output

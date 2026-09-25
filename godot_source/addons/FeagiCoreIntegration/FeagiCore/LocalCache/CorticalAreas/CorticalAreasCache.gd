@@ -55,7 +55,6 @@ func FEAGI_add_custom_cortical_area(cortical_ID: StringName, cortical_name: Stri
 	if defer_parent:
 		new_area.FEAGI_change_parent_brain_region(brain_region)
 	_available_cortical_areas[cortical_ID] = new_area
-	print("FEAGI CACHE: ✅ Added custom cortical area %s (cache size: %d)" % [cortical_ID, _available_cortical_areas.size()])
 	cortical_area_added.emit(new_area)
 
 ## Adds a cortical area of type IPU by ID and emits a signal that this was done. Should only be called from FEAGI!
@@ -336,13 +335,11 @@ func FEAGI_mass_update_2D_positions(IDs_to_locations: Dictionary) -> void:
 func FEAGI_hard_wipe_available_cortical_areas():
 	var area_count = _available_cortical_areas.size()
 	var area_names = _available_cortical_areas.keys()
-	print("CACHE: Wiping %d cortical areas: %s" % [area_count, area_names])
 	for cortical_ID in _available_cortical_areas:
 		var area: AbstractCorticalArea = _available_cortical_areas[cortical_ID]
 		area.FEAGI_delete_cortical_area()
 		cortical_area_about_to_be_removed.emit(area)
 	_available_cortical_areas = {}
-	print("CACHE: Wiping cortical areas and connection wipe complete!")
 
 ## Sets all cortical areas in the list as visible, and all those not as not visible (in terms of activity rendering)
 func FEAGI_set_invisible_cortical_areas(invisible_areas: Array[AbstractCorticalArea]) -> void:
