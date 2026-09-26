@@ -5,6 +5,7 @@ class_name UI_BrainMonitor_3DScene
 const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
 const ContinuousSelectedNeuronFiringLib = preload("res://addons/UI_BrainMonitor/ContinuousSelectedNeuronFiring.gd")
 const BoxSelectLib = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_BoxSelect.gd")
+const CameraStandardViewLib = preload("res://addons/UI_BrainMonitor/CameraStandardView.gd")
 const QuickConnectDestinationPickLib = preload("res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectDestinationPick.gd")
 
 @export var multi_select_key: Key = KEY_SHIFT
@@ -211,6 +212,8 @@ func _ready() -> void:
 		# Use new auto-frame formula when user presses R
 		if not _pancake_cam.camera_reset_requested.is_connected(_on_user_camera_reset_requested):
 			_pancake_cam.camera_reset_requested.connect(_on_user_camera_reset_requested)
+		if not _pancake_cam.camera_standard_view_requested.is_connected(_on_camera_standard_view_requested):
+			_pancake_cam.camera_standard_view_requested.connect(_on_camera_standard_view_requested)
 		# Track mouse enter/exit on this container so keyboard actions (R) are scoped to hovered tab/viewport
 		if not mouse_entered.is_connected(_on_container_mouse_entered):
 			mouse_entered.connect(_on_container_mouse_entered)
@@ -1115,31 +1118,43 @@ func is_transform_manipulation_active() -> bool:
 	return _manipulation_active
 
 
+func cancel_transform_manipulation() -> void:
+	if _manipulation_active:
+		_cancel_manipulation()
+
+
+func is_box_select_active() -> bool:
+	return _box_select.is_active()
+
+
+func cancel_box_select() -> void:
+	_cancel_box_select()
+
+
+func has_selected_neurons() -> bool:
+	for area: UI_BrainMonitor_CorticalArea in _cortical_visualizations_by_ID.values():
+		if area != null and is_instance_valid(area) and not area.get_neuron_selection_states().is_empty():
+			return true
+	return false
+
+
+func stop_continuous_selected_neuron_firing() -> void:
+	_stop_continuous_selected_neuron_firing(false)
+
+
 func _record_position_edit(edit: PositionEdit) -> void:
 	if BV == null or BV.UI == null:
 		return
 	BV.UI.record_position_edit(edit)
 
 
-## Enter: save. Escape: cancel (reset to original).
+## Enter confirms an active move/resize. Escape is handled in UIManager: this container
+## turns _unhandled_input off while the 3D view is focused, so Escape never arrived here
+## after a voxel or cortical-area click.
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key := event as InputEventKey
 		if key.pressed and not key.echo:
-			if key.keycode == KEY_ESCAPE:
-				# Priority 1: active manipulation session uses Escape to cancel.
-				if _manipulation_active:
-					_cancel_manipulation()
-					return
-				# Priority 2: cancel an in-progress Shift+drag box select.
-				if _box_select.is_active():
-					_cancel_box_select()
-					return
-				# Priority 3: clear all current selection/highlights in Brain Monitor.
-				if BV != null and BV.UI != null and BV.UI.selection_system != null:
-					BV.UI.selection_system.clear_all_highlighted()
-					clear_all_selected_cortical_area_neurons()
-					return
 			if key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER:
 				if not _manipulation_active:
 					return
@@ -1358,6 +1373,11 @@ func _frame_camera_to_aabb_with_plane(aabb: AABB, plane_name: StringName) -> voi
 	var center := aabb.position + (aabb.size / 2.0)
 	var view_dir := _resolve_view_direction_for_plane(center, plane_name)
 	var up := _resolve_up_for_plane(plane_name)
+	_place_camera_for_frame(aabb, center, view_dir, up)
+
+
+## Places the camera on [param view_dir] from the volume center, looking back at that center.
+func _place_camera_for_frame(aabb: AABB, center: Vector3, view_dir: Vector3, up: Vector3) -> void:
 	# Compute FOVs (guard bad/zero FOV)
 	var fov_used: float = _pancake_cam.fov
 	if fov_used < 5.0:
@@ -1855,9 +1875,30 @@ func _on_user_camera_moved() -> void:
 	var dist := cam_pos.distance_to(center)
 	_update_all_cortical_area_label_positions_to_camera_edge()
 
-## Handle user pressing R to reset camera using auto-frame logic
+## Home frames the whole brain from the front. T, B, F, L, and R are the fixed side views.
 func _on_user_camera_reset_requested() -> void:
 	await _auto_frame_camera_to_objects()
+	_update_all_cortical_area_label_positions_to_camera_edge()
+
+
+## T, B, F, L, and R frame the brain from a fixed side. Home remains the front reset.
+func _on_camera_standard_view_requested(view_id: int) -> void:
+	if _pancake_cam == null:
+		return
+	if _manipulation_dragging or _box_select.is_active():
+		return
+	var orient: Dictionary = CameraStandardViewLib.orientation(view_id)
+	if orient.is_empty():
+		push_error("Brain Monitor camera view %d has no orientation" % view_id)
+		return
+	var aabb := _compute_scene_aabb()
+	var previews_aabb := _compute_previews_aabb()
+	if previews_aabb.size != Vector3.ZERO or !previews_aabb.position.is_equal_approx(Vector3.ZERO):
+		aabb = previews_aabb if aabb.size == Vector3.ZERO else aabb.merge(previews_aabb)
+	if aabb.size == Vector3.ZERO or (aabb.size.x + aabb.size.y + aabb.size.z) < 0.01:
+		return
+	var center := aabb.position + (aabb.size / 2.0)
+	_place_camera_for_frame(aabb, center, orient[&"view_dir"], orient[&"up"])
 	_update_all_cortical_area_label_positions_to_camera_edge()
 
 ## Repositions cortical area labels so they remain below each area but appear at the camera-facing edge of the cortical depth.

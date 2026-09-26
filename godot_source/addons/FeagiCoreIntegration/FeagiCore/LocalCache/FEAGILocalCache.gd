@@ -1381,11 +1381,14 @@ func _resolve_parent_region_for_area(area_JSON_summary: Dictionary, cortical_are
 		parent_region_id = area_JSON_summary["parent_region_id"]
 	elif cortical_area_ID in area_ID_to_region_ID_mapping:
 		parent_region_id = area_ID_to_region_ID_mapping[cortical_area_ID]
-	else:
+	elif AbstractCorticalArea.summary_may_join_root(area_JSON_summary):
 		var root_region = brain_regions.get_root_region()
 		if root_region == null:
 			return null
 		parent_region_id = root_region.region_ID
+	else:
+		push_error("CORE CACHE: Area %s has no parent region and cannot join root" % cortical_area_ID)
+		return null
 
 	if not brain_regions.available_brain_regions.has(parent_region_id):
 		return null

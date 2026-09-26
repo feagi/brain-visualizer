@@ -405,7 +405,7 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Contains one or more neurons
 - Cortical area dimensions are measured in voxels
 - Each voxel has a position (X, Y, Z) within its cortical area
-- In Brain Monitor, Shift+click selects voxels; Shift+Left Drag box-selects cortical areas; Space / Shift+Space stimulates selected voxels
+- In Brain Monitor, Shift+click selects voxels; Shift+Left Drag box-selects cortical areas; Space / Shift+Space stimulates selected voxels; Escape deselects voxels and cortical areas
 - See also: [Dimensions](#d), [Neurons Per Voxel](#n), [Manual Stimulation](#m)
 
 ---

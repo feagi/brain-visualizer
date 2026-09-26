@@ -62,13 +62,18 @@ Neural activity is visualized through:
 - **A/D**: Move left/right
 - **Q/E**: Move up/down
 - **Arrow Keys**: Pan view
-- **F**: Focus on selected object
-- **Home**: Reset to default view
+- **T**: Top view of the brain in this viewport
+- **B**: Bottom view
+- **F**: Front view
+- **L**: Left view
+- **R**: Right view
+- **Home**: Frame the whole brain from the front
 - **Shift + Click**: Toggle voxel selection inside a cortical volume
 - **Shift + Left Drag**: Draw a rectangle to select multiple cortical areas
 - **Space**: Fire (stimulate) currently selected voxels once
 - **Shift + Space**: Continuously fire selected voxels until you press **Space** again
-- **Delete**: Clear all selected voxels (also stops continuous firing)
+- **Escape**: Deselect voxels and cortical areas (also stops continuous firing and closes the quick menu). During a move, resize, or box select, Escape cancels that drag instead
+- **Delete**: Clear all selected voxels (also stops continuous firing; cortical-area highlights stay)
 
 See [Camera Controls](camera_controls.md) for advanced navigation, and [Navigation Basics](navigation.md) for the full voxel-selection workflow.
 
@@ -117,7 +122,7 @@ Regions organize cortical areas spatially:
 - **Shift + Left Drag** to draw a rectangle; every cortical area whose volume intersects that rectangle is selected
 - Camera pan is paused while the box is being drawn
 - A Shift+click that does not drag still toggles voxels (see below)
-- **Escape** cancels an in-progress box; leaving the viewport also cancels it
+- **Escape** cancels an in-progress box; leaving the viewport also cancels it. When nothing is being dragged, **Escape** clears the selected voxels and cortical areas
 - Box select replaces the current area highlight set and opens the shared multi-edit quick menu
 - With 2 or more areas from the same circuit selected, that menu includes **Arrange** (Align and Distribute on X, Y, or Z)
 - Useful for comparing multiple areas and bulk operations
@@ -138,6 +143,7 @@ Hold **Shift** and **click** voxels inside a cortical volume to toggle them on o
 
 **Stop continuous fire:**
 - Press **Space** (or **Shift + Space**)
+- Press **Escape** to deselect voxels and cortical areas
 - Press **Delete** to clear the voxel selection
 - Clear the last selected voxel so nothing remains selected
 
@@ -218,9 +224,8 @@ Quickly return to important views:
 ### Focus Operations
 
 **Focus on Cortical Area:**
-1. Select area in Circuit Builder OR Brain Monitor
-2. Press **F**, or hover a top bar title and select the area
-3. Camera smoothly frames the object
+1. Hover a top bar title and select the area
+2. Or, with the mouse over Brain Monitor, press **Home** to frame the whole brain, or **T**, **B**, **F**, **L**, or **R** for one side
 
 **Focus on Brain Circuit:**
 1. Hover **Circuits** on the top bar
@@ -336,7 +341,7 @@ Access via **Options** menu in top toolbar.
 2. Press **Space** for a single stimulation, or **Shift + Space** to keep stimulating every burst
 3. Watch downstream areas for evoked activity
 4. Press **Space** again to stop continuous stimulation
-5. Press **Delete** when you are done with the selection
+5. Press **Escape** to deselect the voxels and cortical areas, or **Delete** to clear only the voxels
 
 ### Exploring Genome Structure
 
@@ -388,8 +393,8 @@ Access via **Options** menu in top toolbar.
 - Reduce activity rendering quality
 
 **"Lost my position"**
-- Use camera animations to save important views
-- Use Focus (F key) to return to selected object
+- Press **Home** to frame the whole brain from the front
+- Press **T**, **B**, **F**, **L**, or **R** for top, bottom, front, left, or right
 - Hover **Circuits** and select a circuit for quick navigation
 
 ## Tips for Effective Monitoring

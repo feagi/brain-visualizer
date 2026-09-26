@@ -302,9 +302,11 @@ func FEAGI_load_all_cortical_areas(area_summary_data: Dictionary, area_ID_to_reg
 		# Legacy: Try mapping from brain regions (old FEAGI versions)
 		elif cortical_area_ID in area_ID_to_region_ID_mapping.keys():
 			area_parent_region_ID = area_ID_to_region_ID_mapping[cortical_area_ID]
-		# Fallback: Find root region by property instead of hardcoded ID
+		# Fallback: core, IPU, and OPU with no parent belong in root. Custom and memory do not.
 		else:
-			push_warning("CORE CACHE: No parent_region_id for area %s, using root region" % cortical_area_ID)
+			if not AbstractCorticalArea.summary_may_join_root(area_JSON_summary):
+				push_error("CORE CACHE: Area %s has no parent region and cannot join root" % cortical_area_ID)
+				continue
 			var root_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 			if root_region == null:
 				push_error("CORE CACHE: Cannot find root region for area %s! Skipping!" % cortical_area_ID)

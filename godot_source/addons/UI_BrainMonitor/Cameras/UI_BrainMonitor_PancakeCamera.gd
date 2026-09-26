@@ -1,5 +1,7 @@
 extends Camera3D
 class_name UI_BrainMonitor_PancakeCamera
+
+const CameraStandardViewLib = preload("res://addons/UI_BrainMonitor/CameraStandardView.gd")
 ## Camera interface for Brain Monitor on a flat monitor (non-vr)
 
 
@@ -31,7 +33,7 @@ const ANIMATION_TIMER_NAME: NodePath = "AnimTimer"
 @export var key_tank_fast_camera: Key = KEY_SHIFT
 @export var key_tank_turn_button: MouseButton = MOUSE_BUTTON_RIGHT
 @export var key_tank_pan_button: MouseButton = MOUSE_BUTTON_LEFT
-@export var key_tank_reset_position: Key = KEY_R
+@export var key_tank_reset_position: Key = KEY_HOME
 
 enum MODE {
 	FPS, # Originally based off the MIT work of Marc Nahr: https://github.com/MarcPhi/godot-free-look-camera (TODO give proper credit on github)
@@ -42,6 +44,7 @@ enum MODE {
 signal BM_input_events(input_events: Array[UI_BrainMonitor_InputEvent_Abstract]) # Array can only be a length of 1 since there is only a single mouse cursor!
 signal camera_user_moved()
 signal camera_reset_requested()
+signal camera_standard_view_requested(view_id: int)
 
 var movement_mode: MODE = MODE.TANK
 var allow_user_control: bool = true # set to false externally if user interacting with other UI element
@@ -82,6 +85,25 @@ func _ready() -> void:
 ## Sets the hover state for this camera's SubViewport so we can scope keyboard actions like reset
 func set_mouse_hover_state(is_hovered: bool) -> void:
 	_is_mouse_hovering_viewport = is_hovered
+
+
+## T, B, F, L, and R snap this viewport to a fixed angle. Home frames the whole brain.
+func _try_emit_standard_view(key_event: InputEventKey) -> bool:
+	if key_event == null or not _is_mouse_hovering_viewport:
+		return false
+	var view_id: int = CameraStandardViewLib.view_from_key(
+		key_event.keycode,
+		key_event.physical_keycode,
+		key_event.pressed,
+		key_event.echo,
+		key_event.ctrl_pressed or key_event.meta_pressed,
+		key_event.alt_pressed,
+		key_event.shift_pressed,
+	)
+	if view_id < 0:
+		return false
+	camera_standard_view_requested.emit(view_id)
+	return true
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -201,8 +223,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				
 			MODE.TANK:
 				var dir: Vector3 = Vector3(0,0,0)
+				if _try_emit_standard_view(event as InputEventKey):
+					return
 
-				if Input.is_key_pressed(KEY_R):
+				if Input.is_key_pressed(key_tank_reset_position):
 					# Only reset if the mouse is currently over this SubViewport
 					if _is_mouse_hovering_viewport:
 						camera_reset_requested.emit()

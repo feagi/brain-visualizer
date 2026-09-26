@@ -171,7 +171,7 @@ The main toolbar provides quick access to essential features:
 
 **Closing Windows:**
 - Click **X** button in title bar
-- Or press Escape key (for some windows)
+- Or press Escape (also deselects voxels and cortical areas)
 - Can reopen from menus
 
 ### Window Types
@@ -343,7 +343,7 @@ See [Split View](split_view.md) for details.
 - **F11**: Full screen toggle (if available)
 - **Ctrl + +**: Increase UI scale
 - **Ctrl + -**: Decrease UI scale
-- **Escape**: Close current window/dialog
+- **Escape**: Deselect voxels and cortical areas. With nothing selected, close the current window or dialog
 
 ### View Shortcuts
 

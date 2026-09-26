@@ -10,7 +10,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Jump to an interconnect or memory area** -> Hover that title on a Circuit Builder or Brain Monitor tab bar -> choose area
 - **Open one connectivity rule** -> Hover Connectivity Rules on the root scene top bar -> choose rule. The manager opens on that rule.
 - **Focus selected region/area in active views** -> Select object, then press F
-- **Clear window-level selection or close active popup/window** -> Escape (context dependent; also cancels an in-progress Brain Monitor box select)
+- **Deselect voxels and cortical areas** -> Escape. Also stops continuous voxel fire and closes the quick menu. If a move, resize, or box select is in progress, Escape cancels that instead. With nothing selected, Escape closes the front window.
 
 ## Circuit Builder (2D) Navigation
 
@@ -28,7 +28,12 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Zoom camera at double speed** -> Shift + mouse wheel, or Shift + trackpad scroll
 - **Move camera in X/Z plane** -> W/A/S/D or Arrow Keys
 - **Move camera faster** -> Hold Shift while moving (speed boost)
-- **Reset camera framing** -> R (when mouse is over that Brain Monitor viewport)
+- **Frame the whole brain** -> Home (when mouse is over that Brain Monitor viewport). Faces the front
+- **Top view** -> T (mouse over that viewport)
+- **Bottom view** -> B (mouse over that viewport)
+- **Front view** -> F (mouse over that viewport)
+- **Left view** -> L (mouse over that viewport)
+- **Right view** -> R (mouse over that viewport)
 
 ## Brain Monitor (3D) Focus and Plane-Oriented Focus
 
@@ -47,7 +52,8 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Fire selected voxels once** -> Space (release Shift first if you were picking voxels)
 - **Start continuous fire of selected voxels** -> Shift + Space
 - **Stop continuous fire** -> Space (or Shift + Space)
-- **Clear all selected voxels** -> Delete (also stops continuous fire)
+- **Deselect voxels and cortical areas** -> Escape (also stops continuous fire and closes the quick menu)
+- **Clear all selected voxels** -> Delete (also stops continuous fire; cortical-area highlights stay)
 
 ## Brain Monitor (3D) Voxel Clipboard Actions
 
@@ -75,7 +81,7 @@ Align snaps the chosen axis to the lowest value in the selection. Distribute kee
 
 ## Notes
 
-- **Home** behavior can vary by context and window; for Brain Monitor camera reset, use **R**.
+- **Home** frames the whole brain from the front while the mouse is over that Brain Monitor.
 - Some controls are only active when the relevant panel/viewport has focus or hover.
 - **Ctrl + C** voxel copy requires at least one selected voxel and does not run while a text field is focused.
 - **Ctrl + V** voxel paste requires a cortical area under the mouse in Brain Monitor and does not run while a text field is focused.

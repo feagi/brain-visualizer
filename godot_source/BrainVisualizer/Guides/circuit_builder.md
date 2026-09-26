@@ -119,11 +119,6 @@ See [Mapping Connections](mapping_connections.md) for more details.
 - **Zoom to fit**: Right-click empty space, select "Fit All"
 
 ### Focus on Object
-1. Select a cortical area or region
-2. Press **F** key
-   
-OR
-
 1. Hover **Circuits**, **Inputs**, or **Outputs** on the root scene top bar, or **Circuits**, **Interconnect Areas**, or **Memory Areas** on the tab bar
 2. Select an entry from the list
 3. The current view focuses on it
@@ -244,8 +239,8 @@ Select multiple areas to perform bulk operations:
 ## Keyboard Shortcuts
 
 - **Arrow Keys**: Pan view
-- **Page Up/Down**: Zoom in/out
-- **F**: Focus on selected object
+- **Mouse wheel**: Zoom in and out
+- **Right-click empty space → Fit All**: Show everything
 - **Delete**: Delete selected objects (with confirmation)
 - **Ctrl + C**: Copy selected objects
 - **Ctrl + V**: Paste objects

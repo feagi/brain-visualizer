@@ -43,14 +43,12 @@ The Circuit Builder uses a 2D camera for navigating the node graph.
 Auto-frame all visible objects:
 
 **Method 1:**
-- Right-click empty space
-- Select **Fit All** or **Frame All**
+- Right-click empty space in Circuit Builder
+- Select **Fit All**
 
 **Method 2:**
-- Press **Home** key (if bound)
-
-**Method 3:**
-- Menu → View → Fit All
+- In Brain Monitor, move the mouse over that view and press **Home**
+- This frames the whole brain from the front
 
 **Use Cases:**
 - Lost in large circuits
@@ -59,19 +57,12 @@ Auto-frame all visible objects:
 
 ### Focus on Object
 
-Center view on specific object:
+Center view on a specific object:
 
 **Method 1:**
-1. Select cortical area or region
-2. Press **F** key
-
-**Method 2:**
 1. Hover **Circuits**, **Inputs**, or **Outputs** on the root scene top bar, or **Circuits**, **Interconnect Areas**, or **Memory Areas** on a tab bar
 2. Select an entry from the list
 3. The current view focuses on it
-
-**Method 3:**
-- Right-click object → **Focus**
 
 ## 3D Camera (Brain Monitor)
 
@@ -140,22 +131,17 @@ Auto-frame cortical areas or regions:
 
 **Method 1:**
 1. **Click** on a cortical area volume
-2. Camera smoothly transitions to frame it
+2. The quick menu opens for that area
 
 **Method 2:**
-1. Select area in Circuit Builder
-2. Press **F** key
-3. Both views focus
-
-**Method 3:**
 1. Hover the matching title on the root scene top bar or on a tab bar
 2. Select the area or circuit
-3. The camera focuses on it and flashes an indicator
+3. The camera focuses on it
 
-**Transition:**
-- Smooth animation to target
-- Maintains approximate angle
-- Adjusts distance to frame object
+**Method 3:**
+With the mouse over that Brain Monitor, press a view key to frame the whole brain:
+- **T** top, **B** bottom, **F** front, **L** left, **R** right
+- **Home** frames the whole brain from the front
 
 ### Free Flight Mode
 
@@ -178,17 +164,16 @@ Unrestricted camera movement:
 
 ### Reset View
 
-Return to default position:
+Return to a full view of the brain:
 
 **Method:**
-- Press **Home** key
-- OR Menu → Camera → Reset
-- OR Re-focus on main region
+- Move the mouse over the Brain Monitor and press **Home**
+- The camera frames the whole brain from the front
 
 **Default View:**
-- Shows entire genome
-- Standard orientation
-- Appropriate zoom distance
+- Shows the brain in that viewport
+- Front facing
+- Zoomed to fit
 
 ## Camera Settings
 
@@ -246,14 +231,14 @@ See [Camera Animations](camera_animations.md) for details.
 
 ### Quick Positions
 
-Keyboard shortcuts for common views:
+Keyboard shortcuts for common views, while the mouse is over that Brain Monitor:
 
-**Front View:** Top toolbar → Camera → Front
-**Top View:** Top toolbar → Camera → Top
-**Side View:** Top toolbar → Camera → Side
-**Isometric:** Top toolbar → Camera → Isometric
-
-(If available in your version)
+**T:** Top
+**B:** Bottom
+**F:** Front
+**L:** Left
+**R:** Right
+**Home:** Frame the whole brain from the front
 
 ### Multi-Monitor Setup
 
@@ -272,12 +257,12 @@ Use split views on multiple screens:
 2. **Identify regions**: Note spatial organization
 3. **Focus on a circuit**: Hover **Circuits** and select it
 4. **Explore details**: Zoom in on specific areas
-5. **Return to overview**: Press Home or Fit All
+5. **Return to overview**: Press **Home**
 
 ### Working on Specific Area
 
 1. **Use a top bar list**: Hover the matching title and select the area
-2. **Focus (F key)**: Frame the area
+2. **Press F**: Frame the brain from the front
 3. **Zoom in**: Get close for details
 4. **Isolate in tab**: Open region in dedicated 3D tab
 
@@ -314,9 +299,8 @@ If using a touch device:
 
 ### Circuit Builder (2D)
 - **Arrow Keys**: Pan view
-- **Page Up/Down**: Zoom in/out
-- **Home**: Fit all
-- **F**: Focus on selected
+- **Mouse wheel**: Zoom
+- **Right-click empty space → Fit All**: Show everything
 - **Shift + Drag**: Pan with mouse
 
 ### Brain Monitor (3D)
@@ -324,9 +308,12 @@ If using a touch device:
 - **A/D**: Move left/right
 - **Q/E**: Move up/down
 - **Arrow Keys**: Rotate camera
-- **Page Up/Down**: Zoom in/out
-- **Home**: Reset camera
-- **F**: Focus on selected
+- **T**: Top view
+- **B**: Bottom view
+- **F**: Front view
+- **L**: Left view
+- **R**: Right view
+- **Home**: Frame the whole brain from the front
 - **Shift + WASD**: Move faster
 - **Shift + Left Drag**: Box-select cortical areas
 
@@ -361,8 +348,8 @@ If using a touch device:
 - Scroll gradually for smooth zoom
 
 **"Lost my position"**
-- Press Home to reset
-- Use Focus (F) on any object
+- Press **Home** to frame the whole brain from the front
+- Press **T**, **B**, **F**, **L**, or **R** for top, bottom, front, left, or right
 - Hover **Circuits** and select a known circuit
 
 **"Can't see what I'm looking for"**

@@ -3,6 +3,7 @@ class_name UIManager
 ## Manages UI aspects of BV as a whole
 
 const PREFAB_CB: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn")
+const EscapeSelectionDismissLib = preload("res://addons/UI_BrainMonitor/EscapeSelectionDismiss.gd")
 const MOUSE_CONTEXT_FONT_SIZE: int = 32
 const MOUSE_CONTEXT_OUTLINE_SIZE: int = 2
 const MOUSE_CONTEXT_MARGIN_PX: int = 10
@@ -1925,6 +1926,57 @@ signal advanced_mode_setting_changed(is_in_advanced_mode: bool)
 var is_in_advanced_mode: bool:
 	get: return _is_in_advanced_mode
 
+## Escape clears voxels and cortical-area highlights. Open windows also call this,
+## because they receive the key before this node and mark it handled.
+func dismiss_scene_selection_on_escape() -> bool:
+	var monitors: Array[UI_BrainMonitor_3DScene] = _find_all_brain_monitors_in_scene_tree()
+	var manipulation_active := false
+	var box_select_active := false
+	var has_voxel_selection := false
+	for brain_monitor in monitors:
+		if brain_monitor.is_transform_manipulation_active():
+			manipulation_active = true
+		if brain_monitor.is_box_select_active():
+			box_select_active = true
+		if brain_monitor.has_selected_neurons():
+			has_voxel_selection = true
+	var has_genome_object_selection := _selection_system != null and _selection_system.has_highlighted_objects()
+	var action: int = EscapeSelectionDismissLib.resolve(
+		KEY_ESCAPE,
+		KEY_NONE,
+		true,
+		false,
+		manipulation_active,
+		box_select_active,
+		has_genome_object_selection,
+		has_voxel_selection,
+	)
+	return _apply_escape_selection_action(action, monitors)
+
+
+func _apply_escape_selection_action(action: int, monitors: Array[UI_BrainMonitor_3DScene]) -> bool:
+	if action == EscapeSelectionDismissLib.ACTION.CANCEL_MANIPULATION:
+		for brain_monitor in monitors:
+			if brain_monitor.is_transform_manipulation_active():
+				brain_monitor.cancel_transform_manipulation()
+		return true
+	if action == EscapeSelectionDismissLib.ACTION.CANCEL_BOX_SELECT:
+		for brain_monitor in monitors:
+			if brain_monitor.is_box_select_active():
+				brain_monitor.cancel_box_select()
+		return true
+	if action != EscapeSelectionDismissLib.ACTION.CLEAR_SELECTION:
+		return false
+	if _selection_system != null:
+		_selection_system.clear_all_highlighted()
+	for brain_monitor in monitors:
+		brain_monitor.stop_continuous_selected_neuron_firing()
+		brain_monitor.clear_all_selected_cortical_area_neurons()
+	if _window_manager != null:
+		_window_manager.force_close_window(QuickCorticalMenu.WINDOW_NAME)
+	return true
+
+
 func _input(event):
 	if FeagiCore.feagi_settings == null:
 		return
@@ -1932,6 +1984,10 @@ func _input(event):
 	if event is InputEventKey:
 		var keyboard_event: InputEventKey = event as InputEventKey
 		if keyboard_event.pressed and not keyboard_event.echo:
+			if keyboard_event.keycode == KEY_ESCAPE or keyboard_event.physical_keycode == KEY_ESCAPE:
+				if dismiss_scene_selection_on_escape():
+					get_viewport().set_input_as_handled()
+					return
 			if keyboard_event.keycode == KEY_C and (keyboard_event.ctrl_pressed or keyboard_event.meta_pressed):
 				if _can_copy_voxels_from_selection() and _copy_selected_voxels_to_clipboard():
 					get_viewport().set_input_as_handled()

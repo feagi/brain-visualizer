@@ -508,6 +508,32 @@ func is_leftover_classifier_auto_twin() -> bool:
 	return area_name.ends_with("_scan_twin")
 
 
+## Root may contain core, IPU, and OPU areas. Custom and memory areas never join it.
+static func summary_may_join_root(area_summary: Dictionary) -> bool:
+	var labels: Array[String] = []
+	for key in ["cortical_group", "area_type", "cortical_type"]:
+		if not area_summary.has(key) or area_summary[key] == null:
+			continue
+		var label := String(area_summary[key]).strip_edges().to_upper()
+		if label != "":
+			labels.append(label)
+	for label in labels:
+		match label:
+			"IPU", "OPU", "CORE", "SENSORY", "MOTOR":
+				return true
+			"CUSTOM", "MEMORY":
+				return false
+	var cortical_id := String(area_summary.get("cortical_id", area_summary.get("cortical_id_s", ""))).strip_edges()
+	if cortical_id == "":
+		return false
+	var raw := Marshalls.base64_to_raw(cortical_id)
+	if raw.size() == 0:
+		return false
+	var first := int(raw[0])
+	# 'i' IPU, 'o' OPU, '_' core. Custom ('c') and memory ('m') stay out of root.
+	return first == 105 or first == 111 or first == 95
+
+
 ## True for FEAGI invariant core regions: explicit reserved IDs or [enum CORTICAL_AREA_TYPE.CORE] from the API/cache.
 ## Covers ID encodings the name map does not list yet while still keeping the type contract from FEAGI.
 static func is_feagi_invariant_core_area(area: AbstractCorticalArea) -> bool:

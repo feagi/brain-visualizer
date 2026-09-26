@@ -52,7 +52,11 @@ func _input(event: InputEvent) -> void:
 	# Fallback: capture ESC even if a Control consumes GUI input
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key := event as InputEventKey
-		if key.keycode == KEY_ESCAPE:
+		if key.keycode == KEY_ESCAPE or key.physical_keycode == KEY_ESCAPE:
+			# Newest window receives Escape before the 3D view. Clear voxels and
+			# cortical areas here, then keep the existing close-on-Escape behavior.
+			if BV != null and BV.UI != null:
+				BV.UI.dismiss_scene_selection_on_escape()
 			accept_event()
 			close_window()
 			return

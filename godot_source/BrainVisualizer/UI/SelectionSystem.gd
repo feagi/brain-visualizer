@@ -105,6 +105,9 @@ func remove_from_highlighted(genome_object: GenomeObject) -> ERROR:
 func is_highlighted(genome_object: GenomeObject) -> bool:
 	return genome_object in _highlighted_genome_objects
 
+func has_highlighted_objects() -> bool:
+	return not _highlighted_genome_objects.is_empty()
+
 func get_highlighted_cortical_areas() -> Array[AbstractCorticalArea]:
 	return GenomeObject.filter_cortical_areas(_highlighted_genome_objects)
 

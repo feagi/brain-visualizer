@@ -32,19 +32,11 @@ This method works from anywhere and is the fastest way to navigate.
 
 ### Focus Navigation
 
-Jump to selected objects:
+Jump to an object from the top bar:
 
-**Method 1 - Keyboard:**
-1. Click to select any cortical area or region
-2. Press **F** key
-3. Camera focuses on object in both 2D and 3D
-
-**Method 2 - Menu:**
-1. Right-click object
-2. Select **Focus** (if available)
-
-**Method 3 - Top bar list:**
-- Hover a category title and select an entry. The current view focuses on it. Connectivity Rules is the exception: that selection opens the manager.
+1. Hover a category title and select an entry
+2. The current view focuses on it
+3. Connectivity Rules is the exception: that selection opens the manager
 
 ### Manual Navigation
 
@@ -152,7 +144,7 @@ Navigate through region hierarchy:
 ### Clear Selection
 
 - Click empty space
-- Press **Escape** key (also cancels an in-progress box select)
+- Press **Escape** to deselect voxels and cortical areas. If a move, resize, or box select is in progress, Escape cancels that drag instead. Clearing the selection also stops continuous voxel fire and closes the quick menu
 - Select different object
 
 ## Voxel Selection and Clipboard (Brain Monitor)
@@ -317,15 +309,15 @@ Navigate hierarchically:
 - Name areas descriptively
 
 **Quick Operations:**
-- Focus (F key) after selection
-- Dropdowns for long-distance jumps
-- Tabs to keep multiple views open
+- Hover a top bar title to jump to an area or circuit
+- Right-click empty space and choose **Fit All** to see everything
+- Tabs keep multiple views open
 
 ### In Brain Monitor (3D)
 
 **Getting Oriented:**
-- Click areas to focus automatically
-- Use rotation to see from different angles
+- Press **T**, **B**, **F**, **L**, or **R** for top, bottom, front, left, or right
+- Press **Home** to frame the whole brain from the front
 - Zoom out for overview, in for details
 
 **Understanding Spatial Layout:**
@@ -358,11 +350,11 @@ See [Split View](split_view.md) for more details.
 
 ### Essential Shortcuts
 
-- **F**: Focus on selected object
-- **Home**: Reset view / Fit All
+- **T / B / F / L / R**: Top, bottom, front, left, and right camera views in Brain Monitor. The mouse must be over that viewport
+- **Home**: Frame the whole Brain Monitor from the front
 - **Arrow Keys**: Pan (2D) or Rotate (3D)
 - **Page Up/Down**: Zoom in/out
-- **Escape**: Clear selection (cancels an in-progress box select, then clears area and voxel selection in Brain Monitor)
+- **Escape**: Deselect voxels and cortical areas. Cancels an in-progress move, resize, or box select first. Also stops continuous voxel fire and closes the quick menu. With nothing selected, closes the front window
 - **Ctrl+Z** (Cmd+Z on macOS): Undo the last saved move or area delete
 - **Shift+Ctrl+Z** (Shift+Cmd+Z): Redo that step
 
@@ -450,7 +442,8 @@ Access via **Options** → **Display** or **Developer Options**.
 ## Troubleshooting
 
 **"I'm lost and can't find anything"**
-- Press Home or Fit All
+- In Brain Monitor, press **Home** to frame the whole brain, or **T**, **B**, **F**, **L**, or **R** for a side
+- In Circuit Builder, right-click empty space and choose **Fit All**
 - Close the region tab, or open the main circuit from its parent view. The Circuits list does not include the main circuit itself.
 - Close all tabs and start over
 

@@ -1449,12 +1449,23 @@ func get_cortical_area(checking_cortical_ID: StringName) -> FeagiRequestOutput:
 				properties_dict["parent_region_id"] = current_parent
 		FeagiCore.feagi_local_cache.cortical_areas.FEAGI_update_cortical_area_from_dict(properties_dict)
 	else:
-		# Need to create the cortical area - find the parent region first
-		var parent_region_id: StringName = properties_dict.get("parent_region_id", BrainRegion.ROOT_REGION_ID)
+		# Need to create the cortical area - find the parent region first.
+		# Missing parents join root only for core, IPU, and OPU.
+		var incoming_parent: Variant = properties_dict.get("parent_region_id", null)
+		var parent_region_id: StringName = &""
+		if incoming_parent != null:
+			parent_region_id = StringName(str(incoming_parent))
 		
-		if parent_region_id not in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
-			push_warning("FEAGI REQUEST: Parent region '%s' not found for cortical area '%s', using root region" % [parent_region_id, checking_cortical_ID])
-			parent_region_id = BrainRegion.ROOT_REGION_ID
+		if parent_region_id == &"" or parent_region_id not in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+			if AbstractCorticalArea.summary_may_join_root(properties_dict):
+				var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+				if root_region == null:
+					push_error("FEAGI REQUEST: Root region unavailable for cortical area '%s'" % checking_cortical_ID)
+					return FeagiRequestOutput.requirement_fail("PARENT_REGION_NOT_FOUND")
+				parent_region_id = root_region.region_ID
+			else:
+				push_error("FEAGI REQUEST: Cortical area '%s' has no parent region and cannot join root" % checking_cortical_ID)
+				return FeagiRequestOutput.requirement_fail("PARENT_REGION_NOT_FOUND")
 		
 		# Check if parent region exists in cache
 		if not FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.has(parent_region_id):
@@ -1980,14 +1991,19 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 					continue
 				
 				print("FEAGI REQUEST: Adding cortical area %s to cache" % cortical_id)
-				# Add to cache using FEAGI_add_cortical_area_from_dict which handles all types
-				var parent_region_id: StringName = area_dict.get("parent_region_id", BrainRegion.ROOT_REGION_ID)
-				var parent_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(
-					parent_region_id,
-					FeagiCore.feagi_local_cache.brain_regions.get_root_region()
-				)
+				# Add to cache using FEAGI_add_cortical_area_from_dict which handles all types.
+				# Root is only the default parent for core, IPU, and OPU.
+				var reported_parent: Variant = area_dict.get("parent_region_id", null)
+				var parent_region_id: StringName = &""
+				if reported_parent != null:
+					parent_region_id = StringName(str(reported_parent))
+				var parent_region: BrainRegion = null
+				if parent_region_id != &"":
+					parent_region = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions.get(parent_region_id)
+				if parent_region == null and AbstractCorticalArea.summary_may_join_root(area_dict):
+					parent_region = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 				if parent_region == null:
-					push_error("FEAGI REQUEST: Parent region '%s' not found and root region unavailable, cannot add cortical area '%s'" % [parent_region_id, cortical_id])
+					push_error("FEAGI REQUEST: Cortical area '%s' has no parent region and cannot join root" % cortical_id)
 					continue
 				FeagiCore.feagi_local_cache.cortical_areas.FEAGI_add_cortical_area_from_dict(
 					area_dict,
