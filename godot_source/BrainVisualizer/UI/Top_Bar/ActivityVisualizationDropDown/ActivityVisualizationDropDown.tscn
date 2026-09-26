@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://cm2activityvizdd1"]
+[gd_scene load_steps=23 format=3 uid="uid://cm2activityvizdd1"]
 
 [ext_resource type="PackedScene" uid="uid://mwx2wythpo1l" path="res://BrainVisualizer/UI/GenericElements/DropDown/ToggleImageDropDown/ToggleImageDropDown.tscn" id="1_toggle_dd"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.gd" id="2_script"]
@@ -18,6 +18,10 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory_inspector_C.jpg" id="12_mem_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory_inspector_H.jpg" id="13_mem_h"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory_inspector_D.jpg" id="14_mem_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_inspector_S.png" id="19_ctx_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_inspector_C.png" id="20_ctx_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_inspector_H.png" id="21_ctx_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_inspector_D.png" id="22_ctx_d"]
 
 [node name="ActivityVisualizationDropDown" type="BoxContainer"]
 script = ExtResource("2_script")
@@ -60,6 +64,15 @@ texture_normal = ExtResource("11_mem_s")
 texture_pressed = ExtResource("12_mem_c")
 texture_hover = ExtResource("13_mem_h")
 texture_disabled = ExtResource("14_mem_d")
+
+[node name="CorticalInspector" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="3"]
+layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
+tooltip_text = "Cortical inspector"
+texture_normal = ExtResource("19_ctx_s")
+texture_pressed = ExtResource("20_ctx_c")
+texture_hover = ExtResource("21_ctx_h")
+texture_disabled = ExtResource("22_ctx_d")
 
 [connection signal="user_change_option" from="ToggleImageDropDown" to="." method="_user_request_activity"]
 

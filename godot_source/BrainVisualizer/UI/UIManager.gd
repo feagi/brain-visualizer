@@ -123,7 +123,7 @@ enum STARTUP_DPI_TIER { DPI_STANDARD, DPI_MEDIUM, DPI_LARGE, DPI_XLARGE }
 enum STARTUP_RES_TIER { RES_COMPACT, RES_STANDARD, RES_LARGE, RES_XLARGE }
 
 ## Top bar "brain activity" tool: global connection curves vs voxel-level API inspector.
-enum BRAIN_MONITOR_ACTIVITY_MODE { GLOBAL_NEURAL_CONNECTIONS = 0, VOXEL_INSPECTOR = 1, MEMORY_INSPECTOR = 2 }
+enum BRAIN_MONITOR_ACTIVITY_MODE { GLOBAL_NEURAL_CONNECTIONS = 0, VOXEL_INSPECTOR = 1, MEMORY_INSPECTOR = 2, CORTICAL_INSPECTOR = 3 }
 
 var brain_monitor_activity_mode: BRAIN_MONITOR_ACTIVITY_MODE = BRAIN_MONITOR_ACTIVITY_MODE.GLOBAL_NEURAL_CONNECTIONS
 var _voxel_inspector_fetch_generation: int = 0
@@ -2120,6 +2120,11 @@ func _selection_processing(objects: Array[GenomeObject], context: SelectionSyste
 		var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(objects)
 		if len(cortical_areas) != 0:
 			_window_manager.spawn_adv_cortical_properties(cortical_areas)
+	if SelectionSystem.OVERRIDE_USECASE.CORTICAL_INSPECTOR in override_usecases:
+		var inspector_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(objects)
+		var cortical_inspector: WindowCorticalInspector = _window_manager.get_open_cortical_inspector()
+		if cortical_inspector != null and not inspector_areas.is_empty():
+			cortical_inspector.focus_from_selection(inspector_areas)
 	if SelectionSystem.OVERRIDE_USECASE.CLASSIFIER_PROPERTIES in override_usecases:
 		var classifiers: Array[GenomeClassifier] = GenomeObject.filter_classifiers(objects)
 		if not classifiers.is_empty():

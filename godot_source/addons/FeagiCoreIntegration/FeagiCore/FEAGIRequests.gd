@@ -2251,7 +2251,8 @@ func clone_brain_region_pending(source_region: BrainRegion, region_name: StringN
 
 
 ## Attempts to update the property of a cortical area. Ensure your properties dict is properly formatted for FEAGI!
-func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> FeagiRequestOutput:
+## When [param refresh_cache_from_server] is false, the caller applies the sent values locally and refetches once the gesture ends.
+func update_cortical_area(editing_ID: StringName, properties: Dictionary, refresh_cache_from_server: bool = true) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -2297,8 +2298,11 @@ func update_cortical_area(editing_ID: StringName, properties: Dictionary) -> Fea
 		print("BV [NEURAL-CODING]: FEAGI remapped cortical ID %s -> %s" % [previous_id, updated_id])
 	if updated_id != previous_id:
 		FeagiCore.feagi_local_cache.FEAGI_remap_cortical_id(previous_id, updated_id)
-	print("FEAGI REQUEST: PUT succeeded for %s, re-fetching from FEAGI to sync cache" % updated_id)
-	await get_cortical_area(updated_id)
+	if refresh_cache_from_server:
+		print("FEAGI REQUEST: PUT succeeded for %s, re-fetching from FEAGI to sync cache" % updated_id)
+		await get_cortical_area(updated_id)
+	else:
+		print("FEAGI REQUEST: PUT succeeded for %s" % updated_id)
 	print("FEAGI REQUEST: Successfully updated cortical area %s" % [ updated_id])
 	return FEAGI_response_data
 

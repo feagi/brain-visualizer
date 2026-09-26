@@ -41,8 +41,8 @@ func FEAGI_load_all_regions_and_establish_relations_and_calculate_area_region_ma
 			var child_data = region_summary_data.get(child_region.region_ID)
 			if child_data:
 				var child_parent_id = child_data.get("parent_region_id")
-				# Root has parent_region_id == null
-				if child_parent_id == null or String(child_parent_id) == "null" or String(child_parent_id) == "":
+				# Root has no parent_region_id.
+				if _region_parent_id_is_absent(child_parent_id):
 					continue
 			
 			# Establish parent relationship
@@ -178,7 +178,7 @@ func summary_has_root_region(region_summary_data: Dictionary) -> bool:
 		if typeof(region_data) != TYPE_DICTIONARY:
 			continue
 		var parent_id: Variant = (region_data as Dictionary).get("parent_region_id", null)
-		if parent_id == null:
+		if _region_parent_id_is_absent(parent_id):
 			return true
 	return false
 
@@ -263,11 +263,11 @@ func _get_configured_root_id() -> StringName:
 ## Called after loading all regions
 ## Cache root region ID from API data (checks parent_region_id field)
 func _cache_root_region_id_from_api_data(region_summary_data: Dictionary) -> void:
-	# Find region where parent_region_id is null in API data
+	# Find region where parent_region_id is absent in API data
 	for region_ID in region_summary_data.keys():
 		var region_data = region_summary_data[region_ID]
 		var parent_id = region_data.get("parent_region_id")
-		if parent_id == null:
+		if _region_parent_id_is_absent(parent_id):
 			_cached_root_region_id = region_ID
 			return
 	
@@ -276,34 +276,57 @@ func _cache_root_region_id_from_api_data(region_summary_data: Dictionary) -> voi
 ## Returns True if the root region is in the cache
 ## Root region is identified by having no parent (UUID-based RegionID architecture)
 func is_root_available() -> bool:
-	# O(1) cached lookup
-	if _cached_root_region_id != "" and _cached_root_region_id in _available_brain_regions:
-		return true
-	
-	# Fallback: Search for region with no parent
-	for region in _available_brain_regions.values():
-		if region.is_root_region():
-			_cached_root_region_id = region.region_ID  # Cache for next time
-			return true
-	
-	return false
+	return _resolve_root_region() != null
 
 
 ## Attempts to return the root [BrainRegion]. If it fails, logs an error and returns null
 ## Root region is identified by having no parent (UUID-based RegionID architecture)
 func get_root_region() -> BrainRegion:
-	# O(1) cached lookup
-	if _cached_root_region_id != "" and _cached_root_region_id in _available_brain_regions:
-		return _available_brain_regions[_cached_root_region_id]
-	
-	# Fallback: Search for region with no parent
-	for region in _available_brain_regions.values():
-		if region.is_root_region():
-			_cached_root_region_id = region.region_ID  # Cache for next time
-			return region
-	
+	var root := _resolve_root_region()
+	if root != null:
+		return root
+	# An empty cache, or a summary whose parents are not linked yet, is not a missing root.
+	# The first health check can ask for the root before any circuit has been stored.
+	if _available_brain_regions.is_empty() or not _hierarchy_has_linked_parent():
+		return null
 	push_error("CORE CACHE: Unable to find root region! No region has null parent!")
 	push_error("CORE CACHE: Available regions: %s" % str(_available_brain_regions.keys()))
+	return null
+
+
+## JSON null, a missing field, and the strings FEAGI or a parser may emit for None.
+func _region_parent_id_is_absent(parent_id: Variant) -> bool:
+	if parent_id == null or typeof(parent_id) == TYPE_NIL:
+		return true
+	if typeof(parent_id) != TYPE_STRING and typeof(parent_id) != TYPE_STRING_NAME:
+		return false
+	var text := String(parent_id).strip_edges()
+	return text.is_empty() or text == "null" or text == "None"
+
+
+func _hierarchy_has_linked_parent() -> bool:
+	for region in _available_brain_regions.values():
+		if region.current_parent_region != null:
+			return true
+	return false
+
+
+## Cached id, legacy "root" id, or the single region that has no parent after links exist.
+func _resolve_root_region() -> BrainRegion:
+	if _cached_root_region_id != "" and _cached_root_region_id in _available_brain_regions:
+		return _available_brain_regions[_cached_root_region_id]
+	for region in _available_brain_regions.values():
+		if region.is_root_region():
+			_cached_root_region_id = region.region_ID
+			return region
+	var parentless: Array[BrainRegion] = []
+	for region in _available_brain_regions.values():
+		if region.current_parent_region == null:
+			parentless.append(region)
+	var region_count := _available_brain_regions.size()
+	if parentless.size() == 1 and (region_count == 1 or parentless.size() < region_count):
+		_cached_root_region_id = parentless[0].region_ID
+		return parentless[0]
 	return null
 
 ## Walk from [region] toward the root: [self, parent, grandparent, ... , root]. Cycle-safe.

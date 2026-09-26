@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3 uid="uid://bvcorticalinspwin"]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/CorticalInspector/WindowCorticalInspector.gd" id="1_window"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+
+[node name="WindowCorticalInspector" type="VBoxContainer"]
+custom_minimum_size = Vector2(840, 720)
+offset_right = 840.0
+offset_bottom = 720.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_window")
+window_spawn_location = Vector2i(180, 96)
+
+[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+layout_mode = 2
+title = "Cortical Inspector"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"MarginContainer_WindowBorder"
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10

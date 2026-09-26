@@ -771,6 +771,9 @@ func _on_monitor_activity_mode_changed(action: StringName, enabled: bool) -> voi
 	elif action == ActivityVisualizationDropDown.ACTION_MEMORY_INSPECTOR:
 		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.MEMORY_INSPECTOR
 		BV.WM.spawn_memory_inspector()
+	elif action == ActivityVisualizationDropDown.ACTION_CORTICAL_INSPECTOR:
+		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.CORTICAL_INSPECTOR
+		BV.WM.spawn_cortical_inspector()
 
 
 func _toggle_global_neural_connections_for_scene(brain_monitor: UI_BrainMonitor_3DScene, enabled: bool) -> void:

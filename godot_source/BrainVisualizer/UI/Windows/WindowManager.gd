@@ -35,6 +35,7 @@ const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/Gui
 const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.tscn")
 const _PREFAB_VOXEL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.tscn")
 const _PREFAB_MEMORY_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MemoryInspector/WindowMemoryInspector.tscn")
+const _PREFAB_CORTICAL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/CorticalInspector/WindowCorticalInspector.tscn")
 
 
 var loaded_windows: Dictionary
@@ -138,6 +139,24 @@ func spawn_memory_inspector() -> WindowMemoryInspector:
 	var w: WindowMemoryInspector = _default_spawn_window(_PREFAB_MEMORY_INSPECTOR, WindowMemoryInspector.WINDOW_NAME) as WindowMemoryInspector
 	w.setup()
 	return w
+
+
+## Opens or focuses the cortical inspector. Slider ranges survive later 3D clicks.
+func spawn_cortical_inspector() -> WindowCorticalInspector:
+	if WindowCorticalInspector.WINDOW_NAME in loaded_windows:
+		var existing: WindowCorticalInspector = loaded_windows[WindowCorticalInspector.WINDOW_NAME] as WindowCorticalInspector
+		if existing != null:
+			bring_window_to_top(existing)
+			return existing
+	var created: WindowCorticalInspector = _default_spawn_window(_PREFAB_CORTICAL_INSPECTOR, WindowCorticalInspector.WINDOW_NAME) as WindowCorticalInspector
+	created.setup()
+	return created
+
+
+func get_open_cortical_inspector() -> WindowCorticalInspector:
+	if WindowCorticalInspector.WINDOW_NAME in loaded_windows:
+		return loaded_windows[WindowCorticalInspector.WINDOW_NAME] as WindowCorticalInspector
+	return null
 
 
 func spawn_create_morphology() -> void:
