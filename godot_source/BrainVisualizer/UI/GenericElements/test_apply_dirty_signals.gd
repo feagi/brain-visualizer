@@ -17,6 +17,8 @@ func _run_tests() -> void:
 	failures += _test_int_spinbox_set_value_no_signal_does_not_emit()
 	failures += _test_vector3i_spinbox_typing_emits_user_interacted()
 	failures += _test_user_interacted_enables_apply_button()
+	failures += _test_io_preset_pick_dirties_apply()
+	failures += _test_io_preset_apply_button_leaves_disabled_draw_mode()
 	if failures == 0:
 		print("Apply dirty signal tests: PASS")
 		quit(0)
@@ -139,5 +141,42 @@ func _test_user_interacted_enables_apply_button() -> int:
 	if failed == 1:
 		push_error("user_interacted must enable the section Apply button")
 	spin.queue_free()
+	apply.queue_free()
+	return failed
+
+
+func _load_cortical_properties_script() -> Variant:
+	# Load after autoloads exist. A class_name reference compiles the window before BV is registered.
+	return load("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/AdvancedCorticalProperties.gd")
+
+
+func _test_io_preset_pick_dirties_apply() -> int:
+	var properties_script: Variant = _load_cortical_properties_script()
+	if properties_script == null:
+		push_error("AdvancedCorticalProperties.gd failed to compile")
+		return 1
+	var dirty_changed: bool = properties_script.call("io_preset_pick_dirties_apply", &"Interconnect", &"Input", false)
+	var clean_same: bool = properties_script.call("io_preset_pick_dirties_apply", &"Input", &"Input", false)
+	var clean_locked: bool = properties_script.call("io_preset_pick_dirties_apply", &"Interconnect", &"Output", true)
+	var clean_conflict: bool = properties_script.call("io_preset_pick_dirties_apply", &"Interconnect", &"Conflict", false)
+	if dirty_changed and not clean_same and not clean_locked and not clean_conflict:
+		return 0
+	push_error("IO preset pick must dirty Apply only when the unlocked role actually changes")
+	return 1
+
+
+func _test_io_preset_apply_button_leaves_disabled_draw_mode() -> int:
+	var properties_script: Variant = _load_cortical_properties_script()
+	if properties_script == null:
+		push_error("AdvancedCorticalProperties.gd failed to compile")
+		return 1
+	var apply := Button.new()
+	apply.disabled = true
+	root.add_child(apply)
+	properties_script.call("set_apply_button_enabled", apply, true)
+	var failed: int = 0
+	if apply.disabled or apply.get_draw_mode() == BaseButton.DRAW_DISABLED:
+		push_error("IO preset change must leave Summary Apply enabled and out of the disabled draw mode")
+		failed = 1
 	apply.queue_free()
 	return failed

@@ -19,6 +19,8 @@ This context-awareness means you always see relevant operations without navigati
 - Menu appears centered near your cursor
 - Click an operation to perform it
 
+The menu has no title and no close button. Drag the border around the buttons to move it. Click the scene anywhere that is not one of those buttons to close it. Escape closes it as well.
+
 **Context:**
 - Works in Circuit Builder (2D view)
 - Works in Brain Monitor (3D view)
@@ -396,7 +398,8 @@ Right-clicking empty space in Circuit Builder:
 While Quick Menu is open:
 
 - **Escape**: Close menu without action
-- **Click outside**: Close menu
+- **Click the scene** (anywhere that is not a menu button): Close menu
+- **Drag the border** around the buttons to move the menu
 - **Number keys**: Select button (if numbered)
 - **Arrow keys**: Navigate buttons (if supported)
 

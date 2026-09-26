@@ -1406,14 +1406,19 @@ func _frame_camera_to_aabb_with_padding_and_plane(
 	var half_d := max(0.01, extents.dot(Vector3(abs(view_dir.x), abs(view_dir.y), abs(view_dir.z))))
 	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
 	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
-	var distance: float = max(dist_by_h, dist_by_w) * padding_factor
-	distance += half_d * depth_padding_factor
-	var min_dist: float = max(half_d * 1.05, auto_frame_min_dist * 0.5)
-	var max_dist: float = 3000.0
-	distance = clamp(distance, min_dist, max_dist)
+	var beyond_face: float = max(dist_by_h, dist_by_w) * padding_factor
+	beyond_face += half_d * depth_padding_factor
+	beyond_face = max(beyond_face, auto_frame_min_dist * 0.5)
+	var distance: float = frame_distance_from_center(beyond_face, half_d)
 	var cam_pos := center + (view_dir * distance)
 	_pancake_cam.global_position = cam_pos
 	_pancake_cam.look_at(Vector3(center.x, center.y, center.z), up)
+
+
+## Distance from the volume center to the camera.
+## [param beyond_face] is measured from the surface that faces the camera, not from the midpoint.
+static func frame_distance_from_center(beyond_face: float, half_depth: float) -> float:
+	return max(half_depth, 0.0) + max(beyond_face, 0.0)
 
 
 ## Compute framing distance with balanced padding and depth.
@@ -1434,13 +1439,10 @@ func _compute_frame_distance_for_aabb_from_orientation(
 	var half_d := max(0.01, extents.dot(Vector3(abs(view_dir.x), abs(view_dir.y), abs(view_dir.z))))
 	var dist_by_h: float = half_h / max(0.001, tan(vfov_rad * 0.5))
 	var dist_by_w: float = half_w / max(0.001, tan(hfov_rad * 0.5))
-	var distance: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
-	# Depth padding so near faces don't clip.
-	distance += half_d * 0.75
-	# Allow smaller distances for tiny objects; prevent extremely close shots.
-	var min_dist: float = max(half_d * 1.1, auto_frame_min_dist * 0.5)
-	var max_dist: float = 3000.0
-	return clamp(distance, min_dist, max_dist)
+	# Fit the face that points at the camera. That gap starts at the surface.
+	var beyond_face: float = max(auto_frame_k_height * dist_by_h, auto_frame_k_width * dist_by_w)
+	beyond_face = max(beyond_face, auto_frame_min_dist * 0.5)
+	return frame_distance_from_center(beyond_face, half_d)
 
 
 ## World-space AABB of the object(s) being manipulated (anchor preview, region preview, group previews).

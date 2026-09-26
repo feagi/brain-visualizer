@@ -23,6 +23,7 @@ func _ready() -> void:
 	if grid != null and grid not in theme_scalar_nodes_to_not_include_or_search:
 		theme_scalar_nodes_to_not_include_or_search.append(grid)
 	super._ready()
+	apply_condensed_chrome()
 	_apply_toolbar_icon_size()
 	if BV.UI != null and not BV.UI.theme_changed.is_connected(_apply_toolbar_icon_size):
 		BV.UI.theme_changed.connect(_apply_toolbar_icon_size)
@@ -807,6 +808,20 @@ func _finish_arrange_request() -> void:
 	var clear_selection := _close_requested_clear_selection
 	_close_requested_during_arrange = false
 	close_window(clear_selection)
+
+
+func _condensed_keep_open_rects() -> Array[Rect2]:
+	var rects: Array[Rect2] = []
+	if _btn_arrange != null and _btn_arrange.is_menu_open():
+		var menu_rect := _btn_arrange.get_open_menu_rect()
+		if menu_rect.has_area():
+			rects.append(menu_rect)
+	return rects
+
+
+## Scene clicks dismiss the toolbar without clearing the selection the scene click is about to change.
+func _close_for_condensed_dismiss() -> void:
+	close_window(false)
 
 
 func _on_focus_lost() -> void:

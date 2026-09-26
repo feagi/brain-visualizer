@@ -57,6 +57,16 @@ func is_menu_open() -> bool:
 	return _panel != null and _panel.visible
 
 
+## Viewport rect of the open Align/Distribute menu. Empty when the menu is closed.
+func get_open_menu_rect() -> Rect2:
+	if not is_menu_open():
+		return Rect2()
+	var menu_size := Vector2(_panel.size)
+	if menu_size.x <= 0.0 or menu_size.y <= 0.0:
+		menu_size = _panel.get_contents_minimum_size()
+	return Rect2(Vector2(_panel.position), menu_size)
+
+
 func close_menu() -> void:
 	_toggle_menu(false)
 

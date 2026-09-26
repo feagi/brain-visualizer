@@ -42,6 +42,10 @@ var _isvi_original_z_values: Dictionary = {}  # Maps subunit_id to original z co
 var _isvi_would_overflow: bool = false  # True if current resize would exceed NPU capacity
 ## Suppress IO preset dropdown signal while programmatically refreshing selection.
 var _io_preset_refresh_silent: bool = false
+## Staged Summary IO preset. Empty until the user picks a role different from the current one.
+var _pending_io_preset: StringName = &""
+## Bumps when Apply's enabled look is recomputed so a deferred repaint cannot re-enable a later disable.
+var _summary_apply_visual_generation: int = 0
 ## Programmatic `rate_modulated_leak` refresh: skip marking pending on spin/toggle updates.
 var _rml_suppress_change_signals: bool = false
 ## True after the RML block is added to [param controls_to_hide_in_simple_mode].
@@ -643,6 +647,23 @@ func _send_update(send_button: Button) -> void:
 	if _is_isvi_segment and _isvi_would_overflow:
 		print("🚨 BLOCKED UPDATE - Cannot apply: would exceed NPU capacity!")
 		return
+
+	# Unit-index confirmation must be decided before any await. _confirm_unit_id_update
+	# clears its skip flag as soon as this function yields.
+	var waiting_for_unit_id_confirm := false
+	if send_button.name in _growing_cortical_update:
+		var peek_payload: Variant = _growing_cortical_update[send_button.name]
+		if peek_payload is Dictionary and _should_confirm_unit_id_update(peek_payload):
+			waiting_for_unit_id_confirm = true
+
+	if not waiting_for_unit_id_confirm and send_button == _button_summary_send and _pending_io_preset != &"":
+		var io_ok: bool = await _commit_pending_io_preset()
+		if not io_ok:
+			_refresh_summary_apply_enabled_state()
+			return
+		if not (send_button.name in _growing_cortical_update):
+			_refresh_summary_apply_enabled_state()
+			return
 	
 	if send_button.name in _growing_cortical_update:
 		var update_data: Dictionary = _growing_cortical_update[send_button.name].duplicate(true)
@@ -1647,33 +1668,106 @@ func _on_io_preset_item_selected_index(index: int) -> void:
 		return
 	if index < 0:
 		return
-	await _on_io_preset_user_picked(StringName(_dropdown_io_preset.get_item_text(index)))
+	_on_io_preset_user_picked(StringName(_dropdown_io_preset.get_item_text(index)))
 
 
 func _on_io_preset_option_changed(_index: int, option: StringName) -> void:
 	if _io_preset_refresh_silent:
 		return
-	await _on_io_preset_user_picked(option)
+	_on_io_preset_user_picked(option)
 
 
+## Stage an IO preset edit on the Summary Apply button. The role is sent with Apply Update.
 func _on_io_preset_user_picked(option: StringName) -> void:
 	if len(_cortical_area_refs) != 1:
 		return
 	var preset_data: Dictionary = _derive_io_preset_for_area(_cortical_area_refs[0])
-	if preset_data.get("locked", true):
-		return
-	if option == IO_PRESET_CONFLICT or option == IO_PRESET_MULTI:
-		return
-	await _apply_io_preset_to_feagi(option)
+	var locked: bool = bool(preset_data.get("locked", true))
+	var current_preset: StringName = preset_data.get("preset", IO_PRESET_INTERCONNECT)
+	if io_preset_pick_dirties_apply(current_preset, option, locked):
+		_pending_io_preset = option
+	else:
+		_pending_io_preset = &""
+	_refresh_summary_apply_enabled_state()
 
 
-func _apply_io_preset_to_feagi(option: StringName) -> void:
+## True when a user IO preset pick should turn on Summary Apply Update.
+static func io_preset_pick_dirties_apply(current_preset: StringName, picked_preset: StringName, locked: bool) -> bool:
+	if locked:
+		return false
+	if picked_preset == &"" or picked_preset == IO_PRESET_CONFLICT or picked_preset == IO_PRESET_MULTI:
+		return false
+	return picked_preset != current_preset
+
+
+## Set Apply enabled and force a theme redraw. A single disabled assignment during an
+## OptionButton popup close can leave the button painted with the disabled style.
+static func set_apply_button_enabled(button: Button, enabled: bool) -> void:
+	if button == null:
+		return
+	var want_disabled := not enabled
+	button.disabled = not want_disabled
+	button.disabled = want_disabled
+	button.queue_redraw()
+
+
+func _summary_section_has_pending_payload() -> bool:
+	if _button_summary_send == null:
+		return false
+	if not _growing_cortical_update.has(_button_summary_send.name):
+		return false
+	var payload: Variant = _growing_cortical_update[_button_summary_send.name]
+	return payload is Dictionary and not (payload as Dictionary).is_empty()
+
+
+## Match Summary Apply's enabled look to staged IO preset and other summary edits.
+func _refresh_summary_apply_enabled_state() -> void:
+	if _button_summary_send == null:
+		return
+	var enabled := _pending_io_preset != &"" or _summary_section_has_pending_payload()
+	if _is_isvi_segment and _isvi_would_overflow:
+		enabled = false
+	_summary_apply_visual_generation += 1
+	var generation := _summary_apply_visual_generation
+	set_apply_button_enabled(_button_summary_send, enabled)
+	if enabled:
+		call_deferred("_repaint_summary_apply_button", generation)
+
+
+## Second paint after the IO preset popup closes, so Apply leaves the disabled style.
+func _repaint_summary_apply_button(generation: int) -> void:
+	if generation != _summary_apply_visual_generation:
+		return
+	if _button_summary_send == null or not is_instance_valid(_button_summary_send):
+		return
+	if _button_summary_send.disabled:
+		return
+	set_apply_button_enabled(_button_summary_send, true)
+
+
+## Send the staged IO preset. Returns false when FEAGI rejects the role change.
+func _commit_pending_io_preset() -> bool:
+	var option: StringName = _pending_io_preset
+	if option == &"":
+		return true
+	if len(_cortical_area_refs) != 1:
+		return false
+	if _cortical_area_refs[0].current_parent_region == null:
+		return false
+	_pending_io_preset = &""
+	_summary_apply_visual_generation += 1
+	if _button_summary_send != null:
+		_button_summary_send.disabled = true
+	return await _apply_io_preset_to_feagi(option)
+
+
+func _apply_io_preset_to_feagi(option: StringName) -> bool:
 	if not FeagiCore or not FeagiCore.requests:
-		return
+		return false
 	var area: AbstractCorticalArea = _cortical_area_refs[0]
 	var parent: BrainRegion = area.current_parent_region
 	if parent == null:
-		return
+		return false
 	var result: FeagiRequestOutput = await FeagiCore.requests.update_region_designated_io(parent, area.cortical_ID, option)
 	if result.has_errored:
 		var err_text := "IO preset update failed."
@@ -1686,11 +1780,12 @@ func _apply_io_preset_to_feagi(option: StringName) -> void:
 		_io_preset_refresh_silent = true
 		_refresh_io_preset()
 		_io_preset_refresh_silent = false
-		return
+		return false
 	BV.NOTIF.add_notification("IO preset updated.", NotificationSystemNotification.NOTIFICATION_TYPE.INFO)
 	_io_preset_refresh_silent = true
 	_refresh_io_preset()
 	_io_preset_refresh_silent = false
+	return true
 
 
 func _reset_io_preset_items() -> void:

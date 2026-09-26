@@ -242,24 +242,32 @@ func _test_input_output_lists_share_cortical_focus() -> int:
 func _test_root_bar_list_frames_the_scene_on_screen() -> int:
 	var script: Script = load(COMBO_SCRIPT_PATH)
 	if script.root_bar_list_focus_target(false, true, false, true) != script.CORTICAL_FOCUS_MONITOR:
-		push_error("Root scene list clicks must move the root scene camera while Circuit Builder is only a hidden tab")
+		push_error("Root scene list clicks must move the main scene camera")
 		return 1
 	if script.root_bar_list_focus_target(true, true, true, true) != script.CORTICAL_FOCUS_MONITOR:
-		push_error("A visible Brain Monitor tab must take a root-bar list click")
+		push_error("Split view must not send a main-scene list click to the Brain Monitor tab")
 		return 1
-	if script.root_bar_list_focus_target(true, true, false, true) != script.CORTICAL_FOCUS_BUILDER:
-		push_error("A visible Circuit Builder tab must take a root-bar list click when no monitor tab is showing")
+	if script.root_bar_list_focus_target(true, true, false, true) != script.CORTICAL_FOCUS_MONITOR:
+		push_error("Split view must not send a main-scene list click to Circuit Builder")
 		return 1
-	if script.root_bar_list_focus_target(false, false, false, true) != script.CORTICAL_FOCUS_NONE:
-		push_error("A hidden Circuit Builder must not take a root-bar list click")
+	if script.root_bar_list_focus_target(true, false, true, true) != script.CORTICAL_FOCUS_NONE:
+		push_error("A Brain Monitor tab must not stand in for a missing main scene camera")
 		return 1
 	var source := FileAccess.get_file_as_string(COMBO_SCRIPT_PATH)
 	if source.find("_focus_root_bar_cortical") < 0 or source.find("_focus_root_bar_region") < 0:
-		push_error("Root bar input, output, and circuit lists must focus the on-screen view")
+		push_error("Root bar input, output, and circuit lists must focus the main scene")
 		return 1
-	if source.find("_global_topbar_mode:") < 0 or source.find("_focus_root_bar_region(region)") < 0:
-		push_error("The root bar circuit list must use the on-screen focus path")
+	if source.find("return BV.UI.get_temp_root_bm()") < 0:
+		push_error("The main scene list must use the main scene camera")
 		return 1
+	if source.find("get_brain_monitor_for_active_tab()") >= 0 and source.find("func _root_scene_monitor") >= 0:
+		var monitor_fn := source.substr(source.find("func _root_scene_monitor"))
+		var next_fn := monitor_fn.find("\nfunc ")
+		if next_fn > 0:
+			monitor_fn = monitor_fn.substr(0, next_fn)
+		if monitor_fn.find("get_brain_monitor_for_active_tab") >= 0:
+			push_error("The main scene camera must not be the Brain Monitor tab")
+			return 1
 	return 0
 
 

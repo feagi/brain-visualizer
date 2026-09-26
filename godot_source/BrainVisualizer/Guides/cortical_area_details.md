@@ -622,6 +622,7 @@ These require clicking the section's **Apply** button:
 - Dimension modifications
 - Position changes
 - Name edits
+- IO preset (Input, Output, or Interconnect)
 - Monitoring toggles
 
 **Apply buttons are disabled until changes are made**
@@ -629,7 +630,7 @@ These require clicking the section's **Apply** button:
 ### Section-Specific Apply Buttons
 
 Each section has its own Apply button:
-- **Summary** - Position, dimensions, name, etc.
+- **Summary** - Position, dimensions, name, IO preset, etc.
 - **Neuron Coding** - Coding parameters
 - **Neuron Firing** - Firing parameters
 - **Memory** - Memory parameters
