@@ -20,6 +20,7 @@ func _initialize() -> void:
 	failures += _test_tab_strip_is_two_theme_steps_smaller()
 	failures += _test_tab_strip_shows_only_while_pointer_is_on_tab()
 	failures += _test_input_output_lists_share_cortical_focus()
+	failures += _test_root_bar_list_frames_the_scene_on_screen()
 	failures += _test_circuits_title_does_not_paint_its_own_plate()
 	failures += _test_connectome_inner_hbox_ignores_mouse()
 	failures += _test_scene_keeps_object_combos_inside_menu()
@@ -225,12 +226,39 @@ func _test_input_output_lists_share_cortical_focus() -> int:
 	if script.cortical_list_focus_target(false, false, false, true, false) != script.CORTICAL_FOCUS_BUILDER:
 		push_error("Root bar lists must focus Circuit Builder when that tab is showing the area")
 		return 1
+	if script.cortical_list_focus_target(false, false, false, true, true) != script.CORTICAL_FOCUS_MONITOR:
+		push_error("A monitor that is showing the area must win over a Circuit Builder tab")
+		return 1
 	var source := FileAccess.get_file_as_string(COMBO_SCRIPT_PATH)
 	if source.find("_open_inputs") < 0 or source.find("_open_outputs") < 0 or source.find("_open_interconnect_areas") < 0:
 		push_error("Category lists must stay on the shared combo")
 		return 1
 	if source.count("_focus_cortical(area)") < 4:
 		push_error("Inputs, outputs, interconnect, and memory lists must call the same focus function")
+		return 1
+	return 0
+
+
+func _test_root_bar_list_frames_the_scene_on_screen() -> int:
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	if script.root_bar_list_focus_target(false, true, false, true) != script.CORTICAL_FOCUS_MONITOR:
+		push_error("Root scene list clicks must move the root scene camera while Circuit Builder is only a hidden tab")
+		return 1
+	if script.root_bar_list_focus_target(true, true, true, true) != script.CORTICAL_FOCUS_MONITOR:
+		push_error("A visible Brain Monitor tab must take a root-bar list click")
+		return 1
+	if script.root_bar_list_focus_target(true, true, false, true) != script.CORTICAL_FOCUS_BUILDER:
+		push_error("A visible Circuit Builder tab must take a root-bar list click when no monitor tab is showing")
+		return 1
+	if script.root_bar_list_focus_target(false, false, false, true) != script.CORTICAL_FOCUS_NONE:
+		push_error("A hidden Circuit Builder must not take a root-bar list click")
+		return 1
+	var source := FileAccess.get_file_as_string(COMBO_SCRIPT_PATH)
+	if source.find("_focus_root_bar_cortical") < 0 or source.find("_focus_root_bar_region") < 0:
+		push_error("Root bar input, output, and circuit lists must focus the on-screen view")
+		return 1
+	if source.find("_global_topbar_mode:") < 0 or source.find("_focus_root_bar_region(region)") < 0:
+		push_error("The root bar circuit list must use the on-screen focus path")
 		return 1
 	return 0
 

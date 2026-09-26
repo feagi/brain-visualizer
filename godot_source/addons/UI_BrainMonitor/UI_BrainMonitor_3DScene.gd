@@ -423,9 +423,15 @@ func focus_on_cortical_area(area: AbstractCorticalArea) -> void:
 		return
 	var viz := get_cortical_area_visualization(String(area.cortical_ID))
 	if viz != null:
+		var volume_aabb := viz.get_volume_world_aabb()
+		if _aabb_can_frame_camera(volume_aabb):
+			_frame_camera_to_aabb(volume_aabb)
+			return
 		_frame_camera_to_aabb(_aabb_for_cortical_focus(viz))
 		return
-	var center_pos := Vector3(area.coordinates_3D) + (area.dimensions_3D / 2.0)
+	var coords := Vector3(area.coordinates_3D)
+	var dims := Vector3(area.dimensions_3D)
+	var center_pos := Vector3(coords.x + dims.x * 0.5, coords.y + dims.y * 0.5, -(coords.z + dims.z * 0.5))
 	_pancake_cam.teleport_to_look_at_without_changing_angle(center_pos)
 
 
@@ -449,15 +455,23 @@ func _cortical_focus_anchor(viz: Node) -> Vector3:
 
 ## Focus camera on a brain region with framing when possible.
 func focus_on_brain_region(region: BrainRegion) -> void:
-	if region == null:
+	if region == null or _pancake_cam == null:
 		return
 	var region_frame = _brain_region_visualizations_by_ID.get(region.region_ID, null)
 	if region_frame != null and is_instance_valid(region_frame):
 		var aabb := _compute_world_aabb(region_frame)
-		if aabb.size != Vector3.ZERO:
+		if _aabb_can_frame_camera(aabb):
 			_frame_camera_to_aabb_with_padding(aabb, 1.1, 0.0)
 			return
-	_pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
+		if region_frame is Node3D:
+			_pancake_cam.teleport_to_look_at_without_changing_angle((region_frame as Node3D).global_position)
+			return
+	var coords := Vector3(region.coordinates_3D)
+	_pancake_cam.teleport_to_look_at_without_changing_angle(Vector3(coords.x, coords.y, -coords.z))
+
+
+func _aabb_can_frame_camera(aabb: AABB) -> bool:
+	return aabb.size != Vector3.ZERO and (aabb.size.x + aabb.size.y + aabb.size.z) >= 0.01
 
 
 ## Show a temporary focus indicator above a cortical area visualization.

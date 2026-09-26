@@ -1051,6 +1051,26 @@ func _cortical_mapping_blocked_by_live_synapse_inspector() -> bool:
 func get_volume_world_center() -> Vector3:
 	return _get_cortical_area_center_position()
 
+
+## World bounds of the cortical volume. Labels and connection curves are not part of this box.
+func get_volume_world_aabb() -> AABB:
+	var body := _volume_static_body()
+	if body == null:
+		return AABB()
+	var xf := body.global_transform
+	var size := Vector3(xf.basis.x.length(), xf.basis.y.length(), xf.basis.z.length())
+	if size.x + size.y + size.z < 0.01:
+		return AABB()
+	return AABB(xf.origin - size * 0.5, size)
+
+
+func _volume_static_body() -> StaticBody3D:
+	if _dda_renderer != null and _dda_renderer._static_body != null:
+		return _dda_renderer._static_body
+	if _directpoints_renderer != null and _directpoints_renderer._static_body != null:
+		return _directpoints_renderer._static_body
+	return null
+
 ## Get the center position of this cortical area in world space
 func _get_cortical_area_center_position() -> Vector3:
 	# print("     🔍 Getting position for: ", _representing_cortial_area.cortical_ID)  # Suppressed - too frequent

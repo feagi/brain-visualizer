@@ -113,7 +113,7 @@ func _on_item_selected(index: int) -> void:
 	var item_index := _filtered_item_indices[index]
 	var payload = _items[item_index].get("payload", null)
 	if _selection_handler.is_valid():
-		_selection_handler.call_deferred(payload)
+		_selection_handler.call(payload)
 	item_chosen.emit(payload)
 	hide()
 

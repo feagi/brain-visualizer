@@ -173,7 +173,7 @@ const CORTICAL_FOCUS_BUILDER: StringName = &"builder"
 const CORTICAL_FOCUS_NONE: StringName = &"none"
 
 
-## Which view receives a list click. Bound tab scenes win. The root bar uses the view that shows the area.
+## Which view receives a list click. Bound tab scenes win. A monitor that is showing the area wins over a Circuit Builder tab.
 static func cortical_list_focus_target(
 	has_bound_monitor: bool,
 	has_bound_builder: bool,
@@ -187,10 +187,29 @@ static func cortical_list_focus_target(
 		return CORTICAL_FOCUS_BUILDER
 	if active_monitor_has_area:
 		return CORTICAL_FOCUS_MONITOR
-	if has_active_builder:
-		return CORTICAL_FOCUS_BUILDER
 	if visible_monitor_has_area:
 		return CORTICAL_FOCUS_MONITOR
+	if has_active_builder:
+		return CORTICAL_FOCUS_BUILDER
+	return CORTICAL_FOCUS_NONE
+
+
+## Root-bar list clicks move the view that is on screen.
+## The default Circuit Builder tab stays mounted while the root scene is showing, and must not take the click.
+static func root_bar_list_focus_target(
+	split_view_open: bool,
+	root_monitor_present: bool,
+	tab_monitor_visible: bool,
+	builder_visible: bool
+) -> StringName:
+	if not split_view_open:
+		if root_monitor_present:
+			return CORTICAL_FOCUS_MONITOR
+		return CORTICAL_FOCUS_NONE
+	if tab_monitor_visible:
+		return CORTICAL_FOCUS_MONITOR
+	if builder_visible:
+		return CORTICAL_FOCUS_BUILDER
 	return CORTICAL_FOCUS_NONE
 
 
@@ -1434,6 +1453,11 @@ func _draw() -> void:
 	draw_rect(back_rect, BACKPLATE_COLOR, true)
 
 func _focus_region(region: BrainRegion) -> void:
+	if region == null:
+		return
+	if _global_topbar_mode:
+		_focus_root_bar_region(region)
+		return
 	if _is_3d_context and _bm_scene and _bm_scene.get_pancake_camera():
 		if _bm_scene.has_method("focus_on_brain_region"):
 			_bm_scene.focus_on_brain_region(region)
@@ -1462,6 +1486,9 @@ func _focus_region(region: BrainRegion) -> void:
 
 func _focus_cortical(area: AbstractCorticalArea) -> void:
 	if area == null:
+		return
+	if _global_topbar_mode:
+		_focus_root_bar_cortical(area)
 		return
 	var cortical_id := String(area.cortical_ID)
 	var active_bm := BV.UI.get_brain_monitor_for_active_tab()
@@ -1493,6 +1520,65 @@ func _focus_cortical_on_monitor(monitor: UI_BrainMonitor_3DScene, area: Abstract
 		return
 	monitor.focus_on_cortical_area(area)
 	monitor.flash_indicator_for_cortical_area(area)
+
+
+## Root-bar Inputs, Outputs, and Circuits move the camera that is on screen.
+func _focus_root_bar_cortical(area: AbstractCorticalArea) -> void:
+	if _root_bar_list_target() == CORTICAL_FOCUS_MONITOR:
+		_focus_cortical_on_monitor(_root_bar_on_screen_monitor(), area)
+		return
+	var builder := _root_bar_on_screen_builder()
+	if builder != null:
+		builder.focus_on_cortical_area(area)
+
+
+## Root-bar circuit rows use the same on-screen view as Inputs and Outputs.
+func _focus_root_bar_region(region: BrainRegion) -> void:
+	if _root_bar_list_target() == CORTICAL_FOCUS_MONITOR:
+		var monitor := _root_bar_on_screen_monitor()
+		if monitor != null and monitor.get_pancake_camera() != null:
+			monitor.focus_on_brain_region(region)
+			monitor.flash_indicator_for_brain_region(region)
+		return
+	var builder := _root_bar_on_screen_builder()
+	if builder != null:
+		builder.focus_on_region(region)
+
+
+func _root_bar_list_target() -> StringName:
+	if BV == null or BV.UI == null:
+		return CORTICAL_FOCUS_NONE
+	var split_open := BV.UI.is_split_view_open()
+	var tab_monitor := BV.UI.get_brain_monitor_for_active_tab()
+	var builder := BV.UI.get_circuit_builder_for_active_tab()
+	return root_bar_list_focus_target(
+		split_open,
+		BV.UI.get_temp_root_bm() != null,
+		split_open and tab_monitor != null and tab_monitor.is_visible_in_tree(),
+		split_open and builder != null and builder.is_visible_in_tree()
+	)
+
+
+## Root scene camera while the split is closed. The visible Brain Monitor tab while the split is open.
+func _root_bar_on_screen_monitor() -> UI_BrainMonitor_3DScene:
+	if BV == null or BV.UI == null:
+		return null
+	if not BV.UI.is_split_view_open():
+		return BV.UI.get_temp_root_bm()
+	var active := BV.UI.get_brain_monitor_for_active_tab()
+	if active != null and active.is_visible_in_tree():
+		return active
+	return null
+
+
+## Circuit Builder only when that tab is the view on screen.
+func _root_bar_on_screen_builder() -> CircuitBuilder:
+	if BV == null or BV.UI == null or not BV.UI.is_split_view_open():
+		return null
+	var builder := BV.UI.get_circuit_builder_for_active_tab()
+	if builder != null and builder.is_visible_in_tree():
+		return builder
+	return null
 
 
 ## Find the active Circuit Builder tab if needed.
