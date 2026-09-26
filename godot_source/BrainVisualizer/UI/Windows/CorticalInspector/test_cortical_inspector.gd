@@ -44,6 +44,19 @@ func _test_wire_values() -> int:
 	if not is_equal_approx(float(Model.ui_to_wire("neuron_excitability", 100)), 1.0):
 		push_error("excitability percent must be sent as 0-1")
 		return 1
+	if not is_equal_approx(float(Model.ui_to_wire("neuron_excitability", 150)), 1.0):
+		push_error("excitability above 100 must clamp to 1")
+		return 1
+	if not is_equal_approx(float(Model.ui_to_wire("neuron_excitability", -10)), 0.0):
+		push_error("excitability below 0 must clamp to 0")
+		return 1
+	var excitability: Dictionary = Model.spec_by_id("neuron_excitability")
+	if not is_equal_approx(Model.clamp_ui_value(excitability, 140.0), 100.0):
+		push_error("excitability UI must stay at or below 100")
+		return 1
+	if not is_equal_approx(Model.clamp_ui_value(excitability, -4.0), 0.0):
+		push_error("excitability UI must stay at or above 0")
+		return 1
 	if not is_equal_approx(float(Model.ui_to_wire("neuron_fire_threshold", 1.25)), 1.25):
 		push_error("fire threshold must stay a float")
 		return 1
@@ -69,7 +82,7 @@ func _test_default_spans() -> int:
 		"neuron_consecutive_fire_count": Vector2(0, 64),
 		"neuron_snooze_period": Vector2(0, 64),
 		"neuron_post_synaptic_potential": Vector2(-5, 5),
-		"neuron_post_synaptic_potential_max": Vector2(0, 5),
+		"neuron_post_synaptic_potential_max": Vector2(0, 10000),
 	}
 	for row_id in expected.keys():
 		var spec: Dictionary = Model.spec_by_id(str(row_id))

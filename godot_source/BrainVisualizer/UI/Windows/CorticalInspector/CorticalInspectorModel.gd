@@ -37,7 +37,7 @@ static func parameter_specs() -> Array[Dictionary]:
 		_bool_spec(&"neuron_mp_charge_accumulation", KEY_MP_ACCUMULATION, "MP charge accumulation", SECTION_FIRING, CACHE_FIRING, "neuron_mp_charge_accumulation", true, "Add incoming charge onto the current membrane potential."),
 		_number_spec(&"neuron_fire_threshold", KEY_FIRE_THRESHOLD, "Fire threshold", SECTION_FIRING, CACHE_FIRING, "neuron_fire_threshold", "float", 0.0, 20.0, 0.01, 3, false, "Membrane potential required for a neuron to fire."),
 		_number_spec(&"neuron_firing_threshold_limit", KEY_THRESHOLD_LIMIT, "Threshold limit", SECTION_FIRING, CACHE_FIRING, "neuron_firing_threshold_limit", "int", 0.0, 100.0, 1.0, 0, false, "Upper cap on the firing threshold."),
-		_number_spec(&"neuron_excitability", KEY_EXCITABILITY, "Excitability", SECTION_FIRING, CACHE_FIRING, "neuron_excitability", "percent", 0.0, 100.0, 1.0, 0, false, "Percent of excitability sent to FEAGI as 0 to 1."),
+		_number_spec(&"neuron_excitability", KEY_EXCITABILITY, "Excitability", SECTION_FIRING, CACHE_FIRING, "neuron_excitability", "percent", 0.0, 100.0, 1.0, 0, false, "Excitability from 0 to 100. Sent to FEAGI as 0 to 1."),
 		_number_spec(&"neuron_refractory_period", KEY_REFRACTORY, "Refractory period", SECTION_FIRING, CACHE_FIRING, "neuron_refractory_period", "int", 0.0, 64.0, 1.0, 0, false, "Bursts a neuron stays silent after it fires."),
 		_number_spec(&"neuron_leak_coefficient", KEY_LEAK, "Leak", SECTION_FIRING, CACHE_FIRING, "neuron_leak_coefficient", "percent", 0.0, 100.0, 1.0, 0, true, "Percent of membrane potential removed each burst."),
 		_number_spec(&"neuron_consecutive_fire_count", KEY_CONSECUTIVE, "Consecutive fire count", SECTION_FIRING, CACHE_FIRING, "neuron_consecutive_fire_count", "int", 0.0, 64.0, 1.0, 0, false, "How many bursts a neuron may fire in a row."),
@@ -49,7 +49,7 @@ static func parameter_specs() -> Array[Dictionary]:
 		_bool_spec(&"neuron_psp_uniform_distribution", KEY_PSP_UNIFORM, "PSP uniform distribution", SECTION_PSP, CACHE_PSP, "neuron_psp_uniform_distribution", false, "Spread postsynaptic potential uniformly."),
 		_bool_spec(&"neuron_mp_driven_psp", KEY_MP_DRIVEN_PSP, "MP-driven PSP", SECTION_PSP, CACHE_PSP, "neuron_mp_driven_psp", false, "Use membrane potential as the postsynaptic potential."),
 		_number_spec(&"neuron_post_synaptic_potential", KEY_PSP, "Postsynaptic potential", SECTION_PSP, CACHE_PSP, "neuron_post_synaptic_potential", "float", -5.0, 5.0, 0.01, 3, false, "Membrane potential added to downstream neurons per spike."),
-		_number_spec(&"neuron_post_synaptic_potential_max", KEY_PSP_MAX, "PSP max", SECTION_PSP, CACHE_PSP, "neuron_post_synaptic_potential_max", "float", 0.0, 5.0, 0.01, 3, false, "Maximum postsynaptic potential."),
+		_number_spec(&"neuron_post_synaptic_potential_max", KEY_PSP_MAX, "PSP max", SECTION_PSP, CACHE_PSP, "neuron_post_synaptic_potential_max", "float", 0.0, 10000.0, 0.01, 3, false, "Maximum postsynaptic potential."),
 	]
 
 
@@ -81,6 +81,13 @@ static func value_entry_locked(row_id: String, mp_driven_psp: bool, read_only: b
 	if row_id == str(KEY_PSP) and mp_driven_psp:
 		return true
 	return false
+
+
+## Percent rows stay inside their default span. Unbounded rows are left unchanged.
+static func clamp_ui_value(spec: Dictionary, value: float) -> float:
+	if bool(spec.get("editable_bounds", false)):
+		return value
+	return clampf(value, float(spec["default_min"]), float(spec["default_max"]))
 
 
 ## Widen a stored span so the current value can sit on the slider.
@@ -119,7 +126,7 @@ static func edit_bound(span_min: float, span_max: float, live_value: float, edit
 ## Convert one UI value into the body FEAGI expects for [param key].
 static func ui_to_wire(key: String, ui_value: Variant) -> Variant:
 	if key == str(KEY_LEAK) or key == str(KEY_EXCITABILITY):
-		return float(ui_value) / 100.0
+		return clampf(float(ui_value), 0.0, 100.0) / 100.0
 	if key == str(KEY_THRESHOLD_INCREMENT):
 		return _vector_components(ui_value)
 	if key == str(KEY_MP_ACCUMULATION) or key == str(KEY_PSP_UNIFORM) or key == str(KEY_MP_DRIVEN_PSP):

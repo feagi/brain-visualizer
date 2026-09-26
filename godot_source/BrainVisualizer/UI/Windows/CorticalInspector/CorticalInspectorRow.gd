@@ -40,13 +40,13 @@ func setup(spec: Dictionary) -> void:
 	_build_slider_row()
 
 
-## Place the thumb on [param value]. When [param widen] is true, expand min or max so the value fits.
+## Place the thumb on [param value]. Unbounded rows widen so the value fits. Percent rows stay on 0-100.
 func set_live(value: float, widen: bool) -> void:
-	if widen:
+	if widen and bool(_spec.get("editable_bounds", false)):
 		var span := CorticalInspectorModel.span_including_value(_lo, _hi, value)
 		_lo = span.x
 		_hi = span.y
-	_live = value
+	_live = CorticalInspectorModel.clamp_ui_value(_spec, value)
 	_sync_controls()
 
 
@@ -148,6 +148,8 @@ func _build_slider_row() -> void:
 	_spin.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_spin.step = _micro_step()
 	_spin.rounded = str(_spec["kind"]) == "int" or str(_spec["kind"]) == "percent"
+	_spin.allow_greater = false
+	_spin.allow_lesser = false
 	_spin.tooltip_text = str(_spec["tooltip"])
 	_spin.update_on_text_changed = false
 	row.add_child(_spin)
@@ -188,7 +190,7 @@ func _sync_controls() -> void:
 func _on_slider_value(value: float) -> void:
 	if _syncing:
 		return
-	_live = value
+	_live = CorticalInspectorModel.clamp_ui_value(_spec, value)
 	_syncing = true
 	if _spin != null:
 		_spin.set_value_no_signal(_live)
@@ -200,7 +202,7 @@ func _on_slider_value(value: float) -> void:
 func _on_spin_value(value: float) -> void:
 	if _syncing:
 		return
-	_live = value
+	_live = CorticalInspectorModel.clamp_ui_value(_spec, value)
 	_syncing = true
 	if _slider != null:
 		_slider.set_value_no_signal(clampf(_live, _lo, _hi))
