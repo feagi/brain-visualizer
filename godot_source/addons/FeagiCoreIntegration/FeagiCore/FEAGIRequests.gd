@@ -1908,7 +1908,7 @@ func add_custom_memory_cortical_area(cortical_name: StringName, coordinates_3D: 
 ##
 ## BREAKING CHANGE (unreleased FEAGI API):
 ## `data_type_config` is now per-subunit: `data_type_configs_by_subunit` (Dictionary: subunit_idx -> config_value).
-func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), unit_id: int = 0, neurons_per_voxel: int = 1, data_type_configs_by_subunit: Dictionary = {}) -> FeagiRequestOutput:
+func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, coordinates_3D: Vector3i, is_coordinate_2D_defined: bool, coordinates_2D: Vector2i = Vector2(0,0), unit_id: int = 0, neurons_per_voxel: int = 1, data_type_configs_by_subunit: Dictionary = {}, per_device_dimensions_by_subunit: Dictionary = {}) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
@@ -1928,7 +1928,7 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		push_error("FEAGI Requests: Unable to create non-IPU/OPU area using the request IPU/OPU call!, Skipping!")
 		return FeagiRequestOutput.requirement_fail("NON_IOPU")
 	
-	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with unit_id %d, neurons_per_voxel %d, data_type_configs_by_subunit=%s" % [IOPU_template.cortical_name, unit_id, neurons_per_voxel, str(data_type_configs_by_subunit)])
+	print("FEAGI REQUEST: Request creating IOPU cortical area by name %s with unit_id %d, neurons_per_voxel %d, data_type_configs_by_subunit=%s, per_device_dimensions_by_subunit=%s" % [IOPU_template.cortical_name, unit_id, neurons_per_voxel, str(data_type_configs_by_subunit), str(per_device_dimensions_by_subunit)])
 	# Define Request
 	var dict_to_send: Dictionary = {
 		"cortical_id": IOPU_template.ID,
@@ -1940,6 +1940,8 @@ func add_IOPU_cortical_area(IOPU_template: CorticalTemplate, device_count: int, 
 		"data_type_configs_by_subunit": data_type_configs_by_subunit,
 		"coordinates_2d": [null, null]
 	}
+	if not per_device_dimensions_by_subunit.is_empty():
+		dict_to_send["per_device_dimensions_by_subunit"] = per_device_dimensions_by_subunit
 	
 	# NEW: Add cortical_type_info if available
 	if IOPU_template.feagi_cortical_type != null:

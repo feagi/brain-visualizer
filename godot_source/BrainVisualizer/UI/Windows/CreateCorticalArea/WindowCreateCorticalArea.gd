@@ -279,6 +279,15 @@ func _show_inline_validation_error(message: String) -> void:
 func _on_name_enter_submit(_text: String) -> void:
 	_user_requesing_creation()
 
+func _iopu_dimension_block_message() -> String:
+	if not _IOPU_definition.has_per_device_dimensions():
+		return "Per-device dimensions are not available for this area."
+	var planned_neurons: int = _IOPU_definition.get_planned_neuron_count()
+	if planned_neurons + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
+		return "The resultant cortical area adds too many neurons!!"
+	return ""
+
+
 func _on_unit_id_validation_changed(is_valid: bool, message: String) -> void:
 	if _add_button != null:
 		_add_button.disabled = !is_valid
@@ -320,9 +329,9 @@ func _user_requesing_creation() -> void:
 			var device_count: int = int(_IOPU_definition.device_count.value)
 			var selected_unit_id: int = _IOPU_definition.get_selected_unit_id()
 			var neurons_per_voxel: int = _IOPU_definition.get_neurons_per_voxel()
-			
-			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
+			var dimension_error: String = _iopu_dimension_block_message()
+			if dimension_error != "":
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", dimension_error, "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
 			
@@ -343,6 +352,7 @@ func _user_requesing_creation() -> void:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
 					var data_type_configs_by_subunit: Dictionary = _IOPU_definition.get_selected_data_type_configs_by_subunit()
+					var per_device_dimensions: Dictionary = _IOPU_definition.get_per_device_dimensions_api_payload()
 					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
@@ -351,7 +361,8 @@ func _user_requesing_creation() -> void:
 						pos_2d,
 						selected_unit_id,
 						neurons_per_voxel,
-						data_type_configs_by_subunit
+						data_type_configs_by_subunit,
+						per_device_dimensions
 					)
 					if result.has_errored:
 						var error_details = result.decode_response_as_generic_error_code()
@@ -375,9 +386,9 @@ func _user_requesing_creation() -> void:
 			var device_count: int = int(_IOPU_definition.device_count.value)
 			var selected_unit_id: int = _IOPU_definition.get_selected_unit_id()
 			var neurons_per_voxel: int = _IOPU_definition.get_neurons_per_voxel()
-			
-			if AbstractCorticalArea.get_neuron_count(template.calculate_IOPU_dimension(device_count), 1.0) + FeagiCore.feagi_local_cache.neuron_count_current > FeagiCore.feagi_local_cache.neuron_count_max:
-				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", "The resultant cortical area adds too many neurons!!", "OK")
+			var dimension_error_opu: String = _iopu_dimension_block_message()
+			if dimension_error_opu != "":
+				var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_single_button_close_popup("ERROR", dimension_error_opu, "OK")
 				BV.WM.spawn_popup(popup_definition)
 				return
 				
@@ -398,6 +409,7 @@ func _user_requesing_creation() -> void:
 				# Area doesnt exist, create (unless device count is 0, the ignore)
 				if _IOPU_definition.device_count.value != 0:
 					var data_type_configs_by_subunit_opu: Dictionary = _IOPU_definition.get_selected_data_type_configs_by_subunit()
+					var per_device_dimensions_opu: Dictionary = _IOPU_definition.get_per_device_dimensions_api_payload()
 					var result: FeagiRequestOutput = await FeagiCore.requests.add_IOPU_cortical_area(
 						template,
 						int(_IOPU_definition.device_count.value),
@@ -406,7 +418,8 @@ func _user_requesing_creation() -> void:
 						pos_2d,
 						selected_unit_id,
 						neurons_per_voxel,
-						data_type_configs_by_subunit_opu
+						data_type_configs_by_subunit_opu,
+						per_device_dimensions_opu
 					)
 					if result.has_errored:
 						var error_details = result.decode_response_as_generic_error_code()

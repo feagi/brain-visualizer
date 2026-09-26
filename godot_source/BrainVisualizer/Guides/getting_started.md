@@ -101,8 +101,9 @@ Let's create a simple input area:
 2. Click the **+** button to create a new input
 3. Select a template (e.g., "Vision" or "Generic Input")
 4. Set the device count (typically 1 to start)
-5. Choose a unit ID (leave default if unsure)
-6. Click **Add**
+5. Open **Advanced** to change per-device width, height, or depth on the axes that template allows
+6. Choose a unit ID (leave default if unsure)
+7. Click **Add**
 
 You should now see a new gray box in the Circuit Builder and a volume in the Brain Monitor!
 

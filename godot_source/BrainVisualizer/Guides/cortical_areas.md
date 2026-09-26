@@ -110,10 +110,10 @@ For input and output areas:
 2. Click the **+** button
 3. Select a template (e.g., Vision, Motor)
 4. Configure:
-   - **Device Count**: How many instances (e.g., 2 cameras)
+   - **Device Count**: How many instances (e.g., 2 cameras). Each extra device repeats the per-device width along X
    - **Unit ID**: Unique identifier for the device
    - **Location**: 3D position in genome
-   - **Data Type**: How data is encoded
+   - **Advanced**: Per-device width, height, and depth, plus data type. An axis stays locked when the template fixes it. Simple vision exposes width and height. Miscellaneous input and output expose whichever of width, height, and depth the template allows. Servo and motor depth is the decoding resolution
 5. Click **Add**
 
 The new area appears in both Circuit Builder and Brain Monitor.
@@ -168,7 +168,17 @@ Specifies how many instances of the device exist:
 - **2 cameras** = stereo vision (two separate IPUs or one multi-unit IPU)
 - **4 motors** = four separate motor OPUs
 
-Each count creates the appropriate cortical structure.
+Each count creates the appropriate cortical structure. Width of the area is per-device width times device count. Height and depth stay at the per-device size.
+
+### Per-device dimensions
+
+Open **Advanced** on the add dialog to set the size of one device:
+
+- **Simple vision**: width and height. Depth stays inside the template range (color channels)
+- **Miscellaneous IPU or OPU**: width, height, and depth where the template range allows each axis
+- **Servo and motor**: depth, which is the decoding resolution. Width and height stay fixed
+
+Axes whose template minimum and maximum are the same cannot be changed.
 
 ### Unit ID
 
@@ -382,7 +392,7 @@ For Custom and Memory areas:
 - Edit dimensions X, Y, Z
 - Click Apply
 
-**Note:** IPU/OPU dimensions are determined by templates and cannot be directly resized.
+**Note:** IPU/OPU size is chosen when the area is added. Open **Advanced** and edit the axes that template allows. Fixed axes cannot be changed.
 
 ### Cloning
 
@@ -488,7 +498,7 @@ Before creating areas:
 - Verify FEAGI is processing
 
 **"Can't resize area"**
-- IPU/OPU dimensions are template-defined
+- IPU/OPU axes the template fixes cannot be changed. Set the allowed axes in **Advanced** while adding the area
 - Check if area type allows resizing
 - Use Properties window for precise control
 

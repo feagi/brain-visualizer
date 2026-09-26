@@ -36,7 +36,7 @@ All icons now follow the cortical type naming convention where filenames map to 
 
 ### Previously Missing Icons (Now Created)
 - `opse.png` (Positional Servo - unit ref: *b"pse") - ✅ CREATED
-- `omis.png` (Miscellaneous Motor - unit ref: *b"mis") - ✅ CREATED
+- `omis.png` (Miscellaneous Output - unit ref: *b"mis") - ✅ CREATED
 
 ## Core Types (Keep as-is)
 - `_power.png` → KEEP

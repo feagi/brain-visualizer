@@ -1,6 +1,8 @@
 extends VBoxContainer
 class_name PartSpawnCorticalAreaIOPU
 
+const _IoPerDeviceDimensions = preload("res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/IoPerDeviceDimensions.gd")
+
 signal calculated_dimensions_updated(new_size: Vector3i)
 signal location_changed_from_dropdown(new_location: Vector3i)
 signal unit_id_validation_changed(is_valid: bool, message: String)
@@ -29,8 +31,10 @@ var _metadata_ready: bool = false  # Flag to track if template metadata has been
 # BREAKING CHANGE (unreleased FEAGI API):
 # `cortical_template` metadata is now per-subunit (heterogeneous subunits supported).
 var _subunit_configs_container: VBoxContainer = null
-var _subunit_rows: Dictionary = {}  # subunit_idx -> {"variant": OptionButton, "frame": OptionButton, "pos": OptionButton, "config_map": Dictionary}
+var _subunit_rows: Dictionary = {}  # subunit_idx -> {"variant": OptionButton, "frame": OptionButton, "pos": OptionButton, "config_map": Dictionary, "dimension_spins": Array}
 var _selected_data_type_configs_by_subunit: Dictionary = {}  # subunit_idx -> config_value (int)
+var _per_device_dimensions_by_subunit: Dictionary = {}  # subunit_idx -> Vector3i width, height, depth
+var _per_device_dimensions_valid: bool = false
 
 func _ready() -> void:
 	location = $HBoxContainer/Fields/Location
@@ -104,67 +108,63 @@ func _clear_all_previews() -> void:
 			preview.queue_free()
 	_preview_boxes.clear()
 
+func _preview_dimensions_for_subunit(subunit_index: int, topology_dims: Array) -> Vector3i:
+	var per_device := Vector3i.ZERO
+	if _per_device_dimensions_by_subunit.has(subunit_index):
+		per_device = _per_device_dimensions_by_subunit[subunit_index]
+	elif topology_dims.size() >= 3:
+		per_device = Vector3i(int(topology_dims[0]), int(topology_dims[1]), int(topology_dims[2]))
+	if per_device.x < 1 or per_device.y < 1 or per_device.z < 1:
+		return Vector3i.ZERO
+	var device_total: int = int(device_count.value)
+	if device_total < 1:
+		return Vector3i.ZERO
+	return _IoPerDeviceDimensions.total_dimensions(per_device, device_total)
+
+
 func _create_preview_boxes_from_topology() -> void:
-	"""Create multiple preview boxes based on unit topology data"""
+	"""Replace the add shadow with one box per subunit at the current location and size."""
 	if _selected_template == null or _active_brain_monitor == null:
 		return
-	
-	# Clear existing previews
-	_clear_all_previews()
-	
-	# Get topology data from template
+	var specs: Array[Dictionary] = []
 	var topology: Dictionary = _selected_template.unit_default_topology
-	if topology.is_empty():
-		push_warning("PartSpawnCorticalAreaIOPU: No topology data, creating single preview")
-		# Fallback to single preview box
-		_create_single_preview_box(location.current_vector, _current_dimensions_as_per_device_count)
-		return
-	
-	# Check for existing cortical areas of the same type to get their dimensions
-	var existing_dimensions_map: Dictionary = _get_existing_unit_dimensions(_selected_template.ID)
-	
-	# Create preview boxes for each unit
 	var base_position: Vector3i = location.current_vector
-	# Note: We handle location changes in _on_location_changed, so don't pass move signals
+	if topology.is_empty():
+		var only_subunit := 0
+		if not _per_device_dimensions_by_subunit.is_empty():
+			var only_keys: Array = _per_device_dimensions_by_subunit.keys()
+			only_keys.sort()
+			only_subunit = int(only_keys[0])
+		var only_dims := _preview_dimensions_for_subunit(only_subunit, [])
+		if only_dims != Vector3i.ZERO:
+			specs.append({"position": base_position, "dimensions": only_dims, "subunit": only_subunit})
+	else:
+		var sorted_unit_indices: Array = topology.keys()
+		sorted_unit_indices.sort()
+		for unit_idx in sorted_unit_indices:
+			var subunit_index: int = int(unit_idx)
+			var unit_data: Dictionary = topology[unit_idx]
+			var rel_pos: Array = unit_data.get("relative_position", [0, 0, 0])
+			var topology_dims: Array = unit_data.get("dimensions", [])
+			var dims := _preview_dimensions_for_subunit(subunit_index, topology_dims)
+			if dims == Vector3i.ZERO:
+				push_error("PartSpawnCorticalAreaIOPU: Subunit %d has no preview dimensions" % subunit_index)
+				continue
+			var abs_position: Vector3i = base_position + Vector3i(int(rel_pos[0]), int(rel_pos[1]), int(rel_pos[2]))
+			specs.append({"position": abs_position, "dimensions": dims, "subunit": subunit_index})
+	if specs.is_empty():
+		return
+	# Note: location changes are applied in _on_location_changed, so these boxes do not subscribe to move signals.
 	var move_signals: Array[Signal] = []
 	var resize_signals: Array[Signal] = []
-	
-	var sorted_unit_indices: Array = topology.keys()
-	sorted_unit_indices.sort()
-	
-	for unit_idx in sorted_unit_indices:
-		var unit_data: Dictionary = topology[unit_idx]
-		var rel_pos: Array = unit_data.get("relative_position", [0, 0, 0])
-		var default_dims: Array = unit_data.get("dimensions", [1, 1, 1])
-		
-		# Use existing dimensions if available, otherwise use default
-		var dims: Vector3i
-		if unit_idx in existing_dimensions_map:
-			dims = existing_dimensions_map[unit_idx]
-		else:
-			dims = Vector3i(default_dims[0], default_dims[1], default_dims[2])
-		
-		# Calculate absolute position
-		var abs_position: Vector3i = base_position + Vector3i(rel_pos[0], rel_pos[1], rel_pos[2])
-		
-		# Create preview box for this unit
-		var cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU if _is_IPU_not_OPU else AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
-		var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(abs_position, dims, false, cortical_type, null, false, false)
+	_clear_all_previews()
+	var cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU if _is_IPU_not_OPU else AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+	for spec in specs:
+		var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(spec["position"], spec["dimensions"], false, cortical_type, null, false, false)
+		preview.set_meta("subunit_index", int(spec["subunit"]))
 		preview.connect_UI_signals(move_signals, resize_signals, _preview_close_signals)
 		_preview_boxes.append(preview)
-	
 	print("PartSpawnCorticalAreaIOPU: Created %d preview boxes for %s" % [_preview_boxes.size(), _selected_template.cortical_name])
-	_activate_relocation_on_primary_preview()
-
-func _create_single_preview_box(pos: Vector3i, dims: Vector3i) -> void:
-	"""Create a single preview box (fallback when no topology data)"""
-	# For single preview, we can use the standard signal connections
-	var move_signals: Array[Signal] = [location.user_updated_vector, location_changed_from_dropdown]
-	var resize_signals: Array[Signal] = [calculated_dimensions_updated]
-	var cortical_type = AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU if _is_IPU_not_OPU else AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
-	var preview: UI_BrainMonitor_InteractivePreview = _active_brain_monitor.create_preview(pos, dims, false, cortical_type, null, false, false)
-	preview.connect_UI_signals(move_signals, resize_signals, _preview_close_signals)
-	_preview_boxes.append(preview)
 	_activate_relocation_on_primary_preview()
 
 
@@ -245,46 +245,6 @@ func _stop_preview_relocation() -> void:
 		_active_brain_monitor.stop_cortical_preview_relocation(_relocation_anchor_preview)
 	_relocation_anchor_preview = null
 
-func _get_existing_unit_dimensions(cortical_type_key: String) -> Dictionary:
-	"""Find existing cortical areas of the same type and return dimensions for each unit (from largest unit_id)"""
-	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
-	var unit_dimensions: Dictionary = {}  # {unit_index: Vector3i dimensions}
-	var largest_unit_id: int = -1
-
-	# First pass: find the largest unit_id for this cortical type
-	for cortical_id: StringName in existing_areas.keys():
-		var cortical_id_str: String = String(cortical_id)
-		var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
-		if decoded_bytes.size() != 8:
-			continue
-		
-		var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
-		var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
-		
-		if cortical_subtype == cortical_type_key:
-			var unit_id_val: int = FEAGIUtils.io_cortical_unit_index_from_id_bytes(decoded_bytes)
-			if unit_id_val > largest_unit_id:
-				largest_unit_id = unit_id_val
-
-	# Second pass: collect dimensions from areas with the largest unit_id
-	if largest_unit_id >= 0:
-		for cortical_id: StringName in existing_areas.keys():
-			var cortical_id_str: String = String(cortical_id)
-			var decoded_bytes: PackedByteArray = Marshalls.base64_to_raw(cortical_id_str)
-			if decoded_bytes.size() != 8:
-				continue
-			
-			var subtype_bytes: PackedByteArray = decoded_bytes.slice(0, 4)
-			var cortical_subtype: String = subtype_bytes.get_string_from_ascii()
-			var unit_id_val: int = FEAGIUtils.io_cortical_unit_index_from_id_bytes(decoded_bytes)
-			var unit_index: int = FEAGIUtils.io_cortical_sub_unit_index_from_id_bytes(decoded_bytes)
-			
-			if cortical_subtype == cortical_type_key and unit_id_val == largest_unit_id:
-				var area = existing_areas[cortical_id]
-				unit_dimensions[unit_index] = area.dimensions_3D
-	
-	return unit_dimensions
-
 func _get_existing_neurons_per_voxel(cortical_type_key: String) -> int:
 	"""Find existing cortical areas of the same type and return neurons_per_voxel from largest unit_id"""
 	var existing_areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
@@ -325,7 +285,6 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 		push_warning("PartSpawnCorticalAreaIOPU: Received null cortical template")
 		return
 	_selected_template = cortical_template
-	_current_dimensions_as_per_device_count = cortical_template.calculate_IOPU_dimension(int(device_count.value))
 	_iopu_image.texture = UIManager.get_icon_texture_by_ID(cortical_template.ID, _is_IPU_not_OPU)
 	if _device_name_label != null:
 		_device_name_label.text = str(cortical_template.cortical_name)
@@ -334,17 +293,15 @@ func _apply_template_selection(cortical_template: CorticalTemplate) -> void:
 	var first_available_id = _find_first_available_unit_id(cortical_template.ID)
 	unit_id.value = first_available_id
 	
-	# Populate data type dropdowns for this template
-	print("PartSpawnCorticalAreaIOPU: Populating dropdowns for template ID='%s'" % cortical_template.ID)
-	_populate_subunit_dropdowns(cortical_template.ID)
-	
-	# Update location if an existing area exists
+	# Place the shadow where an existing area of this type already sits.
 	if cortical_template.ID in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
 		location.current_vector = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_template.ID].coordinates_3D
 		location_changed_from_dropdown.emit(location.current_vector)
 	
-	# Create multiple preview boxes based on topology
-	_create_preview_boxes_from_topology()
+	# Subunit metadata can await. The shadow is created when that load finishes,
+	# using the location and per-device size chosen above.
+	print("PartSpawnCorticalAreaIOPU: Populating dropdowns for template ID='%s'" % cortical_template.ID)
+	_populate_subunit_dropdowns(cortical_template.ID)
 	
 
 func _on_location_changed(new_location: Vector3i) -> void:
@@ -376,16 +333,10 @@ func _on_location_changed(new_location: Vector3i) -> void:
 	_is_syncing_from_location_fields = false
 
 func _proxy_device_count_changes(_new_device_count: int) -> void:
-	var selected_template = _selected_template
-	if selected_template == null:
+	if _selected_template == null:
 		push_warning("PartSpawnCorticalAreaIOPU: No template selected, cannot update device count")
 		return
-		
-	_current_dimensions_as_per_device_count = selected_template.calculate_IOPU_dimension(int(device_count.value))
-	calculated_dimensions_updated.emit(_current_dimensions_as_per_device_count)
-	
-	# Regenerate preview boxes with updated dimensions
-	_create_preview_boxes_from_topology()
+	_apply_preview_dimensions()
 
 
 func get_selected_template() -> CorticalTemplate:
@@ -462,14 +413,14 @@ func _validate_unit_id() -> void:
 			if existing_unit_id == selected_unit_id:
 				# Found a match - this unit ID is already used!
 				var area_name: String = existing_areas[cortical_id].friendly_name
-				var message: String = "⚠ Unit ID %d already exists for %s (%s)" % [selected_unit_id, cortical_type_key, area_name]
+				var message: String = "⚠ Unit ID %d is already in use (%s)" % [selected_unit_id, area_name]
 				_unit_id_status_label.text = message
 				_unit_id_status_label.modulate = Color(1.0, 0.5, 0.5)  # Red tint
 				unit_id_validation_changed.emit(false, message)
 				return
 	
 	# Unit ID is available
-	var message: String = "✓ Unit ID %d is available for %s" % [selected_unit_id, cortical_type_key]
+	var message: String = "✓ Unit ID %d is available" % selected_unit_id
 	_unit_id_status_label.text = message
 	_unit_id_status_label.modulate = Color(0.5, 1.0, 0.5)  # Green tint
 	unit_id_validation_changed.emit(true, "")
@@ -482,6 +433,22 @@ func get_neurons_per_voxel() -> int:
 	if _selected_template == null:
 		return 1
 	return _get_existing_neurons_per_voxel(_selected_template.ID)
+
+
+func has_per_device_dimensions() -> bool:
+	return _per_device_dimensions_valid and not _per_device_dimensions_by_subunit.is_empty()
+
+
+func get_planned_neuron_count() -> int:
+	return _IoPerDeviceDimensions.neuron_count(
+		_per_device_dimensions_by_subunit,
+		int(device_count.value),
+		get_neurons_per_voxel()
+	)
+
+
+func get_per_device_dimensions_api_payload() -> Dictionary:
+	return _IoPerDeviceDimensions.to_api_payload(_per_device_dimensions_by_subunit)
 
 func _fetch_template_metadata() -> void:
 	"""Fetch cortical template metadata from FEAGI API"""
@@ -525,7 +492,7 @@ func _ensure_subunit_configs_container() -> void:
 	
 	# Header label
 	var header_label = Label.new()
-	header_label.text = "Advanced Coding Settings"
+	header_label.text = "Advanced"
 	header_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	header_container.add_child(header_label)
@@ -559,6 +526,8 @@ func _clear_subunit_dropdowns() -> void:
 		child.queue_free()
 	_subunit_rows.clear()
 	_selected_data_type_configs_by_subunit.clear()
+	_per_device_dimensions_by_subunit.clear()
+	_per_device_dimensions_valid = false
 
 func _hide_legacy_data_type_controls() -> void:
 	# Hide the old single-dropdown controls; the new UI is per-subunit.
@@ -590,6 +559,7 @@ func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
 		var err = Label.new()
 		err.text = "ERROR: Template metadata not loaded"
 		_subunit_configs_container.add_child(err)
+		_create_preview_boxes_from_topology()
 		return
 
 	var template_data: Dictionary = _template_metadata[cortical_type_key]
@@ -599,10 +569,12 @@ func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
 		var err2 = Label.new()
 		err2.text = "ERROR: No subunits in template (update FEAGI core)"
 		_subunit_configs_container.add_child(err2)
+		_create_preview_boxes_from_topology()
 		return
 
 	var sorted_keys: Array = subunits.keys()
 	sorted_keys.sort_custom(func(a, b): return int(a) < int(b))
+	var dimension_bounds_failed: bool = false
 
 	# Add spacing at top of content
 	var spacer_top = Control.new()
@@ -614,10 +586,11 @@ func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
 		var supported_types: Array = subunit.get("supported_data_types", [])
 		if supported_types.is_empty():
 			push_error("PartSpawnCorticalAreaIOPU: Subunit %s has no supported_data_types" % str(subunit_key))
+			dimension_bounds_failed = true
 			continue
 
-		var rel_pos: Array = subunit.get("relative_position", [0, 0, 0])
-		var dims: Array = subunit.get("channel_dimensions_default", [1, 1, 1])
+		var sub_idx: int = int(subunit_key)
+		var dimension_bounds: Dictionary = _IoPerDeviceDimensions.bounds_from_subunit(subunit)
 
 		# Create a panel container for each subunit for better visual separation
 		var subunit_panel = PanelContainer.new()
@@ -634,16 +607,14 @@ func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
 		subunit_vbox.add_theme_constant_override("separation", 6)
 		subunit_margin.add_child(subunit_vbox)
 
-		# Subunit header with clearer information (uses standard 16pt)
-		var title = Label.new()
-		title.text = "Subunit %s" % str(subunit_key)
-		subunit_vbox.add_child(title)
-		
-		# Technical details in subdued text (uses standard 16pt)
-		var details = Label.new()
-		details.text = "Position: %s  •  Dimensions: %s" % [str(rel_pos), str(dims)]
-		details.modulate = Color(0.7, 0.7, 0.7)
-		subunit_vbox.add_child(details)
+		var dimension_spins: Array = []
+		if dimension_bounds["ok"]:
+			dimension_spins = _add_per_device_dimension_fields(subunit_vbox, sub_idx, dimension_bounds)
+		else:
+			dimension_bounds_failed = true
+			var bounds_error := Label.new()
+			bounds_error.text = str(dimension_bounds["reason"])
+			subunit_vbox.add_child(bounds_error)
 		
 		# Small separator
 		var mini_spacer = Control.new()
@@ -736,12 +707,12 @@ func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
 				pos_dd.add_item(p)
 			pos_container.visible = true
 
-		var sub_idx: int = int(subunit_key)
 		_subunit_rows[sub_idx] = {
 			"variant": variant_dd,
 			"frame": frame_dd,
 			"pos": pos_dd,
 			"config_map": config_map,
+			"dimension_spins": dimension_spins,
 		}
 
 		# Deterministic defaults: first option in each dropdown.
@@ -757,6 +728,94 @@ func _populate_subunit_dropdowns(cortical_type_key: String) -> void:
 		pos_dd.item_selected.connect(func(_i): _update_selected_subunit_config(sub_idx))
 
 		_update_selected_subunit_config(sub_idx)
+
+	_per_device_dimensions_valid = (
+		not dimension_bounds_failed
+		and not _per_device_dimensions_by_subunit.is_empty()
+		and _per_device_dimensions_by_subunit.size() == sorted_keys.size()
+	)
+	_create_preview_boxes_from_topology()
+
+func _add_per_device_dimension_fields(parent: VBoxContainer, subunit_idx: int, bounds: Dictionary) -> Array:
+	## Width, height, and depth for one device. Axes with equal min and max stay locked.
+	var minimum: Vector3i = bounds["minimum"]
+	var maximum: Vector3i = bounds["maximum"]
+	var initial: Vector3i = bounds["initial"]
+	var axis_labels: PackedStringArray = ["Width", "Height", "Depth"]
+	var axis_tooltips: PackedStringArray = [
+		"Per-device width in voxels. Device count repeats this width along X.",
+		"Per-device height in voxels.",
+		"Per-device depth in voxels. For servo and motor areas this is the decoding resolution.",
+	]
+	var axis_values: PackedInt32Array = [initial.x, initial.y, initial.z]
+	var axis_minimums: PackedInt32Array = [minimum.x, minimum.y, minimum.z]
+	var axis_maximums: PackedInt32Array = [maximum.x, maximum.y, maximum.z]
+	var spins: Array = []
+	var size_label := Label.new()
+	size_label.text = "Per-device size"
+	parent.add_child(size_label)
+	for axis in range(3):
+		var row := HBoxContainer.new()
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var axis_label := Label.new()
+		axis_label.text = axis_labels[axis]
+		axis_label.custom_minimum_size = Vector2(100, 0)
+		axis_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var spin := SpinBox.new()
+		spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		spin.min_value = axis_minimums[axis]
+		spin.max_value = axis_maximums[axis]
+		spin.step = 1
+		spin.rounded = true
+		spin.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		spin.value = axis_values[axis]
+		var adjustable: bool = _IoPerDeviceDimensions.axis_is_adjustable(axis_minimums[axis], axis_maximums[axis])
+		spin.editable = adjustable
+		spin.tooltip_text = axis_tooltips[axis]
+		if not adjustable:
+			spin.tooltip_text += " This axis is fixed for this area."
+		row.add_child(axis_label)
+		row.add_child(spin)
+		parent.add_child(row)
+		spins.append(spin)
+	_per_device_dimensions_by_subunit[subunit_idx] = initial
+	var captured_idx: int = subunit_idx
+	for spin in spins:
+		spin.value_changed.connect(func(_value: float) -> void:
+			_on_subunit_dimensions_changed(captured_idx)
+		)
+	return spins
+
+
+func _on_subunit_dimensions_changed(subunit_idx: int) -> void:
+	if not _subunit_rows.has(subunit_idx):
+		return
+	var spins: Array = _subunit_rows[subunit_idx]["dimension_spins"]
+	if spins.size() != 3:
+		return
+	_per_device_dimensions_by_subunit[subunit_idx] = Vector3i(int(spins[0].value), int(spins[1].value), int(spins[2].value))
+	_apply_preview_dimensions()
+
+
+func _apply_preview_dimensions() -> void:
+	var has_sized_preview := false
+	for preview in _preview_boxes:
+		if preview != null and is_instance_valid(preview) and preview.has_meta("subunit_index"):
+			has_sized_preview = true
+			break
+	if not has_sized_preview:
+		_create_preview_boxes_from_topology()
+		return
+	var device_count_value: int = int(device_count.value)
+	for preview in _preview_boxes:
+		if preview == null or not is_instance_valid(preview) or not preview.has_meta("subunit_index"):
+			continue
+		var subunit_idx: int = int(preview.get_meta("subunit_index"))
+		if not _per_device_dimensions_by_subunit.has(subunit_idx):
+			continue
+		var per_device: Vector3i = _per_device_dimensions_by_subunit[subunit_idx]
+		preview.set_new_dimensions(_IoPerDeviceDimensions.total_dimensions(per_device, device_count_value))
+
 
 func _update_selected_subunit_config(subunit_idx: int) -> void:
 	if not _subunit_rows.has(subunit_idx):

@@ -20,7 +20,7 @@ Integrated the new dynamic IPU/OPU types API endpoints into Brain Visualizer, re
 - `iagpio.png` → `iagp.png` (Analog GPIO)
 - `iv00CC.png` → `iimg.png` (Vision Sensor)
 - `segmented_vision.png` → `isvi.png` (Segmented Vision)
-- `i_misc.png` → `imis.png` (Miscellaneous Sensor)
+- `i_misc.png` → `imis.png` (Miscellaneous Input)
 
 **Output Actuators (OPU):**
 - `omot00.png` → `omot.png` (Rotary Motor)
@@ -28,7 +28,7 @@ Integrated the new dynamic IPU/OPU types API endpoints into Brain Visualizer, re
 
 **Created Missing Icons:**
 - `opse.png` (Positional Servo - copied from `oagp00.png`)
-- `omis.png` (Miscellaneous Motor - copied from `omot.png`)
+- `omis.png` (Miscellaneous Output - copied from `omot.png`)
 
 **Naming Convention:** `[i|o][3-letter-unit-ref].png`
 - `i` prefix for inputs (IPU)
