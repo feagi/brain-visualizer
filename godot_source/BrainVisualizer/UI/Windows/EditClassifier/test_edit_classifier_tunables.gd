@@ -22,6 +22,9 @@ func _run_tests() -> void:
 	failures += _test_window_fits_content_inside_available_height()
 	failures += _test_memory_count_matches_cortical_details()
 	failures += _test_numeric_defaults_are_one()
+	failures += _test_every_setting_has_a_tooltip()
+	failures += _test_reward_labels_stay_off_peripheral_terms()
+	failures += _test_tooltips_wrap_to_a_column()
 	if failures == 0:
 		print("Edit classifier tunable tests: PASS")
 		quit(0)
@@ -59,9 +62,54 @@ func _test_memory_keys_match_cortical_details() -> int:
 	return 0
 
 
+func _test_every_setting_has_a_tooltip() -> int:
+	for spec in Tunables.MEMORY_FIELD_SPECS:
+		if String(spec.get("tooltip", "")).is_empty():
+			push_error("memory field %s needs a tooltip" % String(spec["key"]))
+			return 1
+	for spec in Tunables.ASSOCIATIVE_FIELD_SPECS:
+		if String(spec.get("tooltip", "")).is_empty():
+			push_error("associative field %s needs a tooltip" % String(spec["key"]))
+			return 1
+	for title in Tunables.section_titles():
+		if Tunables.section_tooltip(title).is_empty():
+			push_error("section %s needs a tooltip" % title)
+			return 1
+	for label in ["Classifier ID", "Training Mode", "Kernel Area", "Answer Area", "Learn Area", "Confidence Area"]:
+		if Tunables.setting_tooltip(label).is_empty():
+			push_error("setting %s needs a tooltip" % label)
+			return 1
+	return 0
+
+
+func _test_reward_labels_stay_off_peripheral_terms() -> int:
+	for label in ["Answer Area", "Learn Area", "Confidence Area", "Answer Latency"]:
+		var text: String = label.to_lower()
+		if text.contains("opu") or text.contains("ipu") or text.contains("line") or text.contains("feedback"):
+			push_error("reward label uses a mixed term: %s" % label)
+			return 1
+	return 0
+
+
+func _test_tooltips_wrap_to_a_column() -> int:
+	var wrapped: String = Tunables.wrap_tooltip("Answer area carries the correct class for the scanning instance being graded and a quiet area is not pain.")
+	if not wrapped.contains("\n"):
+		push_error("long tooltips must break onto more than one line")
+		return 1
+	for line in wrapped.split("\n"):
+		if line.length() > Tunables.TOOLTIP_COLUMNS:
+			push_error("tooltip line is wider than the column: %s" % line)
+			return 1
+	var kept: String = Tunables.wrap_tooltip("Short tip.")
+	if kept != "Short tip.":
+		push_error("short tooltips must stay on one line")
+		return 1
+	return 0
+
+
 func _test_associative_keys() -> int:
 	var keys: PackedStringArray = Tunables.associative_feagi_keys()
-	for required in ["plasticity_window", "plasticity_constant", "ltp_multiplier", "ltd_multiplier"]:
+	for required in ["plasticity_window", "plasticity_constant", "ltp_multiplier", "ltd_multiplier", "synaptic_delay_bursts"]:
 		if not keys.has(required):
 			push_error("associative section missing key %s" % required)
 			return 1

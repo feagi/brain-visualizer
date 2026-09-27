@@ -27,6 +27,12 @@ var reward_training: bool:
 	get: return _reward_training
 var answer_feedback_area_id: StringName:
 	get: return _answer_feedback_area_id
+var answer_latency_bursts: int:
+	get: return _answer_latency_bursts
+var learn_area_id: StringName:
+	get: return _learn_area_id
+var confidence_area_id: StringName:
+	get: return _confidence_area_id
 
 var _kernel_area_id: StringName = &""
 var _class_area_id: StringName = &""
@@ -37,6 +43,9 @@ var _kernel_memory_id: StringName = &""
 var _class_memory_id: StringName = &""
 var _reward_training: bool = false
 var _answer_feedback_area_id: StringName = &""
+var _answer_latency_bursts: int = 0
+var _learn_area_id: StringName = &""
+var _confidence_area_id: StringName = &""
 ## Each binding is {field_area_id, scan_twin_id}. One trained assembly, one twin per field.
 var _fields: Array[Dictionary] = []
 
@@ -79,6 +88,9 @@ func apply_feagi_dict(data: Dictionary) -> void:
 	_class_memory_id = StringName(str(data.get("class_memory_id", "")))
 	_reward_training = bool(data.get("reward_training", false))
 	_answer_feedback_area_id = _optional_id(data.get("answer_feedback_area_id", null))
+	_answer_latency_bursts = int(data.get("answer_latency_bursts", 0))
+	_learn_area_id = _optional_id(data.get("learn_area_id", null))
+	_confidence_area_id = _optional_id(data.get("confidence_area_id", null))
 	_fields = _bindings_from_feagi(data)
 	sync_layout_from_stamp()
 

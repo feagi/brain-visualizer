@@ -1790,7 +1790,7 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 
 
 ## PUT reward training and the optional correct-answer area. Other classifier fields stay as they are.
-func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_training: bool, answer_feedback_area_id: String) -> FeagiRequestOutput:
+func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_training: bool, answer_feedback_area_id: String, answer_latency_bursts: int, learn_area_id: String, confidence_area_id: String) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -1801,6 +1801,9 @@ func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_trainin
 	var dict_to_send: Dictionary = {
 		"reward_training": reward_training,
 		"answer_feedback_area_id": answer_feedback_area_id.strip_edges(),
+		"answer_latency_bursts": maxi(answer_latency_bursts, 0),
+		"learn_area_id": learn_area_id.strip_edges(),
+		"confidence_area_id": confidence_area_id.strip_edges(),
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(edit_address, dict_to_send)
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)

@@ -2,6 +2,7 @@ extends BaseDraggableWindow
 class_name WindowCreateClassifier
 
 const WINDOW_NAME: StringName = "create_classifier"
+const _Tunables = preload("res://BrainVisualizer/UI/Windows/EditClassifier/EditClassifierTunables.gd")
 const _VALIDATION_ERROR_COLOR: Color = Color(1.0, 0.35, 0.35)
 const _VECTOR_FIELD_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn")
 var _name_input: LineEdit
@@ -62,7 +63,7 @@ func _build_ui() -> void:
 	_mode_option.add_item("Kernel training")
 	_mode_option.add_item("Scanner training")
 	_mode_option.item_selected.connect(func(_index: int) -> void: _apply_training_mode_visibility())
-	internals.add_child(_labeled("Training mode", _mode_option))
+	internals.add_child(_labeled("Training Mode", _mode_option))
 
 	_kernel_option = OptionButton.new()
 	_class_option = OptionButton.new()
@@ -72,10 +73,10 @@ func _build_ui() -> void:
 	_kernel_size.int_y_min = 1
 	_kernel_size.int_z_min = 1
 	_kernel_size.initial_vector = Vector3i(1, 1, 1)
-	_kernel_row = _labeled("Kernel area", _kernel_option)
-	_class_row = _labeled("Class area", _class_option)
-	_mask_row = _labeled("Mask area", _mask_option)
-	_kernel_size_row = _labeled("Kernel size", _kernel_size)
+	_kernel_row = _labeled("Kernel Area", _kernel_option)
+	_class_row = _labeled("Class Area", _class_option)
+	_mask_row = _labeled("Mask Area", _mask_option)
+	_kernel_size_row = _labeled("Kernel Size", _kernel_size)
 	internals.add_child(_kernel_row)
 	internals.add_child(_class_row)
 	internals.add_child(_mask_row)
@@ -97,6 +98,11 @@ func _labeled(label_text: String, control: Control) -> HBoxContainer:
 	var label := Label.new()
 	label.text = label_text
 	label.custom_minimum_size = Vector2(120, 0)
+	var tip: String = _Tunables.setting_tooltip(label_text)
+	if not tip.is_empty():
+		row.tooltip_text = tip
+		label.tooltip_text = tip
+		control.tooltip_text = tip
 	row.add_child(label)
 	control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(control)

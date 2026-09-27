@@ -30,6 +30,13 @@ var _associative_fields: Dictionary = {}
 var _reward_toggle: ToggleButton
 var _feedback_option: OptionButton
 var _feedback_area_ids: Array[StringName] = []
+var _latency_field: IntInput
+var _learn_option: OptionButton
+var _confidence_option: OptionButton
+var _feedback_row: HBoxContainer
+var _latency_row: HBoxContainer
+var _learn_row: HBoxContainer
+var _confidence_row: HBoxContainer
 var _kernel_memory_count: IntInput
 var _class_memory_count: IntInput
 var _kernel_memory_apply: Button
@@ -178,19 +185,24 @@ func _build_classifier_fields() -> void:
 	internals.add_child(buttons)
 
 
-func _labeled(label_text: String, control: Control) -> HBoxContainer:
+func _labeled(label_text: String, control: Control, tooltip: String = "") -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.custom_minimum_size = Vector2(0, 32)
 	var label := Label.new()
 	label.text = label_text
 	label.custom_minimum_size = Vector2(220, 0)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var tip: String = _Tunables.wrap_tooltip(tooltip) if not tooltip.is_empty() else _Tunables.setting_tooltip(label_text)
+	if not tip.is_empty():
+		row.tooltip_text = tip
+		label.tooltip_text = tip
+		control.tooltip_text = tip
 	row.add_child(label)
 	row.add_child(control)
 	return row
 
 
-func _add_collapsible(parent: Control, title: String) -> Dictionary:
+func _add_collapsible(parent: Control, title: String, tooltip: String = "") -> Dictionary:
 	var collapsible: VerticalCollapsibleHiding = _COLLAPSIBLE_PREFAB.instantiate()
 	collapsible.section_text = StringName(title)
 	collapsible.start_open = false
@@ -202,6 +214,9 @@ func _add_collapsible(parent: Control, title: String) -> Dictionary:
 	var title_label: Label = collapsible.get_node("VerticalCollapsible/HBoxContainer/Section_Title")
 	title_label.text = title
 	title_label.theme_type_variation = &"Label_Header"
+	if not tooltip.is_empty():
+		title_label.tooltip_text = tooltip
+		collapsible.tooltip_text = tooltip
 	var content_root: Control = collapsible.get_control()
 	var holder := VBoxContainer.new()
 	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -300,7 +315,7 @@ func _apply_memory_count_display(field: IntInput, total_count: int, short_term_c
 		var short_term: int = int(short_term_count)
 		var long_term: int = int(long_term_count)
 		field.suffix = _Tunables.memory_count_suffix(short_term, long_term)
-		field.tooltip_text = _Tunables.memory_count_tooltip(total_count, short_term, long_term)
+		field.tooltip_text = _Tunables.wrap_tooltip(_Tunables.memory_count_tooltip(total_count, short_term, long_term))
 		field.previous_text = str(total_count)
 		field.text = _Tunables.memory_count_display(total_count, short_term, long_term)
 		return
@@ -317,7 +332,7 @@ func _add_memory_section(
 	field_store: Dictionary,
 	apply_callback: Callable
 ) -> Button:
-	var section_pack: Dictionary = _add_collapsible(parent, title)
+	var section_pack: Dictionary = _add_collapsible(parent, title, _Tunables.section_tooltip(title))
 	var holder: VBoxContainer = section_pack["holder"]
 	var area: AbstractCorticalArea = _cached_area(area_id)
 	if area == null:
@@ -329,7 +344,7 @@ func _add_memory_section(
 		var key: String = String(spec["key"])
 		var control: Control = _make_spec_control(spec)
 		field_store[key] = control
-		holder.add_child(_labeled(String(spec["label"]), control))
+		holder.add_child(_labeled(String(spec["label"]), control, String(spec.get("tooltip", ""))))
 		_apply_spec_value(control, spec, _memory_spec_value(params, spec))
 	var apply := Button.new()
 	apply.text = "Apply Update"
@@ -345,7 +360,7 @@ func _add_memory_section(
 
 
 func _add_associative_section(parent: Control) -> Button:
-	var section_pack: Dictionary = _add_collapsible(parent, _Tunables.SECTION_ASSOCIATIVE)
+	var section_pack: Dictionary = _add_collapsible(parent, _Tunables.SECTION_ASSOCIATIVE, _Tunables.section_tooltip(_Tunables.SECTION_ASSOCIATIVE))
 	var holder: VBoxContainer = section_pack["holder"]
 	var mapping: SingleMappingDefinition = _first_associative_mapping()
 	if mapping == null:
@@ -356,7 +371,7 @@ func _add_associative_section(parent: Control) -> Button:
 		var key: String = String(spec["key"])
 		var control: Control = _make_spec_control(spec)
 		_associative_fields[key] = control
-		holder.add_child(_labeled(String(spec["label"]), control))
+		holder.add_child(_labeled(String(spec["label"]), control, String(spec.get("tooltip", ""))))
 		_apply_spec_value(control, spec, _associative_spec_value(mapping, spec))
 	_reward_toggle = ToggleButton.new()
 	_Tunables.configure_theme_toggle(_reward_toggle)
@@ -365,8 +380,26 @@ func _add_associative_section(parent: Control) -> Button:
 	holder.add_child(_labeled("Reward Training", _reward_toggle))
 	_feedback_option = OptionButton.new()
 	_feedback_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	holder.add_child(_labeled("Answer Feedback", _feedback_option))
+	_feedback_row = _labeled("Answer Area", _feedback_option)
+	holder.add_child(_feedback_row)
+	_latency_field = IntInput.new()
+	_latency_field.custom_minimum_size = Vector2(120, 0)
+	_latency_field.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_latency_field.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_latency_field.min_value = 0
+	_latency_field.current_int = _editing_classifier.answer_latency_bursts if _editing_classifier != null else 0
+	_latency_row = _labeled("Answer Latency", _latency_field)
+	holder.add_child(_latency_row)
+	_learn_option = OptionButton.new()
+	_learn_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_learn_row = _labeled("Learn Area", _learn_option)
+	holder.add_child(_learn_row)
+	_confidence_option = OptionButton.new()
+	_confidence_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_confidence_row = _labeled("Confidence Area", _confidence_option)
+	holder.add_child(_confidence_row)
 	_populate_feedback_options()
+	_apply_reward_visibility()
 	var apply := Button.new()
 	apply.text = "Apply Update"
 	apply.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -376,9 +409,18 @@ func _add_associative_section(parent: Control) -> Button:
 	if mapping != null:
 		_wire_section_dirty(_associative_fields, apply)
 		if _reward_toggle != null:
-			_reward_toggle.toggled.connect(func(_pressed: bool) -> void: apply.disabled = false)
+			_reward_toggle.toggled.connect(func(_pressed: bool) -> void:
+				apply.disabled = false
+				_apply_reward_visibility()
+			)
 		if _feedback_option != null:
 			_feedback_option.item_selected.connect(func(_index: int) -> void: apply.disabled = false)
+		if _latency_field != null and _latency_field.has_signal("user_interacted"):
+			_latency_field.user_interacted.connect(func() -> void: apply.disabled = false)
+		if _learn_option != null:
+			_learn_option.item_selected.connect(func(_index: int) -> void: apply.disabled = false)
+		if _confidence_option != null:
+			_confidence_option.item_selected.connect(func(_index: int) -> void: apply.disabled = false)
 		apply.disabled = true
 	_close_section(section_pack)
 	return apply
@@ -450,6 +492,8 @@ func _associative_spec_value(mapping: SingleMappingDefinition, spec: Dictionary)
 				raw = mapping.LTP_multiplier
 			"ltd_multiplier":
 				raw = mapping.LTD_multiplier
+			"synaptic_delay_bursts":
+				raw = mapping.synaptic_delay_bursts
 	return _Tunables.numeric_or_default(raw, spec)
 
 
@@ -509,7 +553,7 @@ func _mapping_with_associative_overrides(mapping: SingleMappingDefinition, overr
 		float(overrides.get("ltp_multiplier", mapping.LTP_multiplier)),
 		float(overrides.get("ltd_multiplier", mapping.LTD_multiplier)),
 		int(overrides.get("plasticity_window", mapping.plasticity_window)),
-		mapping.synaptic_delay_bursts,
+		int(overrides.get("synaptic_delay_bursts", mapping.synaptic_delay_bursts)),
 		mapping.plasticity_mode,
 		mapping.eligibility_decay_bursts,
 		mapping.reward_source_area,
@@ -582,10 +626,16 @@ func _on_apply_associative() -> void:
 	if _feedback_option != null and _feedback_option.selected > 0 and _feedback_option.selected < _feedback_area_ids.size():
 		feedback_id = String(_feedback_area_ids[_feedback_option.selected])
 	var reward_on: bool = _reward_toggle != null and _reward_toggle.button_pressed
+	var learn_id := _selected_named_area(_learn_option)
+	var confidence_id := _selected_named_area(_confidence_option)
+	var latency: int = _latency_field.current_int if _latency_field != null else 0
 	var reward_result: FeagiRequestOutput = await FeagiCore.requests.edit_classifier_reward(
 		_editing_classifier,
 		reward_on,
-		feedback_id
+		feedback_id,
+		latency,
+		learn_id,
+		confidence_id
 	)
 	if reward_result == null or reward_result.has_errored or reward_result.failed_requirement:
 		_associative_apply.disabled = false
@@ -620,6 +670,12 @@ func _populate_feedback_options() -> void:
 	_feedback_area_ids.clear()
 	_feedback_option.add_item("None")
 	_feedback_area_ids.append(&"")
+	if _learn_option != null:
+		_learn_option.clear()
+		_learn_option.add_item("None")
+	if _confidence_option != null:
+		_confidence_option.clear()
+		_confidence_option.add_item("None")
 	var areas: Array[AbstractCorticalArea] = []
 	if _editing_classifier != null:
 		var parent_region: BrainRegion = _editing_classifier.current_parent_region
@@ -636,14 +692,34 @@ func _populate_feedback_options() -> void:
 		if area.is_scan_twin() or area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin():
 			continue
 		var dims: Vector3i = area.dimensions_3D
-		_feedback_option.add_item("%s %sx%sx%s" % [area.friendly_name, dims.x, dims.y, dims.z])
+		var label := "%s %sx%sx%s" % [area.friendly_name, dims.x, dims.y, dims.z]
+		_feedback_option.add_item(label)
 		_feedback_area_ids.append(area.cortical_ID)
+		if _learn_option != null:
+			_learn_option.add_item(label)
+		if _confidence_option != null:
+			_confidence_option.add_item(label)
 	var selected := 0
 	if _editing_classifier != null:
 		var current: int = _feedback_area_ids.find(_editing_classifier.answer_feedback_area_id)
 		if current >= 0:
 			selected = current
 	_feedback_option.select(selected)
+	_select_shared_area(_learn_option, _editing_classifier.learn_area_id if _editing_classifier != null else &"")
+	_select_shared_area(_confidence_option, _editing_classifier.confidence_area_id if _editing_classifier != null else &"")
+
+
+func _select_shared_area(option: OptionButton, area_id: StringName) -> void:
+	if option == null:
+		return
+	var index: int = _feedback_area_ids.find(area_id)
+	option.select(index if index >= 0 else 0)
+
+
+func _selected_named_area(option: OptionButton) -> String:
+	if option == null or option.selected <= 0 or option.selected >= _feedback_area_ids.size():
+		return ""
+	return String(_feedback_area_ids[option.selected])
 
 
 func _populate_area_options() -> void:
@@ -679,6 +755,19 @@ func _populate_area_options() -> void:
 	_select_area(_kernel_option, _editing_classifier.kernel_area_id)
 	_select_area(_class_option, _editing_classifier.class_area_id)
 	_select_area(_mask_option, _editing_classifier.mask_area_id)
+
+
+func _apply_reward_visibility() -> void:
+	var reward_on: bool = _reward_toggle != null and _reward_toggle.button_pressed
+	if _feedback_row != null:
+		_feedback_row.visible = reward_on
+	if _latency_row != null:
+		_latency_row.visible = reward_on
+	if _learn_row != null:
+		_learn_row.visible = reward_on
+	if _confidence_row != null:
+		_confidence_row.visible = reward_on
+	_fit_window_to_content()
 
 
 func _apply_training_mode_visibility() -> void:
