@@ -27,6 +27,9 @@ var _region_ids: Array[StringName] = []
 var _kernel_memory_fields: Dictionary = {}
 var _class_memory_fields: Dictionary = {}
 var _associative_fields: Dictionary = {}
+var _reward_toggle: ToggleButton
+var _feedback_option: OptionButton
+var _feedback_area_ids: Array[StringName] = []
 var _kernel_memory_count: IntInput
 var _class_memory_count: IntInput
 var _kernel_memory_apply: Button
@@ -355,6 +358,15 @@ func _add_associative_section(parent: Control) -> Button:
 		_associative_fields[key] = control
 		holder.add_child(_labeled(String(spec["label"]), control))
 		_apply_spec_value(control, spec, _associative_spec_value(mapping, spec))
+	_reward_toggle = ToggleButton.new()
+	_Tunables.configure_theme_toggle(_reward_toggle)
+	if _editing_classifier != null:
+		_reward_toggle.set_toggle_no_signal(_editing_classifier.reward_training)
+	holder.add_child(_labeled("Reward Training", _reward_toggle))
+	_feedback_option = OptionButton.new()
+	_feedback_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	holder.add_child(_labeled("Answer Feedback", _feedback_option))
+	_populate_feedback_options()
 	var apply := Button.new()
 	apply.text = "Apply Update"
 	apply.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -363,6 +375,10 @@ func _add_associative_section(parent: Control) -> Button:
 	holder.add_child(apply)
 	if mapping != null:
 		_wire_section_dirty(_associative_fields, apply)
+		if _reward_toggle != null:
+			_reward_toggle.toggled.connect(func(_pressed: bool) -> void: apply.disabled = false)
+		if _feedback_option != null:
+			_feedback_option.item_selected.connect(func(_index: int) -> void: apply.disabled = false)
 		apply.disabled = true
 	_close_section(section_pack)
 	return apply
@@ -561,6 +577,19 @@ func _on_apply_associative() -> void:
 	if result == null or result.has_errored or result.failed_requirement:
 		_associative_apply.disabled = false
 		_notify_failure("Failed to update associative memory parameters.")
+		return
+	var feedback_id := ""
+	if _feedback_option != null and _feedback_option.selected > 0 and _feedback_option.selected < _feedback_area_ids.size():
+		feedback_id = String(_feedback_area_ids[_feedback_option.selected])
+	var reward_on: bool = _reward_toggle != null and _reward_toggle.button_pressed
+	var reward_result: FeagiRequestOutput = await FeagiCore.requests.edit_classifier_reward(
+		_editing_classifier,
+		reward_on,
+		feedback_id
+	)
+	if reward_result == null or reward_result.has_errored or reward_result.failed_requirement:
+		_associative_apply.disabled = false
+		_notify_failure("Failed to update classifier reward training.")
 
 
 func _populate_parent_options() -> void:
@@ -582,6 +611,39 @@ func _populate_parent_options() -> void:
 			selected = _region_ids.size() - 1
 	if _parent_option.item_count > 0:
 		_parent_option.select(selected)
+
+
+func _populate_feedback_options() -> void:
+	if _feedback_option == null:
+		return
+	_feedback_option.clear()
+	_feedback_area_ids.clear()
+	_feedback_option.add_item("None")
+	_feedback_area_ids.append(&"")
+	var areas: Array[AbstractCorticalArea] = []
+	if _editing_classifier != null:
+		var parent_region: BrainRegion = _editing_classifier.current_parent_region
+		if parent_region != null:
+			for area in parent_region.contained_cortical_areas:
+				if area != null and area not in areas:
+					areas.append(area)
+	areas.sort_custom(func(a: AbstractCorticalArea, b: AbstractCorticalArea) -> bool:
+		return String(a.friendly_name).to_lower() < String(b.friendly_name).to_lower()
+	)
+	for area in areas:
+		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
+			continue
+		if area.is_scan_twin() or area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin():
+			continue
+		var dims: Vector3i = area.dimensions_3D
+		_feedback_option.add_item("%s %sx%sx%s" % [area.friendly_name, dims.x, dims.y, dims.z])
+		_feedback_area_ids.append(area.cortical_ID)
+	var selected := 0
+	if _editing_classifier != null:
+		var current: int = _feedback_area_ids.find(_editing_classifier.answer_feedback_area_id)
+		if current >= 0:
+			selected = current
+	_feedback_option.select(selected)
 
 
 func _populate_area_options() -> void:

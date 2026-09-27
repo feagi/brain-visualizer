@@ -23,6 +23,10 @@ var kernel_memory_id: StringName:
 	get: return _kernel_memory_id
 var class_memory_id: StringName:
 	get: return _class_memory_id
+var reward_training: bool:
+	get: return _reward_training
+var answer_feedback_area_id: StringName:
+	get: return _answer_feedback_area_id
 
 var _kernel_area_id: StringName = &""
 var _class_area_id: StringName = &""
@@ -31,6 +35,8 @@ var _mask_area_id: StringName = &""
 var _kernel_size: Vector3i = Vector3i.ZERO
 var _kernel_memory_id: StringName = &""
 var _class_memory_id: StringName = &""
+var _reward_training: bool = false
+var _answer_feedback_area_id: StringName = &""
 ## Each binding is {field_area_id, scan_twin_id}. One trained assembly, one twin per field.
 var _fields: Array[Dictionary] = []
 
@@ -71,6 +77,8 @@ func apply_feagi_dict(data: Dictionary) -> void:
 	_kernel_size = _kernel_size_from_feagi(data.get("kernel_size", null))
 	_kernel_memory_id = StringName(str(data.get("kernel_memory_id", "")))
 	_class_memory_id = StringName(str(data.get("class_memory_id", "")))
+	_reward_training = bool(data.get("reward_training", false))
+	_answer_feedback_area_id = _optional_id(data.get("answer_feedback_area_id", null))
 	_fields = _bindings_from_feagi(data)
 	sync_layout_from_stamp()
 

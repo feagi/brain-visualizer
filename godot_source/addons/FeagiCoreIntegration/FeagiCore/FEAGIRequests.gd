@@ -1789,6 +1789,39 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 	return FEAGI_response_data
 
 
+## PUT reward training and the optional correct-answer area. Other classifier fields stay as they are.
+func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_training: bool, answer_feedback_area_id: String) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if editing_classifier == null or editing_classifier.classifier_id == &"":
+		push_error("FEAGI Requests: Cannot edit reward settings on a null classifier!")
+		return FeagiRequestOutput.requirement_fail("INVALID_CLASSIFIER")
+	var edit_address: StringName = StringName(String(FeagiCore.network.http_API.address_list.PUT_genome_classifier).replace("{classifier_id}", str(editing_classifier.classifier_id)))
+	var dict_to_send: Dictionary = {
+		"reward_training": reward_training,
+		"answer_feedback_area_id": answer_feedback_area_id.strip_edges(),
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(edit_address, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update classifier reward settings for %s!" % editing_classifier.friendly_name)
+		return FEAGI_response_data
+	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	editing_classifier.apply_feagi_dict(response)
+	var cortical_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
+	if cortical_refresh == null or cortical_refresh.has_errored or not cortical_refresh.success:
+		push_warning("FEAGI REQUEST: Classifier reward updated, but BV could not synchronize cortical areas.")
+	await FeagiCore.feagi_local_cache.refresh_classifiers_from_feagi()
+	var mappings_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
+	if mappings_refresh == null or mappings_refresh.has_errored or not mappings_refresh.success:
+		push_warning("FEAGI REQUEST: Classifier reward updated, but BV could not synchronize mappings.")
+	print("FEAGI REQUEST: Updated reward settings for classifier %s" % editing_classifier.classifier_id)
+	return FEAGI_response_data
+
+
 ## POST /v1/cortical_area/classifier/{id}/field — one interconnect field, one detection twin.
 func attach_classifier_field(classifier: GenomeClassifier, field_area_id: StringName) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
