@@ -558,6 +558,10 @@ func _run_ws_retry_recovery_watchdog(generation: int) -> void:
 	# Do not force transport recovery while genome reload is in flight.
 	# Genome reload already performs registration/WS rebind and an overlapping
 	# recovery can race with cache replacement and partial mapping refresh.
+	# Same-session genome_num refresh keeps GENOME_READY, so also honor the reload flag.
+	if FeagiCore and FeagiCore.is_genome_reload_in_progress():
+		_schedule_ws_retry_recovery_watchdog()
+		return
 	if FeagiCore and FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
 		return
 	if _transport_mode != TRANSPORT_MODE.WEBSOCKET:

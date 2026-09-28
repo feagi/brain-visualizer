@@ -512,12 +512,33 @@ func _on_feagi_genome_loading_changed(loading: bool) -> void:
 		return
 	_evaluate_reload_coordinator("genome-loading-finished")
 
+## True while a genome reload owns agent re-registration.
+## The WS retry watchdog must not start a second deregistration during this window.
+func is_genome_reload_in_progress() -> bool:
+	return _reload_in_progress
+
+## Trainer baseline loads bump genome_num inside the same FEAGI process.
+## That is not a new session and must not wait for a healthy websocket: the upload
+## already deregistered agents, so the socket is expected to be retrying.
+func _is_same_session_genome_bump() -> bool:
+	return (
+		_applied_feagi_session > 0
+		and _applied_feagi_session == _desired_feagi_session
+		and _applied_genome_num != _desired_genome_num
+	)
+
 func _is_ready_for_deterministic_genome_reload() -> bool:
 	if not feagi_local_cache.genome_availability or not feagi_local_cache.brain_readiness:
 		return false
 	if network == null:
 		return false
-	return network.connection_state == network.CONNECTION_STATE.HEALTHY
+	var state: FEAGINetworking.CONNECTION_STATE = network.connection_state
+	if _is_same_session_genome_bump():
+		return (
+			state == network.CONNECTION_STATE.HEALTHY
+			or state == network.CONNECTION_STATE.RETRYING_WS
+		)
+	return state == network.CONNECTION_STATE.HEALTHY
 
 func _set_desired_genome_signature(feagi_session: int, genome_num: int, reason: String) -> void:
 	if feagi_session <= 0 or genome_num <= 0:
@@ -549,11 +570,52 @@ func _evaluate_reload_coordinator(trigger: String) -> void:
 		)
 		return
 	if genome_load_state != GENOME_LOAD_STATE.GENOME_RELOADING:
+		if _is_same_session_genome_bump():
+			_begin_same_session_genome_refresh()
+			return
 		print(
 			"FEAGICORE: Coordinator starting reload (trigger=%s session=%d genome=%d)"
 			% [trigger, _desired_feagi_session, _desired_genome_num]
 		)
 		_change_genome_state(GENOME_LOAD_STATE.GENOME_RELOADING)
+
+## Refresh genome cache after a same-session genome_num bump.
+## Keeps the open UI and 3D scene. Re-registers once because genome upload deregisters every agent.
+func _begin_same_session_genome_refresh() -> void:
+	if _reload_in_progress:
+		_reload_requested_while_busy = true
+		return
+	_reload_in_progress = true
+	_reload_requested_while_busy = false
+	_reload_target_feagi_session = _desired_feagi_session
+	_reload_target_genome_num = _desired_genome_num
+	_reload_generation += 1
+	var generation: int = _reload_generation
+	print(
+		"FEAGICORE: Same-session genome refresh %d -> %d (UI stays open)"
+		% [_applied_genome_num, _desired_genome_num]
+	)
+	if network:
+		network._invalidate_ws_retry_watchdog()
+	feagi_local_cache.clear_whole_genome()
+	var genome_result = await requests.reload_genome()
+	if generation != _reload_generation:
+		_reload_in_progress = false
+		return
+	if not genome_result.success:
+		_reload_in_progress = false
+		call_deferred("_evaluate_reload_coordinator", "same-session-refresh-failed")
+		return
+	# Mark applied before transport rebind so connection-healthy does not start a second reload.
+	_applied_feagi_session = _reload_target_feagi_session
+	_applied_genome_num = _reload_target_genome_num
+	if network:
+		await network._register_agent_via_transport()
+	await _force_ws_stream_rebind_after_registration()
+	_ensure_ws_connected_after_reload(30)
+	_reload_in_progress = false
+	if _desired_feagi_session != _applied_feagi_session or _desired_genome_num != _applied_genome_num:
+		call_deferred("_evaluate_reload_coordinator", "same-session-refresh-finished")
 
 func _on_connection_state_changed_for_reload(_prev_state: FEAGINetworking.CONNECTION_STATE, current_state: FEAGINetworking.CONNECTION_STATE) -> void:
 	if current_state == FEAGINetworking.CONNECTION_STATE.HEALTHY:
