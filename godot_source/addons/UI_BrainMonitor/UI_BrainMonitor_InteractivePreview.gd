@@ -40,3 +40,9 @@ func set_warning_state(is_warning: bool) -> void:
 func apply_classifier_stamp_look(class_count: int) -> void:
 	if _renderer != null and _renderer.has_method("apply_classifier_stamp_look"):
 		_renderer.apply_classifier_stamp_look(class_count)
+
+
+func is_classifier_stamp_preview() -> bool:
+	if _renderer != null and _renderer.has_method("is_classifier_stamp_preview"):
+		return _renderer.is_classifier_stamp_preview()
+	return false

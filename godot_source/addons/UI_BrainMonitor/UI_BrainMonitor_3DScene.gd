@@ -18,6 +18,12 @@ signal requesting_to_clear_all_selected_neurons()
 
 enum MANIPULATION_MODE { MOVE, RESIZE }
 
+const SceneLabel3DLib = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
+const DirectPointsRendererLib = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/UI_BrainMonitor_DirectPointsCorticalAreaRenderer.gd")
+## Match brain-region preview gizmo placement below titles.
+const CLASSIFIER_STAMP_GIZMO_CLEARANCE_BELOW_LABEL: float = 0.75
+const CLASSIFIER_STAMP_GIZMO_AXIS_VERTICAL_INSET: float = 0.35
+
 var _manipulation_active: bool = false
 var _manipulation_mode: MANIPULATION_MODE = MANIPULATION_MODE.MOVE
 var _manipulation_area: AbstractCorticalArea = null
@@ -3211,6 +3217,32 @@ func _get_preview_static_body(preview: UI_BrainMonitor_InteractivePreview) -> St
 	var body := preview.find_child("CorticalArea_DDA_Body", true, false)
 	return body as StaticBody3D
 
+func _is_classifier_stamp_manipulation() -> bool:
+	if _manipulation_area != null and _manipulation_area.is_classifier_kernel_memory():
+		return true
+	if _manipulation_preview != null and _manipulation_preview.has_method("is_classifier_stamp_preview"):
+		return _manipulation_preview.is_classifier_stamp_preview()
+	return false
+
+
+## Classifier stamp relocate gizmo sits below the area name (same rule as region previews under titles).
+func _classifier_stamp_manipulation_gizmo_global_pos(body: StaticBody3D, axis_len: float) -> Vector3:
+	var offset_x: float = (body.scale.x * 0.5) + (axis_len * 0.5)
+	var half_y: float = absf(body.scale.y) * 0.5
+	var label_center_y: float = DirectPointsRendererLib.friendly_name_label_center_y_from_volume_center(
+		body.global_position.y,
+		half_y
+	)
+	var label_half_height: float = SceneLabel3DLib.AREA_NAME_VISUAL_SCALE * 0.5
+	var gizmo_y: float = (
+		label_center_y
+		- label_half_height
+		- CLASSIFIER_STAMP_GIZMO_CLEARANCE_BELOW_LABEL
+		- axis_len * CLASSIFIER_STAMP_GIZMO_AXIS_VERTICAL_INSET
+	)
+	return Vector3(body.global_position.x + offset_x, gizmo_y, body.global_position.z)
+
+
 func _update_manipulation_gizmo_transform() -> void:
 	if not _manipulation_active or _manipulation_gizmo == null:
 		return
@@ -3235,8 +3267,11 @@ func _update_manipulation_gizmo_transform() -> void:
 	_manipulation_gizmo.scale = Vector3.ONE * gizmo_scale
 	var axis_len: float = _manipulation_gizmo.get_axis_length() if _manipulation_gizmo.has_method("get_axis_length") else 0.0
 	axis_len *= gizmo_scale
-	var offset_x: float = (body.scale.x * 0.5) + (axis_len * 0.5)
-	_manipulation_gizmo.global_position = body.global_position + Vector3(offset_x, 0.0, 0.0)
+	if _is_classifier_stamp_manipulation():
+		_manipulation_gizmo.global_position = _classifier_stamp_manipulation_gizmo_global_pos(body, axis_len)
+	else:
+		var offset_x: float = (body.scale.x * 0.5) + (axis_len * 0.5)
+		_manipulation_gizmo.global_position = body.global_position + Vector3(offset_x, 0.0, 0.0)
 	if _pancake_cam != null and _manipulation_gizmo.has_method("update_close_handle"):
 		_update_gizmo_action_handles(axis_len)
 

@@ -10,6 +10,7 @@ var _showing_voxels: bool
 var _static_body: StaticBody3D
 var _mat: ShaderMaterial
 var _existing_cortical_area: AbstractCorticalArea  # Store reference to existing area for dynamic sizing
+var _is_classifier_stamp_preview: bool = false
 
 func setup(initial_FEAGI_position: Vector3i, initial_dimensions: Vector3i, show_voxels: bool, cortical_area_type: AbstractCorticalArea.CORTICAL_AREA_TYPE = AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN, existing_cortical_area: AbstractCorticalArea = null) -> void:
 	_showing_voxels = show_voxels
@@ -112,7 +113,12 @@ func _calculate_memory_sphere_size(dimensions: Vector3i, existing_cortical_area:
 	
 	return Vector2(sphere_radius, sphere_height)
 
+func is_classifier_stamp_preview() -> bool:
+	return _is_classifier_stamp_preview
+
+
 func apply_classifier_stamp_look(class_count: int) -> void:
+	_is_classifier_stamp_preview = true
 	if _static_body == null:
 		return
 	var mesh_instance = _static_body.get_node("MeshInstance3D") as MeshInstance3D

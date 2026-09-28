@@ -539,6 +539,16 @@ func bv_update_friendly_name_label_position() -> void:
 	if not had_target:
 		_friendly_name_label.position = _friendly_name_label_target_position
 
+## World/local Y of the area-name label center for a volume whose mesh center is at [param volume_center_y].
+static func friendly_name_label_center_y_from_volume_center(volume_center_y: float, half_extent_y: float) -> float:
+	var bottom_gap: float = clampf(
+		half_extent_y * FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN,
+		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX
+	)
+	return volume_center_y - (half_extent_y + bottom_gap)
+
+
 func _update_friendly_name_label_target_position() -> bool:
 	if _static_body == null or _friendly_name_label == null:
 		return false
@@ -561,12 +571,8 @@ func _update_friendly_name_label_target_position() -> bool:
 	elif _should_use_png_icon_by_id(_cortical_area_id):
 		half_x = maxf(half_x, BILLBOARD_QUAD_MESH_HALF_EXTENT * absf(_static_body.scale.x))
 		half_z = maxf(half_z, BILLBOARD_QUAD_MESH_HALF_EXTENT * absf(_static_body.scale.z))
-	var bottom_gap: float = clampf(
-		half_y * FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE,
-		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN,
-		FRIENDLY_NAME_LABEL_BOTTOM_GAP_MAX
-	)
-	var y_offset: float = -(half_y + bottom_gap)
+	var label_center_y: float = friendly_name_label_center_y_from_volume_center(_static_body.position.y, half_y)
+	var y_offset: float = label_center_y - _static_body.position.y
 	var edge_margin: float = maxf(0.75, minf(_static_body.scale.x, _static_body.scale.z) * 0.15)
 	# Renderer base class extends Node (not Node3D), so compute camera relation in StaticBody3D space.
 	var cam_in_body_local: Vector3 = _static_body.to_local(cam.global_position)
