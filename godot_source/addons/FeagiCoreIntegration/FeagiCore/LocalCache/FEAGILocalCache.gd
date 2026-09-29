@@ -601,7 +601,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 			memory_area_stats = new_memory_stats.duplicate()
 			# print("🧠 FEAGI CACHE: Updated memory area stats for ", memory_area_stats.size(), " areas")  # Suppressed to reduce log spam
 			memory_area_stats_updated.emit(memory_area_stats)
-	
+
 	#TEMP amalgamation
 	#TODO FEAGI really shouldnt be doing this here
 	
@@ -646,6 +646,22 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 		print("FEAGI Cache: 🎯 CRITICAL - amalgamation_no_longer_pending signal emitted successfully")
 			
 	
+
+## Zero cached runtime counts after a memory reset, before the next health poll.
+func note_memory_neurons_cleared(area_ids: Array[StringName]) -> void:
+	var changed: bool = false
+	for area_id in area_ids:
+		if not memory_area_stats.has(area_id):
+			continue
+		var area_stats: Dictionary = memory_area_stats[area_id]
+		if int(area_stats.get("neuron_count", 0)) == 0:
+			continue
+		area_stats["neuron_count"] = 0
+		memory_area_stats[area_id] = area_stats
+		changed = true
+	if changed:
+		memory_area_stats_updated.emit(memory_area_stats)
+
 
 ## Useful when communicaiton with feagi is lost, mark all cached health data as dead
 func set_health_dead() -> void:

@@ -269,14 +269,15 @@ func _on_markdown_link_clicked(target_path: String) -> void:
 		_open_markdown(target_path)
 
 ## Open a guide file by filename (e.g. ``pattern_connectivity.md``).
-func open_guide_file(guide_filename: String) -> void:
+## `heading` scrolls the page to that markdown heading after it loads.
+func open_guide_file(guide_filename: String, heading: String = "") -> void:
 	var file_name := guide_filename.get_file()
 	if file_name.get_extension() == "":
 		file_name = file_name + ".md"
-	_open_markdown(guides_directory.path_join(file_name))
+	_open_markdown(guides_directory.path_join(file_name), heading)
 
 ## Load and display a markdown file.
-func _open_markdown(markdown_path: String) -> void:
+func _open_markdown(markdown_path: String, heading: String = "") -> void:
 	if markdown_path == "":
 		push_error("WindowGuide: Empty markdown path")
 		return
@@ -284,7 +285,7 @@ func _open_markdown(markdown_path: String) -> void:
 		push_error("WindowGuide: Markdown path not found: %s" % markdown_path)
 		_markdown_view.show_message("Guide file not found: %s" % markdown_path)
 		return
-	_markdown_view.load_markdown(markdown_path)
+	_markdown_view.load_markdown(markdown_path, heading)
 
 ## Load guide order from the _guide_order.txt file
 func _load_guide_order(base_dir: String) -> Array[String]:

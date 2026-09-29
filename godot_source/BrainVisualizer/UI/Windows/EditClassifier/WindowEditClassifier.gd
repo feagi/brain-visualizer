@@ -173,16 +173,29 @@ func _build_classifier_fields() -> void:
 	_associative_apply = _add_associative_section(form)
 
 	var buttons := HBoxContainer.new()
-	buttons.alignment = BoxContainer.ALIGNMENT_END
+	var help := Button.new()
+	help.text = "Help"
+	help.tooltip_text = "Open the user guide section for this window"
+	help.pressed.connect(_on_help_pressed)
+	var button_spacer := Control.new()
+	button_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var cancel := Button.new()
 	cancel.text = "Cancel"
 	cancel.pressed.connect(_on_press_cancel)
 	_update_button = Button.new()
 	_update_button.text = "Update"
 	_update_button.pressed.connect(_on_press_update)
+	buttons.add_child(help)
+	buttons.add_child(button_spacer)
 	buttons.add_child(cancel)
 	buttons.add_child(_update_button)
 	internals.add_child(buttons)
+
+
+func _on_help_pressed() -> void:
+	if BV == null or BV.WM == null:
+		return
+	BV.WM.spawn_guide_page(_Tunables.CLASSIFIER_GUIDE_FILE, _Tunables.CLASSIFIER_GUIDE_HEADING)
 
 
 func _labeled(label_text: String, control: Control, tooltip: String = "") -> HBoxContainer:
@@ -276,6 +289,13 @@ func _show_cached_memory_count(field: IntInput, area_id: StringName) -> void:
 	var area: AbstractCorticalArea = _cached_area(area_id)
 	var total: int = area.reported_neuron_count if area != null else 0
 	_apply_memory_count_display(field, total, null, null)
+
+
+## Reload kernel and class memory ST/LT counts from FEAGI.
+func reload_live_memory_counts() -> void:
+	if _editing_classifier == null:
+		return
+	_refresh_memory_counts()
 
 
 func _refresh_memory_counts() -> void:

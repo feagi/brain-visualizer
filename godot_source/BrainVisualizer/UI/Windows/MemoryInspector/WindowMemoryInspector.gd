@@ -262,6 +262,15 @@ func restore_pagination_after_failed_fetch() -> void:
 		_page_next_btn.disabled = not _last_has_more
 
 
+## Re-fetch the summary when the inspector is already showing a reset memory area.
+func reload_if_showing(area_ids: Array[StringName]) -> void:
+	if _last_query_cortical_id == &"" or _last_query_cortical_id not in area_ids:
+		return
+	if BV == null or BV.UI == null:
+		return
+	BV.UI.request_memory_inspector_fetch(_last_query_cortical_id, _displayed_page, _page_size_used)
+
+
 func update_summary_from_response(d: Dictionary) -> void:
 	if _st_value == null:
 		return

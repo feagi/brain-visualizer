@@ -171,7 +171,9 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			_titlebar.title = region.friendly_name
 
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
-			reset_button.visible = false
+			reset_button.visible = true
+			reset_button.disabled = false
+			reset_button.tooltip_text = "Reset kernel and class memory..."
 			iopu_config_button.visible = false
 			open_3d_tab_button.visible = false
 			quick_connect_button.visible = false
@@ -412,24 +414,64 @@ func _button_ipu_opu_config() -> void:
 	BV.WM.spawn_ipu_opu_config(focus_key, focus_section)
 	close_window()
 
-## Resets selected cortical areas' runtime neural state (via FEAGI PUT /v1/cortical_area/reset).
+## Resets runtime neural state (via FEAGI PUT /v1/cortical_area/reset).
+## A classifier resets its kernel memory and class memory, the same call a memory area uses.
 func _button_reset() -> void:
 	if FeagiCore == null or FeagiCore.requests == null:
 		BV.NOTIF.add_notification("Reset unavailable: FEAGI is not ready")
 		close_window()
 		return
-	var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+	var resetting_classifier: bool = _mode == GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER
+	var areas: Array[AbstractCorticalArea] = _reset_target_areas()
 	if areas.is_empty():
-		BV.NOTIF.add_notification("No cortical areas selected to reset")
+		if resetting_classifier:
+			BV.NOTIF.add_notification("Classifier kernel and class memory are not available to reset")
+		else:
+			BV.NOTIF.add_notification("No cortical areas selected to reset")
 		close_window()
 		return
-	BV.NOTIF.add_notification("Resetting cortical areas...")
+	if resetting_classifier:
+		BV.NOTIF.add_notification("Resetting classifier memory...")
+	else:
+		BV.NOTIF.add_notification("Resetting cortical areas...")
 	var result = await FeagiCore.requests.mass_reset_cortical_areas(areas)
 	if result.has_errored:
 		BV.NOTIF.add_notification("Cortical reset failed")
 	else:
-		BV.NOTIF.add_notification("Cortical areas reset")
+		_publish_memory_reset(areas)
+		if resetting_classifier:
+			BV.NOTIF.add_notification("Classifier memory reset")
+		else:
+			BV.NOTIF.add_notification("Cortical areas reset")
 	close_window()
+
+
+## The reset response does not push new ST/LT counts. Reload every open readout for these areas.
+func _publish_memory_reset(areas: Array[AbstractCorticalArea]) -> void:
+	var area_ids: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(areas)
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		FeagiCore.feagi_local_cache.note_memory_neurons_cleared(area_ids)
+	if BV == null or BV.WM == null:
+		return
+	var editor: WindowEditClassifier = BV.WM.loaded_windows.get(WindowEditClassifier.WINDOW_NAME, null) as WindowEditClassifier
+	if editor != null:
+		editor.reload_live_memory_counts()
+	var details: AdvancedCorticalProperties = BV.WM.loaded_windows.get(AdvancedCorticalProperties.WINDOW_NAME, null) as AdvancedCorticalProperties
+	if details != null:
+		details.reload_memory_neuron_counts_if_showing(area_ids)
+	var inspector: WindowMemoryInspector = BV.WM.loaded_windows.get(WindowMemoryInspector.WINDOW_NAME, null) as WindowMemoryInspector
+	if inspector != null:
+		inspector.reload_if_showing(area_ids)
+
+
+## Cortical selection resets those areas. A classifier resets kernel memory and class memory only.
+func _reset_target_areas() -> Array[AbstractCorticalArea]:
+	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
+		return AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+	var classifier: GenomeClassifier = _selection[0] as GenomeClassifier
+	if classifier == null:
+		return []
+	return classifier.get_memory_areas()
 
 func _button_open_3d_tab() -> void:
 	_debug_selection_state("_button_open_3d_tab start")

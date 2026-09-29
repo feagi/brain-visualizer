@@ -17,6 +17,8 @@ const MEMORY_FIELD_SPECS: Array[Dictionary] = [
 ]
 
 const WINDOW_CONTENT_WIDTH: int = 640
+const CLASSIFIER_GUIDE_FILE: String = "integrated_circuits.md"
+const CLASSIFIER_GUIDE_HEADING: String = "Edit a Classifier"
 const BOTTOM_HUD_CLEARANCE_PX: int = 8
 
 const ASSOCIATIVE_FIELD_SPECS: Array[Dictionary] = [

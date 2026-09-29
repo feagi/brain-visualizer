@@ -11,6 +11,7 @@ func _initialize() -> void:
 	failures += _test_classifier_is_not_exportable_circuit()
 	failures += _test_owns_internals_and_references_inputs()
 	failures += _test_owned_area_ids_match_delete_contract()
+	failures += _test_memory_reset_targets_kernel_and_class_only()
 	failures += _test_visual_inbound_aliases_and_hidden_internals()
 	failures += _test_cb_and_bm_hide_rules()
 	failures += _test_stamp_is_kernel_memory_and_twin_is_owned()
@@ -104,6 +105,34 @@ func _test_owned_area_ids_match_delete_contract() -> int:
 	var delete_path := "/v1/cortical_area/classifier/{classifier_id}".replace("{classifier_id}", str(classifier.classifier_id))
 	if delete_path != "/v1/cortical_area/classifier/clf-1":
 		push_error("classifier delete path must interpolate classifier_id")
+		return 1
+	return 0
+
+
+func _test_memory_reset_targets_kernel_and_class_only() -> int:
+	var classifier: GenomeClassifier = _make_classifier()
+	var ids: Array[StringName] = classifier.memory_area_ids()
+	if ids.size() != 2 or ids[0] != &"kmem" or ids[1] != &"cmem":
+		push_error("classifier memory reset must target kernel memory then class memory")
+		return 1
+	if &"stamp" in ids or &"twin-b" in ids:
+		push_error("classifier memory reset must not include scan twins")
+		return 1
+	var menu_source: String = FileAccess.get_file_as_string("res://BrainVisualizer/UI/Windows/QuickMenu/WindowQuickMenu.gd")
+	var block_start: int = menu_source.find("SINGLE_CLASSIFIER:")
+	var block_end: int = menu_source.find("MULTIPLE_CORTICAL_AREAS:", block_start)
+	if block_start < 0 or block_end < 0:
+		push_error("classifier quick menu block missing")
+		return 1
+	var block: String = menu_source.substr(block_start, block_end - block_start)
+	if block.find("reset_button.visible = true") < 0:
+		push_error("classifier quick menu must show Reset")
+		return 1
+	if menu_source.find("get_memory_areas()") < 0:
+		push_error("classifier reset must call get_memory_areas")
+		return 1
+	if menu_source.find("reload_live_memory_counts()") < 0:
+		push_error("classifier reset must reload the open long-term memory count")
 		return 1
 	return 0
 

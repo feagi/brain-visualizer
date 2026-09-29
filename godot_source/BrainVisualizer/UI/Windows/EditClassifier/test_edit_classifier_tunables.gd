@@ -25,6 +25,7 @@ func _run_tests() -> void:
 	failures += _test_every_setting_has_a_tooltip()
 	failures += _test_reward_labels_stay_off_peripheral_terms()
 	failures += _test_tooltips_wrap_to_a_column()
+	failures += _test_help_opens_classifier_guide_section()
 	if failures == 0:
 		print("Edit classifier tunable tests: PASS")
 		quit(0)
@@ -288,5 +289,28 @@ func _test_numeric_defaults_are_one() -> int:
 		return 1
 	if int(Tunables.numeric_or_default(9, Tunables.MEMORY_FIELD_SPECS[0])) != 9:
 		push_error("memory ints must keep an explicit non-zero value")
+		return 1
+	return 0
+
+
+func _test_help_opens_classifier_guide_section() -> int:
+	if Tunables.CLASSIFIER_GUIDE_FILE != "integrated_circuits.md":
+		push_error("classifier help must open the integrated circuits guide")
+		return 1
+	if Tunables.CLASSIFIER_GUIDE_HEADING != "Edit a Classifier":
+		push_error("classifier help must open the Edit a Classifier section")
+		return 1
+	var guide_path := "res://BrainVisualizer/Guides/" + Tunables.CLASSIFIER_GUIDE_FILE
+	if not FileAccess.file_exists(guide_path):
+		push_error("classifier guide file is missing: %s" % guide_path)
+		return 1
+	var guide := FileAccess.open(guide_path, FileAccess.READ)
+	if guide == null:
+		push_error("classifier guide file could not be read")
+		return 1
+	var text := guide.get_as_text()
+	guide.close()
+	if not text.contains("## " + Tunables.CLASSIFIER_GUIDE_HEADING):
+		push_error("integrated circuits guide is missing the Edit a Classifier section")
 		return 1
 	return 0

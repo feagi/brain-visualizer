@@ -88,17 +88,17 @@ func spawn_guide() -> void:
 	var guide_window: WindowGuide = _default_spawn_window(_PREFAB_GUIDE, WindowGuide.WINDOW_NAME) as WindowGuide
 	guide_window.setup()
 
-## Open the user guide to a specific page (pattern or vector authoring).
-func spawn_guide_page(guide_filename: String) -> void:
+## Open the user guide to a page. `heading` scrolls that page to a markdown heading.
+func spawn_guide_page(guide_filename: String, heading: String = "") -> void:
 	if WindowGuide.WINDOW_NAME in loaded_windows:
 		var existing: WindowGuide = loaded_windows[WindowGuide.WINDOW_NAME] as WindowGuide
 		if existing != null:
 			bring_window_to_top(existing)
-			existing.open_guide_file(guide_filename)
+			existing.open_guide_file(guide_filename, heading)
 			return
 	var guide_window: WindowGuide = _default_spawn_window(_PREFAB_GUIDE, WindowGuide.WINDOW_NAME) as WindowGuide
 	guide_window.setup()
-	guide_window.open_guide_file(guide_filename)
+	guide_window.open_guide_file(guide_filename, heading)
 
 func spawn_adv_cortical_properties(cortical_areas: Array[AbstractCorticalArea]) -> void:
 	var cortical_window: AdvancedCorticalProperties = _default_spawn_window(_PREFAB_ADV_CORTICAL_PROPERTIES, AdvancedCorticalProperties.WINDOW_NAME) as AdvancedCorticalProperties

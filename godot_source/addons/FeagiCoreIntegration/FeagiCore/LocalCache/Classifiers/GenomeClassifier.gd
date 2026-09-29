@@ -108,6 +108,28 @@ func get_stamp_area() -> AbstractCorticalArea:
 	return _cached_area(_kernel_memory_id)
 
 
+## Kernel memory then class memory. Empty when either id is missing.
+## Scan twins are not included: classifier reset clears only these two stores.
+func memory_area_ids() -> Array[StringName]:
+	if _kernel_memory_id == &"" or _class_memory_id == &"":
+		return []
+	var ids: Array[StringName] = []
+	ids.append(_kernel_memory_id)
+	ids.append(_class_memory_id)
+	return ids
+
+
+## Cached kernel and class memory areas. Empty when either area is missing from cache.
+func get_memory_areas() -> Array[AbstractCorticalArea]:
+	var areas: Array[AbstractCorticalArea] = []
+	for area_id in memory_area_ids():
+		var area: AbstractCorticalArea = _cached_area(area_id)
+		if area == null:
+			return []
+		areas.append(area)
+	return areas
+
+
 func field_bindings() -> Array[Dictionary]:
 	return _fields.duplicate(true)
 

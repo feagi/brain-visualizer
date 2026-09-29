@@ -73,7 +73,7 @@ Right-click the classifier and choose **Details**. The button tooltip is **Class
 
 If the editor is already open, selecting a different classifier loads that classifier. Selecting the same one again refreshes the neuron counts.
 
-**Update** applies the settings in the main form and closes the editor. **Cancel** closes it without applying those settings. The collapsed sections below the form have their own **Apply Update** buttons and are not part of that commit.
+**Help**, at the bottom left, opens this section of the user guide. **Update** applies the settings in the main form and closes the editor. **Cancel** closes it without applying those settings. The collapsed sections below the form have their own **Apply Update** buttons and are not part of that commit.
 
 ### Main form
 
@@ -124,12 +124,13 @@ Turning reward training on and applying the section creates two hidden areas, na
 
 If the memory area or the associative mapping is not available, the section says so and **Apply Update** stays disabled.
 
-## Move or Delete
+## Move, Reset, or Delete
 
 Right-click the classifier.
 
 - From Circuit Builder, **Relocate this classifier (2D)** follows the mouse. Left-click to commit the new position.
 - From Brain Monitor, **Relocate this classifier (3D gizmo)** moves the stamp. A Brain Monitor for the classifier's circuit must be open.
+- **Reset kernel and class memory...** clears stored patterns in both memory areas. It uses the same cortical reset as a memory area. The open classifier editor reloads the short-term and long-term counts. The classifier, its connections, and the areas you selected as inputs stay in place.
 - **Delete this classifier...** deletes the classifier, its kernel memory, its class memory, its detection areas, and the pain and pleasure areas created for reward training. The kernel, class, mask, answer, learn, and confidence areas you selected are left in place.
 
 The classifier quick menu does not include Open 3D Tab, clone, or Quick Connect. To inspect the stamp, open a Brain Monitor on the circuit that contains the classifier.
@@ -141,6 +142,6 @@ The classifier quick menu does not include Open 3D Tab, clone, or Quick Connect.
 - [Circuit Builder](circuit_builder.md) - The 2D node
 - [Brain Monitor](brain_monitor.md) - The stamp
 - [Mapping Connections](mapping_connections.md) - Quick Connect
-- [Quick Menu](quick_menu.md) - Details, relocate, and delete
+- [Quick Menu](quick_menu.md) - Details, relocate, reset, and delete
 
 [Back to Overview](index.md)

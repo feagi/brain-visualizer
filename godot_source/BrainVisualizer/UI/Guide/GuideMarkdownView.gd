@@ -6,6 +6,7 @@ signal markdown_link_clicked(target_path: String)
 var _current_markdown_path: String = ""
 var _base_font_size: int = 0
 var _font_scale: float = 1.0  # User-adjustable scale multiplier
+var _load_generation: int = 0
 
 ## Configure the label defaults for guide rendering.
 func _ready() -> void:
@@ -21,8 +22,10 @@ func _ready() -> void:
 	# Add better line spacing for readability
 	add_theme_constant_override("line_separation", int(_base_font_size * 0.3))
 
-## Load and render a markdown file.
-func load_markdown(markdown_path: String) -> void:
+## Load and render a markdown file. `heading` scrolls the parent view to that title.
+func load_markdown(markdown_path: String, heading: String = "") -> void:
+	_load_generation += 1
+	var generation := _load_generation
 	_current_markdown_path = markdown_path
 	# Apply cached base font size with user scale multiplier
 	var scaled_font_size := int(_base_font_size * _font_scale)
@@ -44,10 +47,14 @@ func load_markdown(markdown_path: String) -> void:
 	# Wait for text rendering to complete
 	await get_tree().process_frame
 	await get_tree().process_frame
+	if generation != _load_generation:
+		return
 	# Set minimum height based on actual content
 	var content_height := get_content_height()
 	custom_minimum_size = Vector2(0, content_height)
 	size.y = content_height
+	if heading != "":
+		_scroll_to_heading(heading)
 
 ## Set the user-adjustable font scale multiplier and reload current content.
 func set_font_scale(scale: float) -> void:
@@ -55,6 +62,30 @@ func set_font_scale(scale: float) -> void:
 	# Reload current markdown with new scale
 	if _current_markdown_path != "":
 		load_markdown(_current_markdown_path)
+
+## Scroll the guide body so `heading` is at the top of the visible page.
+func _scroll_to_heading(heading: String) -> void:
+	var parsed := get_parsed_text()
+	var index := parsed.find(heading)
+	if index < 0:
+		return
+	var line := get_character_line(index)
+	if line < 0:
+		return
+	var scroll := _owning_scroll()
+	if scroll == null:
+		return
+	scroll.scroll_vertical = int(get_line_offset(line))
+
+
+func _owning_scroll() -> ScrollContainer:
+	var node: Node = get_parent()
+	while node != null:
+		if node is ScrollContainer:
+			return node as ScrollContainer
+		node = node.get_parent()
+	return null
+
 
 ## Display a short message when no guide content is available.
 func show_message(message: String) -> void:

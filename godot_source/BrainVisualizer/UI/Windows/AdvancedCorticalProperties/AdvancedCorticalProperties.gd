@@ -1552,6 +1552,16 @@ func _refresh_from_cache_summary() -> void:
 		# It will appear when the user starts editing position/dimensions.
 	_refresh_memory_neuron_count_breakdown_if_needed()
 
+## Reload the ST/LT readout when this window is showing one of the reset areas.
+func reload_memory_neuron_counts_if_showing(area_ids: Array[StringName]) -> void:
+	if len(_cortical_area_refs) != 1:
+		return
+	var area: AbstractCorticalArea = _cortical_area_refs[0]
+	if area == null or area.cortical_ID not in area_ids:
+		return
+	_refresh_memory_neuron_count_breakdown_if_needed()
+
+
 func _refresh_memory_neuron_count_breakdown_if_needed() -> void:
 	if _line_neuron_count == null:
 		return

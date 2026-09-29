@@ -232,6 +232,11 @@ See [Brain Circuits](brain_circuits.md) for more details.
 - Requires confirmation before proceeding
 - Cannot be undone
 
+**Classifier:**
+- Shown on a classifier the same way it is on a memory area
+- Clears kernel memory and class memory together
+- Leaves the classifier, its connections, and its input areas in place
+
 **Use When:**
 - Starting fresh after testing
 - Clearing corrupted state
