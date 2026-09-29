@@ -12,10 +12,12 @@ var _kernel_option: OptionButton
 var _class_option: OptionButton
 var _mask_option: OptionButton
 var _kernel_size: Vector3iSpinboxField
+var _class_count: SpinBox
 var _kernel_row: Control
 var _class_row: Control
 var _mask_row: Control
 var _kernel_size_row: Control
+var _class_count_row: Control
 var _validation_label: Label
 var _create_button: Button
 var _location: Vector3i
@@ -73,14 +75,17 @@ func _build_ui() -> void:
 	_kernel_size.int_y_min = 1
 	_kernel_size.int_z_min = 1
 	_kernel_size.initial_vector = Vector3i(1, 1, 1)
+	_class_count = GenomeClassifier.make_class_count_spinbox(1)
 	_kernel_row = _labeled("Kernel Area", _kernel_option)
 	_class_row = _labeled("Class Area", _class_option)
 	_mask_row = _labeled("Mask Area", _mask_option)
 	_kernel_size_row = _labeled("Kernel Size", _kernel_size)
+	_class_count_row = _labeled("Class Count", _class_count)
 	internals.add_child(_kernel_row)
 	internals.add_child(_class_row)
 	internals.add_child(_mask_row)
 	internals.add_child(_kernel_size_row)
+	internals.add_child(_class_count_row)
 	_apply_training_mode_visibility()
 
 	_validation_label = Label.new()
@@ -192,6 +197,8 @@ func _apply_training_mode_visibility() -> void:
 		_mask_row.visible = scanner
 	if _kernel_size_row != null:
 		_kernel_size_row.visible = scanner
+	if _class_count_row != null:
+		_class_count_row.visible = scanner
 	_clear_validation()
 
 
@@ -309,7 +316,8 @@ func _on_create_pressed() -> void:
 			&"",
 			&"",
 			_selected_area_id(_mask_option),
-			kernel_size
+			kernel_size,
+			int(_class_count.value)
 		)
 		_finish_create(scan_result, scan_coordinates)
 		return
@@ -328,7 +336,8 @@ func _on_create_pressed() -> void:
 		kernel_id,
 		class_id,
 		&"",
-		Vector3i.ZERO
+		Vector3i.ZERO,
+		0
 	)
 	_finish_create(result, coordinates_3d)
 

@@ -17,6 +17,7 @@ const MEMORY_FIELD_SPECS: Array[Dictionary] = [
 ]
 
 const WINDOW_CONTENT_WIDTH: int = 640
+const AREA_EXPLORER_BUTTON_TOOLTIP: String = "Open Cortical Area Explorer and pick an area from any circuit."
 const CLASSIFIER_GUIDE_FILE: String = "integrated_circuits.md"
 const CLASSIFIER_GUIDE_HEADING: String = "Edit a Classifier"
 const BOTTOM_HUD_CLEARANCE_PX: int = 8
@@ -38,8 +39,9 @@ const SETTING_TOOLTIPS: Dictionary = {
 	"Training Mode": "Kernel training encodes one kernel sample and one class sample per burst. Scanner training slides the kernel across each connected image field and takes the class from the mask depth under that window.",
 	"Kernel Area": "Cortical area encoded into kernel memory. One firing pattern here becomes one kernel memory neuron. Hidden in scanner training, which learns from image-field windows instead.",
 	"Class Area": "Cortical area encoded into class memory. Its active voxels are the class channels bound to the kernel. In kernel mode the answer area must have this same shape.",
-	"Mask Area": "Scanner label volume. Width and height match each image field. Depth is the class count. An active voxel in that depth is the class of the window that covers it.",
+	"Mask Area": "Scanner label plane, one layer deep. Width and height match each image field. Each labeled pixel's potential is (class + 1) / class count; it names the class of the window that covers it.",
 	"Kernel Size": "Scanner window in voxels. Depth must equal the image field depth, and the window must fit inside the field. Changing it drops patterns learned under the previous window.",
+	"Class Count": "Number of classes the mask and detection twins encode. Each pixel carries its class as potential (class + 1) / class count, so the twins stay one layer. Changing it drops learned patterns.",
 	"Kernel Memory Neurons": "Memory neurons currently stored for kernels. The count is short-term plus long-term. Only long-term neurons are recalled when a field is scanned.",
 	"Class Memory Neurons": "Memory neurons currently stored for classes. The count is short-term plus long-term.",
 	"Reward Training": "Grade each scanning instance on its own. Off keeps ordinary co-activation learning. On, an ambiguous decision (more than one class channel, and no answer area) is pain. With an answer area, a matching channel is pleasure and any other channel is pain. Each pattern is corrected once, then waits until the field pattern changes. A quiet field drops the open decision so the next image is not trained with the previous answer.",
@@ -159,6 +161,26 @@ static func fitted_window_top(current_top: int, window_height: int, band_top: in
 	if top < band_top:
 		top = band_top
 	return top
+
+
+## Dropdown text for a cortical area: name plus voxel size, matching the classifier area menus.
+static func cortical_area_choice_label(friendly_name: String, dimensions: Vector3i) -> String:
+	return "%s %sx%sx%s" % [friendly_name, dimensions.x, dimensions.y, dimensions.z]
+
+
+## Adds [param area_id] to every shared dropdown when it is not already listed.
+## Returns the index in [param area_ids], or -1 when [param area_id] is empty.
+static func ensure_shared_area_choice(area_ids: Array[StringName], area_id: StringName, label: String, options: Array) -> int:
+	if area_id == &"":
+		return -1
+	var existing: int = area_ids.find(area_id)
+	if existing >= 0:
+		return existing
+	area_ids.append(area_id)
+	for option in options:
+		if option is OptionButton:
+			(option as OptionButton).add_item(label)
+	return area_ids.size() - 1
 
 
 ## Match Cortical Area Details: source art is 486x256, so the control must ignore texture size.

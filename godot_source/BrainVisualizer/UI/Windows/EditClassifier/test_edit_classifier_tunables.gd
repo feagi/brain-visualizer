@@ -26,6 +26,8 @@ func _run_tests() -> void:
 	failures += _test_reward_labels_stay_off_peripheral_terms()
 	failures += _test_tooltips_wrap_to_a_column()
 	failures += _test_help_opens_classifier_guide_section()
+	failures += _test_shared_area_choice_keeps_dropdowns_aligned()
+	failures += _test_area_dropdowns_open_explorer()
 	if failures == 0:
 		print("Edit classifier tunable tests: PASS")
 		quit(0)
@@ -312,5 +314,63 @@ func _test_help_opens_classifier_guide_section() -> int:
 	guide.close()
 	if not text.contains("## " + Tunables.CLASSIFIER_GUIDE_HEADING):
 		push_error("integrated circuits guide is missing the Edit a Classifier section")
+		return 1
+	if not text.contains("Cortical Area Explorer"):
+		push_error("classifier guide must describe the area explorer edit icon")
+		return 1
+	return 0
+
+
+func _test_shared_area_choice_keeps_dropdowns_aligned() -> int:
+	if Tunables.cortical_area_choice_label("vision", Vector3i(2, 3, 1)) != "vision 2x3x1":
+		push_error("area dropdown label must be name plus voxel size")
+		return 1
+	if Tunables.AREA_EXPLORER_BUTTON_TOOLTIP.is_empty():
+		push_error("area explorer button needs a tooltip")
+		return 1
+	var ids: Array[StringName] = [&""]
+	var first := OptionButton.new()
+	var second := OptionButton.new()
+	first.add_item("None")
+	second.add_item("None")
+	var options: Array = [first, second]
+	if Tunables.ensure_shared_area_choice(ids, &"", "unused", options) != -1:
+		push_error("an empty area id must not be added")
+		return 1
+	if Tunables.ensure_shared_area_choice(ids, &"outside", "outside 4x4x1", options) != 1:
+		push_error("an area outside the current list must be appended")
+		return 1
+	if first.item_count != 2 or second.item_count != 2 or ids.size() != 2:
+		push_error("shared area dropdowns must stay the same length")
+		return 1
+	if Tunables.ensure_shared_area_choice(ids, &"outside", "outside 4x4x1", options) != 1:
+		push_error("picking the same area again must keep its index")
+		return 1
+	if first.item_count != 2:
+		push_error("a repeated area pick must not duplicate the dropdown item")
+		return 1
+	return 0
+
+
+func _test_area_dropdowns_open_explorer() -> int:
+	var source := FileAccess.get_file_as_string("res://BrainVisualizer/UI/Windows/EditClassifier/WindowEditClassifier.gd")
+	if source.is_empty():
+		push_error("classifier editor script could not be read")
+		return 1
+	for label in ["Kernel Area", "Class Area", "Mask Area", "Answer Area", "Learn Area", "Confidence Area"]:
+		if not source.contains('_labeled_cortical_area("%s"' % label):
+			push_error("%s must use the explorer edit icon" % label)
+			return 1
+	if source.contains('_labeled_cortical_area("Parent Circuit"'):
+		push_error("Parent Circuit is not a cortical area dropdown")
+		return 1
+	if not source.contains("config_for_single_cortical_area_selection"):
+		push_error("area edit icon must open single-area Cortical Area Explorer")
+		return 1
+	if not source.contains("get_root_region"):
+		push_error("area explorer must start at the root circuit")
+		return 1
+	if load("res://BrainVisualizer/UI/Windows/EditClassifier/WindowEditClassifier.gd") == null:
+		push_error("classifier editor script failed to parse")
 		return 1
 	return 0

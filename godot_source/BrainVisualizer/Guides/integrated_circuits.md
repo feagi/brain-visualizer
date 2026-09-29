@@ -82,6 +82,7 @@ If the editor is already open, selecting a different classifier loads that class
 - **Parent Circuit** is the brain circuit that contains the classifier. Change it here. The quick menu has no separate command for moving a classifier into another circuit.
 - **3D Position** moves the stamp.
 - **Training Mode** offers the same choice as creation. Kernel training still requires a kernel area and a class area. Scanner training still requires a mask area and a kernel size. Changing the mode replaces the inputs used by the previous mode.
+- **Kernel Area**, **Class Area**, and **Mask Area** each have an edit icon beside the dropdown. The dropdown lists areas in the classifier's circuit. The icon opens Cortical Area Explorer at the root circuit so you can pick an area from any other circuit. The same icon is on **Answer Area**, **Learn Area**, and **Confidence Area**.
 
 ### Neuron counts
 

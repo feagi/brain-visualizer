@@ -4,6 +4,10 @@ class_name WindowEditClassifier
 ## Tunables use the same [VerticalCollapsibleHiding] expanders as Cortical Area Details.
 
 const WINDOW_NAME: StringName = "edit_classifier"
+const _EDIT_ICON_NORMAL: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png")
+const _EDIT_ICON_PRESSED: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png")
+const _EDIT_ICON_HOVER: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png")
+const _EDIT_ICON_DISABLED: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png")
 const _VECTOR_FIELD_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn")
 const _COLLAPSIBLE_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn")
 const _Tunables = preload("res://BrainVisualizer/UI/Windows/EditClassifier/EditClassifierTunables.gd")
@@ -16,10 +20,12 @@ var _kernel_option: OptionButton
 var _class_option: OptionButton
 var _mask_option: OptionButton
 var _kernel_size: Vector3iSpinboxField
+var _class_count: SpinBox
 var _kernel_row: Control
 var _class_row: Control
 var _mask_row: Control
 var _kernel_size_row: Control
+var _class_count_row: Control
 var _update_button: Button
 var _editing_classifier: GenomeClassifier
 var _area_ids: Array[StringName] = []
@@ -137,15 +143,19 @@ func _build_classifier_fields() -> void:
 	_kernel_size.int_z_min = 1
 	var stored_size: Vector3i = _editing_classifier.kernel_size
 	_kernel_size.initial_vector = stored_size if stored_size != Vector3i.ZERO else Vector3i(1, 1, 1)
+	_class_count = GenomeClassifier.make_class_count_spinbox(_editing_classifier.class_count)
 	_populate_area_options()
-	_kernel_row = _labeled("Kernel Area", _kernel_option)
-	_class_row = _labeled("Class Area", _class_option)
-	_mask_row = _labeled("Mask Area", _mask_option)
+	var visual_options: Array[OptionButton] = [_kernel_option, _class_option, _mask_option]
+	_kernel_row = _labeled_cortical_area("Kernel Area", _kernel_option, visual_options, _area_ids, false)
+	_class_row = _labeled_cortical_area("Class Area", _class_option, visual_options, _area_ids, false)
+	_mask_row = _labeled_cortical_area("Mask Area", _mask_option, visual_options, _area_ids, false)
 	_kernel_size_row = _labeled("Kernel Size", _kernel_size)
+	_class_count_row = _labeled("Class Count", _class_count)
 	form.add_child(_kernel_row)
 	form.add_child(_class_row)
 	form.add_child(_mask_row)
 	form.add_child(_kernel_size_row)
+	form.add_child(_class_count_row)
 	_apply_training_mode_visibility()
 
 	_kernel_memory_count = _make_memory_count_field()
@@ -213,6 +223,71 @@ func _labeled(label_text: String, control: Control, tooltip: String = "") -> HBo
 	row.add_child(label)
 	row.add_child(control)
 	return row
+
+
+## Area dropdown plus the edit icon that opens Cortical Area Explorer for any circuit.
+func _labeled_cortical_area(label_text: String, option: OptionButton, shared_options: Array[OptionButton], shared_ids: Array[StringName], marks_associative: bool) -> HBoxContainer:
+	var row := _labeled(label_text, option)
+	var edit := _make_area_explorer_button()
+	edit.pressed.connect(func() -> void:
+		_open_area_explorer(option, shared_options, shared_ids, marks_associative)
+	)
+	row.add_child(edit)
+	return row
+
+
+func _make_area_explorer_button() -> TextureButton:
+	var edit := TextureButton.new()
+	edit.tooltip_text = _Tunables.wrap_tooltip(_Tunables.AREA_EXPLORER_BUTTON_TOOLTIP)
+	edit.theme_type_variation = &"TextureButton_icon"
+	edit.texture_normal = _EDIT_ICON_NORMAL
+	edit.texture_pressed = _EDIT_ICON_PRESSED
+	edit.texture_hover = _EDIT_ICON_HOVER
+	edit.texture_disabled = _EDIT_ICON_DISABLED
+	edit.ignore_texture_size = true
+	edit.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	edit.size_flags_horizontal = Control.SIZE_SHRINK_END
+	edit.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if BV != null and BV.UI != null:
+		edit.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(edit, &"TextureButton_icon")
+	return edit
+
+
+## Opens Cortical Area Explorer at the root circuit so the pick is not limited to the classifier circuit.
+func _open_area_explorer(option: OptionButton, shared_options: Array[OptionButton], shared_ids: Array[StringName], marks_associative: bool) -> void:
+	if BV == null or BV.WM == null:
+		return
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null or FeagiCore.feagi_local_cache.brain_regions == null:
+		return
+	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if root_region == null:
+		return
+	var current_id: StringName = _selected_named_area(option) if marks_associative else _selected_area_id(option)
+	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_cortical_area_selection(root_region, _cached_area(current_id))
+	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
+	if window == null:
+		return
+	window.final_selection.connect(func(genome_objects: Array[GenomeObject]) -> void:
+		_apply_explorer_area(option, shared_options, shared_ids, genome_objects, marks_associative)
+	, CONNECT_ONE_SHOT)
+
+
+func _apply_explorer_area(option: OptionButton, shared_options: Array[OptionButton], shared_ids: Array[StringName], genome_objects: Array[GenomeObject], marks_associative: bool) -> void:
+	var areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(genome_objects)
+	if areas.is_empty() or areas[0] == null or option == null:
+		return
+	var area: AbstractCorticalArea = areas[0]
+	var index: int = _Tunables.ensure_shared_area_choice(
+		shared_ids,
+		area.cortical_ID,
+		_Tunables.cortical_area_choice_label(String(area.friendly_name), area.dimensions_3D),
+		shared_options
+	)
+	if index < 0:
+		return
+	option.select(index)
+	if marks_associative and _associative_apply != null:
+		_associative_apply.disabled = false
 
 
 func _add_collapsible(parent: Control, title: String, tooltip: String = "") -> Dictionary:
@@ -400,8 +475,6 @@ func _add_associative_section(parent: Control) -> Button:
 	holder.add_child(_labeled("Reward Training", _reward_toggle))
 	_feedback_option = OptionButton.new()
 	_feedback_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_feedback_row = _labeled("Answer Area", _feedback_option)
-	holder.add_child(_feedback_row)
 	_latency_field = IntInput.new()
 	_latency_field.custom_minimum_size = Vector2(120, 0)
 	_latency_field.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -409,14 +482,17 @@ func _add_associative_section(parent: Control) -> Button:
 	_latency_field.min_value = 0
 	_latency_field.current_int = _editing_classifier.answer_latency_bursts if _editing_classifier != null else 0
 	_latency_row = _labeled("Answer Latency", _latency_field)
-	holder.add_child(_latency_row)
 	_learn_option = OptionButton.new()
 	_learn_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_learn_row = _labeled("Learn Area", _learn_option)
-	holder.add_child(_learn_row)
 	_confidence_option = OptionButton.new()
 	_confidence_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_confidence_row = _labeled("Confidence Area", _confidence_option)
+	var reward_options: Array[OptionButton] = [_feedback_option, _learn_option, _confidence_option]
+	_feedback_row = _labeled_cortical_area("Answer Area", _feedback_option, reward_options, _feedback_area_ids, true)
+	holder.add_child(_feedback_row)
+	holder.add_child(_latency_row)
+	_learn_row = _labeled_cortical_area("Learn Area", _learn_option, reward_options, _feedback_area_ids, true)
+	holder.add_child(_learn_row)
+	_confidence_row = _labeled_cortical_area("Confidence Area", _confidence_option, reward_options, _feedback_area_ids, true)
 	holder.add_child(_confidence_row)
 	_populate_feedback_options()
 	_apply_reward_visibility()
@@ -711,14 +787,18 @@ func _populate_feedback_options() -> void:
 			continue
 		if area.is_scan_twin() or area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin():
 			continue
-		var dims: Vector3i = area.dimensions_3D
-		var label := "%s %sx%sx%s" % [area.friendly_name, dims.x, dims.y, dims.z]
+		var label := _Tunables.cortical_area_choice_label(String(area.friendly_name), area.dimensions_3D)
 		_feedback_option.add_item(label)
 		_feedback_area_ids.append(area.cortical_ID)
 		if _learn_option != null:
 			_learn_option.add_item(label)
 		if _confidence_option != null:
 			_confidence_option.add_item(label)
+	if _editing_classifier != null:
+		var reward_options: Array[OptionButton] = [_feedback_option, _learn_option, _confidence_option]
+		_include_assigned_area(_editing_classifier.answer_feedback_area_id, reward_options, _feedback_area_ids)
+		_include_assigned_area(_editing_classifier.learn_area_id, reward_options, _feedback_area_ids)
+		_include_assigned_area(_editing_classifier.confidence_area_id, reward_options, _feedback_area_ids)
 	var selected := 0
 	if _editing_classifier != null:
 		var current: int = _feedback_area_ids.find(_editing_classifier.answer_feedback_area_id)
@@ -766,8 +846,7 @@ func _populate_area_options() -> void:
 			continue
 		if area.is_scan_twin() or area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin():
 			continue
-		var dims: Vector3i = area.dimensions_3D
-		var label := "%s %sx%sx%s" % [area.friendly_name, dims.x, dims.y, dims.z]
+		var label := _Tunables.cortical_area_choice_label(String(area.friendly_name), area.dimensions_3D)
 		_kernel_option.add_item(label)
 		_class_option.add_item(label)
 		_mask_option.add_item(label)
@@ -800,10 +879,24 @@ func _apply_training_mode_visibility() -> void:
 		_mask_row.visible = scanner
 	if _kernel_size_row != null:
 		_kernel_size_row.visible = scanner
+	if _class_count_row != null:
+		_class_count_row.visible = scanner
 
 
 func _is_scanner_mode() -> bool:
 	return _mode_option != null and _mode_option.selected == 1
+
+
+func _include_assigned_area(area_id: StringName, options: Array[OptionButton], ids: Array[StringName]) -> void:
+	var area: AbstractCorticalArea = _cached_area(area_id)
+	if area == null:
+		return
+	_Tunables.ensure_shared_area_choice(
+		ids,
+		area.cortical_ID,
+		_Tunables.cortical_area_choice_label(String(area.friendly_name), area.dimensions_3D),
+		options
+	)
 
 
 func _select_area(option: OptionButton, area_id: StringName) -> void:
@@ -855,7 +948,8 @@ func _on_press_update() -> void:
 		_selected_area_id(_kernel_option),
 		_selected_area_id(_class_option),
 		_selected_area_id(_mask_option),
-		_kernel_size.current_vector if _kernel_size != null else Vector3i.ZERO
+		_kernel_size.current_vector if _kernel_size != null else Vector3i.ZERO,
+		int(_class_count.value) if _class_count != null else 0
 	)
 	if result == null or result.has_errored or result.failed_requirement:
 		_update_button.disabled = false

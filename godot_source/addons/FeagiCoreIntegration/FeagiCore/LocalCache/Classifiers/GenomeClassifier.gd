@@ -19,6 +19,10 @@ var mask_area_id: StringName:
 	get: return _mask_area_id
 var kernel_size: Vector3i:
 	get: return _kernel_size
+## Scanner mode only. The mask and twins carry each pixel's class as potential
+## (class_id + 1) / class_count. Zero when unset (kernel mode).
+var class_count: int:
+	get: return _class_count
 var kernel_memory_id: StringName:
 	get: return _kernel_memory_id
 var class_memory_id: StringName:
@@ -39,6 +43,7 @@ var _class_area_id: StringName = &""
 var _training_mode: StringName = &"kernel"
 var _mask_area_id: StringName = &""
 var _kernel_size: Vector3i = Vector3i.ZERO
+var _class_count: int = 0
 var _kernel_memory_id: StringName = &""
 var _class_memory_id: StringName = &""
 var _reward_training: bool = false
@@ -84,6 +89,8 @@ func apply_feagi_dict(data: Dictionary) -> void:
 	var mode_text: String = str(data.get("training_mode", "kernel")).strip_edges()
 	_training_mode = &"scanner" if mode_text == "scanner" else &"kernel"
 	_kernel_size = _kernel_size_from_feagi(data.get("kernel_size", null))
+	var count_value: Variant = data.get("class_count", null)
+	_class_count = int(count_value) if count_value != null else 0
 	_kernel_memory_id = StringName(str(data.get("kernel_memory_id", "")))
 	_class_memory_id = StringName(str(data.get("class_memory_id", "")))
 	_reward_training = bool(data.get("reward_training", false))
@@ -221,6 +228,21 @@ func is_stamp_host_id(area_id: StringName) -> bool:
 
 
 ## Wobbly stamp size: XY from stored memory neurons, Z from classifier temporal depth.
+## Largest class count FEAGI accepts (feagi_structures class_potential::MAX_CLASS_COUNT).
+const MAX_CLASS_COUNT: int = 9999
+
+
+## Class Count input for scanner classifiers. Kept here so create and edit share limits.
+static func make_class_count_spinbox(initial_value: int) -> SpinBox:
+	var spin := SpinBox.new()
+	spin.min_value = 1
+	spin.max_value = MAX_CLASS_COUNT
+	spin.step = 1
+	spin.rounded = true
+	spin.value = clampi(initial_value, 1, MAX_CLASS_COUNT)
+	return spin
+
+
 static func stamp_visual_dimensions(memory_neuron_count: int, classifier_depth: int) -> Vector3i:
 	var count: int = maxi(memory_neuron_count, 1)
 	var side: int = int(ceil(sqrt(float(count))))
@@ -263,6 +285,7 @@ func details_rows() -> Array[Dictionary]:
 	if _training_mode == &"scanner":
 		rows.append(_details_row("mask_area", "Mask Area", _area_name(_mask_area_id), true))
 		rows.append(_details_row("kernel_size", "Kernel Size", "%s x %s x %s" % [_kernel_size.x, _kernel_size.y, _kernel_size.z], true))
+		rows.append(_details_row("class_count", "Class Count", str(_class_count), true))
 	else:
 		rows.append(_details_row("kernel_area", "Kernel Area", _area_name(_kernel_area_id), true))
 		rows.append(_details_row("class_area", "Class Area", _area_name(_class_area_id), true))

@@ -1603,7 +1603,9 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 
 
 ## Adds a custom memory cortical area
-func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, parent_region: BrainRegion, training_mode: String, kernel_area_id: StringName, class_area_id: StringName, mask_area_id: StringName, kernel_size: Vector3i) -> FeagiRequestOutput:
+## Scanner mode sends [param class_count]: the mask and detection twins are one layer and
+## carry each pixel's class as potential (class_id + 1) / class_count.
+func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, parent_region: BrainRegion, training_mode: String, kernel_area_id: StringName, class_area_id: StringName, mask_area_id: StringName, kernel_size: Vector3i, class_count: int) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -1617,8 +1619,12 @@ func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, 
 		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3D),
 	}
 	if training_mode == "scanner":
+		if class_count < 1:
+			push_error("FEAGI Requests: Scanner training requires a class count of at least 1!")
+			return FeagiRequestOutput.requirement_fail("BLANK_INPUTS")
 		dict_to_send["mask_area_id"] = String(mask_area_id)
 		dict_to_send["kernel_size"] = [kernel_size.x, kernel_size.y, kernel_size.z]
+		dict_to_send["class_count"] = class_count
 	else:
 		dict_to_send["kernel_area_id"] = String(kernel_area_id)
 		dict_to_send["class_area_id"] = String(class_area_id)
@@ -1728,7 +1734,7 @@ func delete_classifier(deleting_classifier: GenomeClassifier) -> FeagiRequestOut
 
 
 ## PUT /v1/cortical_area/classifier/{classifier_id} — classifier assembly fields, not cortical-area neuron params.
-func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: String, coordinates_3d: Vector3i, parent_region_id: StringName, training_mode: String, kernel_area_id: StringName, class_area_id: StringName, mask_area_id: StringName, kernel_size: Vector3i) -> FeagiRequestOutput:
+func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: String, coordinates_3d: Vector3i, parent_region_id: StringName, training_mode: String, kernel_area_id: StringName, class_area_id: StringName, mask_area_id: StringName, kernel_size: Vector3i, class_count: int) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -1743,8 +1749,8 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 		push_error("FEAGI Requests: Classifier parent circuit cannot be blank!")
 		return FeagiRequestOutput.requirement_fail("BLANK_PARENT")
 	if training_mode == "scanner":
-		if mask_area_id == &"" or kernel_size.x < 1 or kernel_size.y < 1 or kernel_size.z < 1:
-			push_error("FEAGI Requests: Scanner training requires a mask and a kernel size!")
+		if mask_area_id == &"" or kernel_size.x < 1 or kernel_size.y < 1 or kernel_size.z < 1 or class_count < 1:
+			push_error("FEAGI Requests: Scanner training requires a mask, a kernel size, and a class count!")
 			return FeagiRequestOutput.requirement_fail("BLANK_INPUTS")
 	elif kernel_area_id == &"" or class_area_id == &"":
 		push_error("FEAGI Requests: Classifier kernel and class are required!")
@@ -1762,6 +1768,7 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 	if training_mode == "scanner":
 		dict_to_send["mask_area_id"] = String(mask_area_id)
 		dict_to_send["kernel_size"] = [kernel_size.x, kernel_size.y, kernel_size.z]
+		dict_to_send["class_count"] = class_count
 	else:
 		dict_to_send["kernel_area_id"] = String(kernel_area_id)
 		dict_to_send["class_area_id"] = String(class_area_id)

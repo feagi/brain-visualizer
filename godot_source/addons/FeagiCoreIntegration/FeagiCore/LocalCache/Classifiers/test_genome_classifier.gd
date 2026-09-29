@@ -298,6 +298,7 @@ func _test_scanner_mode_exposes_mask_and_kernel_size() -> int:
 		"training_mode": "scanner",
 		"mask_area_id": "mask",
 		"kernel_size": [8, 8, 3],
+		"class_count": 19,
 		"kernel_memory_id": "kmem",
 		"class_memory_id": "cmem",
 	})
@@ -307,14 +308,17 @@ func _test_scanner_mode_exposes_mask_and_kernel_size() -> int:
 	if classifier.mask_area_id != &"mask" or classifier.kernel_size != Vector3i(8, 8, 3):
 		push_error("scanner mode must keep the mask and kernel size")
 		return 1
+	if classifier.class_count != 19:
+		push_error("scanner mode must keep the class count")
+		return 1
 	if not classifier.references_input_id(&"mask"):
 		push_error("the mask is a referenced input")
 		return 1
 	var keys: PackedStringArray = PackedStringArray()
 	for row in classifier.details_rows():
 		keys.append(str(row.get("key", "")))
-	if not keys.has("mask_area") or not keys.has("kernel_size") or keys.has("kernel_area"):
-		push_error("scanner details must show the mask and kernel size")
+	if not keys.has("mask_area") or not keys.has("kernel_size") or not keys.has("class_count") or keys.has("kernel_area"):
+		push_error("scanner details must show the mask, kernel size, and class count")
 		return 1
 	return 0
 
