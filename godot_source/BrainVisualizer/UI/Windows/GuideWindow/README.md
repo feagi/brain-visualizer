@@ -14,7 +14,8 @@ Draggable and resizable user guide window for Brain Visualizer.
   - **Text Size Controls**: Small **A** / Large **A** buttons to decrease/increase font size (0.5x to 2.0x)
     - Matches the UI scale control style in the main toolbar
   - **Expandable**: Room for future toolbar additions
-- **25/75 Split Layout**: Fixed sidebar (25%) with topic list, content area (75%) for markdown
+- **25/75 Split Layout**: Sidebar (25%) of expandable topics, content area (75%) for markdown
+- **Two-level topics**: Each guide file is a collapsible topic. Each `##` section inside it is a selectable subtopic. `###` headings stay in the page.
 - **Markdown Support**: Headings, bold, italics, bullets, links, inline code, images
 - **Inter-page Links**: Navigate between guide pages using relative links
 - **Theme Integration**: Base fonts scale with UI theme, user can further adjust
@@ -48,10 +49,14 @@ help icons on the pattern and vector editors.
 ## Adding New Guide Topics
 
 1. Create a new `.md` file in `Guides/` folder
-2. Start with a H1 heading (used as topic title in sidebar)
-3. Use standard markdown syntax
-4. Link to other guides using relative paths: `[Link Text](other_guide.md)`
-5. Window will automatically detect and list new guides
+2. Start with one H1 heading. That title is the expandable topic in the sidebar
+3. Add an H2 for each subtopic. Keep H2 labels short enough to read in the sidebar
+4. Use H3 for detail inside a subtopic. Those are not separate sidebar entries
+5. Put any introduction before the first H2. It shows as **Overview**
+6. Use bullets for lists. The guide view does not render markdown tables
+7. Link to other guides using relative paths: `[Link Text](other_guide.md)`
+8. Add the filename to `_guide_order.txt`
+9. The window lists new guides on open
 
 ## Migration from Overlay
 

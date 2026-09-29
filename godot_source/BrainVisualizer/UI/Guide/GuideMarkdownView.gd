@@ -3,7 +3,10 @@ class_name GuideMarkdownView
 
 signal markdown_link_clicked(target_path: String)
 
+const HEADING_MARKER: String = "\u200b"
+
 var _current_markdown_path: String = ""
+var _active_heading: String = ""
 var _base_font_size: int = 0
 var _font_scale: float = 1.0  # User-adjustable scale multiplier
 var _load_generation: int = 0
@@ -27,6 +30,7 @@ func load_markdown(markdown_path: String, heading: String = "") -> void:
 	_load_generation += 1
 	var generation := _load_generation
 	_current_markdown_path = markdown_path
+	_active_heading = heading
 	# Apply cached base font size with user scale multiplier
 	var scaled_font_size := int(_base_font_size * _font_scale)
 	add_theme_font_size_override("normal_font_size", scaled_font_size)
@@ -55,18 +59,23 @@ func load_markdown(markdown_path: String, heading: String = "") -> void:
 	size.y = content_height
 	if heading != "":
 		_scroll_to_heading(heading)
+	else:
+		var scroll := _owning_scroll()
+		if scroll != null:
+			scroll.scroll_vertical = 0
 
 ## Set the user-adjustable font scale multiplier and reload current content.
 func set_font_scale(scale: float) -> void:
 	_font_scale = scale
-	# Reload current markdown with new scale
+	# Reload current markdown with new scale, keeping the open section.
 	if _current_markdown_path != "":
-		load_markdown(_current_markdown_path)
+		load_markdown(_current_markdown_path, _active_heading)
 
 ## Scroll the guide body so `heading` is at the top of the visible page.
 func _scroll_to_heading(heading: String) -> void:
 	var parsed := get_parsed_text()
-	var index := parsed.find(heading)
+	var needle := HEADING_MARKER + heading
+	var index := _find_heading_index(parsed, needle)
 	if index < 0:
 		return
 	var line := get_character_line(index)
@@ -76,6 +85,24 @@ func _scroll_to_heading(heading: String) -> void:
 	if scroll == null:
 		return
 	scroll.scroll_vertical = int(get_line_offset(line))
+
+
+## Locate a rendered heading without matching the same words in body text.
+func _find_heading_index(parsed: String, needle: String) -> int:
+	var search_from := 0
+	while search_from < parsed.length():
+		var index := parsed.find(needle, search_from)
+		if index < 0:
+			return -1
+		var end := index + needle.length()
+		if end >= parsed.length() or not _is_heading_word_char(parsed.unicode_at(end)):
+			return index
+		search_from = index + 1
+	return -1
+
+
+func _is_heading_word_char(codepoint: int) -> bool:
+	return (codepoint >= 48 and codepoint <= 57) or (codepoint >= 65 and codepoint <= 90) or (codepoint >= 97 and codepoint <= 122)
 
 
 func _owning_scroll() -> ScrollContainer:
@@ -117,6 +144,8 @@ func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -
 	for raw_line in lines:
 		var line := raw_line
 		var trimmed := line.strip_edges()
+		if trimmed.begins_with("```") or trimmed == "---":
+			continue
 		
 		# Handle headings
 		if trimmed.begins_with("#"):
@@ -191,7 +220,7 @@ func _format_heading(title: String, level: int) -> String:
 	
 	# Add color for headings to make them stand out
 	var color := "8ab4f8"  # Light blue color
-	return "[font_size=%d][b][color=#%s]%s[/color][/b][/font_size]" % [size, color, title]
+	return "[font_size=%d][b][color=#%s]%s%s[/color][/b][/font_size]" % [size, color, HEADING_MARKER, title]
 
 ## Convert markdown bold markers to BBCode.
 func _replace_bold(line: String) -> String:
@@ -357,3 +386,67 @@ func _replace_regex_callback(line: String, pattern: String, replacer: Callable) 
 		last_index = match.get_end()
 	result += line.substr(last_index)
 	return result
+
+
+## Split a guide into its page title and `##` sections.
+## Text before the first `##` becomes an "Overview" section with an empty heading.
+## `###` headings stay inside the current section body.
+static func extract_outline(markdown_text: String) -> Dictionary:
+	var title := ""
+	var sections: Array[Dictionary] = []
+	var preamble := PackedStringArray()
+	var saw_h2 := false
+	var current_title := ""
+	var current_lines := PackedStringArray()
+	for raw_line in markdown_text.split("\n", true):
+		var trimmed := raw_line.strip_edges()
+		var level := _heading_level(trimmed)
+		if level == 1 and title == "":
+			title = trimmed.substr(level).strip_edges()
+			continue
+		if level == 2:
+			if saw_h2:
+				sections.append(_section_record(current_title, current_title, current_lines))
+			elif _preamble_has_text(preamble):
+				sections.append(_section_record("Overview", "", preamble))
+			saw_h2 = true
+			current_title = trimmed.substr(level).strip_edges()
+			current_lines = PackedStringArray()
+			continue
+		if not saw_h2:
+			preamble.append(raw_line)
+			continue
+		current_lines.append(raw_line)
+	if saw_h2:
+		sections.append(_section_record(current_title, current_title, current_lines))
+	elif title != "" or _preamble_has_text(preamble):
+		sections.append(_section_record("Overview", "", preamble))
+	if title == "":
+		title = "Guide"
+	return {"title": title, "sections": sections}
+
+
+static func _heading_level(trimmed: String) -> int:
+	var count := 0
+	while count < trimmed.length() and trimmed.unicode_at(count) == 35:
+		count += 1
+	if count == 0 or count >= trimmed.length():
+		return 0
+	if trimmed.unicode_at(count) != 32:
+		return 0
+	return count
+
+
+static func _preamble_has_text(lines: PackedStringArray) -> bool:
+	for line in lines:
+		if line.strip_edges() != "":
+			return true
+	return false
+
+
+static func _section_record(title: String, heading: String, lines: PackedStringArray) -> Dictionary:
+	return {
+		"title": title,
+		"heading": heading,
+		"body": "\n".join(lines),
+	}

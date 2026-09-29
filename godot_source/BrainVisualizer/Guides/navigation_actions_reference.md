@@ -12,7 +12,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Focus selected region/area in active views** -> Select object, then press F
 - **Deselect voxels and cortical areas** -> Escape. Also stops continuous voxel fire and closes the quick menu. If a move, resize, or box select is in progress, Escape cancels that instead. With nothing selected, Escape closes the front window.
 
-## Circuit Builder (2D) Navigation
+## 2D Navigation
 
 - **Pan** -> Middle Drag or Shift + Left Drag
 - **Zoom** -> Mouse Wheel
@@ -20,7 +20,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Focus on selected cortical area/region** -> Select node, then press F
 - **Open region in Brain Monitor** -> Right-click region -> Open 3D Tab
 
-## Brain Monitor (3D) Camera Controls (Tank Mode - default)
+## 3D Camera Controls
 
 - **Pan camera** -> Left Drag
 - **Rotate camera** -> Right Drag
@@ -35,14 +35,14 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Left view** -> L (mouse over that viewport)
 - **Right view** -> R (mouse over that viewport)
 
-## Brain Monitor (3D) Focus and Plane-Oriented Focus
+## 3D Focus Planes
 
 - **Focus clicked cortical area on XY plane** -> Ctrl + 1 + Click
 - **Focus clicked cortical area on XZ plane** -> Ctrl + 2 + Click
 - **Focus clicked cortical area on YZ plane** -> Ctrl + 3 + Click
 - **Focus clicked brain region frame** -> Ctrl + Click on region frame
 
-## Brain Monitor (3D) Selection and Neuron Actions
+## 3D Selection and Firing
 
 - **Select cortical area** -> Left Click on cortical volume
 - **Select brain region frame** -> Left Click on region frame
@@ -55,7 +55,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Deselect voxels and cortical areas** -> Escape (also stops continuous fire and closes the quick menu)
 - **Clear all selected voxels** -> Delete (also stops continuous fire; cortical-area highlights stay)
 
-## Brain Monitor (3D) Voxel Clipboard Actions
+## 3D Voxel Clipboard
 
 - **Open Voxel Selection Capture panel** -> Select 2+ voxels with Shift + Click
 - **Copy selected voxels JSON to clipboard** -> Ctrl + C (Cmd + C on macOS), or Voxel Selection Capture panel -> Copy JSON to clipboard
@@ -74,7 +74,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 
 Align snaps the chosen axis to the lowest value in the selection. Distribute keeps the outermost areas fixed. Reserved core areas cannot be arranged. Text fields keep their own undo. History clears when another genome loads. See [Navigation Basics](navigation.md).
 
-## Manipulation Session Shortcuts (when gizmo manipulation is active)
+## Manipulation Shortcuts
 
 - **Confirm manipulation** -> Enter
 - **Cancel manipulation** -> Escape

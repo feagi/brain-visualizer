@@ -110,27 +110,23 @@ A synapse is created for every expanded destination where a neuron actually exis
 
 These do not depend on the source neuron's position.
 
-| Syntax | Name | Meaning |
-|--------|------|---------|
-| `*` | Wildcard | All coordinates on this axis (0 to dimension-1) |
-| `5` | Exact | Only coordinate 5 |
-| `N..M` | Absolute range | All coordinates from N to M inclusive (for example `1..98`) |
+- `*` (wildcard) — all coordinates on this axis (0 to dimension-1)
+- `5` (exact) — only coordinate 5
+- `N..M` (absolute range) — all coordinates from N to M inclusive (for example `1..98`)
 
 #### Source-Relative Patterns
 
 These resolve relative to the source neuron's coordinate on the same axis.
 
-| Syntax | Name | Meaning |
-|--------|------|---------|
-| `?` | Pass-through | Same coordinate as the source neuron |
-| `!` | Exclude | All coordinates except the source's |
-| `?+` | Direction positive | All coordinates strictly greater than source |
-| `?-` | Direction negative | All coordinates strictly less than source |
-| `?+=` | Direction positive inclusive | All coordinates greater than or equal to source |
-| `?-=` | Direction negative inclusive | All coordinates less than or equal to source |
-| `?+N` | Offset positive | Single coordinate at source + N |
-| `?-N` | Offset negative | Single coordinate at source - N |
-| `?-A:?+B` | Range | All coordinates from source-A to source+B (inclusive) |
+- `?` (pass-through) — same coordinate as the source neuron
+- `!` (exclude) — all coordinates except the source's
+- `?+` (direction positive) — all coordinates strictly greater than source
+- `?-` (direction negative) — all coordinates strictly less than source
+- `?+=` (direction positive inclusive) — all coordinates greater than or equal to source
+- `?-=` (direction negative inclusive) — all coordinates less than or equal to source
+- `?+N` (offset positive) — single coordinate at source + N
+- `?-N` (offset negative) — single coordinate at source - N
+- `?-A:?+B` (range) — all coordinates from source-A to source+B (inclusive)
 
 ### Pattern Examples
 

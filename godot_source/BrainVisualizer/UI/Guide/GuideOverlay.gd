@@ -107,7 +107,7 @@ func _on_search_changed(query: String) -> void:
 		button.visible = title.to_lower().find(normalized) >= 0
 
 ## Open the selected guide markdown.
-func _on_topic_selected(markdown_path: String) -> void:
+func _on_topic_selected(markdown_path: String, _heading: String = "") -> void:
 	_open_markdown(markdown_path)
 
 ## Resolve markdown links to other guide files.

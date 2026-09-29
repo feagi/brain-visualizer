@@ -6,6 +6,9 @@ const MIN_WINDOW_WIDTH: int = 600
 const MIN_WINDOW_HEIGHT: int = 400
 const DEFAULT_WINDOW_VIEWPORT_RATIO: float = 0.8
 
+const _COLLAPSIBLE_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn")
+const _SECTION_TOGGLE_SIZE: int = 22
+
 @export var guides_directory: String = "res://BrainVisualizer/Guides"
 
 var _search_bar: LineEdit
@@ -14,9 +17,10 @@ var _markdown_view: GuideMarkdownView
 var _sidebar: VBoxContainer
 var _font_size_decrease_btn: Button
 var _font_size_increase_btn: Button
-var _topics: Array[Dictionary] = []
+var _groups: Array[Dictionary] = []
+var _active_button: GuideTopicButton
+var _active_path: String = ""
 var _font_size_scale: float = 1.0  # User-adjustable font scale multiplier
-var _content_cache: Dictionary = {}  # Cache markdown content for search performance
 
 # Window resizing
 var _resize_handle_corner: Panel
@@ -183,29 +187,72 @@ func _draw_resize_grip_corner(control: Control) -> void:
 	control.draw_rect(rect, grip_color, true)
 
 ## Load markdown topics from disk and populate the sidebar.
+## Each file is one collapsible topic. Each `##` section is a child button.
 func _refresh_topics() -> void:
-	_topics.clear()
-	_content_cache.clear()
+	_groups.clear()
+	_active_button = null
+	_active_path = ""
 	for child in _topic_container.get_children():
 		child.queue_free()
 	var markdown_files := _collect_markdown_files(guides_directory)
 	for markdown_path in markdown_files:
-		var title := _extract_title(markdown_path)
-		var button := GuideTopicButton.new()
-		button.setup(title, markdown_path)
-		button.topic_selected.connect(_on_topic_selected)
-		_topic_container.add_child(button)
-		_topics.append({
-			"title": title,
-			"path": markdown_path,
-			"button": button,
-		})
-		# Pre-cache content for faster searching
-		_content_cache[markdown_path] = _read_file_content(markdown_path).to_lower()
-	if _topics.is_empty():
+		var content := _read_file_content(markdown_path)
+		var outline: Dictionary = GuideMarkdownView.extract_outline(content)
+		var group := _add_topic_group(str(outline["title"]), markdown_path)
+		var sections: Array[Dictionary] = []
+		for section in outline["sections"]:
+			var button := GuideTopicButton.new()
+			var heading := str(section["heading"])
+			group["holder"].add_child(button)
+			button.setup(str(section["title"]), markdown_path, heading, true)
+			button.topic_selected.connect(_on_section_selected)
+			sections.append({
+				"title": str(section["title"]),
+				"heading": heading,
+				"body": str(section["body"]).to_lower(),
+				"button": button,
+			})
+		group["sections"] = sections
+		_groups.append(group)
+	if _groups.is_empty():
 		_markdown_view.show_message("No guide topics found.")
 		return
-	_open_markdown(_topics[0]["path"])
+	var first_sections: Array = _groups[0]["sections"]
+	if first_sections.is_empty():
+		_open_markdown(_groups[0]["path"])
+		return
+	var first_section: Dictionary = first_sections[0]
+	_activate_section(_groups[0]["path"], str(first_section["heading"]))
+
+
+## Build one cortical-style expander for a guide file.
+func _add_topic_group(title: String, markdown_path: String) -> Dictionary:
+	var collapsible: VerticalCollapsibleHiding = _COLLAPSIBLE_PREFAB.instantiate()
+	collapsible.section_text = StringName(title)
+	collapsible.start_open = false
+	collapsible.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	collapsible.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var title_label: Label = collapsible.get_node("VerticalCollapsible/HBoxContainer/Section_Title")
+	title_label.text = title
+	title_label.clip_text = true
+	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var toggle: TextureButton = collapsible.get_node("VerticalCollapsible/HBoxContainer/Collapsible_Toggle")
+	toggle.custom_minimum_size = Vector2(_SECTION_TOGGLE_SIZE, _SECTION_TOGGLE_SIZE)
+	_topic_container.add_child(collapsible)
+	var header_size := title_label.get_theme_font_size("font_size", "Label_Header")
+	if header_size > 0:
+		title_label.add_theme_font_size_override("font_size", header_size)
+	var holder := VBoxContainer.new()
+	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	holder.add_theme_constant_override("separation", 2)
+	collapsible.get_control().add_child(holder)
+	return {
+		"title": title,
+		"path": markdown_path,
+		"section": collapsible,
+		"holder": holder,
+		"sections": [],
+	}
 
 ## Update sidebar width to be exactly 25% of the window width.
 func _update_sidebar_width() -> void:
@@ -221,52 +268,45 @@ func _update_sidebar_width() -> void:
 	var sidebar_width := int(total_width * 0.25)
 	_sidebar.custom_minimum_size.x = sidebar_width
 
-## Filter guide topics by the search query (searches both title and content).
+## Filter sections by title or body. A matching topic title shows all of its sections.
 func _on_search_changed(query: String) -> void:
 	var normalized := query.strip_edges().to_lower()
 	var visible_count := 0
-	
-	for topic in _topics:
-		var title: String = topic["title"]
-		var path: String = topic["path"]
-		var button: GuideTopicButton = topic["button"]
-		
-		if normalized == "":
-			button.visible = true
-			visible_count += 1
-			continue
-		
-		# Search in title first (faster)
-		if title.to_lower().find(normalized) >= 0:
-			button.visible = true
-			visible_count += 1
-			continue
-		
-		# Search in content (use cache for performance)
-		if not _content_cache.has(path):
-			_content_cache[path] = _read_file_content(path).to_lower()
-		
-		var content: String = _content_cache[path]
-		if content.find(normalized) >= 0:
-			button.visible = true
-			visible_count += 1
+	for group in _groups:
+		var group_title := str(group["title"]).to_lower()
+		var group_match := normalized != "" and group_title.find(normalized) >= 0
+		var any_section := false
+		var sections: Array = group["sections"]
+		for section in sections:
+			var button: GuideTopicButton = section["button"]
+			var show := normalized == "" or group_match
+			if not show:
+				show = str(section["title"]).to_lower().find(normalized) >= 0
+			if not show:
+				show = str(section["body"]).find(normalized) >= 0
+			button.visible = show
+			if show:
+				any_section = true
+				visible_count += 1
+		var section_node: VerticalCollapsibleHiding = group["section"]
+		section_node.visible = any_section
+		if normalized != "":
+			section_node.is_open = any_section
 		else:
-			button.visible = false
-	
-	# Update search bar placeholder with result count
+			section_node.is_open = str(group["path"]) == _active_path
 	if normalized != "":
 		_search_bar.placeholder_text = "Search guides... (%d results)" % visible_count
 	else:
 		_search_bar.placeholder_text = "Search guides..."
 
-## Open the selected guide markdown.
-func _on_topic_selected(markdown_path: String) -> void:
-	_open_markdown(markdown_path)
+## Open the selected guide section.
+func _on_section_selected(markdown_path: String, heading: String) -> void:
+	_activate_section(markdown_path, heading)
 
 ## Resolve markdown links to other guide files.
 func _on_markdown_link_clicked(target_path: String) -> void:
 	if _is_markdown_path(target_path):
-		_open_markdown(target_path)
+		_activate_section(target_path, "")
 
 ## Open a guide file by filename (e.g. ``pattern_connectivity.md``).
 ## `heading` scrolls the page to that markdown heading after it loads.
@@ -274,7 +314,38 @@ func open_guide_file(guide_filename: String, heading: String = "") -> void:
 	var file_name := guide_filename.get_file()
 	if file_name.get_extension() == "":
 		file_name = file_name + ".md"
-	_open_markdown(guides_directory.path_join(file_name), heading)
+	_activate_section(guides_directory.path_join(file_name), heading)
+
+## Expand the topic and show `heading`. An empty heading shows the top of the page.
+func _activate_section(markdown_path: String, heading: String) -> void:
+	_active_path = markdown_path
+	for group in _groups:
+		if str(group["path"]) != markdown_path:
+			continue
+		var section_node: VerticalCollapsibleHiding = group["section"]
+		section_node.visible = true
+		section_node.is_open = true
+		var matched := false
+		for section in group["sections"]:
+			if str(section["heading"]) != heading:
+				continue
+			_set_active_button(section["button"])
+			matched = true
+			break
+		if not matched:
+			_set_active_button(null)
+		_open_markdown(markdown_path, heading)
+		return
+	_set_active_button(null)
+	_open_markdown(markdown_path, heading)
+
+
+func _set_active_button(button: GuideTopicButton) -> void:
+	if _active_button != null and is_instance_valid(_active_button):
+		_active_button.set_selected(false)
+	_active_button = button
+	if button != null:
+		button.set_selected(true)
 
 ## Load and display a markdown file.
 func _open_markdown(markdown_path: String, heading: String = "") -> void:
@@ -369,23 +440,6 @@ func _collect_markdown_files(base_dir: String) -> Array[String]:
 	)
 
 	return results
-
-## Extract the first heading title from a markdown file.
-func _extract_title(markdown_path: String) -> String:
-	var file := FileAccess.open(markdown_path, FileAccess.READ)
-	if file == null:
-		push_error("WindowGuide: Unable to read markdown at %s." % markdown_path)
-		return markdown_path.get_file()
-	while not file.eof_reached():
-		var line := file.get_line().strip_edges()
-		if line.begins_with("#"):
-			var heading_level := 0
-			for i in range(line.length()):
-				if line[i] != "#":
-					break
-				heading_level += 1
-			return line.substr(heading_level).strip_edges()
-	return markdown_path.get_file()
 
 ## Read the full content of a markdown file.
 func _read_file_content(markdown_path: String) -> String:

@@ -147,7 +147,7 @@ Navigate through region hierarchy:
 - Press **Escape** to deselect voxels and cortical areas. If a move, resize, or box select is in progress, Escape cancels that drag instead. Clearing the selection also stops continuous voxel fire and closes the quick menu
 - Select different object
 
-## Voxel Selection and Clipboard (Brain Monitor)
+## Voxel Selection and Clipboard
 
 Use these workflows in the 3D Brain Monitor to pick voxels, copy their coordinates, and reuse them for mapping or further selection.
 

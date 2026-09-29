@@ -295,7 +295,7 @@ How far back in time the memory can recall:
 
 ---
 
-## Post-Synaptic Potential Parameters Section
+## Post-Synaptic Potential
 
 **Available for:** All cortical areas
 

@@ -10,12 +10,10 @@ Click the guide icon in the vector editor to return here.
 
 Each row is one offset:
 
-| dx | dy | dz | Result |
-|----|----|----|--------|
-| 0 | 0 | 0 | Identity: dest voxel equals source voxel |
-| 1 | 0 | 0 | One step in +X |
-| 0 | 0 | 1 | One step in +Z (next layer) |
-| -1 | 0 | 0 | One step in -X |
+- `0, 0, 0` — identity: dest voxel equals source voxel
+- `1, 0, 0` — one step in +X
+- `0, 0, 1` — one step in +Z (next layer)
+- `-1, 0, 0` — one step in -X
 
 Add multiple rows to union several regular offsets (for example both +X and -X).
 
@@ -38,7 +36,7 @@ source-X block onto dest Z=0.
 If `src + offset` leaves the destination area, that source neuron simply gets
 no synapse for that vector. No wrap-around.
 
-## Related
+## Related Topics
 
 - [Pattern Connectivity](pattern_connectivity.md) - wildcards, `N..M`, `?+N`
 - [Connectivity Rules](connectivity_rules.md) - rule types and manager
