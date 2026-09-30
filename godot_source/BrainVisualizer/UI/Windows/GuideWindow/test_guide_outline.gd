@@ -16,6 +16,8 @@ func _run_tests() -> void:
 	failures += _test_preamble_becomes_overview()
 	failures += _test_no_preamble_skips_overview()
 	failures += _test_classifier_heading_stays_addressable()
+	failures += _test_io_template_help_headings_stay_addressable()
+	failures += _test_nested_heading_selects_parent_chapter()
 	failures += _test_sidebar_labels_stay_short()
 	failures += _test_heading_marker_is_not_body_text()
 	failures += _test_heading_sits_against_following_paragraph()
@@ -84,6 +86,42 @@ func _test_classifier_heading_stays_addressable() -> int:
 	if not found:
 		push_error("classifier help must still open the Edit a Classifier section")
 		return 1
+	return 0
+
+
+func _test_io_template_help_headings_stay_addressable() -> int:
+	var text := FileAccess.get_file_as_string("res://BrainVisualizer/Guides/cortical_areas.md")
+	var script := FileAccess.get_file_as_string("res://BrainVisualizer/UI/Windows/SelectCorticalTemplate/WindowSelectCorticalTemplate.gd")
+	if not script.contains("cortical_areas.md"):
+		push_error("add input/output help must open the cortical areas guide")
+		return 1
+	for heading in ["Input Processing Unit (IPU)", "Output Processing Unit (OPU)"]:
+		if not script.contains(heading):
+			push_error("add input/output help is missing heading: %s" % heading)
+			return 1
+		if not text.contains("### " + heading):
+			push_error("cortical areas guide is missing heading: %s" % heading)
+			return 1
+	return 0
+
+
+func _test_nested_heading_selects_parent_chapter() -> int:
+	var sample := "# Cortical Areas\n\n## Types of Cortical Areas\n\n### Input Processing Unit (IPU)\n\ntext\n\n## Creating Cortical Areas\n"
+	var sections: Array = MarkdownView.extract_outline(sample)["sections"]
+	if MarkdownView.enclosing_section_heading(sections, "Input Processing Unit (IPU)") != "Types of Cortical Areas":
+		push_error("a nested heading must highlight its chapter")
+		return 1
+	if MarkdownView.enclosing_section_heading(sections, "Creating Cortical Areas") != "Creating Cortical Areas":
+		push_error("a chapter heading must highlight itself")
+		return 1
+	if MarkdownView.enclosing_section_heading(sections, "Missing") != "":
+		push_error("an unknown heading must not highlight a chapter")
+		return 1
+	var cortical := MarkdownView.extract_outline(FileAccess.get_file_as_string("res://BrainVisualizer/Guides/cortical_areas.md"))
+	for heading in ["Input Processing Unit (IPU)", "Output Processing Unit (OPU)"]:
+		if MarkdownView.enclosing_section_heading(cortical["sections"], heading) != "Types of Cortical Areas":
+			push_error("IO help must highlight Types of Cortical Areas for %s" % heading)
+			return 1
 	return 0
 
 

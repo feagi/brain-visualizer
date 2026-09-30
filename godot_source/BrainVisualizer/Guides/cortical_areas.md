@@ -19,38 +19,201 @@ Brain Visualizer supports several types of cortical areas, each with specific pu
 
 ![IPU Icon](../UI/GenericResources/ButtonIcons/input.png)
 
-**Purpose**: Receive data from external sources (sensors, cameras, etc.)
+An input area is where the outside world enters the genome. A controller, camera, microphone, or sensor writes into it. Neurons there then connect onward to memory and interconnect areas.
 
-**Characteristics:**
-- **Color**: Dark Gray
-- **Interface**: Connected to embodiment devices
-- **Configuration**: Based on device templates (vision, audio, text, etc.)
-- **Dimensions**: Determined by device type and count
+**Color**: Dark gray in Circuit Builder.
 
-**Common Uses:**
-- Visual input from cameras
-- Audio input from microphones  
-- Sensor data (temperature, distance, etc.)
-- Text or symbolic input
-- Controller input (keyboard, gamepad)
+The size is fixed by the template. You choose a template in **Add Input Cortical Area**, then set how many devices you have and, when the template allows it, the per-device width, height, and depth. Extra devices repeat that width along X. Height and depth stay the size of one device.
+
+**How a value is encoded**
+
+The controller does not write a raw number into the area. It turns the reading into neurons. Decoding is the same map run backwards: which neurons fired, and how strongly, becomes the number, pixel, or token again.
+
+- **Linear percentage.** One neuron fires along Z, and its firing strength is full. Z 0 is the top of the range. The last Z is the bottom. A deeper area splits the same range into finer steps. Nothing firing reads back as zero. Use this when you want one obvious "the value is here" neuron.
+- **Fractional percentage.** Several Z neurons can fire at once. Z 0 is one half, Z 1 is one quarter, Z 2 is one eighth, and each later plane is half of the one before it. The value is the sum of the planes that fired. Zero uses only the last plane. Use this when a single reading should look like a small pattern instead of one spike.
+- **Unsigned** is 0 to 100%. **Signed** on one column runs from full negative at the far Z, through stopped in the middle, to full positive at Z 0. Some signed devices instead use two neighboring columns, one for the positive amount and one for the negative amount.
+- **Absolute** is the reading or command right now. **Incremental** is a change. Where a template allows incremental, X grows into an increase column and a decrease column for each axis.
+- **Pictures.** One neuron per pixel per color channel. X and Y are the pixel, with the origin at the top left. Z is the channel. Firing strength is that channel's brightness.
+- **Sound.** One neuron per frequency column. X is the frequency. Y is the phase step. Firing strength is loudness on the decibel scale registered with the device. Strength 0 is silence and emits no neuron.
+- **Text.** One token per tick, only at x = 0, y = 0. Each Z plane is one bit, and Z 0 is the highest bit. Any strength above 0 turns that bit on. The stored integer is the token id plus one, so a completely quiet frame means "no token," not token zero.
+
+**Input templates**
+
+#### Simple Vision
+
+Use this for a camera, a screen capture, or any picture the brain should see as an image.
+
+Encoded as a picture. The default is 128 wide, 128 tall, and 3 channels. Width and height are the resolution you set. Depth stays inside the template range because it is the color channels, not a free measurement axis.
+
+#### Segmented Vision
+
+Use this when the center of the view matters more than the edges, the way a fovea does. Attention and gaze can sit on the sharp middle while the surround stays cheap.
+
+Encoded as nine pictures from one frame. The center is high resolution. The eight surrounding areas are lower resolution. Each of those nine is still a picture: pixel position on X and Y, channel on Z, brightness as firing strength.
+
+#### Depth Map
+
+Use this for a depth camera or lidar image, when the brain needs distance per pixel rather than color.
+
+Encoded as one layer. X and Y are the sensor canvas. Firing strength is normalized depth, from just above 0 up to 1. Strength 0 means no return, not "touching the sensor."
+
+#### Object Segmentation
+
+Use this when an upstream vision model has already named the pixels: road, person, cup. The brain receives labels, not raw color.
+
+Encoded as one layer. X and Y are the source pixel. Firing strength is (class id + 1) divided by the number of classes. Strength 0 means unlabeled. Decoding multiplies that strength by the class count and subtracts one to recover the class.
+
+#### Audio Input
+
+Use this for a microphone or any PCM stream you want the brain to hear as pitch and loudness, not as a waveform sample list.
+
+Encoded as a spectrum for one tick. X is the frequency column. A linear layout is one column per FFT bin from 0 Hz to the Nyquist frequency, which is what you need if something downstream should rebuild the waveform. Y is the phase step. One Y row carries loudness only. Firing strength maps amplitude onto the registered decibel floor and ceiling. Below the floor, that column stays silent. A second device index is the other stereo channel.
+
+#### Text Input (English)
+
+Use this to feed a token stream, one token each tick, such as words already converted to token ids.
+
+Encoded as bits along Z at a single voxel column. The default depth is 16 planes, which is enough for a typical language-model vocabulary once the id is offset by one. A quiet area is a gap between tokens. It is not the token whose id is 0.
+
+#### Count Input
+
+Use this for a single quantity: a score, a remaining count, a number of objects.
+
+Encoded as one unsigned percentage, absolute only. Depth is how many steps that 0% to 100% range is split into. The default depth is 10.
+
+#### Infrared Sensor, Proximity Sensor, Battery Sensor, Shock sensor, Servo Encoder
+
+Use these for one scalar from a device. Infrared and proximity are distance. Battery is charge level. Shock is a pain or impact signal for training. Servo Encoder is the measured position of an actuator, so the brain can see where the joint actually is.
+
+Each is one unsigned percentage. X and Y stay 1. Depth is the resolution of that percentage. Servo Encoder defaults to 20 steps. The others default to 10.
+
+#### Analog GPIO Sensor
+
+Use this for a bank of analog pins, such as the analog inputs on a board, where each pin is its own reading.
+
+Encoded as a grid. X and Y pick the pin. The default grid is 8 by 8. Each pin's percentage is then encoded along Z. The default depth is 1, which cannot split a range, so raise depth in Advanced when the pin value needs more than a single step.
+
+#### Digital GPIO Sensor
+
+Use this for a pin that is only on or off: a switch, a bump sensor, a digital line.
+
+Encoded as a Boolean. A firing neuron is on. Silence is off. The size stays 1 x 1 x 1.
+
+#### Raw IMU
+
+Use this when you want the raw motion sensors, not a fused orientation. Acceleration, rotation rate, and magnetic field stay separate so the brain can learn each.
+
+Encoded as three areas. In order they are accelerometer, gyroscope, and magnetometer. Each area is three signed axes on X, and the signed percentage of that axis is encoded along Z. The default depth is 10.
+
+#### Smart IMU
+
+Use this when the device, or the controller, has already fused the sensors into an orientation.
+
+Encoded as one area with four signed axes on X: w, x, y, and z of the unit quaternion. Each axis is a signed percentage along Z. The default depth is 10.
+
+#### Cartesian Position Sensor
+
+Use this for an absolute place in a workspace you define: a hand, a tool tip, a marker. It is the sensor side of a Spatial Pointer that is in absolute mode.
+
+Encoded as three unsigned percentages on X, one each for x, y, and z. Each axis runs from 0% to 100% of that workspace axis. The value is encoded along Z. Absolute only. The default depth is 100, so each axis has a fine step.
+
+#### Miscellaneous Input
+
+Use this when the data does not match a template above and you will define the meaning yourself in the controller.
+
+FEAGI does not assign a sensor meaning. Width, height, and depth can each change inside the template limits. Whatever layout you choose on the way in is the layout a reader has to use on the way out.
 
 ### Output Processing Unit (OPU)
 
 ![OPU Icon](../UI/GenericResources/ButtonIcons/output.png)
 
-**Purpose**: Send data to external actuators (motors, displays, etc.)
+An output area is where the genome leaves the brain. Firing here is what a motor, display, speaker, or other actuator reads.
 
-**Characteristics:**
-- **Color**: Orange
-- **Interface**: Connected to embodiment devices
-- **Configuration**: Based on device templates (motor, display, etc.)
-- **Dimensions**: Determined by device type and count
+**Color**: Orange in Circuit Builder.
 
-**Common Uses:**
-- Motor control (movement, rotation)
-- Display output (text, graphics)
-- Audio output (speech, sounds)
-- Control signals (on/off, analog values)
+You choose a template in **Add Output Cortical Area**. Size rules match inputs: the template sets the shape, device count repeats width along X, and only the axes the template leaves open can be edited.
+
+Decoding uses the same layouts as encoding. The controller looks at which neurons fired and rebuilds the command. A quiet output is a zero command, a blank image, or no token, depending on the template.
+
+**Output templates**
+
+#### Rotary Motor
+
+Use this for a wheel, a propeller, or any actuator that takes a signed speed rather than a target angle.
+
+Decoded as one signed percentage on a single column. Z 0 is full forward. The far Z is full reverse. The middle of Z is stopped. Depth is the number of speed steps. The default depth is 9. Width and height stay 1.
+
+#### Positional Servo
+
+Use this for a joint that should go to a position between two mechanical stops, and that can also take a speed limit.
+
+Decoded as an unsigned percentage, 0% to 100% of the travel. Absolute mode is the target position. Incremental mode is motion instead of a target, on two X columns. A third area carries the per-channel speed limit, also an unsigned percentage. Depth is the position resolution. The default depth is 20.
+
+#### Gaze Control
+
+Use this to tell a camera or a segmented-vision pipeline where to look and how wide that look is.
+
+Decoded as two areas. One is the XY center of gaze, a 2D percentage. The other is the relative size of the attended region, a single unsigned percentage. The center defaults to an 8 by 8 grid.
+
+#### Simple Vision
+
+Use this when the brain should paint an image: a display, a "what I am imagining" view, or a camera-like output another program can show.
+
+Decoded as a picture, the same way Simple Vision input is encoded. X and Y are the pixel. Z is the color channel. Firing strength is brightness. The default is 128 x 128 x 3.
+
+#### Image Enhancements
+
+Use this to drive image sliders rather than pixels: how much frame-to-frame change to keep, and how bright or contrasty the picture should be.
+
+Decoded as three columns on X: difference, brightness, and contrast. Z is the slider position, and Z 0 is the top of the range. Absolute mode is one column per slider. Incremental mode is six columns, an increase and a decrease for each slider. The default depth is 10.
+
+#### Object Segmentation
+
+Use this when the brain has decided a class for each pixel and a display or a robot should read those labels.
+
+Decoded the same way as Object Segmentation input. One layer. Firing strength is (class id + 1) divided by the class count. Strength 0 is unlabeled.
+
+#### Pose Estimation
+
+Use this when the brain should report a skeleton: where each joint is in the image, and how sure that report is.
+
+Decoded per joint. Z is the joint id, so the depth is the number of joints in the pose schema. The default depth is 17, a common human-body set. Inside one Z layer, the cluster of firing on X and Y is the joint location, normalized from 0 to 1 across the plane. Confidence is the average firing strength of that cluster. No coherent cluster means that joint was not detected.
+
+#### Audio Output
+
+Use this when firing should become sound: a speaker, a tone, or a check that the brain preserved what Audio Input heard.
+
+Decoded with the same spectrum layout as Audio Input. X is frequency, Y is phase, firing strength is loudness on the registered decibel scale. If several phase rows fire in one frequency column, the strongest strength wins and the others are ignored. Strength 0 stays silent.
+
+#### Text Output (English)
+
+Use this when the brain should emit tokens, one per tick, for a display or a speech step.
+
+Decoded with the same bit planes as Text Input. Bits at x = 0, y = 0, Z 0 as the highest bit. The integer on the planes is the token id plus one. A quiet area emits no token.
+
+#### Count Output
+
+Use this for a single number the brain should report: a chosen class count, a score, a magnitude.
+
+Decoded as one unsigned percentage, absolute only. Depth is the number of steps from 0% to 100%. The default depth is 10.
+
+#### Spatial Pointer
+
+Use this to point at a place in a 3D workspace, or to nudge that point. Pair absolute mode with a Cartesian Position Sensor when you want the command and the measurement in the same units.
+
+Absolute mode is three X columns, x, y, and z, each an unsigned percentage of the workspace, encoded along Z. Incremental mode is six X columns, increase and decrease for each axis, and the value is a signed motion. Zero means no motion. The default depth is 10.
+
+#### Angular Pointer
+
+Use this for a heading: yaw, pitch, and roll. A gimbal, a gaze in angles, or a body orientation command.
+
+Both modes are signed, from -1 to 1 on each axis, with 0 as center or no motion. Absolute mode is three X columns, one per axis, and low Z is +1 while high Z is -1. Incremental mode is six columns, increase and decrease for yaw, pitch, and roll. The default depth is 10.
+
+#### Miscellaneous Output
+
+Use this when the actuator does not match a template and the controller will interpret the voxels itself.
+
+Same rule as Miscellaneous Input. FEAGI does not assign a meaning. The width, height, and depth you set are the contract between the brain and the controller.
 
 ### Memory
 
@@ -108,7 +271,7 @@ For input and output areas:
 
 1. Hover **Inputs** or **Outputs** on the root scene top bar
 2. Click the **+** button
-3. Select a template (e.g., Vision, Motor)
+3. Select a template, such as Simple Vision or Rotary Motor
 4. Configure:
    - **Device Count**: How many instances (e.g., 2 cameras). Each extra device repeats the per-device width along X
    - **Unit ID**: Unique identifier for the device
@@ -145,20 +308,7 @@ Duplicate an area with similar settings:
 
 ### Templates
 
-IPU and OPU areas use **templates** that define their structure:
-
-**Common IPU Templates:**
-- **Vision**: Camera input (2D image data)
-- **Audio**: Microphone input (frequency bands)
-- **Text Input**: Character or word data
-- **Generic Sensor**: Numerical sensor data
-- **Controller**: Button/joystick input
-
-**Common OPU Templates:**
-- **Motor**: Servo or motor control
-- **Display**: Text or graphics output
-- **Audio Output**: Sound generation
-- **Generic Actuator**: Numerical control signals
+Each input and output template is listed above, under Input Processing Unit (IPU) and Output Processing Unit (OPU). The name in the add window is the name in that list. The template decides the shape, which axes you can edit, and how a number becomes firing.
 
 ### Device Count
 
@@ -188,35 +338,9 @@ Unique identifier connecting the cortical area to physical/virtual hardware:
 - Allows FEAGI to route data to/from correct devices
 - Required for IPU/OPU areas
 
-### Data Type Configuration
+### Data encoding
 
-Determines how data is encoded:
-
-**For IPU (Input):**
-- **Signed Percentage**: Normalized -100% to +100%
-- **Unsigned Percentage**: Normalized 0% to 100%
-- **Absolute Values**: Raw numeric values
-- **Binary**: On/off states
-
-**For OPU (Output):**
-- Similar encoding options
-- Must match what the embodiment expects
-
-### Frame Handling
-
-For vision IPU areas:
-
-- **Single Frame**: Process one frame at a time
-- **Frame Stack**: Stack multiple frames for temporal awareness
-- **Differential**: Process frame-to-frame changes
-
-### Positioning
-
-How multi-unit data is arranged spatially:
-
-- **Stack XYZ**: Stack along specific axis
-- **Grid**: Arrange in 2D grid
-- **Linear**: Arrange in line
+The template chooses the encoding. Each input and output section above says what that template is for and how its neurons are written and read. The controller has to use that same map. A signed motor command will not match an area that only accepts an unsigned position.
 
 ## Configuring Custom/Memory Areas
 

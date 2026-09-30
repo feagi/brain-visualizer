@@ -51,6 +51,13 @@ theme_override_constants/v_separation = 26
 layout_mode = 2
 theme_override_constants/separation = 4
 
+[node name="Help" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+custom_minimum_size = Vector2(128, 48)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+tooltip_text = "Open the user guide section for this window"
+text = "Help"
+
 [node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
 layout_mode = 2
 size_flags_horizontal = 3

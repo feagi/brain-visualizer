@@ -91,16 +91,15 @@ horizontal_alignment = 1
 layout_mode = 2
 mouse_filter = 1
 
-[node name="RichTextLabel" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_DescriptionFont"
-bbcode_enabled = true
-text = "[p][center]Vectors use magnitude and direction[/center][/p][p][center]to define how neurons from source[/center][/p][p][center]and destination connect.[/center][/p]"
-fit_content = true
-scroll_active = false
+text = "Vectors use magnitude and direction
+to define how neurons from source
+and destination connect."
+horizontal_alignment = 1
 autowrap_mode = 0
-shortcut_keys_enabled = false
 
 [node name="Pattern" parent="WindowPanel/WindowMargin/WindowInternals/Options" instance=ExtResource("4_ujsmp")]
 layout_mode = 2
@@ -137,16 +136,15 @@ horizontal_alignment = 1
 layout_mode = 2
 mouse_filter = 1
 
-[node name="RichTextLabel" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_DescriptionFont"
-bbcode_enabled = true
-text = "[p][center]Patterns leverage wildcards to[/center][/p][p][center]define how source neurons reach[/center][/p][p][center]their destinations.[/center][/p]"
-fit_content = true
-scroll_active = false
+text = "Patterns leverage wildcards to
+define how source neurons reach
+their destinations."
+horizontal_alignment = 1
 autowrap_mode = 0
-shortcut_keys_enabled = false
 
 [node name="Name" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 visible = false

@@ -465,6 +465,28 @@ static func _preamble_has_text(lines: PackedStringArray) -> bool:
 	return false
 
 
+## Sidebar chapter for `target_heading`.
+## An H2 matches itself. A deeper heading matches the H2 whose body contains it.
+static func enclosing_section_heading(sections: Array, target_heading: String) -> String:
+	var target := target_heading.strip_edges()
+	if target == "":
+		return ""
+	var target_lower := target.to_lower()
+	for section in sections:
+		if str(section["heading"]).strip_edges().to_lower() == target_lower:
+			return str(section["heading"])
+	for section in sections:
+		for raw_line in str(section["body"]).split("\n", false):
+			var trimmed := raw_line.strip_edges()
+			var level := _heading_level(trimmed)
+			if level < 3:
+				continue
+			if trimmed.substr(level).strip_edges().to_lower() != target_lower:
+				continue
+			return str(section["heading"])
+	return ""
+
+
 static func _section_record(title: String, heading: String, lines: PackedStringArray) -> Dictionary:
 	return {
 		"title": title,

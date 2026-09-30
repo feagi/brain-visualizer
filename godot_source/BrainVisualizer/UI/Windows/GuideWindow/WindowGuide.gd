@@ -314,7 +314,15 @@ func open_guide_file(guide_filename: String, heading: String = "") -> void:
 	var file_name := guide_filename.get_file()
 	if file_name.get_extension() == "":
 		file_name = file_name + ".md"
-	_activate_section(guides_directory.path_join(file_name), heading)
+	var markdown_path := guides_directory.path_join(file_name)
+	# Help jumps here after setup has already expanded the first topic.
+	# Leave only the requested topic open.
+	for group in _groups:
+		if str(group["path"]) == markdown_path:
+			continue
+		var section_node: VerticalCollapsibleHiding = group["section"]
+		section_node.is_open = false
+	_activate_section(markdown_path, heading)
 
 ## Expand the topic and show `heading`. An empty heading shows the top of the page.
 func _activate_section(markdown_path: String, heading: String) -> void:
@@ -325,11 +333,13 @@ func _activate_section(markdown_path: String, heading: String) -> void:
 		var section_node: VerticalCollapsibleHiding = group["section"]
 		section_node.visible = true
 		section_node.is_open = true
+		var sidebar_heading := GuideMarkdownView.enclosing_section_heading(group["sections"], heading)
 		var matched := false
 		for section in group["sections"]:
-			if str(section["heading"]) != heading:
+			if sidebar_heading == "" or str(section["heading"]) != sidebar_heading:
 				continue
 			_set_active_button(section["button"])
+			_reveal_sidebar_button(section["button"])
 			matched = true
 			break
 		if not matched:
@@ -338,6 +348,13 @@ func _activate_section(markdown_path: String, heading: String) -> void:
 		return
 	_set_active_button(null)
 	_open_markdown(markdown_path, heading)
+
+
+## Keep the highlighted chapter inside the sidebar scroll area.
+func _reveal_sidebar_button(button: Control) -> void:
+	var scroll := _topic_container.get_parent()
+	if scroll is ScrollContainer:
+		(scroll as ScrollContainer).ensure_control_visible.call_deferred(button)
 
 
 func _set_active_button(button: GuideTopicButton) -> void:

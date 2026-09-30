@@ -46,7 +46,7 @@ const OUTPUT_DEVICE_ICON_IDS: Dictionary = {
 	"TextEnglishOutput": "oten",
 	"CountOutput": "ocnt",
 	"ObjectSegmentation": "oifs",
-	"SimpleVisionOutput": "ovout",
+	"SimpleVisionOutput": "oimg",
 }
 
 var _agent_dropdown: OptionButton

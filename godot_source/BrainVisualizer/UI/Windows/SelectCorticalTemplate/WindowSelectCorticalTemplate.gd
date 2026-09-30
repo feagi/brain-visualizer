@@ -2,6 +2,9 @@ extends BaseDraggableWindow
 class_name WindowSelectCorticalTemplate
 
 const WINDOW_NAME: StringName = "select_cortical_template"
+const GUIDE_FILE: String = "cortical_areas.md"
+const GUIDE_HEADING_INPUT: String = "Input Processing Unit (IPU)"
+const GUIDE_HEADING_OUTPUT: String = "Output Processing Unit (OPU)"
 ## Label column width: long single words stay one line (AUTOWRAP_WORD); only phrases wrap at spaces.
 const _TILE_CELL_WIDTH_PX: int = 180
 const _ICON_BUTTON_SIZE_PX: int = 128
@@ -24,6 +27,8 @@ func _ready() -> void:
 	_cancel_button = _window_internals.get_node("Buttons/Cancel")
 	_icon_grid = _window_internals.get_node("Scroll/ContentMargin/IconGrid")
 	_cancel_button.pressed.connect(_on_cancel)
+	var help_button: Button = _window_internals.get_node("Buttons/Help")
+	help_button.pressed.connect(_on_help_pressed)
 
 func setup_for_type(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, context_region: BrainRegion = null) -> void:
 	_setup_base_window(WINDOW_NAME)
@@ -55,6 +60,15 @@ func _apply_placement_below_anchor() -> void:
 
 func _on_cancel() -> void:
 	close_window()
+
+## Open the Cortical Areas guide at the input or output explanation.
+func _on_help_pressed() -> void:
+	if BV == null or BV.WM == null:
+		return
+	var heading := GUIDE_HEADING_OUTPUT
+	if _is_ipu:
+		heading = GUIDE_HEADING_INPUT
+	BV.WM.spawn_guide_page(GUIDE_FILE, heading)
 
 func _populate_grid(cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE) -> void:
 	for child in _icon_grid.get_children():
@@ -117,9 +131,10 @@ func _populate_from_api_endpoint(type_str: String) -> void:
 func _add_tile_from_api_data(type_key: String, metadata: Dictionary) -> void:
 	var tile := VBoxContainer.new()
 	tile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# Top of the cell, so shorter labels do not shift the icon and caption down the row.
+	tile.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	tile.custom_minimum_size.x = float(_TILE_CELL_WIDTH_PX)
-	tile.alignment = BoxContainer.ALIGNMENT_CENTER
+	tile.alignment = BoxContainer.ALIGNMENT_BEGIN
 	tile.add_theme_constant_override("separation", 14)
 
 	var btn := TextureButton.new()
@@ -154,9 +169,10 @@ func _add_tile_from_api_data(type_key: String, metadata: Dictionary) -> void:
 func _add_tile(template: CorticalTemplate) -> void:
 	var tile := VBoxContainer.new()
 	tile.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# Top of the cell, so shorter labels do not shift the icon and caption down the row.
+	tile.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	tile.custom_minimum_size.x = float(_TILE_CELL_WIDTH_PX)
-	tile.alignment = BoxContainer.ALIGNMENT_CENTER
+	tile.alignment = BoxContainer.ALIGNMENT_BEGIN
 	tile.add_theme_constant_override("separation", 14)
 	var btn := TextureButton.new()
 	btn.custom_minimum_size = Vector2(_ICON_BUTTON_SIZE_PX, _ICON_BUTTON_SIZE_PX)
