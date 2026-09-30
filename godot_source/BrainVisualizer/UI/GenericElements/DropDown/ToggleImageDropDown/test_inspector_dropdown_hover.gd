@@ -38,6 +38,18 @@ func _test_hover_open_rules() -> int:
 	if float(script.MENU_HOVER_CLOSE_DELAY_SEC) <= 0.0:
 		push_error("Inspectors menu hover close delay must be positive")
 		return 1
+	if float(script.MENU_HOVER_OPEN_DELAY_SEC) < 0.25:
+		push_error("Inspectors menu must wait for a brief hover pause before opening")
+		return 1
+	if bool(script.should_open_menu_after_hover_pause(true, false, true, 0.05)):
+		push_error("A passing drag must not open the Inspectors menu")
+		return 1
+	if not bool(script.should_open_menu_after_hover_pause(true, false, true, float(script.MENU_HOVER_OPEN_DELAY_SEC))):
+		push_error("A paused pointer must open the Inspectors menu")
+		return 1
+	if bool(script.should_open_menu_after_hover_pause(true, false, false, float(script.MENU_HOVER_OPEN_DELAY_SEC))):
+		push_error("The Inspectors menu must stay closed when the pointer has already left")
+		return 1
 	return 0
 
 

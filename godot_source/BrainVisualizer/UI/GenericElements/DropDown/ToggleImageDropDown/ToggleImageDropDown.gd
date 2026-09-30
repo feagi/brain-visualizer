@@ -13,12 +13,15 @@ signal user_change_option(label: StringName, index: int)
 
 ## Overlap so the pointer can move from the trigger into the menu without a gap.
 const MENU_ANCHOR_OVERLAP_PX: int = 4
+## Pause before a hover opens the menu. A passing drag stays closed.
+const MENU_HOVER_OPEN_DELAY_SEC: float = 0.4
 ## Grace period while the pointer crosses from the trigger into the menu.
 const MENU_HOVER_CLOSE_DELAY_SEC: float = 0.15
 
 var _panel: PopupPanel
 var _button_holder: BoxContainer
 var _current_setting_index: int = -2 # start withs omething invalid that the initial index overrides on start
+var _menu_open_timer: Timer = null
 var _menu_close_timer: Timer = null
 
 func _ready() -> void:
@@ -39,8 +42,8 @@ func _ready() -> void:
 	_toggle_menu(false)
 	focus_exited.connect(_on_trigger_focus_exited)
 	if open_on_hover:
-		mouse_entered.connect(_open_menu_from_pointer)
-		mouse_exited.connect(_schedule_menu_close)
+		mouse_entered.connect(_on_hover_open_pointer_entered)
+		mouse_exited.connect(_on_hover_open_pointer_exited)
 		if not _panel.mouse_entered.is_connected(_cancel_menu_close):
 			_panel.mouse_entered.connect(_cancel_menu_close)
 		if not _panel.mouse_exited.is_connected(_schedule_menu_close):
@@ -76,6 +79,7 @@ func set_option(option: int, should_emit_signal: bool = true, close_dropdown_men
 
 func dropdown_toggle() -> void:
 	if open_on_hover:
+		_cancel_hover_menu_open()
 		_open_menu_from_pointer()
 		return
 	if _is_menu_shown():
@@ -87,6 +91,15 @@ func dropdown_toggle() -> void:
 ## Hover-open is opt-in. A disabled trigger must stay closed.
 static func should_open_menu_on_hover(open_on_hover_enabled: bool, button_disabled: bool) -> bool:
 	return open_on_hover_enabled and not button_disabled
+
+
+## A hover opens only after the pointer has paused on the trigger.
+static func should_open_menu_after_hover_pause(open_on_hover_enabled: bool, button_disabled: bool, pointer_still_over_trigger: bool, elapsed_sec: float) -> bool:
+	if not should_open_menu_on_hover(open_on_hover_enabled, button_disabled):
+		return false
+	if not pointer_still_over_trigger:
+		return false
+	return elapsed_sec >= MENU_HOVER_OPEN_DELAY_SEC
 
 
 ## Keep the menu open while the pointer is on the trigger or the popup.
@@ -215,7 +228,21 @@ func _on_trigger_focus_exited() -> void:
 	_toggle_menu(false)
 
 
-## Open from a hover or click. A second press does not close the menu.
+## Pointer arrived on the trigger. Keep an open menu, otherwise wait for a pause.
+func _on_hover_open_pointer_entered() -> void:
+	_cancel_menu_close()
+	if _is_menu_shown():
+		return
+	_schedule_hover_menu_open()
+
+
+## Pointer left the trigger. Drop a pending open and close if it does not enter the menu.
+func _on_hover_open_pointer_exited() -> void:
+	_cancel_hover_menu_open()
+	_schedule_menu_close()
+
+
+## Open from a click, or after the hover pause. A second press does not close the menu.
 func _open_menu_from_pointer() -> void:
 	if not should_open_menu_on_hover(open_on_hover, disabled):
 		return
@@ -223,6 +250,36 @@ func _open_menu_from_pointer() -> void:
 	if _is_menu_shown():
 		return
 	_toggle_menu(true)
+
+
+func _ensure_menu_open_timer() -> Timer:
+	if _menu_open_timer != null:
+		return _menu_open_timer
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.timeout.connect(_open_menu_after_hover_pause)
+	add_child(timer)
+	_menu_open_timer = timer
+	return timer
+
+
+func _schedule_hover_menu_open() -> void:
+	if not should_open_menu_on_hover(open_on_hover, disabled):
+		return
+	if _is_menu_shown():
+		return
+	_ensure_menu_open_timer().start(MENU_HOVER_OPEN_DELAY_SEC)
+
+
+func _cancel_hover_menu_open() -> void:
+	if _menu_open_timer != null:
+		_menu_open_timer.stop()
+
+
+func _open_menu_after_hover_pause() -> void:
+	if not should_open_menu_after_hover_pause(open_on_hover, disabled, _is_pointer_over_trigger(), MENU_HOVER_OPEN_DELAY_SEC):
+		return
+	_open_menu_from_pointer()
 
 
 func _ensure_menu_close_timer() -> Timer:

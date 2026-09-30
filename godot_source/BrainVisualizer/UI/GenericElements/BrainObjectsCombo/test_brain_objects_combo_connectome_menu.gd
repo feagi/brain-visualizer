@@ -171,6 +171,18 @@ func _test_root_bar_category_lists_open_on_title_hover() -> int:
 	if script.should_open_category_list_on_title_hover(true):
 		push_error("A disabled strip must not open category lists on hover")
 		return 1
+	if float(script.CATEGORY_LIST_HOVER_OPEN_DELAY_SEC) < 0.25:
+		push_error("Category lists must wait for a brief hover pause before opening")
+		return 1
+	if bool(script.should_open_category_list_after_hover_pause(false, true, 0.05)):
+		push_error("A passing drag must not open a category list")
+		return 1
+	if not bool(script.should_open_category_list_after_hover_pause(false, true, float(script.CATEGORY_LIST_HOVER_OPEN_DELAY_SEC))):
+		push_error("A paused pointer must open a category list")
+		return 1
+	if bool(script.should_open_category_list_after_hover_pause(false, false, float(script.CATEGORY_LIST_HOVER_OPEN_DELAY_SEC))):
+		push_error("A category list must stay closed when the pointer has already left the title")
+		return 1
 	return 0
 
 

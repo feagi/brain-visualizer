@@ -60,6 +60,8 @@ const CONNECTOME_HOVER_SCALE: float = 1.1
 const ELEMENTS_MENU_ANCHOR_OVERLAP_PX: int = 4
 ## Grace period while the pointer crosses from the button into the menu.
 const ELEMENTS_MENU_HOVER_CLOSE_DELAY_SEC: float = 0.15
+## Pause before a category title hover opens its list. A passing drag stays closed.
+const CATEGORY_LIST_HOVER_OPEN_DELAY_SEC: float = 0.4
 ## Same overlay stacking as CircuitBuilder.tscn so tab chrome stays above the view.
 const TAB_OVERLAY_Z_INDEX: int = 10
 ## Expander between list and + on a hamburger row. Ignores mouse so the plate is not a button.
@@ -80,6 +82,10 @@ var _outputs_row: PanelContainer
 var _root_hover_list_anchor: Control = null
 var _root_open_list_id: StringName = &""
 var _root_list_hover_close_timer: Timer = null
+var _category_hover_open_timer: Timer = null
+var _pending_category_title: Control = null
+var _pending_category_list_id: StringName = &""
+var _pending_category_opener: Callable = Callable()
 const ROOT_LIST_CIRCUITS: StringName = &"circuits"
 const ROOT_LIST_INTERCONNECT: StringName = &"interconnect"
 const ROOT_LIST_MEMORY: StringName = &"memory"
@@ -166,6 +172,15 @@ static func reparent_under_host(host: Node, node: Node) -> void:
 ## Title hover opens the category list on the root bar and on tab bars.
 static func should_open_category_list_on_title_hover(strip_disabled: bool) -> bool:
 	return not strip_disabled
+
+
+## A title hover opens its list only after the pointer has paused on that title.
+static func should_open_category_list_after_hover_pause(strip_disabled: bool, pointer_still_over_title: bool, elapsed_sec: float) -> bool:
+	if not should_open_category_list_on_title_hover(strip_disabled):
+		return false
+	if not pointer_still_over_title:
+		return false
+	return elapsed_sec >= CATEGORY_LIST_HOVER_OPEN_DELAY_SEC
 
 
 const CORTICAL_FOCUS_MONITOR: StringName = &"monitor"
@@ -869,16 +884,20 @@ func _category_strip_is_disabled() -> bool:
 func _on_root_category_title_entered(title: Control, list_id: StringName, opener: Callable) -> void:
 	if not should_open_category_list_on_title_hover(_category_strip_is_disabled()):
 		return
-	_root_hover_list_anchor = title
 	_cancel_root_list_hover_close()
-	_ensure_list_popup_hover_hooks()
 	if _list_popup != null and _list_popup.visible and _root_open_list_id == list_id:
+		_cancel_category_hover_open()
+		_root_hover_list_anchor = title
 		return
-	_root_open_list_id = list_id
-	opener.call()
+	_pending_category_title = title
+	_pending_category_list_id = list_id
+	_pending_category_opener = opener
+	_ensure_category_hover_open_timer().start(CATEGORY_LIST_HOVER_OPEN_DELAY_SEC)
 
 
 func _on_root_category_title_exited(title: Control) -> void:
+	if _pending_category_title == title:
+		_cancel_category_hover_open()
 	if _root_hover_list_anchor != title:
 		return
 	_schedule_root_list_hover_close()
@@ -893,6 +912,7 @@ func _on_category_title_gui_input(event: InputEvent, title: Control, list_id: St
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
 		return
+	_cancel_category_hover_open()
 	_root_hover_list_anchor = title
 	_root_open_list_id = list_id
 	opener.call()
@@ -905,6 +925,45 @@ func _ensure_list_popup_hover_hooks() -> void:
 		return
 	_list_popup.mouse_entered.connect(_cancel_root_list_hover_close)
 	_list_popup.mouse_exited.connect(_schedule_root_list_hover_close)
+
+
+func _ensure_category_hover_open_timer() -> Timer:
+	if _category_hover_open_timer != null:
+		return _category_hover_open_timer
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.timeout.connect(_open_category_list_after_hover_pause)
+	add_child(timer)
+	_category_hover_open_timer = timer
+	return timer
+
+
+func _cancel_category_hover_open() -> void:
+	if _category_hover_open_timer != null:
+		_category_hover_open_timer.stop()
+	_pending_category_title = null
+	_pending_category_list_id = &""
+	_pending_category_opener = Callable()
+
+
+## Opens the list for the title the pointer paused on.
+func _open_category_list_after_hover_pause() -> void:
+	var title := _pending_category_title
+	var list_id := _pending_category_list_id
+	var opener := _pending_category_opener
+	_pending_category_title = null
+	_pending_category_list_id = &""
+	_pending_category_opener = Callable()
+	if title == null or not opener.is_valid():
+		return
+	if not should_open_category_list_after_hover_pause(_category_strip_is_disabled(), _is_pointer_over_control(title), CATEGORY_LIST_HOVER_OPEN_DELAY_SEC):
+		return
+	_root_hover_list_anchor = title
+	_ensure_list_popup_hover_hooks()
+	if _list_popup != null and _list_popup.visible and _root_open_list_id == list_id:
+		return
+	_root_open_list_id = list_id
+	opener.call()
 
 
 func _ensure_root_list_hover_close_timer() -> Timer:

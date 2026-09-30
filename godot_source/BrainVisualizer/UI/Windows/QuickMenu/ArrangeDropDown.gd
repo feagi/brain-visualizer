@@ -6,11 +6,14 @@ class_name ArrangeDropDown
 signal arrange_requested(action: StringName, axis: int)
 
 const MENU_ANCHOR_OVERLAP_PX: int = 4
+## Pause before a hover opens Align and Distribute. A passing drag stays closed.
+const MENU_HOVER_OPEN_DELAY_SEC: float = 0.4
 const MENU_HOVER_CLOSE_DELAY_SEC: float = 0.15
 
 var _panel: PopupPanel
 var _align_buttons: Array[Button] = []
 var _distribute_buttons: Array[Button] = []
+var _menu_open_timer: Timer
 var _menu_close_timer: Timer
 
 
@@ -24,10 +27,10 @@ func _ready() -> void:
 	_connect_theme_listener()
 	if not pressed.is_connected(_on_trigger_pressed):
 		pressed.connect(_on_trigger_pressed)
-	if not mouse_entered.is_connected(_open_menu_from_pointer):
-		mouse_entered.connect(_open_menu_from_pointer)
-	if not mouse_exited.is_connected(_schedule_menu_close):
-		mouse_exited.connect(_schedule_menu_close)
+	if not mouse_entered.is_connected(_on_hover_open_pointer_entered):
+		mouse_entered.connect(_on_hover_open_pointer_entered)
+	if not mouse_exited.is_connected(_on_hover_open_pointer_exited):
+		mouse_exited.connect(_on_hover_open_pointer_exited)
 	focus_mode = Control.FOCUS_NONE
 
 
@@ -143,7 +146,29 @@ func _axis_of_button(button: Button) -> int:
 
 
 func _on_trigger_pressed() -> void:
+	_cancel_hover_menu_open()
 	_open_menu_from_pointer()
+
+
+## A hover opens only after the pointer has paused on the trigger.
+static func should_open_menu_after_hover_pause(button_disabled: bool, pointer_still_over_trigger: bool, elapsed_sec: float) -> bool:
+	if button_disabled or not pointer_still_over_trigger:
+		return false
+	return elapsed_sec >= MENU_HOVER_OPEN_DELAY_SEC
+
+
+## Pointer arrived on the trigger. Keep an open menu, otherwise wait for a pause.
+func _on_hover_open_pointer_entered() -> void:
+	_cancel_menu_close()
+	if is_menu_open():
+		return
+	_schedule_hover_menu_open()
+
+
+## Pointer left the trigger. Drop a pending open and close if it does not enter the menu.
+func _on_hover_open_pointer_exited() -> void:
+	_cancel_hover_menu_open()
+	_schedule_menu_close()
 
 
 func _on_axis_pressed(action: StringName, axis: int) -> void:
@@ -152,13 +177,41 @@ func _on_axis_pressed(action: StringName, axis: int) -> void:
 
 
 func _open_menu_from_pointer() -> void:
-	# Same rule as the inspectors dropdown: hover opens the menu, a disabled trigger stays closed.
+	# Click, or the hover pause, opens the menu. A disabled trigger stays closed.
 	if disabled:
 		return
 	_cancel_menu_close()
 	if is_menu_open():
 		return
 	_toggle_menu(true)
+
+
+func _ensure_menu_open_timer() -> Timer:
+	if _menu_open_timer != null:
+		return _menu_open_timer
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.timeout.connect(_open_menu_after_hover_pause)
+	add_child(timer)
+	_menu_open_timer = timer
+	return timer
+
+
+func _schedule_hover_menu_open() -> void:
+	if disabled or is_menu_open():
+		return
+	_ensure_menu_open_timer().start(MENU_HOVER_OPEN_DELAY_SEC)
+
+
+func _cancel_hover_menu_open() -> void:
+	if _menu_open_timer != null:
+		_menu_open_timer.stop()
+
+
+func _open_menu_after_hover_pause() -> void:
+	if not should_open_menu_after_hover_pause(disabled, _is_pointer_over_trigger(), MENU_HOVER_OPEN_DELAY_SEC):
+		return
+	_open_menu_from_pointer()
 
 
 func _toggle_menu(show_menu: bool) -> void:

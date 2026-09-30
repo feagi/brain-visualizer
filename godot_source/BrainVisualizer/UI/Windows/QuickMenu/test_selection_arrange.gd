@@ -208,6 +208,18 @@ func _test_arrange_dropdown_actions() -> int:
 		push_error("Distribute must stay disabled until 3 areas are selected")
 		dropdown.queue_free()
 		return 1
+	if float(dropdown_script.MENU_HOVER_OPEN_DELAY_SEC) < 0.25:
+		push_error("Arrange must wait for a brief hover pause before opening")
+		dropdown.queue_free()
+		return 1
+	if bool(dropdown_script.should_open_menu_after_hover_pause(false, true, 0.05)):
+		push_error("A passing drag must not open Arrange")
+		dropdown.queue_free()
+		return 1
+	if not bool(dropdown_script.should_open_menu_after_hover_pause(false, true, float(dropdown_script.MENU_HOVER_OPEN_DELAY_SEC))):
+		push_error("A paused pointer must open Arrange")
+		dropdown.queue_free()
+		return 1
 	dropdown.disabled = true
 	dropdown._open_menu_from_pointer()
 	if dropdown.is_menu_open():
