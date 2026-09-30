@@ -4,8 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="3_dcueh"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_af2cq"]
 [ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="5_int"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="6_tgl_off"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="7_tgl_script"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/DropDown.gd" id="6_dropdown"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="7_float"]
 
 [node name="Definition_Memory" type="VBoxContainer"]
 offset_right = 473.0
@@ -116,20 +116,48 @@ initial_int = 1
 max_value = 99999999999999
 min_value = 1
 
-[node name="mp_learning_enabled" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="mp_encoding" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
 layout_mode = 2
-tooltip_text = "When enabled, membrane potentials are captured and stored with replay frames for intensity-faithful pattern reconstruction."
+tooltip_text = "How upstream membrane potentials shape memories. None: firing pattern only. MP Learning: store MPs and replay them. MP Differential: the same MP change (e.g. 2 to 4 and 7 to 9) forms one memory. MP Ratio: the same growth ratio (e.g. 2 to 4 and 7 to 14) forms one memory. Change modes need Temporal Depth of 2 or more and do not replay."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_learning_enabled"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_encoding"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "MP Learning"
+text = "MP Encoding"
 
-[node name="mp_learning_enabled" type="TextureButton" parent="PanelContainer/MemoryParameters/mp_learning_enabled"]
-custom_minimum_size = Vector2(60, 0)
+[node name="mp_encoding" type="OptionButton" parent="PanelContainer/MemoryParameters/mp_encoding"]
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-theme_type_variation = &"ToggleButton"
-texture_normal = ExtResource("6_tgl_off")
-ignore_texture_size = true
-stretch_mode = 0
-script = ExtResource("7_tgl_script")
+script = ExtResource("6_dropdown")
+
+[node name="mp_delta_quantization" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+visible = false
+layout_mode = 2
+tooltip_text = "MP Differential rounding step in membrane potential units. Changes are rounded to the nearest multiple of this value."
+
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_delta_quantization"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Delta Quantization"
+
+[node name="mp_delta_quantization" type="LineEdit" parent="PanelContainer/MemoryParameters/mp_delta_quantization"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("7_float")
+min_value = 0.001
+
+[node name="mp_ratio_quantization" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+visible = false
+layout_mode = 2
+tooltip_text = "MP Ratio rounding step in percent, compounding. At 20, a doubling is +4 steps and a halving is -4 steps."
+
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_ratio_quantization"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ratio Quantization (%)"
+
+[node name="mp_ratio_quantization" type="LineEdit" parent="PanelContainer/MemoryParameters/mp_ratio_quantization"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("7_float")
+min_value = 0.001

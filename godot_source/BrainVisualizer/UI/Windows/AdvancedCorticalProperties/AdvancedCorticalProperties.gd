@@ -17,7 +17,8 @@ const INITIAL_WINDOW_LEFT_X: int = 0
 const INITIAL_WINDOW_BOTTOM_MARGIN: int = 0
 const INITIAL_WINDOW_EXTRA_BOTTOM_CLEARANCE_PX: int = 8
 const MIN_SCROLLABLE_HEIGHT: int = 180
-const MIN_COUNT_FIELD_WIDTH_PX: float = 190.0
+const CountFieldLayout = preload("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/CorticalCountFieldLayout.gd")
+const MIN_COUNT_FIELD_WIDTH_PX: float = CountFieldLayout.MIN_COUNT_FIELD_WIDTH_PX
 const IO_PRESET_INPUT: StringName = "Input"
 const IO_PRESET_OUTPUT: StringName = "Output"
 const IO_PRESET_INTERCONNECT: StringName = "Interconnect"
@@ -424,8 +425,12 @@ func _apply_core_type_restrictions() -> void:
 		_line_longterm_memory_threshold.editable = false
 	if _line_temporal_depth != null:
 		_line_temporal_depth.editable = false
-	if _check_mp_learning != null:
-		_check_mp_learning.disabled = true
+	if _dropdown_mp_encoding != null:
+		_dropdown_mp_encoding.disabled = true
+	if _line_mp_delta_quantization != null:
+		_line_mp_delta_quantization.editable = false
+	if _line_mp_ratio_quantization != null:
+		_line_mp_ratio_quantization.editable = false
 	if _button_memory_send != null:
 		_button_memory_send.disabled = true
 	
@@ -1601,6 +1606,27 @@ func _apply_min_count_field_width(field: Control) -> void:
 		return
 	field.custom_minimum_size.x = maxf(field.custom_minimum_size.x, MIN_COUNT_FIELD_WIDTH_PX)
 
+
+## Grow the neuron-count field so memory readouts such as "1.5K (ST: 1K | LT: 500)" stay visible.
+func _sync_neuron_count_field_width(displayed_text: String) -> void:
+	if _line_neuron_count == null:
+		return
+	var text_width: float = 0.0
+	var style_padding: float = 0.0
+	if _line_neuron_count.is_inside_tree():
+		var font: Font = _line_neuron_count.get_theme_font(&"font")
+		if font != null:
+			var font_size: int = _line_neuron_count.get_theme_font_size(&"font_size")
+			text_width = font.get_string_size(displayed_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		if _line_neuron_count.has_theme_stylebox(&"read_only"):
+			var style: StyleBox = _line_neuron_count.get_theme_stylebox(&"read_only")
+			style_padding = style.get_margin(SIDE_LEFT) + style.get_margin(SIDE_RIGHT)
+	_line_neuron_count.custom_minimum_size.x = CountFieldLayout.count_field_width_px(
+		text_width,
+		style_padding,
+		CountFieldLayout.floor_width_for_display(displayed_text),
+	)
+
 func _apply_neuron_count_display(total_count: int, short_term_count: Variant = null, long_term_count: Variant = null) -> void:
 	if _line_neuron_count == null:
 		return
@@ -1620,7 +1646,9 @@ func _apply_neuron_count_display(total_count: int, short_term_count: Variant = n
 	_line_neuron_count.suffix = suffix_text
 	# Keep current_int numeric for callers, while rendering compact text for display.
 	_line_neuron_count.previous_text = str(total_count)
-	_line_neuron_count.text = compact_total + suffix_text
+	var displayed_text: String = compact_total + suffix_text
+	_line_neuron_count.text = displayed_text
+	_sync_neuron_count_field_width(displayed_text)
 
 func _format_compact_count(value: int) -> String:
 	var abs_value: int = absi(value)
@@ -2073,7 +2101,11 @@ func _refresh_from_cache_firing_parameters() -> void:
 @export var _line_lifespan_growth_rate: IntInput
 @export var _line_longterm_memory_threshold: IntInput
 @export var _line_temporal_depth: IntInput
-@export var _check_mp_learning: ToggleButton
+@export var _dropdown_mp_encoding: DropDown
+@export var _row_mp_delta_quantization: Control
+@export var _line_mp_delta_quantization: FloatInput
+@export var _row_mp_ratio_quantization: Control
+@export var _line_mp_ratio_quantization: FloatInput
 @export var _button_memory_send: Button
 
 func _init_memory() -> void:
@@ -2081,16 +2113,38 @@ func _init_memory() -> void:
 	_connect_control_to_update_button(_line_lifespan_growth_rate, "neuron_lifespan_growth_rate", _button_memory_send)
 	_connect_control_to_update_button(_line_longterm_memory_threshold, "neuron_longterm_mem_threshold", _button_memory_send)
 	_connect_control_to_update_button(_line_temporal_depth, "temporal_depth", _button_memory_send)
-	_connect_control_to_update_button(_check_mp_learning, "mp_learning_enabled", _button_memory_send)
+	_connect_control_to_update_button(_line_mp_delta_quantization, "mp_delta_quantization", _button_memory_send)
+	_connect_control_to_update_button(_line_mp_ratio_quantization, "mp_ratio_quantization", _button_memory_send)
+	if _dropdown_mp_encoding != null:
+		_dropdown_mp_encoding.options = CorticalPropertyMemoryParameters.MP_ENCODING_OPTIONS
+		_dropdown_mp_encoding.option_changed.connect(_on_mp_encoding_changed)
 	
 	_button_memory_send.pressed.connect(_send_update.bind(_button_memory_send))
+
+## One dropdown drives two mutually exclusive FEAGI keys; both are always sent together.
+func _on_mp_encoding_changed(_index: int, encoding: StringName) -> void:
+	var keys: Dictionary = CorticalPropertyMemoryParameters.mp_encoding_to_keys(encoding)
+	for key in keys:
+		_add_to_dict_to_send(keys[key], _button_memory_send, StringName(key))
+	_apply_mp_quantization_rows_visibility(encoding)
+
+## Show only the quantization that applies to the selected encoding.
+func _apply_mp_quantization_rows_visibility(encoding: StringName) -> void:
+	if _row_mp_delta_quantization != null:
+		_row_mp_delta_quantization.visible = encoding == CorticalPropertyMemoryParameters.MP_ENCODING_DIFFERENTIAL
+	if _row_mp_ratio_quantization != null:
+		_row_mp_ratio_quantization.visible = encoding == CorticalPropertyMemoryParameters.MP_ENCODING_RATIO
 
 func _refresh_from_cache_memory() -> void:
 	_update_control_with_value_from_areas(_line_initial_neuron_lifespan, "memory_parameters", "initial_neuron_lifespan")
 	_update_control_with_value_from_areas(_line_lifespan_growth_rate, "memory_parameters", "lifespan_growth_rate")
 	_update_control_with_value_from_areas(_line_longterm_memory_threshold, "memory_parameters", "longterm_memory_threshold")
 	_update_control_with_value_from_areas(_line_temporal_depth, "memory_parameters", "temporal_depth")
-	_update_control_with_value_from_areas(_check_mp_learning, "memory_parameters", "mp_learning_enabled")
+	_update_control_with_value_from_areas(_dropdown_mp_encoding, "memory_parameters", "mp_encoding")
+	_update_control_with_value_from_areas(_line_mp_delta_quantization, "memory_parameters", "mp_delta_quantization")
+	_update_control_with_value_from_areas(_line_mp_ratio_quantization, "memory_parameters", "mp_ratio_quantization")
+	if _dropdown_mp_encoding != null and _dropdown_mp_encoding.selected >= 0:
+		_apply_mp_quantization_rows_visibility(_dropdown_mp_encoding.selected_item)
 
 #endregion
 

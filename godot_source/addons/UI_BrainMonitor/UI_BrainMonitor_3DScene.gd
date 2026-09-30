@@ -73,6 +73,7 @@ var _representing_region: BrainRegion
 var _world_3D: World3D # used for physics stuff
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
 var _brain_region_visualizations_by_ID: Dictionary  # Dictionary[StringName, UI_BrainMonitor_BrainRegion3D]
+var _external_io_plates: UI_BrainMonitor_BrainRegion3D = null
 var _active_previews: Array[UI_BrainMonitor_InteractivePreview] = []
 var _restrict_neuron_selection_to: AbstractCorticalArea = null
 
@@ -565,6 +566,8 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	# Create child brain region frames
 	for child_region in _representing_region.contained_regions:
 		_add_brain_region_frame(child_region)
+
+	_ensure_external_io_plates()
 	
 
 
@@ -1282,6 +1285,11 @@ func _compute_scene_aabb() -> AABB:
 			if a.size != Vector3.ZERO or !a.position.is_equal_approx(Vector3.ZERO):
 				merged = a if !have else merged.merge(a)
 				have = true
+	if _external_io_plates != null and is_instance_valid(_external_io_plates):
+		var external_aabb := _compute_world_aabb(_external_io_plates)
+		if external_aabb.size != Vector3.ZERO or !external_aabb.position.is_equal_approx(Vector3.ZERO):
+			merged = external_aabb if !have else merged.merge(external_aabb)
+			have = true
 	# Fallback to entire 3D root
 	if !have:
 		return _compute_world_aabb(_node_3D_root)
@@ -2365,15 +2373,18 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						"MotherPlateClickArea", "RegionLabelClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
-					var region_name: String = "Region"
-					if region_frame and region_frame.get("representing_region") != null:
-						var rep = region_frame.get("representing_region")
-						var fname = rep.get("friendly_name") if rep != null else null
-						if fname != null:
-							region_name = str(fname)
-					_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
-					if _is_region_description_hover_collider(hit_body):
-						_show_region_description_tooltip_for_frame(region_frame)
+					if region_frame != null and region_frame.has_method("is_external_io_anchor") and region_frame.is_external_io_anchor():
+						_UI_layer_for_BM.show_plate_hover("External", plate_kind)
+					else:
+						var region_name: String = "Region"
+						if region_frame and region_frame.get("representing_region") != null:
+							var rep = region_frame.get("representing_region")
+							var fname = rep.get("friendly_name") if rep != null else null
+							if fname != null:
+								region_name = str(fname)
+						_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
+						if _is_region_description_hover_collider(hit_body):
+							_show_region_description_tooltip_for_frame(region_frame)
 			# Cortical pick: use a pass-through ray so plate pick volumes do not hide output-side areas
 			var showed_live_voxel_inspector := false
 			if not cortical_hover_hit.is_empty():
@@ -2437,7 +2448,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 									var projected: Vector3 = ray_from.lerp(ray_to, t)
 									var local: Vector3 = plate.global_transform.affine_inverse() * projected
 									if abs(local.x) <= half_x and abs(local.z) <= half_z:
-										_UI_layer_for_BM.show_plate_hover(region_frame.representing_region.friendly_name, plate_label)
+										var hover_name: String = "External" if region_frame.is_external_io_anchor() else region_frame.representing_region.friendly_name
+										_UI_layer_for_BM.show_plate_hover(hover_name, plate_label)
 										break
 			# Check if we hit a plate click area (input/output/conflict/mother) or region title
 			elif _is_region_plate_or_label_click_area(hit_body):
@@ -2451,12 +2463,15 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						"MotherPlateClickArea", "RegionLabelClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
-					var region_name := "Region"
-					if region_frame.representing_region:
-						region_name = region_frame.representing_region.friendly_name
-					_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
-					if _is_region_description_hover_collider(hit_body):
-						_show_region_description_tooltip_for_frame(region_frame)
+					if region_frame.has_method("is_external_io_anchor") and region_frame.is_external_io_anchor():
+						_UI_layer_for_BM.show_plate_hover("External", plate_kind)
+					else:
+						var region_name := "Region"
+						if region_frame.representing_region:
+							region_name = region_frame.representing_region.friendly_name
+						_UI_layer_for_BM.show_plate_hover(region_name, plate_kind)
+						if _is_region_description_hover_collider(hit_body):
+							_show_region_description_tooltip_for_frame(region_frame)
 			if not showed_live_voxel_inspector and BV != null and BV.UI != null:
 				BV.UI.end_live_voxel_inspector_hover(_UI_layer_for_BM)
 			
@@ -2735,7 +2750,10 @@ func _process_scene_pick_click(
 				currently_moused_over_volumes,
 			)
 	elif hit_body.get_parent() and hit_body.get_parent().get_script() and hit_body.get_parent().get_script().get_global_name() == "UI_BrainMonitor_BrainRegion3D":
-		_activate_region_frame_click(hit_body.get_parent() as UI_BrainMonitor_BrainRegion3D, bm_input_event)
+		var picked_frame: UI_BrainMonitor_BrainRegion3D = hit_body.get_parent() as UI_BrainMonitor_BrainRegion3D
+		if picked_frame != null and picked_frame.is_external_io_anchor():
+			return
+		_activate_region_frame_click(picked_frame, bm_input_event)
 	elif _is_region_plate_or_label_click_area(hit_body):
 		if _UI_layer_for_BM and not bm_input_event.button_pressed:
 			_UI_layer_for_BM.clear_plate_hover()
@@ -4558,7 +4576,7 @@ func _teardown_core_cluster_plate() -> void:
 
 # NOTE: Cortical area movements, resizes, and renames are handled by the [UI_BrainMonitor_CorticalArea]s themselves!
 
-func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalArea:
+func _add_cortical_area(area: AbstractCorticalArea, allow_external: bool = false) -> UI_BrainMonitor_CorticalArea:
 	# print("🚨 _add_cortical_area() CALLED for area: %s in brain monitor instance %d (region: %s)" % [area.cortical_ID, get_instance_id(), _representing_region.friendly_name])  # Suppressed - causes output overflow
 	if area == null:
 		return null
@@ -4605,7 +4623,7 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 	var is_special_invariant_core: bool = _should_show_feagi_invariant_core_in_this_monitor(area)
 
 	# Create if: direct member of this circuit, an I/O bridge, or an invariant core on the root monitor.
-	if not is_subtree_ok and not is_io_of_child_region and not is_io_of_this_region and not is_special_invariant_core:
+	if not allow_external and not is_subtree_ok and not is_io_of_child_region and not is_io_of_this_region and not is_special_invariant_core:
 		return null
 
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
@@ -4640,6 +4658,25 @@ func _add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalA
 ## Public wrapper to avoid external access to private member.
 func add_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalArea:
 	return _add_cortical_area(area)
+
+
+## Creates a volume for an outside area that is shown only on the fixed external plates.
+func add_external_io_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalArea:
+	return _add_cortical_area(area, true)
+
+
+func release_external_io_visualization(viz: UI_BrainMonitor_CorticalArea) -> void:
+	if viz == null or not is_instance_valid(viz):
+		return
+	var area: AbstractCorticalArea = viz.cortical_area
+	if area != null:
+		var current: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(area.cortical_ID)
+		if current == viz:
+			_cortical_visualizations_by_ID.erase(area.cortical_ID)
+	var parent_node: Node = viz.get_parent()
+	if parent_node != null:
+		parent_node.remove_child(viz)
+	viz.queue_free()
 
 ## Gets an existing cortical area visualization by ID (used by brain region frames)
 func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
@@ -4706,6 +4743,32 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	else:
 		_prune_invalid_cortical_refs_from_mouse_tracking()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
+
+func _ensure_external_io_plates() -> void:
+	if _representing_region == null or _node_3D_root == null or _representing_region.is_root_region():
+		_clear_external_io_plates()
+		return
+	if _external_io_plates != null and is_instance_valid(_external_io_plates):
+		var bound: BrainRegion = _external_io_plates.representing_region
+		if bound != null and bound.region_ID == _representing_region.region_ID and bound == _representing_region:
+			_external_io_plates.force_refresh()
+			return
+		_clear_external_io_plates()
+	var region_script: Script = load("res://addons/UI_BrainMonitor/UI_BrainMonitor_BrainRegion3D.gd")
+	_external_io_plates = region_script.new()
+	_node_3D_root.add_child(_external_io_plates)
+	_external_io_plates.setup_external_io(_representing_region)
+
+
+func _clear_external_io_plates() -> void:
+	if _external_io_plates == null or not is_instance_valid(_external_io_plates):
+		_external_io_plates = null
+		return
+	if _external_io_plates.has_method("detach_shared_cortical_visualizations"):
+		_external_io_plates.detach_shared_cortical_visualizations()
+	_external_io_plates.queue_free()
+	_external_io_plates = null
+
 
 func _add_brain_region_frame(brain_region: BrainRegion):  # -> UI_BrainMonitor_BrainRegion3D
 	# print("🚨🚨🚨 DEBUG: _add_brain_region_frame called for: %s" % brain_region.friendly_name)  # Suppressed - causes output overflow
@@ -5088,6 +5151,7 @@ func _perform_coalesced_cache_rebuild() -> void:
 	_create_missing_brain_region_visualizations()
 	_rebuild_cortical_visualizations_after_cache_touch()
 	_refresh_existing_region_plates_after_cortical_rebuild()
+	_ensure_external_io_plates()
 	# Force refresh connections for all currently hovered cortical areas (post-rebuild on fresh nodes).
 	for cortical_viz in _cortical_visualizations_by_ID.values():
 		if cortical_viz != null and is_instance_valid(cortical_viz):
@@ -5140,7 +5204,8 @@ func _add_missing_cortical_area_visualizations() -> void:
 		var is_io_child = _is_area_input_output_of_child_region(area)
 		var is_io_self = _is_area_input_output_of_region(area)
 		var is_reserved_core: bool = _should_show_feagi_invariant_core_in_this_monitor(area)
-		if not subtree_keeps_viz and not is_io_child and not is_io_self and not is_reserved_core:
+		var kept_on_external_plates: bool = _external_io_plates != null and is_instance_valid(_external_io_plates) and _external_io_plates.holds_external_area(area)
+		if not subtree_keeps_viz and not is_io_child and not is_io_self and not is_reserved_core and not kept_on_external_plates:
 			_remove_cortical_area(area)
 
 	# Add areas directly in this region

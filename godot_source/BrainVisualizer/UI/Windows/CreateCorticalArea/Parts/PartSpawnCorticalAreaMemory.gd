@@ -13,7 +13,11 @@ var _line_initial_neuron_lifespan: IntInput
 var _line_lifespan_growth_rate: IntInput
 var _line_longterm_memory_threshold: IntInput
 var _line_temporal_depth: IntInput
-var _check_mp_learning: ToggleButton
+var _dropdown_mp_encoding: DropDown
+var _row_mp_delta_quantization: Control
+var _line_mp_delta_quantization: FloatInput
+var _row_mp_ratio_quantization: Control
+var _line_mp_ratio_quantization: FloatInput
 var _active_brain_monitor: UI_BrainMonitor_3DScene = null
 var _preview: UI_BrainMonitor_InteractivePreview = null
 
@@ -24,7 +28,20 @@ func _ready() -> void:
 	_line_lifespan_growth_rate = $PanelContainer/MemoryParameters/lifespan_growth_rate/lifespan_growth_rate
 	_line_longterm_memory_threshold = $PanelContainer/MemoryParameters/longterm_memory_threshold/longterm_memory_threshold
 	_line_temporal_depth = $PanelContainer/MemoryParameters/temporal_depth/temporal_depth
-	_check_mp_learning = $PanelContainer/MemoryParameters/mp_learning_enabled/mp_learning_enabled
+	_dropdown_mp_encoding = $PanelContainer/MemoryParameters/mp_encoding/mp_encoding
+	_row_mp_delta_quantization = $PanelContainer/MemoryParameters/mp_delta_quantization
+	_line_mp_delta_quantization = $PanelContainer/MemoryParameters/mp_delta_quantization/mp_delta_quantization
+	_row_mp_ratio_quantization = $PanelContainer/MemoryParameters/mp_ratio_quantization
+	_line_mp_ratio_quantization = $PanelContainer/MemoryParameters/mp_ratio_quantization/mp_ratio_quantization
+	_dropdown_mp_encoding.options = CorticalPropertyMemoryParameters.MP_ENCODING_OPTIONS
+	_line_mp_delta_quantization.set_float(CorticalPropertyMemoryParameters.DEFAULT_MP_DELTA_QUANTIZATION)
+	_line_mp_ratio_quantization.set_float(CorticalPropertyMemoryParameters.DEFAULT_MP_RATIO_QUANTIZATION)
+	_dropdown_mp_encoding.option_changed.connect(_on_mp_encoding_changed)
+
+
+func _on_mp_encoding_changed(_index: int, encoding: StringName) -> void:
+	_row_mp_delta_quantization.visible = encoding == CorticalPropertyMemoryParameters.MP_ENCODING_DIFFERENTIAL
+	_row_mp_ratio_quantization.visible = encoding == CorticalPropertyMemoryParameters.MP_ENCODING_RATIO
 
 
 func cortical_type_selected(_cortical_type: AbstractCorticalArea.CORTICAL_AREA_TYPE, preview_close_signals: Array[Signal], host_bm = null) -> void:
@@ -70,11 +87,18 @@ func _stop_preview_relocation() -> void:
 
 
 ## Same keys as [AdvancedCorticalProperties] memory section (FEAGI PUT / cortical area).
+## Quantization is only sent for the selected change mode; FEAGI defaults the other.
 func get_memory_parameters_for_api() -> Dictionary:
-	return {
+	var params: Dictionary = {
 		"neuron_init_lifespan": _line_initial_neuron_lifespan.current_int,
 		"neuron_lifespan_growth_rate": _line_lifespan_growth_rate.current_int,
 		"neuron_longterm_mem_threshold": _line_longterm_memory_threshold.current_int,
 		"temporal_depth": _line_temporal_depth.current_int,
-		"mp_learning_enabled": _check_mp_learning.button_pressed if _check_mp_learning != null else false,
 	}
+	var encoding: StringName = _dropdown_mp_encoding.selected_item
+	params.merge(CorticalPropertyMemoryParameters.mp_encoding_to_keys(encoding))
+	if encoding == CorticalPropertyMemoryParameters.MP_ENCODING_DIFFERENTIAL:
+		params["mp_delta_quantization"] = _line_mp_delta_quantization.current_float
+	elif encoding == CorticalPropertyMemoryParameters.MP_ENCODING_RATIO:
+		params["mp_ratio_quantization"] = _line_mp_ratio_quantization.current_float
+	return params

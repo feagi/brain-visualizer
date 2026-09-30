@@ -45,6 +45,10 @@ UI_BrainMonitor_3DScene
             └── Output Cortical Areas (scaled down)
 ```
 
+## External plates inside a region view
+
+Each non-root brain-monitor view also shows a fixed input plate and output plate for cortical areas that live outside that region and connect to areas inside it, including nested regions. The root region does not show these plates. An outside area that both feeds the region and is fed by it uses the existing conflict plate. These plates have no base plate and no region popup. A fixed label reads "External Connections". Their front-left corner stays at FEAGI (-100, 50, 0) and they are not relocated with the region.
+
 ## Display Logic
 
 ### Cortical Area Visibility Rules
