@@ -127,19 +127,34 @@ func show_message(message: String) -> void:
 	size.y = content_height
 
 ## Handle link clicks inside the rendered markdown.
+## Web addresses open in the system browser. Guide files stay in the window.
 func _on_meta_clicked(meta: Variant) -> void:
 	if typeof(meta) != TYPE_STRING:
 		return
 	var target_path: String = meta
 	if target_path == "":
 		return
+	if is_web_url(target_path):
+		var error := OS.shell_open(target_path)
+		if error != OK:
+			push_error("GuideMarkdownView: Unable to open link %s. Error: %d" % [target_path, error])
+		return
 	markdown_link_clicked.emit(target_path)
+
+
+## True when a guide link should leave the app and open in a browser.
+static func is_web_url(target_path: String) -> bool:
+	return target_path.begins_with("https://") or target_path.begins_with("http://")
 
 ## Convert markdown text into BBCode for RichTextLabel rendering.
 func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -> String:
 	var lines := markdown_text.split("\n", true)
 	var output_lines: Array[String] = []
 	var in_list := false
+	# Markdown already leaves a blank line under a heading. Skipping that one
+	# line keeps the description against the title. A second blank line is what
+	# opened the large gap in the guide.
+	var skip_blank_after_heading := false
 	
 	for raw_line in lines:
 		var line := raw_line
@@ -153,17 +168,23 @@ func _convert_markdown_to_bbcode(markdown_text: String, markdown_path: String) -
 				in_list = false
 			var heading_level := _count_heading_level(line)
 			var title := line.substr(heading_level).strip_edges()
-			output_lines.append("")
+			if not output_lines.is_empty() and output_lines[output_lines.size() - 1] != "":
+				output_lines.append("")
 			output_lines.append(_format_heading(title, heading_level))
-			output_lines.append("")
+			skip_blank_after_heading = true
 			continue
 		
 		# Handle empty lines
 		if trimmed == "":
 			if in_list:
 				in_list = false
+			if skip_blank_after_heading:
+				skip_blank_after_heading = false
+				continue
 			output_lines.append("")
 			continue
+		
+		skip_blank_after_heading = false
 		
 		# Handle bullets with proper indentation
 		if trimmed.begins_with("- "):

@@ -14,8 +14,23 @@ func setup(popup_definition: ConfigurablePopupDefinition) -> void:
 	_setup_base_window(popup_definition.window_name)
 	_titlebar.title = popup_definition.title
 	_message_box.text = popup_definition.message
+	_message_box.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_apply_message_column_width(String(popup_definition.message))
 	_generate_buttons(popup_definition.buttons)
 	custom_minimum_size = popup_definition.minimum_size
+
+
+func _apply_message_column_width(message: String) -> void:
+	var font := _message_box.get_theme_font(&"normal_font")
+	var font_size := _message_box.get_theme_font_size(&"normal_font_size")
+	if font == null:
+		font = ThemeDB.fallback_font
+	if font_size <= 0:
+		font_size = ThemeDB.fallback_font_size
+	var column := ConfigurablePopupDefinition.message_column_width(message, font, font_size)
+	if column <= 0.0:
+		return
+	_message_box.custom_minimum_size.x = column
 
 func _generate_buttons(button_defs: Array[ConfigurablePopupButtonDefinition]) -> void:
 	for button_def in button_defs:

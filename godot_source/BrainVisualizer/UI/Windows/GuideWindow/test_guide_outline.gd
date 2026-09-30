@@ -18,6 +18,8 @@ func _run_tests() -> void:
 	failures += _test_classifier_heading_stays_addressable()
 	failures += _test_sidebar_labels_stay_short()
 	failures += _test_heading_marker_is_not_body_text()
+	failures += _test_heading_sits_against_following_paragraph()
+	failures += _test_web_links_are_browser_urls()
 	failures += _test_section_button_fits_collapsible()
 	if failures == 0:
 		print("Guide outline tests: PASS")
@@ -104,6 +106,31 @@ func _test_sidebar_labels_stay_short() -> int:
 func _test_heading_marker_is_not_body_text() -> int:
 	if MarkdownView.HEADING_MARKER != "\u200b":
 		push_error("heading scroll marker must stay invisible")
+		return 1
+	return 0
+
+
+## http and https links are browser targets. Guide files are not.
+func _test_web_links_are_browser_urls() -> int:
+	var studio := "https://brainsforrobots.com/nrs"
+	if not MarkdownView.is_web_url(studio) or not MarkdownView.is_web_url("http://brainsforrobots.com/nrs"):
+		push_error("web guide links must open in a browser")
+		return 1
+	if MarkdownView.is_web_url("res://BrainVisualizer/Guides/glossary.md"):
+		push_error("guide file links must stay inside the window")
+		return 1
+	return 0
+
+
+## A heading and the paragraph under it must not be split by a blank line.
+func _test_heading_sits_against_following_paragraph() -> int:
+	var view: GuideMarkdownView = MarkdownView.new()
+	var source := "## What is Brain Visualizer?\n\nBrain Visualizer is a tool.\n"
+	var bbcode: String = view._convert_markdown_to_bbcode(source, "")
+	view.free()
+	var marker := "[/font_size]\nBrain Visualizer is a tool."
+	if bbcode.find(marker) < 0:
+		push_error("heading must be followed immediately by its paragraph, got: %s" % bbcode)
 		return 1
 	return 0
 

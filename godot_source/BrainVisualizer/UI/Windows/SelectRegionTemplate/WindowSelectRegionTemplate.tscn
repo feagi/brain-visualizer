@@ -47,11 +47,20 @@ columns = 4
 theme_override_constants/h_separation = 30
 theme_override_constants/v_separation = 13
 
-[node name="FooterNote" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="FooterNote" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Prefix" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/FooterNote"]
 layout_mode = 2
 theme_type_variation = &"Label_Small"
-text = "More at BrainsForRobots.com/hub"
-horizontal_alignment = 1
+text = "More at"
+
+[node name="HubLink" type="LinkButton" parent="WindowPanel/WindowMargin/WindowInternals/FooterNote"]
+layout_mode = 2
+text = "hub.BrainsForRobots.com"
+underline = 0
 
 [node name="FooterSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 12)

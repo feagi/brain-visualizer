@@ -23,6 +23,16 @@ func _initialize() -> void:
 	if source.find("carbon.png") < 0:
 		push_error("Classifier tile must use the carbon icon")
 		failures += 1
+	if source.find("const HUB_URL: String = \"https://hub.brainsforrobots.com\"") < 0 or source.find("OS.shell_open(HUB_URL)") < 0:
+		push_error("Add Circuit footer must open hub.BrainsForRobots.com in the browser")
+		failures += 1
+	if source.find("prefix.get_theme_font_size(\"font_size\")") < 0 or source.find("_footer_link.add_theme_font_size_override(\"font_size\", size)") < 0:
+		push_error("Hub link must use the footer label font size")
+		failures += 1
+	var scene := FileAccess.get_file_as_string("res://BrainVisualizer/UI/Windows/SelectRegionTemplate/WindowSelectRegionTemplate.tscn")
+	if scene.find("HubLink") < 0 or scene.find("hub.BrainsForRobots.com") < 0:
+		push_error("Add Circuit footer must show hub.BrainsForRobots.com as a link")
+		failures += 1
 	if source.find(".z_index") >= 0:
 		push_error("Classifier tile must stay in the window draw order")
 		failures += 1

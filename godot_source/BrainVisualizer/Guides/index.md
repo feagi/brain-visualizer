@@ -1,10 +1,30 @@
 # Brain Visualizer User Guide
 
-Welcome to Brain Visualizer, a powerful 3D visualization and editing client for FEAGI (Framework for Evolutionary Artificial General Intelligence). This guide will help you understand and master all features of the application.
+Brain Visualizer is the editor and live monitor for a brain running in FEAGI (Framework for Evolutionary Artificial General Intelligence). FEAGI executes the brain. This guide covers how to inspect that brain, change its structure, and read its activity.
 
 ## What is Brain Visualizer?
 
-Brain Visualizer is an interactive tool that allows you to visualize, create, and modify neural structures (genomes) in FEAGI. You can view neural activity in real-time, create cortical areas, connect them together, organize them into regions, and watch your artificial brain in action.
+A FEAGI brain is stored as a genome: the specification of its cortical areas, the circuits that group those areas, and the connections among them. Brain Visualizer loads the genome from a running FEAGI instance and edits it in place.
+
+From here you add and arrange cortical areas, connect them, organize them into circuits, and observe neurons firing while FEAGI is running.
+
+## What It Does Not Do
+
+Brain Visualizer requires FEAGI to be running and a genome to be loaded. It does not retrieve published models, define an experiment, produce or inspect sensory data, train the network, or attach the brain to a robot or a simulator.
+
+Those steps belong to [Neurorobotics Studio](https://brainsforrobots.com/nrs), the desktop environment that runs Brain Visualizer together with the rest of the workflow:
+
+- **My Experiments**: Bind a genome to an embodiment, the robot or simulation it controls, and manage those pairings
+- **Embodiment Explorer**: Select a physical or simulated body, including robots, simulators, and microcontrollers
+- **Brain Hub**: Retrieve a published genome and load it
+- **FEAGI Academy**: Structured tutorials for the platform
+- **Hey FEAGI**: Query and direct a running brain in natural language
+- **FEAGI Trainer**: Train from tabular data, images, or video
+- **Sensory Generator**: Inject sensory streams, including camera, screen, video, and audio
+- **Perception Inspector**: Examine the sensory patterns the brain is emitting
+- **Vision Lab**: Segmentation, detection, pose estimation, and depth
+
+Edit and monitor the genome here. Use Neurorobotics Studio for a published model, an embodiment, sensory input, or a training run. Visit [BrainsForRobots.com](https://brainsforrobots.com) to learn more.
 
 ## Quick Start
 

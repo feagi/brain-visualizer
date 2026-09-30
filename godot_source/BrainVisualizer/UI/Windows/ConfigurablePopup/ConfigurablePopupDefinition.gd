@@ -1,6 +1,10 @@
 extends RefCounted
 class_name ConfigurablePopupDefinition
 
+## Readable text column. RichTextLabel fit_content reports a 1px minimum width, so a
+## long message otherwise wraps to the title bar and becomes one short word per line.
+const MESSAGE_COLUMN_WIDTH_PX: float = 440.0
+
 
 var title: StringName
 var message: StringName
@@ -40,6 +44,17 @@ static func create_cancel_and_action_popup(window_title: StringName, window_mess
 	var button_close: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_close_button(cancel_text)
 	var button_arr: Array[ConfigurablePopupButtonDefinition] = [button_close, button_ok]
 	return ConfigurablePopupDefinition.new(window_title, window_message, button_arr, window_minumum_size)
+
+## Caps a long message at [constant MESSAGE_COLUMN_WIDTH_PX]. A short message keeps its natural width.
+static func message_column_width(message: String, font: Font, font_size: int) -> float:
+	if font == null or message.is_empty() or font_size <= 0:
+		return 0.0
+	var longest := 0.0
+	for line in message.split("\n", false):
+		var line_width := font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		longest = maxf(longest, line_width)
+	return minf(longest, MESSAGE_COLUMN_WIDTH_PX)
+
 
 func _generate_random_letters(num_letters: int) -> StringName:
 	var result: String = ""

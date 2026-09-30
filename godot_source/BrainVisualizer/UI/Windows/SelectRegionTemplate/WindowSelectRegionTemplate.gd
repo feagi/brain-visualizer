@@ -15,12 +15,13 @@ const CLASSIFIER_ICON: Texture2D = preload("res://BrainVisualizer/UI/GenericReso
 const CIRCUITS_DIR_NAME: StringName = "circuits"
 const MANIFEST_FILENAME: StringName = "manifest.json"
 const GENOME_FILENAME: StringName = "genome.genome"
+const HUB_URL: String = "https://hub.brainsforrobots.com"
 
 var _cancel_button: Button
 var _icon_grid: GridContainer
 var _parent_region: BrainRegion = null
 var _force_main_scene_context: bool = false
-var _footer_note: Label
+var _footer_link: LinkButton
 var _placement_anchor: Control = null
 var _placement_anchor_rect: Rect2 = Rect2()
 var _placement_anchor_rect_exact_top_left: bool = false
@@ -30,8 +31,9 @@ func _ready() -> void:
 	super()
 	_cancel_button = _window_internals.get_node("Buttons/Cancel")
 	_icon_grid = _window_internals.get_node("Scroll/ContentMargin/IconGrid")
-	_footer_note = _window_internals.get_node("FooterNote")
+	_footer_link = _window_internals.get_node("FooterNote/HubLink")
 	_cancel_button.pressed.connect(_on_cancel)
+	_footer_link.pressed.connect(_on_hub_link_pressed)
 	_apply_footer_font_bump()
 	call_deferred("_apply_anchored_placement_if_needed")
 
@@ -141,13 +143,27 @@ func _open_create_region() -> void:
 	BV.WM.spawn_create_region(parent_region, empty_selection, _force_main_scene_context, null, anchor_rect, true)
 	close_window()
 
-## Increase footer note font size by two points.
+## Open the published-circuit catalog in the system browser.
+func _on_hub_link_pressed() -> void:
+	var error := OS.shell_open(HUB_URL)
+	if error != OK:
+		push_error("Add Circuit: Unable to open %s. Error: %d" % [HUB_URL, error])
+
+
+## Keep the hub link on the same font and size as the words in front of it.
 func _apply_footer_font_bump() -> void:
-	if _footer_note == null:
+	var prefix: Label = _window_internals.get_node_or_null("FooterNote/Prefix")
+	if prefix == null or _footer_link == null:
 		return
-	var base_size := _footer_note.get_theme_font_size("font_size")
-	if base_size > 0:
-		_footer_note.add_theme_font_size_override("font_size", base_size + 2)
+	var base_size := prefix.get_theme_font_size("font_size")
+	if base_size <= 0:
+		return
+	var size := base_size + 2
+	prefix.add_theme_font_size_override("font_size", size)
+	_footer_link.add_theme_font_size_override("font_size", size)
+	var font := prefix.get_theme_font("font")
+	if font != null:
+		_footer_link.add_theme_font_override("font", font)
 
 ## Load circuits from the manifest and add tiles.
 func _add_manifest_tiles() -> void:
