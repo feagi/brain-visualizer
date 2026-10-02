@@ -47,6 +47,35 @@ func setup(mode: MODE) -> void:
 func get_axis_length() -> float:
 	return _axis_length
 
+
+## Scalar along [param axis_dir] through [param axis_origin] closest to the mouse ray.
+## Returns NAN when the ray is parallel to the axis or does not pass near it.
+## A parallel ray must not fall back to the camera's projection on the axis: that
+## projection is the camera offset (often a large negative X) and was written into
+## the add-area location field.
+static func axis_drag_param(axis_origin: Vector3, axis_dir: Vector3, ray_from: Vector3, ray_to: Vector3) -> float:
+	var d1 := axis_dir.normalized()
+	if d1.length_squared() < 0.000001:
+		return NAN
+	var ray := ray_to - ray_from
+	if ray.length_squared() < 0.000001:
+		return NAN
+	var d2 := ray.normalized()
+	var r := axis_origin - ray_from
+	var b := d1.dot(d2)
+	var denom := 1.0 - b * b
+	if denom < 0.0001:
+		return NAN
+	var f := d2.dot(r)
+	var c := d1.dot(r)
+	var along_axis := (b * f - c) / denom
+	var along_ray := (f - b * c) / denom
+	var gap := (axis_origin + d1 * along_axis).distance_to(ray_from + d2 * along_ray)
+	var gap_limit := maxf(2.0, ray_from.distance_to(axis_origin) * 0.02)
+	if gap > gap_limit:
+		return NAN
+	return along_axis
+
 func _clear_children() -> void:
 	_axis_visual_roots.clear()
 	for i in range(_axis_hover_tweens.size()):

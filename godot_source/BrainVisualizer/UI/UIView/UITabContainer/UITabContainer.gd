@@ -139,15 +139,49 @@ func bring_existing_region_BM_to_top(region: BrainRegion) -> void:
 	var tab_idx: int = get_tab_idx_from_control(bm)
 	current_tab = tab_idx
 
+## Closes CB/BM tabs whose region is absent from the current genome cache.
+## Same-session genome loads keep the UI mounted, so leftover tabs from the previous genome must be removed here.
+func close_views_absent_from_genome() -> int:
+	var available: Dictionary = {}
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null and FeagiCore.feagi_local_cache.brain_regions != null:
+		available = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions
+	return close_views_absent_from_region_ids(available)
+
+
+## Closes CB/BM tabs whose representing region ID is not in [param available_regions].
+func close_views_absent_from_region_ids(available_regions: Dictionary) -> int:
+	var to_close: Array[Control] = []
+	for child in get_children():
+		var region: BrainRegion = _tab_child_region(child)
+		if region == null:
+			continue
+		if FEAGIUtils.region_tab_matches_loaded_genome(region.region_ID, available_regions):
+			continue
+		to_close.append(child as Control)
+	for view in to_close:
+		_remove_control_view_as_tab(view)
+	return to_close.size()
+
+
+func _tab_child_region(child: Node) -> BrainRegion:
+	if child is CircuitBuilder:
+		return (child as CircuitBuilder).representing_region
+	if child is UI_BrainMonitor_3DScene:
+		return (child as UI_BrainMonitor_3DScene).representing_region
+	return null
+
+
 ## Closes all nonroot CB and BM views. If this results in all tabs being removed, it will emit all_tabs_removed
 func close_all_nonroot_views() -> void:
 	for child in get_children():
 		if child is CircuitBuilder:
-			if !(child as CircuitBuilder).representing_region.is_root_region():
+			var cb_region: BrainRegion = (child as CircuitBuilder).representing_region
+			if cb_region == null or not cb_region.is_root_region():
 				child.queue_free()
 			continue
 		elif child is UI_BrainMonitor_3DScene:
-			if !(child as UI_BrainMonitor_3DScene).representing_region.is_root_region():
+			var bm_region: BrainRegion = (child as UI_BrainMonitor_3DScene).representing_region
+			if bm_region == null or not bm_region.is_root_region():
 				child.queue_free()
 			continue
 	
@@ -356,7 +390,8 @@ func _remove_control_view_as_tab(region_view: Control) -> void:
 	var tabs_before: int = get_tab_count()
 	if region_view is CircuitBuilder:
 		var cb: CircuitBuilder = region_view as CircuitBuilder
-		cb.user_request_viewing_subregion.disconnect(_internal_CB_requesting_CB_view_of_region)
+		if cb.user_request_viewing_subregion.is_connected(_internal_CB_requesting_CB_view_of_region):
+			cb.user_request_viewing_subregion.disconnect(_internal_CB_requesting_CB_view_of_region)
 		remove_child(cb)
 		cb.queue_free()
 	elif region_view is UI_BrainMonitor_3DScene:

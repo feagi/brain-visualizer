@@ -4,6 +4,7 @@ class_name CBLineInterTerminal
 
 const LINE_COLOR_PSPP: Color = Color.DARK_GREEN
 const LINE_COLOR_PSPN: Color = Color.DARK_RED
+const LINE_COLOR_EPISODIC: Color = Color(0.95, 0.82, 0.08, 1)
 const LINE_COLOR_TRANSPARENT: Color = Color(0,0,0,0)
 const LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY: float = 0.3
 
@@ -132,10 +133,7 @@ func _on_full_mapping_change(mapping_ref: InterCorticalMappingSet) -> void:
 		_request_dispose()
 		return
 	_button.text = "  " + str(mapping_ref.number_mappings) + "  "
-	if mapping_ref.is_any_PSP_multiplier_negative():
-		set_line_base_color(Color(LINE_COLOR_PSPN.r, LINE_COLOR_PSPN.g, LINE_COLOR_PSPN.b, LINE_COLOR_PSPN.a))
-	else:
-		set_line_base_color(Color(LINE_COLOR_PSPP.r, LINE_COLOR_PSPP.g, LINE_COLOR_PSPP.b, LINE_COLOR_PSPP.a))
+	_apply_polarity_color(mapping_ref.is_every_mapping_episodic(), mapping_ref.is_any_PSP_multiplier_negative(), 1.0)
 	set_line_dashing(mapping_ref.is_any_mapping_plastic())
 
 func _on_partial_mapping(partial_mapping: PartialMappingSet) -> void:
@@ -144,11 +142,17 @@ func _on_partial_mapping(partial_mapping: PartialMappingSet) -> void:
 		_request_dispose()
 		return
 	_button.text = "  " + str(partial_mapping.number_mappings) + "  "
-	if partial_mapping.is_any_PSP_multiplier_negative():
-		set_line_base_color(Color(LINE_COLOR_PSPN.r, LINE_COLOR_PSPN.g, LINE_COLOR_PSPN.b, LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY))
-	else:
-		set_line_base_color(Color(LINE_COLOR_PSPP.r, LINE_COLOR_PSPP.g, LINE_COLOR_PSPP.b, LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY))
+	_apply_polarity_color(partial_mapping.is_every_mapping_episodic(), partial_mapping.is_any_PSP_multiplier_negative(), LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY)
 	set_line_dashing(partial_mapping.is_any_mapping_plastic())
+
+## Excitatory is green, inhibitory is red, and a fully episodic mapping set is yellow.
+func _apply_polarity_color(every_episodic: bool, any_inhibitory: bool, alpha: float) -> void:
+	var base: Color = LINE_COLOR_PSPP
+	if every_episodic:
+		base = LINE_COLOR_EPISODIC
+	elif any_inhibitory:
+		base = LINE_COLOR_PSPN
+	set_line_base_color(Color(base.r, base.g, base.b, alpha))
 
 func _user_pressed_visual_alias() -> void:
 	return

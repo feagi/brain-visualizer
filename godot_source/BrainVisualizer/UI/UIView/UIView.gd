@@ -93,6 +93,15 @@ func close_all_non_root_brain_region_views() -> void:
 	for tab_container in all_tab_containers:
 		tab_container.close_all_nonroot_views()
 
+
+## Closes Circuit Builder / Brain Monitor tabs whose region is not in the newly loaded genome.
+func close_views_absent_from_genome() -> int:
+	var closed: int = 0
+	var all_tab_containers: Array[UITabContainer] = get_recursive_UITabContainer_children()
+	for tab_container in all_tab_containers:
+		closed += tab_container.close_views_absent_from_genome()
+	return closed
+
 func reset():
 	for child in _primary_container.get_children():
 		child.queue_free()

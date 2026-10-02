@@ -99,7 +99,7 @@ When hovering over or selecting a cortical area:
 - **Outgoing connections**: Lines from this area to others
 - **Incoming connections**: Lines from other areas to this
 - **Connection strength**: Line thickness or opacity
-- **Connection type**: Color or style variations
+- **Connection type**: Green is excitatory, red is inhibitory, yellow is episodic (`episodic_memory` and `episodic_scan`). Dashed lines are plastic.
 
 ### Brain Circuits
 

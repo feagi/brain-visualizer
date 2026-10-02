@@ -9,6 +9,8 @@ func _initialize() -> void:
 	var failures: int = 0
 	failures += _test_mouse_destination_states()
 	failures += _test_plate_click_yields_to_cortical_volume()
+	failures += _test_guide_follows_area_behind_region_shell()
+	failures += _test_cancel_stops_region_scene_that_drew_the_line()
 	if failures == 0:
 		print("Quick Connect mouse destination tests: PASS")
 		quit(0)
@@ -48,5 +50,30 @@ func _test_plate_click_yields_to_cortical_volume() -> int:
 		failures += 1
 	if Pick.click_prefers_cortical_volume(false, false):
 		push_error("normal clicks must keep plate picking")
+		failures += 1
+	return failures
+
+
+func _test_guide_follows_area_behind_region_shell() -> int:
+	var failures: int = 0
+	if not Pick.guide_follows_cortical_hit(true):
+		push_error("guide must end on the area behind a region shell")
+		failures += 1
+	if Pick.guide_follows_cortical_hit(false):
+		push_error("guide must not stick to a region shell when no area is under the pointer")
+		failures += 1
+	return failures
+
+
+func _test_cancel_stops_region_scene_that_drew_the_line() -> int:
+	var failures: int = 0
+	if not Pick.must_stop_guide_on_scene(true, false, true):
+		push_error("cancel must clear the region view that drew the line for an outside source")
+		failures += 1
+	if not Pick.must_stop_guide_on_scene(false, true, true):
+		push_error("cancel must clear the monitor that owns the source area")
+		failures += 1
+	if Pick.must_stop_guide_on_scene(false, false, false):
+		push_error("a hidden monitor that did not draw the line does not need a stop")
 		failures += 1
 	return failures

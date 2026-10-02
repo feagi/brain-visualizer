@@ -1595,6 +1595,30 @@ func _on_genome_availability_changed(available: bool) -> void:
 func _on_genome_cache_replaced() -> void:
 	genome_history.clear()
 	update_loading_status("Updating brain visualizer cache...")
+	# Same-session genome loads keep the UI mounted (trainer / in-process upload).
+	# Full reloads rebuild tabs in FEAGI_confirmed_genome. Only the READY path
+	# can leave previous-genome region tabs visible.
+	if FeagiCore.genome_load_state != FeagiCore.GENOME_LOAD_STATE.GENOME_READY:
+		return
+	if _root_UI_view != null:
+		_root_UI_view.close_views_absent_from_genome()
+		_collapse_split_if_region_tabs_empty()
+
+
+## Hide the region split when a genome replace removed every Brain Monitor tab.
+func _collapse_split_if_region_tabs_empty() -> void:
+	if _root_UI_view == null:
+		return
+	var secondary: UITabContainer = _root_UI_view.get_secondary_tab_container()
+	if secondary == null:
+		return
+	if not FEAGIUtils.should_close_split_after_stale_region_tabs(secondary.get_tab_count()):
+		return
+	if not has_node("CB_Holder"):
+		return
+	var temp_split: TempSplit = $CB_Holder as TempSplit
+	if temp_split != null:
+		temp_split.close_split_view()
 
 ## Handle genome load state changes to show/hide loading screen
 func _on_genome_load_state_changed(current_state: FeagiCore.GENOME_LOAD_STATE, _prev_state: FeagiCore.GENOME_LOAD_STATE) -> void:

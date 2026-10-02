@@ -2238,14 +2238,17 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				var end_point: Vector3
 				var is_over_cortical: bool = false
 				var anchor_on_classifier: bool = false
-				# Default to thin guide when not over a cortical area
+				# Default to thin guide when not over a cortical area.
+				# Region shells and plates sit in front of areas. The line follows the area, not that shell.
 				_qc_guide_current_radius = _qc_guide_radius_thin
+				var cortical_guide_hit: Dictionary = _raycast_first_cortical_renderer_hit(current_space, bm_input_event.get_ray_query())
+				var guide_hit: Dictionary = cortical_guide_hit if QuickConnectDestinationPickLib.guide_follows_cortical_hit(not cortical_guide_hit.is_empty()) else {}
 				if _qc_guide_active and _qc_guide_end_locked:
 					end_point = _qc_guide_locked_end
 					is_over_cortical = true
 					anchor_on_classifier = true
 					_qc_guide_current_radius = _qc_guide_radius_thick
-				elif hit.is_empty():
+				elif guide_hit.is_empty():
 					# Fallback: keep at the mouse tip but limit depth (Z) relative to camera
 					var rq: PhysicsRayQueryParameters3D = bm_input_event.get_ray_query()
 					var ray_from: Vector3 = rq.from
@@ -2263,12 +2266,12 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var scale: float = clamped_depth / proj_on_fwd
 					end_point = ray_from + ray_dir * scale
 				else:
-					end_point = hit[&"position"]
-					var collider_parent = (hit[&"collider"] as Node).get_parent()
+					end_point = guide_hit[&"position"]
+					var collider_parent = (guide_hit[&"collider"] as Node).get_parent()
 					is_over_cortical = collider_parent is UI_BrainMonitor_AbstractCorticalAreaRenderer
 					if is_over_cortical:
 						_qc_guide_current_radius = _qc_guide_radius_thick
-					var stamp_anchor: Vector3 = _quick_connect_classifier_stamp_anchor(current_space, bm_input_event.get_ray_query(), hit)
+					var stamp_anchor: Vector3 = _quick_connect_classifier_stamp_anchor(current_space, bm_input_event.get_ray_query(), guide_hit)
 					if stamp_anchor != Vector3.INF:
 						end_point = stamp_anchor
 						is_over_cortical = true
@@ -2322,7 +2325,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var bridge_end: Vector3 = _qc_bridge_locked_end if _qc_bridge_end_locked else end_point
 					if _qc_bridge_end_locked:
 						is_over_cortical = true
-					elif hit.is_empty():
+					elif guide_hit.is_empty():
 						var depth2: float = _qc_bridge_off_target_depth
 						var proj2: float = max(0.0001, curr_dir.dot(forward2))
 						var scale2: float = depth2 / proj2
@@ -3651,6 +3654,13 @@ func _start_manipulation_drag(hit_body: StaticBody3D, bm_input_event: UI_BrainMo
 		_axis_dir_world(_manipulation_axis),
 		bm_input_event.get_ray_query()
 	)
+	# Parallel to the axis: there is no usable drag parameter. Do not start a drag
+	# that would later subtract a camera-sized offset from the area location.
+	if is_nan(_manipulation_start_param):
+		_manipulation_dragging = false
+		if _pancake_cam != null and _pancake_cam.has_method("set_tank_pan_enabled"):
+			_pancake_cam.call("set_tank_pan_enabled", true)
+		return
 	if _manipulation_gizmo.has_method("set_axis_hovered"):
 		_manipulation_gizmo.set_axis_hovered(_manipulation_axis)
 
@@ -3659,9 +3669,24 @@ func _process_manipulation_drag(bm_hover_event: UI_BrainMonitor_InputEvent_Hover
 	if not _manipulation_active or not _manipulation_dragging or not has_preview or _manipulation_gizmo == null:
 		return
 	var axis_dir := _axis_dir_world(_manipulation_axis)
-	var param := _axis_param_from_ray(_manipulation_axis_origin, axis_dir, bm_hover_event.get_ray_query())
+	var ray_query := bm_hover_event.get_ray_query()
+	var param := UI_BrainMonitor_RuntimeTransformGizmo.axis_drag_param(
+		_manipulation_axis_origin,
+		axis_dir,
+		ray_query.from,
+		ray_query.to
+	)
+	if is_nan(param):
+		return
 	var step_delta := int(round(param - _manipulation_start_param))
 	if step_delta == 0:
+		return
+	# One bad sample must not teleport the area. A parallel-axis fallback used to
+	# report the camera's X offset (tens of thousands of voxels) as a single step.
+	var max_step := 512
+	if _pancake_cam != null:
+		max_step = int(maxf(512.0, _pancake_cam.global_position.distance_to(_manipulation_axis_origin) * 0.5))
+	if absi(step_delta) > max_step:
 		return
 
 	# Apply incrementally to avoid snapping back/forth due to rounding jitter in ray projection.
@@ -4179,21 +4204,7 @@ func _axis_dir_world(axis: int) -> Vector3:
 
 ## Returns the scalar parameter (in world units) along the axis line through origin that is closest to the mouse ray.
 func _axis_param_from_ray(axis_origin: Vector3, axis_dir: Vector3, ray_query: PhysicsRayQueryParameters3D) -> float:
-	var p1 := axis_origin
-	var d1 := axis_dir.normalized()
-	var p2 := ray_query.from
-	var d2 := (ray_query.to - ray_query.from).normalized()
-	var r := p1 - p2
-	var a := d1.dot(d1)
-	var e := d2.dot(d2)
-	var f := d2.dot(r)
-	var c := d1.dot(r)
-	var b := d1.dot(d2)
-	var denom := a * e - b * b
-	if abs(denom) < 0.0001:
-		return d1.dot(p2 - p1)
-	var s := (b * f - c * e) / denom
-	return s
+	return UI_BrainMonitor_RuntimeTransformGizmo.axis_drag_param(axis_origin, axis_dir, ray_query.from, ray_query.to)
 
 
 #endregion
@@ -4276,10 +4287,13 @@ func stop_quick_connect_guide() -> void:
 	"""
 	_qc_guide_end_locked = false
 	_qc_guide_locked_end = Vector3.ZERO
+	_qc_bridge_end_locked = false
+	_qc_bridge_locked_end = Vector3.ZERO
 	if _qc_guide_node != null:
 		_qc_guide_node.queue_free()
 		_qc_guide_node = null
 	_qc_guide_active = false
+	_clear_bridge_segment()
 
 ## Internal: rebuilds the guide from start to end as a Bézier arc using thin cylinder segments.
 ## [param preserve_end] leaves the endpoint on a classifier stamp instead of clamping it short.

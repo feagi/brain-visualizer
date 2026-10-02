@@ -1288,31 +1288,38 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 	var use_electric_arc: bool = is_plastic and (has_associative or is_reciprocal_plastic)
 	var apply_reciprocal_offset: bool = is_reciprocal_plastic
 	
-	# If inhibitory and excitatory coexist between two areas, render two independent arcs.
-	# - Excitatory: green
-	# - Inhibitory: red
-	# The arcs use a slightly different bend to remain visually distinguishable.
-	var has_inhibitory := false
-	var has_excitatory := false
-	if mapping_set != null and not mapping_set.mappings.is_empty():
-		has_inhibitory = mapping_set.is_any_PSP_multiplier_negative()
-		has_excitatory = mapping_set.is_any_PSP_multiplier_positive()
-	
-	if has_inhibitory and has_excitatory:
+	# Coexisting polarities get independent arcs with a slightly different bend.
+	# Excitatory is green, inhibitory is red, episodic (episodic_memory / episodic_scan) is yellow.
+	var polarities: Array[Dictionary] = _mapping_set_visual_polarities(mapping_set)
+	if polarities.size() > 1:
 		var mixed_node := Node3D.new()
 		var plastic_prefix = "PLA_" if is_plastic else "STD_"
 		mixed_node.name = "MIXED_" + plastic_prefix + connection_id
-		
-		# Slightly different bend multipliers for separation
-		var excitatory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, false, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.43)
-		var inhibitory_curve = _create_connection_curve_variant(start_pos, end_pos, connection_id, true, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.37)
-		mixed_node.add_child(excitatory_curve)
-		mixed_node.add_child(inhibitory_curve)
+		for polarity in polarities:
+			var curve = _create_connection_curve_variant(
+				start_pos,
+				end_pos,
+				connection_id,
+				polarity["inhibitory"],
+				is_plastic,
+				use_electric_arc,
+				apply_reciprocal_offset,
+				has_associative,
+				polarity["arc_height"],
+				true,
+				0.0,
+				polarity["episodic"]
+			)
+			mixed_node.add_child(curve)
 		_attach_rstdp_tap_if_needed(mixed_node, start_pos, end_pos, mapping_set)
 		return mixed_node
 	
-	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
-	var single_curve := _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.4)
+	var is_inhibitory := false
+	var is_episodic := false
+	if polarities.size() == 1:
+		is_inhibitory = polarities[0]["inhibitory"]
+		is_episodic = polarities[0]["episodic"]
+	var single_curve := _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.4, true, 0.0, is_episodic)
 	_attach_rstdp_tap_if_needed(single_curve, start_pos, end_pos, mapping_set)
 	return single_curve
 
@@ -1329,7 +1336,8 @@ func _create_connection_curve_variant(
 	has_associative_memory_mapping: bool,
 	arc_height_multiplier: float,
 	include_pulse_animation: bool = true,
-	min_arc_height: float = 0.0
+	min_arc_height: float = 0.0,
+	is_episodic: bool = false
 ) -> Node3D:
 	# Separate reciprocal A<->B arcs sideways so direction is readable (reverse edge gets opposite offset).
 	var sp: Vector3 = start_pos
@@ -1349,7 +1357,7 @@ func _create_connection_curve_variant(
 	
 	# Create a container for the curve segments
 	var connection_node = Node3D.new()
-	var type_prefix = "INH_" if is_inhibitory else "EXC_"
+	var type_prefix = "EPI_" if is_episodic else ("INH_" if is_inhibitory else "EXC_")
 	var plastic_prefix = "PLA_" if is_plastic else "STD_" 
 	connection_node.name = type_prefix + plastic_prefix + connection_id
 	
@@ -1380,7 +1388,8 @@ func _create_connection_curve_variant(
 			ep,
 			is_inhibitory,
 			connection_id,
-			arc_anim_freq_scale
+			arc_anim_freq_scale,
+			is_episodic
 		)
 		_add_electric_arc_animation(connection_node, sp, control_point, ep, arc_anim_freq_scale)
 		# Associative only: red traveling pulses along source→dest (same motion as regular connections).
@@ -1408,7 +1417,7 @@ func _create_connection_curve_variant(
 		var desired_dash_spacing = 2.5  # Units between dashes
 		var num_dashes = max(4, int(curve_length / desired_dash_spacing))  # Minimum 4 dashes
 		
-		var dash_material = _create_plastic_animated_material(is_inhibitory)
+		var dash_material = _create_plastic_animated_material(is_inhibitory, is_episodic)
 		
 		for i in range(num_dashes):
 			var t = float(i) / float(num_dashes - 1)  # 0 to 1 along curve
@@ -1463,7 +1472,7 @@ func _create_connection_curve_variant(
 	else:
 		# For non-plastic connections, use continuous segments
 		var num_segments = 12
-		var segment_material = _create_curve_material(is_inhibitory)
+		var segment_material = _create_curve_material(is_inhibitory, is_episodic)
 		
 		for i in range(num_segments):
 			var t1 = float(i) / float(num_segments)
@@ -1833,7 +1842,8 @@ func _create_electric_arc_segments(
 	end_pos: Vector3,
 	is_inhibitory: bool,
 	connection_id: StringName,
-	anim_freq_scale: float = 1.0
+	anim_freq_scale: float = 1.0,
+	is_episodic: bool = false
 ) -> Array[Vector3]:
 	var arc_length = _estimate_curve_length(start_pos, control_point, end_pos)
 	var segment_count = max(8, int(arc_length * 1.5))
@@ -1845,7 +1855,7 @@ func _create_electric_arc_segments(
 	var seed_offset = float(hash(String(connection_id))) * 0.001
 	var points = _build_electric_arc_points(start_pos, control_point, end_pos, t_values, seed_offset, jitter_strength, anim_freq_scale)
 	
-	var material = _create_electric_arc_material(is_inhibitory)
+	var material = _create_electric_arc_material(is_inhibitory, is_episodic)
 	var segments: Array = []
 	for i in range(segment_count):
 		var segment = _create_curve_segment(points[i], points[i + 1], i, material)
@@ -1905,9 +1915,12 @@ func _electric_arc_offset(
 	return lateral + longitudinal
 
 ## Electric arc material for associative / reciprocal-plastic connections
-func _create_electric_arc_material(is_inhibitory: bool = false) -> StandardMaterial3D:
+func _create_electric_arc_material(is_inhibitory: bool = false, is_episodic: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
-	if is_inhibitory:
+	if is_episodic:
+		material.albedo_color = Color(1.0, 0.9, 0.15, 0.9)
+		material.emission = Color(1.0, 0.8, 0.05)
+	elif is_inhibitory:
 		material.albedo_color = Color(0.9, 0.4, 1.0, 0.9)
 		material.emission = Color(0.8, 0.3, 1.0)
 	else:
@@ -2020,10 +2033,14 @@ func _create_curve_segment(start_pos: Vector3, end_pos: Vector3, segment_index: 
 	return mesh_instance
 
 ## Create material for curve segments based on inhibitory/excitatory properties
-func _create_curve_material(is_inhibitory: bool = false) -> StandardMaterial3D:
+func _create_curve_material(is_inhibitory: bool = false, is_episodic: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
 	
-	if is_inhibitory:
+	if is_episodic:
+		# Episodic connections - Yellow
+		material.albedo_color = Color(1.0, 0.92, 0.15, 0.9)
+		material.emission = Color(0.95, 0.8, 0.05)
+	elif is_inhibitory:
 		# Inhibitory connections - Red color
 		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
 		material.emission = Color(0.8, 0.1, 0.1)
@@ -2135,28 +2152,35 @@ func _create_pulse_animation(
 func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet) -> Node3D:
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
 	
-	# If inhibitory and excitatory coexist in the recursive mapping set, render two loops
-	# separated slightly in height so both remain visible.
-	var has_inhibitory := false
-	var has_excitatory := false
-	if mapping_set != null and not mapping_set.mappings.is_empty():
-		has_inhibitory = mapping_set.is_any_PSP_multiplier_negative()
-		has_excitatory = mapping_set.is_any_PSP_multiplier_positive()
-	
-	if has_inhibitory and has_excitatory:
+	# Coexisting polarities get separate loops. Episodic is yellow, excitatory green, inhibitory red.
+	var polarities: Array[Dictionary] = _mapping_set_visual_polarities(mapping_set)
+	if polarities.size() > 1:
 		var mixed_loop := Node3D.new()
 		var plastic_prefix = "PLA_" if is_plastic else "STD_"
 		mixed_loop.name = "MIXED_RECURS_" + plastic_prefix + area_id
-		
-		var loop_height_separation := 0.6  # Small vertical separation between E/I loops
-		var excitatory_loop = _create_recursive_loop_variant(center_pos, area_id, false, is_plastic, loop_height_separation)
-		var inhibitory_loop = _create_recursive_loop_variant(center_pos, area_id, true, is_plastic, -loop_height_separation)
-		mixed_loop.add_child(excitatory_loop)
-		mixed_loop.add_child(inhibitory_loop)
+		var height_offsets: Array[float] = [0.6, -0.6] if polarities.size() == 2 else [0.6, 0.0, -0.6]
+		for index in polarities.size():
+			var polarity: Dictionary = polarities[index]
+			var loop = _create_recursive_loop_variant(
+				center_pos,
+				area_id,
+				polarity["inhibitory"],
+				is_plastic,
+				height_offsets[index],
+				3.0,
+				2.0,
+				true,
+				polarity["episodic"]
+			)
+			mixed_loop.add_child(loop)
 		return mixed_loop
 	
-	var is_inhibitory = _is_mapping_set_inhibitory(mapping_set)
-	return _create_recursive_loop_variant(center_pos, area_id, is_inhibitory, is_plastic, 0.0)
+	var is_inhibitory := false
+	var is_episodic := false
+	if polarities.size() == 1:
+		is_inhibitory = polarities[0]["inhibitory"]
+		is_episodic = polarities[0]["episodic"]
+	return _create_recursive_loop_variant(center_pos, area_id, is_inhibitory, is_plastic, 0.0, 3.0, 2.0, true, is_episodic)
 
 ## Internal helper that creates a single recursive loop visual.
 ## loop_height_offset vertically shifts the loop relative to its default loop height.
@@ -2169,12 +2193,13 @@ func _create_recursive_loop_variant(
 	loop_height_offset: float,
 	loop_radius_param: float = 3.0,
 	loop_height_base_param: float = 2.0,
-	include_pulse_animation: bool = true
+	include_pulse_animation: bool = true,
+	is_episodic: bool = false
 ) -> Node3D:
 	
 	# Create a container for the loop
 	var loop_node = Node3D.new()
-	var type_prefix = "INH_RECURS_" if is_inhibitory else "EXC_RECURS_"
+	var type_prefix = "EPI_RECURS_" if is_episodic else ("INH_RECURS_" if is_inhibitory else "EXC_RECURS_")
 	var plastic_prefix = "PLA_" if is_plastic else "STD_"
 	loop_node.name = type_prefix + plastic_prefix + area_id
 	
@@ -2201,7 +2226,7 @@ func _create_recursive_loop_variant(
 		var desired_dash_spacing = 2.0  # Units between dashes for loops
 		var num_dashes = max(6, int(loop_circumference / desired_dash_spacing))  # Minimum 6 dashes
 		
-		var dash_material = _create_plastic_animated_material(is_inhibitory)
+		var dash_material = _create_plastic_animated_material(is_inhibitory, is_episodic)
 		
 		for i in range(num_dashes):
 			var angle = (float(i) / float(num_dashes)) * TAU
@@ -2255,7 +2280,7 @@ func _create_recursive_loop_variant(
 		_add_circular_dash_wave_animation(loop_node, center_pos, loop_radius)
 	else:
 		# For non-plastic recursive connections, use continuous segments
-		var loop_material = _create_recursive_material(is_inhibitory)
+		var loop_material = _create_recursive_material(is_inhibitory, is_episodic)
 		
 		for i in range(num_segments):
 			var point1 = loop_points[i]
@@ -2271,10 +2296,13 @@ func _create_recursive_loop_variant(
 	return loop_node
 
 ## Create material for recursive connections based on inhibitory/excitatory properties
-func _create_recursive_material(is_inhibitory: bool = false) -> StandardMaterial3D:
+func _create_recursive_material(is_inhibitory: bool = false, is_episodic: bool = false) -> StandardMaterial3D:
 	var material = StandardMaterial3D.new()
 	
-	if is_inhibitory:
+	if is_episodic:
+		material.albedo_color = Color(1.0, 0.92, 0.15, 0.9)
+		material.emission = Color(1.0, 0.92, 0.15)
+	elif is_inhibitory:
 		# Inhibitory recursive connections - Red
 		# Keep consistent with non-recursive inhibitory connections.
 		material.albedo_color = Color(1.0, 0.2, 0.2, 0.9)  # Bright red
@@ -2381,18 +2409,36 @@ func _should_use_png_icon(area: AbstractCorticalArea) -> bool:
 	var png_icon_areas = ["_health", "_energy", "_status"]  # Expandable list
 	return area.cortical_ID in png_icon_areas
 
-## Helper function to determine if a mapping set contains inhibitory connections
-func _is_mapping_set_inhibitory(mapping_set: InterCorticalMappingSet) -> bool:
-	"""Check if the mapping set contains any inhibitory connections (negative PSC multiplier)"""
-	if mapping_set == null or mapping_set.mappings.is_empty():
-		return false
-	
-	# Check all mappings in the set
-	for mapping in mapping_set.mappings:
-		if mapping.post_synaptic_current_multiplier < 0:
-			return true  # At least one inhibitory connection found
-	
-	return false  # All connections are excitatory
+## Visual polarities for a mapping set. Episodic rules are yellow and are not also drawn as green.
+## Each entry is {inhibitory, episodic, arc_height}. Coexisting kinds use different arc heights.
+func _mapping_set_visual_polarities(mapping_set: InterCorticalMappingSet) -> Array[Dictionary]:
+	var has_excitatory := false
+	var has_inhibitory := false
+	var has_episodic := false
+	if mapping_set != null:
+		for mapping in mapping_set.mappings:
+			if mapping.is_episodic_mapping():
+				has_episodic = true
+			elif mapping.post_synaptic_current_multiplier < 0.0:
+				has_inhibitory = true
+			else:
+				has_excitatory = true
+	var kind_count := int(has_excitatory) + int(has_inhibitory) + int(has_episodic)
+	var excitatory_height := 0.4
+	var episodic_height := 0.4
+	var inhibitory_height := 0.4
+	if kind_count > 1:
+		excitatory_height = 0.46
+		episodic_height = 0.40
+		inhibitory_height = 0.34
+	var kinds: Array[Dictionary] = []
+	if has_excitatory:
+		kinds.append({"inhibitory": false, "episodic": false, "arc_height": excitatory_height})
+	if has_episodic:
+		kinds.append({"inhibitory": false, "episodic": true, "arc_height": episodic_height})
+	if has_inhibitory:
+		kinds.append({"inhibitory": true, "episodic": false, "arc_height": inhibitory_height})
+	return kinds
 
 ## Helper function to determine if a mapping set contains plastic connections
 func _is_mapping_set_plastic(mapping_set: InterCorticalMappingSet) -> bool:
@@ -2477,11 +2523,14 @@ func _add_wobble_to_point(point: Vector3, t: float) -> Vector3:
 	return point + total_wobble
 
 ## Create animated material for plastic connections with pulsing effects
-func _create_plastic_animated_material(is_inhibitory: bool = false) -> StandardMaterial3D:
+func _create_plastic_animated_material(is_inhibitory: bool = false, is_episodic: bool = false) -> StandardMaterial3D:
 	"""Create a dynamic, pulsing material for plastic connections with enhanced visual effects"""
 	var material = StandardMaterial3D.new()
 	
-	if is_inhibitory:
+	if is_episodic:
+		material.albedo_color = Color(1.0, 0.95, 0.25, 0.95)
+		material.emission = Color(1.0, 0.85, 0.1)
+	elif is_inhibitory:
 		# Inhibitory plastic connections - Enhanced red with stronger base emission
 		material.albedo_color = Color(1.0, 0.3, 0.3, 0.95)  # More opaque for visibility
 		material.emission = Color(1.0, 0.2, 0.2)  # Brighter emission

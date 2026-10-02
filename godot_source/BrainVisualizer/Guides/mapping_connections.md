@@ -166,8 +166,10 @@ Once configured:
 ### In Circuit Builder
 
 Mappings appear as lines between cortical areas:
-- **Line Style**: Indicates connection type
-- **Line Color**: May indicate properties
+- **Green**: excitatory
+- **Red**: inhibitory
+- **Yellow**: episodic (`episodic_memory` and `episodic_scan`)
+- **Dashed**: plastic
 - **Arrows**: Show direction of information flow
 
 **Click a line** to view/edit its properties.

@@ -367,3 +367,9 @@ func is_memory_mapping() -> bool:
 	if _morphology_used == null:
 		return false
 	return _morphology_used.name == &"episodic_memory" # TODO this needs to be a reference
+
+## Episodic write or scan. These mappings are drawn yellow, separate from excitatory and inhibitory.
+func is_episodic_mapping() -> bool:
+	if _morphology_used == null:
+		return false
+	return _morphology_used.name == &"episodic_memory" or _morphology_used.name == &"episodic_scan"

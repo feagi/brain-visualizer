@@ -114,6 +114,15 @@ func is_any_PSP_multiplier_negative() -> bool:
 			return true
 	return false
 
+## True when every rule uses episodic_memory or episodic_scan. Empty sets are not episodic.
+func is_every_mapping_episodic() -> bool:
+	if _mappings.is_empty():
+		return false
+	for mapping: SingleMappingDefinition in _mappings:
+		if not mapping.is_episodic_mapping():
+			return false
+	return true
+
 func get_PSP_signal_type() -> MappingsCache.SIGNAL_TYPE:
 	if is_any_PSP_multiplier_negative():
 		if is_any_PSP_multiplier_positive():

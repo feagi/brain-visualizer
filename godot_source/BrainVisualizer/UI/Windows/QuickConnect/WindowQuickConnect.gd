@@ -859,12 +859,31 @@ func _set_morphology(morphology: BaseMorphology) -> void:
 
 func _stop_quick_connect_guide() -> void:
 	_release_quick_connect_stick()
-	if _source == null:
-		BV.UI.qc_guide_source_bm = null
+	if BV == null or BV.UI == null:
 		return
-	var source_bm = BV.UI.get_brain_monitor_for_cortical_area(_source)
-	if source_bm != null and source_bm.has_method("stop_quick_connect_guide"):
-		source_bm.stop_quick_connect_guide()
+	# The line is drawn on the region view the user is in. An outside source still
+	# belongs to its parent monitor, so stopping only that parent leaves the line up.
+	var started: UI_BrainMonitor_3DScene = BV.UI.qc_guide_source_bm
+	var owner: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_cortical_area(_source) if _source != null else null
+	var visible: Array[UI_BrainMonitor_3DScene] = BV.UI.get_all_visible_brain_monitors()
+	var candidates: Array[UI_BrainMonitor_3DScene] = []
+	if started != null and is_instance_valid(started):
+		candidates.append(started)
+	if owner != null and is_instance_valid(owner) and not candidates.has(owner):
+		candidates.append(owner)
+	for bm in visible:
+		if bm != null and is_instance_valid(bm) and not candidates.has(bm):
+			candidates.append(bm)
+	if BV.UI.temp_root_bm != null and is_instance_valid(BV.UI.temp_root_bm) and not candidates.has(BV.UI.temp_root_bm):
+		candidates.append(BV.UI.temp_root_bm)
+	for bm in candidates:
+		var started_this: bool = bm == started
+		var owns_source: bool = bm == owner
+		var scene_visible: bool = visible.has(bm) or bm == BV.UI.temp_root_bm
+		if not DestinationPick.must_stop_guide_on_scene(started_this, owns_source, scene_visible):
+			continue
+		if bm.has_method("stop_quick_connect_guide"):
+			bm.stop_quick_connect_guide()
 	BV.UI.qc_guide_source_bm = null
 
 

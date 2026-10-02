@@ -51,7 +51,10 @@ Sub-regions appear as larger boxes that can contain cortical areas and other sub
 Lines between nodes represent neural mappings:
 - Click on a line to view or edit mapping properties
 - Multiple lines between the same areas indicate different mapping types
-- Line color and style indicate connection properties
+- **Green**: excitatory
+- **Red**: inhibitory
+- **Yellow**: episodic (`episodic_memory` and `episodic_scan`)
+- Dashed lines are plastic
 
 ## Basic Operations
 

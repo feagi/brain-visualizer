@@ -86,6 +86,7 @@ func setup(editing_classifier: GenomeClassifier) -> void:
 	_editing_classifier = editing_classifier
 	_build_classifier_fields()
 	_fit_window_to_content()
+	_refresh_memory_tunables_from_server()
 
 
 func _delay_shrink_window() -> void:
@@ -671,9 +672,45 @@ func _on_apply_class_memory() -> void:
 	await _apply_memory_section(_editing_classifier.class_memory_id, _class_memory_fields, _class_memory_apply)
 
 
+## Line edits keep the last confirmed number until focus leaves. Apply must commit
+## the field that still has focus, or the request writes the previous value.
+func _commit_focused_editor() -> void:
+	var vp: Viewport = get_viewport()
+	if vp == null:
+		return
+	var focused: Control = vp.gui_get_focus_owner()
+	if focused == null:
+		return
+	focused.release_focus()
+
+
+## Reload kernel and class memory tunables from the area record so a reopen matches the genome.
+func _refresh_memory_tunables_from_server() -> void:
+	if _editing_classifier == null or FeagiCore == null or FeagiCore.requests == null:
+		return
+	if not FeagiCore.can_interact_with_feagi():
+		return
+	await FeagiCore.requests.get_cortical_area(_editing_classifier.kernel_memory_id)
+	await FeagiCore.requests.get_cortical_area(_editing_classifier.class_memory_id)
+	if not is_instance_valid(self) or _editing_classifier == null:
+		return
+	_fill_memory_fields(_editing_classifier.kernel_memory_id, _kernel_memory_fields)
+	_fill_memory_fields(_editing_classifier.class_memory_id, _class_memory_fields)
+
+
+func _fill_memory_fields(area_id: StringName, fields: Dictionary) -> void:
+	var params: CorticalPropertyMemoryParameters = _memory_parameters(_cached_area(area_id))
+	for spec in _Tunables.MEMORY_FIELD_SPECS:
+		var key: String = String(spec["key"])
+		var control: Variant = fields.get(key, null)
+		if control is Control:
+			_apply_spec_value(control, spec, _memory_spec_value(params, spec))
+
+
 func _apply_memory_section(area_id: StringName, fields: Dictionary, apply: Button) -> void:
 	if FeagiCore == null or FeagiCore.requests == null:
 		return
+	_commit_focused_editor()
 	var payload: Dictionary = _Tunables.memory_update_payload(
 		_values_from_fields(fields, _Tunables.MEMORY_FIELD_SPECS)
 	)
@@ -689,6 +726,7 @@ func _apply_memory_section(area_id: StringName, fields: Dictionary, apply: Butto
 func _on_apply_associative() -> void:
 	if FeagiCore == null or FeagiCore.requests == null or _editing_classifier == null:
 		return
+	_commit_focused_editor()
 	var kernel_memory: AbstractCorticalArea = _cached_area(_editing_classifier.kernel_memory_id)
 	var class_memory: AbstractCorticalArea = _cached_area(_editing_classifier.class_memory_id)
 	var existing: Array[SingleMappingDefinition] = _associative_mapping_set()

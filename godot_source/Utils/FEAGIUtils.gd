@@ -441,6 +441,28 @@ static func string_name_array_to_CSV(arr: Array[StringName]) -> StringName:
 	output = output + arr[length - 1]
 	return output
 
+## True when an open region tab still belongs to the genome now in cache.
+## Empty IDs are stale. Missing IDs are leftover from a previous genome load.
+static func region_tab_matches_loaded_genome(region_id: StringName, available_region_ids: Dictionary) -> bool:
+	if region_id == &"":
+		return false
+	return available_region_ids.has(region_id)
+
+
+## Region IDs among open tabs that are not in the newly loaded genome.
+static func region_ids_missing_from_genome(open_region_ids: Array[StringName], available_region_ids: Dictionary) -> Array[StringName]:
+	var missing: Array[StringName] = []
+	for region_id in open_region_ids:
+		if not region_tab_matches_loaded_genome(region_id, available_region_ids):
+			missing.append(region_id)
+	return missing
+
+
+## Close the split pane when a genome replace left no Brain Monitor region tabs.
+static func should_close_split_after_stale_region_tabs(remaining_secondary_tab_count: int) -> bool:
+	return remaining_secondary_tab_count <= 0
+
+
 ## Cortical unit (group) index packed as little-endian u16 in bytes 6-7 of an 8-byte IO cortical ID.
 static func io_cortical_unit_index_from_id_bytes(raw_id: PackedByteArray) -> int:
 	if raw_id.size() != 8:
