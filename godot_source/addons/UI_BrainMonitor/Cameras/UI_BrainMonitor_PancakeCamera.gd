@@ -2,6 +2,7 @@ extends Camera3D
 class_name UI_BrainMonitor_PancakeCamera
 
 const CameraStandardViewLib = preload("res://addons/UI_BrainMonitor/CameraStandardView.gd")
+const CameraOrbitLib = preload("res://addons/UI_BrainMonitor/CameraOrbit.gd")
 ## Camera interface for Brain Monitor on a flat monitor (non-vr)
 
 
@@ -19,6 +20,7 @@ const TANK_CAMERA_TURN_SPEED = 200
 const TANK_CAMERA_MOVEMENT_SPEED: float =  2.0
 const TANK_CAMERA_PAN_SPEED: float = 0.1
 const TANK_CAMERA_ROTATION_SPEED: float = 0.001
+const TANK_CAMERA_ORBIT_SPEED: float = TANK_CAMERA_ROTATION_SPEED * 3.0
 const TANK_CAMERA_FAST_MULTIPLIER: float = 3.0
 const TANK_CAMERA_SCROLL_FAST_MULTIPLIER: float = 2.0
 
@@ -55,6 +57,13 @@ var allow_tank_pan: bool = true
 
 func set_tank_pan_enabled(is_enabled: bool) -> void:
 	allow_tank_pan = is_enabled
+
+## Called when an orbit drag starts. Returns {&"found": bool, &"pivot": Vector3}. The Brain Monitor scene sets this.
+var orbit_pivot_provider: Callable = Callable()
+
+var _orbit_active: bool = false
+var _orbit_button: MouseButton = MOUSE_BUTTON_NONE
+var _orbit_pivot: Vector3 = Vector3.ZERO
 
 var _parent_viewport: Viewport
 var _initial_position: Vector3
@@ -139,6 +148,9 @@ func _unhandled_input(event: InputEvent) -> void:
 					return # disable sending inputs while looking around
 				
 			MODE.TANK:
+				# An orbit drag owns the mouse until its button is released, so it never pans, selects, or opens a menu.
+				if _handle_orbit_input(event as InputEventMouse):
+					return
 				if event is InputEventMouseMotion:
 					if Input.is_mouse_button_pressed(key_tank_turn_button):
 						rotation.x += event.relative.y * -TANK_CAMERA_ROTATION_SPEED
@@ -364,6 +376,63 @@ func _scroll_is_fast(event: InputEvent) -> bool:
 			return bool(node.call(&"is_scroll_fast_modifier_held"))
 		node = node.get_parent()
 	return false
+
+
+## Middle drag, or Option/Alt + left drag, orbits around a pivot chosen when the drag starts.
+## Returns true when the event belongs to an orbit and must not reach pan, selection, or the scene.
+func _handle_orbit_input(mouse_event: InputEventMouse) -> bool:
+	if mouse_event is InputEventMouseButton:
+		var button_event: InputEventMouseButton = mouse_event as InputEventMouseButton
+		if _orbit_active:
+			if button_event.button_index == _orbit_button and not button_event.pressed:
+				_end_orbit()
+				return true
+			return button_event.button_index == MOUSE_BUTTON_LEFT or button_event.button_index == MOUSE_BUTTON_RIGHT or button_event.button_index == MOUSE_BUTTON_MIDDLE
+		if button_event.pressed and CameraOrbitLib.is_orbit_press(button_event.button_index, button_event.alt_pressed):
+			_begin_orbit(button_event.button_index)
+			return true
+		return false
+	if mouse_event is InputEventMouseMotion and _orbit_active:
+		var motion_event: InputEventMouseMotion = mouse_event as InputEventMouseMotion
+		# The release can land outside this viewport. The button mask still shows the drag ended.
+		if (motion_event.button_mask & MouseButtonMask.MOUSE_BUTTON_MASK_LEFT) == 0 and _orbit_button == MOUSE_BUTTON_LEFT:
+			_end_orbit()
+			return false
+		if (motion_event.button_mask & MouseButtonMask.MOUSE_BUTTON_MASK_MIDDLE) == 0 and _orbit_button == MOUSE_BUTTON_MIDDLE:
+			_end_orbit()
+			return false
+		orbit_by_mouse_delta(motion_event.relative)
+		return true
+	return false
+
+
+func _begin_orbit(button: MouseButton) -> void:
+	_orbit_active = true
+	_orbit_button = button
+	_orbit_pivot = global_position
+	if not orbit_pivot_provider.is_valid():
+		return
+	var choice: Dictionary = orbit_pivot_provider.call()
+	if bool(choice.get(&"found", false)):
+		_orbit_pivot = choice[&"pivot"] as Vector3
+
+
+func _end_orbit() -> void:
+	_orbit_active = false
+	_orbit_button = MOUSE_BUTTON_NONE
+
+
+func is_orbiting() -> bool:
+	return _orbit_active
+
+
+## Orbits the camera around the current pivot. Horizontal motion turns around world up; vertical motion tilts.
+func orbit_by_mouse_delta(mouse_delta: Vector2) -> void:
+	if global_position.is_equal_approx(_orbit_pivot):
+		return
+	var yaw_delta: float = mouse_delta.x * -TANK_CAMERA_ORBIT_SPEED
+	var pitch_delta: float = mouse_delta.y * -TANK_CAMERA_ORBIT_SPEED
+	global_transform = CameraOrbitLib.orbit_transform(_orbit_pivot, global_transform, yaw_delta, pitch_delta)
 
 
 func point_camera_at(position_to_look_at: Vector3) -> void:

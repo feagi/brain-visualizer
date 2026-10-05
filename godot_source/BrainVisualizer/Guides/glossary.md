@@ -284,6 +284,12 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Shown in Orange color in Circuit Builder
 - See also: [Cortical Area](#c), [IPU](#i)
 
+**Orbit**
+- Brain Monitor camera move that revolves around a pivot while keeping the same distance
+- Middle drag, or Option/Alt + left drag
+- The pivot is the selected cortical areas, else the area under the screen center, else the whole brain
+- See also: Orbit in [Camera Controls](camera_controls.md)
+
 ---
 
 ## P

@@ -24,6 +24,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 
 - **Pan camera** -> Left Drag
 - **Rotate camera** -> Right Drag
+- **Orbit around the selected areas** -> Middle Drag, or Option/Alt + Left Drag. With nothing selected, orbits the area under the screen center, or else the whole brain
 - **Zoom camera** -> Mouse Wheel Up/Down
 - **Zoom camera at double speed** -> Shift + mouse wheel, or Shift + trackpad scroll
 - **Move camera in X/Z plane** -> W/A/S/D or Arrow Keys

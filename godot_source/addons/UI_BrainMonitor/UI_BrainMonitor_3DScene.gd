@@ -6,6 +6,7 @@ const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/Brain
 const ContinuousSelectedNeuronFiringLib = preload("res://addons/UI_BrainMonitor/ContinuousSelectedNeuronFiring.gd")
 const BoxSelectLib = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_BoxSelect.gd")
 const CameraStandardViewLib = preload("res://addons/UI_BrainMonitor/CameraStandardView.gd")
+const CameraOrbitLib = preload("res://addons/UI_BrainMonitor/CameraOrbit.gd")
 const QuickConnectDestinationPickLib = preload("res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectDestinationPick.gd")
 
 @export var multi_select_key: Key = KEY_SHIFT
@@ -221,6 +222,7 @@ func _ready() -> void:
 			_pancake_cam.camera_reset_requested.connect(_on_user_camera_reset_requested)
 		if not _pancake_cam.camera_standard_view_requested.is_connected(_on_camera_standard_view_requested):
 			_pancake_cam.camera_standard_view_requested.connect(_on_camera_standard_view_requested)
+		_pancake_cam.orbit_pivot_provider = _resolve_orbit_pivot
 		# Track mouse enter/exit on this container so keyboard actions (R) are scoped to hovered tab/viewport
 		if not mouse_entered.is_connected(_on_container_mouse_entered):
 			mouse_entered.connect(_on_container_mouse_entered)
@@ -1914,6 +1916,41 @@ func _on_camera_standard_view_requested(view_id: int) -> void:
 	var center := aabb.position + (aabb.size / 2.0)
 	_place_camera_for_frame(aabb, center, orient[&"view_dir"], orient[&"up"])
 	_update_all_cortical_area_label_positions_to_camera_edge()
+
+## Orbit pivot for the camera, chosen when an orbit drag starts. See [method CameraOrbitLib.choose_pivot] for the order.
+func _resolve_orbit_pivot() -> Dictionary:
+	var center_hit: Dictionary = {}
+	if _pancake_cam != null and _world_3D != null:
+		var screen_center: Vector2 = Vector2(($SubViewport as SubViewport).size) * 0.5
+		var ray := PhysicsRayQueryParameters3D.new()
+		ray.from = _pancake_cam.project_ray_origin(screen_center)
+		ray.to = ray.from + _pancake_cam.project_ray_normal(screen_center) * UI_BrainMonitor_PancakeCamera.RAYCAST_LENGTH
+		ray.collision_mask = 0x7FFFFFFF
+		ray.collide_with_areas = true
+		ray.collide_with_bodies = true
+		center_hit = _raycast_first_cortical_renderer_hit(_world_3D.direct_space_state, ray)
+	return CameraOrbitLib.choose_pivot(_compute_selected_areas_aabb(), center_hit, _compute_scene_aabb())
+
+
+## Combined world bounds of the selected cortical areas shown in this Brain Monitor. Empty when none are shown here.
+func _compute_selected_areas_aabb() -> AABB:
+	if BV == null or BV.UI == null or BV.UI.selection_system == null:
+		return AABB()
+	var have: bool = false
+	var merged := AABB()
+	for area in BV.UI.selection_system.get_highlighted_cortical_areas():
+		if area == null:
+			continue
+		var viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(String(area.cortical_ID))
+		if viz == null:
+			continue
+		var area_aabb: AABB = viz.get_volume_world_aabb()
+		if area_aabb.size == Vector3.ZERO:
+			continue
+		merged = area_aabb if not have else merged.merge(area_aabb)
+		have = true
+	return merged if have else AABB()
+
 
 ## Repositions cortical area labels so they remain below each area but appear at the camera-facing edge of the cortical depth.
 func _update_all_cortical_area_label_positions_to_camera_edge() -> void:

@@ -37,18 +37,20 @@ Neural activity is visualized through:
 
 ### Mouse Controls
 
-**Rotation (Orbit)**
-- **Left mouse drag**: Rotate the camera around the focus point
-- The camera orbits while keeping the center of interest in view
+**Orbit**
+- **Middle mouse drag**, or **Option/Alt + left mouse drag**: Revolve the camera around the selected cortical areas
+- With nothing selected, it orbits the area under the center of the screen, or else the whole brain
+- An orbit drag does not select anything. See Orbit in [Camera Controls](camera_controls.md)
+
+**Turn in Place**
+- **Right mouse drag**: Turn the view without moving the camera
 
 **Pan (Move Laterally)**
 - **Left mouse drag**: Move left/right/up/down (Tank mode)
-- **Middle mouse drag**: Alternative pan
 - **Shift + Left mouse drag** is box selection, not pan (see Multi-Selection below)
 
 **Zoom**
 - **Mouse wheel scroll**: Zoom in (scroll up) or out (scroll down)
-- **Right mouse drag**: Alternative zoom (drag up/down)
 - Get closer to see details or pull back for overview
 
 **Focus on Object**

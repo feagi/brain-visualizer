@@ -50,6 +50,7 @@ Pan, zoom, and rotate for exploration:
 **In Brain Monitor (3D):**
 - **Pan**: Left-drag
 - **Rotate**: Right-drag
+- **Orbit around the selection**: Middle-drag or Option/Alt+Left-drag
 - **Zoom**: Mouse wheel
 - **Box-select areas**: Shift+Left-drag a rectangle
 - **Reset**: R (when the mouse is over that Brain Monitor viewport)
@@ -374,7 +375,8 @@ See [Split View](split_view.md) for more details.
 - **Left Click**: Select object
 - **Left Drag**: Pan camera (3D) or move object (2D)
 - **Shift + Left Drag**: Box-select cortical areas (3D) or pan view (2D)
-- **Middle Drag**: Pan view
+- **Middle Drag**: Pan view (2D) or orbit around the selection (3D)
+- **Option/Alt + Left Drag**: Orbit around the selection (3D)
 - **Wheel**: Zoom in/out
 - **Ctrl + Click**: Multi-select cortical areas (opens Area Firing Recorder when used in Brain Monitor)
 

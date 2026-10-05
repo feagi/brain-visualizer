@@ -68,24 +68,42 @@ Center view on a specific object:
 
 The Brain Monitor uses a 3D camera with full six-degree-of-freedom movement.
 
-### Rotation (Orbit)
+### Orbit
 
-Rotate camera around focus point:
+Revolve the camera around a cortical area or point of interest:
 
 **Mouse:**
-- **Left Mouse Drag**: Click and hold left button, move mouse
-  - Left/Right: Rotate horizontally (yaw)
-  - Up/Down: Rotate vertically (pitch)
+- **Middle Mouse Drag**: Click and hold the middle button, move mouse
+- **Option/Alt + Left Mouse Drag**: For trackpads or mice without a middle button
+  - Left/Right: Revolve around the vertical axis
+  - Up/Down: Tilt over or under the pivot. The camera stops just short of straight above or below
+
+**What it orbits around**, chosen when you start dragging:
+1. The selected cortical areas (the center of all of them)
+2. With nothing selected, the point on the cortical area under the center of the screen
+3. With nothing there, the center of the whole brain
+
+The camera keeps its distance from the pivot, and the pivot stays where it was on screen. An orbit drag never selects an area or opens the quick menu.
+
+**Tips:**
+- Select an area, then middle drag to look at it from every side
+- Orbit turns about three times faster than right-drag turning, so a short drag covers a wide angle
+- On a Mac trackpad, see Trackpad (macOS) below
+- On some Linux desktops, Alt + drag moves the window instead. Use middle drag there
+
+### Turn in Place
+
+Turn the camera's view without moving it:
+
+**Mouse:**
+- **Right Mouse Drag**: Click and hold right button, move mouse. On macOS, Control + left drag does the same
+  - Left/Right: Turn horizontally (yaw)
+  - Up/Down: Turn vertically (pitch)
 
 **Keyboard:**
 - **Arrow Keys**: Rotate camera
   - Left/Right: Horizontal rotation
   - Up/Down: Vertical rotation
-
-**Tips:**
-- Camera orbits around point of interest
-- Combined with pan for full control
-- Smooth movements for best view
 
 ### Panning (Lateral Movement)
 
@@ -93,7 +111,6 @@ Move camera sideways without rotating:
 
 **Mouse:**
 - **Left Mouse Drag**: Click and hold left button, move mouse (Tank mode)
-- **Middle Mouse Drag**: Alternative pan
 - **Shift + Left Mouse Drag** draws a selection rectangle over cortical areas; it does not pan
 
 **Keyboard:**
@@ -114,7 +131,6 @@ Move camera closer or farther:
 - **Scroll Wheel Up**: Move forward (zoom in)
 - **Scroll Wheel Down**: Move backward (zoom out)
 - **Shift + Scroll Wheel or trackpad scroll**: Move closer or farther at double speed
-- **Right Mouse Drag**: Drag up to zoom in, down to zoom out
 
 **Keyboard:**
 - **W/S**: Move forward/backward
@@ -281,19 +297,23 @@ Use split views on multiple screens:
 
 See [Camera Animations](camera_animations.md) for demo techniques.
 
-## Touch and Tablet Support
+## Trackpad (macOS)
 
-If using a touch device:
+In Brain Monitor:
+- **Click-drag**: Pan
+- **Option + click-drag**: Orbit around the selected cortical areas. Press the trackpad down until it clicks, keep holding, and slide. You can let go of Option once the drag starts
+- **Two-finger click-drag**, or **Control + click-drag**: Turn in place
+- **Two-finger scroll up/down**: Move closer or farther
+- **Two-finger scroll left/right**: Move sideways
+- **Shift + two-finger scroll**: Move closer or farther at double speed
 
-**Gestures:**
-- **One finger drag**: Rotate camera
-- **Two finger drag**: Pan camera
-- **Pinch**: Zoom in/out
-- **Double tap**: Focus on object
+Tap to click cannot orbit, because the tap releases right away. If holding the click while sliding is awkward, turn on three-finger drag: **System Settings** → **Accessibility** → **Pointer Control** → **Trackpad Options**, then set **Use trackpad for dragging** to **Three Finger Drag**. Then hold Option and drag with three fingers.
 
-**Stylus:**
-- Stylus functions as mouse
-- Use stylus buttons for middle/right-click
+Pinch does not zoom. Use two-finger scroll instead.
+
+## Touch Screens and Stylus
+
+Brain Monitor does not respond to touch-screen gestures. A stylus that acts as a mouse works like one: use its buttons for middle-drag (orbit) and right-drag (turn in place).
 
 ## Keyboard Shortcuts Reference
 
@@ -316,6 +336,8 @@ If using a touch device:
 - **Home**: Frame the whole brain from the front
 - **Shift + WASD**: Move faster
 - **Shift + Left Drag**: Box-select cortical areas
+- **Middle Drag** or **Option/Alt + Left Drag**: Orbit around the selection
+- **Right Drag**: Turn the camera in place
 
 ## Tips for Efficient Navigation
 
@@ -329,7 +351,7 @@ If using a touch device:
 ### In Brain Monitor
 
 1. **Click to focus**: Fastest way to target
-2. **Orbit around focus**: Use rotation after focusing
+2. **Orbit around focus**: Select an area, then middle drag (or Option/Alt + left drag)
 3. **Save positions**: Use camera animations for important views
 4. **Split View**: Work with 2D and 3D simultaneously
 
@@ -371,7 +393,7 @@ If using a touch device:
 - Ensure stable input device
 
 **"Can't rotate in 3D"**
-- Ensure you're clicking on background (not object)
+- Use middle drag or Option/Alt + left drag to orbit, or right drag to turn in place
 - Try arrow keys instead
 - Check camera isn't locked (if feature exists)
 - Reset camera and try again

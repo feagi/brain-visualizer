@@ -127,7 +127,7 @@ Each panel navigates independently:
 - Select and edit objects
 
 **Right Panel (Brain Monitor):**
-- Rotate, pan, zoom in 3D
+- Rotate, orbit, pan, zoom in 3D. Orbit centers on the selection, so selecting an area in the left panel lets you orbit it on the right
 - Focus on objects
 - View neural activity
 
