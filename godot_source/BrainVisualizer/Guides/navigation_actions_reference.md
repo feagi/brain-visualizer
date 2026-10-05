@@ -49,6 +49,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Select brain region frame** -> Left Click on region frame
 - **Add/remove cortical area from multi-selection** -> Ctrl + Click on cortical area (Cmd + Click on macOS)
 - **Box-select multiple cortical areas** -> Shift + Left Drag a rectangle in the 3D scene
+- **Open floating 3D view of one cortical area** -> Shift + Ctrl + Click on the area (Shift + Command + Click on macOS). Click elsewhere to close it
 - **Toggle voxel selection (additive)** -> Hold Shift, then Click voxels
 - **Fire selected voxels once** -> Space (release Shift first if you were picking voxels)
 - **Start continuous fire of selected voxels** -> Shift + Space

@@ -120,6 +120,7 @@ Regions organize cortical areas spatially:
 - Properties panel updates (if visible)
 
 **Multi-Selection:**
+- **Shift + Ctrl + Click** (Shift + Command + Click on macOS) on a cortical area opens a floating 3D view of that area alone. On macOS, Control + click is delivered as a right-click and still opens this view. Left-drag tumbles the area on every axis, right-drag rolls it, and the scroll wheel zooms. Ctrl + 1, 2, or 3 then click snaps that view to the XY, XZ, or YZ axis. Shift + Click still toggles voxels inside the panel. The panel opens at the point you clicked, and its bottom-right corner resizes it. Click anywhere else in Brain Visualizer to close it. A drag with those keys still box-selects areas
 - **Ctrl + Click** (Cmd + Click on macOS) to add or remove a cortical area
 - **Shift + Left Drag** to draw a rectangle; every cortical area whose volume intersects that rectangle is selected
 - Camera pan is paused while the box is being drawn

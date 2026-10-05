@@ -8,6 +8,7 @@ const BoxSelectLib = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_BoxSe
 const CameraStandardViewLib = preload("res://addons/UI_BrainMonitor/CameraStandardView.gd")
 const CameraOrbitLib = preload("res://addons/UI_BrainMonitor/CameraOrbit.gd")
 const QuickConnectDestinationPickLib = preload("res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectDestinationPick.gd")
+const IsolatedAreaInspectLib = preload("res://addons/UI_BrainMonitor/IsolatedAreaInspect.gd")
 
 @export var multi_select_key: Key = KEY_SHIFT
 
@@ -71,6 +72,8 @@ var _should_show_combo_buttons: bool = true
 
 
 var _representing_region: BrainRegion
+## Set for the floating single-area inspect view. That view shows only this area.
+var _isolated_cortical_area: AbstractCorticalArea = null
 var _world_3D: World3D # used for physics stuff
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
 var _brain_region_visualizations_by_ID: Dictionary  # Dictionary[StringName, UI_BrainMonitor_BrainRegion3D]
@@ -504,6 +507,32 @@ func flash_indicator_for_brain_region(region: BrainRegion) -> void:
 	var region_frame = _brain_region_visualizations_by_ID.get(region.region_ID, null)
 	if region_frame != null and is_instance_valid(region_frame):
 		_spawn_indicator_for_node_center(region_frame)
+
+## True for the floating inspect view of one cortical area.
+func is_isolated_cortical_inspect() -> bool:
+	return _isolated_cortical_area != null
+
+
+## Builds this monitor as a single-area inspect view. Call after the monitor is in the scene tree.
+func setup_isolated_cortical_area(area: AbstractCorticalArea) -> void:
+	if area == null:
+		push_error("Isolated cortical inspect requires a cortical area")
+		return
+	_isolated_cortical_area = area
+	_should_show_combo_buttons = false
+	enable_startup_camera_intro = false
+	_representing_region = area.current_parent_region
+	name = "BM_Isolated_" + String(area.cortical_ID)
+	var viz: UI_BrainMonitor_CorticalArea = _add_cortical_area(area, true)
+	if viz == null:
+		push_error("Isolated cortical inspect could not show area %s" % String(area.cortical_ID))
+		return
+	if _pancake_cam:
+		_pancake_cam.inspect_tumble = true
+		_pancake_cam.ignore_direct_key_input = true
+		await _auto_frame_camera_to_objects()
+	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+
 
 func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	_should_show_combo_buttons = show_combo_buttons
@@ -1918,7 +1947,10 @@ func _on_camera_standard_view_requested(view_id: int) -> void:
 	_update_all_cortical_area_label_positions_to_camera_edge()
 
 ## Orbit pivot for the camera, chosen when an orbit drag starts. See [method CameraOrbitLib.choose_pivot] for the order.
+## The isolated inspect view always revolves around that one area.
 func _resolve_orbit_pivot() -> Dictionary:
+	if is_isolated_cortical_inspect():
+		return IsolatedAreaInspectLib.pivot_for_area(_isolated_area_world_aabb())
 	var center_hit: Dictionary = {}
 	if _pancake_cam != null and _world_3D != null:
 		var screen_center: Vector2 = Vector2(($SubViewport as SubViewport).size) * 0.5
@@ -1930,6 +1962,62 @@ func _resolve_orbit_pivot() -> Dictionary:
 		ray.collide_with_bodies = true
 		center_hit = _raycast_first_cortical_renderer_hit(_world_3D.direct_space_state, ray)
 	return CameraOrbitLib.choose_pivot(_compute_selected_areas_aabb(), center_hit, _compute_scene_aabb())
+
+
+func _isolated_area_world_aabb() -> AABB:
+	if _isolated_cortical_area == null:
+		return AABB()
+	var viz: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(_isolated_cortical_area.cortical_ID)
+	if viz == null or not is_instance_valid(viz):
+		return AABB()
+	return viz.get_volume_world_aabb()
+
+
+func _is_isolated_target_area(area: AbstractCorticalArea) -> bool:
+	return _isolated_cortical_area != null and area != null and area.cortical_ID == _isolated_cortical_area.cortical_ID
+
+
+func is_pointer_over_view() -> bool:
+	return _is_mouse_hovering_viewport
+
+
+## Forwards a key into this view's camera. Used when the camera's SubViewport does not receive root-viewport keys.
+func forward_key_to_camera(event: InputEvent) -> void:
+	if _pancake_cam == null:
+		return
+	_pancake_cam.apply_key_input(event)
+
+
+func _focus_plane_from_held_number_keys() -> StringName:
+	if Input.is_physical_key_pressed(KEY_1):
+		return &"xy"
+	if Input.is_physical_key_pressed(KEY_2):
+		return &"xz"
+	if Input.is_physical_key_pressed(KEY_3):
+		return &"yz"
+	return &""
+
+
+func _request_isolated_cortical_inspect(area: AbstractCorticalArea) -> void:
+	if area == null or BV == null or BV.WM == null:
+		return
+	BV.WM.spawn_isolated_cortical_inspect(area, self, _click_point_in_root_viewport())
+
+
+## Mouse position for this Brain Monitor, in the same root-viewport space as floating windows.
+func _click_point_in_root_viewport() -> Vector2:
+	var local := _get_bm_mouse_position()
+	var global_rect := get_global_rect()
+	var viewport_size := Vector2(($SubViewport as SubViewport).size)
+	if viewport_size.x > 1.0 and viewport_size.y > 1.0 and global_rect.size.x > 1.0 and global_rect.size.y > 1.0:
+		local = Vector2(local.x * global_rect.size.x / viewport_size.x, local.y * global_rect.size.y / viewport_size.y)
+	var point := global_rect.position + local
+	var anchor_viewport := get_viewport()
+	if anchor_viewport is SubViewport:
+		var container := anchor_viewport.get_parent()
+		if container is SubViewportContainer:
+			point += (container as SubViewportContainer).get_global_position()
+	return point
 
 
 ## Combined world bounds of the selected cortical areas shown in this Brain Monitor. Empty when none are shown here.
@@ -2112,6 +2200,31 @@ func _handle_cortical_pick_click_event(
 	var arr_test: Array[GenomeObject] = [_selection_object_for_cortical_area(hit_parent_parent.cortical_area)]
 	if not bm_input_event.button_pressed:
 		return
+	if IsolatedAreaInspectLib.is_open_gesture(
+		bm_input_event.ctrl_pressed,
+		bm_input_event.shift_pressed,
+		bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN,
+		bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY,
+		bm_input_event.button_pressed,
+		bm_input_event.was_dragging,
+	):
+		if not is_isolated_cortical_inspect():
+			_request_isolated_cortical_inspect(hit_parent_parent.cortical_area)
+		return
+	if is_isolated_cortical_inspect():
+		var isolated_plane: StringName = _focus_plane_from_held_number_keys()
+		if bm_input_event.ctrl_pressed and isolated_plane != &"" and (bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY):
+			var isolated_aabb: AABB = _compute_world_aabb(hit_parent)
+			if isolated_aabb.size != Vector3.ZERO and (isolated_aabb.size.x + isolated_aabb.size.y + isolated_aabb.size.z) > 0.01:
+				_frame_camera_to_aabb_with_plane(isolated_aabb, isolated_plane)
+			return
+		if UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS in bm_input_event.all_buttons_being_held and bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
+			if not is_instance_valid(hit_parent_parent) or not hit_parent_parent.cortical_area:
+				return
+			var isolated_selected: bool = hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
+			cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
+			cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, isolated_selected)
+		return
 	var quick_connect_override_active: bool = BV != null and BV.UI != null and BV.UI.selection_system != null and BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
 	var quick_connect_neuron_click_voxel_mode: bool = _should_disable_unit_group_auto_selection_for_click()
 	var selecting_quick_connect_neuron_voxel_with_click: bool = quick_connect_neuron_click_voxel_mode and bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN
@@ -2140,13 +2253,7 @@ func _handle_cortical_pick_click_event(
 					cortical_area_selected_neurons_changed_delta.emit(qc_clicked, neuron_coordinate_clicked, true)
 				return
 			if bm_input_event.ctrl_pressed:
-				var focus_plane: StringName = &""
-				if Input.is_physical_key_pressed(KEY_1):
-					focus_plane = &"xy"
-				elif Input.is_physical_key_pressed(KEY_2):
-					focus_plane = &"xz"
-				elif Input.is_physical_key_pressed(KEY_3):
-					focus_plane = &"yz"
+				var focus_plane: StringName = _focus_plane_from_held_number_keys()
 				if focus_plane != &"":
 					if _pancake_cam:
 						var cortical_aabb = _compute_world_aabb(hit_parent)
@@ -2628,6 +2735,8 @@ func _quick_connect_click_prefers_cortical_volume() -> bool:
 
 
 func _box_select_is_allowed() -> bool:
+	if is_isolated_cortical_inspect():
+		return false
 	if _manipulation_active:
 		return false
 	if _qc_guide_active:
@@ -4631,8 +4740,11 @@ func _add_cortical_area(area: AbstractCorticalArea, allow_external: bool = false
 	# print("🚨 _add_cortical_area() CALLED for area: %s in brain monitor instance %d (region: %s)" % [area.cortical_ID, get_instance_id(), _representing_region.friendly_name])  # Suppressed - causes output overflow
 	if area == null:
 		return null
+	var isolated_target: bool = _is_isolated_target_area(area)
+	if _isolated_cortical_area != null and not isolated_target:
+		return null
 	_strip_classifier_internal_memory_visuals()
-	if _area_hidden_as_memory_in_this_monitor(area):
+	if not isolated_target and _area_hidden_as_memory_in_this_monitor(area):
 		return null
 	# Rebuild iterates contained_cortical_areas / partial mappings that can still hold
 	# an instance removed from available_cortical_areas. Cache is the source of truth.
@@ -4674,7 +4786,7 @@ func _add_cortical_area(area: AbstractCorticalArea, allow_external: bool = false
 	var is_special_invariant_core: bool = _should_show_feagi_invariant_core_in_this_monitor(area)
 
 	# Create if: direct member of this circuit, an I/O bridge, or an invariant core on the root monitor.
-	if not allow_external and not is_subtree_ok and not is_io_of_child_region and not is_io_of_this_region and not is_special_invariant_core:
+	if not isolated_target and not allow_external and not is_subtree_ok and not is_io_of_child_region and not is_io_of_this_region and not is_special_invariant_core:
 		return null
 
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()

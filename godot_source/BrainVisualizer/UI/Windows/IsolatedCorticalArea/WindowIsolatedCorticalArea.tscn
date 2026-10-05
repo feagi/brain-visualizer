@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/IsolatedCorticalArea/WindowIsolatedCorticalArea.gd" id="1_window"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
+
+[node name="WindowIsolatedCorticalArea" type="VBoxContainer"]
+custom_minimum_size = Vector2(480, 360)
+offset_right = 480.0
+offset_bottom = 360.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 0
+script = ExtResource("1_window")
+window_spawn_location = Vector2i(8, 8)
+
+[node name="TitleBar" parent="." instance=ExtResource("2_title")]
+layout_mode = 2
+title = "Cortical Area"
+
+[node name="WindowPanel" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"MarginContainer_WindowBorder"
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0

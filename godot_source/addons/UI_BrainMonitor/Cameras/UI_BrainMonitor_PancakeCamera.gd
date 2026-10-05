@@ -60,8 +60,13 @@ func set_tank_pan_enabled(is_enabled: bool) -> void:
 
 ## Called when an orbit drag starts. Returns {&"found": bool, &"pivot": Vector3}. The Brain Monitor scene sets this.
 var orbit_pivot_provider: Callable = Callable()
+## Isolated inspect view: left-drag tumbles without a pitch limit, right-drag rolls. The main brain monitor stays a turntable.
+var inspect_tumble: bool = false
+## When true, key events are applied only through [method apply_key_input], so a parent window can forward them while the pointer is over this view.
+var ignore_direct_key_input: bool = false
 
 var _orbit_active: bool = false
+var _roll_active: bool = false
 var _orbit_button: MouseButton = MOUSE_BUTTON_NONE
 var _orbit_pivot: Vector3 = Vector3.ZERO
 
@@ -222,73 +227,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			
 		
 	if event is InputEventKey:
-		
-		
-		
-		match(movement_mode):
-			
-			MODE.ANIMATION:
-				return
-			
-			MODE.FPS:
-				pass
-				
-			MODE.TANK:
-				var dir: Vector3 = Vector3(0,0,0)
-				if _try_emit_standard_view(event as InputEventKey):
-					return
-
-				if Input.is_key_pressed(key_tank_reset_position):
-					# Only reset if the mouse is currently over this SubViewport
-					if _is_mouse_hovering_viewport:
-						camera_reset_requested.emit()
-					return
-				if Input.is_action_pressed("forward"):
-					dir += Vector3(0,0,-1)
-				if Input.is_action_pressed("backward"):
-					dir += Vector3(0,0,1)
-				if Input.is_action_pressed("left"):
-					dir += Vector3(-1,0,0)
-				if Input.is_action_pressed("right"):
-					dir += Vector3(1,0,0)
-					
-				var speed: float = TANK_CAMERA_MOVEMENT_SPEED
-				if Input.is_key_pressed(key_tank_fast_camera):
-					speed *= TANK_CAMERA_FAST_MULTIPLIER
-				
-				dir = dir.normalized() * speed
-				translate(dir)
-		
-		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(Input.get_mouse_button_mask())
-		var bm_mouse_position: Vector2 = get_viewport().get_mouse_position()
-		var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
-		var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
-		if Input.is_key_pressed(key_to_fire_selected_neurons):
-			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS)
-		if Input.is_key_pressed(key_to_clear_all_neurons):
-			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS)
-		
-		var bm_fire_event: UI_BrainMonitor_InputEvent_Click
-		var bm_ctrl: bool = event.ctrl_pressed or event.meta_pressed
-		var bm_shift: bool = event.shift_pressed
-		var bm_alt: bool = event.alt_pressed
-		
-		if (event.keycode == key_to_fire_selected_neurons):
-			# Key-repeat echoes would otherwise re-fire or re-toggle continuous activation.
-			if event.echo:
-				return
-			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false, bm_ctrl, bm_shift, bm_alt)
-		elif (event.keycode == key_to_clear_all_neurons):
-			bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS, false, bm_ctrl, bm_shift, bm_alt)
-		else:
+		if ignore_direct_key_input:
 			return
-
-		var bm_fire_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_fire_event]
-		BM_input_events.emit(bm_fire_events)
-
+		apply_key_input(event)
+		return
 
 	if event is InputEventPanGesture:
-		
 		match(movement_mode):
 			MODE.ANIMATION:
 				pass
@@ -297,6 +241,61 @@ func _unhandled_input(event: InputEvent) -> void:
 			MODE.TANK:
 				if allow_tank_pan:
 					_apply_trackpad_scroll(event as InputEventPanGesture)
+
+
+## Keyboard camera controls. The isolated inspect window forwards keys while the pointer is over that view.
+func apply_key_input(event: InputEvent) -> void:
+	if not (event is InputEventKey):
+		return
+	var key_event := event as InputEventKey
+	match(movement_mode):
+		MODE.ANIMATION:
+			return
+		MODE.FPS:
+			pass
+		MODE.TANK:
+			var dir: Vector3 = Vector3(0, 0, 0)
+			if _try_emit_standard_view(key_event):
+				return
+			if Input.is_key_pressed(key_tank_reset_position):
+				if _is_mouse_hovering_viewport:
+					camera_reset_requested.emit()
+				return
+			if Input.is_action_pressed("forward"):
+				dir += Vector3(0, 0, -1)
+			if Input.is_action_pressed("backward"):
+				dir += Vector3(0, 0, 1)
+			if Input.is_action_pressed("left"):
+				dir += Vector3(-1, 0, 0)
+			if Input.is_action_pressed("right"):
+				dir += Vector3(1, 0, 0)
+			var speed: float = TANK_CAMERA_MOVEMENT_SPEED
+			if Input.is_key_pressed(key_tank_fast_camera):
+				speed *= TANK_CAMERA_FAST_MULTIPLIER
+			dir = dir.normalized() * speed
+			translate(dir)
+	var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(Input.get_mouse_button_mask())
+	var bm_mouse_position: Vector2 = get_viewport().get_mouse_position()
+	var start_pos: Vector3 = project_ray_origin(bm_mouse_position)
+	var end_pos: Vector3 = (project_ray_normal(bm_mouse_position) * RAYCAST_LENGTH) + start_pos
+	if Input.is_key_pressed(key_to_fire_selected_neurons):
+		held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS)
+	if Input.is_key_pressed(key_to_clear_all_neurons):
+		held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS)
+	var bm_ctrl: bool = key_event.ctrl_pressed or key_event.meta_pressed
+	var bm_shift: bool = key_event.shift_pressed
+	var bm_alt: bool = key_event.alt_pressed
+	var bm_fire_event: UI_BrainMonitor_InputEvent_Click
+	if key_event.keycode == key_to_fire_selected_neurons:
+		if key_event.echo:
+			return
+		bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, key_event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.FIRE_SELECTED_NEURONS, false, bm_ctrl, bm_shift, bm_alt)
+	elif key_event.keycode == key_to_clear_all_neurons:
+		bm_fire_event = UI_BrainMonitor_InputEvent_Click.new(held_bm_buttons, start_pos, end_pos, key_event.pressed, false, UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS, false, bm_ctrl, bm_shift, bm_alt)
+	else:
+		return
+	var bm_fire_events: Array[UI_BrainMonitor_InputEvent_Abstract] = [bm_fire_event]
+	BM_input_events.emit(bm_fire_events)
 
 
 func _process(delta):
@@ -383,7 +382,7 @@ func _scroll_is_fast(event: InputEvent) -> bool:
 func _handle_orbit_input(mouse_event: InputEventMouse) -> bool:
 	if mouse_event is InputEventMouseButton:
 		var button_event: InputEventMouseButton = mouse_event as InputEventMouseButton
-		if _orbit_active:
+		if _orbit_active or _roll_active:
 			if button_event.button_index == _orbit_button and not button_event.pressed:
 				_end_orbit()
 				return true
@@ -391,7 +390,21 @@ func _handle_orbit_input(mouse_event: InputEventMouse) -> bool:
 		if button_event.pressed and CameraOrbitLib.is_orbit_press(button_event.button_index, button_event.alt_pressed):
 			_begin_orbit(button_event.button_index)
 			return true
+		if button_event.pressed and inspect_tumble and not button_event.shift_pressed and not button_event.ctrl_pressed and not button_event.meta_pressed:
+			if button_event.button_index == MOUSE_BUTTON_LEFT and not button_event.alt_pressed:
+				_begin_orbit(button_event.button_index)
+				return true
+			if button_event.button_index == MOUSE_BUTTON_RIGHT:
+				_begin_roll(button_event.button_index)
+				return true
 		return false
+	if mouse_event is InputEventMouseMotion and _roll_active:
+		var roll_motion: InputEventMouseMotion = mouse_event as InputEventMouseMotion
+		if (roll_motion.button_mask & MouseButtonMask.MOUSE_BUTTON_MASK_RIGHT) == 0:
+			_end_orbit()
+			return false
+		_roll_by_mouse_delta(roll_motion.relative)
+		return true
 	if mouse_event is InputEventMouseMotion and _orbit_active:
 		var motion_event: InputEventMouseMotion = mouse_event as InputEventMouseMotion
 		# The release can land outside this viewport. The button mask still shows the drag ended.
@@ -407,8 +420,20 @@ func _handle_orbit_input(mouse_event: InputEventMouse) -> bool:
 
 
 func _begin_orbit(button: MouseButton) -> void:
+	_roll_active = false
 	_orbit_active = true
 	_orbit_button = button
+	_capture_orbit_pivot()
+
+
+func _begin_roll(button: MouseButton) -> void:
+	_orbit_active = false
+	_roll_active = true
+	_orbit_button = button
+	_capture_orbit_pivot()
+
+
+func _capture_orbit_pivot() -> void:
 	_orbit_pivot = global_position
 	if not orbit_pivot_provider.is_valid():
 		return
@@ -419,6 +444,7 @@ func _begin_orbit(button: MouseButton) -> void:
 
 func _end_orbit() -> void:
 	_orbit_active = false
+	_roll_active = false
 	_orbit_button = MOUSE_BUTTON_NONE
 
 
@@ -432,7 +458,17 @@ func orbit_by_mouse_delta(mouse_delta: Vector2) -> void:
 		return
 	var yaw_delta: float = mouse_delta.x * -TANK_CAMERA_ORBIT_SPEED
 	var pitch_delta: float = mouse_delta.y * -TANK_CAMERA_ORBIT_SPEED
-	global_transform = CameraOrbitLib.orbit_transform(_orbit_pivot, global_transform, yaw_delta, pitch_delta)
+	if inspect_tumble:
+		global_transform = CameraOrbitLib.tumble_transform(_orbit_pivot, global_transform, yaw_delta, pitch_delta)
+	else:
+		global_transform = CameraOrbitLib.orbit_transform(_orbit_pivot, global_transform, yaw_delta, pitch_delta)
+
+
+func _roll_by_mouse_delta(mouse_delta: Vector2) -> void:
+	if global_position.is_equal_approx(_orbit_pivot):
+		return
+	var roll_delta: float = mouse_delta.x * -TANK_CAMERA_ORBIT_SPEED
+	global_transform = CameraOrbitLib.roll_transform(_orbit_pivot, global_transform, roll_delta)
 
 
 func point_camera_at(position_to_look_at: Vector3) -> void:

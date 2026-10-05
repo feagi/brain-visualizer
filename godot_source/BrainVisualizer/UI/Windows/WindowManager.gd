@@ -36,6 +36,7 @@ const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Wi
 const _PREFAB_VOXEL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.tscn")
 const _PREFAB_MEMORY_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MemoryInspector/WindowMemoryInspector.tscn")
 const _PREFAB_CORTICAL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/CorticalInspector/WindowCorticalInspector.tscn")
+const _PREFAB_ISOLATED_CORTICAL_INSPECT: PackedScene = preload("res://BrainVisualizer/UI/Windows/IsolatedCorticalArea/WindowIsolatedCorticalArea.tscn")
 
 
 var loaded_windows: Dictionary
@@ -83,6 +84,25 @@ func spawn_options() -> void:
 func spawn_camera_animations(host_brain_monitor: UI_BrainMonitor_3DScene = null) -> void:
 	var cam_window: WindowCameraAnimations = _default_spawn_window(_PREFAB_CAMERA_ANIMATIONS, WindowCameraAnimations.WINDOW_NAME) as WindowCameraAnimations
 	cam_window.setup(host_brain_monitor)
+
+## Opens the floating 3D inspect view for one cortical area, replacing any inspect view already open.
+## [param click_in_root] is the click in root-viewport space. The panel's top-left sits on that point.
+func spawn_isolated_cortical_inspect(area: AbstractCorticalArea, _anchor: Control, click_in_root: Vector2) -> WindowIsolatedCorticalArea:
+	if area == null:
+		push_error("WindowManager: isolated cortical inspect requires a cortical area")
+		return null
+	var inspect_window: WindowIsolatedCorticalArea = _default_spawn_window(
+		_PREFAB_ISOLATED_CORTICAL_INSPECT,
+		WindowIsolatedCorticalArea.WINDOW_NAME,
+		true,
+		null,
+		Rect2(click_in_root, Vector2.ONE),
+		true,
+	) as WindowIsolatedCorticalArea
+	inspect_window.set_click_point(click_in_root)
+	inspect_window.setup(area)
+	return inspect_window
+
 
 func spawn_guide() -> void:
 	var guide_window: WindowGuide = _default_spawn_window(_PREFAB_GUIDE, WindowGuide.WINDOW_NAME) as WindowGuide

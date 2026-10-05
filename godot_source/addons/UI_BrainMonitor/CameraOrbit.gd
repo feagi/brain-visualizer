@@ -44,6 +44,20 @@ static func choose_pivot(selection_aabb: AABB, center_hit: Dictionary, scene_aab
 	return {&"found": false, &"pivot": Vector3.ZERO}
 
 
+## Free tumble around [param pivot]. Yaw turns about the camera's up axis. Pitch turns about its right axis and is not clamped, so the view can pass over the poles and continue.
+static func tumble_transform(pivot: Vector3, camera_transform: Transform3D, yaw_delta: float, pitch_delta: float) -> Transform3D:
+	var up_axis: Vector3 = camera_transform.basis.y.normalized()
+	var result: Transform3D = _rotate_about(pivot, camera_transform, up_axis, yaw_delta)
+	var right_axis: Vector3 = result.basis.x.normalized()
+	return _rotate_about(pivot, result, right_axis, pitch_delta)
+
+
+## Roll about the view axis through [param pivot]. The camera stays on that axis and the horizon twists.
+static func roll_transform(pivot: Vector3, camera_transform: Transform3D, roll_delta: float) -> Transform3D:
+	var view_axis: Vector3 = -camera_transform.basis.z.normalized()
+	return _rotate_about(pivot, camera_transform, view_axis, roll_delta)
+
+
 static func _rotate_about(pivot: Vector3, xform: Transform3D, axis: Vector3, angle: float) -> Transform3D:
 	if is_zero_approx(angle) or axis.is_zero_approx():
 		return xform
