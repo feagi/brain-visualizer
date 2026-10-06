@@ -34,6 +34,7 @@ var GET_connectome_properties_mappings: StringName = "/v1/connectome/properties/
 var GET_connectome_corticalAreas_list_detailed: StringName = "/v1/connectome/cortical_areas/list/detailed"
 var GET_burstEngine_simulationTimestep: StringName = "/v1/burst_engine/simulation_timestep"
 var GET_system_healthCheck: StringName = "/v1/system/health_check"
+var GET_genome_changes: StringName = "/v1/genome/changes"
 var POST_insight_neurons_membranePotentialStatus: StringName = '/v1/insight/neurons/membrane_potential_status'
 var POST_insight_neuron_synapticPotentialStatus: StringName = '/v1/insight/neuron/synaptic_potential_status'
 var GET_morphology_list_types: StringName = '/v1/morphology/list/types'

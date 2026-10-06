@@ -5,10 +5,12 @@ Draggable and resizable user guide window for Brain Visualizer.
 ## Features
 
 - **Draggable**: Move the window anywhere on screen via title bar
-- **Resizable**: 
-  - Drag the **right edge** to adjust width only
-  - Drag the **bottom-right corner** to adjust both width and height
-  - Minimum size: 600x400 pixels
+- **Resizable**:
+  - Drag the **right edge** to adjust width
+  - Drag the **bottom edge** to adjust height
+  - Drag the **bottom-right corner** to adjust both
+  - Opens at a reading size (about 1320×860, wider on large displays, never past the screen)
+  - Minimum size: 960×560 pixels
 - **Toolbar Controls**:
   - **Search Bar**: Search through guide topics and content (searches both titles and full text)
   - **Text Size Controls**: Small **A** / Large **A** buttons to decrease/increase font size (0.5x to 2.0x)

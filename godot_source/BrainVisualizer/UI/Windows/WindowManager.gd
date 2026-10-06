@@ -32,6 +32,8 @@ const _PREFAB_OPTIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/O
 const _PREFAB_VIEW_PREVIEWS: PackedScene = preload("res://BrainVisualizer/UI/Windows/ViewPreviews/WindowViewPreviews.tscn")
 const _PREFAB_CAMERA_ANIMATIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.tscn")
 const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.tscn")
+const _PREFAB_GENOME_CHANGE_HISTORY: PackedScene = preload("res://BrainVisualizer/UI/Windows/GenomeChangeHistory/WindowGenomeChangeHistory.tscn")
+const _GENOME_CHANGE_HISTORY_SCRIPT: Script = preload("res://BrainVisualizer/UI/Windows/GenomeChangeHistory/WindowGenomeChangeHistory.gd")
 const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.tscn")
 const _PREFAB_VOXEL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.tscn")
 const _PREFAB_MEMORY_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MemoryInspector/WindowMemoryInspector.tscn")
@@ -107,6 +109,15 @@ func spawn_isolated_cortical_inspect(area: AbstractCorticalArea, _anchor: Contro
 func spawn_guide() -> void:
 	var guide_window: WindowGuide = _default_spawn_window(_PREFAB_GUIDE, WindowGuide.WINDOW_NAME) as WindowGuide
 	guide_window.setup()
+
+
+func spawn_genome_change_history() -> void:
+	var window_name: StringName = _GENOME_CHANGE_HISTORY_SCRIPT.WINDOW_NAME
+	if window_name in loaded_windows:
+		bring_window_to_top(loaded_windows[window_name])
+		return
+	var history_window: BaseDraggableWindow = _default_spawn_window(_PREFAB_GENOME_CHANGE_HISTORY, window_name)
+	history_window.call("setup")
 
 ## Open the user guide to a page. `heading` scrolls that page to a markdown heading.
 func spawn_guide_page(guide_filename: String, heading: String = "") -> void:

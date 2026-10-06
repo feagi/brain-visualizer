@@ -184,6 +184,12 @@ func attempt_connection_to_FEAGI(feagi_endpoint_details: FeagiEndpointDetails) -
 	
 	feagi_local_cache.genome_availability_or_brain_readiness_changed.connect(_if_brain_readiness_or_genome_availability_changes)
 
+var _change_history_sequence: int = -1
+var _change_history_fetching: bool = false
+## Sequence seen on a health poll while a ledger fetch was already running.
+var _change_history_pending_sequence: int = -1
+
+
 func _process_health_check_output(polled_result: FeagiRequestOutput) -> void:
 	if polled_result.has_timed_out:
 		return
@@ -191,6 +197,45 @@ func _process_health_check_output(polled_result: FeagiRequestOutput) -> void:
 		return
 	var health_data: Dictionary = polled_result.decode_response_as_dict()
 	feagi_local_cache.update_health_from_FEAGI_dict(health_data)
+	_maybe_refresh_change_history(health_data)
+
+
+## Pull newly recorded genome edits into the history chip when the ledger cursor moves.
+func _maybe_refresh_change_history(health: Dictionary) -> void:
+	if not health.has("genome_change_sequence"):
+		return
+	var sequence := int(health["genome_change_sequence"])
+	if _change_history_fetching:
+		if sequence != _change_history_sequence:
+			_change_history_pending_sequence = sequence
+		return
+	if sequence == _change_history_sequence:
+		return
+	_fetch_change_history()
+
+
+func _fetch_change_history() -> void:
+	if _change_history_fetching or requests == null:
+		return
+	var events_node := get_node_or_null("/root/DesktopTeamEvents")
+	if events_node == null:
+		return
+	_change_history_fetching = true
+	var since := int(events_node.ledger_cursor)
+	var result: FeagiRequestOutput = await requests.get_genome_changes(since)
+	_change_history_fetching = false
+	if result == null or not result.success:
+		return
+	var page: Dictionary = result.decode_response_as_dict()
+	var changes: Array = page.get("changes", [])
+	var self_agent := OS.get_environment("FEAGI_AGENT_ID").strip_edges()
+	var rows := TeamBranchText.events_from_ledger(changes, self_agent)
+	events_node.append_ledger_events(rows, int(page.get("latest_sequence", since)))
+	_change_history_sequence = int(events_node.ledger_cursor)
+	var pending := _change_history_pending_sequence
+	_change_history_pending_sequence = -1
+	if pending > _change_history_sequence:
+		_fetch_change_history()
 
 func _start_periodic_simulation_timestep_check() -> void:
 	"""Start persistent HTTP health check - this should NEVER stop as long as BV is running"""
@@ -258,6 +303,8 @@ func _fetch_simulation_timestep() -> void:
 		_consecutive_health_failures = 0
 		var health_data: Dictionary = response.decode_response_as_dict()
 		feagi_local_cache.update_health_from_FEAGI_dict(health_data)
+		# The connect-time health check runs once. This poll is what sees edits made after that.
+		_maybe_refresh_change_history(health_data)
 		
 		# If we previously marked HTTP as RETRYING (e.g., FEAGI restart), a successful health check
 		# must restore CONNECTABLE so the UI can exit RETRYING_HTTP.

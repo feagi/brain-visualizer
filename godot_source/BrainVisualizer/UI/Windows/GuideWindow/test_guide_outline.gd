@@ -23,6 +23,8 @@ func _run_tests() -> void:
 	failures += _test_heading_sits_against_following_paragraph()
 	failures += _test_web_links_are_browser_urls()
 	failures += _test_section_button_fits_collapsible()
+	failures += _test_opening_size_is_a_wide_reader()
+	failures += _test_resize_can_grow_and_shrink()
 	if failures == 0:
 		print("Guide outline tests: PASS")
 		quit(0)
@@ -184,8 +186,10 @@ func _test_section_button_fits_collapsible() -> int:
 		push_error("guide topics must start collapsed")
 		section.queue_free()
 		return 1
+	var section_body := section.get_control() as MarginContainer
+	WindowGuide.indent_subchapter_list(section_body)
 	var holder := VBoxContainer.new()
-	section.get_control().add_child(holder)
+	section_body.add_child(holder)
 	var button := GuideTopicButton.new()
 	button.setup("3D Camera Controls", "res://BrainVisualizer/Guides/navigation_actions_reference.md", "3D Camera Controls", true)
 	holder.add_child(button)
@@ -195,5 +199,49 @@ func _test_section_button_fits_collapsible() -> int:
 		push_error("section button must sit inside the expanded topic")
 		section.queue_free()
 		return 1
+	if section_body.get_theme_constant("margin_left") != WindowGuide.SUBCHAPTER_INDENT:
+		push_error("subchapter labels must be indented under the chapter")
+		section.queue_free()
+		return 1
 	section.queue_free()
+	return 0
+
+
+## A normal display opens wide enough for the chapter list and the article.
+func _test_opening_size_is_a_wide_reader() -> int:
+	var desktop := Vector2(1920, 1080)
+	var opened := WindowGuide.opening_window_size(desktop)
+	if opened.x < WindowGuide.OPENING_PREFERRED.x or opened.y < WindowGuide.OPENING_PREFERRED.y:
+		push_error("guide should open at the reading size, got %s" % opened)
+		return 1
+	if opened.x > WindowGuide.OPENING_MAX.x or opened.y > WindowGuide.OPENING_MAX.y:
+		push_error("guide should not open larger than the reading cap, got %s" % opened)
+		return 1
+	var huge := WindowGuide.opening_window_size(Vector2(5568, 2428))
+	if huge.x != WindowGuide.OPENING_MAX.x or huge.y != WindowGuide.OPENING_MAX.y:
+		push_error("a large display should cap the guide, got %s" % huge)
+		return 1
+	var small := WindowGuide.opening_window_size(Vector2(800, 600))
+	if small.x > 800.0 or small.y > 600.0:
+		push_error("guide must stay inside a small viewport, got %s" % small)
+		return 1
+	return 0
+
+
+## Dragging grows past the opening size and can shrink back to the floor.
+func _test_resize_can_grow_and_shrink() -> int:
+	var viewport := Vector2(1920, 1080)
+	var start := WindowGuide.opening_window_size(viewport)
+	var grown := WindowGuide.resized_window_size(start, Vector2(200, 80), "corner", viewport)
+	if grown.x <= start.x or grown.y <= start.y:
+		push_error("corner drag should grow the guide, got %s from %s" % [grown, start])
+		return 1
+	var shrunk := WindowGuide.resized_window_size(start, Vector2(-800, -800), "corner", viewport)
+	if shrunk.x != WindowGuide.MIN_WINDOW_SIZE.x or shrunk.y != WindowGuide.MIN_WINDOW_SIZE.y:
+		push_error("corner drag should shrink to the floor, got %s" % shrunk)
+		return 1
+	var wider := WindowGuide.resized_window_size(start, Vector2(100, 400), "right", viewport)
+	if wider.x != start.x + 100.0 or wider.y != start.y:
+		push_error("right edge should change width only, got %s" % wider)
+		return 1
 	return 0

@@ -5,9 +5,9 @@
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Guide/GuideMarkdownView.gd" id="3_markdown"]
 
 [node name="WindowGuide" type="VBoxContainer"]
-custom_minimum_size = Vector2(1000, 600)
-offset_right = 1000.0
-offset_bottom = 600.0
+custom_minimum_size = Vector2(960, 560)
+offset_right = 1320.0
+offset_bottom = 860.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0

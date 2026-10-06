@@ -14,6 +14,7 @@ var _neuron_count: TextInput
 var _synapse_count: TextInput
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
 const PREFAB_BRAIN_OBJECTS_COMBO: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
+const GENOME_HISTORY_BUTTON: Script = preload("res://BrainVisualizer/UI/Top_Bar/TeamBranch/GenomeHistoryButton.gd")
 var _shared_combo: BrainObjectsCombo = null
 
 var _increase_scale_button: TextureButton
@@ -39,7 +40,7 @@ func _ready():
 	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
 	_mount_shared_combo_strip()
-	_mount_team_branch_badge()
+	_mount_genome_history_button()
 	# The combo sizes its own icons, including the 20% category-icon reduction.
 	# The root-bar theme scaler would otherwise set those TextureRects back to full size.
 	if _shared_combo != null and not theme_scalar_nodes_to_not_include_or_search.has(_shared_combo):
@@ -91,11 +92,25 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	COMBO_STYLER.apply_combo_row_plate_padding(rules_row)
 
 
-## Mount the persistent team experiment branch badge right after the main button strip.
-func _mount_team_branch_badge() -> void:
-	var badge := TeamBranchBadge.new()
-	add_child(badge)
-	move_child(badge, $Buttons.get_index() + 1)
+## History sits immediately before Settings. The count chip is drawn by the button.
+func _mount_genome_history_button() -> void:
+	var button: ButtonTextureRectScaling = GENOME_HISTORY_BUTTON.new()
+	button.name = "GenomeHistoryButton"
+	button.custom_minimum_size = Vector2(64, 64)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	button.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	button.stretch_mode = TextureRect.STRETCH_SCALE
+	var icon_dir := "res://BrainVisualizer/UI/GenericResources/ButtonIcons/"
+	button.texture_normal = load(icon_dir + "history_S.png")
+	button.texture_hover = load(icon_dir + "history_H.png")
+	button.texture_pressed = load(icon_dir + "history_C.png")
+	button.texture_disabled = load(icon_dir + "history_D.png")
+	button.texture = button.texture_normal
+	var host := $TopBarControlsPanel/MarginContainer/HBoxContainer
+	var settings: Node = host.get_node("SettingsButton")
+	host.add_child(button)
+	host.move_child(button, settings.get_index())
 
 
 ## Mount the shared combo implementation used across Circuit Builder and Brain Monitor.
@@ -555,6 +570,7 @@ func _setup_custom_tooltips() -> void:
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown/ToggleImageDropDown, "Inspectors")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/CameraAnimations, "Camera animations")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/GuideButton, "User guide and tutorials")
+	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/GenomeHistoryButton, "Genome change history")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/SettingsButton, "Brain Visualizer settings")
 	_add_tooltip_to_control($DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer/RR_Float, "FEAGI refresh rate (simulation frequency)")
 	_add_tooltip_to_control($DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron, "Total neuron count in the genome")

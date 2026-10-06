@@ -32,6 +32,18 @@ func single_health_check_call(update_cache_with_result: bool = false) -> FeagiRe
 		FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(response_data.decode_response_as_dict())
 	return response_data
 
+
+## Ledger page of genome changes with sequence greater than [param since_sequence].
+func get_genome_changes(since_sequence: int) -> FeagiRequestOutput:
+	if not FeagiCore.network or not FeagiCore.network.http_API or not FeagiCore.network.http_API.address_list:
+		return FeagiRequestOutput.requirement_fail("ADDRESS_LIST_NULL")
+	var address := "%s?since=%d" % [str(FeagiCore.network.http_API.address_list.GET_genome_changes), since_sequence]
+	var request := APIRequestWorkerDefinition.define_single_GET_call(StringName(address))
+	var worker := FeagiCore.network.http_API.make_HTTP_call(request)
+	await worker.worker_done
+	return worker.retrieve_output_and_close()
+
+
 ## FAST initial health check for startup - bypasses global timeout/retry settings for instant response
 func fast_initial_health_check() -> FeagiRequestOutput:
 	# Check if network components are properly initialized

@@ -30,6 +30,9 @@ static func create_from(api_address: StringName, websocket_address: StringName) 
 	var output: FeagiEndpointDetails = FeagiEndpointDetails.new()
 	output.full_http_address = api_address
 	output.full_websocket_address = websocket_address
+	var agent_id := OS.get_environment("FEAGI_AGENT_ID").strip_edges()
+	if agent_id != "":
+		output.header.append("X-FEAGI-Agent-Id: %s" % agent_id)
 	return output
 	
 

@@ -13,6 +13,22 @@ extends Node
 
 signal team_brain_state_changed(state: Dictionary)
 signal team_main_branch_event(event: Dictionary)
+signal change_history_changed
+
+## Genome changes received this session, oldest first. Includes this member and teammates.
+var change_history: Array[Dictionary] = []
+## This member's changes since the history window was last closed.
+var unseen_own_count: int = 0
+## Teammates' changes since the history window was last closed.
+var unseen_other_count: int = 0
+## Unseen changes by display name since the history window was last closed. Includes "You".
+var unseen_by_actor: Dictionary = {}
+## Own plus teammate counts. Kept so older callers can read one total.
+var unseen_change_count: int = 0
+## True while the history window is on screen. Changes in that time are listed, not counted.
+var history_window_open: bool = false
+## Last FEAGI ledger sequence already copied into [member change_history].
+var ledger_cursor: int = 0
 
 const URL_ENV: String = "FEAGI_DESKTOP_EVENTS_WS_URL"
 const RECONNECT_ENV: String = "FEAGI_DESKTOP_EVENTS_RECONNECT_SECONDS"
@@ -82,3 +98,65 @@ func handle_message(text: String) -> void:
 			var event = message.get("event")
 			if typeof(event) == TYPE_DICTIONARY:
 				team_main_branch_event.emit(event)
+
+
+## Append ledger rows newer than [member ledger_cursor]. Returns the number added.
+## Counts rise only while the history window is closed, split into this member and teammates.
+func append_ledger_events(events: Array, latest_sequence: int) -> int:
+	if latest_sequence > ledger_cursor:
+		ledger_cursor = latest_sequence
+	if events.is_empty():
+		return 0
+	var added := 0
+	for event in events:
+		if typeof(event) != TYPE_DICTIONARY:
+			continue
+		change_history.append(event)
+		added += 1
+		if history_window_open:
+			continue
+		var actor := _actor_label(event)
+		unseen_by_actor[actor] = int(unseen_by_actor.get(actor, 0)) + 1
+		if actor == "You":
+			unseen_own_count += 1
+		else:
+			unseen_other_count += 1
+	_sync_unseen_total()
+	change_history_changed.emit()
+	return added
+
+
+## The history window just opened. Chips go back to empty until it closes.
+func mark_change_history_seen() -> void:
+	history_window_open = true
+	if unseen_own_count == 0 and unseen_other_count == 0 and unseen_by_actor.is_empty():
+		return
+	unseen_own_count = 0
+	unseen_other_count = 0
+	unseen_by_actor.clear()
+	_sync_unseen_total()
+	change_history_changed.emit()
+
+
+## The history window just closed. Later ledger rows are what the chips count.
+func mark_history_window_closed() -> void:
+	history_window_open = false
+
+
+func _is_own_change(event: Dictionary) -> bool:
+	if event.has("mine"):
+		return bool(event["mine"])
+	return str(event.get("actor_display_name", "")) == "You"
+
+
+func _actor_label(event: Dictionary) -> String:
+	if _is_own_change(event):
+		return "You"
+	var actor := str(event.get("actor_display_name", "")).strip_edges()
+	if actor == "" or actor == "<null>":
+		return "A teammate"
+	return actor
+
+
+func _sync_unseen_total() -> void:
+	unseen_change_count = unseen_own_count + unseen_other_count

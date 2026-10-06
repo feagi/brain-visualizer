@@ -2,12 +2,21 @@ extends BaseDraggableWindow
 class_name WindowGuide
 
 const WINDOW_NAME: StringName = "guide_window"
-const MIN_WINDOW_WIDTH: int = 600
-const MIN_WINDOW_HEIGHT: int = 400
-const DEFAULT_WINDOW_VIEWPORT_RATIO: float = 0.8
+## Smallest size the user can drag to. Wide enough for the chapter list and the article.
+const MIN_WINDOW_SIZE: Vector2 = Vector2(960, 560)
+## Size used on a normal display: chapter list plus a readable article column.
+const OPENING_PREFERRED: Vector2 = Vector2(1320, 860)
+## Cap so a very large display does not open the guide across the whole screen.
+const OPENING_MAX: Vector2 = Vector2(1680, 1040)
+const OPENING_WIDTH_RATIO: float = 0.62
+const OPENING_HEIGHT_RATIO: float = 0.70
+const OPENING_EDGE_MARGIN: float = 48.0
+const _RESIZE_EDGE: float = 14.0
 
 const _COLLAPSIBLE_PREFAB: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn")
 const _SECTION_TOGGLE_SIZE: int = 22
+## Left inset so section labels sit inside the chapter, not on the chapter title.
+const SUBCHAPTER_INDENT: int = 20
 
 @export var guides_directory: String = "res://BrainVisualizer/Guides"
 
@@ -23,19 +32,18 @@ var _active_path: String = ""
 var _font_size_scale: float = 1.0  # User-adjustable font scale multiplier
 
 # Window resizing
-var _resize_handle_corner: Panel
-var _resize_handle_right: Panel
 var _resizing: bool = false
 var _resize_start_mouse: Vector2 = Vector2.ZERO
 var _resize_start_size: Vector2 = Vector2.ZERO
-var _resize_margin: int = 16
-var _resize_mode: String = ""  # "corner" or "right"
+var _resize_edge: String = ""
+var _chosen_size: Vector2 = Vector2.ZERO
+var _opening_applied: bool = false
 
 ## Initialize and setup the guide window.
 func setup() -> void:
 	_setup_base_window(WINDOW_NAME)
-	_apply_default_window_size_to_viewport()
-	call_deferred("_apply_default_window_size_to_viewport")
+	_apply_opening_size()
+	call_deferred("_apply_opening_size")
 	
 	# Toolbar references
 	_search_bar = $WindowPanel/WindowMargin/WindowInternals/GuideToolbar/SearchBar
@@ -62,19 +70,83 @@ func setup() -> void:
 	call_deferred("_update_sidebar_width")
 	resized.connect(_update_sidebar_width)
 
-## Size the guide window to a fraction of the active BV viewport.
-func _apply_default_window_size_to_viewport() -> void:
+## Keep the size the user chose. The base window would otherwise collapse this control.
+func _delay_shrink_window() -> void:
+	if _chosen_size.x <= 0.0 or _chosen_size.y <= 0.0:
+		_apply_opening_size()
+		return
+	_apply_window_size(_chosen_size)
+
+
+func _input(event: InputEvent) -> void:
+	if _resizing:
+		if event is InputEventMouseMotion:
+			_apply_resize_drag()
+			accept_event()
+			return
+		if event is InputEventMouseButton and not (event as InputEventMouseButton).pressed:
+			_resizing = false
+			_resize_edge = ""
+			accept_event()
+			return
+	super._input(event)
+
+
+## Open at a reading size. A later drag replaces it.
+func _apply_opening_size() -> void:
+	if _resizing or _opening_applied:
+		return
+	var viewport_size := _viewport_size()
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+	var target := opening_window_size(viewport_size)
+	_apply_window_size(target)
+	_opening_applied = true
+	var pos := Vector2(position)
+	pos.x = clampf(pos.x, 0.0, maxf(viewport_size.x - target.x, 0.0))
+	pos.y = clampf(pos.y, 0.0, maxf(viewport_size.y - target.y, 0.0))
+	position = Vector2i(roundi(pos.x), roundi(pos.y))
+
+
+func _apply_window_size(new_size: Vector2) -> void:
+	_chosen_size = new_size
+	custom_minimum_size = Vector2(
+		minf(MIN_WINDOW_SIZE.x, new_size.x),
+		minf(MIN_WINDOW_SIZE.y, new_size.y),
+	)
+	size = new_size
+
+
+func _viewport_size() -> Vector2:
 	var viewport := get_viewport()
 	if viewport == null:
-		return
-	var visible_size: Vector2 = viewport.get_visible_rect().size
-	if visible_size.x <= 0.0 or visible_size.y <= 0.0:
-		return
-	var target_size: Vector2 = visible_size * DEFAULT_WINDOW_VIEWPORT_RATIO
-	target_size.x = clamp(target_size.x, float(MIN_WINDOW_WIDTH), visible_size.x)
-	target_size.y = clamp(target_size.y, float(MIN_WINDOW_HEIGHT), visible_size.y)
-	custom_minimum_size = target_size
-	size = target_size
+		return Vector2.ZERO
+	return viewport.get_visible_rect().size
+
+
+## Preferred guide size for a viewport. Stays inside the screen, and wider than a single column.
+static func opening_window_size(viewport_size: Vector2) -> Vector2:
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return OPENING_PREFERRED
+	var max_width := minf(viewport_size.x, maxf(viewport_size.x - OPENING_EDGE_MARGIN, 1.0))
+	var max_height := minf(viewport_size.y, maxf(viewport_size.y - OPENING_EDGE_MARGIN, 1.0))
+	var width := minf(maxf(OPENING_PREFERRED.x, viewport_size.x * OPENING_WIDTH_RATIO), OPENING_MAX.x)
+	var height := minf(maxf(OPENING_PREFERRED.y, viewport_size.y * OPENING_HEIGHT_RATIO), OPENING_MAX.y)
+	return Vector2(minf(width, max_width), minf(height, max_height))
+
+
+## Size after a drag. `edge` is "right", "bottom", or "corner".
+static func resized_window_size(start: Vector2, delta: Vector2, edge: String, viewport_size: Vector2) -> Vector2:
+	var new_size := start
+	if edge == "right" or edge == "corner":
+		new_size.x += delta.x
+	if edge == "bottom" or edge == "corner":
+		new_size.y += delta.y
+	var max_width := viewport_size.x if viewport_size.x > 0.0 else new_size.x
+	var max_height := viewport_size.y if viewport_size.y > 0.0 else new_size.y
+	new_size.x = clampf(new_size.x, minf(MIN_WINDOW_SIZE.x, max_width), max_width)
+	new_size.y = clampf(new_size.y, minf(MIN_WINDOW_SIZE.y, max_height), max_height)
+	return new_size
 
 ## Style the font size buttons with different A sizes (small and large).
 func _apply_font_size_button_styles() -> void:
@@ -84,107 +156,68 @@ func _apply_font_size_button_styles() -> void:
 	# Large A for increase button
 	_font_size_increase_btn.add_theme_font_size_override("font_size", 24)
 
-## Create resize handles (bottom-right corner and right edge).
+## Edges sit on an overlay inside the panel. The window itself is a box container, which would stack handles as extra rows.
 func _setup_resize_handle() -> void:
-	# Bottom-right corner handle
-	_resize_handle_corner = Panel.new()
-	_resize_handle_corner.name = "ResizeHandleCorner"
-	_resize_handle_corner.custom_minimum_size = Vector2(_resize_margin, _resize_margin)
-	_resize_handle_corner.mouse_filter = Control.MOUSE_FILTER_PASS
-	_resize_handle_corner.mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE
-	_resize_handle_corner.gui_input.connect(_on_resize_corner_gui_input)
-	
-	# Add visual grip indicator for corner
-	var grip_icon_corner := Control.new()
-	grip_icon_corner.name = "GripIconCorner"
-	grip_icon_corner.custom_minimum_size = Vector2(_resize_margin, _resize_margin)
-	grip_icon_corner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	grip_icon_corner.draw.connect(_draw_resize_grip_corner.bind(grip_icon_corner))
-	_resize_handle_corner.add_child(grip_icon_corner)
-	
-	add_child(_resize_handle_corner)
-	_resize_handle_corner.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_resize_handle_corner.offset_left = -_resize_margin
-	_resize_handle_corner.offset_top = -_resize_margin
-	_resize_handle_corner.z_index = 1000
-	
-	# Right edge handle
-	_resize_handle_right = Panel.new()
-	_resize_handle_right.name = "ResizeHandleRight"
-	_resize_handle_right.custom_minimum_size = Vector2(_resize_margin, 0)
-	_resize_handle_right.mouse_filter = Control.MOUSE_FILTER_PASS
-	_resize_handle_right.mouse_default_cursor_shape = Control.CURSOR_HSIZE
-	_resize_handle_right.gui_input.connect(_on_resize_right_gui_input)
-	
-	add_child(_resize_handle_right)
-	_resize_handle_right.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-	_resize_handle_right.offset_left = -_resize_margin
-	_resize_handle_right.offset_right = 0
-	_resize_handle_right.offset_top = 0
-	_resize_handle_right.offset_bottom = -_resize_margin  # Stop before corner handle
-	_resize_handle_right.z_index = 999
+	var overlay := Control.new()
+	overlay.name = "ResizeOverlay"
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.z_index = 20
+	_window_panel.add_child(overlay)
+	_add_resize_edge(overlay, "ResizeHandleRight", "right", Control.CURSOR_HSIZE, Control.PRESET_RIGHT_WIDE, Vector2(-_RESIZE_EDGE, 0), Vector2(0, -_RESIZE_EDGE))
+	_add_resize_edge(overlay, "ResizeHandleBottom", "bottom", Control.CURSOR_VSIZE, Control.PRESET_BOTTOM_WIDE, Vector2(0, -_RESIZE_EDGE), Vector2(-_RESIZE_EDGE, 0))
+	var corner := _add_resize_edge(overlay, "ResizeHandleCorner", "corner", Control.CURSOR_FDIAGSIZE, Control.PRESET_BOTTOM_RIGHT, Vector2(-_RESIZE_EDGE, -_RESIZE_EDGE), Vector2.ZERO)
+	var grip := Control.new()
+	grip.name = "GripIconCorner"
+	grip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grip.set_anchors_preset(Control.PRESET_FULL_RECT)
+	grip.draw.connect(_draw_resize_grip_corner.bind(grip))
+	corner.add_child(grip)
 
-## Handle corner resize dragging (both width and height).
-func _on_resize_corner_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			if mb.pressed:
-				_resizing = true
-				_resize_mode = "corner"
-				_resize_start_mouse = get_global_mouse_position()
-				_resize_start_size = size
-			else:
-				_resizing = false
-				_resize_mode = ""
-	
-	elif event is InputEventMouseMotion and _resizing and _resize_mode == "corner":
-		var delta := get_global_mouse_position() - _resize_start_mouse
-		var new_size := _resize_start_size + delta
-		
-		# Enforce minimum size
-		new_size.x = max(new_size.x, MIN_WINDOW_WIDTH)
-		new_size.y = max(new_size.y, MIN_WINDOW_HEIGHT)
-		
-		size = new_size
-		custom_minimum_size = new_size
 
-## Handle right edge resize dragging (width only).
-func _on_resize_right_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			if mb.pressed:
-				_resizing = true
-				_resize_mode = "right"
-				_resize_start_mouse = get_global_mouse_position()
-				_resize_start_size = size
-			else:
-				_resizing = false
-				_resize_mode = ""
-	
-	elif event is InputEventMouseMotion and _resizing and _resize_mode == "right":
-		var delta := get_global_mouse_position() - _resize_start_mouse
-		var new_size := _resize_start_size
-		new_size.x += delta.x  # Only change width
-		
-		# Enforce minimum width
-		new_size.x = max(new_size.x, MIN_WINDOW_WIDTH)
-		
-		size = new_size
-		custom_minimum_size = new_size
+func _add_resize_edge(overlay: Control, edge_name: String, edge: String, cursor: Control.CursorShape, preset: Control.LayoutPreset, offset_min: Vector2, offset_max: Vector2) -> Control:
+	var handle := Control.new()
+	handle.name = edge_name
+	handle.mouse_filter = Control.MOUSE_FILTER_STOP
+	handle.mouse_default_cursor_shape = cursor
+	overlay.add_child(handle)
+	handle.set_anchors_preset(preset)
+	handle.offset_left = offset_min.x
+	handle.offset_top = offset_min.y
+	handle.offset_right = offset_max.x
+	handle.offset_bottom = offset_max.y
+	handle.gui_input.connect(_on_resize_edge_gui_input.bind(edge))
+	return handle
+
+
+func _on_resize_edge_gui_input(event: InputEvent, edge: String) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if mouse_event.pressed:
+		_resizing = true
+		_resize_edge = edge
+		_resize_start_mouse = get_global_mouse_position()
+		_resize_start_size = size
+		accept_event()
+		return
+	_resizing = false
+	_resize_edge = ""
+	accept_event()
+
+
+func _apply_resize_drag() -> void:
+	var delta := get_global_mouse_position() - _resize_start_mouse
+	_apply_window_size(resized_window_size(_resize_start_size, delta, _resize_edge, _viewport_size()))
+
 
 ## Draw resize grip indicator in bottom-right corner.
 func _draw_resize_grip_corner(control: Control) -> void:
-	var grip_color := Color(0.6, 0.6, 0.6, 0.9)
-	var square_size := 8
-	
-	# Draw square at the right side of the control
-	var x_pos := _resize_margin - square_size
-	var y_pos := (_resize_margin - square_size) / 2.0
-	
-	var rect := Rect2(Vector2(x_pos, y_pos), Vector2(square_size, square_size))
-	control.draw_rect(rect, grip_color, true)
+	var grip_color := Color(0.75, 0.78, 0.82, 0.9)
+	var inset := 3.0
+	control.draw_line(Vector2(inset, _RESIZE_EDGE - inset), Vector2(_RESIZE_EDGE - inset, inset), grip_color, 1.5)
+	control.draw_line(Vector2(inset + 4.0, _RESIZE_EDGE - inset), Vector2(_RESIZE_EDGE - inset, inset + 4.0), grip_color, 1.5)
 
 ## Load markdown topics from disk and populate the sidebar.
 ## Each file is one collapsible topic. Each `##` section is a child button.
@@ -245,7 +278,9 @@ func _add_topic_group(title: String, markdown_path: String) -> Dictionary:
 	var holder := VBoxContainer.new()
 	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	holder.add_theme_constant_override("separation", 2)
-	collapsible.get_control().add_child(holder)
+	var section_body := collapsible.get_control() as MarginContainer
+	indent_subchapter_list(section_body)
+	section_body.add_child(holder)
 	return {
 		"title": title,
 		"path": markdown_path,
@@ -253,6 +288,11 @@ func _add_topic_group(title: String, markdown_path: String) -> Dictionary:
 		"holder": holder,
 		"sections": [],
 	}
+
+
+## Inset the expanded section list so its labels read as children of the chapter.
+static func indent_subchapter_list(body: MarginContainer) -> void:
+	body.add_theme_constant_override("margin_left", SUBCHAPTER_INDENT)
 
 ## Update sidebar width to be exactly 25% of the window width.
 func _update_sidebar_width() -> void:
