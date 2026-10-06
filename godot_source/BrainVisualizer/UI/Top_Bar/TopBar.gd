@@ -39,6 +39,7 @@ func _ready():
 	_neuron_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2/neuron
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
 	_mount_shared_combo_strip()
+	_mount_team_branch_badge()
 	# The combo sizes its own icons, including the 20% category-icon reduction.
 	# The root-bar theme scaler would otherwise set those TextureRects back to full size.
 	if _shared_combo != null and not theme_scalar_nodes_to_not_include_or_search.has(_shared_combo):
@@ -88,6 +89,13 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	combo_host.add_theme_constant_override("separation", COMBO_STYLER.COMBO_PLATE_GAP)
 	var rules_row := $Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow as PanelContainer
 	COMBO_STYLER.apply_combo_row_plate_padding(rules_row)
+
+
+## Mount the persistent team experiment branch badge right after the main button strip.
+func _mount_team_branch_badge() -> void:
+	var badge := TeamBranchBadge.new()
+	add_child(badge)
+	move_child(badge, $Buttons.get_index() + 1)
 
 
 ## Mount the shared combo implementation used across Circuit Builder and Brain Monitor.

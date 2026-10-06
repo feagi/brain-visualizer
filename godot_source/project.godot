@@ -25,6 +25,7 @@ feagi/root_region_id="root"
 
 WindowStateManager="*res://Autoload/WindowStateManager.gd"
 StatusReporter="*res://Autoload/StatusReporter.gd"
+DesktopTeamEvents="*res://Autoload/DesktopTeamEvents.gd"
 FeagiModeDetector="*res://Autoload/FeagiModeDetector.gd"
 FeagiProcessManager="*res://Autoload/FeagiProcessManager.gd"
 ShutdownManager="*res://Autoload/ShutdownManager.gd"
