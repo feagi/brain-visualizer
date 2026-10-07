@@ -687,8 +687,11 @@ jobs:
           printf '  %s\n' "${files[@]}"
           tar -czf ${{ matrix.package_name }} "${files[@]}"
           echo "Archive contents:"
-          tar -tzf ${{ matrix.package_name }}
-          if ! tar -tzf ${{ matrix.package_name }} | grep -qx "BrainVisualizer-Remote.pck"; then
+          # Read the listing fully before matching. grep -q on a tar pipe
+          # closes stdout early; with pipefail that SIGPIPE is a false failure.
+          archive_contents="$(tar -tzf ${{ matrix.package_name }})"
+          printf '%s\n' "${archive_contents}"
+          if ! grep -x "BrainVisualizer-Remote.pck" <<< "${archive_contents}" >/dev/null; then
             echo "ERROR: BrainVisualizer-Remote.pck was not written into the archive"
             exit 1
           fi
