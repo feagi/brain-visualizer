@@ -3,6 +3,7 @@ class_name WindowManager
 ## Coordinates all the visible windows
 
 const _PREFAB_CREATE_MORPHOLOGY: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateMorphology/WindowCreateMorphology.tscn")
+const _PREFAB_CREATE_MODULATOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateModulator/WindowCreateModulator.tscn")
 const _PREFAB_MAPPING_EDITOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.tscn")
 const _PREFAB_MORPHOLOGY_MANAGER: PackedScene = preload("res://BrainVisualizer/UI/Windows/MorphologyManager/WindowMorphologyManager.tscn")
 const _PREFAB_CREATE_CORTICAL: PackedScene = preload("res://BrainVisualizer/UI/Windows/CreateCorticalArea/WindowCreateCorticalArea.tscn")
@@ -59,6 +60,7 @@ const _ADD_FLOW_WINDOW_NAMES: Array[StringName] = [
 	"select_region_template",
 	"create_cortical",
 	"select_cortical_template",
+	"create_modulator",
 ]
 
 func set_suppress_auto_open_3d_tabs(enabled: bool, auto_reset_ms: int = 0) -> void:
@@ -188,6 +190,13 @@ func get_open_cortical_inspector() -> WindowCorticalInspector:
 	if WindowCorticalInspector.WINDOW_NAME in loaded_windows:
 		return loaded_windows[WindowCorticalInspector.WINDOW_NAME] as WindowCorticalInspector
 	return null
+
+
+func spawn_create_modulator(placement_anchor: Control = null) -> void:
+	_close_other_add_flow_windows(WindowCreateModulator.WINDOW_NAME)
+	var window: WindowCreateModulator = _default_spawn_window(_PREFAB_CREATE_MODULATOR, WindowCreateModulator.WINDOW_NAME, true, placement_anchor) as WindowCreateModulator
+	window.setup()
+	bring_window_to_top(window)
 
 
 func spawn_create_morphology() -> void:

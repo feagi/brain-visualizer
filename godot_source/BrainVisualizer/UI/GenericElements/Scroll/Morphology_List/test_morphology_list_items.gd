@@ -59,4 +59,11 @@ func _test_top_bar_reuses_category_hover_list() -> int:
 	if scene.find("_open_neuron_morphologies") >= 0:
 		push_error("Connectivity Rules title must not open the manager before a rule is chosen")
 		return 1
+	var modulators_wire := top_bar.substr(top_bar.find("func _wire_modulators"))
+	var modulators_end := modulators_wire.find("func _open_modulators")
+	if modulators_end > 0:
+		modulators_wire = modulators_wire.substr(0, modulators_end)
+	if modulators_wire.find("attach_category_list_hover") < 0 or modulators_wire.find("ROOT_LIST_MODULATORS") < 0:
+		push_error("Modulators must open its list on hover like the other category buttons")
+		return 1
 	return 0

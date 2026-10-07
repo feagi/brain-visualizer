@@ -32,6 +32,7 @@ var _LTD_multiplier: FloatInput
 var _eligibility_decay: IntInput
 var _reward_source: CorticalDropDown
 var _punishment_source: CorticalDropDown
+var _modulator_instances: LineEdit
 var _edit: TextureButton
 
 func _ready() -> void:
@@ -50,6 +51,12 @@ func _ready() -> void:
 	_reward_source = $Reward_Source_Area
 	_punishment_source = $Punishment_Source_Area
 	_edit = $MappingDefinitionGroup/edit
+	_modulator_instances = LineEdit.new()
+	_modulator_instances.name = "ModulatorInstances"
+	_modulator_instances.placeholder_text = "synaptic modulator instance ids"
+	_modulator_instances.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_modulator_instances.custom_minimum_size = Vector2(160, 0)
+	add_child(_modulator_instances)
 
 	# Populate the plasticity-mode dropdown. We do this in code (rather than in the .tscn)
 	# to match the convention used by the rest of the editor, where OptionButtons are
@@ -110,6 +117,8 @@ func load_mapping(mapping: SingleMappingDefinition) -> void:
 	_eligibility_decay.current_int = mapping.eligibility_decay_bursts
 	_set_dropdown_to_area_id(_reward_source, mapping.reward_source_area)
 	_set_dropdown_to_area_id(_punishment_source, mapping.punishment_source_area)
+	if _modulator_instances != null:
+		_modulator_instances.text = ",".join(mapping.modulator_ids)
 
 	_apply_associative_plasticity_mode(mapping.morphology_used)
 	_apply_mode_field_state(_get_selected_plasticity_mode())
@@ -153,7 +162,7 @@ func export_mapping() -> SingleMappingDefinition:
 
 	var gate_id: String = _get_dropdown_area_id(_gate_source)
 
-	return SingleMappingDefinition.new(
+	var mapping := SingleMappingDefinition.new(
 		morphology_used,
 		scalar,
 		PSP,
@@ -169,6 +178,9 @@ func export_mapping() -> SingleMappingDefinition:
 		punishment_id,
 		gate_id,
 	)
+	if _modulator_instances != null:
+		mapping.set_modulator_ids(_modulator_instances.text)
+	return mapping
 
 func _on_user_PSP(_value: float) -> void:
 	# FloatInput updates its internal value on validation; this exists to satisfy the

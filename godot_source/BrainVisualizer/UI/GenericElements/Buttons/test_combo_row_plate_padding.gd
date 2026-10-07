@@ -12,13 +12,56 @@ func _initialize() -> void:
 	failures += _test_apply_insets_the_plate()
 	failures += _test_scene_row_plate("BrainRegionsRow", COMBO_SCENE_PATH)
 	failures += _test_scene_row_plate("BrainAreasRow", TOP_BAR_SCENE_PATH)
+	failures += _test_scene_row_plate("ModulatorsRow", TOP_BAR_SCENE_PATH)
+	failures += _test_modulators_follows_connectivity_rules()
 	failures += _test_combo_plate_gap_matches_icon_strip()
+	failures += _test_hidden_plus_keeps_row_as_tall_as_icon_buttons()
 	if failures == 0:
 		print("Combo row plate padding tests: PASS")
 		quit(0)
 	else:
 		push_error("Combo row plate padding tests: FAIL (%d)" % failures)
 		quit(1)
+
+
+func _test_hidden_plus_keeps_row_as_tall_as_icon_buttons() -> int:
+	var styler: Script = load(STYLER_PATH)
+	var row := PanelContainer.new()
+	var hbox := HBoxContainer.new()
+	hbox.name = "HBoxContainer"
+	var title := Label.new()
+	title.name = "Title"
+	title.visible = true
+	var plus := TextureButton.new()
+	plus.name = "Plus"
+	plus.visible = false
+	hbox.add_child(title)
+	hbox.add_child(plus)
+	row.add_child(hbox)
+	root.add_child(row)
+	styler.apply_combo_row_slot_height(row, 64.0)
+	if not is_equal_approx(row.custom_minimum_size.y, 64.0):
+		push_error("Category chip must keep the icon-button height after + is hidden")
+		row.queue_free()
+		return 1
+	if row.size_flags_vertical != Control.SIZE_FILL:
+		push_error("Category plate must fill the strip so it matches the square controls")
+		row.queue_free()
+		return 1
+	if hbox.alignment != BoxContainer.ALIGNMENT_CENTER:
+		push_error("Category chip content must stay vertically centered in the icon-button slot")
+		row.queue_free()
+		return 1
+	if title.size_flags_vertical != Control.SIZE_EXPAND_FILL:
+		push_error("The visible title must fill the chip so hover covers the plate")
+		row.queue_free()
+		return 1
+	if plus.size_flags_vertical == Control.SIZE_EXPAND_FILL:
+		push_error("The hidden + must not be stretched back into the chip")
+		row.queue_free()
+		return 1
+	row.queue_free()
+	return 0
 
 
 func _test_apply_insets_the_plate() -> int:
@@ -78,6 +121,37 @@ func _test_scene_row_plate(row_name: String, scene_path: String) -> int:
 		return 1
 	push_error("%s missing from %s" % [row_name, scene_path])
 	return 1
+
+
+func _test_modulators_follows_connectivity_rules() -> int:
+	var scene := FileAccess.get_file_as_string(TOP_BAR_SCENE_PATH)
+	if scene.find("text = \"Modulators\"") < 0:
+		push_error("Modulators combo must label the plate Modulators")
+		return 1
+	if scene.find("modulators.png") < 0:
+		push_error("Modulators combo must use modulators.png")
+		return 1
+	var rules_header := "[node name=\"HBoxContainer3\" type=\"HBoxContainer\" parent=\"Buttons/MarginContainer/HBoxContainer\"]"
+	var modulators_header := "[node name=\"ModulatorsHost\" type=\"HBoxContainer\" parent=\"Buttons/MarginContainer/HBoxContainer\"]"
+	var rules_at := scene.find(rules_header)
+	var modulators_at := scene.find(modulators_header)
+	if rules_at < 0 or modulators_at < rules_at:
+		push_error("Modulators must sit to the right of Connectivity Rules")
+		return 1
+	var packed: PackedScene = load(TOP_BAR_SCENE_PATH)
+	var state: SceneState = packed.get_state()
+	var icon_is_category := false
+	for i in range(state.get_node_count()):
+		var path_str := str(state.get_node_path(i, false))
+		if path_str.find("ModulatorsList") < 0 or str(state.get_node_name(i)) != "TextureRect":
+			continue
+		for p in range(state.get_node_property_count(i)):
+			if str(state.get_node_property_name(i, p)) == "metadata/category_icon" and bool(state.get_node_property_value(i, p)):
+				icon_is_category = true
+	if not icon_is_category:
+		push_error("Modulators icon must use the shared category icon size")
+		return 1
+	return 0
 
 
 func _test_combo_plate_gap_matches_icon_strip() -> int:

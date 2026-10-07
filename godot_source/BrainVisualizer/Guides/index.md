@@ -39,6 +39,7 @@ Edit and monitor the genome here. Use Neurorobotics Studio for a published model
 - **Brain Circuits**: Organizational containers that group related cortical areas and sub-circuits
 - **Integrated Circuits**: Custom circuits you configure, such as a classifier. Packaged tiles on Add Circuit are genomes or connectomes.
 - **Connectivity Rules**: Define the shape and properties of neural connections
+- **Modulators**: Change neuron or synapse behavior while a driver neuron is firing. See [Modulators](cortical_areas.md)
 - **Mappings**: Connections between cortical areas that use specific connectivity rules
 - **IPU/OPU**: Input and Output Processing Units - how your genome interacts with the world
 

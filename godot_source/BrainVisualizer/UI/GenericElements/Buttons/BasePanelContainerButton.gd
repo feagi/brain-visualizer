@@ -399,7 +399,10 @@ func _on_plus_hover(plus: Control, hovered: bool) -> void:
 	if plus == null or _disabled:
 		return
 	_plus_pointer_inside = hovered
-	_animate_control_scale(plus, content_hover_scale(hovered, true), true)
+	var factor := content_hover_scale(hovered, true)
+	if bool(plus.get_meta("plus_icon", false)):
+		factor *= ComboButtonStripStyler.PLUS_ICON_SCALE
+	_animate_control_scale(plus, factor, true)
 	_refresh_list_hover_scale()
 
 

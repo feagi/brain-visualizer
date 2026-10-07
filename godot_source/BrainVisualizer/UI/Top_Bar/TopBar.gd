@@ -49,6 +49,8 @@ func _ready():
 	
 	_setup_custom_tooltips()
 	_wire_connectivity_rules_list()
+	_wire_modulators()
+	_hide_strip_add_buttons()
 	
 	# FEAGI data
 	# Burst rate
@@ -74,22 +76,28 @@ func _apply_shared_combo_spacing_tokens() -> void:
 	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"))
 	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList/HBoxContainer"))
+	list_hbox_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList/HBoxContainer"))
 	COMBO_STYLER.apply_list_hbox_spacing(self, list_hbox_paths)
 	var spacer_paths := []
 	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddCircuits"))
 	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddInputs"))
 	spacer_paths.append(NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer/Spacer_AfterAddOutputs"))
 	COMBO_STYLER.apply_spacer_width(self, spacer_paths)
-	# The rules plate is the last combo button. No extra spacer after it.
+	# Connectivity Rules and Modulators are the trailing combo plates. No extra spacer after either.
 	var rules_tail := get_node_or_null("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/Spacer_AfterAddBrainAreas") as Control
 	if rules_tail != null:
 		rules_tail.custom_minimum_size = Vector2.ZERO
 	var rules_host := $Buttons/MarginContainer/HBoxContainer/HBoxContainer3 as HBoxContainer
 	rules_host.add_theme_constant_override("separation", 0)
+	var modulators_host := $Buttons/MarginContainer/HBoxContainer/ModulatorsHost as HBoxContainer
+	modulators_host.add_theme_constant_override("separation", 0)
 	var combo_host := $Buttons/MarginContainer/HBoxContainer as HBoxContainer
 	combo_host.add_theme_constant_override("separation", COMBO_STYLER.COMBO_PLATE_GAP)
 	var rules_row := $Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow as PanelContainer
 	COMBO_STYLER.apply_combo_row_plate_padding(rules_row)
+	var modulators_row := $Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow as PanelContainer
+	COMBO_STYLER.apply_combo_row_plate_padding(modulators_row)
+	_apply_root_combo_row_heights()
 
 
 ## History sits immediately before Settings. The count chip is drawn by the button.
@@ -139,6 +147,12 @@ func toggle_buttons_interactability(pressable: bool) -> void:
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Inputs.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList.disabled = !pressable
 	$Buttons/MarginContainer/HBoxContainer/HBoxContainer/TextureButton_Outputs.disabled = !pressable
+	var modulators_list := _modulators_list()
+	if modulators_list != null:
+		modulators_list.disabled = !pressable
+	var modulators_add := _modulators_add_button()
+	if modulators_add != null:
+		modulators_add.disabled = !pressable
 	if _shared_combo != null:
 		_shared_combo.set_force_disabled(!pressable)
 	
@@ -222,6 +236,50 @@ func _open_create_output() -> void:
 		return
 	BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU)
 
+func _modulators_list() -> BasePanelContainerButton:
+	return $Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList as BasePanelContainerButton
+
+
+func _modulators_add_button() -> TextureButton:
+	return $Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/TextureButton as TextureButton
+
+
+## Plus buttons stay off the strip. Add new lives above each hover list filter.
+func _hide_strip_add_buttons() -> void:
+	var rules_plus := $Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/TextureButton as TextureButton
+	if rules_plus != null:
+		rules_plus.visible = false
+	var modulators_plus := _modulators_add_button()
+	if modulators_plus != null:
+		modulators_plus.visible = false
+
+
+func _wire_modulators() -> void:
+	if _shared_combo == null:
+		push_error("TopBar: Modulators list needs the shared category hover list")
+		return
+	var title := _modulators_list()
+	if title == null:
+		return
+	title.mouse_filter = Control.MOUSE_FILTER_STOP
+	_shared_combo.attach_category_list_hover(title, BrainObjectsCombo.ROOT_LIST_MODULATORS, _open_modulators)
+
+
+func _open_modulators() -> void:
+	if _shared_combo == null:
+		return
+	var items := _build_topbar_cortical_items(AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR)
+	_shared_combo.open_category_list(_modulators_list(), items, "Filter modulators...", _on_modulator_chosen, _open_create_modulator, BrainObjectsCombo.ROOT_LIST_MODULATORS)
+
+
+func _on_modulator_chosen(area: AbstractCorticalArea) -> void:
+	_focus_cortical_from_topbar(area)
+
+
+func _open_create_modulator() -> void:
+	BV.WM.spawn_create_modulator(_modulators_list())
+
+
 func _wire_connectivity_rules_list() -> void:
 	if _shared_combo == null:
 		push_error("TopBar: Connectivity Rules list needs the shared category hover list")
@@ -237,7 +295,9 @@ func _open_connectivity_rules_list() -> void:
 		_connectivity_rules_title(),
 		items,
 		MorphologyScroll.FILTER_PLACEHOLDER,
-		_open_selected_connectivity_rule
+		_open_selected_connectivity_rule,
+		_open_create_morpology,
+		BrainObjectsCombo.ROOT_LIST_CONNECTIVITY_RULES
 	)
 
 
@@ -373,6 +433,24 @@ func _recursive_find_cortical_areas(node: Node, cortical_areas: Array) -> void:
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
 	_sync_refresh_rate_background_style()
+	_apply_root_combo_row_heights()
+
+
+## Connectivity Rules and Modulators keep the icon-button height after the + slot is hidden.
+func _apply_root_combo_row_heights() -> void:
+	var button_size := Vector2(BV.UI.get_minimum_size_from_loaded_theme(COMBO_STYLER.TOP_BAR_CONTROL_THEME))
+	var hosts: Array[HBoxContainer] = [
+		get_node_or_null("Buttons/MarginContainer/HBoxContainer/HBoxContainer3") as HBoxContainer,
+		get_node_or_null("Buttons/MarginContainer/HBoxContainer/ModulatorsHost") as HBoxContainer,
+	]
+	for host in hosts:
+		if host == null:
+			continue
+		host.size_flags_vertical = Control.SIZE_FILL
+	var rules_row := get_node_or_null("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow") as PanelContainer
+	var modulators_row := get_node_or_null("Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow") as PanelContainer
+	COMBO_STYLER.apply_combo_row_slot_height(rules_row, button_size.y)
+	COMBO_STYLER.apply_combo_row_slot_height(modulators_row, button_size.y)
 
 
 ## Keep refresh-rate input background visually aligned with neurons/synapses fields.
@@ -405,9 +483,9 @@ func _ensure_list_popup() -> void:
 
 
 ## Open the dropdown with the provided items.
-func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable) -> void:
+func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable, add_handler: Callable = Callable()) -> void:
 	_ensure_list_popup()
-	_list_popup.open_with_items(anchor_button, items, selection_handler, placeholder_text)
+	_list_popup.open_with_items(anchor_button, items, selection_handler, placeholder_text, 0, add_handler)
 
 
 ## Build dropdown items: all sub-circuits under the genome root (matches global top-bar Circuits combo).
@@ -563,8 +641,8 @@ func _setup_custom_tooltips() -> void:
 	# Visible strip is [SharedBrainObjectsCombo], not the hidden legacy [HBoxContainer] row.
 	if _shared_combo != null:
 		_shared_combo.apply_custom_topbar_tooltips()
-	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList, "View all connectivity rules")
 	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/TextureButton, "Add connectivity rule")
+	_add_tooltip_to_control($Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/TextureButton, "Add modulator")
 	# Hover target is the toggle control; nested TextureButtons kept native-free above.
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown/ToggleImageDropDown, "Split view: Circuit Builder, Brain Monitor, or split layout")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown/ToggleImageDropDown, "Inspectors")

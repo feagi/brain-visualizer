@@ -64,9 +64,12 @@ var punishment_source_area: String:
 ## Base64 cortical_id of the area whose firing gates propagation (empty = unconditional)
 var gate_source_area: String:
 	get: return _gate_source_area
-## True iff this rule has any reward/punishment source declared (used by BV for tap rendering)
+## Instance ids of synaptic modulators subscribed by this mapping rule.
+var modulator_ids: Array[String]:
+	get: return _modulator_ids
+## True iff this rule subscribes to a modulator or still carries a legacy reward source.
 var has_reward_modulation: bool:
-	get: return _reward_source_area != "" or _punishment_source_area != ""
+	get: return not _modulator_ids.is_empty() or _reward_source_area != "" or _punishment_source_area != ""
 
 var _morphology_used: BaseMorphology
 var _scalar: Vector3i # must all be non-zero positive
@@ -82,6 +85,7 @@ var _eligibility_decay_bursts: int = 0
 var _reward_source_area: String = ""
 var _punishment_source_area: String
 var _gate_source_area: String = ""
+var _modulator_ids: Array[String] = []
 
 ## Creates a mapping with default settings (given a morphology)
 static func create_default_mapping(morphology: BaseMorphology) -> SingleMappingDefinition:
@@ -237,6 +241,7 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 	defn._reward_source_area = reward_area_used
 	defn._punishment_source_area = punishment_area_used
 	defn._gate_source_area = gate_area_used
+	defn.set_modulator_ids(mapping_property.get("modulators", []))
 	return defn
 
 
@@ -318,6 +323,19 @@ func _init(
 	_punishment_source_area = punishment_source_area_
 	_gate_source_area = gate_source_area_
 
+func set_modulator_ids(ids: Variant) -> void:
+	_modulator_ids.clear()
+	if ids is Array:
+		for item in ids:
+			var text := String(item).strip_edges()
+			if not text.is_empty() and text not in _modulator_ids:
+				_modulator_ids.append(text)
+	elif ids is String:
+		for part in String(ids).split(",", false):
+			var text := part.strip_edges()
+			if not text.is_empty() and text not in _modulator_ids:
+				_modulator_ids.append(text)
+
 ## Returns a dictionary of this object in the same format FEAGI expects
 func to_FEAGI_JSON() -> Dictionary:
 	var associative_memory: bool = _morphology_used != null and _morphology_used.name == &"associative_memory"
@@ -331,6 +349,8 @@ func to_FEAGI_JSON() -> Dictionary:
 		}
 		if _gate_source_area != "":
 			out["gate_source_area"] = _gate_source_area
+		if not _modulator_ids.is_empty():
+			out["modulators"] = _modulator_ids
 		return out
 	else:
 		var out: Dictionary = {
@@ -348,10 +368,8 @@ func to_FEAGI_JSON() -> Dictionary:
 			out["plasticity_mode"] = _plasticity_mode
 		if _eligibility_decay_bursts > 0:
 			out["eligibility_decay_bursts"] = _eligibility_decay_bursts
-		if _reward_source_area != "":
-			out["reward_source_area"] = _reward_source_area
-		if _punishment_source_area != "":
-			out["punishment_source_area"] = _punishment_source_area
+		if not _modulator_ids.is_empty():
+			out["modulators"] = _modulator_ids
 		if _gate_source_area != "":
 			out["gate_source_area"] = _gate_source_area
 		return out

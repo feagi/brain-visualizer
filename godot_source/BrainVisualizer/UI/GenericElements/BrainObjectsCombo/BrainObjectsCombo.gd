@@ -92,6 +92,9 @@ const ROOT_LIST_MEMORY: StringName = &"memory"
 const ROOT_LIST_INPUTS: StringName = &"inputs"
 const ROOT_LIST_OUTPUTS: StringName = &"outputs"
 const ROOT_LIST_CONNECTIVITY_RULES: StringName = &"connectivity_rules"
+const ROOT_LIST_MODULATORS: StringName = &"modulators"
+const CATEGORY_GUIDE_FILE := "file"
+const CATEGORY_GUIDE_HEADING := "heading"
 const TAB_ROW_SPACER_AFTER_CIRCUITS: StringName = &"Spacer_AfterCircuitsRow"
 const TAB_ROW_SPACER_AFTER_INTERCONNECT: StringName = &"Spacer_AfterInterconnectRow"
 ## True after [method apply_custom_topbar_tooltips] succeeded for this instance (TopBar or tab host).
@@ -121,9 +124,40 @@ static func should_show_category_list_button() -> bool:
 	return false
 
 
+## Strip + buttons are not shown. Each hover list has an Add new row above its filter.
+static func should_show_strip_add_button() -> bool:
+	return false
+
+
 ## Circuit Builder and Brain Monitor show Circuits, Interconnect Areas, and Memory Areas on the strip.
 static func should_show_tab_category_rows_on_strip(global_topbar_mode: bool) -> bool:
 	return not global_topbar_mode
+
+
+## Guide page for a category list. Empty when that list has no user guide page.
+static func category_list_guide(list_id: StringName) -> Dictionary:
+	match list_id:
+		ROOT_LIST_CIRCUITS:
+			return {CATEGORY_GUIDE_FILE: "brain_circuits.md", CATEGORY_GUIDE_HEADING: ""}
+		ROOT_LIST_INTERCONNECT:
+			return {CATEGORY_GUIDE_FILE: "cortical_areas.md", CATEGORY_GUIDE_HEADING: "Custom (Interconnect)"}
+		ROOT_LIST_MEMORY:
+			return {CATEGORY_GUIDE_FILE: "cortical_areas.md", CATEGORY_GUIDE_HEADING: "Memory"}
+		ROOT_LIST_INPUTS:
+			return {CATEGORY_GUIDE_FILE: "cortical_areas.md", CATEGORY_GUIDE_HEADING: "Input Processing Unit (IPU)"}
+		ROOT_LIST_OUTPUTS:
+			return {CATEGORY_GUIDE_FILE: "cortical_areas.md", CATEGORY_GUIDE_HEADING: "Output Processing Unit (OPU)"}
+		ROOT_LIST_CONNECTIVITY_RULES:
+			return {CATEGORY_GUIDE_FILE: "connectivity_rules.md", CATEGORY_GUIDE_HEADING: ""}
+		ROOT_LIST_MODULATORS:
+			return {CATEGORY_GUIDE_FILE: "cortical_areas.md", CATEGORY_GUIDE_HEADING: "Modulators"}
+		_:
+			return {}
+
+
+## Category dropdowns do not use tooltips. The list info button opens the guide instead.
+static func category_dropdown_uses_tooltip() -> bool:
+	return false
 
 
 ## Tab strips show while the pointer is on that tab, and while one of their menus is still open.
@@ -328,15 +362,18 @@ func _ready() -> void:
 ## Default Godot tooltips when this strip is not using the main top bar custom tooltip host.
 func _apply_native_tooltips_for_combo_strip() -> void:
 	_btn_connectome.tooltip_text = "Circuits, areas, and memory"
-	_btn_brain_regions_list.tooltip_text = "Select circuit"
+	_clear_category_dropdown_tooltip(_circuits_title)
+	_clear_category_dropdown_tooltip(_btn_brain_regions_list)
 	_btn_brain_regions_add.tooltip_text = "Add circuit"
-	_btn_interconnect_list.tooltip_text = "Select interconnect area"
+	_clear_category_dropdown_tooltip(_interconnect_title)
+	_clear_category_dropdown_tooltip(_btn_interconnect_list)
 	_btn_interconnect_add.tooltip_text = "Add interconnect area"
-	_btn_memory_list.tooltip_text = "Select memory area"
+	_clear_category_dropdown_tooltip(_memory_title)
+	_clear_category_dropdown_tooltip(_btn_memory_list)
 	_btn_memory_add.tooltip_text = "Add memory area"
-	_btn_inputs_list.tooltip_text = "Select input area"
+	_clear_category_dropdown_tooltip(_btn_inputs_list)
 	_btn_inputs_add.tooltip_text = "Add input area"
-	_btn_outputs_list.tooltip_text = "Select output area"
+	_clear_category_dropdown_tooltip(_btn_outputs_list)
 	_btn_outputs_add.tooltip_text = "Add output area"
 	_btn_rearrange_layout.tooltip_text = "Circuit organizer"
 	if _activity_visualization_dropdown != null:
@@ -375,17 +412,13 @@ func apply_custom_topbar_tooltips() -> void:
 		) as ToggleImageDropDown
 		CustomTopBarTooltipManager.wire_toggle_dropdown_menu_tooltips(act_toggle, true)
 	CustomTopBarTooltipManager.strip_native_tooltips_recursive(self)
+	_clear_category_dropdown_tooltips()
 	var pairs: Array = [
 		[_btn_connectome, "Circuits, areas, and memory"],
-		[_btn_brain_regions_list, "View all circuits"],
 		[_btn_brain_regions_add, "Add a new circuit"],
-		[_btn_interconnect_list, "View interconnect areas"],
 		[_btn_interconnect_add, "Add interconnect area"],
-		[_btn_memory_list, "View memory areas"],
 		[_btn_memory_add, "Add memory area"],
-		[_btn_inputs_list, "View all input areas"],
 		[_btn_inputs_add, "Add input area"],
-		[_btn_outputs_list, "View all output areas"],
 		[_btn_outputs_add, "Add output area"],
 		[_btn_rearrange_layout, "Circuit organizer"],
 	]
@@ -415,6 +448,32 @@ func apply_custom_topbar_tooltips() -> void:
 	if _btn_connectome != null:
 		_btn_connectome.mouse_filter = Control.MOUSE_FILTER_STOP
 	_hosted_styled_tooltips_applied = true
+
+
+## Category menus open on hover, so a tooltip on the same control covers the list.
+func _clear_category_dropdown_tooltips() -> void:
+	if category_dropdown_uses_tooltip():
+		return
+	for control in [
+		_circuits_title,
+		_interconnect_title,
+		_memory_title,
+		_btn_brain_regions_list,
+		_btn_interconnect_list,
+		_btn_memory_list,
+		_btn_inputs_list,
+		_btn_outputs_list,
+	]:
+		_clear_category_dropdown_tooltip(control)
+
+
+func _clear_category_dropdown_tooltip(control: Control) -> void:
+	if control == null or not is_instance_valid(control):
+		return
+	control.tooltip_text = ""
+	var trigger := control.get_node_or_null("TooltipTrigger")
+	if trigger != null:
+		trigger.queue_free()
 
 
 ## Apply shared spacing tokens to keep all combo strips consistent across views.
@@ -458,6 +517,32 @@ func _apply_shared_combo_spacing_tokens() -> void:
 		COMBO_STYLER.apply_combo_row_plate_padding(combo_row, pad_x, pad_y)
 
 
+## Main-bar chips fill the same row as the square controls. Tab strips stay shrink-wrapped.
+func _sync_strip_to_icon_button_height() -> void:
+	if _global_topbar_mode:
+		size_flags_vertical = Control.SIZE_FILL
+		if _group_main != null:
+			_group_main.size_flags_vertical = Control.SIZE_FILL
+			var buttons_row := _group_main.get_node_or_null("MarginContainer/ButtonsRow") as HBoxContainer
+			if buttons_row != null:
+				buttons_row.size_flags_vertical = Control.SIZE_FILL
+		return
+	size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+## Category chips stay as tall as the organizer, inspector, and camera buttons on the same strip.
+func _apply_category_row_slot_height(height: float) -> void:
+	var combo_rows: Array[PanelContainer] = [
+		_circuits_row,
+		_interconnect_row,
+		_memory_row,
+		_inputs_row,
+		_outputs_row,
+	]
+	for combo_row in combo_rows:
+		COMBO_STYLER.apply_combo_row_slot_height(combo_row, height)
+
+
 ## Space a category row from the row node, so it still works after the row leaves the Elements menu.
 func _space_row_content(row: Node, list_name: String, separation: int) -> void:
 	if row == null:
@@ -493,6 +578,8 @@ func _on_theme_changed(_new_theme: Theme) -> void:
 		_apply_uniform_control_size(_connectome_menu, button_size)
 	_apply_rearrange_button_size(button_size)
 	_apply_shared_combo_spacing_tokens()
+	_apply_category_row_slot_height(button_size.y)
+	_sync_strip_to_icon_button_height()
 	_style_connectome_like_icon_buttons()
 
 
@@ -545,6 +632,8 @@ func _apply_uniform_control_size(node: Node, theme_button_size: Vector2) -> void
 			button.custom_minimum_size = theme_button_size
 			button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			if bool(button.get_meta("plus_icon", false)):
+				COMBO_STYLER.apply_plus_icon_scale(button)
 		elif child is TextureRect:
 			(child as Control).custom_minimum_size = theme_button_size
 		_apply_uniform_control_size(child, theme_button_size)
@@ -854,8 +943,9 @@ func attach_category_list_hover(title: Control, list_id: StringName, opener: Cal
 
 
 ## Open the shared filter list under [param anchor].
-func open_category_list(anchor: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable) -> void:
-	_open_dropdown_for_items(anchor, items, placeholder_text, selection_handler)
+## [param add_handler] shows Add new above the filter when it is valid.
+func open_category_list(anchor: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable, add_handler: Callable = Callable(), list_id: StringName = &"") -> void:
+	_open_dropdown_for_items(anchor, items, placeholder_text, selection_handler, add_handler, list_id)
 
 
 func _wire_category_title(title: Control, list_id: StringName, opener: Callable) -> void:
@@ -1028,10 +1118,10 @@ func _open_brain_regions() -> void:
 	var items := _build_region_items()
 	_open_dropdown_for_items(_circuits_title, items, "Filter circuits...", func(region: BrainRegion):
 		_focus_region(region)
-	)
+	, _add_brain_region, ROOT_LIST_CIRCUITS)
 
 func _add_brain_region() -> void:
-	var anchor := _btn_brain_regions_add
+	var anchor: Control = _circuits_title
 	if _global_topbar_mode:
 		# Top bar trigger defines context: create under main/root scene.
 		BV.WM.spawn_select_region_template(null, true, anchor)
@@ -1050,7 +1140,7 @@ func _open_interconnect_areas() -> void:
 	])
 	_open_dropdown_for_items(_interconnect_title, items, "Filter interconnect areas...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
-	)
+	, _add_interconnect_area, ROOT_LIST_INTERCONNECT)
 
 ## Open memory areas dropdown for the current region.
 func _open_memory_areas() -> void:
@@ -1059,7 +1149,7 @@ func _open_memory_areas() -> void:
 	var items := _build_cortical_items_for_types([AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY])
 	_open_dropdown_for_items(_memory_title, items, "Filter memory areas...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
-	)
+	, _add_memory_area, ROOT_LIST_MEMORY)
 
 ## Open input areas dropdown for the current region.
 func _open_inputs() -> void:
@@ -1068,7 +1158,7 @@ func _open_inputs() -> void:
 	var items := _build_cortical_items_for_types([AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU])
 	_open_dropdown_for_items(_btn_inputs_list, items, "Filter inputs...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
-	)
+	, _add_input_area, ROOT_LIST_INPUTS)
 
 ## Open output areas dropdown for the current region.
 func _open_outputs() -> void:
@@ -1077,10 +1167,10 @@ func _open_outputs() -> void:
 	var items := _build_cortical_items_for_types([AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU])
 	_open_dropdown_for_items(_btn_outputs_list, items, "Filter outputs...", func(area: AbstractCorticalArea):
 		_focus_cortical(area)
-	)
+	, _add_output_area, ROOT_LIST_OUTPUTS)
 
 func _add_interconnect_area() -> void:
-	var anchor := _btn_interconnect_add
+	var anchor: Control = _interconnect_title
 	if _global_topbar_mode:
 		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, anchor)
 		return
@@ -1090,7 +1180,7 @@ func _add_interconnect_area() -> void:
 	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM, anchor)
 
 func _add_memory_area() -> void:
-	var anchor := _btn_memory_add
+	var anchor: Control = _memory_title
 	if _global_topbar_mode:
 		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, anchor)
 		return
@@ -1100,22 +1190,24 @@ func _add_memory_area() -> void:
 	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY, anchor)
 
 func _add_input_area() -> void:
+	var anchor: Control = _btn_inputs_list
 	if _global_topbar_mode:
-		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, _btn_inputs_add)
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, anchor)
 		return
 	if context_region == null:
 		return
 	print("BrainObjectsCombo: Opening create input window for region:", context_region.region_ID)
-	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, _btn_inputs_add)
+	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU, anchor)
 
 func _add_output_area() -> void:
+	var anchor: Control = _btn_outputs_list
 	if _global_topbar_mode:
-		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU, _btn_outputs_add)
+		BV.WM.spawn_create_cortical_with_type(AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU, anchor)
 		return
 	if context_region == null:
 		return
 	print("BrainObjectsCombo: Opening create output window for region:", context_region.region_ID)
-	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU, _btn_outputs_add)
+	BV.WM.spawn_create_cortical_with_type_for_region(context_region, AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU, anchor)
 
 
 ## Top bar / host wiring: anchor for spawning create I/O dialogs to the right of the + button.
@@ -1174,23 +1266,24 @@ func _set_visibility_for_context(show_inputs_and_outputs: bool, show_rearrange_l
 	if _btn_memory_list:
 		_btn_memory_list.visible = should_show_category_list_button()
 	_apply_category_title_pointer()
+	var show_add := should_show_strip_add_button()
 	if _btn_brain_regions_add:
-		_btn_brain_regions_add.visible = true
+		_btn_brain_regions_add.visible = show_add
 	if _btn_interconnect_add:
-		_btn_interconnect_add.visible = true
+		_btn_interconnect_add.visible = show_add
 	if _btn_memory_add:
-		_btn_memory_add.visible = true
+		_btn_memory_add.visible = show_add
 	if _btn_rearrange_layout:
 		_btn_rearrange_layout.visible = show_rearrange_layout
 	# Inputs/Outputs remain on the strip (root / global top bar).
 	if _btn_inputs_list:
 		_btn_inputs_list.visible = show_inputs_and_outputs
 	if _btn_inputs_add:
-		_btn_inputs_add.visible = show_inputs_and_outputs
+		_btn_inputs_add.visible = show_add and show_inputs_and_outputs
 	if _btn_outputs_list:
 		_btn_outputs_list.visible = show_inputs_and_outputs
 	if _btn_outputs_add:
-		_btn_outputs_add.visible = show_inputs_and_outputs
+		_btn_outputs_add.visible = show_add and show_inputs_and_outputs
 	if _spacer_after_add_inputs:
 		_spacer_after_add_inputs.visible = show_inputs_and_outputs
 	if _group_main:
@@ -1424,13 +1517,23 @@ func _connectome_action_anchor() -> Control:
 
 
 ## Open the dropdown with the provided items.
-func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable) -> void:
+func _open_dropdown_for_items(anchor_button: Control, items: Array[Dictionary], placeholder_text: String, selection_handler: Callable, add_handler: Callable = Callable(), list_id: StringName = &"") -> void:
 	var anchor := anchor_button
 	if is_connectome_menu_open() or _is_connectome_menu_row(anchor_button):
 		anchor = _connectome_action_anchor()
 	_ensure_list_popup()
 	_ensure_list_popup_hover_hooks()
-	_list_popup.open_with_items(anchor, items, selection_handler, placeholder_text, ELEMENTS_MENU_ANCHOR_OVERLAP_PX)
+	var guide := category_list_guide(list_id)
+	_list_popup.open_with_items(
+		anchor,
+		items,
+		selection_handler,
+		placeholder_text,
+		ELEMENTS_MENU_ANCHOR_OVERLAP_PX,
+		add_handler,
+		str(guide.get(CATEGORY_GUIDE_FILE, "")),
+		str(guide.get(CATEGORY_GUIDE_HEADING, ""))
+	)
 
 
 func _is_connectome_menu_row(control: Control) -> bool:

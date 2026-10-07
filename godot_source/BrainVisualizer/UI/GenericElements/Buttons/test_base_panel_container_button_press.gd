@@ -192,7 +192,7 @@ func _test_connectivity_rules_list_and_plus_are_siblings() -> int:
 	var plus_parent := ""
 	var row_has_plate := false
 	var list_is_flat := false
-	var label_is_hover_target := false
+	var title_keeps_text_still := false
 	for i in range(state.get_node_count()):
 		var node_name := str(state.get_node_name(i))
 		var path_str := str(state.get_node_path(i, false))
@@ -201,9 +201,11 @@ func _test_connectivity_rules_list_and_plus_are_siblings() -> int:
 		if node_name == "BrainAreasList":
 			list_parent = path_str.get_base_dir()
 			for p in range(state.get_node_property_count(i)):
-				if str(state.get_node_property_name(i, p)) != "metadata/flat_on_backdrop":
-					continue
-				list_is_flat = bool(state.get_node_property_value(i, p))
+				var prop_name := str(state.get_node_property_name(i, p))
+				if prop_name == "metadata/flat_on_backdrop":
+					list_is_flat = bool(state.get_node_property_value(i, p))
+				if prop_name == "metadata/disable_hover_scale":
+					title_keeps_text_still = bool(state.get_node_property_value(i, p))
 		elif node_name == "TextureButton" and path_str.find("BrainAreasRow") >= 0:
 			plus_parent = path_str.get_base_dir()
 			if path_str.find("BrainAreasList") >= 0:
@@ -213,10 +215,6 @@ func _test_connectivity_rules_list_and_plus_are_siblings() -> int:
 			for p in range(state.get_node_property_count(i)):
 				if str(state.get_node_property_name(i, p)) == "theme_override_styles/panel":
 					row_has_plate = true
-		elif node_name == "Label" and path_str.find("BrainAreasList") >= 0:
-			for p in range(state.get_node_property_count(i)):
-				if str(state.get_node_property_name(i, p)) == "metadata/hover_scale_target":
-					label_is_hover_target = bool(state.get_node_property_value(i, p))
 	if list_parent == "" or plus_parent == "":
 		push_error("Connectivity rules list and + must exist on the top bar")
 		return 1
@@ -229,8 +227,8 @@ func _test_connectivity_rules_list_and_plus_are_siblings() -> int:
 	if not list_is_flat:
 		push_error("Connectivity rules text button must be flat on the shared row plate")
 		return 1
-	if not label_is_hover_target:
-		push_error("Connectivity rules hover must target the label, not the row")
+	if not title_keeps_text_still:
+		push_error("Connectivity rules text must stay still while the list opens on hover")
 		return 1
 	return 0
 

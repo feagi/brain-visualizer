@@ -54,6 +54,8 @@ var _manipulation_moved_cb: Callable = Callable()    # stored for explicit disco
 var _manipulation_resized_cb: Callable = Callable()  # stored for explicit disconnect before preview is freed
 var _core_cluster_plate: MeshInstance3D = null
 var _core_cluster_layout_refresh_pending: bool = false
+var _modulator_plate: MeshInstance3D = null
+var _modulator_plate_refresh_pending: bool = false
 var _ws_fastpath_resync_pending: bool = false
 # Number of [method FeagiCore.bv_begin_visual_rebuild_pause] calls awaiting their matching release.
 # Accumulated (never dropped) so overlapping rebuild cycles - e.g. cortical_areas_hash and
@@ -4811,6 +4813,7 @@ func _add_cortical_area(area: AbstractCorticalArea, allow_external: bool = false
 		if not area.coordinates_3D_updated.is_connected(power_cb):
 			area.coordinates_3D_updated.connect(power_cb)
 	_schedule_core_cluster_layout_refresh()
+	_schedule_modulator_plate_refresh()
 	
 	# If this area is I/O of a child region, it will be moved later by the brain region component
 	# For now, position it normally - it will be repositioned when brain regions populate
@@ -4906,6 +4909,69 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	else:
 		_prune_invalid_cortical_refs_from_mouse_tracking()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
+	_schedule_modulator_plate_refresh()
+
+func _schedule_modulator_plate_refresh() -> void:
+	if _modulator_plate_refresh_pending:
+		return
+	_modulator_plate_refresh_pending = true
+	call_deferred("_update_modulator_plate")
+
+func _ensure_modulator_plate() -> void:
+	if _modulator_plate != null and is_instance_valid(_modulator_plate):
+		return
+	var plate := MeshInstance3D.new()
+	plate.name = "ModulatorPlate"
+	plate.mesh = BoxMesh.new()
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(0.45, 0.32, 0.18, 0.28)
+	mat.emission_enabled = true
+	mat.emission = Color(0.42, 0.28, 0.12, 1.0)
+	mat.emission_energy = 0.35
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	plate.material_override = mat
+	plate.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_node_3D_root.add_child(plate)
+	_modulator_plate = plate
+
+func _update_modulator_plate() -> void:
+	_modulator_plate_refresh_pending = false
+	if _node_3D_root == null or not _brain_monitor_viewing_feagi_root_region():
+		if _modulator_plate != null and is_instance_valid(_modulator_plate):
+			_modulator_plate.visible = false
+		return
+	var members: Array[UI_BrainMonitor_CorticalArea] = []
+	for viz in _cortical_visualizations_by_ID.values():
+		var rendering := viz as UI_BrainMonitor_CorticalArea
+		if rendering == null or not is_instance_valid(rendering):
+			continue
+		var area: AbstractCorticalArea = rendering.cortical_area
+		if area != null and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
+			members.append(rendering)
+	if members.is_empty():
+		if _modulator_plate != null and is_instance_valid(_modulator_plate):
+			_modulator_plate.visible = false
+		return
+	_ensure_modulator_plate()
+	var min_x: float = members[0].get_volume_world_center().x
+	var max_x: float = min_x
+	var min_z: float = members[0].get_volume_world_center().z
+	var max_z: float = min_z
+	var sum_y: float = members[0].get_volume_world_center().y
+	for i in range(1, members.size()):
+		var center: Vector3 = members[i].get_volume_world_center()
+		min_x = minf(min_x, center.x)
+		max_x = maxf(max_x, center.x)
+		min_z = minf(min_z, center.z)
+		max_z = maxf(max_z, center.z)
+		sum_y += center.y
+	var mesh := _modulator_plate.mesh as BoxMesh
+	if mesh != null:
+		mesh.size = Vector3(maxf(max_x - min_x + 6.0, 6.0), 0.35, maxf(max_z - min_z + 6.0, 6.0))
+	_modulator_plate.global_position = Vector3((min_x + max_x) * 0.5, (sum_y / float(members.size())) - 1.8, (min_z + max_z) * 0.5)
+	_modulator_plate.visible = true
 
 func _ensure_external_io_plates() -> void:
 	if _representing_region == null or _node_3D_root == null or _representing_region.is_root_region():
@@ -5323,6 +5389,7 @@ func _perform_coalesced_cache_rebuild() -> void:
 				cortical_viz._show_neural_connections()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 	_schedule_core_cluster_layout_refresh()
+	_schedule_modulator_plate_refresh()
 
 
 ## Re-runs region plate population after cortical rebuild so rebuilt nodes are reparented off root.

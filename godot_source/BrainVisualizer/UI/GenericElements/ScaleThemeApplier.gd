@@ -61,10 +61,14 @@ func search_for_matching_children(starting_node: Node) -> void:
 func update_theme_customs(_updated_theme: Theme) -> void:
 	
 	# TextureButton. Size comes from the control's theme type, TextureButton_TopBar on the top bar.
+	# Combo + artwork is drawn at 80 percent of that slot.
 	for tb: TextureButton in _texture_buttons:
 		if tb == null:
 			continue
-		tb.custom_minimum_size = BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(tb, "TextureButton")
+		var button_size := Vector2(BV.UI.get_minimum_size_from_loaded_theme_variant_given_control(tb, "TextureButton"))
+		tb.custom_minimum_size = button_size
+		if bool(tb.get_meta("plus_icon", false)):
+			ComboButtonStripStyler.apply_plus_icon_scale(tb)
 	
 	for but: Button in _text_buttons:
 		if but == null:

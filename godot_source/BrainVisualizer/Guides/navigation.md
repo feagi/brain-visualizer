@@ -17,7 +17,7 @@ Each has its own navigation system optimized for its purpose.
 Use the **top bar lists** to jump directly to an object. Hover the title. The list opens. There is no separate list icon.
 
 **Root scene top bar:**
-1. Hover **Circuits**, **Inputs**, **Outputs**, or **Connectivity Rules**
+1. Hover **Circuits**, **Inputs**, **Outputs**, or **Connectivity Rules**. **Modulators** sits to the right of Connectivity Rules.
 2. Select an entry
 3. A circuit, input, or output is shown in the current view. A connectivity rule opens the Connectivity Rules Manager on that rule.
 

@@ -75,7 +75,7 @@ Add areas later using "Add to Region" operation.
 Quick access from anywhere:
 
 1. Hover **Circuits** on the top bar
-2. Click **+**
+2. Click **Add new**. The square info button to its left opens this page.
 3. Configure region properties
 4. Choose parent circuit
 5. Click **Create**

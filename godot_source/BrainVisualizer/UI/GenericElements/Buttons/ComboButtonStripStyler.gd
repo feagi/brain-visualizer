@@ -12,6 +12,8 @@ const ROW_PAD_Y: int = 0
 const TOP_BAR_CONTROL_THEME: StringName = &"TextureButton_TopBar"
 ## Category icons are smaller than TextureButton_TopBar. The button size itself stays in the theme.
 const CATEGORY_ICON_SCALE: float = 0.8
+## Combo + icons use the same reduction as category icons.
+const PLUS_ICON_SCALE: float = 0.8
 ## interconnected.png has no transparent margin, so the shared category box still looks full size.
 const FULL_BLEED_ICON_SCALE: float = 0.64
 
@@ -20,6 +22,31 @@ const FULL_BLEED_ICON_SCALE: float = 0.64
 static func category_icon_size(theme_button_size: Vector2, full_bleed: bool = false) -> Vector2:
 	var factor: float = FULL_BLEED_ICON_SCALE if full_bleed else CATEGORY_ICON_SCALE
 	return theme_button_size * factor
+
+
+## Size of a combo + icon. [param theme_button_size] is TextureButton_TopBar from the loaded theme.
+static func plus_icon_size(theme_button_size: Vector2) -> Vector2:
+	return theme_button_size * PLUS_ICON_SCALE
+
+
+## Draw a + at 80 percent. The control keeps the shared top-bar slot so the row height stays put.
+static func apply_plus_icon_scale(button: TextureButton) -> void:
+	if button == null:
+		return
+	button.ignore_texture_size = true
+	_center_plus_pivot(button)
+	if bool(button.get_meta("plus_scale_wired", false)):
+		return
+	button.set_meta("plus_scale_wired", true)
+	button.resized.connect(_center_plus_pivot.bind(button))
+
+
+static func _center_plus_pivot(button: TextureButton) -> void:
+	if button == null or not is_instance_valid(button):
+		return
+	button.scale = Vector2.ONE
+	button.pivot_offset = button.size * 0.5
+	button.scale = Vector2(PLUS_ICON_SCALE, PLUS_ICON_SCALE)
 
 
 ## Apply a consistent icon/label separation to list button content rows.
@@ -38,6 +65,23 @@ static func apply_spacer_width(root: Node, spacer_paths: Array, width: float = C
 		if spacer == null:
 			continue
 		spacer.custom_minimum_size = Vector2(width, spacer.custom_minimum_size.y)
+
+
+## Keep a category chip as tall as the icon buttons beside it after the + slot is hidden.
+## The plate fills its strip so it matches those squares instead of hugging the icon.
+static func apply_combo_row_slot_height(row: PanelContainer, height: float) -> void:
+	if row == null or height <= 0.0:
+		return
+	row.custom_minimum_size = Vector2(row.custom_minimum_size.x, height)
+	row.size_flags_vertical = Control.SIZE_FILL
+	var hbox := row.get_node_or_null("HBoxContainer") as HBoxContainer
+	if hbox == null:
+		return
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.size_flags_vertical = Control.SIZE_FILL
+	for child in hbox.get_children():
+		if child is Control and (child as Control).visible:
+			(child as Control).size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
 ## Inset a combo-row plate. Shared by the root top bar and the tab strips.

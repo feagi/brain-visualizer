@@ -10,6 +10,7 @@ const TYPES_NOT_ALLOWED_TO_BE_MOVED_INTO_SUBREGION: Array[CORTICAL_AREA_TYPE] = 
 	CORTICAL_AREA_TYPE.IPU,
 	CORTICAL_AREA_TYPE.OPU,
 	CORTICAL_AREA_TYPE.CORE,
+	CORTICAL_AREA_TYPE.MODULATOR,
 ]
 
 ## The type of cortical area, not 1-1 mapped with feagi
@@ -20,7 +21,8 @@ enum CORTICAL_AREA_TYPE {
 	CUSTOM,
 	INTERCONNECT,
 	OPU,
-	UNKNOWN
+	UNKNOWN,
+	MODULATOR
 }
 
 ## Any specific flags to be aware of for a cortical area? 

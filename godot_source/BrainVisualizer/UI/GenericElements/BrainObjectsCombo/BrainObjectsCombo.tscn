@@ -149,6 +149,7 @@ focus_mode = 0
 
 [node name="TextureButton_BrainRegions" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(48, 48)
 size_flags_horizontal = 8
 size_flags_vertical = 4
@@ -159,6 +160,7 @@ texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
+metadata/plus_icon = true
 [node name="InterconnectAreasRow" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems"]
 unique_name_in_owner = true
 mouse_filter = 2
@@ -214,6 +216,7 @@ focus_mode = 0
 
 [node name="TextureButton_Interconnect" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(48, 48)
 size_flags_horizontal = 8
 size_flags_vertical = 4
@@ -224,6 +227,7 @@ texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
+metadata/plus_icon = true
 [node name="MemoryAreasRow" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems"]
 unique_name_in_owner = true
 mouse_filter = 2
@@ -278,6 +282,7 @@ focus_mode = 0
 
 [node name="TextureButton_Memory" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(48, 48)
 size_flags_horizontal = 8
 size_flags_vertical = 4
@@ -288,6 +293,7 @@ texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
+metadata/plus_icon = true
 [node name="Spacer_AfterConnectome" type="Control" parent="."]
 custom_minimum_size = Vector2(5, 0)
 size_flags_horizontal = 0
@@ -324,6 +330,7 @@ size_flags_vertical = 4
 clip_contents = false
 script = ExtResource("2_basebtn")
 metadata/flat_on_backdrop = true
+metadata/disable_hover_scale = true
 metadata/plate_padding_x = 0
 metadata/plate_padding_y = 0
 
@@ -342,10 +349,10 @@ metadata/category_icon = true
 mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Inputs"
-metadata/hover_scale_target = true
 
 [node name="TextureButton_Inputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(48, 48)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
@@ -355,6 +362,7 @@ texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
+metadata/plus_icon = true
 [node name="Spacer_AfterAddInputs" type="Control" parent="MainGroup/MarginContainer/ButtonsRow"]
 custom_minimum_size = Vector2(5, 0)
 size_flags_horizontal = 0
@@ -375,6 +383,7 @@ size_flags_vertical = 4
 clip_contents = false
 script = ExtResource("2_basebtn")
 metadata/flat_on_backdrop = true
+metadata/disable_hover_scale = true
 metadata/plate_padding_x = 0
 metadata/plate_padding_y = 0
 
@@ -393,10 +402,10 @@ metadata/category_icon = true
 mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Outputs"
-metadata/hover_scale_target = true
 
 [node name="TextureButton_Outputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(48, 48)
 size_flags_vertical = 4
 texture_normal = ExtResource("5_plus_s")
@@ -406,6 +415,7 @@ texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
+metadata/plus_icon = true
 [node name="Spacer_BeforeRearrange" type="Control" parent="."]
 custom_minimum_size = Vector2(2, 0)
 size_flags_horizontal = 0

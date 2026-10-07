@@ -230,6 +230,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_section_memory.visible = false
 	if true: # currently, all cortical areas have this
 		_init_psp()
+	_ensure_modulations_section()
 	_ensure_rate_modulated_leak_section()
 	
 	_refresh_all_relevant()
@@ -353,9 +354,188 @@ func _apply_type_based_ui_restrictions() -> void:
 	# Currently only CORE has strict UI restrictions.
 	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
 		return
+	_apply_modulator_driver_locks()
 	if !_is_core_type_context():
 		return
 	_apply_core_type_restrictions()
+
+
+const _NEURO_MODULATOR_TYPES: Array[String] = [
+	"neuro.firing_threshold",
+	"neuro.leak",
+	"neuro.firing_probability",
+]
+
+func _ensure_modulations_section() -> void:
+	if _section_dangerzone == null:
+		return
+	var parent := _section_dangerzone.get_parent()
+	if parent == null or parent.get_node_or_null("Modulations") != null:
+		return
+	var section := VBoxContainer.new()
+	section.name = "Modulations"
+	var title := Label.new()
+	title.text = "Modulations"
+	section.add_child(title)
+	var field := LineEdit.new()
+	field.name = "ModulatorIds"
+	field.placeholder_text = "subscribed instance ids, comma separated"
+	section.add_child(field)
+	var type_list := OptionButton.new()
+	type_list.name = "ModulatorType"
+	for kind in _NEURO_MODULATOR_TYPES:
+		type_list.add_item(kind)
+	section.add_child(type_list)
+	var existing := OptionButton.new()
+	existing.name = "ExistingModulator"
+	existing.add_item("(refresh to list instances)")
+	section.add_child(existing)
+	var refresh := Button.new()
+	refresh.text = "Refresh instances"
+	refresh.pressed.connect(_on_modulator_instances_refresh)
+	section.add_child(refresh)
+	var use_existing := Button.new()
+	use_existing.text = "Subscribe selected instance"
+	use_existing.pressed.connect(_on_modulator_subscribe_existing)
+	section.add_child(use_existing)
+	var new_id := LineEdit.new()
+	new_id.name = "NewModulatorId"
+	new_id.placeholder_text = "new instance id"
+	section.add_child(new_id)
+	var magnitude := LineEdit.new()
+	magnitude.name = "NewModulatorMagnitude"
+	magnitude.placeholder_text = "magnitude percent"
+	magnitude.text = "0"
+	section.add_child(magnitude)
+	var create := Button.new()
+	create.text = "Create instance and subscribe"
+	create.pressed.connect(_on_modulator_create_and_subscribe)
+	section.add_child(create)
+	var button := Button.new()
+	button.text = "Apply subscriptions"
+	button.pressed.connect(_on_modulator_subscriptions_apply)
+	section.add_child(button)
+	parent.add_child(section)
+	parent.move_child(section, _section_dangerzone.get_index())
+
+
+func _modulations_node(node_name: String) -> Node:
+	if _section_dangerzone == null:
+		return null
+	var parent := _section_dangerzone.get_parent()
+	if parent == null:
+		return null
+	return parent.get_node_or_null("Modulations/" + node_name)
+
+
+func _append_modulator_subscription(instance_id: String) -> void:
+	var field := _modulations_node("ModulatorIds") as LineEdit
+	if field == null:
+		return
+	var trimmed := instance_id.strip_edges()
+	if trimmed.is_empty():
+		return
+	var ids: PackedStringArray = _modulator_ids_from_field(field)
+	if trimmed not in ids:
+		ids.append(trimmed)
+	field.text = ",".join(ids)
+
+
+func _modulator_ids_from_field(field: LineEdit) -> PackedStringArray:
+	var ids: PackedStringArray = []
+	for part in field.text.split(",", false):
+		var trimmed := str(part).strip_edges()
+		if not trimmed.is_empty() and trimmed not in ids:
+			ids.append(trimmed)
+	return ids
+
+
+func _on_modulator_subscriptions_apply() -> void:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		return
+	var field := _modulations_node("ModulatorIds") as LineEdit
+	if field == null:
+		return
+	var ids: Array = []
+	for instance_id in _modulator_ids_from_field(field):
+		ids.append(instance_id)
+	FeagiCore.requests.update_cortical_areas(_cortical_area_refs, {"modulators": ids})
+
+
+func _on_modulator_subscribe_existing() -> void:
+	var existing := _modulations_node("ExistingModulator") as OptionButton
+	if existing == null or existing.item_count == 0:
+		return
+	var instance_id := existing.get_item_text(existing.selected)
+	if instance_id.begins_with("("):
+		return
+	_append_modulator_subscription(instance_id)
+	_on_modulator_subscriptions_apply()
+
+
+func _on_modulator_instances_refresh() -> void:
+	var existing := _modulations_node("ExistingModulator") as OptionButton
+	var type_list := _modulations_node("ModulatorType") as OptionButton
+	if existing == null or type_list == null:
+		return
+	var selected_type := type_list.get_item_text(type_list.selected)
+	var response: FeagiRequestOutput = await FeagiCore.requests.list_modulators()
+	existing.clear()
+	if response == null or response.has_errored:
+		existing.add_item("(list failed)")
+		return
+	var payload: Dictionary = response.decode_response_as_dict()
+	var added := 0
+	for instance_id in payload.keys():
+		var body: Variant = payload[instance_id]
+		if body is Dictionary and str(body.get("type", "")) == selected_type:
+			existing.add_item(str(instance_id))
+			added += 1
+	if added == 0:
+		existing.add_item("(none of this type)")
+
+
+func _on_modulator_create_and_subscribe() -> void:
+	var type_list := _modulations_node("ModulatorType") as OptionButton
+	var new_id := _modulations_node("NewModulatorId") as LineEdit
+	var magnitude := _modulations_node("NewModulatorMagnitude") as LineEdit
+	if type_list == null or new_id == null or magnitude == null:
+		return
+	var instance_id := new_id.text.strip_edges()
+	if instance_id.is_empty():
+		return
+	var created: FeagiRequestOutput = await FeagiCore.requests.create_modulator(instance_id, {
+		"type": type_list.get_item_text(type_list.selected),
+		"magnitude_percent": float(magnitude.text),
+		"effect_duration_bursts": 1,
+		"rest_bursts": 0,
+		"graded": false,
+	})
+	if created == null or created.has_errored:
+		return
+	_append_modulator_subscription(instance_id)
+	_on_modulator_subscriptions_apply()
+
+
+func _apply_modulator_driver_locks() -> void:
+	var all_drivers := true
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
+		all_drivers = false
+	else:
+		for area in _cortical_area_refs:
+			if area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
+				all_drivers = false
+				break
+	if not all_drivers:
+		return
+	if _line_Refactory_Period != null:
+		_line_Refactory_Period.editable = false
+	if _line_Consecutive_Fire_Count != null:
+		_line_Consecutive_Fire_Count.editable = false
+	if _line_Snooze_Period != null:
+		_line_Snooze_Period.editable = false
+	if _button_MP_Driven_PSP != null:
+		_button_MP_Driven_PSP.disabled = true
 
 
 func _apply_core_type_restrictions() -> void:

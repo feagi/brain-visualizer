@@ -662,7 +662,36 @@ jobs:
         shell: bash
         run: |
           cd exports
-          tar -czf ${{ matrix.package_name }} BrainVisualizer-Remote.x86_64
+          # embed_pck=false writes BrainVisualizer-Remote.pck beside the binary.
+          # Godot also copies GDExtension .so files into this directory.
+          if [ ! -f "BrainVisualizer-Remote.x86_64" ]; then
+            echo "ERROR: Linux binary missing: BrainVisualizer-Remote.x86_64"
+            ls -la
+            exit 1
+          fi
+          if [ ! -f "BrainVisualizer-Remote.pck" ]; then
+            echo "ERROR: BrainVisualizer-Remote.pck missing (embed_pck=false requires the sidecar PCK)"
+            ls -la
+            exit 1
+          fi
+          files=(BrainVisualizer-Remote.x86_64 BrainVisualizer-Remote.pck)
+          shopt -s nullglob
+          so_files=(*.so)
+          shopt -u nullglob
+          if [ ${#so_files[@]} -gt 0 ]; then
+            files+=("${so_files[@]}")
+          else
+            echo "WARNING: No GDExtension .so files found in exports/"
+          fi
+          echo "Packaging:"
+          printf '  %s\n' "${files[@]}"
+          tar -czf ${{ matrix.package_name }} "${files[@]}"
+          echo "Archive contents:"
+          tar -tzf ${{ matrix.package_name }}
+          if ! tar -tzf ${{ matrix.package_name }} | grep -qx "BrainVisualizer-Remote.pck"; then
+            echo "ERROR: BrainVisualizer-Remote.pck was not written into the archive"
+            exit 1
+          fi
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4

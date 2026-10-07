@@ -50,6 +50,8 @@ var GET_agent_capabilities_all: StringName = "/v1/agent/capabilities/all"
 var GET_agent_shared_mem: StringName = "/v1/agent/shared_mem"
 var GET_network_connection_info: StringName = "/v1/network/connection_info"
 var GET_input_vision: StringName = "/v1/input/vision"
+var GET_modulator_modulators: StringName = "/v1/modulator/modulators"
+var POST_modulator_modulator: StringName = "/v1/modulator/modulator"
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/simulation_timestep"

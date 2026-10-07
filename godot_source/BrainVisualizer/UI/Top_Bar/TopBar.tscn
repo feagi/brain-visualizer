@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene load_steps=40 format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" uid="uid://yg0uidt8aocq" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" uid="uid://dqxgqll112i2k" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_o4dth"]
@@ -37,6 +37,7 @@
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iimg.png" id="21_n6kq0"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="26_brain_regions_icon"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/modulators.png" id="39_modulators"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_combo_row"]
 bg_color = Color(0.262745, 0.262745, 0.262745, 1)
@@ -214,6 +215,7 @@ size_flags_vertical = 4
 clip_contents = false
 script = ExtResource("2_o4dth")
 metadata/flat_on_backdrop = true
+metadata/disable_hover_scale = true
 metadata/plate_padding_x = 0
 metadata/plate_padding_y = 0
 
@@ -237,9 +239,9 @@ mouse_filter = 1
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Connectivity Rules"
-metadata/hover_scale_target = true
 
 [node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer"]
+visible = false
 custom_minimum_size = Vector2(48, 48)
 theme_type_variation = &"TextureButton_TopBar"
 layout_mode = 2
@@ -254,11 +256,76 @@ ignore_texture_size = true
 stretch_mode = 0
 focus_mode = 0
 metadata/ignore_parent_press = true
+metadata/plus_icon = true
 
 [node name="Spacer_AfterAddBrainAreas" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
 custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 size_flags_horizontal = 4
+
+[node name="ModulatorsHost" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="ModulatorsRow" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost"]
+mouse_filter = 2
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_combo_row")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ModulatorsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+clip_contents = false
+script = ExtResource("2_o4dth")
+metadata/flat_on_backdrop = true
+metadata/disable_hover_scale = true
+metadata/plate_padding_x = 0
+metadata/plate_padding_y = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList"]
+mouse_filter = 2
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList/HBoxContainer"]
+mouse_filter = 2
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("39_modulators")
+expand_mode = 1
+stretch_mode = 5
+metadata/category_icon = true
+
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList/HBoxContainer"]
+mouse_filter = 1
+layout_mode = 2
+theme_type_variation = &"Label_Header"
+text = "Modulators"
+
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer"]
+visible = false
+custom_minimum_size = Vector2(48, 48)
+theme_type_variation = &"TextureButton_TopBar"
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture_normal = ExtResource("4_e2mvc")
+texture_pressed = ExtResource("5_etpv8")
+texture_hover = ExtResource("6_fkuh3")
+texture_disabled = ExtResource("7_puuh8")
+ignore_texture_size = true
+stretch_mode = 0
+focus_mode = 0
+metadata/ignore_parent_press = true
+metadata/plus_icon = true
 
 [node name="ChangeSize" type="PanelContainer" parent="."]
 visible = false

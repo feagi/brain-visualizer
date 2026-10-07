@@ -90,22 +90,22 @@ The main toolbar provides quick access to essential features:
 ### Middle Section (Quick Access)
 
 **Root scene top bar:**
-- Circuits, Inputs, Outputs, then Connectivity Rules
-- Hover a title to open its list. There is no list icon.
-- **+** creates one
+- Circuits, Inputs, Outputs, Connectivity Rules, then Modulators
+- Hover Circuits, Inputs, Outputs, Connectivity Rules, or Modulators to open that list. There is no list icon.
+- **Add new** creates one. The square info button to its left opens the user guide for that list.
 - Choosing a circuit, input, or output moves the view to it
 - Choosing a connectivity rule opens the Connectivity Rules Manager with that rule shown
 
-![Connectivity Rules Icon](../UI/GenericResources/ButtonIcons/neuron.png)
+![Connectivity Rules Icon](../UI/GenericResources/ButtonIcons/neuron.png) ![Modulators Icon](../UI/GenericResources/ButtonIcons/modulators.png)
 
 **Circuit Builder and Brain Monitor tab bars:**
 - Shown only while the pointer is on that tab. Hidden when the pointer is elsewhere. A menu opened from the bar stays up until it closes.
 - Circuits, Interconnect Areas, and Memory Areas, in that order
 - The whole tab bar is two UI sizes smaller than the root scene top bar
 - Hover a title to open its list. There is no Elements menu and no list icon.
-- **+** creates one. Choosing an entry moves the view to it.
+- **Add new** creates one. The square info button to its left opens the user guide for that list. Choosing an entry moves the view to it.
 - A tab opened on the main circuit also shows Inputs and Outputs. Other region tabs do not.
-- **Classifier** is added from **Add Circuit** (the Circuits **+**). It is an integrated circuit: a gold **IC** chip hangs off the top-right corner of its image. See [Integrated Circuits](integrated_circuits.md). Logic AND and Logic OR stay genomes or connectomes on that same window.
+- **Classifier** is added from **Add new** on Circuits. It is an integrated circuit: a gold **IC** chip hangs off the top-right corner of its image. See [Integrated Circuits](integrated_circuits.md). Logic AND and Logic OR stay genomes or connectomes on that same window.
 
 ### Right Section (Tools and Settings)
 

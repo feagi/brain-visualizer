@@ -248,6 +248,12 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Shown in Dark Red color in Circuit Builder
 - See also: [Cortical Area](#c)
 
+**Modulator**
+- Changes neurons or synapses while its driver neuron is firing
+- A neuromodulator acts on cortical areas. A synaptic modulator acts on a mapping
+- Each instance owns a 1x1x1 driver area. Hover **Modulators** on the root scene top bar to list or add one
+- See also: [Cortical Area](#c), [Mapping](#m)
+
 ---
 
 ## N

@@ -33,6 +33,9 @@ func _initialize() -> void:
 	failures += _test_list_and_plus_are_siblings_on_shared_plate()
 	failures += _test_elements_menu_titles_are_not_links()
 	failures += _test_category_icons_are_twenty_percent_smaller()
+	failures += _test_plus_icons_are_twenty_percent_smaller()
+	failures += _test_strip_add_buttons_stay_hidden()
+	failures += _test_category_lists_use_guide_button_instead_of_tooltips()
 	failures += _test_keep_menu_open_when_pointer_still_on_trigger()
 	failures += _test_tab_overlay_z_index_matches_circuit_builder()
 	failures += _test_add_buttons_use_texture_hover_without_scale()
@@ -370,7 +373,7 @@ func _test_scene_has_no_classifier_row() -> int:
 func _test_combo_rows_scale_label_not_hbox() -> int:
 	var packed: PackedScene = load(COMBO_SCENE_PATH)
 	var state: SceneState = packed.get_state()
-	var label_targets: int = 0
+	var disabled_titles: int = 0
 	for i in range(state.get_node_count()):
 		var node_name := str(state.get_node_name(i))
 		var path_str := str(state.get_node_path(i, false))
@@ -382,20 +385,21 @@ func _test_combo_rows_scale_label_not_hbox() -> int:
 					push_error("Elements menu titles must not scale like links: %s" % path_str)
 					return 1
 			continue
-		var has_scale_meta := false
+		var disables_scale := false
+		var marks_scale := false
 		for p in range(state.get_node_property_count(i)):
-			if str(state.get_node_property_name(i, p)) != "metadata/hover_scale_target":
-				continue
-			has_scale_meta = bool(state.get_node_property_value(i, p))
-		if not has_scale_meta:
-			continue
-		if node_name == "HBoxContainer":
-			push_error("Combo row HBox must not be the hover scale target (that also enlarges +): %s" % path_str)
+			var prop_name := str(state.get_node_property_name(i, p))
+			if prop_name == "metadata/disable_hover_scale" and bool(state.get_node_property_value(i, p)):
+				disables_scale = true
+			if prop_name == "metadata/hover_scale_target" and bool(state.get_node_property_value(i, p)):
+				marks_scale = true
+		if marks_scale:
+			push_error("Combo title text must not grow on hover: %s" % path_str)
 			return 1
-		if node_name == "Label":
-			label_targets += 1
-	if label_targets < 2:
-		push_error("Inputs and Outputs labels must stay the hover scale target (found %d)" % label_targets)
+		if disables_scale and (node_name == "InputsList" or node_name == "OutputsList"):
+			disabled_titles += 1
+	if disabled_titles != 2:
+		push_error("Inputs and Outputs must keep their text still while the list opens on hover")
 		return 1
 	return 0
 
@@ -716,6 +720,188 @@ func _test_category_icons_are_twenty_percent_smaller() -> int:
 		push_error("Connectivity Rules icon must use the same category icon size as Circuits, Inputs, and Outputs")
 		return 1
 	return 0
+
+
+func _test_strip_add_buttons_stay_hidden() -> int:
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	if bool(script.should_show_strip_add_button()):
+		push_error("Strip + buttons must stay hidden; Add new lives above the filter")
+		return 1
+	var popup_script: Script = load("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.gd")
+	if str(popup_script.ADD_NEW_TEXT) != "Add new":
+		push_error("Filter list add action must read Add new")
+		return 1
+	if bool(popup_script.should_show_add_new_button(false)):
+		push_error("Filter lists without an add handler must hide Add new")
+		return 1
+	if not bool(popup_script.should_show_add_new_button(true)):
+		push_error("Filter lists with an add handler must show Add new")
+		return 1
+	if int(popup_script.add_new_font_size(14)) != 18:
+		push_error("Add new must use a larger face than the filter list")
+		return 1
+	var popup_scene: PackedScene = load("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
+	var popup_state: SceneState = popup_scene.get_state()
+	var add_index := _find_node_index_by_name(popup_state, "AddNew")
+	var filter_index := _find_node_index_by_name(popup_state, "FilterLine")
+	if add_index < 0 or filter_index < 0 or add_index > filter_index:
+		push_error("Add new must sit above the filter line")
+		return 1
+	var add_text := ""
+	var add_starts_hidden := false
+	for p in range(popup_state.get_node_property_count(add_index)):
+		var prop_name := str(popup_state.get_node_property_name(add_index, p))
+		if prop_name == "text":
+			add_text = str(popup_state.get_node_property_value(add_index, p))
+		if prop_name == "visible" and not bool(popup_state.get_node_property_value(add_index, p)):
+			add_starts_hidden = true
+	if add_text != "Add new":
+		push_error("Add new button text must be Add new")
+		return 1
+	if not add_starts_hidden:
+		push_error("Add new must stay hidden until a combo list opens")
+		return 1
+	return 0
+
+
+func _test_category_lists_use_guide_button_instead_of_tooltips() -> int:
+	var script: Script = load(COMBO_SCRIPT_PATH)
+	if bool(script.category_dropdown_uses_tooltip()):
+		push_error("Category dropdowns must not use tooltips")
+		return 1
+	var popup_script: Script = load("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.gd")
+	if not bool(popup_script.should_show_guide_button(true, "brain_circuits.md")):
+		push_error("A list with a guide page must show the info button beside Add new")
+		return 1
+	if bool(popup_script.should_show_guide_button(true, "")):
+		push_error("A list without a guide page must hide the info button")
+		return 1
+	if bool(popup_script.should_show_guide_button(false, "brain_circuits.md")):
+		push_error("The info button must stay hidden when Add new is hidden")
+		return 1
+	if int(popup_script.guide_button_side(36)) != 36:
+		push_error("The info button must be a square matching the Add new height")
+		return 1
+	var expected: Dictionary = {
+		String(script.ROOT_LIST_CIRCUITS): "brain_circuits.md",
+		String(script.ROOT_LIST_INTERCONNECT): "cortical_areas.md",
+		String(script.ROOT_LIST_MEMORY): "cortical_areas.md",
+		String(script.ROOT_LIST_INPUTS): "cortical_areas.md",
+		String(script.ROOT_LIST_OUTPUTS): "cortical_areas.md",
+		String(script.ROOT_LIST_CONNECTIVITY_RULES): "connectivity_rules.md",
+		String(script.ROOT_LIST_MODULATORS): "cortical_areas.md",
+	}
+	for list_id in expected.keys():
+		var guide: Dictionary = script.category_list_guide(StringName(list_id))
+		if str(guide.get("file", "")) != str(expected[list_id]):
+			push_error("Guide page mismatch for %s" % list_id)
+			return 1
+	var input_heading := str(script.category_list_guide(script.ROOT_LIST_INPUTS).get("heading", ""))
+	if input_heading != "Input Processing Unit (IPU)":
+		push_error("Inputs info button must open the IPU section")
+		return 1
+	var output_heading := str(script.category_list_guide(script.ROOT_LIST_OUTPUTS).get("heading", ""))
+	if output_heading != "Output Processing Unit (OPU)":
+		push_error("Outputs info button must open the OPU section")
+		return 1
+	var modulator_heading := str(script.category_list_guide(script.ROOT_LIST_MODULATORS).get("heading", ""))
+	if modulator_heading != "Modulators":
+		push_error("Modulators info button must open the Modulators section")
+		return 1
+	var combo_source := FileAccess.get_file_as_string(COMBO_SCRIPT_PATH)
+	for phrase in ["Select circuit", "View all circuits", "Select input area", "View all input areas", "Select output area", "View all output areas", "Select interconnect area", "View interconnect areas", "Select memory area", "View memory areas"]:
+		if combo_source.find(phrase) >= 0:
+			push_error("Category dropdown tooltip must be removed: %s" % phrase)
+			return 1
+	var top_bar_source := FileAccess.get_file_as_string("res://BrainVisualizer/UI/Top_Bar/TopBar.gd")
+	if top_bar_source.find("View all connectivity rules") >= 0:
+		push_error("Connectivity Rules dropdown must not keep a tooltip")
+		return 1
+	if top_bar_source.find("ModulatorsList\", \"Modulators\"") >= 0:
+		push_error("Modulators dropdown must not keep a tooltip")
+		return 1
+	var popup_scene: PackedScene = load("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
+	var popup_state: SceneState = popup_scene.get_state()
+	var guide_index := _find_node_index_by_name(popup_state, "GuideButton")
+	var add_index := _find_node_index_by_name(popup_state, "AddNew")
+	if guide_index < 0 or add_index < 0 or guide_index > add_index:
+		push_error("Info button must sit to the left of Add new")
+		return 1
+	var guide_parent := str(popup_state.get_node_path(guide_index, true))
+	var add_parent := str(popup_state.get_node_path(add_index, true))
+	if guide_parent.find("AddRow") < 0 or add_parent.find("AddRow") < 0:
+		push_error("Info button and Add new must share the add row")
+		return 1
+	var guide_hidden := false
+	var uses_info_icon := false
+	for p in range(popup_state.get_node_property_count(guide_index)):
+		var prop_name := str(popup_state.get_node_property_name(guide_index, p))
+		if prop_name == "visible" and not bool(popup_state.get_node_property_value(guide_index, p)):
+			guide_hidden = true
+		if prop_name == "texture_normal" and str(popup_state.get_node_property_value(guide_index, p)).find("info_S.png") >= 0:
+			uses_info_icon = true
+	if not guide_hidden:
+		push_error("Info button must stay hidden until a guided list opens")
+		return 1
+	if not uses_info_icon:
+		push_error("Info button must use the square info icon")
+		return 1
+	return 0
+
+
+func _test_plus_icons_are_twenty_percent_smaller() -> int:
+	var styler: Script = load("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
+	if not is_equal_approx(float(styler.PLUS_ICON_SCALE), 0.8):
+		push_error("Plus icons must be 80 percent of the control size")
+		return 1
+	var scaled: Vector2 = styler.plus_icon_size(Vector2(64, 64))
+	if not is_equal_approx(scaled.x, 51.2) or not is_equal_approx(scaled.y, 51.2):
+		push_error("Plus icon size must be control size times 0.8")
+		return 1
+	var combo_source := FileAccess.get_file_as_string(COMBO_SCRIPT_PATH)
+	if combo_source.find("apply_plus_icon_scale") < 0:
+		push_error("Combo strip must draw + icons at the plus icon scale")
+		return 1
+	var scaler_source := FileAccess.get_file_as_string("res://BrainVisualizer/UI/GenericElements/ScaleThemeApplier.gd")
+	if scaler_source.find("apply_plus_icon_scale") < 0:
+		push_error("Root bar theme scaler must keep Connectivity Rules and Modulators + at the plus icon scale")
+		return 1
+	var required: PackedStringArray = PackedStringArray([
+		"TextureButton_BrainRegions",
+		"TextureButton_Interconnect",
+		"TextureButton_Memory",
+		"TextureButton_Inputs",
+		"TextureButton_Outputs",
+	])
+	if _count_plus_icons(COMBO_SCENE_PATH, required) != required.size():
+		push_error("Every combo + button must be marked plus_icon")
+		return 1
+	var top_bar_plus := PackedStringArray(["BrainAreasRow", "ModulatorsRow"])
+	if _count_plus_icons("res://BrainVisualizer/UI/Top_Bar/TopBar.tscn", top_bar_plus) != top_bar_plus.size():
+		push_error("Connectivity Rules and Modulators + must be marked plus_icon")
+		return 1
+	return 0
+
+
+func _count_plus_icons(scene_path: String, name_fragments: PackedStringArray) -> int:
+	var packed: PackedScene = load(scene_path)
+	var state: SceneState = packed.get_state()
+	var found := 0
+	for i in range(state.get_node_count()):
+		var node_name := str(state.get_node_name(i))
+		var path_str := str(state.get_node_path(i, false))
+		var matches := false
+		for fragment in name_fragments:
+			var named_button := node_name == String(fragment)
+			var row_plus := node_name == "TextureButton" and path_str.find(fragment) >= 0
+			if named_button or row_plus:
+				matches = true
+		if not matches:
+			continue
+		for p in range(state.get_node_property_count(i)):
+			if str(state.get_node_property_name(i, p)) == "metadata/plus_icon" and bool(state.get_node_property_value(i, p)):
+				found += 1
+	return found
 
 
 func _make_combo_row(label_text: String) -> PanelContainer:

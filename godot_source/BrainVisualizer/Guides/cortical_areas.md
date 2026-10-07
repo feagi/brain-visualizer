@@ -263,6 +263,38 @@ Same rule as Miscellaneous Input. FEAGI does not assign a meaning. The width, he
 
 **Note**: Core areas are typically created by FEAGI itself and rarely created manually.
 
+## Modulators
+
+![Modulators Icon](../UI/GenericResources/ButtonIcons/modulators.png)
+
+A modulator changes neurons or synapses while its driver neuron is firing. A neuromodulator acts on cortical areas. A synaptic modulator acts on the synapses of a mapping.
+
+Each modulator is one instance of a built-in type. The instance has its own name, magnitude, and timing. Creating one also creates a 1x1x1 driver area in the main circuit. That area has a single neuron. The modulator is active on the bursts that neuron fires.
+
+Magnitude is a signed percent. A positive value strengthens the target parameter. A negative value weakens it. When several modulators affect the same target, their factors multiply, and the result stays inside that parameter's allowed range.
+
+### Types
+
+The type list in **Add modulator** uses these ids:
+
+- **neuro.firing_threshold**: raises or lowers the firing threshold of the neurons it acts on
+- **neuro.leak**: raises or lowers how fast membrane potential leaks away
+- **neuro.firing_probability**: raises or lowers the chance a neuron fires when it is able to
+- **synaptic.transmission_gain**: raises or lowers the postsynaptic effect of a mapping
+- **synaptic.reward**: sends a reward signal into R-STDP learning on a mapping. Positive magnitude is pleasure. Negative magnitude is pain
+- **synaptic.learning_rate**: raises or lowers the learning rate of a mapping
+
+### Add a modulator
+
+1. Hover **Modulators** on the root scene top bar
+2. Click **Add new**. The square info button to its left opens this section
+3. Choose a type and enter an instance id
+4. Set **Magnitude percent**, **Effect duration (bursts)**, and **Rest (bursts)**
+5. Turn on **Graded** when the effect should scale with the driver neuron's membrane potential, then set **Full scale potential** above 0
+6. Click **Create**
+
+Choosing a modulator from the list moves the current view to its driver area.
+
 ## Creating Cortical Areas
 
 ### Method 1: Quick Access (IPU/OPU)

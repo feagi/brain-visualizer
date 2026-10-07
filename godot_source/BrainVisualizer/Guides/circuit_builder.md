@@ -62,8 +62,8 @@ Lines between nodes represent neural mappings:
 
 **Quick Method:**
 1. On the root scene top bar, hover **Inputs**, **Outputs**, or **Circuits**, then click **+**
-2. On a Circuit Builder tab bar, hover **Circuits**, **Interconnect Areas**, or **Memory Areas**, then click **+**. A tab on the main circuit also shows Inputs and Outputs.
-3. Circuits **+** opens Add Circuit. Classifier is an integrated circuit: a gold IC chip hangs off the top-right corner of its image. See [Integrated Circuits](integrated_circuits.md). Logic AND and Logic OR are genomes or connectomes on that same window.
+2. On a Circuit Builder tab bar, hover **Circuits**, **Interconnect Areas**, or **Memory Areas**, then click **Add new**. The square info button to its left opens the user guide for that list. A tab on the main circuit also shows Inputs and Outputs.
+3. **Add new** on Circuits opens Add Circuit. Classifier is an integrated circuit: a gold IC chip hangs off the top-right corner of its image. See [Integrated Circuits](integrated_circuits.md). Logic AND and Logic OR are genomes or connectomes on that same window.
 4. Configure the area and confirm
 
 **From Circuit Builder:**
