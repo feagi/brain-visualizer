@@ -48,3 +48,9 @@ linux.debug.x86_64 = {
 linux.release.x86_64 = {
     "target/x86_64-unknown-linux-gnu/release/libfeagi_data_deserializer.so": ""
 }
+linux.debug.arm64 = {
+    "target/aarch64-unknown-linux-gnu/debug/libfeagi_data_deserializer.so": ""
+}
+linux.release.arm64 = {
+    "target/aarch64-unknown-linux-gnu/release/libfeagi_data_deserializer.so": ""
+}

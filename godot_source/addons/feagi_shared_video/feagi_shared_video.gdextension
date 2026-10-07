@@ -10,6 +10,8 @@ windows.debug.x86_64 = "target/release/feagi_shared_video.dll"
 windows.release.x86_64 = "target/release/feagi_shared_video.dll"
 linux.debug.x86_64 = "target/release/libfeagi_shared_video.so"
 linux.release.x86_64 = "target/release/libfeagi_shared_video.so"
+linux.debug.arm64 = "target/release/libfeagi_shared_video.so"
+linux.release.arm64 = "target/release/libfeagi_shared_video.so"
 
 [dependencies]
 
@@ -29,5 +31,11 @@ linux.debug.x86_64 = {
     "target/release/libfeagi_shared_video.so": ""
 }
 linux.release.x86_64 = {
+    "target/release/libfeagi_shared_video.so": ""
+}
+linux.debug.arm64 = {
+    "target/release/libfeagi_shared_video.so": ""
+}
+linux.release.arm64 = {
     "target/release/libfeagi_shared_video.so": ""
 }

@@ -90,7 +90,8 @@ bv.start(fullscreen=True, debug=True)
 
 The `feagi-bv` package automatically installs the correct platform-specific binaries:
 
-- **Linux**: `feagi-bv-linux` (x86_64)
+- **Linux x86_64**: `feagi-bv-linux`
+- **Linux ARM64**: `feagi-bv-linux-arm64`
 - **macOS**: `feagi-bv-macos` (Universal: Intel + Apple Silicon)
 - **Windows**: `feagi-bv-windows` (x86_64)
 
@@ -98,7 +99,8 @@ You can also install platform packages directly:
 
 ```bash
 pip install feagi-bv-macos  # macOS only
-pip install feagi-bv-linux  # Linux only
+pip install feagi-bv-linux  # Linux x86_64 only
+pip install feagi-bv-linux-arm64  # Linux ARM64 only
 pip install feagi-bv-windows  # Windows only
 ```
 

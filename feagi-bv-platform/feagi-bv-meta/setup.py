@@ -1,7 +1,7 @@
 """Setup script for feagi-bv meta-package with platform-specific dependencies.
 
 Uses environment markers so ALL platform deps are in metadata regardless of
-build host. Otherwise building on Linux bakes only feagi-bv-linux, and
+build host. Otherwise building on Linux bakes only the Linux wheels, and
 pip install feagi-bv on Windows never pulls feagi-bv-windows.
 """
 
@@ -26,7 +26,8 @@ setup(
     install_requires=[
         "feagi-core==2.2.2",
         "toml>=0.10.2",
-        f"feagi-bv-linux>={VERSION} ; sys_platform == 'linux'",
+        f"feagi-bv-linux>={VERSION} ; sys_platform == 'linux' and platform_machine == 'x86_64'",
+        f"feagi-bv-linux-arm64>={VERSION} ; sys_platform == 'linux' and platform_machine == 'aarch64'",
         f"feagi-bv-windows>={VERSION} ; sys_platform == 'win32'",
         f"feagi-bv-macos-arm64>={VERSION} ; sys_platform == 'darwin' and platform_machine == 'arm64'",
         f"feagi-bv-macos-x86_64>={VERSION} ; sys_platform == 'darwin' and platform_machine == 'x86_64'",

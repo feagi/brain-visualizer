@@ -6,6 +6,7 @@ Provides a Python API for starting BV with proper FEAGI configuration.
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import platform
 import subprocess
@@ -108,43 +109,83 @@ def _extract_network_settings(config: Dict[str, object]) -> Tuple[str, int, str,
     return str(api_host), api_port_int, str(ws_host), ws_port_int
 
 
+def _linux_runtime_package(machine: str) -> str:
+    """Return the installed Linux wheel module for this CPU."""
+    normalized = machine.lower()
+    if normalized in ("x86_64", "amd64"):
+        return "feagi_bv_linux"
+    if normalized in ("aarch64", "arm64"):
+        return "feagi_bv_linux_arm64"
+    raise BrainVisualizerLaunchError(
+        f"Unsupported Linux architecture: {machine}"
+    )
+
+
+def _first_existing_path(candidates: Tuple[Path, ...]) -> Optional[Path]:
+    """Return the first path that exists."""
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
 def _resolve_bv_binary() -> Tuple[Path, Path]:
     """Resolve the Brain Visualizer binary from platform-specific packages."""
     system = platform.system().lower()
-    
-    # Try to import platform-specific package
-    try:
-        if system == "windows":
-            import feagi_bv_windows
-            package_dir = Path(feagi_bv_windows.__file__).resolve().parent
-            bin_dir = package_dir / "bin" / "windows"
-            binary = bin_dir / "BrainVisualizer.exe"
-            working_dir = bin_dir
-        elif system == "linux":
-            import feagi_bv_linux
-            package_dir = Path(feagi_bv_linux.__file__).resolve().parent
-            bin_dir = package_dir / "bin" / "linux"
-            binary = bin_dir / "BrainVisualizer"
-            working_dir = bin_dir
-        elif system == "darwin":
-            import feagi_bv_macos
-            package_dir = Path(feagi_bv_macos.__file__).resolve().parent
-            bin_dir = package_dir / "bin" / "macos"
-            app_dir = bin_dir / "BrainVisualizer-Remote.app"
-            binary = app_dir / "Contents" / "MacOS" / "Brain Visualizer"
-            working_dir = binary.parent
-        else:
-            raise BrainVisualizerLaunchError(f"Unsupported platform: {system}")
-    except ImportError as exc:
+    machine = platform.machine().lower()
+
+    if system == "windows":
+        package_name = "feagi_bv_windows"
+    elif system == "linux":
+        package_name = _linux_runtime_package(machine)
+    elif system == "darwin":
+        package_name = "feagi_bv_macos"
+    else:
+        raise BrainVisualizerLaunchError(f"Unsupported platform: {system}")
+
+    spec = importlib.util.find_spec(package_name)
+    if spec is None or not spec.origin:
         raise BrainVisualizerLaunchError(
-            f"Platform-specific package not installed for {system}. "
-            f"Install with: pip install feagi-bv (this should auto-install platform package)"
-        ) from exc
+            f"Platform package {package_name} is not installed. "
+            "Install with: pip install feagi-bv"
+        )
+
+    package_dir = Path(spec.origin).resolve().parent
+    if system == "windows":
+        bin_dir = package_dir / "bin" / "windows"
+        binary = bin_dir / "BrainVisualizer.exe"
+        working_dir = bin_dir
+    elif system == "linux":
+        binary_names = (
+            "BrainVisualizer",
+            "BrainVisualizer-Remote",
+            "BrainVisualizer.x86_64",
+            "BrainVisualizer.arm64",
+            "BrainVisualizer-Remote.x86_64",
+            "BrainVisualizer-Remote.arm64",
+        )
+        candidates = []
+        for subdir in ("", "linux"):
+            root = package_dir / "bin" / subdir if subdir else package_dir / "bin"
+            for name in binary_names:
+                candidates.append(root / name)
+        binary = _first_existing_path(tuple(candidates))
+        if binary is None:
+            raise BrainVisualizerLaunchError(
+                "BV binary not found under "
+                f"{package_dir / 'bin'}."
+            )
+        working_dir = binary.parent
+    else:
+        bin_dir = package_dir / "bin" / "macos"
+        app_dir = bin_dir / "BrainVisualizer-Remote.app"
+        binary = app_dir / "Contents" / "MacOS" / "Brain Visualizer"
+        working_dir = binary.parent
 
     if not binary.exists():
         raise BrainVisualizerLaunchError(
-            f"BV binary not found: {binary}\n"
-            f"Platform package may be corrupted. Try reinstalling: pip install --force-reinstall feagi-bv-{system}"
+            f"BV binary not found: {binary}. "
+            "Reinstall with: pip install --force-reinstall feagi-bv"
         )
 
     return binary, working_dir

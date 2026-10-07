@@ -128,6 +128,15 @@ jobs:
             export_name: "Linux/X11"
             output_name: BrainVisualizer-Remote.x86_64
             package_name: BrainVisualizer-Remote-Linux.tar.gz
+            arch: x86_64
+            linux_triple: x86_64-unknown-linux-gnu
+          - os: ubuntu-24.04-arm
+            platform: Linux-arm64
+            export_name: "Linux/X11-arm64"
+            output_name: BrainVisualizer-Remote.arm64
+            package_name: BrainVisualizer-Remote-Linux-arm64.tar.gz
+            arch: arm64
+            linux_triple: aarch64-unknown-linux-gnu
           - os: macos-15
             platform: macOS-arm64
             export_name: "macOS"
@@ -145,6 +154,7 @@ jobs:
             export_name: "Windows Desktop"
             output_name: BrainVisualizer-Remote.exe
             package_name: BrainVisualizer-Remote-Windows.zip
+            arch: x86_64
 
     steps:
       - name: Checkout repository
@@ -225,7 +235,7 @@ jobs:
           path: |
             ~/.rustup
             ~/.cargo/bin
-          key: ${{ runner.os }}-rustup-${{ hashFiles('rust_extensions/rust-toolchain.toml') }}
+          key: ${{ runner.os }}-${{ matrix.arch }}-rustup-${{ hashFiles('rust_extensions/rust-toolchain.toml') }}
 
       - name: Install pinned Rust toolchain
         uses: nick-fields/retry@v3
@@ -260,7 +270,6 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.platform }}-rust-target-${{ hashFiles('rust_extensions/**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.platform }}-rust-target-
-            ${{ runner.os }}-rust-target-
 
       - name: Log Rust cache status
         shell: bash
@@ -314,10 +323,11 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
-          unzip -q Godot_v4.7.2-stable_linux.x86_64.zip
-          chmod +x Godot_v4.7.2-stable_linux.x86_64
-          sudo mv Godot_v4.7.2-stable_linux.x86_64 /usr/local/bin/godot
+          GODOT_ARCH="${{ matrix.arch }}"
+          wget -q "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.${GODOT_ARCH}.zip"
+          unzip -q "Godot_v4.7.2-stable_linux.${GODOT_ARCH}.zip"
+          chmod +x "Godot_v4.7.2-stable_linux.${GODOT_ARCH}"
+          sudo mv "Godot_v4.7.2-stable_linux.${GODOT_ARCH}" /usr/local/bin/godot
           
           wget -q https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
           mkdir -p "$HOME/.local/share/godot/export_templates/4.7.2.stable"
@@ -425,7 +435,7 @@ jobs:
             DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
             SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
           elif [[ "${{ runner.os }}" == "Linux" ]]; then
-            TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+            TARGET_TRIPLE="${{ matrix.linux_triple }}"
             DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
             DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
             SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
@@ -504,7 +514,7 @@ jobs:
             DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
             SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
           elif [[ "${{ runner.os }}" == "Linux" ]]; then
-            TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+            TARGET_TRIPLE="${{ matrix.linux_triple }}"
             DESERIALIZER_SOURCE="godot_source/addons/feagi_rust_deserializer/target/${TARGET_TRIPLE}/release"
             DESERIALIZER_LEGACY="godot_source/addons/FeagiCoreIntegration/target/${TARGET_TRIPLE}/release"
             SHARED_VIDEO_SOURCE="godot_source/addons/feagi_shared_video/target/${TARGET_TRIPLE}/release"
@@ -664,9 +674,23 @@ jobs:
           cd exports
           # embed_pck=false writes BrainVisualizer-Remote.pck beside the binary.
           # Godot also copies GDExtension .so files into this directory.
-          if [ ! -f "BrainVisualizer-Remote.x86_64" ]; then
-            echo "ERROR: Linux binary missing: BrainVisualizer-Remote.x86_64"
+          LINUX_BINARY="${{ matrix.output_name }}"
+          if [ ! -f "$LINUX_BINARY" ]; then
+            echo "ERROR: Linux binary missing: $LINUX_BINARY"
             ls -la
+            exit 1
+          fi
+          case "${{ matrix.arch }}" in
+            x86_64) EXPECT_ARCH="x86-64" ;;
+            arm64) EXPECT_ARCH="aarch64" ;;
+            *)
+              echo "ERROR: Unsupported Linux arch ${{ matrix.arch }}"
+              exit 1
+              ;;
+          esac
+          if ! file "$LINUX_BINARY" | grep -q "$EXPECT_ARCH"; then
+            echo "ERROR: $LINUX_BINARY is not a $EXPECT_ARCH executable"
+            file "$LINUX_BINARY"
             exit 1
           fi
           if [ ! -f "BrainVisualizer-Remote.pck" ]; then
@@ -674,7 +698,7 @@ jobs:
             ls -la
             exit 1
           fi
-          files=(BrainVisualizer-Remote.x86_64 BrainVisualizer-Remote.pck)
+          files=("$LINUX_BINARY" BrainVisualizer-Remote.pck)
           shopt -s nullglob
           so_files=(*.so)
           shopt -u nullglob
@@ -713,6 +737,10 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: Linux
+            arch: x86_64
+          - os: ubuntu-24.04-arm
+            platform: Linux-arm64
+            arch: arm64
           - os: macos-15
             platform: macOS-arm64
             arch: arm64
@@ -831,8 +859,8 @@ jobs:
           PLATFORMS=$(ls -d binaries/rust-binaries-* 2>/dev/null | wc -l || echo "0")
           echo "Found $PLATFORMS platform(s)"
           
-          if [ "$PLATFORMS" -lt 4 ]; then
-            echo "WARNING: Expected 4 platforms (Linux, macOS-arm64, macOS-x86_64, Windows), found $PLATFORMS"
+          if [ "$PLATFORMS" -lt 5 ]; then
+            echo "WARNING: Expected 5 platforms (Linux, Linux-arm64, macOS-arm64, macOS-x86_64, Windows), found $PLATFORMS"
             echo "Available artifacts:"
             ls -la binaries/ || true
           fi
@@ -843,14 +871,25 @@ jobs:
           
           ERRORS=0
           
-          # Package Linux binaries
+          # Package Linux x86_64 binaries
           if [ -d "binaries/rust-binaries-Linux" ] && [ -n "$(ls -A binaries/rust-binaries-Linux/*.so 2>/dev/null)" ]; then
             cd binaries/rust-binaries-Linux
             tar -czf ../../release-packages/rust-binaries-linux-x86_64.tar.gz *.so
             cd ../..
-            echo "✅ Packaged Linux binaries"
+            echo "Packaged Linux x86_64 binaries"
           else
-            echo "❌ ERROR: Linux binaries not found!"
+            echo "ERROR: Linux x86_64 binaries not found!"
+            ERRORS=$((ERRORS + 1))
+          fi
+
+          # Package Linux arm64 binaries
+          if [ -d "binaries/rust-binaries-Linux-arm64" ] && [ -n "$(ls -A binaries/rust-binaries-Linux-arm64/*.so 2>/dev/null)" ]; then
+            cd binaries/rust-binaries-Linux-arm64
+            tar -czf ../../release-packages/rust-binaries-linux-arm64.tar.gz *.so
+            cd ../..
+            echo "Packaged Linux arm64 binaries"
+          else
+            echo "ERROR: Linux arm64 binaries not found!"
             ERRORS=$((ERRORS + 1))
           fi
           
@@ -968,6 +1007,9 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             download_artifact: BrainVisualizer-Remote-Linux
+          - os: ubuntu-24.04-arm
+            platform: linux-arm64
+            download_artifact: BrainVisualizer-Remote-Linux-arm64
           - os: macos-15
             platform: macos-arm64
             download_artifact: BrainVisualizer-Remote-macOS-arm64
@@ -1154,6 +1196,10 @@ jobs:
             PLATFORM_DIR="feagi-bv-macos-x86_64"
             PACKAGE_DIR="feagi_bv_macos_x86_64"
             PYPI_PROJECT="feagi-bv-macos-x86_64"
+          elif [[ "${{ matrix.platform }}" == "linux-arm64" ]]; then
+            PLATFORM_DIR="feagi-bv-linux-arm64"
+            PACKAGE_DIR="feagi_bv_linux_arm64"
+            PYPI_PROJECT="feagi-bv-linux-arm64"
           else
             PLATFORM_DIR="feagi-bv-${{ matrix.platform }}"
             PACKAGE_DIR="feagi_bv_${{ matrix.platform }}"
@@ -1272,6 +1318,8 @@ jobs:
             PLATFORM_DIR="feagi-bv-macos-arm64"
           elif [[ "${{ matrix.platform }}" == "macos-x86_64" ]]; then
             PLATFORM_DIR="feagi-bv-macos-x86_64"
+          elif [[ "${{ matrix.platform }}" == "linux-arm64" ]]; then
+            PLATFORM_DIR="feagi-bv-linux-arm64"
           else
             PLATFORM_DIR="feagi-bv-${{ matrix.platform }}"
           fi
@@ -1344,7 +1392,7 @@ jobs:
           
           # Update dependencies in setup.py.
           # Use environment markers so ALL platform deps are in metadata regardless of
-          # build host. Otherwise building on Linux bakes only feagi-bv-linux, and
+          # build host. Otherwise building on Linux bakes only the Linux wheels, and
           # pip install feagi-bv on Windows never pulls feagi-bv-windows.
           cat > setup.py << 'EOFPY'
           from setuptools import setup, find_packages
@@ -1369,7 +1417,8 @@ jobs:
               install_requires=[
                   'feagi-core==2.2.2',
                   'toml>=0.10.2',
-                  f'feagi-bv-linux>={VERSION} ; sys_platform == "linux"',
+                  f'feagi-bv-linux>={VERSION} ; sys_platform == "linux" and platform_machine == "x86_64"',
+                  f'feagi-bv-linux-arm64>={VERSION} ; sys_platform == "linux" and platform_machine == "aarch64"',
                   f'feagi-bv-windows>={VERSION} ; sys_platform == "win32"',
                   f'feagi-bv-macos-arm64>={VERSION} ; sys_platform == "darwin" and platform_machine == "arm64"',
                   f'feagi-bv-macos-x86_64>={VERSION} ; sys_platform == "darwin" and platform_machine == "x86_64"',
@@ -1484,8 +1533,8 @@ jobs:
         run: |
           echo "⚠️  IMPORTANT: PyPI configuration requirements"
           echo ""
-          echo "1. TRUSTED PUBLISHERS: You need 6 trusted publishers configured"
-          echo "   This workflow publishes 6 packages, each needs its own trusted publisher."
+          echo "1. TRUSTED PUBLISHERS: You need 7 trusted publishers configured"
+          echo "   This workflow publishes 7 packages, each needs its own trusted publisher."
           echo ""
           echo "   CRITICAL: The PyPI project name in the trusted publisher MUST match"
           echo "   the package name in pyproject.toml exactly (with hyphens, not underscores)."
@@ -1493,6 +1542,7 @@ jobs:
           echo "   Required trusted publishers:"
           echo "   - feagi-bv (meta package)"
           echo "   - feagi-bv-linux"
+          echo "   - feagi-bv-linux-arm64"
           echo "   - feagi-bv-macos-arm64"
           echo "   - feagi-bv-macos-x86_64"
           echo "   - feagi-bv-windows"
@@ -1526,7 +1576,7 @@ jobs:
         id: check
         run: |
           LIMIT=$((200 * 1024 * 1024))
-          for dir in wheel-linux wheel-macos-arm64 wheel-macos-x86_64 wheel-windows wheel-meta; do
+          for dir in wheel-linux wheel-linux-arm64 wheel-macos-arm64 wheel-macos-x86_64 wheel-windows wheel-meta; do
             key="upload_${dir#wheel-}"
             key="${key//-/_}"
             path="wheels/${dir}"
@@ -1548,11 +1598,18 @@ jobs:
             fi
           done
 
-      - name: Publish platform packages to PyPI (Linux)
+      - name: Publish platform packages to PyPI (Linux x86_64)
         if: steps.check.outputs.upload_linux == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: wheels/wheel-linux/
+          skip-existing: true
+
+      - name: Publish platform packages to PyPI (Linux arm64)
+        if: steps.check.outputs.upload_linux_arm64 == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheels/wheel-linux-arm64/
           skip-existing: true
 
       - name: Publish platform packages to PyPI (macOS arm64)

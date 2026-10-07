@@ -19,7 +19,8 @@ pip install feagi-bv  # Requires feagi-core separately
 ```
 
 This will automatically install the correct platform-specific package for your system:
-- `feagi-bv-linux` on Linux
+- `feagi-bv-linux` on Linux x86_64
+- `feagi-bv-linux-arm64` on Linux ARM64 (`platform_machine == aarch64`)
 - `feagi-bv-macos` on macOS
 - `feagi-bv-windows` on Windows
 
@@ -50,6 +51,7 @@ pip install feagi-bv==2.0.3
 
 This is a meta-package that installs platform-specific binaries:
 - **feagi-bv-linux**: Linux x86_64 binaries (~50-70 MB)
+- **feagi-bv-linux-arm64**: Linux ARM64 binaries (~50-70 MB)
 - **feagi-bv-macos**: macOS universal binaries (~150-200 MB)
 - **feagi-bv-windows**: Windows x86_64 binaries (~50-70 MB)
 

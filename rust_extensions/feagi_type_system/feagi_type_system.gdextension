@@ -12,4 +12,6 @@ windows.debug.x86_64 = "res://rust_extensions/feagi_type_system/target/debug/fea
 windows.release.x86_64 = "res://rust_extensions/feagi_type_system/target/release/feagi_type_system.dll"
 linux.debug.x86_64 = "res://rust_extensions/feagi_type_system/target/debug/libfeagi_type_system.so"
 linux.release.x86_64 = "res://rust_extensions/feagi_type_system/target/release/libfeagi_type_system.so"
+linux.debug.arm64 = "res://rust_extensions/feagi_type_system/target/debug/libfeagi_type_system.so"
+linux.release.arm64 = "res://rust_extensions/feagi_type_system/target/release/libfeagi_type_system.so"
 

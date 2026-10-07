@@ -155,6 +155,7 @@ For **BrainVisualizer Embedded** (Mode 1, includes FEAGI in-process), download f
 | Platform        | Architecture | Binary Included |
 |-----------------|--------------|-----------------|
 | Linux           | x86_64       | ✅               |
+| Linux           | ARM64        | ✅               |
 | macOS           | Universal    | ✅ (arm64+x86)  |
 | Windows         | x86_64       | ✅               |
 

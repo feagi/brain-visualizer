@@ -46,7 +46,7 @@ When you push a tag, GitHub Actions automatically:
 - **Output:** `BrainVisualizer-macos-v1.2.3.tar.gz`
 
 ### 2. Linux (executable)
-- Godot-exported x86_64 binary
+- Godot-exported x86_64 and ARM64 binaries
 - Includes .pck data file
 - **Output:** `BrainVisualizer-linux-v1.2.3.tar.gz`
 
@@ -313,7 +313,7 @@ When you push a tag, GitHub Actions automatically:
 - **Output:** `BrainVisualizer-macos-v1.2.3.tar.gz`
 
 ### 2. Linux (executable)
-- Godot-exported x86_64 binary
+- Godot-exported x86_64 and ARM64 binaries
 - Includes .pck data file
 - **Output:** `BrainVisualizer-linux-v1.2.3.tar.gz`
 

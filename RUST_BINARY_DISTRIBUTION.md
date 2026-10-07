@@ -323,7 +323,7 @@ A: Only when Rust code changes in staging. Not on every commit.
 A: Yes, comment out the push step in the workflow. But why? This is the whole point!
 
 **Q: What if I need arm64 Linux or other architectures?**  
-A: Add to the build matrix in the workflow. CI will build and commit automatically.
+A: Linux ARM64 is built on `ubuntu-24.04-arm` and published as `feagi-bv-linux-arm64`. Add any further architecture to the release matrix.
 
 ## Next Steps
 

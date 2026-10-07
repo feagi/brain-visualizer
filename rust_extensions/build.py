@@ -67,6 +67,20 @@ def get_library_prefix():
     return "" if platform.system() == "Windows" else "lib"
 
 
+def linux_gnu_target_triple(machine: str) -> str:
+    """Map a Linux machine name to its Rust GNU target triple.
+
+    CPython reports aarch64 on Linux ARM64. Some environments report arm64
+    for the same CPU. Both select the aarch64 GNU triple.
+    """
+    normalized = machine.lower()
+    if normalized in ("x86_64", "amd64"):
+        return "x86_64-unknown-linux-gnu"
+    if normalized in ("aarch64", "arm64"):
+        return "aarch64-unknown-linux-gnu"
+    raise ValueError(f"Unsupported Linux architecture: {machine}")
+
+
 def run_command(cmd, cwd=None):
     """Run a shell command and check for errors."""
     print(f"Running: {' '.join(cmd)}")
@@ -153,8 +167,11 @@ def build_rust_library(
     system = platform.system()
     
     if system == "Linux":
-        # Linux: copy to target/x86_64-unknown-linux-gnu/release/
-        target_triple = "x86_64-unknown-linux-gnu"
+        try:
+            target_triple = linux_gnu_target_triple(platform.machine())
+        except ValueError as exc:
+            print(f"[ERROR] {exc}")
+            sys.exit(1)
         if build_release and release_lib:
             release_dest = addon_path / "target" / target_triple / "release"
             release_dest.mkdir(parents=True, exist_ok=True)
@@ -205,7 +222,10 @@ def build_rust_library(
         if system == "Darwin":
             release_size = (addon_path / lib_name).stat().st_size
         elif system == "Linux":
-            release_size = (addon_path / "target" / "x86_64-unknown-linux-gnu" / "release" / lib_name).stat().st_size
+            linux_triple = linux_gnu_target_triple(platform.machine())
+            release_size = (
+                addon_path / "target" / linux_triple / "release" / lib_name
+            ).stat().st_size
         elif system == "Windows":
             release_size = (addon_path / "target" / "x86_64-pc-windows-msvc" / "release" / lib_name).stat().st_size
         else:
@@ -346,8 +366,11 @@ def main():
         print("[COPY] Also deploying to FeagiCoreIntegration addon (legacy location)...")
         
         if system == "Linux":
-            # Linux: copy to target/x86_64-unknown-linux-gnu/release/
-            target_triple = "x86_64-unknown-linux-gnu"
+            try:
+                target_triple = linux_gnu_target_triple(platform.machine())
+            except ValueError as exc:
+                print(f"[ERROR] {exc}")
+                sys.exit(1)
             release_dest = addon2_path / "target" / target_triple / "release"
             release_dest.mkdir(parents=True, exist_ok=True)
             if build_release:
