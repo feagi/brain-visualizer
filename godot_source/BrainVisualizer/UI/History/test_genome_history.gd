@@ -280,7 +280,8 @@ func _test_delete_snapshot_keeps_properties_and_mappings() -> int:
 func _test_memory_replay_edge_is_not_restored() -> int:
 	var edit := DeleteAreaEdit.new()
 	var snapshot := _area_snapshot("M", "M2", {
-		"twin-old": [{"morphology_id": "memory_replay"}],
+		"twin-old": [{"morphology_id": "episodic_memory"}],
+		"twin-legacy": [{"morphology_id": "memory_replay"}],
 		"other": [{"morphology_id": "associative_memory"}],
 	})
 	snapshot["properties"]["memory_twin_areas"] = {"field": "twin-old"}
@@ -302,8 +303,8 @@ func _test_memory_replay_edge_is_not_restored() -> int:
 		push_error("A real outbound mapping must still be restored")
 		return 1
 	for write in writes:
-		if write["destination_id"] == "twin-old":
-			push_error("The generated memory replay edge must not be written back to the old twin")
+		if write["destination_id"] == "twin-old" or write["destination_id"] == "twin-legacy":
+			push_error("The generated memory-to-twin edge must not be written back to the old twin")
 			return 1
 	return 0
 

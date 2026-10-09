@@ -128,7 +128,10 @@ func mapping_writes() -> Array[Dictionary]:
 				continue
 			_append_mapping_write(incoming_writes, _mapped_id(source_id, mapped), restored_self, remap_value((edge as Dictionary).get("rules", []), mapped))
 		var outgoing := outgoing_map(snapshot["properties"])
+		var generated_twins := _generated_twin_ids(snapshot["properties"])
 		for destination_id in outgoing.keys():
+			if generated_twins.has(String(destination_id)):
+				continue
 			_append_mapping_write(outgoing_writes, restored_self, _mapped_id(String(destination_id), mapped), remap_value(outgoing[destination_id], mapped))
 	# Inbound mappings are written first. A mapping into memory makes FEAGI create the replay twin.
 	incoming_writes.append_array(outgoing_writes)
@@ -165,8 +168,22 @@ static func _copy_payload_fields(source: Dictionary, payload: Dictionary) -> voi
 		payload[field] = source[key]
 
 
-## FEAGI creates the memory_replay edge and its twin when an inbound memory mapping is restored.
+## Twin ids FEAGI recreates from the inbound episodic mapping. Those edges are not written back.
+static func _generated_twin_ids(properties: Dictionary) -> Dictionary:
+	var twins: Dictionary = {}
+	var raw: Variant = properties.get("memory_twin_areas", {})
+	var bag: Variant = properties.get("properties", {})
+	if bag is Dictionary and (bag as Dictionary).has("memory_twin_areas"):
+		raw = (bag as Dictionary)["memory_twin_areas"]
+	if raw is Dictionary:
+		for upstream_id in (raw as Dictionary).keys():
+			twins[String((raw as Dictionary)[upstream_id])] = true
+	return twins
+
+
+## FEAGI creates the episodic memory-to-twin edge when an inbound memory mapping is restored.
 ## The twin from before the delete no longer exists, so that edge is not written back.
+## Older genomes used memory_replay for the same edge.
 static func _append_mapping_write(writes: Array[Dictionary], source_id: String, destination_id: String, rules: Variant) -> void:
 	if not (rules is Array):
 		return
