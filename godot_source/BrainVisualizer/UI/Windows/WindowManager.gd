@@ -34,6 +34,7 @@ const _PREFAB_VIEW_PREVIEWS: PackedScene = preload("res://BrainVisualizer/UI/Win
 const _PREFAB_CAMERA_ANIMATIONS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.tscn")
 const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.tscn")
 const _PREFAB_GENOME_CHANGE_HISTORY: PackedScene = preload("res://BrainVisualizer/UI/Windows/GenomeChangeHistory/WindowGenomeChangeHistory.tscn")
+const _PREFAB_GLOBAL_SEARCH: PackedScene = preload("res://BrainVisualizer/UI/Windows/GlobalSearch/WindowGlobalSearch.tscn")
 const _GENOME_CHANGE_HISTORY_SCRIPT: Script = preload("res://BrainVisualizer/UI/Windows/GenomeChangeHistory/WindowGenomeChangeHistory.gd")
 const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.tscn")
 const _PREFAB_VOXEL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.tscn")
@@ -80,6 +81,13 @@ func _close_other_add_flow_windows(except_window_name: StringName) -> void:
 			continue
 		if window_name in loaded_windows:
 			force_close_window(window_name)
+
+## Opens the genome search window. Choosing a row uses the same action as the top-bar lists.
+func spawn_global_search() -> void:
+	var search_window: WindowGlobalSearch = _default_spawn_window(_PREFAB_GLOBAL_SEARCH, WindowGlobalSearch.WINDOW_NAME) as WindowGlobalSearch
+	search_window.setup()
+	bring_window_to_top(search_window)
+
 
 func spawn_options() -> void:
 	var options_window: WindowOptionsMenu = _default_spawn_window(_PREFAB_OPTIONS, WindowOptionsMenu.WINDOW_NAME) as WindowOptionsMenu

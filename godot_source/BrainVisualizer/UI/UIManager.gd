@@ -2020,6 +2020,17 @@ func _input(event):
 				if _try_paste_clipboard_voxels_to_hovered_area():
 					get_viewport().set_input_as_handled()
 					return
+			if GlobalSearchCatalog.is_search_shortcut(
+				keyboard_event.keycode,
+				keyboard_event.ctrl_pressed or keyboard_event.meta_pressed,
+				keyboard_event.shift_pressed,
+				keyboard_event.alt_pressed,
+				true,
+				false
+			):
+				get_viewport().set_input_as_handled()
+				_toggle_global_search()
+				return
 			var history_shortcut: StringName = GenomeHistory.history_shortcut(
 				keyboard_event.keycode,
 				keyboard_event.ctrl_pressed or keyboard_event.meta_pressed,
@@ -2051,6 +2062,16 @@ func record_genome_edit(edit: GenomeEdit) -> void:
 
 func record_position_edit(edit: PositionEdit) -> void:
 	record_genome_edit(edit)
+
+
+## Ctrl/Cmd+S opens genome search. The same chord closes it when it is already open.
+func _toggle_global_search() -> void:
+	if _window_manager == null:
+		return
+	if WindowGlobalSearch.WINDOW_NAME in _window_manager.loaded_windows:
+		_window_manager.force_close_window(WindowGlobalSearch.WINDOW_NAME)
+		return
+	_window_manager.spawn_global_search()
 
 
 func _position_history_shortcut_blocked_by_text() -> bool:

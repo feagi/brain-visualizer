@@ -531,6 +531,20 @@ func _focus_region_from_topbar(region: BrainRegion) -> void:
 		cb.focus_on_region(region)
 
 
+## Moves the camera the same way a top-bar area list click does.
+func focus_menu_cortical_area(area: AbstractCorticalArea) -> void:
+	if _shared_combo == null or area == null:
+		return
+	_shared_combo.focus_menu_cortical_area(area)
+
+
+## Moves the camera the same way a top-bar circuit list click does.
+func focus_menu_region(region: BrainRegion) -> void:
+	if _shared_combo == null or region == null:
+		return
+	_shared_combo.focus_menu_region(region)
+
+
 ## Focus the selected cortical area in the active view.
 func _focus_cortical_from_topbar(area: AbstractCorticalArea) -> void:
 	var bm := BV.UI.get_active_brain_monitor()

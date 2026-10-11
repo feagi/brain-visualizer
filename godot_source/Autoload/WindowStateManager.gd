@@ -6,6 +6,7 @@ extends Node
 const STATE_FILE_PATH = "user://window_state.json"
 const MIN_WINDOW_WIDTH = 800
 const MIN_WINDOW_HEIGHT = 600
+const WINDOW_TITLE = "FEAGI Brain Visualizer"
 
 var _state_data: Dictionary = {}
 var _save_timer: Timer
@@ -15,6 +16,9 @@ var _position_check_timer: float = 0.0
 var _position_check_interval: float = 1.0  # Check position every second
 
 func _ready() -> void:
+	# Project name stays "Brain Visualizer" so user:// settings keep their path.
+	get_tree().root.title = WINDOW_TITLE
+
 	# Load saved state
 	_load_window_state()
 	

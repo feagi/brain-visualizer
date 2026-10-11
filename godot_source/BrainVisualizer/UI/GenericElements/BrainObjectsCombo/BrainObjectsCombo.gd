@@ -1608,6 +1608,16 @@ func _draw() -> void:
 	var back_rect: Rect2 = Rect2(Vector2.ZERO, size)
 	draw_rect(back_rect, BACKPLATE_COLOR, true)
 
+## Same camera move as choosing this area from a category list on this strip.
+func focus_menu_cortical_area(area: AbstractCorticalArea) -> void:
+	_focus_cortical(area)
+
+
+## Same camera move as choosing this circuit from the Circuits list on this strip.
+func focus_menu_region(region: BrainRegion) -> void:
+	_focus_region(region)
+
+
 func _focus_region(region: BrainRegion) -> void:
 	if region == null:
 		return
