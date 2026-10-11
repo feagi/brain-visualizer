@@ -58,7 +58,7 @@ func setup(area: AbstractCorticalArea) -> void:
 		SceneLabel3D.ROLE.AREA_NAME,
 		&"AreaNameLabel"
 	)
-	# Visibility (always vs hover-only on brain-region plates) is set by UI_BrainMonitor_CorticalArea.
+	# Visibility (hover-only for every area, including invariant cores) is set by UI_BrainMonitor_CorticalArea.
 	_friendly_name_label.visible = false
 	add_child(_friendly_name_label)
 	set_process(true)

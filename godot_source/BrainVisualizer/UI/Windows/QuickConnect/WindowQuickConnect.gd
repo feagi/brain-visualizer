@@ -3,6 +3,7 @@ class_name WindowQuickConnect
 
 const WINDOW_NAME: StringName = "quick_connect"
 const DestinationPick = preload("res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectDestinationPick.gd")
+const ScenePick = preload("res://BrainVisualizer/UI/Windows/SelectGenomeObject/CorticalExplorerScenePick.gd")
 
 # Ordinals match QuickConnectDestinationPick.STEP.
 enum POSSIBLE_STATES {
@@ -129,6 +130,9 @@ func setup(cortical_source_if_picked: AbstractCorticalArea) -> void:
 		_set_source(cortical_source_if_picked)
 
 func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, _override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
+	# Cortical Area Explorer is the picker while it is open. The click checks that area there.
+	if _cortical_explorer_owns_mouse_pick():
+		return
 	match _current_state:
 		POSSIBLE_STATES.SOURCE:
 			if len(objects) != 1:
@@ -138,7 +142,7 @@ func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.S
 			var cortical_area: AbstractCorticalArea = objects[0] as AbstractCorticalArea
 			_set_source(cortical_area)
 		POSSIBLE_STATES.DESTINATION, POSSIBLE_STATES.MORPHOLOGY, POSSIBLE_STATES.IDLE:
-			# Mouse clicks keep choosing the destination. Edit still opens Cortical Area Explorer.
+			# Mouse clicks choose the destination. While Cortical Area Explorer is open, the click is checked there instead.
 			if not DestinationPick.accepts_mouse_destination_click(_current_state):
 				return
 			var picked_classifier: GenomeClassifier = GenomeClassifier.destination_classifier_from_selection(objects, _is_ctrl_modifier_held())
@@ -795,6 +799,10 @@ func _apply_destinations_from_objects(objects: Array[GenomeObject], stay_in_dest
 			_step4_button.disabled = true
 	if _source != null and _destination != null and _destination != previous_primary:
 		FeagiCore.requests.get_mappings_between_2_cortical_areas(_source.cortical_ID, _destination.cortical_ID)
+
+func _cortical_explorer_owns_mouse_pick() -> bool:
+	var explorer_open: bool = BV != null and BV.WM != null and WindowSelectGenomeObject.WINDOW_NAME in BV.WM.loaded_windows
+	return ScenePick.quick_connect_should_yield_to_explorer(explorer_open)
 
 ## Opens Cortical Area Explorer so destinations can be picked from any circuit.
 func _open_destination_explorer() -> void:

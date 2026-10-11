@@ -50,19 +50,38 @@ func reset_to_blank() -> void:
 	for child in _container.get_children():
 		child.queue_free()
 
-func set_toggle(object: GenomeObject, is_on: bool) -> void:
+## True when this column lists the object directly, not only inside a nested circuit.
+func has_direct(object: GenomeObject) -> bool:
 	if object is AbstractCorticalArea:
-		if !object.genome_ID in _internal_cortical_areas:
-			push_error("UI: Unable to find area %s to toggle!" % object.genome_ID)
-			return
-		(_internal_cortical_areas[object.cortical_ID] as ScrollRegionInternalsViewItem).set_checkbox_check(is_on)
-		return
+		return (object as AbstractCorticalArea).cortical_ID in _internal_cortical_areas
 	if object is BrainRegion:
-		if !object.genome_ID in _internal_regions:
-			push_error("UI: Unable to find region %s to toggle!" % object.genome_ID)
-			return
-		(_internal_regions[object.genome_ID] as ScrollRegionInternalsViewItem).set_checkbox_check(is_on)
+		return (object as BrainRegion).region_ID in _internal_regions
+	return false
+
+func focus_object(object: GenomeObject) -> void:
+	var item: ScrollRegionInternalsViewItem = _item_for(object)
+	if item == null:
 		return
+	var scroller: ScrollContainer = $Scroll
+	scroller.ensure_control_visible(item)
+
+func _item_for(object: GenomeObject) -> ScrollRegionInternalsViewItem:
+	if object is AbstractCorticalArea:
+		var area_id: StringName = (object as AbstractCorticalArea).cortical_ID
+		if area_id in _internal_cortical_areas:
+			return _internal_cortical_areas[area_id] as ScrollRegionInternalsViewItem
+	if object is BrainRegion:
+		var region_id: StringName = (object as BrainRegion).region_ID
+		if region_id in _internal_regions:
+			return _internal_regions[region_id] as ScrollRegionInternalsViewItem
+	return null
+
+func set_toggle(object: GenomeObject, is_on: bool) -> void:
+	var item: ScrollRegionInternalsViewItem = _item_for(object)
+	if item == null:
+		push_error("UI: Unable to find %s to toggle!" % object.genome_ID)
+		return
+	item.set_checkbox_check(is_on)
 
 func filter_by_name(friendly_name: StringName) -> void:
 	if friendly_name == "":

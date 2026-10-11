@@ -369,8 +369,8 @@ func setup(area: AbstractCorticalArea) -> void:
 		SceneLabel3D.ROLE.AREA_NAME,
 		&"AreaNameLabel"
 	)
-	# Initial guess; UI_BrainMonitor_CorticalArea refreshes for genome vs plate hover rules.
-	_friendly_name_label.visible = AbstractCorticalArea.is_feagi_invariant_core_area(area)
+	# Initial guess; UI_BrainMonitor_CorticalArea keeps every title, including cores, hidden until hover.
+	_friendly_name_label.visible = false
 	# Parent to this renderer (same as power/memory) so bv_update_friendly_name_label_position()
 	# uses one coordinate space for all special areas (label below footprint, camera-aware XZ).
 	add_child(_friendly_name_label)

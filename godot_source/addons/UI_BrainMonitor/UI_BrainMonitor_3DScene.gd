@@ -1741,14 +1741,17 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 			return entry_index
 		return -1
 	
-	var always_show_name := viz.bv_friendly_name_label_always_visible()
 	var ctx_matches_bottom_hover := viz.cortical_area != null and viz.cortical_area.cortical_ID == _mouse_context_cortical_id
-	var show_from_hover := viz.is_volume_moused_over or ctx_matches_bottom_hover
-	# DDA renderer: hover-only on region plates; invariant cores always show when using DDA (unusual).
+	# Every area, including invariant cores, shows its title only while hovered.
+	var show_name := UI_BrainMonitor_CorticalArea.friendly_name_label_should_show(
+		viz.cortical_area,
+		viz.is_volume_moused_over,
+		ctx_matches_bottom_hover
+	)
 	if viz._dda_renderer != null and viz._dda_renderer._friendly_name_label != null:
 		var label = viz._dda_renderer._friendly_name_label
 		var area_id = viz.cortical_area.cortical_ID if viz.cortical_area else &""
-		add_label.call(label, area_id, always_show_name or show_from_hover)
+		add_label.call(label, area_id, show_name)
 	
 	# DirectPoints: same rules; hidden when DDA owns the visible label
 	if viz._directpoints_renderer != null and viz._directpoints_renderer._friendly_name_label != null:
@@ -1761,7 +1764,7 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 				break
 		if not already_added:
 			var area_id = viz.cortical_area.cortical_ID if viz.cortical_area else &""
-			var should_be_visible := (always_show_name or show_from_hover) and viz._dda_renderer == null
+			var should_be_visible := show_name and viz._dda_renderer == null
 			add_label.call(label, area_id, should_be_visible)
 
 ## Updates label visibility to prevent overlaps when cortical areas are close together
@@ -2226,6 +2229,9 @@ func _handle_cortical_pick_click_event(
 			var isolated_selected: bool = hit_parent_parent.toggle_neuron_selection_state(neuron_coordinate_clicked)
 			cortical_area_selected_neurons_changed.emit(hit_parent_parent.cortical_area, hit_parent_parent.get_neuron_selection_states())
 			cortical_area_selected_neurons_changed_delta.emit(hit_parent_parent.cortical_area, neuron_coordinate_clicked, isolated_selected)
+		return
+	# Cortical Area Explorer is the picker while it is open, including voxel-click mode.
+	if (bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN or bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.SECONDARY) and _choose_area_in_open_cortical_explorer(hit_parent_parent.cortical_area):
 		return
 	var quick_connect_override_active: bool = BV != null and BV.UI != null and BV.UI.selection_system != null and BV.UI.selection_system.has_override_usecase(SelectionSystem.OVERRIDE_USECASE.QUICK_CONNECT)
 	var quick_connect_neuron_click_voxel_mode: bool = _should_disable_unit_group_auto_selection_for_click()
@@ -2726,6 +2732,18 @@ func _get_bm_mouse_position() -> Vector2:
 	return sv.get_mouse_position()
 
 
+## Checks the clicked cortical area in Cortical Area Explorer. The area itself is used, not a classifier stand-in.
+func _choose_area_in_open_cortical_explorer(area: AbstractCorticalArea) -> bool:
+	if area == null or BV == null or BV.WM == null:
+		return false
+	if WindowSelectGenomeObject.WINDOW_NAME not in BV.WM.loaded_windows:
+		return false
+	var window: WindowSelectGenomeObject = BV.WM.loaded_windows[WindowSelectGenomeObject.WINDOW_NAME] as WindowSelectGenomeObject
+	if window == null:
+		return false
+	return window.choose_scene_area(area)
+
+
 func _quick_connect_click_prefers_cortical_volume() -> bool:
 	if BV == null or BV.UI == null or BV.UI.selection_system == null:
 		return false
@@ -2829,7 +2847,7 @@ func _commit_box_select(screen_rect: Rect2) -> void:
 	for viz in _cortical_visualizations_by_ID.values():
 		if viz == null or not is_instance_valid(viz) or viz.cortical_area == null:
 			continue
-		var target: Node = viz.renderer
+		var target: Node = viz.box_select_bounds_node()
 		if target == null or not is_instance_valid(target):
 			continue
 		var aabb: AABB = _compute_world_aabb(target)

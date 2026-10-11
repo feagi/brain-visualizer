@@ -1,8 +1,8 @@
 extends RefCounted
 class_name UI_BrainMonitor_SceneLabel3D
 ## Shared Label3D setup for BV 3D scene names.
-## One MSDF font and modest font_size; role-specific pixel_size keeps prior visual scale.
-## Region titles keep fixed_size; area names and plate tags do not.
+## One MSDF font and modest font_size; role-specific pixel_size sets the size.
+## Area names and region titles use fixed_size so a far title stays the same on-screen size. Plate tags do not.
 
 
 enum ROLE {
@@ -17,9 +17,10 @@ const MSDF_PIXEL_RANGE: int = 8
 const OUTLINE_SIZE: int = 4
 const OUTLINE_MODULATE: Color = Color.BLACK
 
-## Previous constructors used font_size * pixel_size for on-screen / world size.
-const AREA_NAME_VISUAL_SCALE: float = 512.0 * 0.005
+## Screen-constant title height. Godot fixed_size draws this world height as if the camera were 1 unit away,
+## so the title stays readable when the area is far. Area names use the same size as region titles.
 const REGION_TITLE_VISUAL_SCALE: float = 32.0 * 0.001
+const AREA_NAME_VISUAL_SCALE: float = REGION_TITLE_VISUAL_SCALE
 const PLATE_TAG_VISUAL_SCALE: float = 18.0 * 0.002
 const REGION_DESCRIPTION_VISUAL_SCALE: float = 24.0 * 0.001
 const REGION_DESCRIPTION_WRAP_WIDTH_PX: float = 960.0
@@ -60,7 +61,7 @@ static func apply(label: Label3D, role: ROLE) -> void:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	match role:
 		ROLE.AREA_NAME:
-			label.fixed_size = false
+			label.fixed_size = true
 			label.no_depth_test = false
 			apply_render_priority(label, AREA_NAME_RENDER_PRIORITY)
 			label.modulate = Color.WHITE
@@ -123,4 +124,4 @@ static func pixel_size_for_role(role: ROLE) -> float:
 
 
 static func uses_fixed_size(role: ROLE) -> bool:
-	return role == ROLE.REGION_TITLE or role == ROLE.REGION_DESCRIPTION
+	return role == ROLE.AREA_NAME or role == ROLE.REGION_TITLE or role == ROLE.REGION_DESCRIPTION

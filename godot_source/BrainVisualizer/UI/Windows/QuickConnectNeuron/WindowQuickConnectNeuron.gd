@@ -2,6 +2,7 @@ extends BaseDraggableWindow
 class_name WindowQuickConnectNeuron
 
 const WINDOW_NAME: StringName = "quick_connect_neuron"
+const ScenePick = preload("res://BrainVisualizer/UI/Windows/SelectGenomeObject/CorticalExplorerScenePick.gd")
 
 const INVALID_COORD: Vector3i = Vector3i(-1,-1,-1)
 
@@ -192,6 +193,9 @@ func _start_edit_destination_config(optional_limit_to_cortical_area: AbstractCor
 
 
 func _retrieved_destination_neuron_list_change(area: AbstractCorticalArea, local_coord: Vector3i, added: bool) -> void:
+	# The open explorer records the clicked area. This step must not commit it yet.
+	if _cortical_explorer_owns_mouse_pick():
+		return
 	if not _destination_batch_neurons_by_area.is_empty():
 		_destination_batch_neurons_by_area.clear()
 	if _destination == null:
@@ -251,6 +255,10 @@ func _paste_source_from_clipboard() -> void:
 func _paste_destination_from_clipboard() -> void:
 	_apply_clipboard_voxel_selection(false)
 
+
+func _cortical_explorer_owns_mouse_pick() -> bool:
+	var explorer_open: bool = BV != null and BV.WM != null and WindowSelectGenomeObject.WINDOW_NAME in BV.WM.loaded_windows
+	return ScenePick.quick_connect_should_yield_to_explorer(explorer_open)
 
 ## Opens Cortical Area Explorer so destinations can be picked from any circuit.
 func _open_destination_explorer() -> void:

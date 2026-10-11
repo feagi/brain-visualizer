@@ -17,6 +17,9 @@ func _initialize() -> void:
 	failures += _test_projected_aabb_overlap_and_miss()
 	failures += _test_behind_camera_corners_are_excluded()
 	failures += _test_collect_overlapping_objects_integration()
+	failures += _test_memory_area_uses_direct_points_bounds()
+	failures += _test_volume_renderer_wins_over_direct_points()
+	failures += _test_missing_renderers_have_no_bounds()
 	if failures == 0:
 		print("BoxSelect tests: PASS")
 		quit(0)
@@ -165,5 +168,36 @@ func _test_collect_overlapping_objects_integration() -> int:
 		return 1
 	if area_b in selected:
 		push_error("box must not select an area outside the rectangle")
+		return 1
+	return 0
+
+
+func _test_memory_area_uses_direct_points_bounds() -> int:
+	var memory_volume := Node.new()
+	var chosen: Node = BoxSelectScript.bounds_node_for_area(null, memory_volume)
+	var failed: bool = chosen != memory_volume
+	memory_volume.free()
+	if failed:
+		push_error("a memory area with no DDA volume must use its DirectPoints renderer for box select")
+		return 1
+	return 0
+
+
+func _test_volume_renderer_wins_over_direct_points() -> int:
+	var volume := Node.new()
+	var direct_points := Node.new()
+	var chosen: Node = BoxSelectScript.bounds_node_for_area(volume, direct_points)
+	var failed: bool = chosen != volume
+	volume.free()
+	direct_points.free()
+	if failed:
+		push_error("areas with a DDA volume must keep that volume as the box-select bounds")
+		return 1
+	return 0
+
+
+func _test_missing_renderers_have_no_bounds() -> int:
+	if BoxSelectScript.bounds_node_for_area(null, null) != null:
+		push_error("an area with no renderer must not produce a box-select bounds node")
 		return 1
 	return 0

@@ -100,6 +100,17 @@ static func project_aabb_corners(
 	return points
 
 
+## Volume node whose meshes define a Shift+drag hit.
+## Interconnect and other cube areas use the DDA renderer. Memory areas have no DDA volume;
+## their DirectPoints sphere is the only mesh, so a null volume renderer must fall through to it.
+static func bounds_node_for_area(volume_renderer: Node, direct_points_renderer: Node) -> Node:
+	if volume_renderer != null and is_instance_valid(volume_renderer):
+		return volume_renderer
+	if direct_points_renderer != null and is_instance_valid(direct_points_renderer):
+		return direct_points_renderer
+	return null
+
+
 ## [param entries] items are Dictionaries with keys `object` and `bounds` (Rect2).
 static func collect_overlapping_objects(entries: Array, selection: Rect2) -> Array:
 	var selected: Array = []

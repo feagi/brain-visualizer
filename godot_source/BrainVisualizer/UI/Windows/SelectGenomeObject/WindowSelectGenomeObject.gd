@@ -2,6 +2,7 @@ extends BaseDraggableWindow
 class_name WindowSelectGenomeObject
 
 const WINDOW_NAME: StringName = "select_genome_object"
+const ScenePick = preload("res://BrainVisualizer/UI/Windows/SelectGenomeObject/CorticalExplorerScenePick.gd")
 
 signal final_selection(genome_objects: Array[GenomeObject])
 
@@ -25,6 +26,39 @@ func setup(config: SelectGenomeObjectSettings) -> void:
 	_instructions.text = _selection_config.pick_instructions
 	_updated_selected_objects(config.preselected_objects)
 	_select.disabled = len(config.preselected_objects) == 0
+	_listen_for_scene_picks()
+
+func _exit_tree() -> void:
+	_stop_listening_for_scene_picks()
+
+## Checks [param area] in this explorer. Returns true when that area is now selected.
+func choose_scene_area(area: AbstractCorticalArea) -> bool:
+	if area == null or _scroll_genome_object == null:
+		return false
+	var picked: Array[GenomeObject] = [area]
+	_scroll_genome_object.apply_mouse_pick(picked)
+	return _scroll_genome_object.has_selected_id(area)
+
+## A mouse click chooses that area or circuit in this explorer instead of bypassing it.
+func _on_scene_selection(objects: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTEXT, _override_usecases: Array[SelectionSystem.OVERRIDE_USECASE]) -> void:
+	if not ScenePick.accepts_mouse_context(context):
+		return
+	if _scroll_genome_object == null:
+		return
+	_scroll_genome_object.apply_mouse_pick(objects)
+
+func _listen_for_scene_picks() -> void:
+	if BV == null or BV.UI == null or BV.UI.selection_system == null:
+		return
+	if BV.UI.selection_system.objects_selection_event_called.is_connected(_on_scene_selection):
+		return
+	BV.UI.selection_system.objects_selection_event_called.connect(_on_scene_selection)
+
+func _stop_listening_for_scene_picks() -> void:
+	if BV == null or BV.UI == null or BV.UI.selection_system == null:
+		return
+	if BV.UI.selection_system.objects_selection_event_called.is_connected(_on_scene_selection):
+		BV.UI.selection_system.objects_selection_event_called.disconnect(_on_scene_selection)
 
 func _proxy_object_added_or_removed(_irrelevant) -> void:
 	_updated_selected_objects(_scroll_genome_object.selected_objects)

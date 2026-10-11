@@ -9,7 +9,7 @@ func _initialize() -> void:
 	var failures: int = 0
 	failures += _test_shared_msdf_and_outline()
 	failures += _test_role_visual_scale_matches_legacy_product()
-	failures += _test_fixed_size_only_on_region_titles()
+	failures += _test_fixed_size_keeps_far_titles_legible()
 	failures += _test_apply_is_idempotent()
 	failures += _test_create_names_and_priorities()
 	failures += _test_outline_sorts_behind_fill()
@@ -60,7 +60,10 @@ func _test_shared_msdf_and_outline() -> int:
 
 func _test_role_visual_scale_matches_legacy_product() -> int:
 	if not is_equal_approx(SceneLabel3D.FONT_SIZE * SceneLabel3D.AREA_NAME_PIXEL_SIZE, SceneLabel3D.AREA_NAME_VISUAL_SCALE):
-		push_error("area name visual scale drifted from legacy 512 * 0.005")
+		push_error("area name visual scale must stay font_size * pixel_size")
+		return 1
+	if not is_equal_approx(SceneLabel3D.AREA_NAME_VISUAL_SCALE, SceneLabel3D.REGION_TITLE_VISUAL_SCALE):
+		push_error("area name screen size must match the region title")
 		return 1
 	if not is_equal_approx(SceneLabel3D.FONT_SIZE * SceneLabel3D.REGION_TITLE_PIXEL_SIZE, SceneLabel3D.REGION_TITLE_VISUAL_SCALE):
 		push_error("region title visual scale drifted from legacy 32 * 0.001")
@@ -71,9 +74,9 @@ func _test_role_visual_scale_matches_legacy_product() -> int:
 	return 0
 
 
-func _test_fixed_size_only_on_region_titles() -> int:
-	if SceneLabel3D.uses_fixed_size(SceneLabel3D.ROLE.AREA_NAME):
-		push_error("area names must not use fixed_size")
+func _test_fixed_size_keeps_far_titles_legible() -> int:
+	if not SceneLabel3D.uses_fixed_size(SceneLabel3D.ROLE.AREA_NAME):
+		push_error("area names must use fixed_size so a far title stays readable")
 		return 1
 	if not SceneLabel3D.uses_fixed_size(SceneLabel3D.ROLE.REGION_TITLE):
 		push_error("region titles must use fixed_size")
@@ -87,7 +90,7 @@ func _test_fixed_size_only_on_region_titles() -> int:
 	var area: Label3D = SceneLabel3D.create(SceneLabel3D.ROLE.AREA_NAME, &"Area")
 	var region: Label3D = SceneLabel3D.create(SceneLabel3D.ROLE.REGION_TITLE, &"Region")
 	var plate: Label3D = SceneLabel3D.create(SceneLabel3D.ROLE.PLATE_TAG, &"Plate")
-	if area.fixed_size or plate.fixed_size or not region.fixed_size:
+	if not area.fixed_size or plate.fixed_size or not region.fixed_size:
 		push_error("fixed_size flags do not match role policy")
 		area.free()
 		region.free()

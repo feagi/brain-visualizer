@@ -18,6 +18,7 @@ const INITIAL_WINDOW_BOTTOM_MARGIN: int = 0
 const INITIAL_WINDOW_EXTRA_BOTTOM_CLEARANCE_PX: int = 8
 const MIN_SCROLLABLE_HEIGHT: int = 180
 const CountFieldLayout = preload("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/CorticalCountFieldLayout.gd")
+const ModulationsSection = preload("res://BrainVisualizer/UI/Windows/AdvancedCorticalProperties/CorticalModulationsSection.gd")
 const MIN_COUNT_FIELD_WIDTH_PX: float = CountFieldLayout.MIN_COUNT_FIELD_WIDTH_PX
 const IO_PRESET_INPUT: StringName = "Input"
 const IO_PRESET_OUTPUT: StringName = "Output"
@@ -360,63 +361,45 @@ func _apply_type_based_ui_restrictions() -> void:
 	_apply_core_type_restrictions()
 
 
-const _NEURO_MODULATOR_TYPES: Array[String] = [
-	"neuro.firing_threshold",
-	"neuro.leak",
-	"neuro.firing_probability",
-]
-
 func _ensure_modulations_section() -> void:
 	if _section_dangerzone == null:
 		return
 	var parent := _section_dangerzone.get_parent()
 	if parent == null or parent.get_node_or_null("Modulations") != null:
 		return
-	var section := VBoxContainer.new()
-	section.name = "Modulations"
-	var title := Label.new()
-	title.text = "Modulations"
-	section.add_child(title)
-	var field := LineEdit.new()
-	field.name = "ModulatorIds"
-	field.placeholder_text = "subscribed instance ids, comma separated"
-	section.add_child(field)
-	var type_list := OptionButton.new()
-	type_list.name = "ModulatorType"
-	for kind in _NEURO_MODULATOR_TYPES:
-		type_list.add_item(kind)
-	section.add_child(type_list)
-	var existing := OptionButton.new()
-	existing.name = "ExistingModulator"
-	existing.add_item("(refresh to list instances)")
-	section.add_child(existing)
-	var refresh := Button.new()
-	refresh.text = "Refresh instances"
-	refresh.pressed.connect(_on_modulator_instances_refresh)
-	section.add_child(refresh)
-	var use_existing := Button.new()
-	use_existing.text = "Subscribe selected instance"
-	use_existing.pressed.connect(_on_modulator_subscribe_existing)
-	section.add_child(use_existing)
-	var new_id := LineEdit.new()
-	new_id.name = "NewModulatorId"
-	new_id.placeholder_text = "new instance id"
-	section.add_child(new_id)
-	var magnitude := LineEdit.new()
-	magnitude.name = "NewModulatorMagnitude"
-	magnitude.placeholder_text = "magnitude percent"
-	magnitude.text = "0"
-	section.add_child(magnitude)
-	var create := Button.new()
-	create.text = "Create instance and subscribe"
-	create.pressed.connect(_on_modulator_create_and_subscribe)
-	section.add_child(create)
-	var button := Button.new()
-	button.text = "Apply subscriptions"
-	button.pressed.connect(_on_modulator_subscriptions_apply)
-	section.add_child(button)
+	var section: VerticalCollapsibleHiding = ModulationsSection.build()
+	var plate := _section_dangerzone.get_theme_stylebox("panel")
+	if plate != null:
+		section.add_theme_stylebox_override("panel", plate.duplicate())
 	parent.add_child(section)
 	parent.move_child(section, _section_dangerzone.get_index())
+	_sync_modulator_expand_button()
+	if BV != null and BV.UI != null and not BV.UI.theme_changed.is_connected(_sync_modulator_expand_button):
+		BV.UI.theme_changed.connect(_sync_modulator_expand_button)
+	_connect_modulator_button("RefreshInstances", _on_modulator_instances_refresh)
+	_connect_modulator_button("SubscribeExisting", _on_modulator_subscribe_existing)
+	_connect_modulator_button("CreateAndSubscribe", _on_modulator_create_and_subscribe)
+	_connect_modulator_button("ApplySubscriptions", _on_modulator_subscriptions_apply)
+
+
+## Theme scaler runs before this panel exists, so the arrow must copy a sibling's scaled size.
+func _sync_modulator_expand_button(_theme: Theme = null) -> void:
+	if _section_dangerzone == null:
+		return
+	var parent := _section_dangerzone.get_parent()
+	if parent == null:
+		return
+	var section := parent.get_node_or_null("Modulations")
+	var reference := _section_dangerzone.get_node_or_null("VerticalCollapsible/HBoxContainer/Collapsible_Toggle") as TextureButton
+	ModulationsSection.match_expand_button(section, reference)
+
+
+func _connect_modulator_button(node_name: String, handler: Callable) -> void:
+	var button := _modulations_node(node_name) as Button
+	if button == null:
+		push_error("AdvancedCorticalProperties: missing modulators button '%s'" % node_name)
+		return
+	button.pressed.connect(handler)
 
 
 func _modulations_node(node_name: String) -> Node:
@@ -425,7 +408,10 @@ func _modulations_node(node_name: String) -> Node:
 	var parent := _section_dangerzone.get_parent()
 	if parent == null:
 		return null
-	return parent.get_node_or_null("Modulations/" + node_name)
+	var section := parent.get_node_or_null("Modulations")
+	if section == null:
+		return null
+	return section.find_child(node_name, true, false)
 
 
 func _append_modulator_subscription(instance_id: String) -> void:

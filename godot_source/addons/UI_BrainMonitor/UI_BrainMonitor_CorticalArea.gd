@@ -4,6 +4,8 @@ class_name UI_BrainMonitor_CorticalArea
 # NOTE: We will leave adding, removing, or changing parent region to the Brain Monitor itself, since those interactions affect multiple objects
 
 const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
+const AreaNameLabelVisibility = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_AreaNameLabelVisibility.gd")
+const BoxSelectLib = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_BoxSelect.gd")
 
 var cortical_area: AbstractCorticalArea:
 	get: return _representing_cortial_area
@@ -92,6 +94,12 @@ func _apply_distance_scale_to_pulse(pulse_sphere: MeshInstance3D) -> void:
 	var dist: float = cam.global_position.distance_to(pulse_sphere.global_position)
 	var s: float = clamp(dist / PULSE_DISTANCE_REF, PULSE_DISTANCE_MIN_SCALE, PULSE_DISTANCE_MAX_SCALE)
 	pulse_sphere.scale = Vector3(s, s, s)
+
+
+## Node whose meshes define the Shift+drag hit volume.
+## Memory areas have no DDA cube, so the DirectPoints sphere is the volume.
+func box_select_bounds_node() -> Node:
+	return BoxSelectLib.bounds_node_for_area(_dda_renderer, _directpoints_renderer)
 
 
 func setup(defined_cortical_area: AbstractCorticalArea) -> void:
@@ -807,24 +815,23 @@ func bv_update_friendly_name_label_positions() -> void:
 		_directpoints_renderer.bv_update_friendly_name_label_position()
 
 
-## Names stay visible for genome/main-scene areas and for invariant cores on plates; other plate-mounted areas use hover-only labels.
+## Every area title, including invariant cores, stays hidden until hover.
+static func friendly_name_label_always_visible_for(_area: AbstractCorticalArea) -> bool:
+	return AreaNameLabelVisibility.always_visible()
+
+
+## True when the 3D area title should be drawn. Cores and every other area label only while hovered.
+static func friendly_name_label_should_show(_area: AbstractCorticalArea, volume_moused_over: bool, matches_bottom_hover_line: bool) -> bool:
+	return AreaNameLabelVisibility.should_show(volume_moused_over, matches_bottom_hover_line)
+
+
 func bv_friendly_name_label_always_visible() -> bool:
-	if not _is_on_brain_region_plate():
-		return true
-	return _representing_cortial_area != null and AbstractCorticalArea.is_feagi_invariant_core_area(_representing_cortial_area)
+	return friendly_name_label_always_visible_for(_representing_cortial_area)
 
 
 ## Toggles the 3D cortical area name label (not the brain region title).
 func _update_friendly_name_label_visibility_for_hover() -> void:
 	_friendly_name_refresh_pending = false
-	if bv_friendly_name_label_always_visible():
-		if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
-			(_dda_renderer.get("_friendly_name_label") as Label3D).visible = true
-		if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:
-			var dp_label_core := _directpoints_renderer.get("_friendly_name_label") as Label3D
-			dp_label_core.visible = true if _dda_renderer == null else false
-		_apply_friendly_name_label_depth_policy()
-		return
 	var show_from_bottom_line := false
 	if _representing_cortial_area != null:
 		var bm_scene := get_parent()
@@ -834,7 +841,7 @@ func _update_friendly_name_label_visibility_for_hover() -> void:
 				show_from_bottom_line = s.brain_monitor_mouse_context_cortical_id() == _representing_cortial_area.cortical_ID
 				break
 			bm_scene = bm_scene.get_parent()
-	var show_area_name := _is_volume_moused_over or show_from_bottom_line
+	var show_area_name := friendly_name_label_should_show(_representing_cortial_area, _is_volume_moused_over, show_from_bottom_line)
 	if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
 		(_dda_renderer.get("_friendly_name_label") as Label3D).visible = show_area_name
 	if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:
@@ -2601,7 +2608,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		_cleanup_cache_connections()
 	elif what == NOTIFICATION_PARENTED:
-		# Genome root vs brain-region plate changes hover-only vs always-visible name rules.
+		# Apply the hover-only title rule once this area is in the tree.
 		if not _friendly_name_refresh_pending:
 			_friendly_name_refresh_pending = true
 			call_deferred("_update_friendly_name_label_visibility_for_hover")
