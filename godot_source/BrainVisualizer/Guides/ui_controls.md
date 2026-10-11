@@ -343,7 +343,8 @@ See [Split View](split_view.md) for details.
 - **F11**: Full screen toggle (if available)
 - **Ctrl + +**: Increase UI scale
 - **Ctrl + -**: Decrease UI scale
-- **Escape**: Deselect voxels and cortical areas. With nothing selected, close the current window or dialog
+- **Ctrl + S** (**Cmd + S** on macOS): Open or close Search. See [Navigation Basics](navigation.md)
+- **Escape**: Deselect voxels and cortical areas. With nothing selected, close the current window or dialog. While Search is open, Escape closes Search and leaves the 3D selection in place
 
 ### View Shortcuts
 

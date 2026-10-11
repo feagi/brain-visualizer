@@ -63,6 +63,8 @@ var _ws_fastpath_resync_pending: bool = false
 # can never leave [method FeagiCore.bv_is_type11_visual_rebuild_pause_active] stuck true.
 var _ws_fastpath_resync_pause_ends_owed: int = 0
 
+signal scene_setup_finished
+
 var representing_region: BrainRegion:
 	get: return _representing_region
 
@@ -74,6 +76,7 @@ var _should_show_combo_buttons: bool = true
 
 
 var _representing_region: BrainRegion
+var _scene_setup_complete: bool = false
 ## Set for the floating single-area inspect view. That view shows only this area.
 var _isolated_cortical_area: AbstractCorticalArea = null
 var _world_3D: World3D # used for physics stuff
@@ -536,6 +539,11 @@ func setup_isolated_cortical_area(area: AbstractCorticalArea) -> void:
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 
 
+## True after [method setup] has framed the scene. A tab created this frame is still false.
+func is_scene_setup_complete() -> bool:
+	return _scene_setup_complete
+
+
 func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	_should_show_combo_buttons = show_combo_buttons
 	_representing_region = region
@@ -634,6 +642,8 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 	
 	# Ensure cortical area labels are snapped to the camera-facing edge after initial camera framing.
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
+	_scene_setup_complete = true
+	scene_setup_finished.emit()
 
 ## Plays a brief camera intro that drops from above and gently zooms into the scene
 ## The camera ends exactly at its current transform, which is assumed to be the intended initial view
@@ -752,6 +762,7 @@ func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float, source_nod
 	var indicator: Node3D = Node3D.new()
 	indicator.name = "PreviewIndicator"
 	_node_3D_root.add_child(indicator)
+	_hold_focus_title_for_indicator(indicator, source_node)
 	# Our arrow is oriented downward (180 deg on X). The cone tip should be at indicator origin, so position indicator at tip
 	indicator.global_position = Vector3(world_center_xz.x, tip_y, world_center_xz.z)
 
@@ -836,12 +847,35 @@ func _spawn_preview_indicator(world_center_xz: Vector3, tip_y: float, source_nod
 func _cleanup_preview_indicator(indicator_ref: WeakRef) -> void:
 	var indicator_node: Node3D = indicator_ref.get_ref() as Node3D
 	if indicator_node != null and is_instance_valid(indicator_node):
+		_release_focus_title_for_indicator(indicator_node)
 		indicator_node.queue_free()
 	var filtered: Array = _active_preview_indicators.filter(
 		func(node) -> bool:
 			return node != null and is_instance_valid(node)
 	)
 	_active_preview_indicators.assign(filtered)
+
+const _FOCUS_TITLE_META: StringName = &"bv_focus_title_viz"
+
+
+## Keeps the area title on screen for the same time this arrow is pointing at it.
+func _hold_focus_title_for_indicator(indicator: Node3D, source_node: Node) -> void:
+	if indicator == null or not source_node is UI_BrainMonitor_CorticalArea:
+		return
+	var viz := source_node as UI_BrainMonitor_CorticalArea
+	viz.hold_focus_indicator_title()
+	indicator.set_meta(_FOCUS_TITLE_META, viz)
+
+
+## Drops the title hold once, even if both the timer and the source node ask to remove the arrow.
+func _release_focus_title_for_indicator(indicator: Node3D) -> void:
+	if indicator == null or not indicator.has_meta(_FOCUS_TITLE_META):
+		return
+	var viz: Variant = indicator.get_meta(_FOCUS_TITLE_META)
+	indicator.remove_meta(_FOCUS_TITLE_META)
+	if viz is UI_BrainMonitor_CorticalArea and is_instance_valid(viz):
+		(viz as UI_BrainMonitor_CorticalArea).release_focus_indicator_title()
+
 
 ## Defers indicator spawning until transforms are updated, then places it at true world center
 func _spawn_indicator_for_node_center(node: Node) -> void:
@@ -1742,11 +1776,12 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 		return -1
 	
 	var ctx_matches_bottom_hover := viz.cortical_area != null and viz.cortical_area.cortical_ID == _mouse_context_cortical_id
-	# Every area, including invariant cores, shows its title only while hovered.
+	# Every area, including invariant cores, shows its title while hovered or while the focus arrow points at it.
 	var show_name := UI_BrainMonitor_CorticalArea.friendly_name_label_should_show(
 		viz.cortical_area,
 		viz.is_volume_moused_over,
-		ctx_matches_bottom_hover
+		ctx_matches_bottom_hover,
+		viz.focus_indicator_holds_title
 	)
 	if viz._dda_renderer != null and viz._dda_renderer._friendly_name_label != null:
 		var label = viz._dda_renderer._friendly_name_label

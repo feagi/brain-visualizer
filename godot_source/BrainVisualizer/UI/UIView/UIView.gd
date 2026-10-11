@@ -78,14 +78,14 @@ func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITab
 	## Region doesn't exist as a CB anywhere, create one
 	UI_tab_to_create_in.spawn_CB_of_region(region)
 
-## Searches from the root [UIView] for a BM of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer]
-func show_or_create_BM_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> void:
+## Searches from the root [UIView] for a BM of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer].
+func show_or_create_BM_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> UI_BrainMonitor_3DScene:
 	var UI_tab: UITabContainer = get_root_UIView().return_UITabContainer_holding_BM_of_given_region(region)
 	if UI_tab != null:
 		UI_tab.bring_existing_region_BM_to_top(region)
-		return
+		return UI_tab.return_BM_of_region(region)
 	## Region doesn't exist as a BM anywhere, create one
-	UI_tab_to_create_in.spawn_BM_of_region(region)
+	return UI_tab_to_create_in.show_BM_of_region(region)
 
 ## Closes all non-root [BrainRegion] views
 func close_all_non_root_brain_region_views() -> void:

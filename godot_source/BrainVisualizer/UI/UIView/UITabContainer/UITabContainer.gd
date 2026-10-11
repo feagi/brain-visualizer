@@ -88,12 +88,14 @@ func spawn_CB_of_region(region: BrainRegion) -> void:
 	new_cb.setup(region)
 	new_cb.request_initial_fit()
 
-## If BM of given region exists, brings it to the top. Otherwise, instantiates it and brings it to the top
-func show_BM_of_region(region: BrainRegion) -> void:
+## If BM of given region exists, brings it to the top. Otherwise, instantiates it and brings it to the top.
+## Returns that brain monitor. A newly created one has not run [method UI_BrainMonitor_3DScene.setup] yet.
+func show_BM_of_region(region: BrainRegion) -> UI_BrainMonitor_3DScene:
 	if does_contain_BM_of_region(region):
 		bring_existing_region_BM_to_top(region)
-		return
+		return return_BM_of_region(region)
 	spawn_BM_of_region(region)
+	return get_tab_control(current_tab) as UI_BrainMonitor_3DScene
 
 ## SPECIFICALLY creates a BM of a region, and then adds it to this UITabContainer
 func spawn_BM_of_region(region: BrainRegion) -> void:
@@ -249,7 +251,8 @@ func return_CB_of_region(searching_region: BrainRegion) -> CircuitBuilder:
 func does_contain_BM_of_region(searching_region: BrainRegion) -> bool:
 	for child in get_children():
 		if child is UI_BrainMonitor_3DScene:
-			if (child as UI_BrainMonitor_3DScene).representing_region.region_ID == searching_region.region_ID:
+			var monitor := child as UI_BrainMonitor_3DScene
+			if monitor.representing_region != null and monitor.representing_region.region_ID == searching_region.region_ID:
 				return true
 	return false
 
@@ -257,8 +260,9 @@ func does_contain_BM_of_region(searching_region: BrainRegion) -> bool:
 func return_BM_of_region(searching_region: BrainRegion) -> UI_BrainMonitor_3DScene:
 	for child in get_children():
 		if child is UI_BrainMonitor_3DScene:
-			if (child as UI_BrainMonitor_3DScene).representing_region.region_ID == searching_region.region_ID:
-				return (child as UI_BrainMonitor_3DScene)
+			var monitor := child as UI_BrainMonitor_3DScene
+			if monitor.representing_region != null and monitor.representing_region.region_ID == searching_region.region_ID:
+				return monitor
 	return null
 
 ## Tab page for [param idx]. Uses [method TabContainer.get_tab_control], not [method Node.get_child]:

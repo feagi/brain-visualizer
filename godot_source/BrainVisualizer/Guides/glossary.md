@@ -344,6 +344,14 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 
 ## S
 
+**Search**
+- **Ctrl+S** (**Cmd+S** on macOS) opens a window over the views. The same keys close it
+- Type part of a name. Matching ignores letter case, and a kind word such as `input`, `rule`, or `core` lists objects of that kind
+- Covers cores, inputs, outputs, memory areas, interconnect areas, modulator areas, circuits, connectivity rules, and classifiers
+- Choosing an area moves the camera to it. A red arrow points at the area, and the area title stays visible while the arrow is showing. An area inside a sub-circuit opens that circuit's tab first
+- Choosing a circuit moves the current view to it. Choosing a connectivity rule opens the Connectivity Rules Manager. Choosing a classifier opens its editor
+- See [Navigation Basics](navigation.md)
+
 **Selection (Brain Monitor)**
 - **Click** a cortical volume to select that area
 - **Ctrl + Click** (Cmd + Click on macOS) adds or removes areas from multi-selection

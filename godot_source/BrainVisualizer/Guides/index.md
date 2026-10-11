@@ -47,7 +47,7 @@ Edit and monitor the genome here. Use Neurorobotics Studio for a published model
 
 ### Interface & Navigation
 - [Getting Started](getting_started.md) - First steps with Brain Visualizer
-- [Navigation Basics](navigation.md) - Moving around in 2D and 3D views
+- [Navigation Basics](navigation.md) - Moving around in 2D and 3D views, including Search (**Ctrl+S**, **Cmd+S** on macOS)
 - [Navigation Action Reference](navigation_actions_reference.md) - Action-to-input quick lookup table
 - [Camera Controls](camera_controls.md) - Advanced camera navigation
 - [Camera Animations](camera_animations.md) - Recording and playing camera paths

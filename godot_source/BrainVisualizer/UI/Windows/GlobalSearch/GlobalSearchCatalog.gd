@@ -55,6 +55,11 @@ static func kind_for_cortical_type(cortical_type: AbstractCorticalArea.CORTICAL_
 			return KIND_AREA
 
 
+## An area inside a non-root circuit is shown in that circuit's tab, not the main scene.
+static func area_opens_circuit_tab(has_parent: bool, parent_is_root: bool) -> bool:
+	return has_parent and not parent_is_root
+
+
 ## What a click on this kind does.
 static func action_for_kind(kind: StringName) -> StringName:
 	match kind:

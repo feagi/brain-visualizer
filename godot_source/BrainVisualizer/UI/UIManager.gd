@@ -2064,6 +2064,46 @@ func record_position_edit(edit: PositionEdit) -> void:
 	record_genome_edit(edit)
 
 
+## Areas in the root scene use the top-bar camera. Areas inside a sub-circuit open that circuit tab first.
+func focus_searched_cortical_area(area: AbstractCorticalArea) -> void:
+	if area == null:
+		return
+	var parent := area.current_parent_region
+	var parent_is_root := parent != null and parent.is_root_region()
+	if not GlobalSearchCatalog.area_opens_circuit_tab(parent != null, parent_is_root):
+		if top_bar != null:
+			top_bar.focus_menu_cortical_area(area)
+		return
+	var monitor := _open_circuit_brain_monitor(parent)
+	if monitor == null:
+		return
+	if not monitor.is_scene_setup_complete():
+		monitor.enable_startup_camera_intro = false
+		await monitor.scene_setup_finished
+	if not is_instance_valid(monitor):
+		return
+	monitor.focus_on_cortical_area(area)
+	monitor.flash_indicator_for_cortical_area(area)
+
+
+## Opens the circuit builder and brain monitor tabs for [param region], the same way Open Circuit does.
+func _open_circuit_brain_monitor(region: BrainRegion) -> UI_BrainMonitor_3DScene:
+	if _root_UI_view == null or region == null:
+		return null
+	if _root_UI_view.mode != UIView.MODE.SPLIT:
+		_root_UI_view.setup_as_split()
+	var temp_split: TempSplit = get_node_or_null("CB_Holder") as TempSplit
+	if temp_split != null and temp_split.current_state == TempSplit.STATES.CB_CLOSED:
+		temp_split.set_view(TempSplit.STATES.CB_HORIZONTAL)
+	var primary_tab_container: UITabContainer = _root_UI_view._get_primary_child() as UITabContainer
+	var secondary_tab_container: UITabContainer = _root_UI_view.get_secondary_tab_container()
+	if primary_tab_container == null or secondary_tab_container == null:
+		push_error("Search: circuit tabs are missing after opening split view")
+		return null
+	_root_UI_view.show_or_create_CB_of_region(region, primary_tab_container)
+	return _root_UI_view.show_or_create_BM_of_region(region, secondary_tab_container)
+
+
 ## Ctrl/Cmd+S opens genome search. The same chord closes it when it is already open.
 func _toggle_global_search() -> void:
 	if _window_manager == null:

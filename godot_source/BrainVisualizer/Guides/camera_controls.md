@@ -378,7 +378,7 @@ Brain Monitor does not respond to touch-screen gestures. A stylus that acts as a
 - Use Fit All to see everything
 - Try different zoom levels
 - Check you're in the correct region/tab
-- Use Search, or hover a top bar title, to find objects
+- Press **Ctrl+S** (**Cmd+S** on macOS) to search by name, or hover a top bar title. See [Navigation Basics](navigation.md)
 
 **"Camera feels sluggish"**
 - Disable inertia in Options

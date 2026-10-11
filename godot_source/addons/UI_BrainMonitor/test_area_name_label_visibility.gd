@@ -9,6 +9,7 @@ func _initialize() -> void:
 	var failures: int = 0
 	failures += _test_titles_stay_hidden_until_hover()
 	failures += _test_bottom_hover_line_shows_title()
+	failures += _test_focus_arrow_shows_title()
 	if failures == 0:
 		print("Area name label visibility tests: PASS")
 		quit(0)
@@ -34,5 +35,15 @@ func _test_titles_stay_hidden_until_hover() -> int:
 func _test_bottom_hover_line_shows_title() -> int:
 	if not Visibility.should_show(false, true):
 		push_error("Area title must show when the bottom hover line names that area")
+		return 1
+	return 0
+
+
+func _test_focus_arrow_shows_title() -> int:
+	if not Visibility.should_show(false, false, true):
+		push_error("Area title must show while the focus arrow points at the area")
+		return 1
+	if Visibility.should_show(false, false, false):
+		push_error("Area title must hide again after the focus arrow is gone")
 		return 1
 	return 0

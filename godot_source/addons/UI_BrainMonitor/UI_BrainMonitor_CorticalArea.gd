@@ -16,11 +16,16 @@ var renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer:
 var is_volume_moused_over: bool:
 	get: return _is_volume_moused_over
 
+## True while a focus arrow is pointing at this area. The title stays up for that same time.
+var focus_indicator_holds_title: bool:
+	get: return _focus_title_holds > 0
+
 var _representing_cortial_area: AbstractCorticalArea
 var _dda_renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer  # For translucent voxel structure
 var _directpoints_renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer  # For individual neuron firing
 
 var _is_volume_moused_over: bool
+var _focus_title_holds: int = 0
 var _hovered_neuron_coordinates: Array[Vector3i] = [] # wouldnt a dictionary be faster?
 var _selected_neuron_coordinates: Array[Vector3i] = [] #TODO we should clear this and the hover on dimension changes!
 
@@ -815,14 +820,26 @@ func bv_update_friendly_name_label_positions() -> void:
 		_directpoints_renderer.bv_update_friendly_name_label_position()
 
 
-## Every area title, including invariant cores, stays hidden until hover.
+## Every area title, including invariant cores, stays hidden until hover or a focus arrow.
 static func friendly_name_label_always_visible_for(_area: AbstractCorticalArea) -> bool:
 	return AreaNameLabelVisibility.always_visible()
 
 
-## True when the 3D area title should be drawn. Cores and every other area label only while hovered.
-static func friendly_name_label_should_show(_area: AbstractCorticalArea, volume_moused_over: bool, matches_bottom_hover_line: bool) -> bool:
-	return AreaNameLabelVisibility.should_show(volume_moused_over, matches_bottom_hover_line)
+## True when the 3D area title should be drawn.
+static func friendly_name_label_should_show(_area: AbstractCorticalArea, volume_moused_over: bool, matches_bottom_hover_line: bool, focus_indicator_holding: bool = false) -> bool:
+	return AreaNameLabelVisibility.should_show(volume_moused_over, matches_bottom_hover_line, focus_indicator_holding)
+
+
+## Shows the area title for as long as one focus arrow points here.
+func hold_focus_indicator_title() -> void:
+	_focus_title_holds += 1
+	_update_friendly_name_label_visibility_for_hover()
+
+
+## Hides the area title again when its focus arrow goes away, unless hover still wants it.
+func release_focus_indicator_title() -> void:
+	_focus_title_holds = maxi(0, _focus_title_holds - 1)
+	_update_friendly_name_label_visibility_for_hover()
 
 
 func bv_friendly_name_label_always_visible() -> bool:
@@ -841,7 +858,7 @@ func _update_friendly_name_label_visibility_for_hover() -> void:
 				show_from_bottom_line = s.brain_monitor_mouse_context_cortical_id() == _representing_cortial_area.cortical_ID
 				break
 			bm_scene = bm_scene.get_parent()
-	var show_area_name := friendly_name_label_should_show(_representing_cortial_area, _is_volume_moused_over, show_from_bottom_line)
+	var show_area_name := friendly_name_label_should_show(_representing_cortial_area, _is_volume_moused_over, show_from_bottom_line, focus_indicator_holds_title)
 	if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
 		(_dda_renderer.get("_friendly_name_label") as Label3D).visible = show_area_name
 	if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:

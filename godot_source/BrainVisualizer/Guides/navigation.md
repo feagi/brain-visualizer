@@ -59,13 +59,7 @@ See [Camera Controls](camera_controls.md) for complete details.
 
 ## Finding Objects
 
-### Using Search (if available)
-
-Some versions include a search feature:
-1. Open search bar (Ctrl+F or search icon)
-2. Type cortical area or region name
-3. Select from results
-4. View focuses on selection
+Press **Ctrl+S** (**Cmd+S** on macOS) to search the loaded genome by name. The full behavior is in [Search](#search) below.
 
 ### Using Lists
 
@@ -84,6 +78,47 @@ Navigate through region hierarchy:
 2. Double-click regions to enter them
 3. View contents
 4. Navigate up/down through structure
+
+## Search
+
+**Ctrl+S** (**Cmd+S** on macOS) opens the Search window. The same keys close it. The field at the top is where you type. Matches are listed under it. This searches the genome loaded in Brain Visualizer. The search bar inside this user guide is a separate control and only finds help topics.
+
+### What a query matches
+
+Type part of a name. Matching ignores letter case. A query also matches the kind of object, so these words list that kind:
+
+- `input` lists inputs (IPUs)
+- `output` lists outputs (OPUs)
+- `memory` lists memory areas
+- `interconnect` lists interconnect areas
+- `modulator` lists modulator areas
+- `circuit` lists circuits
+- `rule` lists connectivity rules
+- `core` lists cores
+- `classifier` lists classifiers
+
+An empty field shows **Type a name**. A query with nothing in the genome shows **No matches**. Results are ordered by name, then by kind. Each row shows the name and then its kind: Core, IPU, OPU, Memory, Interconnect, Modulator, Circuit, Connectivity rule, or Classifier.
+
+Search lists those named objects: cortical areas, circuits, connectivity rules, and classifiers.
+
+### Choosing a match
+
+Click a row, or press **Enter** on the highlighted row. Search closes, then one of these happens:
+
+- **Cortical area** (core, input, output, memory, interconnect, or modulator): the camera moves to that area. An area that belongs to a sub-circuit opens that circuit's tab first, then the camera moves onto the area there. An area on the main circuit stays in the current view.
+- A red 3D arrow points at the area. The area title stays visible for as long as that arrow is showing. After the arrow goes away, the title follows the usual rule: hidden until the pointer is over the area, or until the bottom hover line names it.
+- **Circuit**: the current view moves to that circuit. Choosing a circuit keeps you in the current view.
+- **Connectivity rule**: the Connectivity Rules Manager opens with that rule shown.
+- **Classifier**: the classifier editor opens.
+
+The same arrow and title appear when a top bar list jumps the camera to an area.
+
+### Search keys
+
+- **Ctrl+S** (**Cmd+S** on macOS): open Search, or close it if it is already open. This works while a text field is focused
+- **Escape**: close Search and leave the current 3D selection in place
+- **Up** and **Down**: move the highlight, while the search field or the match list has focus
+- **Enter**: open the highlighted match
 
 ## Selection Techniques
 
@@ -355,7 +390,8 @@ See [Split View](split_view.md) for more details.
 - **Home**: Frame the whole Brain Monitor from the front
 - **Arrow Keys**: Pan (2D) or Rotate (3D)
 - **Page Up/Down**: Zoom in/out
-- **Escape**: Deselect voxels and cortical areas. Cancels an in-progress move, resize, or box select first. Also stops continuous voxel fire and closes the quick menu. With nothing selected, closes the front window
+- **Ctrl+S** (**Cmd+S** on macOS): Open or close Search. See [Search](#search)
+- **Escape**: Deselect voxels and cortical areas. Cancels an in-progress move, resize, or box select first. Also stops continuous voxel fire and closes the quick menu. With nothing selected, closes the front window. While Search is open, Escape closes Search and leaves the 3D selection in place
 - **Ctrl+Z** (Cmd+Z on macOS): Undo the last saved move or area delete
 - **Shift+Ctrl+Z** (Shift+Cmd+Z): Redo that step
 
@@ -452,7 +488,7 @@ Access via **Options** → **Display** or **Developer Options**.
 **"Object isn't where I expected"**
 - Check which region it is in. Hover **Circuits** to list circuits by name.
 - Verify you're viewing correct region
-- Use global search if available
+- Press **Ctrl+S** (**Cmd+S** on macOS) and type the name. See [Search](#search)
 
 **"Navigation is too slow"**
 - Hover a top bar title instead of panning across the genome

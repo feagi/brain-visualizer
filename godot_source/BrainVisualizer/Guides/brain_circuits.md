@@ -485,7 +485,7 @@ For genomes with 100+ cortical areas:
 
 **"Can't find my cortical area"**
 - Check which region it's in
-- Use global search (if available)
+- Press **Ctrl+S** (**Cmd+S** on macOS) and type the area name. See [Navigation Basics](navigation.md)
 - Navigate through region hierarchy
 - Hover **Circuits** on the root scene top bar to list circuits under the main circuit
 

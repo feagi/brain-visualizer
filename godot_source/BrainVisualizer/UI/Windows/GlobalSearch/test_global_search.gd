@@ -25,6 +25,7 @@ func _initialize() -> void:
 	var failures := 0
 	failures += _test_shortcut()
 	failures += _test_kind_actions()
+	failures += _test_circuit_tab_target()
 	failures += _test_catalog_matches()
 	failures += _test_window_placement()
 	if failures == 0:
@@ -89,6 +90,19 @@ func _test_kind_actions() -> int:
 		return 1
 	if _catalog.action_for_kind(_catalog.KIND_CLASSIFIER) != _catalog.ACTION_OPEN_CLASSIFIER:
 		push_error("a classifier click must open the classifier editor")
+		return 1
+	return 0
+
+
+func _test_circuit_tab_target() -> int:
+	if _catalog.area_opens_circuit_tab(true, true):
+		push_error("a root-scene area must stay on the main camera")
+		return 1
+	if not _catalog.area_opens_circuit_tab(true, false):
+		push_error("an area inside a sub-circuit must open that circuit tab")
+		return 1
+	if _catalog.area_opens_circuit_tab(false, false):
+		push_error("an area with no parent circuit must not open a tab")
 		return 1
 	return 0
 
