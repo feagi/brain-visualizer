@@ -328,7 +328,7 @@ impl FeagiDataDeserializer {
 
         // Collect all neurons into a flat vector
         let mut all_neurons = Vec::with_capacity(process_count);
-        for (_, neuron_array) in neuron_data_ref.mappings.iter() {
+        for neuron_array in neuron_data_ref.mappings.values() {
             for neuron in neuron_array.iter() {
                 if all_neurons.len() >= process_count {
                     break;
