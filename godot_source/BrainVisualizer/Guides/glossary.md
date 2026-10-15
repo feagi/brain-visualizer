@@ -42,6 +42,7 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Shows cortical areas as colored 3D volumes
 - Displays real-time neural activity
 - Provides spatial understanding of genome structure
+- Area titles stay hidden until the pointer is over an area. Hold Shift over one 3D view to show every title in that view. Other views stay unlabeled
 - Shift+click voxels, then Space / Shift+Space to stimulate them
 - See also: [Circuit Builder](#c), [Manual Stimulation](#m)
 
@@ -348,7 +349,7 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - **Ctrl+S** (**Cmd+S** on macOS) opens a window over the views. The same keys close it
 - Type part of a name. Matching ignores letter case, and a kind word such as `input`, `rule`, or `core` lists objects of that kind
 - Covers cores, inputs, outputs, memory areas, interconnect areas, modulator areas, circuits, connectivity rules, and classifiers
-- Choosing an area moves the camera to it. A red arrow points at the area, and the area title stays visible while the arrow is showing. An area inside a sub-circuit opens that circuit's tab first
+- Choosing an area moves the camera to it. A red arrow points at the area, and the area title stays visible while the arrow is showing. Hold Shift with the pointer inside that 3D view to show every area title there. Other views stay unlabeled. An area inside a sub-circuit opens that circuit's tab first
 - Choosing a circuit moves the current view to it. Choosing a connectivity rule opens the Connectivity Rules Manager. Choosing a classifier opens its editor
 - See [Navigation Basics](navigation.md)
 

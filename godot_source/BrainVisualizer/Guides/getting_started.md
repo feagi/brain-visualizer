@@ -69,6 +69,7 @@ When Brain Visualizer loads, you'll see:
 - **Multi-select**: Ctrl + Click to add or remove an area, or **Shift + Left Drag** a rectangle around several areas
 - **Focus**: Click on a cortical area, then press F
 - **Search**: **Ctrl+S** (**Cmd+S** on macOS). Type a name to find a core, input, output, memory area, interconnect, modulator, circuit, connectivity rule, or classifier. Choosing an area moves the camera to it. An area inside a sub-circuit opens that circuit first
+- **Area titles**: Hidden until the pointer is over an area. Hold **Shift** over one 3D view to show every title in that view. Other views stay unlabeled
 
 See [Navigation Basics](navigation.md) for more details.
 
