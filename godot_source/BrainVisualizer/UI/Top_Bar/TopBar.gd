@@ -339,6 +339,9 @@ func _preview_button_pressed() -> void:
 	BV.WM.spawn_view_previews()
 
 func _on_activity_visualization_mode_changed(action: StringName, enabled: bool) -> void:
+	if action == ActivityVisualizationDropDown.ACTION_GENOME_SEARCH:
+		BV.WM.spawn_global_search()
+		return
 	if action != ActivityVisualizationDropDown.ACTION_VOXEL_INSPECTOR:
 		BV.UI.clear_live_voxel_inspector()
 	if action == ActivityVisualizationDropDown.ACTION_GLOBAL_NEURAL_CONNECTIONS:

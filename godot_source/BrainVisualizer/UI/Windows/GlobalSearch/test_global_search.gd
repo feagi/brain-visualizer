@@ -27,6 +27,8 @@ func _initialize() -> void:
 	failures += _test_kind_actions()
 	failures += _test_circuit_tab_target()
 	failures += _test_catalog_matches()
+	failures += _test_kind_chips()
+	failures += _test_inspector_menu_opens_search()
 	failures += _test_window_placement()
 	if failures == 0:
 		print("Global search tests: PASS")
@@ -172,6 +174,68 @@ func _test_catalog_matches() -> int:
 			push_error("matches should be sorted by name")
 			return 1
 		previous = label
+	return 0
+
+
+func _test_kind_chips() -> int:
+	var kinds: Array = [
+		_catalog.KIND_CORE,
+		_catalog.KIND_IPU,
+		_catalog.KIND_OPU,
+		_catalog.KIND_MEMORY,
+		_catalog.KIND_INTERCONNECT,
+		_catalog.KIND_MODULATOR,
+		_catalog.KIND_AREA,
+		_catalog.KIND_CIRCUIT,
+		_catalog.KIND_RULE,
+		_catalog.KIND_CLASSIFIER,
+	]
+	var seen: Array[Color] = []
+	for kind in kinds:
+		var color: Color = _catalog.kind_chip_color(kind)
+		if not _is_pastel(color):
+			push_error("kind chip must be pastel, got %s for %s" % [color, kind])
+			return 1
+		if seen.has(color):
+			push_error("kind chips must use a distinct color, clash on %s" % kind)
+			return 1
+		seen.append(color)
+	var ink: Color = _catalog.kind_chip_ink()
+	if ink.r > 0.4 or ink.g > 0.4 or ink.b > 0.4:
+		push_error("chip text must stay dark on pastel plates")
+		return 1
+	if _catalog.kind_chip_color(&"unknown") != _catalog.CHIP_AREA:
+		push_error("an unknown kind must use the area chip")
+		return 1
+	return 0
+
+
+func _is_pastel(color: Color) -> bool:
+	var darkest := minf(color.r, minf(color.g, color.b))
+	var lightest := maxf(color.r, maxf(color.g, color.b))
+	return darkest >= 0.62 and lightest <= 0.99 and (lightest - darkest) >= 0.08
+
+
+func _test_inspector_menu_opens_search() -> int:
+	var dropdown: GDScript = load("res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.gd") as GDScript
+	if dropdown == null:
+		push_error("inspectors menu script did not load")
+		return 1
+	if dropdown.action_for_menu_index(0) != dropdown.ACTION_GENOME_SEARCH:
+		push_error("search must be the first inspectors menu entry")
+		return 1
+	if dropdown.action_for_menu_index(1) != dropdown.ACTION_GLOBAL_NEURAL_CONNECTIONS:
+		push_error("connection inspector must stay directly under search")
+		return 1
+	var scene := FileAccess.get_file_as_string("res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.tscn")
+	var search_at := scene.find("GenomeSearch")
+	var connection_at := scene.find("GlobalNeuralConnections")
+	if search_at < 0 or connection_at < 0 or search_at > connection_at:
+		push_error("the search icon must be listed above the connection inspector")
+		return 1
+	if scene.find("tooltip_text = \"Search\"") < 0:
+		push_error("the search menu entry must be labeled Search")
+		return 1
 	return 0
 
 

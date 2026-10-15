@@ -2,10 +2,12 @@ extends BoxContainer
 class_name ActivityVisualizationDropDown
 
 ## Emits action-style changes for activity controls.
+## - action = "genome_search" opens genome search
 ## - action = "global_neural_connections", enabled toggles on/off (latched push behavior)
 ## - action = "voxel_inspector", enabled is always true (open/focus inspector window)
 signal activity_mode_changed(action: StringName, enabled: bool)
 
+const ACTION_GENOME_SEARCH: StringName = &"genome_search"
 const ACTION_GLOBAL_NEURAL_CONNECTIONS: StringName = &"global_neural_connections"
 const ACTION_VOXEL_INSPECTOR: StringName = &"voxel_inspector"
 const ACTION_MEMORY_INSPECTOR: StringName = &"memory_inspector"
@@ -22,25 +24,39 @@ func is_inspector_dropdown_menu_open() -> bool:
 
 
 func _ready() -> void:
-	# Trigger uses inspectors_*.jpg from scene; submenu row 0 keeps connection_inspector_*.
+	# Trigger uses inspectors_*.jpg. Row 0 opens search. Row 1 keeps connection_inspector_*.
 	if _global_button != null:
 		_global_button.toggle_mode = true
 	_refresh_global_button_visual_state()
 
+
+## Menu order: search, connection inspector, voxel, memory, cortical.
+static func action_for_menu_index(index: int) -> StringName:
+	match index:
+		0:
+			return ACTION_GENOME_SEARCH
+		1:
+			return ACTION_GLOBAL_NEURAL_CONNECTIONS
+		2:
+			return ACTION_VOXEL_INSPECTOR
+		3:
+			return ACTION_MEMORY_INSPECTOR
+		4:
+			return ACTION_CORTICAL_INSPECTOR
+		_:
+			return &""
+
+
 func _user_request_activity(_view_name: StringName, index: int) -> void:
-	if index == 0:
+	var action := action_for_menu_index(index)
+	if action == &"":
+		return
+	if action == ACTION_GLOBAL_NEURAL_CONNECTIONS:
 		_global_connections_enabled = not _global_connections_enabled
 		_refresh_global_button_visual_state()
-		activity_mode_changed.emit(ACTION_GLOBAL_NEURAL_CONNECTIONS, _global_connections_enabled)
+		activity_mode_changed.emit(action, _global_connections_enabled)
 		return
-	if index == 1:
-		activity_mode_changed.emit(ACTION_VOXEL_INSPECTOR, true)
-		return
-	if index == 2:
-		activity_mode_changed.emit(ACTION_MEMORY_INSPECTOR, true)
-		return
-	if index == 3:
-		activity_mode_changed.emit(ACTION_CORTICAL_INSPECTOR, true)
+	activity_mode_changed.emit(action, true)
 
 
 func _refresh_global_button_visual_state() -> void:

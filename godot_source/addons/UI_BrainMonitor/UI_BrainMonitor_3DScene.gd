@@ -21,6 +21,7 @@ signal requesting_to_clear_all_selected_neurons()
 enum MANIPULATION_MODE { MOVE, RESIZE }
 
 const SceneLabel3DLib = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
+const AreaNameLabelVisibility = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_AreaNameLabelVisibility.gd")
 const DirectPointsRendererLib = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/UI_BrainMonitor_DirectPointsCorticalAreaRenderer.gd")
 ## Match brain-region preview gizmo placement below titles.
 const CLASSIFIER_STAMP_GIZMO_CLEARANCE_BELOW_LABEL: float = 0.75
@@ -946,6 +947,12 @@ func is_scroll_fast_modifier_held() -> bool:
 	return _scroll_fast_modifier_held
 
 
+## True while Shift is held and the pointer is inside this 3D view.
+## Other Brain Monitor views keep their titles hidden.
+func reveals_all_area_name_labels() -> bool:
+	return AreaNameLabelVisibility.shift_reveals_titles_in_this_view(_scroll_fast_modifier_held, _is_mouse_hovering_viewport)
+
+
 ## While the intro is running, keep the camera aimed at the scene center as it moves
 func _process(delta: float) -> void:
 	_scroll_fast_modifier_held = Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_SHIFT)
@@ -1776,12 +1783,13 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 		return -1
 	
 	var ctx_matches_bottom_hover := viz.cortical_area != null and viz.cortical_area.cortical_ID == _mouse_context_cortical_id
-	# Every area, including invariant cores, shows its title while hovered or while the focus arrow points at it.
+	# Every area, including invariant cores, shows its title while hovered, while the focus arrow points at it, or while Shift is held over this view.
 	var show_name := UI_BrainMonitor_CorticalArea.friendly_name_label_should_show(
 		viz.cortical_area,
 		viz.is_volume_moused_over,
 		ctx_matches_bottom_hover,
-		viz.focus_indicator_holds_title
+		viz.focus_indicator_holds_title,
+		reveals_all_area_name_labels()
 	)
 	if viz._dda_renderer != null and viz._dda_renderer._friendly_name_label != null:
 		var label = viz._dda_renderer._friendly_name_label
@@ -1846,6 +1854,10 @@ func _update_label_overlap_visibility() -> void:
 	# This ensures labels that were hidden due to previous overlap checks can become visible again
 	for label_info in label_data:
 		label_info.label.visible = label_info.original_visible
+
+	# Shift over this view shows every title here, including ones that would otherwise overlap.
+	if reveals_all_area_name_labels():
+		return
 	
 	# Track which labels to hide (use an array to avoid double-hiding)
 	var labels_to_hide: Array[Label3D] = []

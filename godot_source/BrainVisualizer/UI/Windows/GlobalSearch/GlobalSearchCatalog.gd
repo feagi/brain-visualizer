@@ -28,6 +28,19 @@ const KEY_KIND := "kind"
 const KEY_ACTION := "action"
 const KEY_PAYLOAD := "payload"
 
+## Dark ink that stays readable on every pastel chip.
+const CHIP_INK := Color(0.17, 0.2, 0.28, 1.0)
+const CHIP_CORE := Color(0.773, 0.808, 0.965, 1.0)
+const CHIP_IPU := Color(0.718, 0.894, 0.78, 1.0)
+const CHIP_OPU := Color(0.973, 0.788, 0.659, 1.0)
+const CHIP_MEMORY := Color(0.718, 0.867, 0.961, 1.0)
+const CHIP_INTERCONNECT := Color(0.878, 0.765, 0.988, 1.0)
+const CHIP_MODULATOR := Color(0.965, 0.757, 0.831, 1.0)
+const CHIP_AREA := Color(0.78, 0.82, 0.91, 1.0)
+const CHIP_CIRCUIT := Color(0.965, 0.906, 0.659, 1.0)
+const CHIP_RULE := Color(0.659, 0.902, 0.831, 1.0)
+const CHIP_CLASSIFIER := Color(0.965, 0.722, 0.69, 1.0)
+
 
 ## Ctrl/Cmd+S. Shift and Alt stay free. Echoes are ignored so a held key does not toggle.
 static func is_search_shortcut(keycode: Key, with_command: bool, shift_pressed: bool, alt_pressed: bool, pressed: bool, echo: bool) -> bool:
@@ -73,7 +86,37 @@ static func action_for_kind(kind: StringName) -> StringName:
 			return ACTION_FOCUS_AREA
 
 
-## Short label shown beside the name.
+## Pastel plate for the kind chip. Each kind has its own color.
+static func kind_chip_color(kind: StringName) -> Color:
+	match kind:
+		KIND_CORE:
+			return CHIP_CORE
+		KIND_IPU:
+			return CHIP_IPU
+		KIND_OPU:
+			return CHIP_OPU
+		KIND_MEMORY:
+			return CHIP_MEMORY
+		KIND_INTERCONNECT:
+			return CHIP_INTERCONNECT
+		KIND_MODULATOR:
+			return CHIP_MODULATOR
+		KIND_CIRCUIT:
+			return CHIP_CIRCUIT
+		KIND_RULE:
+			return CHIP_RULE
+		KIND_CLASSIFIER:
+			return CHIP_CLASSIFIER
+		_:
+			return CHIP_AREA
+
+
+## Text color used on every kind chip.
+static func kind_chip_ink() -> Color:
+	return CHIP_INK
+
+
+## Short label shown on the kind chip.
 static func kind_title(kind: StringName) -> String:
 	match kind:
 		KIND_CORE:

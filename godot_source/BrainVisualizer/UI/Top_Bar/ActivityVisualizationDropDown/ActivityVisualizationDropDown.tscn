@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://cm2activityvizdd1"]
+[gd_scene load_steps=27 format=3 uid="uid://cm2activityvizdd1"]
 
 [ext_resource type="PackedScene" uid="uid://mwx2wythpo1l" path="res://BrainVisualizer/UI/GenericElements/DropDown/ToggleImageDropDown/ToggleImageDropDown.tscn" id="1_toggle_dd"]
 [ext_resource type="Script" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.gd" id="2_script"]
@@ -22,6 +22,10 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_inspector_C.png" id="20_ctx_c"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_inspector_H.png" id="21_ctx_h"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/cortical_inspector_D.png" id="22_ctx_d"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/genome_search_S.jpg" id="23_search_s"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/genome_search_C.jpg" id="24_search_c"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/genome_search_H.jpg" id="25_search_h"]
+[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/genome_search_D.jpg" id="26_search_d"]
 
 [node name="ActivityVisualizationDropDown" type="BoxContainer"]
 script = ExtResource("2_script")
@@ -38,7 +42,16 @@ texture_pressed = ExtResource("16_insp_c")
 texture_hover = ExtResource("17_insp_h")
 texture_disabled = ExtResource("18_insp_d")
 
-[node name="GlobalNeuralConnections" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]
+[node name="GenomeSearch" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]
+layout_mode = 2
+theme_type_variation = &"TextureButton_TopBar"
+tooltip_text = "Search"
+texture_normal = ExtResource("23_search_s")
+texture_pressed = ExtResource("24_search_c")
+texture_hover = ExtResource("25_search_h")
+texture_disabled = ExtResource("26_search_d")
+
+[node name="GlobalNeuralConnections" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="1"]
 layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
 tooltip_text = "Connection inspector"
@@ -47,7 +60,7 @@ texture_pressed = ExtResource("4_eye_c")
 texture_hover = ExtResource("5_eye_h")
 texture_disabled = ExtResource("6_eye_d")
 
-[node name="VoxelInspector" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="1"]
+[node name="VoxelInspector" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="2"]
 layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
 tooltip_text = "Voxel inspector"
@@ -56,7 +69,7 @@ texture_pressed = ExtResource("8_voxel_c")
 texture_hover = ExtResource("9_voxel_h")
 texture_disabled = ExtResource("10_voxel_d")
 
-[node name="MemoryInspector" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="2"]
+[node name="MemoryInspector" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="3"]
 layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
 tooltip_text = "Memory inspector"
@@ -65,7 +78,7 @@ texture_pressed = ExtResource("12_mem_c")
 texture_hover = ExtResource("13_mem_h")
 texture_disabled = ExtResource("14_mem_d")
 
-[node name="CorticalInspector" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="3"]
+[node name="CorticalInspector" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="4"]
 layout_mode = 2
 theme_type_variation = &"TextureButton_TopBar"
 tooltip_text = "Cortical inspector"

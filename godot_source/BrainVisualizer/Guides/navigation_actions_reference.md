@@ -34,6 +34,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Zoom camera at double speed** -> Shift + mouse wheel, or Shift + trackpad scroll
 - **Move camera in X/Z plane** -> W/A/S/D or Arrow Keys
 - **Move camera faster** -> Hold Shift while moving (speed boost)
+- **Show every cortical area title in one view** -> Hold Shift while the pointer is inside that 3D view. Other views stay unlabeled. Titles hide again when Shift is released or the pointer leaves that view
 - **Frame the whole brain** -> Home (when mouse is over that Brain Monitor viewport). Faces the front
 - **Top view** -> T (mouse over that viewport)
 - **Bottom view** -> B (mouse over that viewport)

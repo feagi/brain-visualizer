@@ -820,14 +820,15 @@ func bv_update_friendly_name_label_positions() -> void:
 		_directpoints_renderer.bv_update_friendly_name_label_position()
 
 
-## Every area title, including invariant cores, stays hidden until hover or a focus arrow.
+## Every area title, including invariant cores, stays hidden until hover, a focus arrow, or a Shift hold over this view.
 static func friendly_name_label_always_visible_for(_area: AbstractCorticalArea) -> bool:
 	return AreaNameLabelVisibility.always_visible()
 
 
 ## True when the 3D area title should be drawn.
-static func friendly_name_label_should_show(_area: AbstractCorticalArea, volume_moused_over: bool, matches_bottom_hover_line: bool, focus_indicator_holding: bool = false) -> bool:
-	return AreaNameLabelVisibility.should_show(volume_moused_over, matches_bottom_hover_line, focus_indicator_holding)
+## [param reveal_all] draws every title in the view the pointer is over while Shift is held.
+static func friendly_name_label_should_show(_area: AbstractCorticalArea, volume_moused_over: bool, matches_bottom_hover_line: bool, focus_indicator_holding: bool = false, reveal_all: bool = false) -> bool:
+	return AreaNameLabelVisibility.should_show(volume_moused_over, matches_bottom_hover_line, focus_indicator_holding, reveal_all)
 
 
 ## Shows the area title for as long as one focus arrow points here.
@@ -850,15 +851,17 @@ func bv_friendly_name_label_always_visible() -> bool:
 func _update_friendly_name_label_visibility_for_hover() -> void:
 	_friendly_name_refresh_pending = false
 	var show_from_bottom_line := false
+	var reveal_all := false
 	if _representing_cortial_area != null:
 		var bm_scene := get_parent()
 		while bm_scene != null:
 			if bm_scene is UI_BrainMonitor_3DScene:
 				var s := bm_scene as UI_BrainMonitor_3DScene
 				show_from_bottom_line = s.brain_monitor_mouse_context_cortical_id() == _representing_cortial_area.cortical_ID
+				reveal_all = s.reveals_all_area_name_labels()
 				break
 			bm_scene = bm_scene.get_parent()
-	var show_area_name := friendly_name_label_should_show(_representing_cortial_area, _is_volume_moused_over, show_from_bottom_line, focus_indicator_holds_title)
+	var show_area_name := friendly_name_label_should_show(_representing_cortial_area, _is_volume_moused_over, show_from_bottom_line, focus_indicator_holds_title, reveal_all)
 	if _dda_renderer != null and _dda_renderer.get("_friendly_name_label") != null:
 		(_dda_renderer.get("_friendly_name_label") as Label3D).visible = show_area_name
 	if _directpoints_renderer != null and _directpoints_renderer.get("_friendly_name_label") != null:

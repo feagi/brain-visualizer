@@ -84,6 +84,12 @@ func _close_other_add_flow_windows(except_window_name: StringName) -> void:
 
 ## Opens the genome search window. Choosing a row uses the same action as the top-bar lists.
 func spawn_global_search() -> void:
+	if WindowGlobalSearch.WINDOW_NAME in loaded_windows:
+		var existing: WindowGlobalSearch = loaded_windows[WindowGlobalSearch.WINDOW_NAME] as WindowGlobalSearch
+		bring_window_to_top(existing)
+		if existing != null:
+			existing.focus_search()
+		return
 	var search_window: WindowGlobalSearch = _default_spawn_window(_PREFAB_GLOBAL_SEARCH, WindowGlobalSearch.WINDOW_NAME) as WindowGlobalSearch
 	search_window.setup()
 	bring_window_to_top(search_window)

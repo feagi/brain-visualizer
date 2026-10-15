@@ -875,6 +875,9 @@ func _update_monitor_tools_visibility() -> void:
 
 
 func _on_monitor_activity_mode_changed(action: StringName, enabled: bool) -> void:
+	if action == ActivityVisualizationDropDown.ACTION_GENOME_SEARCH:
+		BV.WM.spawn_global_search()
+		return
 	if _bm_scene == null:
 		return
 	if action != ActivityVisualizationDropDown.ACTION_VOXEL_INSPECTOR:

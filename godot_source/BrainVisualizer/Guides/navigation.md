@@ -106,7 +106,7 @@ Search lists those named objects: cortical areas, circuits, connectivity rules, 
 Click a row, or press **Enter** on the highlighted row. Search closes, then one of these happens:
 
 - **Cortical area** (core, input, output, memory, interconnect, or modulator): the camera moves to that area. An area that belongs to a sub-circuit opens that circuit's tab first, then the camera moves onto the area there. An area on the main circuit stays in the current view.
-- A red 3D arrow points at the area. The area title stays visible for as long as that arrow is showing. After the arrow goes away, the title follows the usual rule: hidden until the pointer is over the area, or until the bottom hover line names it.
+- A red 3D arrow points at the area. The area title stays visible for as long as that arrow is showing. After the arrow goes away, the title follows the usual rule: hidden until the pointer is over the area, until the bottom hover line names it, or while Shift is held with the pointer inside that 3D view. Other views stay unlabeled. Releasing Shift, or moving the pointer out of that view, hides the titles again.
 - **Circuit**: the current view moves to that circuit. Choosing a circuit keeps you in the current view.
 - **Connectivity rule**: the Connectivity Rules Manager opens with that rule shown.
 - **Classifier**: the classifier editor opens.
@@ -386,6 +386,7 @@ See [Split View](split_view.md) for more details.
 
 ### Essential Shortcuts
 
+- **Hold Shift** (pointer inside one Brain Monitor view): Show every cortical area title in that view. Other views stay unlabeled. Titles hide again when Shift is released or the pointer leaves that view
 - **T / B / F / L / R**: Top, bottom, front, left, and right camera views in Brain Monitor. The mouse must be over that viewport
 - **Home**: Frame the whole Brain Monitor from the front
 - **Arrow Keys**: Pan (2D) or Rotate (3D)

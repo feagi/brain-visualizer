@@ -70,6 +70,7 @@ Neural activity is visualized through:
 - **L**: Left view
 - **R**: Right view
 - **Home**: Frame the whole brain from the front
+- **Hold Shift**: Show every cortical area title in the 3D view the pointer is over. Other views stay unlabeled. Titles hide again when Shift is released or the pointer leaves that view
 - **Shift + Click**: Toggle voxel selection inside a cortical volume
 - **Shift + Left Drag**: Draw a rectangle to select multiple cortical areas
 - **Space**: Fire (stimulate) currently selected voxels once
@@ -94,6 +95,17 @@ Each cortical area appears as a 3D box with:
 - Active neurons highlight within the volume
 - Color intensity shows firing rate
 - Spatial patterns show which regions are processing
+
+### Area Titles
+
+Cortical area names stay off the volumes so the view stays readable.
+
+A title appears for one area when:
+- The pointer is over that area
+- The line at the bottom left names that area
+- A red focus arrow is pointing at that area
+
+**Hold Shift** while the pointer is inside one Brain Monitor view to show every title in that view, including titles that sit on top of each other. Other Brain Monitor views stay unlabeled. That includes other tabs and the floating inspect window. Release Shift, or move the pointer out of that view, and those titles hide again.
 
 ### Connection Lines
 
