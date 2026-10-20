@@ -233,6 +233,7 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Defines how neurons in source area connect to neurons in destination area
 - Uses a connectivity rule to determine connection pattern
 - Can be afferent, efferent, or recursive
+- In Brain Monitor, hover an area and hold Shift to keep its mapping lines. Click the count in the middle of a line to open the mapping editor
 - See also: [Connectivity Rule](#c), [Afferent Connection](#a), [Efferent Connection](#e)
 
 **Membrane Potential**
