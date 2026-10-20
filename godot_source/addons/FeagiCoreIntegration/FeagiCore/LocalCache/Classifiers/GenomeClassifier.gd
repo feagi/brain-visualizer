@@ -462,25 +462,27 @@ static func circuit_interior_button_enabled(is_classifier_circuit: bool) -> bool
 	return not is_classifier_circuit
 
 
-## A classifier circuit is the region that contains the classifier, even when the region summary omits the flag.
+## Close the interior only for a classifier circuit or a region that holds a classifier.
+## A memory named *_class_mem or *_sample_mem inside an ordinary circuit stays open.
+static func circuit_interior_closed(is_classifier_circuit: bool, holds_classifier: bool) -> bool:
+	return is_classifier_circuit or holds_classifier
+
+
+## A classifier circuit is the region FEAGI marks, or the region that holds the classifier.
+## Area names do not close an ordinary circuit.
 static func region_hides_interior(region: BrainRegion) -> bool:
 	if region == null:
 		return false
-	if region.is_classifier_circuit:
-		return true
-	if not region.contained_classifiers.is_empty():
-		return true
-	for area in region.contained_cortical_areas:
-		if area.is_classifier_sample_memory() or area.is_classifier_class_memory() or area.is_classifier_error_output() or area.is_classifier_class_output():
-			return true
-	var cache: FEAGILocalCache = _local_cache()
-	if cache == null:
-		return false
-	for classifier_id in cache.classifiers.keys():
-		var classifier: GenomeClassifier = cache.classifiers[classifier_id] as GenomeClassifier
-		if classifier != null and classifier.current_parent_region == region:
-			return true
-	return false
+	var holds_classifier := not region.contained_classifiers.is_empty()
+	if not holds_classifier:
+		var cache: FEAGILocalCache = _local_cache()
+		if cache != null:
+			for classifier_id in cache.classifiers.keys():
+				var classifier: GenomeClassifier = cache.classifiers[classifier_id] as GenomeClassifier
+				if classifier != null and classifier.current_parent_region == region:
+					holds_classifier = true
+					break
+	return circuit_interior_closed(region.is_classifier_circuit, holds_classifier)
 
 
 ## True when Circuit Builder must not spawn this area as a sibling cortical node.

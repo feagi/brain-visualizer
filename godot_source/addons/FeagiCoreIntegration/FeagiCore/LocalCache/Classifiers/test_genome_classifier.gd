@@ -430,6 +430,35 @@ func _test_classifier_circuit_interior_stays_closed() -> int:
 	if GenomeClassifier.region_hides_interior(null):
 		push_error("a missing region must not hide an interior")
 		return 1
+	if GenomeClassifier.circuit_interior_closed(false, false):
+		push_error("an ordinary circuit must stay open")
+		return 1
+	if not GenomeClassifier.circuit_interior_closed(true, false):
+		push_error("a classifier circuit must stay closed")
+		return 1
+	if not GenomeClassifier.circuit_interior_closed(false, true):
+		push_error("a region that holds a classifier must stay closed")
+		return 1
+	var classifier_source := FileAccess.get_file_as_string("res://addons/FeagiCoreIntegration/FeagiCore/LocalCache/Classifiers/GenomeClassifier.gd")
+	var hide_start := classifier_source.find("static func region_hides_interior")
+	var hide_end := classifier_source.find("static func should_hide_area_in_circuit_builder")
+	if hide_start < 0 or hide_end < hide_start:
+		push_error("region_hides_interior source block missing")
+		return 1
+	var hide_body := classifier_source.substr(hide_start, hide_end - hide_start)
+	if hide_body.find("is_classifier_class_memory") >= 0 or hide_body.find("is_classifier_sample_memory") >= 0 or hide_body.find("is_classifier_error_output") >= 0 or hide_body.find("is_classifier_class_output") >= 0 or hide_body.find("_class_mem") >= 0 or hide_body.find("_sample_mem") >= 0:
+		push_error("circuit interior must not close because an area looks like classifier memory")
+		return 1
+	var area_source := FileAccess.get_file_as_string("res://addons/FeagiCoreIntegration/FeagiCore/LocalCache/CorticalAreas/AbstractCorticalArea.gd")
+	var role_start := area_source.find("func is_classifier_sample_memory")
+	var role_end := area_source.find("func is_classifier_internal_memory")
+	if role_start < 0 or role_end < role_start:
+		push_error("classifier memory role source block missing")
+		return 1
+	var role_body := area_source.substr(role_start, role_end - role_start)
+	if role_body.find("ends_with") >= 0:
+		push_error("classifier memory must come from classifier_role, not the area name")
+		return 1
 	return 0
 
 

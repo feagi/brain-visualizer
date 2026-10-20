@@ -484,19 +484,15 @@ func is_classifier_error_output() -> bool:
 
 
 func is_classifier_sample_memory() -> bool:
-	if _classifier_role == &"sample_memory":
-		return true
-	return String(friendly_name).ends_with("_sample_mem")
+	return _classifier_role == &"sample_memory"
 
 
 func is_classifier_class_memory() -> bool:
-	if _classifier_role == &"class_memory":
-		return true
-	return String(friendly_name).ends_with("_class_mem")
+	return _classifier_role == &"class_memory"
 
 
 ## True for the sample and class memories of a classifier assembly.
-## Names are the post_classifier contract: `{name}_sample_mem` and `{name}_class_mem`.
+## The role comes from FEAGI. A name ending in _sample_mem or _class_mem is not enough.
 func is_classifier_internal_memory() -> bool:
 	return is_classifier_sample_memory() or is_classifier_class_memory()
 
