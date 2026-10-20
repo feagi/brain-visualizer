@@ -337,6 +337,7 @@ Press **K** anywhere outside a text field to open the full shortcuts table. Pres
 - **R**: Right view
 - **Home**: Frame the whole brain from the front
 - **Shift + WASD**: Move faster
+- **Hold Shift** over a cortical area: Keep its mapping lines after the pointer leaves. Click the count in the middle of a line to open the mapping editor
 - **Shift + Left Drag**: Box-select cortical areas
 - **Middle Drag** or **Option/Alt + Left Drag**: Orbit around the selection
 - **Right Drag**: Turn the camera in place
