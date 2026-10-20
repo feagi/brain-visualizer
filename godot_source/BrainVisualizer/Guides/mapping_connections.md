@@ -81,6 +81,15 @@ Create two-way connection:
 3. Or use bidirectional option if available
 4. Each direction can use different connectivity rule
 
+## Opening a Mapping from Brain Monitor
+
+1. Hover a cortical area so its incoming and outgoing mapping lines appear
+2. Hold **Shift**. The lines stay up after the pointer leaves the area
+3. Click the button in the middle of a line. The button shows how many mappings connect those two areas
+4. The mapping editor opens for that pair, the same window Circuit Builder opens from its connection button
+
+Release Shift and the lines hide, unless the pointer is still over the area.
+
 ## Mapping Editor
 
 The Mapping Editor is your detailed interface for configuring connections.
