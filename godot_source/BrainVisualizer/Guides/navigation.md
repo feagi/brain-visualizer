@@ -388,6 +388,7 @@ See [Split View](split_view.md) for more details.
 
 - **K**: Open or close the keyboard shortcuts table. Does not type into a text field. Escape also closes that window
 - **Hold Shift** (pointer inside one Brain Monitor view): Show every cortical area title in that view. Other views stay unlabeled. Titles hide again when Shift is released or the pointer leaves that view
+- **Hold Shift** over a cortical area: Keep its mapping lines after the pointer leaves. Each line shows a count of the mappings between the two areas. Click the count to open the mapping editor. Release Shift and the lines hide, unless the pointer is still over the area
 - **T / B / F / L / R**: Top, bottom, front, left, and right camera views in Brain Monitor. The mouse must be over that viewport
 - **Home**: Frame the whole Brain Monitor from the front
 - **Arrow Keys**: Pan (2D) or Rotate (3D)
@@ -401,6 +402,7 @@ See [Split View](split_view.md) for more details.
 
 - **Shift + Left Drag**: Draw a rectangle to select multiple cortical areas
 - **Ctrl + Click**: Add or remove a cortical area from multi-selection
+- **Hold Shift** over a cortical area: Keep its mapping lines, and click a line's count to open the mapping editor
 - **Shift + Click**: Toggle voxel selection (hold Shift, then click voxels)
 - **Space**: Fire selected voxels once (release Shift first if you were picking voxels)
 - **Shift + Space**: Continuously fire selected voxels until Space
