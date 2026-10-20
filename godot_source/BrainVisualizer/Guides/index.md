@@ -28,6 +28,8 @@ Edit and monitor the genome here. Use Neurorobotics Studio for a published model
 
 ## Quick Start
 
+Press **K** anywhere outside a text field to open the keyboard shortcuts. Press **K** or **Escape** to close that window.
+
 1. **Connect to FEAGI**: Brain Visualizer connects to a running FEAGI instance via WebSocket
 2. **Explore the Interface**: Use the Circuit Builder (2D view) and Brain Monitor (3D view) to navigate your genome
 3. **Create Neural Structures**: Add cortical areas, connect them, and organize them into regions

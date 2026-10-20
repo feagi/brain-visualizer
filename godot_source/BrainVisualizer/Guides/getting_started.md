@@ -2,6 +2,8 @@
 
 This guide will help you take your first steps with Brain Visualizer and understand the basic interface.
 
+Press **K** anywhere outside a text field to open the keyboard shortcuts. Press **K** or **Escape** to close that window.
+
 **New to FEAGI terminology?** Check the [Glossary](glossary.md) for definitions of terms like cortical areas, neurons, voxels, and more.
 
 ## Connecting to FEAGI
