@@ -63,11 +63,11 @@ func _test_role_visual_scale_matches_legacy_product() -> int:
 	if not is_equal_approx(SceneLabel3D.FONT_SIZE * SceneLabel3D.AREA_NAME_PIXEL_SIZE, SceneLabel3D.AREA_NAME_VISUAL_SCALE):
 		push_error("area name visual scale must stay font_size * pixel_size")
 		return 1
-	if SceneLabel3D.AREA_NAME_VISUAL_SCALE > SceneLabel3D.REGION_TITLE_VISUAL_SCALE:
-		push_error("area names must stay at or under the region title scale")
+	if not is_equal_approx(SceneLabel3D.AREA_NAME_VISUAL_SCALE, SceneLabel3D.REGION_TITLE_VISUAL_SCALE):
+		push_error("region titles must use the same screen size as area names")
 		return 1
 	if not is_equal_approx(SceneLabel3D.FONT_SIZE * SceneLabel3D.REGION_TITLE_PIXEL_SIZE, SceneLabel3D.REGION_TITLE_VISUAL_SCALE):
-		push_error("region title visual scale drifted from legacy 32 * 0.001")
+		push_error("region title visual scale must stay font_size * pixel_size")
 		return 1
 	if not is_equal_approx(SceneLabel3D.FONT_SIZE * SceneLabel3D.PLATE_TAG_PIXEL_SIZE, SceneLabel3D.PLATE_TAG_VISUAL_SCALE):
 		push_error("plate tag visual scale drifted from legacy 18 * 0.002")

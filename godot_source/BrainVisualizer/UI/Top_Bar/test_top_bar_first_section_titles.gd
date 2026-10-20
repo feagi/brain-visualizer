@@ -8,8 +8,10 @@ const Titles = preload("res://BrainVisualizer/UI/Top_Bar/TopBarFirstSectionTitle
 func _initialize() -> void:
 	var failures: int = 0
 	failures += _test_hides_only_when_the_labeled_bar_does_not_fit()
+	failures += _test_compression_drops_counts_before_the_refresh_label()
 	failures += _test_hidden_title_width_includes_the_gap()
 	failures += _test_category_title_label_finds_the_chip_text()
+	failures += _test_refresh_label_savings_is_the_dropped_words()
 	if failures == 0:
 		print("Top bar first-section title tests: PASS")
 		quit(0)
@@ -30,6 +32,31 @@ func _test_hides_only_when_the_labeled_bar_does_not_fit() -> int:
 		return 1
 	if Titles.should_hide(1200.0, 0.0):
 		push_error("An unknown window width must keep the titles")
+		return 1
+	return 0
+
+
+func _test_compression_drops_counts_before_the_refresh_label() -> int:
+	# full 1500, titles 200, counts 250, shortening the refresh label saves 80.
+	var full := 1500.0
+	var titles := 200.0
+	var counts := 250.0
+	var savings := 80.0
+	if Titles.compression_stage(1600.0, full, titles, counts, savings) != Titles.STAGE_FULL:
+		push_error("A bar that fits must keep titles, counts, and the refresh label")
+		return 1
+	if Titles.compression_stage(1400.0, full, titles, counts, savings) != Titles.STAGE_ICONS:
+		push_error("The first squeeze must drop category titles only")
+		return 1
+	if Titles.compression_stage(1100.0, full, titles, counts, savings) != Titles.STAGE_NO_COUNTS:
+		push_error("The next squeeze must hide neuron and synapse counts before touching refresh rate")
+		return 1
+	if Titles.compression_stage(1000.0, full, titles, counts, savings) != Titles.STAGE_SHORT_HZ:
+		push_error("Refresh rate shortens only after counts are already hidden")
+		return 1
+	# Stage 2 width is 1500 - 200 - 250 = 1050. Exact fit keeps the long refresh label.
+	if Titles.compression_stage(1050.0, full, titles, counts, savings) != Titles.STAGE_NO_COUNTS:
+		push_error("An exact fit after hiding counts must keep Refresh Rate (Hz)")
 		return 1
 	return 0
 
@@ -86,6 +113,35 @@ func _test_category_title_label_finds_the_chip_text() -> int:
 		return 1
 	if Titles.category_title_label(null, "InputsList") != null:
 		push_error("A missing row has no title")
+		row.queue_free()
+		return 1
+	row.queue_free()
+	return 0
+
+
+func _test_refresh_label_savings_is_the_dropped_words() -> int:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	var label := Label.new()
+	label.text = Titles.REFRESH_LABEL_FULL
+	var field := LineEdit.new()
+	field.text = "30"
+	row.add_child(label)
+	row.add_child(field)
+	root.add_child(row)
+	if not is_zero_approx(Titles.compact_refresh_extra_width(label, field)):
+		push_error("A visible refresh title is already inside the bar width")
+		row.queue_free()
+		return 1
+	label.visible = false
+	var extra: float = Titles.compact_refresh_extra_width(label, field)
+	var expected: float = Titles.hidden_title_slot_width(label)
+	if not is_equal_approx(extra, expected):
+		push_error("Compact refresh width must add the hidden title back without subtracting Hz")
+		row.queue_free()
+		return 1
+	if extra <= 0.0:
+		push_error("Dropping the refresh title must still save width")
 		row.queue_free()
 		return 1
 	row.queue_free()
