@@ -2289,12 +2289,9 @@ func _position_cortical_area_on_plate(cortical_viz: UI_BrainMonitor_CorticalArea
 		cortical_viz._directpoints_renderer._static_body.global_position = desired_world_pos
 		cortical_viz._directpoints_renderer.bv_update_friendly_name_label_position()
 
-	# If neural connections are currently shown (hover state), rebuild them to align pulses with new position
-	if cortical_viz._is_volume_moused_over:
-		if cortical_viz.has_method("_hide_neural_connections"):
-			cortical_viz._hide_neural_connections()
-		if cortical_viz.has_method("_show_neural_connections"):
-			cortical_viz._show_neural_connections()
+	# Rebuild lines that are on screen so a Shift hold follows the moved area.
+	if cortical_viz.has_method("refresh_neural_connections_if_shown"):
+		cortical_viz.refresh_neural_connections_if_shown()
 	
 	
 	# print("    📍 Positioned %s on plate %s at Z-offset %.1f" % [cortical_viz.cortical_area.cortical_ID, side_label, z_offset])  # Suppressed to reduce log overflow
