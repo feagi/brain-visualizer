@@ -3,7 +3,7 @@ class_name UI_BrainMonitor_SceneLabel3D
 ## Shared Label3D setup for BV 3D scene names.
 ## One MSDF font and modest font_size; role-specific pixel_size sets the size.
 ## Area names and region titles use fixed_size so a far title stays the same on-screen size. Plate tags do not.
-## Area names are capped at the top-bar Circuits / Inputs / Outputs font size.
+## Area names and region titles are capped at the top-bar Circuits / Inputs / Outputs font size.
 
 
 enum ROLE {
@@ -26,9 +26,9 @@ const REFERENCE_VIEWPORT_HEIGHT_PX: float = 1080.0
 
 ## Screen-constant title height. Godot fixed_size draws this world height as if the camera were 1 unit away,
 ## so the title stays readable when the area is far.
-## Region titles keep the legacy 32px * 0.001 height. Area names match the top-bar header on the reference frustum.
-const REGION_TITLE_VISUAL_SCALE: float = 32.0 * 0.001
+## Area names and region titles match the top-bar header on the reference frustum.
 const AREA_NAME_VISUAL_SCALE: float = 0.028419518
+const REGION_TITLE_VISUAL_SCALE: float = AREA_NAME_VISUAL_SCALE
 const PLATE_TAG_VISUAL_SCALE: float = 18.0 * 0.002
 const REGION_DESCRIPTION_VISUAL_SCALE: float = 24.0 * 0.001
 const REGION_DESCRIPTION_WRAP_WIDTH_PX: float = 960.0
