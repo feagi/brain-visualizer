@@ -71,6 +71,7 @@ Neural activity is visualized through:
 - **R**: Right view
 - **Home**: Frame the whole brain from the front
 - **Hold Shift**: Show every cortical area title in the 3D view the pointer is over. Other views stay unlabeled. Titles hide again when Shift is released or the pointer leaves that view
+- **Hold Shift** over a cortical area: Keep its incoming and outgoing mapping lines after the pointer leaves. A button in the middle of each line shows how many mappings connect the two areas. Click that button to open the mapping editor. Release Shift and the lines hide, unless the pointer is still over the area
 - **Shift + Click**: Toggle voxel selection inside a cortical volume
 - **Shift + Left Drag**: Draw a rectangle to select multiple cortical areas
 - **Space**: Fire (stimulate) currently selected voxels once
@@ -109,7 +110,10 @@ A title appears for one area when:
 
 ### Connection Lines
 
-When hovering over or selecting a cortical area:
+When the pointer is over a cortical area, that area's incoming and outgoing mapping lines are drawn.
+
+Hold **Shift** to keep those lines after the pointer leaves the area. While Shift is held, each line has a button at its midpoint with the number of mappings between the two areas. Click the button to open the mapping editor, the same window Circuit Builder opens from its connection button. Release Shift and the lines hide again, unless the pointer is still over the area.
+
 - **Outgoing connections**: Lines from this area to others
 - **Incoming connections**: Lines from other areas to this
 - **Connection strength**: Line thickness or opacity
