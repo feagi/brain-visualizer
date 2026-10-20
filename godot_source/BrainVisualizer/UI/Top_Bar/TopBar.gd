@@ -66,10 +66,10 @@ func _ready():
 	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme)
 	BV.UI.theme_changed.connect(_theme_updated)
 	_theme_updated(BV.UI.loaded_theme)
-	resized.connect(_sync_first_section_titles)
-	if is_inside_tree() and not get_viewport().size_changed.is_connected(_sync_first_section_titles):
-		get_viewport().size_changed.connect(_sync_first_section_titles)
-	call_deferred("_sync_first_section_titles")
+	resized.connect(_sync_top_bar_fit)
+	if is_inside_tree() and not get_viewport().size_changed.is_connected(_sync_top_bar_fit):
+		get_viewport().size_changed.connect(_sync_top_bar_fit)
+	call_deferred("_sync_top_bar_fit")
 	FeagiCore.about_to_reload_genome.connect(_on_genome_about_to_reload)
 	toggle_buttons_interactability(false)
 
@@ -451,31 +451,93 @@ func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
 	_sync_refresh_rate_background_style()
 	_apply_root_combo_row_heights()
-	call_deferred("_sync_first_section_titles")
+	call_deferred("_sync_top_bar_fit")
 
 
-var _first_section_titles_hidden: bool = false
-var _syncing_first_section_titles: bool = false
+var _top_bar_fit_stage: int = FirstSectionTitles.STAGE_FULL
+var _syncing_top_bar_fit: bool = false
+var _top_bar_fit_apply_queued: bool = false
 
 
-## Drops Circuits, Inputs, Outputs, Connectivity Rules, and Modulators to icons when the bar does not fit.
-func _sync_first_section_titles() -> void:
-	if _syncing_first_section_titles or not is_inside_tree():
+## Compresses the bar in order: category titles, neuron and synapse counts, then the refresh label.
+func _sync_top_bar_fit() -> void:
+	if _syncing_top_bar_fit or not is_inside_tree():
 		return
 	var viewport := get_viewport()
 	if viewport == null:
 		return
 	var available: float = viewport.get_visible_rect().size.x - position.x
 	var full_width: float = get_combined_minimum_size().x
+	var title_width: float = 0.0
 	for label in _first_section_title_labels():
+		title_width += FirstSectionTitles.control_slot_width(label)
 		full_width += FirstSectionTitles.hidden_title_slot_width(label)
-	var hide: bool = FirstSectionTitles.should_hide(full_width, available)
-	if hide == _first_section_titles_hidden:
+	var count_width: float = 0.0
+	for row in _count_rows():
+		count_width += FirstSectionTitles.control_slot_width(row)
+		full_width += FirstSectionTitles.hidden_title_slot_width(row)
+	var refresh_label := _refresh_rate_label()
+	var refresh_savings: float = FirstSectionTitles.control_slot_width(refresh_label)
+	full_width += FirstSectionTitles.compact_refresh_extra_width(refresh_label, _refresh_rate_field)
+	var stage: int = FirstSectionTitles.compression_stage(available, full_width, title_width, count_width, refresh_savings)
+	if stage == _top_bar_fit_stage:
 		return
-	_syncing_first_section_titles = true
-	_first_section_titles_hidden = hide
-	_set_first_section_titles_visible(not hide)
-	_syncing_first_section_titles = false
+	_top_bar_fit_stage = stage
+	if _top_bar_fit_apply_queued:
+		return
+	_top_bar_fit_apply_queued = true
+	call_deferred("_apply_queued_top_bar_fit")
+
+
+## Layout changes emit resized. Applying them inside that handler re-enters the container and crashes.
+func _apply_queued_top_bar_fit() -> void:
+	_top_bar_fit_apply_queued = false
+	_syncing_top_bar_fit = true
+	_apply_top_bar_fit_stage(_top_bar_fit_stage)
+	_syncing_top_bar_fit = false
+	_sync_top_bar_fit()
+
+
+func _apply_top_bar_fit_stage(stage: int) -> void:
+	_set_first_section_titles_visible(stage == FirstSectionTitles.STAGE_FULL)
+	for row in _count_rows():
+		row.visible = stage < FirstSectionTitles.STAGE_NO_COUNTS
+	_apply_refresh_compact(stage == FirstSectionTitles.STAGE_SHORT_HZ)
+
+
+## Hides the refresh title and shows the value as 30Hz. Focus shows the number alone.
+func _apply_refresh_compact(compact: bool) -> void:
+	var refresh_label := _refresh_rate_label()
+	if refresh_label != null:
+		refresh_label.visible = not compact
+		if not compact:
+			refresh_label.text = FirstSectionTitles.REFRESH_LABEL_FULL
+	if _refresh_rate_field == null:
+		return
+	var suffix := FirstSectionTitles.REFRESH_VALUE_SUFFIX if compact else ""
+	if _refresh_rate_field.suffix == suffix:
+		return
+	_refresh_rate_field.suffix = suffix
+	if _refresh_rate_field.has_focus():
+		return
+	_refresh_rate_field.set_value_from_text(str(_refresh_rate_field.current_float))
+
+
+func _count_rows() -> Array[Control]:
+	var rows: Array[Control] = []
+	var paths: Array[NodePath] = [
+		NodePath("DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"),
+		NodePath("DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3"),
+	]
+	for path in paths:
+		var row := get_node_or_null(path) as Control
+		if row != null:
+			rows.append(row)
+	return rows
+
+
+func _refresh_rate_label() -> Label:
+	return get_node_or_null("DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer/RR_Label") as Label
 
 
 func _set_first_section_titles_visible(show_titles: bool) -> void:
