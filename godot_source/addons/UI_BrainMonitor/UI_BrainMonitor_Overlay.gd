@@ -2,7 +2,10 @@ extends BoxContainer
 class_name UI_BrainMonitor_Overlay
 ## UI overlay for Brain Monitor
 
+const MappingHoverHold = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_MappingHoverHold.gd")
+
 var _mouse_context_label: Label
+var _mapping_count_buttons: Dictionary = {}
 var _fdp_deserializer: Object = null
 var _box_select_rect: Rect2 = Rect2()
 var _box_select_visible: bool = false
@@ -224,6 +227,84 @@ func _draw() -> void:
 		return
 	draw_rect(_box_select_rect, BOX_SELECT_FILL, true)
 	draw_rect(_box_select_rect, BOX_SELECT_BORDER, false, 1.5)
+
+
+## Screen-space count buttons, one per visible mapping line, while Shift is held.
+## [param specs] entries carry world_position, count, source, and destination.
+func sync_mapping_count_buttons(specs: Array[Dictionary], camera: Camera3D) -> void:
+	var canvas := get_parent()
+	if canvas == null or camera == null:
+		_clear_mapping_count_buttons()
+		return
+	var viewport := camera.get_viewport()
+	if viewport == null:
+		_clear_mapping_count_buttons()
+		return
+	var viewport_size := viewport.get_visible_rect().size
+	var seen: Dictionary = {}
+	for spec in specs:
+		var source: AbstractCorticalArea = spec.get("source") as AbstractCorticalArea
+		var destination: AbstractCorticalArea = spec.get("destination") as AbstractCorticalArea
+		if source == null or destination == null:
+			continue
+		var count := int(spec.get("count", 0))
+		if count <= 0:
+			continue
+		var world: Vector3 = spec.get("world_position", Vector3.ZERO)
+		var key := "%s->%s" % [String(source.cortical_ID), String(destination.cortical_ID)]
+		seen[key] = true
+		var button := _mapping_count_buttons.get(key) as Button
+		if button == null:
+			button = _create_mapping_count_button(source, destination)
+			_mapping_count_buttons[key] = button
+			canvas.add_child(button)
+		var label := MappingHoverHold.count_button_label(count)
+		if button.text != label:
+			button.text = label
+		button.size = button.get_combined_minimum_size()
+		if camera.is_position_behind(world):
+			button.visible = false
+			continue
+		var screen := camera.unproject_position(world)
+		var on_screen := screen.x >= -button.size.x and screen.y >= -button.size.y and screen.x <= viewport_size.x + button.size.x and screen.y <= viewport_size.y + button.size.y
+		button.visible = on_screen
+		button.position = screen - button.size * 0.5
+	var stale: Array[String] = []
+	for existing_key in _mapping_count_buttons.keys():
+		if not seen.has(existing_key):
+			stale.append(String(existing_key))
+	for stale_key in stale:
+		var old_button: Button = _mapping_count_buttons.get(stale_key) as Button
+		_mapping_count_buttons.erase(stale_key)
+		if old_button != null:
+			old_button.queue_free()
+
+
+func _create_mapping_count_button(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> Button:
+	var button := Button.new()
+	button.name = "MappingCountButton"
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.z_index = 30
+	button.pressed.connect(_on_mapping_count_button_pressed.bind(source, destination))
+	return button
+
+
+func _on_mapping_count_button_pressed(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> void:
+	if source == null or destination == null:
+		return
+	if BV == null or BV.UI == null or BV.UI.window_manager == null:
+		return
+	BV.UI.window_manager.spawn_mapping_editor(source, destination)
+
+
+func _clear_mapping_count_buttons() -> void:
+	for existing_key in _mapping_count_buttons.keys():
+		var old_button: Button = _mapping_count_buttons[existing_key] as Button
+		if old_button != null:
+			old_button.queue_free()
+	_mapping_count_buttons.clear()
 
 
 ## Clear all text
