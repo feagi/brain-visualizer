@@ -1231,6 +1231,18 @@ func _attach_hover_warning(plate_node: MeshInstance3D, warning_text: String) -> 
 	warn.position = Vector3(0, 2.0, 0)
 	plate_node.add_child(warn)
 
+## Matches the region title's on-screen em to the top-bar header. Does not change visibility.
+func apply_region_title_pixel_size(pixel_size: float) -> void:
+	if pixel_size <= 0.0 or _region_name_label == null or not is_instance_valid(_region_name_label):
+		return
+	var current_pixel_size: float = _region_name_label.pixel_size
+	if current_pixel_size > 0.0 and absf(current_pixel_size - pixel_size) / current_pixel_size <= 0.02:
+		return
+	_region_name_label.pixel_size = pixel_size
+	if _description_hover_label != null and is_instance_valid(_description_hover_label) and _description_hover_label.visible:
+		_place_description_hover_label()
+
+
 ## Shared region-title Label3D. Callers parent and position it.
 func _make_region_name_label() -> Label3D:
 	var label := SceneLabel3D.create(
