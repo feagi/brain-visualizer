@@ -49,7 +49,7 @@ Sub-regions appear as larger boxes that can contain cortical areas and other sub
 ### Connection Lines
 
 Lines between nodes represent neural mappings:
-- Click on a line to view or edit mapping properties
+- A button in the middle of each line shows how many mappings connect the two areas. Click it to open the mapping editor
 - Multiple lines between the same areas indicate different mapping types
 - **Green**: excitatory
 - **Red**: inhibitory
@@ -220,7 +220,7 @@ See [Quick Menu](quick_menu.md) for complete details.
 ### Connection Visualization
 
 - **Hover over area**: See all connections to/from that area highlighted
-- **Click connection line**: View mapping properties
+- **Click the count on a connection line**: Open the mapping editor for that pair
 - **Follow connections**: Visual indicators show data flow direction
 
 ### Recursive Connections
@@ -267,6 +267,7 @@ Select multiple areas to perform bulk operations:
 Circuit Builder and Brain Monitor are tightly integrated:
 
 - **Selection Sync**: Selecting in one view highlights in the other (including Brain Monitor **Shift + Left Drag** box select)
+- **Mapping lines**: In Brain Monitor, hover an area and hold **Shift**. Each line shows the same mapping count as Circuit Builder. Click the count to open the mapping editor
 - **Focus Sync**: Focusing on an area in one view focuses in the other
 - **Split View**: View both simultaneously for best workflow
 
