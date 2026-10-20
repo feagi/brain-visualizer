@@ -10,6 +10,7 @@ const CameraOrbitLib = preload("res://addons/UI_BrainMonitor/CameraOrbit.gd")
 const QuickConnectDestinationPickLib = preload("res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectDestinationPick.gd")
 const IsolatedAreaInspectLib = preload("res://addons/UI_BrainMonitor/IsolatedAreaInspect.gd")
 const GenomeClassifierLib = preload("res://addons/FeagiCoreIntegration/FeagiCore/LocalCache/Classifiers/GenomeClassifier.gd")
+const MappingHoverHold = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_MappingHoverHold.gd")
 
 @export var multi_select_key: Key = KEY_SHIFT
 
@@ -137,14 +138,14 @@ func hide_live_voxel_inspector() -> void:
 		_UI_layer_for_BM.hide_live_inspector()
 
 
-## Hides area-to-area mapping curves, or restores them on areas that are still hovered.
+## Hides area-to-area mapping curves, or restores them on areas that are still hovered or Shift-held.
 func set_cortical_mapping_curves_suppressed(suppressed: bool) -> void:
 	for cortical_viz in _cortical_visualizations_by_ID.values():
 		if cortical_viz == null or not is_instance_valid(cortical_viz):
 			continue
 		if suppressed:
 			cortical_viz._hide_neural_connections()
-		elif cortical_viz._is_volume_moused_over:
+		elif cortical_viz.neural_connections_should_show():
 			cortical_viz._show_neural_connections()
 
 
@@ -943,6 +944,9 @@ func _compute_world_aabb(node: Node) -> AABB:
 	return aabb
 
 var _scroll_fast_modifier_held: bool = false
+var _mapping_shift_was_held: bool = false
+var _mapping_pinned_cortical_id: StringName = &""
+var _mapping_count_buttons_active: bool = false
 
 
 ## Shift held in the main window. The 3D view's own input state does not see that key.
@@ -983,6 +987,52 @@ func _process(delta: float) -> void:
 		_enter_key_latched = enter_down
 	else:
 		_enter_key_latched = false
+	_sync_mapping_hover_hold()
+
+
+## Pins the hovered area's mapping lines while Shift is held, and keeps count buttons on those lines.
+func _sync_mapping_hover_hold() -> void:
+	var shift_held := is_scroll_fast_modifier_held()
+	var just_pressed := shift_held and not _mapping_shift_was_held
+	_mapping_shift_was_held = shift_held
+	var hovered_id := _hovered_cortical_id_for_mapping_hold()
+	var next_pin := MappingHoverHold.next_pinned_cortical_id(hovered_id, _mapping_pinned_cortical_id, shift_held, just_pressed)
+	if next_pin != _mapping_pinned_cortical_id or next_pin != &"":
+		_apply_mapping_line_pin(next_pin)
+	_mapping_pinned_cortical_id = next_pin
+	if shift_held or _mapping_count_buttons_active:
+		_sync_mapping_count_buttons(shift_held)
+
+
+func _hovered_cortical_id_for_mapping_hold() -> StringName:
+	for volume in _previously_moused_over_volumes:
+		if volume != null and is_instance_valid(volume) and volume.cortical_area != null:
+			return volume.cortical_area.cortical_ID
+	return &""
+
+
+func _apply_mapping_line_pin(pinned_id: StringName) -> void:
+	for viz in _cortical_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
+		var pinned: bool = pinned_id != &"" and viz.cortical_area != null and viz.cortical_area.cortical_ID == pinned_id
+		viz.set_shift_pin_holds_connections(pinned)
+
+
+func _sync_mapping_count_buttons(shift_held: bool) -> void:
+	if _UI_layer_for_BM == null or _pancake_cam == null:
+		return
+	var specs: Array[Dictionary] = []
+	if shift_held:
+		for viz in _cortical_visualizations_by_ID.values():
+			if viz == null or not is_instance_valid(viz):
+				continue
+			if not MappingHoverHold.should_show_count_buttons(viz.neural_connections_visible(), true):
+				continue
+			specs.append_array(viz.mapping_count_button_specs())
+	_mapping_count_buttons_active = not specs.is_empty()
+	_UI_layer_for_BM.sync_mapping_count_buttons(specs, _pancake_cam)
+
 
 ## True when mouse is over gizmo action handle (close/accept) or axis.
 func _is_mouse_over_gizmo() -> bool:
@@ -5455,12 +5505,10 @@ func _perform_coalesced_cache_rebuild() -> void:
 	_rebuild_cortical_visualizations_after_cache_touch()
 	_refresh_existing_region_plates_after_cortical_rebuild()
 	_ensure_external_io_plates()
-	# Force refresh connections for all currently hovered cortical areas (post-rebuild on fresh nodes).
+	# Force refresh connections for hovered areas and any Shift-held mapping lines.
 	for cortical_viz in _cortical_visualizations_by_ID.values():
 		if cortical_viz != null and is_instance_valid(cortical_viz):
-			if cortical_viz._is_volume_moused_over:
-				cortical_viz._hide_neural_connections()
-				cortical_viz._show_neural_connections()
+			cortical_viz.refresh_neural_connections_if_shown()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 	_schedule_core_cluster_layout_refresh()
 	_schedule_modulator_plate_refresh()
@@ -5683,10 +5731,7 @@ func _on_mappings_reloaded_refresh_connections() -> void:
 	var refreshed_count = 0
 	for cortical_viz in _cortical_visualizations_by_ID.values():
 		if cortical_viz != null and is_instance_valid(cortical_viz):
-			# Refresh connection curves only when hovered to avoid heavy rebuilds.
-			if cortical_viz._is_volume_moused_over:
-				cortical_viz._hide_neural_connections()
-				cortical_viz._show_neural_connections()
+			if cortical_viz.refresh_neural_connections_if_shown():
 				refreshed_count += 1
 			cortical_viz._refresh_io_direction_indicator()
 	print("BrainMonitor 3D Scene: ✅ Mapping refresh updated %d hovered areas" % refreshed_count)
@@ -5702,8 +5747,7 @@ func force_create_missing_regions() -> void:
 			# Hide any existing connections
 			cortical_viz._hide_neural_connections()
 			
-			# If this area is currently hovered, show refreshed connections
-			if cortical_viz._is_volume_moused_over:
+			if cortical_viz.neural_connections_should_show():
 				cortical_viz._show_neural_connections()
 				refreshed_count += 1
 	
