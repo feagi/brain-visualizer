@@ -371,7 +371,7 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 **Split View**
 - Feature allowing side-by-side or stacked windows
 - Can display Circuit Builder and Brain Monitor simultaneously
-- Supports horizontal and vertical splits
+- Supports horizontal and vertical splits. **1** shows the main 3D scene, **2** is vertical, **3** is horizontal. Closing keeps the tabs
 - Independent camera and navigation per view
 
 **Synapse**

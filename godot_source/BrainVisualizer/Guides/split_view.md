@@ -62,14 +62,24 @@ The easiest way to enter split view:
 
 Both panels show the same region from different perspectives.
 
-### Method 2: Manual Split
+### Method 2: Keyboard
+
+Anywhere except a text field:
+
+- **1**: Show only the main 3D scene. An open split closes. Its tabs stay, so **2** or **3** brings the same tabs back
+- **2**: Vertical split. The main 3D scene is beside the split tabs
+- **3**: Horizontal split. The main 3D scene is above the split tabs
+
+Ctrl/Cmd with **1**, **2**, or **3** is unchanged: hold that chord and click a cortical area to frame it. Press **K** for the full shortcuts table.
+
+### Method 3: Manual Split
 
 Create split view manually:
 
 1. Hover **Split view** on the root scene top bar
 2. Choose Circuit Builder, Brain Monitor, vertical split, or horizontal split
 
-### Method 3: View Controls
+### Method 4: View Controls
 
 Some versions have dedicated view buttons:
 - Icon to toggle split view
@@ -78,28 +88,32 @@ Some versions have dedicated view buttons:
 
 ## Split View Layouts
 
-### Horizontal Split (Side-by-Side)
+### Vertical Split (Side-by-Side)
 
-![Horizontal Split Icon](../UI/GenericResources/ButtonIcons/horiozontal_split_C.png)
-
-Circuit Builder | Brain Monitor
-- Left panel: Circuit Builder
-- Right panel: Brain Monitor
-- Good for wide screens
-- Most common layout
-
-### Vertical Split (Top-Bottom)
+Press **2**, or choose the vertical split button.
 
 ![Vertical Split Icon](../UI/GenericResources/ButtonIcons/vertical_split_C.png)
 
+Main 3D scene | Split tabs
+- Left panel: main 3D scene
+- Right panel: the open split tabs
+- Good for wide screens
+- Most common layout
+
+### Horizontal Split (Stacked)
+
+Press **3**, or choose the horizontal split button.
+
+![Horizontal Split Icon](../UI/GenericResources/ButtonIcons/horiozontal_split_C.png)
+
 ```
-Circuit Builder (Top)
+Main 3D scene (Top)
 -------------------
-Brain Monitor (Bottom)
+Split tabs (Bottom)
 ```
 
-- Top panel: Circuit Builder
-- Bottom panel: Brain Monitor
+- Top panel: main 3D scene
+- Bottom panel: the open split tabs
 - Good for tall screens or stacked monitors
 
 ### Adjusting Split Ratio
@@ -202,7 +216,7 @@ Each panel can have multiple tabs:
 ### Layout Recommendations
 
 **Widescreen (16:9 or wider):**
-- Use horizontal split (side-by-side)
+- Use vertical split (side-by-side)
 - 50/50 or give more space to whichever you use more
 - Room for both views comfortably
 
@@ -280,9 +294,9 @@ For genomes with many areas:
 ### Return to Single View
 
 **Method 1:**
-- Hover **Split view** on the root scene top bar and choose Circuit Builder or Brain Monitor
-- Returns to Circuit Builder only
-- Or Brain Monitor only (depending on last active)
+- Press **1**, or hover **Split view** on the root scene top bar and choose Brain Monitor
+- Shows only the main 3D scene
+- Split tabs stay in place and come back with **2** or **3**
 
 **Method 2:**
 - Close all tabs in one panel

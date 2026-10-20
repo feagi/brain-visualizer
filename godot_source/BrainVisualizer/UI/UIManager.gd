@@ -2059,6 +2059,21 @@ func _input(event):
 				get_viewport().set_input_as_handled()
 				_toggle_keybinds()
 				return
+			var split_digit: int = KeybindCatalog.split_layout_digit(
+				keyboard_event.keycode,
+				keyboard_event.physical_keycode,
+				keyboard_event.ctrl_pressed or keyboard_event.meta_pressed,
+				keyboard_event.shift_pressed,
+				keyboard_event.alt_pressed,
+				true,
+				false
+			)
+			if split_digit != 0:
+				if _keybinds_shortcut_blocked_by_text():
+					return
+				get_viewport().set_input_as_handled()
+				_apply_split_layout_digit(split_digit)
+				return
 			var history_shortcut: StringName = GenomeHistory.history_shortcut(
 				keyboard_event.keycode,
 				keyboard_event.ctrl_pressed or keyboard_event.meta_pressed,
@@ -2130,6 +2145,20 @@ func _open_circuit_brain_monitor(region: BrainRegion) -> UI_BrainMonitor_3DScene
 		return null
 	_root_UI_view.show_or_create_CB_of_region(region, primary_tab_container)
 	return _root_UI_view.show_or_create_BM_of_region(region, secondary_tab_container)
+
+
+## 1 hides the split, 2 opens a vertical split, 3 opens a horizontal split.
+## Hiding only collapses the container, so the circuit and monitor tabs remain.
+func _apply_split_layout_digit(digit: int) -> void:
+	var state: int = KeybindCatalog.split_state_for_digit(digit)
+	if state < 0:
+		return
+	var temp_split: TempSplit = get_node_or_null("CB_Holder") as TempSplit
+	if temp_split == null or int(temp_split.current_state) == state:
+		return
+	temp_split.set_view(state as TempSplit.STATES)
+	if _top_bar != null:
+		_top_bar.show_split_view_state(state as TempSplit.STATES)
 
 
 ## K opens the shortcuts table. The same key closes it when it is already open.

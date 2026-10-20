@@ -26,6 +26,46 @@ static func is_keybinds_shortcut(
 	return keycode == KEY_K or physical_keycode == KEY_K
 
 
+## Bare 1, 2, or 3, including the keypad. 0 means this is not a split-layout shortcut.
+## Ctrl/Cmd+1/2/3 stays available for framing a cortical area.
+static func split_layout_digit(
+	keycode: Key,
+	physical_keycode: Key,
+	with_command: bool,
+	shift_pressed: bool,
+	alt_pressed: bool,
+	pressed: bool,
+	echo: bool,
+) -> int:
+	if not pressed or echo or with_command or shift_pressed or alt_pressed:
+		return 0
+	if _is_digit_key(keycode, physical_keycode, KEY_1, KEY_KP_1):
+		return 1
+	if _is_digit_key(keycode, physical_keycode, KEY_2, KEY_KP_2):
+		return 2
+	if _is_digit_key(keycode, physical_keycode, KEY_3, KEY_KP_3):
+		return 3
+	return 0
+
+
+## Layout for a split digit. 1 hides the split, 2 is side by side, 3 is stacked.
+## Returns -1 when [param digit] is not 1, 2, or 3.
+static func split_state_for_digit(digit: int) -> int:
+	match digit:
+		1:
+			return TempSplit.STATES.CB_CLOSED
+		2:
+			return TempSplit.STATES.CB_HORIZONTAL
+		3:
+			return TempSplit.STATES.CB_VERTICAL
+		_:
+			return -1
+
+
+static func _is_digit_key(keycode: Key, physical_keycode: Key, top_row: Key, keypad: Key) -> bool:
+	return keycode == top_row or physical_keycode == top_row or keycode == keypad or physical_keycode == keypad
+
+
 ## A focused text field should receive K as a character.
 static func focus_blocks_keybinds(focus_owner: Control) -> bool:
 	return focus_owner is LineEdit or focus_owner is TextEdit
@@ -40,6 +80,9 @@ static func entries() -> Array[Dictionary]:
 		_row("App", "Shift + Ctrl/Cmd + Z", "Redo", "Anywhere except a text field"),
 		_row("App", "Escape", "Stop Inspector when that button is showing. Otherwise close the front window, or cancel a move, a box select, or the current selection", "Anywhere"),
 		_row("App", "Enter", "Confirm the open dialog, or confirm a move or resize", "Dialogs and Brain Monitor"),
+		_row("App", "1", "Show only the main 3D scene. Split tabs stay ready to reopen", "Anywhere except a text field"),
+		_row("App", "2", "Switch to a vertical split", "Anywhere except a text field"),
+		_row("App", "3", "Switch to a horizontal split", "Anywhere except a text field"),
 		_row("Selection", "Ctrl/Cmd + C", "Copy the selected voxels", "At least one voxel is selected"),
 		_row("Selection", "Ctrl/Cmd + V", "Paste copied voxels into the area under the pointer", "Brain Monitor"),
 		_row("Selection", "Ctrl/Cmd + click", "Add or remove that cortical area from the selection", "Brain Monitor"),

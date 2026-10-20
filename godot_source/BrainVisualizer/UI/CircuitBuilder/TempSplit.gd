@@ -69,6 +69,7 @@ func set_view(state: STATES) -> void:
 	_current_state = state
 	match state:
 		STATES.CB_CLOSED:
+			# Hide only. Children, including split tabs, stay so the next open restores them.
 			visible = false
 		STATES.CB_FULL:
 			visible = true

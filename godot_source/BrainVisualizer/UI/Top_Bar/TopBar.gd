@@ -200,6 +200,15 @@ func _user_on_burst_delay_change(new_refresh_rate_hz: float) -> void:
 func _view_selected(new_state: TempSplit.STATES) -> void:
 	request_UI_mode.emit(new_state)
 
+
+## Matches the split-view icon to a layout chosen from the keyboard.
+## Does not emit [signal request_UI_mode], so the layout is not applied twice.
+func show_split_view_state(state: TempSplit.STATES) -> void:
+	var split_toggle: ToggleImageDropDown = $TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown/ToggleImageDropDown as ToggleImageDropDown
+	if split_toggle == null:
+		return
+	split_toggle.set_option(int(state), false)
+
 func _open_inputs() -> void:
 	var items := _build_topbar_cortical_items(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
 	_open_dropdown_for_items($Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList, items, "Filter inputs...", func(area: AbstractCorticalArea):

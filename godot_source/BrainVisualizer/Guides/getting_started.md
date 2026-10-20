@@ -149,7 +149,7 @@ For the best workflow, use **Split View** to see both Circuit Builder and Brain 
 2. Select **Open 3D Tab** from the Quick Menu
 3. The interface will split, showing both views side-by-side
 
-Alternatively, use the view controls in the top-left of the Circuit Builder tab.
+Alternatively, press **2** for a vertical split or **3** for a horizontal split. **1** returns to the main 3D scene and keeps the split tabs. The same choices are on the split view control in the top bar.
 
 See [Split View](split_view.md) for more details.
 

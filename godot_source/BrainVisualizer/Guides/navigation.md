@@ -387,6 +387,9 @@ See [Split View](split_view.md) for more details.
 ### Essential Shortcuts
 
 - **K**: Open or close the keyboard shortcuts table. Does not type into a text field. Escape also closes that window
+- **1**: Show only the main 3D scene. Closes a split and keeps its tabs for the next open. Does not type into a text field
+- **2**: Vertical split. The main 3D scene sits beside the split tabs
+- **3**: Horizontal split. The main 3D scene sits above the split tabs
 - **Hold Shift** (pointer inside one Brain Monitor view): Show every cortical area title in that view. Other views stay unlabeled. Titles hide again when Shift is released or the pointer leaves that view
 - **Hold Shift** over a cortical area: Keep its mapping lines after the pointer leaves. Each line shows a count of the mappings between the two areas. Click the count to open the mapping editor. Release Shift and the lines hide, unless the pointer is still over the area
 - **T / B / F / L / R**: Top, bottom, front, left, and right camera views in Brain Monitor. The mouse must be over that viewport

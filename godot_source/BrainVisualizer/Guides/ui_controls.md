@@ -133,6 +133,7 @@ The main toolbar provides quick access to essential features:
 - On the root scene top bar
 - Opens on hover
 - Circuit Builder, Brain Monitor, vertical split, and horizontal split
+- **1** shows only the main 3D scene and keeps the split tabs. **2** is a vertical split. **3** is a horizontal split
 
 **Inspectors Button:**
 - On the root scene top bar and the Brain Monitor tab bar
@@ -310,7 +311,7 @@ See [Split View](split_view.md) for details.
 - Medium or Large UI scale
 - Split View with 50/50 ratio
 - Multiple tabs open
-- Horizontal split layout
+- Vertical split (side by side)
 
 ### For Small Displays
 

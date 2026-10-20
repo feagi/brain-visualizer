@@ -576,21 +576,66 @@ func _post_initial_build_sync() -> void:
 	_generated_io_coordinates = generate_io_coordinates_for_brain_region(_representing_region)
 	_recalculate_plates_and_positioning_after_dimension_change()
 
+func _io_dimensions_callback(cortical_id: StringName) -> Callable:
+	return _on_io_cortical_area_dimensions_changed.bind(cortical_id)
+
+
+## Drop the plate dimension subscription. Scene-root volumes keep their own renderer handlers.
+func _disconnect_plate_dimension_handler(area: AbstractCorticalArea) -> void:
+	if area == null:
+		return
+	var dimensions_cb := _io_dimensions_callback(area.cortical_ID)
+	if area.dimensions_3D_updated.is_connected(dimensions_cb):
+		area.dimensions_3D_updated.disconnect(dimensions_cb)
+
+
+func _disconnect_plate_dimension_handler_by_id(cortical_id: StringName) -> void:
+	if cortical_id == &"":
+		return
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null or FeagiCore.feagi_local_cache.cortical_areas == null:
+		return
+	var areas: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
+	if cortical_id not in areas:
+		return
+	var area: Variant = areas[cortical_id]
+	if area is AbstractCorticalArea:
+		_disconnect_plate_dimension_handler(area as AbstractCorticalArea)
+
+
+## Plate dictionary, then the live input/output/conflict containers.
+## A refresh can clear the dictionary while the volume node is still parented here.
+func _hosted_io_visualization(cortical_id: StringName) -> UI_BrainMonitor_CorticalArea:
+	var viz_any: Variant = _cortical_area_visualizations.get(cortical_id)
+	if viz_any != null and is_instance_valid(viz_any) and viz_any is UI_BrainMonitor_CorticalArea:
+		return viz_any as UI_BrainMonitor_CorticalArea
+	if _cortical_area_visualizations.has(cortical_id):
+		_cortical_area_visualizations.erase(cortical_id)
+	var node_name := "CA_%s" % String(cortical_id)
+	for container in [_input_areas_container, _output_areas_container, _conflict_areas_container]:
+		if container == null or not is_instance_valid(container):
+			continue
+		var node: Node = container.get_node_or_null(node_name)
+		if node is UI_BrainMonitor_CorticalArea and is_instance_valid(node):
+			var hosted := node as UI_BrainMonitor_CorticalArea
+			_cortical_area_visualizations[cortical_id] = hosted
+			return hosted
+	return null
+
+
 ## Custom dimension update handler for I/O cortical areas on brain region plates
 ## Updates dimensions without overriding brain region positioning
 func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_id: String) -> void:
 	# print("🔧 Brain region handling dimension update for I/O area %s: %s" % [cortical_id, new_dimensions])
+	var cortical_key := StringName(cortical_id)
+	var cortical_viz := _hosted_io_visualization(cortical_key)
+	if cortical_viz == null:
+		# This plate subscribed while hosting the volume, then dropped it without unsubscribing.
+		_disconnect_plate_dimension_handler_by_id(cortical_key)
+		return
 	if _dimension_recalc_in_progress:
 		# print("⏳ Dimension recalc already in progress; skipping duplicate update for %s" % cortical_id)
 		return
 	_dimension_recalc_in_progress = true
-	
-	# Find the cortical visualization using the ID
-	var cortical_viz = _cortical_area_visualizations.get(cortical_id)
-	if cortical_viz == null:
-		push_error("Brain region dimension update: Could not find visualization for area %s" % cortical_id)
-		_dimension_recalc_in_progress = false
-		return
 	
 	# Update DDA renderer dimensions (but preserve positioning)
 	if cortical_viz._dda_renderer != null:
@@ -804,7 +849,8 @@ func _recalculate_plates_and_positioning_after_dimension_change() -> void:
 	for cortical_id in cortical_ids:
 		var viz_any = _cortical_area_visualizations.get(cortical_id)
 		if viz_any == null or not is_instance_valid(viz_any):
-			# Clean stale references opportunistically.
+			# Freed volume is no longer on this plate. Drop the dimension subscription with it.
+			_disconnect_plate_dimension_handler_by_id(StringName(cortical_id))
 			_cortical_area_visualizations.erase(cortical_id)
 			continue
 		var cortical_viz := viz_any as UI_BrainMonitor_CorticalArea
@@ -1983,6 +2029,9 @@ func _populate_cortical_areas() -> void:
 				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 			# print("    ✅ Input area %s already correctly positioned on input plate, skipping repositioning" % area.cortical_ID)
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
+			var dimensions_cb := _io_dimensions_callback(area.cortical_ID)
+			if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+				area.dimensions_3D_updated.connect(dimensions_cb)
 			continue
 		
 		var old_parent = existing_viz.get_parent()
@@ -2005,16 +2054,16 @@ func _populate_cortical_areas() -> void:
 		if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
 			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
 		
-		# Connect to our custom dimension update handler that preserves brain region positioning
-		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
-		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
-			area.dimensions_3D_updated.connect(dimensions_cb)
-		
 		existing_viz.get_parent().remove_child(existing_viz)
 		_input_areas_container.add_child(existing_viz)
+		# Register before subscribing so a dimension signal emitted during placement can resolve the volume.
+		_cortical_area_visualizations[area.cortical_ID] = existing_viz
+		# Connect to our custom dimension update handler that preserves brain region positioning
+		var dimensions_cb := _io_dimensions_callback(area.cortical_ID)
+		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.connect(dimensions_cb)
 		# _scale_cortical_area_visualization(existing_viz, 0.8)  # Removed - preserve original cortical area dimensions
 		_position_cortical_area_on_plate(existing_viz, i, input_areas.size(), true)  # true = is_input
-		_cortical_area_visualizations[area.cortical_ID] = existing_viz
 	
 	# Move output area visualizations from main scene to our plate
 	for i in output_areas.size():
@@ -2041,6 +2090,9 @@ func _populate_cortical_areas() -> void:
 				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 			# print("    ✅ Output area %s already correctly positioned on output plate, skipping repositioning" % area.cortical_ID)
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
+			var dimensions_cb := _io_dimensions_callback(area.cortical_ID)
+			if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+				area.dimensions_3D_updated.connect(dimensions_cb)
 			continue
 		
 		var old_parent = existing_viz.get_parent()
@@ -2063,16 +2115,16 @@ func _populate_cortical_areas() -> void:
 		if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
 			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
 		
-		# Connect to our custom dimension update handler that preserves brain region positioning
-		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
-		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
-			area.dimensions_3D_updated.connect(dimensions_cb)
-		
 		existing_viz.get_parent().remove_child(existing_viz)
 		_output_areas_container.add_child(existing_viz)
+		# Register before subscribing so a dimension signal emitted during placement can resolve the volume.
+		_cortical_area_visualizations[area.cortical_ID] = existing_viz
+		# Connect to our custom dimension update handler that preserves brain region positioning
+		var dimensions_cb := _io_dimensions_callback(area.cortical_ID)
+		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.connect(dimensions_cb)
 		# _scale_cortical_area_visualization(existing_viz, 0.8)  # Removed - preserve original cortical area dimensions
 		_position_cortical_area_on_plate(existing_viz, i, output_areas.size(), false)  # false = is_output
-		_cortical_area_visualizations[area.cortical_ID] = existing_viz
 	
 	# Move conflict area visualizations from main scene to our conflict plate  
 	for i in conflict_areas.size():
@@ -2099,6 +2151,9 @@ func _populate_cortical_areas() -> void:
 				area.coordinates_3D_updated.disconnect(existing_viz._directpoints_renderer.update_position_with_new_FEAGI_coordinate)
 			# print("    ✅ Conflict area %s already correctly positioned on conflict plate, skipping repositioning" % area.cortical_ID)
 			_cortical_area_visualizations[area.cortical_ID] = existing_viz
+			var dimensions_cb := _io_dimensions_callback(area.cortical_ID)
+			if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+				area.dimensions_3D_updated.connect(dimensions_cb)
 			continue
 		
 		var old_parent = existing_viz.get_parent()
@@ -2121,16 +2176,16 @@ func _populate_cortical_areas() -> void:
 		if existing_viz._directpoints_renderer != null and area.dimensions_3D_updated.is_connected(existing_viz._directpoints_renderer.update_dimensions):
 			area.dimensions_3D_updated.disconnect(existing_viz._directpoints_renderer.update_dimensions)
 		
-		# Connect to our custom dimension update handler that preserves brain region positioning
-		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
-		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
-			area.dimensions_3D_updated.connect(dimensions_cb)
-		
 		existing_viz.get_parent().remove_child(existing_viz)
 		_conflict_areas_container.add_child(existing_viz)
+		# Register before subscribing so a dimension signal emitted during placement can resolve the volume.
+		_cortical_area_visualizations[area.cortical_ID] = existing_viz
+		# Connect to our custom dimension update handler that preserves brain region positioning
+		var dimensions_cb := _io_dimensions_callback(area.cortical_ID)
+		if not area.dimensions_3D_updated.is_connected(dimensions_cb):
+			area.dimensions_3D_updated.connect(dimensions_cb)
 		# Use a special flag to indicate this is a conflict area (neither purely input nor output)  
 		_position_cortical_area_on_plate(existing_viz, i, conflict_areas.size(), "conflict")  # "conflict" = special conflict type
-		_cortical_area_visualizations[area.cortical_ID] = existing_viz
 	if debug_regions:
 		print("[REGION-DBG][Plate] populate done region_id=%s input_nodes=%d output_nodes=%d conflict_nodes=%d total_plate_viz=%d" % [
 			String(_representing_region.region_ID) if _representing_region != null else "none",
@@ -3056,10 +3111,14 @@ func _release_external_visualizations() -> void:
 	for cortical_id in _cortical_area_visualizations.keys():
 		var viz_any: Variant = _cortical_area_visualizations[cortical_id]
 		if viz_any != null and is_instance_valid(viz_any) and viz_any is UI_BrainMonitor_CorticalArea:
+			var hosted := viz_any as UI_BrainMonitor_CorticalArea
+			_disconnect_plate_dimension_handler(hosted.cortical_area)
 			if brain_monitor != null:
-				brain_monitor.release_external_io_visualization(viz_any as UI_BrainMonitor_CorticalArea)
+				brain_monitor.release_external_io_visualization(hosted)
 			else:
-				(viz_any as Node).queue_free()
+				(hosted as Node).queue_free()
+		else:
+			_disconnect_plate_dimension_handler_by_id(StringName(cortical_id))
 	_cortical_area_visualizations.clear()
 
 
@@ -3082,9 +3141,7 @@ func _return_cortical_visualization_to_scene_root(viz: UI_BrainMonitor_CorticalA
 		return
 	var area: AbstractCorticalArea = viz.cortical_area
 	if area != null:
-		var dimensions_cb := _on_io_cortical_area_dimensions_changed.bind(area.cortical_ID)
-		if area.dimensions_3D_updated.is_connected(dimensions_cb):
-			area.dimensions_3D_updated.disconnect(dimensions_cb)
+		_disconnect_plate_dimension_handler(area)
 		var slaved_to_power: bool = AbstractCorticalArea.is_core_cluster_slaved_to_power_layout(area.cortical_ID)
 		if not slaved_to_power and not area.coordinates_3D_updated.is_connected(viz.set_new_position):
 			area.coordinates_3D_updated.connect(viz.set_new_position)

@@ -24,6 +24,7 @@ func _initialize() -> void:
 		return
 	var failures := 0
 	failures += _test_shortcut()
+	failures += _test_split_layout_shortcut()
 	failures += _test_text_focus()
 	failures += _test_catalog()
 	failures += _test_window_placement()
@@ -64,6 +65,40 @@ func _test_shortcut() -> int:
 	return 0
 
 
+func _test_split_layout_shortcut() -> int:
+	if _catalog.split_layout_digit(KEY_1, KEY_NONE, false, false, false, true, false) != 1:
+		push_error("1 should show the main 3D scene")
+		return 1
+	if _catalog.split_layout_digit(KEY_NONE, KEY_2, false, false, false, true, false) != 2:
+		push_error("physical 2 should open a vertical split")
+		return 1
+	if _catalog.split_layout_digit(KEY_KP_3, KEY_NONE, false, false, false, true, false) != 3:
+		push_error("keypad 3 should open a horizontal split")
+		return 1
+	if _catalog.split_layout_digit(KEY_1, KEY_1, true, false, false, true, false) != 0:
+		push_error("Ctrl/Cmd+1 should stay a camera framing chord")
+		return 1
+	if _catalog.split_layout_digit(KEY_2, KEY_2, false, true, false, true, false) != 0:
+		push_error("Shift+2 should not change the split")
+		return 1
+	if _catalog.split_layout_digit(KEY_3, KEY_3, false, false, false, true, true) != 0:
+		push_error("a key repeat should not change the split")
+		return 1
+	if _catalog.split_state_for_digit(1) != 1:
+		push_error("1 should close the split")
+		return 1
+	if _catalog.split_state_for_digit(2) != 2:
+		push_error("2 should select the vertical split state")
+		return 1
+	if _catalog.split_state_for_digit(3) != 3:
+		push_error("3 should select the horizontal split state")
+		return 1
+	if _catalog.split_state_for_digit(0) != -1:
+		push_error("an unknown digit should not select a split")
+		return 1
+	return 0
+
+
 func _test_text_focus() -> int:
 	if not _catalog.focus_blocks_keybinds(LineEdit.new()):
 		push_error("a line edit should keep the letter K")
@@ -91,6 +126,9 @@ func _test_catalog() -> int:
 	var has_search := false
 	var has_undo := false
 	var has_views := false
+	var has_main_scene := false
+	var has_vertical_split := false
+	var has_horizontal_split := false
 	for entry in rows:
 		var keys := String(entry.get(_catalog.KEY_KEYS, "")).strip_edges()
 		var action := String(entry.get(_catalog.KEY_ACTION, "")).strip_edges()
@@ -117,8 +155,17 @@ func _test_catalog() -> int:
 			has_undo = true
 		if keys == "T":
 			has_views = true
+		if keys == "1" and action.find("main 3D scene") >= 0:
+			has_main_scene = true
+		if keys == "2" and action.find("vertical split") >= 0:
+			has_vertical_split = true
+		if keys == "3" and action.find("horizontal split") >= 0:
+			has_horizontal_split = true
 	if not has_open or not has_search or not has_undo or not has_views:
 		push_error("the table is missing K, search, undo, or the top view")
+		return 1
+	if not has_main_scene or not has_vertical_split or not has_horizontal_split:
+		push_error("the table is missing the 1, 2, or 3 split layout shortcuts")
 		return 1
 	if sections != ["App", "Selection", "Camera"]:
 		push_error("shortcut sections are out of order: %s" % str(sections))

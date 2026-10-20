@@ -319,6 +319,12 @@ Brain Monitor does not respond to touch-screen gestures. A stylus that acts as a
 
 Press **K** anywhere outside a text field to open the full shortcuts table. Press **K** or **Escape** to close it.
 
+### Split layout
+- **1**: Main 3D scene only. Split tabs stay ready to reopen
+- **2**: Vertical split, side by side
+- **3**: Horizontal split, stacked
+- These do not type into a text field. Ctrl/Cmd+1, 2, or 3 with a click still frames a cortical area
+
 ### Circuit Builder (2D)
 - **Arrow Keys**: Pan view
 - **Mouse wheel**: Zoom
