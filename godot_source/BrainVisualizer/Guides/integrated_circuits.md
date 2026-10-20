@@ -8,28 +8,25 @@ A [brain circuit](brain_circuits.md) is the container: a named place that holds 
 
 ## What a Classifier Does
 
-A classifier learns a correspondence between a pattern and a label, then reports detections when that pattern appears again.
+A classifier learns a correspondence between a sample pattern and a class pattern. It is two memory areas joined by an associative mapping, plus the areas Brain Visualizer creates around them.
 
 It is made of cortical areas in the brain circuit where you create it:
 
-- **Kernel memory** and **class memory** are memory areas created with the classifier. Their names are the classifier name plus `_kernel_mem` and `_class_mem`. Kernel memory holds the patterns. Class memory holds the labels. An associative mapping binds the two.
-- The **kernel area**, **class area**, or **mask** is a cortical area you already have. You choose it when you configure the classifier. It is not created for you, and deleting the classifier does not delete it.
-- Each image field you connect later gets its own **detection area**. That area is where the classifier reports a match for that field.
-- **Answer area**, **learn area**, and **confidence area** are optional cortical areas you choose later, under reward training. They are not created with the classifier, and they are not peripheral inputs or outputs.
-
-Two training modes decide how a pattern and a label are paired. Recall uses the same geometry you trained with.
-
-**Kernel training** takes one sample from the kernel area and one label from the class area on each burst. Use it when both the pattern and the label are already single areas.
-
-**Scanner training** slides a kernel of the size you set across every image field you connect, and takes the label for each window from the mask area. The mask is read across its width and height. Its depth is the number of classes. The kernel's depth must match the depth of each field you connect. Use it when the thing to classify is a region inside a larger field, rather than the whole area.
+- **Sample memory** and **class memory** are created with the classifier. Their names are the classifier name plus `_sample_mem` and `_class_mem`. Sample memory holds the patterns. Class memory holds the labels. An associative mapping binds the two.
+- **Sample inputs** and **class inputs** are cortical areas you already have. You connect them after the classifier exists. A sample input uses the **Classifier Sample** rule and lands on sample memory. A class input uses the **Classifier Class** rule and lands on class memory. Several inputs of one kind are hashed together as one pattern. Memory areas and interconnect areas are both valid inputs. Deleting the classifier does not delete those inputs.
+- Each class input gets its own **class output**. FEAGI creates it when you connect that class input, and its shape matches the class input. Disconnecting the class input deletes that output.
+- The **error area** is a 1x1x1 area created with the classifier. It fires on the next burst when a class input and its class output disagree, or when one class output has more than one neuron firing. Several class outputs with one neuron each are not an error.
+- **Answer area**, **learn area**, and **confidence area** are optional cortical areas you store under reward settings. They are not created with the classifier, and they are not peripheral inputs or outputs. Reward settings are stored on the classifier. They do not run a scan.
 
 ## How It Appears
 
-In **Circuit Builder** the classifier is a teal node in the circuit where you created it. Mappings you draw land on that node. Kernel memory and class memory are not drawn as separate nodes. Each detection area is drawn, with a line back to the classifier. That line shows which field the area belongs to. It is not a mapping, and clicking it does not open the mapping editor.
+Creating a classifier adds a circuit with the classifier's name. On the parent circuit, that region's plate shows the classifier as an input. The error area and each class output show as outputs.
 
-In **Brain Monitor** kernel memory is the stamp: the cortical volume for the classifier. Click the stamp to select the classifier. Class memory is not drawn. A detection area is an ordinary cortical volume.
+The button that opens a circuit's interior is grayed out on this circuit. Its tooltip says "this is an integrated circuit and internals are not visible". Double-clicking the circuit does not open it either.
 
-**Memory Areas** lists kernel memory and class memory under those names. **Interconnect Areas** lists each detection area.
+Sample memory is that input. It is the stamp you connect to with **Classifier Sample**. Class memory stays inside and is not shown as an input or an output.
+
+**Memory Areas** lists sample memory and class memory under those names. **Interconnect Areas** lists each class output and the error area.
 
 ## Add a Classifier
 
@@ -37,7 +34,7 @@ In **Brain Monitor** kernel memory is the stamp: the cortical volume for the cla
 2. Hover **Circuits** and click **+**.
 3. Choose **Classifier**.
 
-The create window opens for that circuit. Its instruction is to choose kernel training or scanner training, and to connect image fields after the classifier exists.
+The create window opens for that circuit. Connect sample and class inputs after the classifier exists.
 
 ### Create window
 
@@ -45,27 +42,20 @@ The create window opens for that circuit. Its instruction is to choose kernel tr
 
 **3D Position** is the stamp's location. When a Brain Monitor for this circuit is open, a preview stamp appears there. Move the preview with the gizmo, or type the position. The two stay in step.
 
-**Training mode** changes the rest of the form.
+**Create Classifier** builds sample memory, class memory, the error area, and the associative mapping, then closes the window. A problem stays on the form in red, and the window stays open.
 
-- Kernel training asks for a **Kernel area** and a **Class area**.
-- Scanner training asks for a **Mask area** and a **Kernel size**. Each axis of the kernel size must be at least 1.
+## Connect a Sample or a Class
 
-The area menus list non-memory areas in this circuit. They omit memory areas, detection areas, and areas a classifier already owns. Kernel training needs both a kernel area and a class area. Scanner training needs a mask in this circuit.
+Connect inputs after the classifier exists.
 
-**Create Classifier** builds the assembly and closes the window. A problem stays on the form in red, and the window stays open.
-
-## Connect an Image Field
-
-Connect fields after the classifier exists. Each field is one image the classifier will scan, and each field receives its own detection area.
-
-1. Right-click the source area and choose **Quick Connect**. The source must be an interconnect area or a custom area.
+1. Right-click the source area and choose **Quick Connect**. The source must be a memory area, an interconnect area, an input area, or an output area.
 2. Click the classifier: its node in Circuit Builder, or its stamp in Brain Monitor.
-3. The connectivity rule is set to **Classifier**. There is no other rule to choose.
+3. Choose **Classifier Sample** or **Classifier Class**.
 4. Confirm.
 
-The detection area for that field then appears. In Brain Monitor the connection guide ends on the center of the stamp, unless another cortical volume lies in front of the stamp.
+Classifier Sample maps the source onto sample memory. Classifier Class maps it onto class memory and creates a class output with the same shape. In Brain Monitor the connection guide ends on the center of the stamp, unless another cortical volume lies in front of the stamp.
 
-Quick Connect will not start from a memory area, a detection area, or an area the classifier already owns. In that case the window tells you that a classifier mapping starts from an interconnect area.
+Quick Connect will not start from an area this classifier already owns. In that case the window tells you that a classifier input starts from a memory, interconnect, input, or output area.
 
 ## Edit a Classifier
 
@@ -81,20 +71,21 @@ If the editor is already open, selecting a different classifier loads that class
 - **Classifier Name** is the name shown on the node and used in the memory-area names.
 - **Parent Circuit** is the brain circuit that contains the classifier. Change it here. The quick menu has no separate command for moving a classifier into another circuit.
 - **3D Position** moves the stamp.
-- **Training Mode** offers the same choice as creation. Kernel training still requires a kernel area and a class area. Scanner training still requires a mask area and a kernel size. Changing the mode replaces the inputs used by the previous mode.
-- **Kernel Area**, **Class Area**, and **Mask Area** each have an edit icon beside the dropdown. The dropdown lists areas in the classifier's circuit. The icon opens Cortical Area Explorer at the root circuit so you can pick an area from any other circuit. The same icon is on **Answer Area**, **Learn Area**, and **Confidence Area**.
+- **Sample Inputs**, **Class Outputs**, and **Error Area** are read-only. Inputs change through Quick Connect. A class output appears when its class input is connected, and disappears when that mapping is removed.
+
+**Answer Area**, **Learn Area**, and **Confidence Area** each have an edit icon beside the dropdown. The icon opens Cortical Area Explorer at the root circuit so you can pick an area from any other circuit.
 
 ### Neuron counts
 
-**Kernel Memory Neurons** and **Class Memory Neurons** are read-only. When FEAGI can report live counts, the field shows the total and the short-term / long-term split, as `(ST: … | LT: …)`. Hover the field for the three numbers written out.
+**Sample Memory Neurons** and **Class Memory Neurons** are read-only. When FEAGI can report live counts, the field shows the total and the short-term / long-term split, as `(ST: … | LT: …)`. Hover the field for the three numbers written out.
 
-### Kernel memory, class memory, and the associative mapping
+### Sample memory, class memory, and the associative mapping
 
 Three sections start collapsed. **Apply Update** in a section stays disabled until you change a value in that section.
 
-**Kernel Memory Area** and **Class Memory Area** edit the memory parameters of those two areas: Initial Neuron Lifespan, Lifespan Growth Rate, Longterm Memory Threshold, Temporal Depth, and MP Learning. Those parameters are the same ones documented for any memory area in [Cortical Area Details](cortical_area_details.md).
+**Sample Memory Area** and **Class Memory Area** edit the memory parameters of those two areas: Initial Neuron Lifespan, Lifespan Growth Rate, Longterm Memory Threshold, Temporal Depth, and MP Learning. Those parameters are the same ones documented for any memory area in [Cortical Area Details](cortical_area_details.md).
 
-**Associative Memory Parameters** edits the mapping from kernel memory to class memory.
+**Associative Memory Parameters** edits the mapping from sample memory to class memory.
 
 These rows are always shown:
 
@@ -102,26 +93,17 @@ These rows are always shown:
 - **Plasticity Constant** is the base size of one weight step.
 - **LTP Multiplier** scales a strengthening step. With reward training on, that step is pleasure.
 - **LTD Multiplier** scales a weakening step. With reward training on, that step is pain.
-- **Synaptic Delay** is how many bursts a spike waits on this mapping before it reaches class memory. The minimum is 1. It is not the wait before an answer is graded. Count this delay on each hop from the image area to the classifier field when you set **Answer Latency**.
-- **Reward Training** turns per-instance grading on or off. Off keeps ordinary co-activation learning. On, each scanning instance is graded on its own.
+- **Synaptic Delay** is how many bursts a spike waits on this mapping before it reaches class memory. The minimum is 1.
+- **Reward Training** stores reward settings on the classifier. Off keeps ordinary co-activation learning on the associative mapping. These settings do not run a scan.
 
 These rows appear only while **Reward Training** is on. Turning it off hides them. Their values are kept, so turning it back on shows them again.
 
-- **Answer Area** is a cortical area you already have. It carries the correct class for the instance being graded. It is not created for you, and it is not a peripheral input or output. A quiet answer area is not scored, so a gap before the answer arrives is not pain. In kernel mode its shape must match the class area. In scanner mode its shape must match each detection area, or be one class for the whole image as `1×1×C`. That whole-image shape is the class teacher a dataset trainer already writes, with class on Z.
-- **Answer Latency** is the number of bursts between a decision and the answer that grades it. Zero grades the same burst. Set it to the number of synaptic hops from the image area to the classifier field. The trainer hold, in ticks per sample, must be longer than this or the answer lands on the next image.
+- **Answer Area** is a cortical area you already have. It is stored as the correct-class reference. It is not created for you, and it is not a peripheral input or output.
+- **Answer Latency** is the number of bursts stored between a decision and the answer. Zero is the same burst.
 - **Learn Area** is a cortical area that must fire before pain or pleasure can change weights. Empty allows a correction whenever reward training has an answer or an ambiguous decision. On the image trainer, type this area's id in **Learn area**. The trainer stimulates it on the train split only. Validation and test leave it quiet, so the label can still be present without changing weights.
 - **Confidence Area** is a cortical area that receives one value per class channel: how far that channel's associative weight sits above the class-memory firing threshold. It is not a peripheral output. To have a trainer show those values, map this area onward to a peripheral output and choose that output as the trainer decoder. The run step then lists the class and one number per channel.
 
-While reward training is on, the rules are:
-
-- One recalled class channel, and no answer area, does not change weights.
-- More than one class channel, and no answer area, is pain on those channels.
-- A channel that matches the answer area is pleasure. A channel that does not match is pain. An answer channel the decision missed is bound under pleasure.
-- The same pattern is corrected once. Another step waits until the field pattern changes.
-- When the field goes quiet, the open decision is dropped. The next image is not trained with the previous answer.
-- **Temporal Depth** on kernel memory must be no longer than the trainer's ticks per sample. A run that breaks this is rejected at start.
-
-Turning reward training on and applying the section creates two hidden areas, named from the classifier plus `_pain` and `_pleasure`. They belong to this classifier. They are not the brain's global pain and pleasure areas.
+Turning reward training on and applying the section creates two hidden areas, named from the classifier plus `_pain` and `_pleasure`. They belong to this classifier. They are not the brain's global pain and pleasure areas. The stored settings do not grade a scan.
 
 If the memory area or the associative mapping is not available, the section says so and **Apply Update** stays disabled.
 
@@ -130,16 +112,16 @@ If the memory area or the associative mapping is not available, the section says
 Right-click the classifier.
 
 - From Circuit Builder, **Relocate this classifier (2D)** follows the mouse. Left-click to commit the new position.
-- From Brain Monitor, **Relocate this classifier (3D gizmo)** moves the stamp. A Brain Monitor for the classifier's circuit must be open.
-- **Reset kernel and class memory...** clears stored patterns in both memory areas. It uses the same cortical reset as a memory area. The open classifier editor reloads the short-term and long-term counts. The classifier, its connections, and the areas you selected as inputs stay in place.
-- **Delete this classifier...** deletes the classifier, its kernel memory, its class memory, its detection areas, and the pain and pleasure areas created for reward training. The kernel, class, mask, answer, learn, and confidence areas you selected are left in place.
+- From Brain Monitor, **Relocate this classifier (3D gizmo)** moves the stamp on the monitor that is already showing it.
+- **Reset sample and class memory...** clears stored patterns in both memory areas. It uses the same cortical reset as a memory area. The open classifier editor reloads the short-term and long-term counts. The classifier, its connections, and the areas you connected as inputs stay in place.
+- **Delete this classifier...** deletes the classifier, its sample memory, its class memory, its class outputs, its error area, and the pain and pleasure areas created for reward settings. The sample inputs, class inputs, answer, learn, and confidence areas you selected are left in place.
 
-The classifier quick menu does not include Open 3D Tab, clone, or Quick Connect. To inspect the stamp, open a Brain Monitor on the circuit that contains the classifier.
+The classifier quick menu does not include Open 3D Tab, clone, or Quick Connect. On the classifier circuit itself, Open Circuit in 3D Tab stays grayed out. Its tooltip says "this is an integrated circuit and internals are not visible".
 
 ## Related Topics
 
 - [Brain Circuits](brain_circuits.md) - Containers that hold a classifier
-- [Cortical Area Details](cortical_area_details.md) - Memory parameters used by kernel and class memory
+- [Cortical Area Details](cortical_area_details.md) - Memory parameters used by sample and class memory
 - [Circuit Builder](circuit_builder.md) - The 2D node
 - [Brain Monitor](brain_monitor.md) - The stamp
 - [Mapping Connections](mapping_connections.md) - Quick Connect

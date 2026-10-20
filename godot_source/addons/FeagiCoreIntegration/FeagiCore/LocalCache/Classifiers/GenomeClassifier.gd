@@ -1,32 +1,118 @@
 extends GenomeObject
 class_name GenomeClassifier
 ## First-class BV object for a genome classifier assembly.
-## Not a [BrainRegion] and not a cortical area. Class memory stays hidden; kernel
-## memory is the wobbly stamp. Each field binding has its own connectable detection
-## twin. Inputs stay in [member parent_region_id]. Circuit Builder treats this as
-## one region-like node and draws inbound mappings as visual aliases onto it.
+## Not a [BrainRegion] and not a cortical area. Sample memory is the wobbly stamp.
+## Class memory stays hidden. Each class input owns a visible class output, and the
+## assembly owns one visible error area. Circuit Builder treats this as one
+## region-like node and draws inbound mappings as visual aliases onto it.
+
+const SAMPLE_INPUT_MORPHOLOGY: StringName = &"classifier_sample"
+const CLASS_INPUT_MORPHOLOGY: StringName = &"classifier_class"
+const INTEGRATED_CIRCUIT_INTERNALS_TOOLTIP: String = "this is an integrated circuit and internals are not visible"
+
+
+## Sample memory is the classifier face on a region input plate.
+static func classifier_plate_input_ids(classifier: GenomeClassifier) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	if classifier == null or classifier.sample_memory_id == &"":
+		return ids
+	ids.append(classifier.sample_memory_id)
+	return ids
+
+
+## The error area and each class output sit on a region output plate.
+static func classifier_plate_output_ids(classifier: GenomeClassifier) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	if classifier == null:
+		return ids
+	if classifier.error_area_id != &"":
+		ids.append(classifier.error_area_id)
+	for output_id in classifier.class_output_ids():
+		if output_id != &"" and output_id not in ids:
+			ids.append(output_id)
+	return ids
+
+
+static func classifiers_hosted_by_region(region: BrainRegion) -> Array[GenomeClassifier]:
+	var found: Array[GenomeClassifier] = []
+	if region == null:
+		return found
+	for classifier in region.contained_classifiers:
+		if classifier not in found:
+			found.append(classifier)
+	var cache: FEAGILocalCache = _local_cache()
+	if cache == null:
+		return found
+	for item in cache.classifiers.values():
+		if not item is GenomeClassifier:
+			continue
+		var classifier: GenomeClassifier = item as GenomeClassifier
+		if classifier in found:
+			continue
+		if classifier.current_parent_region == region:
+			found.append(classifier)
+			continue
+		for area in region.contained_cortical_areas:
+			if classifier.owns_area_id(area.cortical_ID):
+				found.append(classifier)
+				break
+	return found
+
+
+static func _resolve_plate_area(region: BrainRegion, area_id: StringName) -> AbstractCorticalArea:
+	if area_id == &"":
+		return null
+	if region != null:
+		for area in region.contained_cortical_areas:
+			if area.cortical_ID == area_id:
+				return area
+	var cache: FEAGILocalCache = _local_cache()
+	if cache == null or cache.cortical_areas == null:
+		return null
+	return cache.cortical_areas.available_cortical_areas.get(area_id, null)
+
+
+static func classifier_plate_input_areas(region: BrainRegion) -> Array[AbstractCorticalArea]:
+	var areas: Array[AbstractCorticalArea] = []
+	for classifier in classifiers_hosted_by_region(region):
+		for area_id in classifier_plate_input_ids(classifier):
+			var area: AbstractCorticalArea = _resolve_plate_area(region, area_id)
+			if area != null and area not in areas:
+				areas.append(area)
+	return areas
+
+
+static func classifier_plate_output_areas(region: BrainRegion) -> Array[AbstractCorticalArea]:
+	var areas: Array[AbstractCorticalArea] = []
+	for classifier in classifiers_hosted_by_region(region):
+		for area_id in classifier_plate_output_ids(classifier):
+			var area: AbstractCorticalArea = _resolve_plate_area(region, area_id)
+			if area != null and area not in areas:
+				areas.append(area)
+	return areas
+
+
+static func area_is_classifier_plate_face(area: AbstractCorticalArea, region: BrainRegion) -> bool:
+	if area == null or region == null:
+		return false
+	for candidate in classifier_plate_input_areas(region):
+		if candidate.cortical_ID == area.cortical_ID:
+			return true
+	for candidate in classifier_plate_output_areas(region):
+		if candidate.cortical_ID == area.cortical_ID:
+			return true
+	return false
+
 
 var classifier_id: StringName:
 	get: return _genome_ID
 
-var kernel_area_id: StringName:
-	get: return _kernel_area_id
-var class_area_id: StringName:
-	get: return _class_area_id
-var training_mode: StringName:
-	get: return _training_mode
-var mask_area_id: StringName:
-	get: return _mask_area_id
-var kernel_size: Vector3i:
-	get: return _kernel_size
-## Scanner mode only. The mask and twins carry each pixel's class as potential
-## (class_id + 1) / class_count. Zero when unset (kernel mode).
-var class_count: int:
-	get: return _class_count
-var kernel_memory_id: StringName:
-	get: return _kernel_memory_id
+var sample_memory_id: StringName:
+	get: return _sample_memory_id
 var class_memory_id: StringName:
 	get: return _class_memory_id
+var error_area_id: StringName:
+	get: return _error_area_id
 var reward_training: bool:
 	get: return _reward_training
 var answer_feedback_area_id: StringName:
@@ -38,21 +124,18 @@ var learn_area_id: StringName:
 var confidence_area_id: StringName:
 	get: return _confidence_area_id
 
-var _kernel_area_id: StringName = &""
-var _class_area_id: StringName = &""
-var _training_mode: StringName = &"kernel"
-var _mask_area_id: StringName = &""
-var _kernel_size: Vector3i = Vector3i.ZERO
-var _class_count: int = 0
-var _kernel_memory_id: StringName = &""
+var _sample_memory_id: StringName = &""
 var _class_memory_id: StringName = &""
+var _error_area_id: StringName = &""
 var _reward_training: bool = false
 var _answer_feedback_area_id: StringName = &""
 var _answer_latency_bursts: int = 0
 var _learn_area_id: StringName = &""
 var _confidence_area_id: StringName = &""
-## Each binding is {field_area_id, scan_twin_id}. One trained assembly, one twin per field.
-var _fields: Array[Dictionary] = []
+## Episodic upstreams of sample memory. Several inputs hash as one joint pattern.
+var _sample_area_ids: Array[StringName] = []
+## Each binding is {class_area_id, class_output_area_id}.
+var _class_bindings: Array[Dictionary] = []
 
 
 func _init(
@@ -83,26 +166,20 @@ func apply_feagi_dict(data: Dictionary) -> void:
 	var next_name: StringName = StringName(str(data.get("name", _friendly_name)))
 	FEAGI_change_friendly_name(next_name)
 	FEAGI_change_coordinates_3D(_coords_3d_from_feagi(data.get("coordinates_3d", [_coordinates_3D.x, _coordinates_3D.y, _coordinates_3D.z])))
-	_kernel_area_id = _optional_id(data.get("kernel_area_id", null))
-	_class_area_id = _optional_id(data.get("class_area_id", null))
-	_mask_area_id = _optional_id(data.get("mask_area_id", null))
-	var mode_text: String = str(data.get("training_mode", "kernel")).strip_edges()
-	_training_mode = &"scanner" if mode_text == "scanner" else &"kernel"
-	_kernel_size = _kernel_size_from_feagi(data.get("kernel_size", null))
-	var count_value: Variant = data.get("class_count", null)
-	_class_count = int(count_value) if count_value != null else 0
-	_kernel_memory_id = StringName(str(data.get("kernel_memory_id", "")))
-	_class_memory_id = StringName(str(data.get("class_memory_id", "")))
+	_sample_memory_id = StringName(str(data.get("sample_memory_id", "")).strip_edges())
+	_class_memory_id = StringName(str(data.get("class_memory_id", "")).strip_edges())
+	_error_area_id = StringName(str(data.get("error_area_id", "")).strip_edges())
+	_sample_area_ids = _id_list_from_feagi(data.get("sample_area_ids", []))
+	_class_bindings = _class_bindings_from_feagi(data.get("class_bindings", []))
 	_reward_training = bool(data.get("reward_training", false))
 	_answer_feedback_area_id = _optional_id(data.get("answer_feedback_area_id", null))
 	_answer_latency_bursts = int(data.get("answer_latency_bursts", 0))
 	_learn_area_id = _optional_id(data.get("learn_area_id", null))
 	_confidence_area_id = _optional_id(data.get("confidence_area_id", null))
-	_fields = _bindings_from_feagi(data)
 	sync_layout_from_stamp()
 
 
-## Copy 2D layout from the wobbly stamp host (kernel memory) when it exists in cache.
+## Copy 2D layout from the wobbly stamp host (sample memory) when it exists in cache.
 func sync_layout_from_stamp() -> void:
 	var stamp: AbstractCorticalArea = get_stamp_area()
 	if stamp == null:
@@ -112,21 +189,21 @@ func sync_layout_from_stamp() -> void:
 
 
 func get_stamp_area() -> AbstractCorticalArea:
-	return _cached_area(_kernel_memory_id)
+	return _cached_area(_sample_memory_id)
 
 
-## Kernel memory then class memory. Empty when either id is missing.
-## Scan twins are not included: classifier reset clears only these two stores.
+## Sample memory then class memory. Empty when either id is missing.
+## Class outputs and the error area are not included: reset clears only these two stores.
 func memory_area_ids() -> Array[StringName]:
-	if _kernel_memory_id == &"" or _class_memory_id == &"":
+	if _sample_memory_id == &"" or _class_memory_id == &"":
 		return []
 	var ids: Array[StringName] = []
-	ids.append(_kernel_memory_id)
+	ids.append(_sample_memory_id)
 	ids.append(_class_memory_id)
 	return ids
 
 
-## Cached kernel and class memory areas. Empty when either area is missing from cache.
+## Cached sample and class memory areas. Empty when either area is missing from cache.
 func get_memory_areas() -> Array[AbstractCorticalArea]:
 	var areas: Array[AbstractCorticalArea] = []
 	for area_id in memory_area_ids():
@@ -137,34 +214,110 @@ func get_memory_areas() -> Array[AbstractCorticalArea]:
 	return areas
 
 
-func field_bindings() -> Array[Dictionary]:
-	return _fields.duplicate(true)
+func sample_area_ids() -> Array[StringName]:
+	return _sample_area_ids.duplicate()
 
 
-func scan_twin_ids() -> Array[StringName]:
-	var twin_ids: Array[StringName] = []
-	for binding in _fields:
-		var twin_id: StringName = binding.get("scan_twin_id", &"")
-		if twin_id != &"":
-			twin_ids.append(twin_id)
-	return twin_ids
+func class_bindings() -> Array[Dictionary]:
+	return _class_bindings.duplicate(true)
 
 
-func is_scan_twin_id(area_id: StringName) -> bool:
-	return area_id != &"" and area_id in scan_twin_ids()
+func class_output_ids() -> Array[StringName]:
+	var output_ids: Array[StringName] = []
+	for binding in _class_bindings:
+		var output_id: StringName = binding.get("class_output_area_id", &"")
+		if output_id != &"":
+			output_ids.append(output_id)
+	return output_ids
 
 
-func has_field(area_id: StringName) -> bool:
-	return _binding_for_field(area_id) != null
+func is_class_output_id(area_id: StringName) -> bool:
+	return area_id != &"" and area_id in class_output_ids()
 
 
-func get_twin_areas() -> Array[AbstractCorticalArea]:
-	var twins: Array[AbstractCorticalArea] = []
-	for twin_id in scan_twin_ids():
-		var twin: AbstractCorticalArea = _cached_area(twin_id)
-		if twin != null:
-			twins.append(twin)
-	return twins
+func is_error_area_id(area_id: StringName) -> bool:
+	return area_id != &"" and area_id == _error_area_id
+
+
+func has_sample_input(area_id: StringName) -> bool:
+	return area_id != &"" and area_id in _sample_area_ids
+
+
+func has_class_input(area_id: StringName) -> bool:
+	return _binding_for_class(area_id) != null
+
+
+func get_visible_output_areas() -> Array[AbstractCorticalArea]:
+	var outputs: Array[AbstractCorticalArea] = []
+	for output_id in class_output_ids():
+		var output_area: AbstractCorticalArea = _cached_area(output_id)
+		if output_area != null:
+			outputs.append(output_area)
+	var error_area: AbstractCorticalArea = _cached_area(_error_area_id)
+	if error_area != null:
+		outputs.append(error_area)
+	return outputs
+
+
+static func is_input_rule(morphology_name: StringName) -> bool:
+	return morphology_name == SAMPLE_INPUT_MORPHOLOGY or morphology_name == CLASS_INPUT_MORPHOLOGY
+
+
+static func input_rule_label(morphology_name: StringName) -> String:
+	if morphology_name == SAMPLE_INPUT_MORPHOLOGY:
+		return "Classifier Sample"
+	if morphology_name == CLASS_INPUT_MORPHOLOGY:
+		return "Classifier Class"
+	return String(morphology_name)
+
+
+static func input_rule_morphology(morphology_name: StringName) -> BaseMorphology:
+	if not is_input_rule(morphology_name):
+		return null
+	return _named_input_rule(morphology_name)
+
+
+static func input_morphologies() -> Array[BaseMorphology]:
+	var rules: Array[BaseMorphology] = []
+	rules.append(_named_input_rule(SAMPLE_INPUT_MORPHOLOGY))
+	rules.append(_named_input_rule(CLASS_INPUT_MORPHOLOGY))
+	return rules
+
+
+## Classifier rules are not catalog morphologies. An unset type is PATTERNS, and the
+## pattern editor then casts the object to nil and reads editability_changed.
+static func _named_input_rule(morphology_name: StringName) -> BaseMorphology:
+	var rule := BaseMorphology.new(morphology_name, true, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE)
+	rule.type = BaseMorphology.MORPHOLOGY_TYPE.FUNCTIONS
+	return rule
+
+
+## Classifier, or its sample/class memory, is a mapping destination.
+## Class outputs and the error area stay ordinary areas.
+static func classifier_for_mapping_destination(genome_object: GenomeObject, classifiers: Dictionary) -> GenomeClassifier:
+	if genome_object is GenomeClassifier:
+		return genome_object as GenomeClassifier
+	if not genome_object is AbstractCorticalArea:
+		return null
+	return classifier_for_destination_area_id((genome_object as AbstractCorticalArea).cortical_ID, classifiers)
+
+
+## Sample memory and class memory accept classifier_sample / classifier_class only.
+static func classifier_for_destination_area_id(area_id: StringName, classifiers: Dictionary) -> GenomeClassifier:
+	var owner: GenomeClassifier = find_owner_of_area(area_id, classifiers)
+	if owner == null:
+		return null
+	if owner.is_stamp_host_id(area_id) or area_id == owner.class_memory_id:
+		return owner
+	return null
+
+
+func memory_id_for_input_rule(morphology_name: StringName) -> StringName:
+	if morphology_name == SAMPLE_INPUT_MORPHOLOGY:
+		return _sample_memory_id
+	if morphology_name == CLASS_INPUT_MORPHOLOGY:
+		return _class_memory_id
+	return &""
 
 
 func _cached_area(area_id: StringName) -> AbstractCorticalArea:
@@ -189,23 +342,23 @@ static func _local_cache() -> FEAGILocalCache:
 	return core.get("feagi_local_cache") as FEAGILocalCache
 
 
-## Owned internals deleted with the classifier (kernel_mem, class_mem, class-map twin).
+## Owned areas deleted with the classifier: both memories, the error area, and class outputs.
 func owned_area_ids() -> Array[StringName]:
 	var owned: Array[StringName] = []
-	if _kernel_memory_id != &"":
-		owned.append(_kernel_memory_id)
+	if _sample_memory_id != &"":
+		owned.append(_sample_memory_id)
 	if _class_memory_id != &"":
 		owned.append(_class_memory_id)
-	for twin_id in scan_twin_ids():
-		owned.append(twin_id)
+	if _error_area_id != &"":
+		owned.append(_error_area_id)
+	for output_id in class_output_ids():
+		owned.append(output_id)
 	return owned
 
 
-## Hidden internals only. The class-map twin stays a visible, connectable cortical area.
+## Sample memory hosts the stamp. Class memory is the only hidden internal.
 func hidden_owned_area_ids() -> Array[StringName]:
 	var hidden: Array[StringName] = []
-	if _kernel_memory_id != &"":
-		hidden.append(_kernel_memory_id)
 	if _class_memory_id != &"":
 		hidden.append(_class_memory_id)
 	return hidden
@@ -214,7 +367,7 @@ func hidden_owned_area_ids() -> Array[StringName]:
 func owns_area_id(area_id: StringName) -> bool:
 	if area_id == &"":
 		return false
-	return area_id == _kernel_memory_id or area_id == _class_memory_id or is_scan_twin_id(area_id)
+	return area_id == _sample_memory_id or area_id == _class_memory_id or is_error_area_id(area_id) or is_class_output_id(area_id)
 
 
 func hides_area_id(area_id: StringName) -> bool:
@@ -224,25 +377,10 @@ func hides_area_id(area_id: StringName) -> bool:
 
 
 func is_stamp_host_id(area_id: StringName) -> bool:
-	return area_id != &"" and area_id == _kernel_memory_id
+	return area_id != &"" and area_id == _sample_memory_id
 
 
-## Wobbly stamp size: XY from stored memory neurons, Z from classifier temporal depth.
-## Largest class count FEAGI accepts (feagi_structures class_potential::MAX_CLASS_COUNT).
-const MAX_CLASS_COUNT: int = 9999
-
-
-## Class Count input for scanner classifiers. Kept here so create and edit share limits.
-static func make_class_count_spinbox(initial_value: int) -> SpinBox:
-	var spin := SpinBox.new()
-	spin.min_value = 1
-	spin.max_value = MAX_CLASS_COUNT
-	spin.step = 1
-	spin.rounded = true
-	spin.value = clampi(initial_value, 1, MAX_CLASS_COUNT)
-	return spin
-
-
+## Wobbly stamp size: XY from stored memory neurons, Z from sample-memory temporal depth.
 static func stamp_visual_dimensions(memory_neuron_count: int, classifier_depth: int) -> Vector3i:
 	var count: int = maxi(memory_neuron_count, 1)
 	var side: int = int(ceil(sqrt(float(count))))
@@ -252,22 +390,19 @@ static func stamp_visual_dimensions(memory_neuron_count: int, classifier_depth: 
 func references_input_id(area_id: StringName) -> bool:
 	if area_id == &"":
 		return false
-	return area_id == _kernel_area_id or area_id == _class_area_id or area_id == _mask_area_id or _binding_for_field(area_id) != null
+	return has_sample_input(area_id) or has_class_input(area_id)
 
 
-## Kernel / class / field area IDs that should draw a visual inbound line to this object.
+## Sample and class input ids that should draw a visual inbound line to this object.
 func inbound_visual_source_ids() -> Array[StringName]:
 	var sources: Array[StringName] = []
-	if _kernel_area_id != &"":
-		sources.append(_kernel_area_id)
-	if _class_area_id != &"":
-		sources.append(_class_area_id)
-	if _mask_area_id != &"":
-		sources.append(_mask_area_id)
-	for binding in _fields:
-		var field_id: StringName = binding.get("field_area_id", &"")
-		if field_id != &"":
-			sources.append(field_id)
+	for sample_id in _sample_area_ids:
+		if sample_id != &"":
+			sources.append(sample_id)
+	for binding in _class_bindings:
+		var class_id: StringName = binding.get("class_area_id", &"")
+		if class_id != &"":
+			sources.append(class_id)
 	return sources
 
 
@@ -281,15 +416,9 @@ func details_rows() -> Array[Dictionary]:
 		parent_name = String(current_parent_region.friendly_name)
 	rows.append(_details_row("parent_circuit", "Parent Circuit", parent_name, true))
 	rows.append(_details_row("coordinates_3d", "3D Position", str(coordinates_3D), true))
-	rows.append(_details_row("training_mode", "Training Mode", String(_training_mode), true))
-	if _training_mode == &"scanner":
-		rows.append(_details_row("mask_area", "Mask Area", _area_name(_mask_area_id), true))
-		rows.append(_details_row("kernel_size", "Kernel Size", "%s x %s x %s" % [_kernel_size.x, _kernel_size.y, _kernel_size.z], true))
-		rows.append(_details_row("class_count", "Class Count", str(_class_count), true))
-	else:
-		rows.append(_details_row("kernel_area", "Kernel Area", _area_name(_kernel_area_id), true))
-		rows.append(_details_row("class_area", "Class Area", _area_name(_class_area_id), true))
-	rows.append(_details_row("fields", "Fields", _field_names_text(), false))
+	rows.append(_details_row("sample_inputs", "Sample Inputs", _named_id_list(_sample_area_ids), false))
+	rows.append(_details_row("class_outputs", "Class Outputs", _class_output_names_text(), false))
+	rows.append(_details_row("error_area", "Error Area", _area_name(_error_area_id), false))
 	rows.append(_details_row("hidden_internals", "Hidden Internals", hidden_internals_text(), false))
 	return rows
 
@@ -328,8 +457,34 @@ func FEAGI_prepare_delete() -> void:
 		_parent_region = null
 
 
+## The open-interior control stays disabled on a classifier circuit.
+static func circuit_interior_button_enabled(is_classifier_circuit: bool) -> bool:
+	return not is_classifier_circuit
+
+
+## A classifier circuit is the region that contains the classifier, even when the region summary omits the flag.
+static func region_hides_interior(region: BrainRegion) -> bool:
+	if region == null:
+		return false
+	if region.is_classifier_circuit:
+		return true
+	if not region.contained_classifiers.is_empty():
+		return true
+	for area in region.contained_cortical_areas:
+		if area.is_classifier_sample_memory() or area.is_classifier_class_memory() or area.is_classifier_error_output() or area.is_classifier_class_output():
+			return true
+	var cache: FEAGILocalCache = _local_cache()
+	if cache == null:
+		return false
+	for classifier_id in cache.classifiers.keys():
+		var classifier: GenomeClassifier = cache.classifiers[classifier_id] as GenomeClassifier
+		if classifier != null and classifier.current_parent_region == region:
+			return true
+	return false
+
+
 ## True when Circuit Builder must not spawn this area as a sibling cortical node.
-## The class-map twin stays visible and connectable.
+## Class outputs and the error area stay visible and connectable.
 static func should_hide_area_in_circuit_builder(area: AbstractCorticalArea) -> bool:
 	if area == null:
 		return false
@@ -347,6 +502,22 @@ static func quick_connect_should_draw_cross_scene_bridge(destination_end_locked:
 	return not destination_end_locked
 
 
+## Memory, interconnect, IPU, and OPU can map onto a classifier.
+## Classifier internals and areas this classifier owns cannot.
+static func cortical_type_can_feed_classifier(
+	kind: AbstractCorticalArea.CORTICAL_AREA_TYPE,
+	is_classifier_internal: bool,
+	owned_by_destination: bool,
+) -> bool:
+	if is_classifier_internal or owned_by_destination:
+		return false
+	return kind == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM \
+		or kind == AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT \
+		or kind == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY \
+		or kind == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU \
+		or kind == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+
+
 ## Destination click while the source area is still highlighted.
 ## Ctrl keeps multi-select. Otherwise the classifier is the quick-connect destination.
 static func destination_classifier_from_selection(objects: Array[GenomeObject], ctrl_held: bool) -> GenomeClassifier:
@@ -359,16 +530,16 @@ static func destination_classifier_from_selection(objects: Array[GenomeObject], 
 
 
 ## True when Brain Monitor must not spawn this area as a sibling volume.
-## Kernel memory is the wobbly stamp host. The twin is a classical cortical volume.
+## Sample memory is the wobbly stamp host. Class outputs and the error area are ordinary volumes.
 static func should_hide_area_in_brain_monitor(area: AbstractCorticalArea) -> bool:
 	if area == null:
 		return false
-	if area.is_classifier_kernel_memory():
+	if area.is_classifier_sample_memory():
 		return false
 	return area.is_classifier_class_memory() or area.is_leftover_classifier_auto_twin()
 
 
-## Remap hidden internals onto the classifier. The class-map twin stays itself.
+## Remap hidden internals onto the classifier. Class outputs and the error area stay themselves.
 static func resolve_visual_connectable(genome_object: GenomeObject, classifiers: Dictionary) -> GenomeObject:
 	if genome_object == null:
 		return null
@@ -380,13 +551,12 @@ static func resolve_visual_connectable(genome_object: GenomeObject, classifiers:
 	var owner: GenomeClassifier = find_owner_of_area(area_id, classifiers)
 	if owner == null:
 		return genome_object
-	if owner.is_scan_twin_id(area_id):
+	if owner.is_class_output_id(area_id) or owner.is_error_area_id(area_id):
 		return genome_object
 	return owner
 
 
-## Hide mem-to-mem internals (both ends owned by the same classifier).
-## The class-map twin is a visible interconnect; mappings to/from it stay drawn.
+## Hide the associative edge between the two memories. Visible outputs stay drawn.
 static func is_internal_only_classifier_mapping(source: GenomeObject, destination: GenomeObject, classifiers: Dictionary) -> bool:
 	if not source is AbstractCorticalArea or not destination is AbstractCorticalArea:
 		return false
@@ -395,18 +565,22 @@ static func is_internal_only_classifier_mapping(source: GenomeObject, destinatio
 	var owner: GenomeClassifier = find_owner_of_area(src_id, classifiers)
 	if owner == null:
 		return false
-	if owner.is_scan_twin_id(src_id) or owner.is_scan_twin_id(dst_id):
+	if owner.is_class_output_id(src_id) or owner.is_class_output_id(dst_id):
+		return false
+	if owner.is_error_area_id(src_id) or owner.is_error_area_id(dst_id):
 		return false
 	return owner.owns_area_id(dst_id)
 
 
-## True when Circuit Builder / Brain Monitor should draw classifier → twin.
-static func is_visual_twin_alias(source: GenomeObject, destination: GenomeObject, classifiers: Dictionary) -> bool:
+## True when Circuit Builder / Brain Monitor should draw classifier → class output or error area.
+static func is_visual_output_alias(source: GenomeObject, destination: GenomeObject, classifiers: Dictionary) -> bool:
 	if destination == null or not destination is AbstractCorticalArea:
 		return false
 	var dest_id: StringName = (destination as AbstractCorticalArea).cortical_ID
 	var owner: GenomeClassifier = find_owner_of_area(dest_id, classifiers)
-	if owner == null or not owner.is_scan_twin_id(dest_id):
+	if owner == null:
+		return false
+	if not owner.is_class_output_id(dest_id) and not owner.is_error_area_id(dest_id):
 		return false
 	if source is GenomeClassifier:
 		return (source as GenomeClassifier).classifier_id == owner.classifier_id
@@ -415,7 +589,7 @@ static func is_visual_twin_alias(source: GenomeObject, destination: GenomeObject
 	return false
 
 
-## True for the three inbound aliases: kernel/class/field → classifier-owned dest.
+## True for inbound aliases: sample or class input → classifier-owned memory.
 static func is_visual_inbound_alias(source: GenomeObject, destination: GenomeObject, classifiers: Dictionary) -> bool:
 	if not source is AbstractCorticalArea or not destination is AbstractCorticalArea:
 		return false
@@ -445,38 +619,54 @@ static func find_by_id(classifier_id: StringName, classifiers: Dictionary) -> Ge
 	return null
 
 
-func _field_names_text() -> String:
+func _class_output_names_text() -> String:
 	var names: PackedStringArray = PackedStringArray()
-	for binding in _fields:
-		names.append(_area_name(binding.get("field_area_id", &"")))
+	for binding in _class_bindings:
+		var class_label: String = _area_name(binding.get("class_area_id", &""))
+		var output_name: String = _area_name(binding.get("class_output_area_id", &""))
+		if class_label.is_empty() and output_name.is_empty():
+			continue
+		names.append("%s -> %s" % [class_label, output_name])
 	return ", ".join(names)
 
 
-func _binding_for_field(area_id: StringName) -> Variant:
-	for binding in _fields:
-		if binding.get("field_area_id", &"") == area_id:
+func _named_id_list(area_ids: Array[StringName]) -> String:
+	var names: PackedStringArray = PackedStringArray()
+	for area_id in area_ids:
+		names.append(_area_name(area_id))
+	return ", ".join(names)
+
+
+func _binding_for_class(area_id: StringName) -> Variant:
+	for binding in _class_bindings:
+		if binding.get("class_area_id", &"") == area_id:
 			return binding
 	return null
 
 
-## Previous genomes stored one field_area_id and scan_twin_id. Load that as one binding.
-static func _bindings_from_feagi(data: Dictionary) -> Array[Dictionary]:
+static func _id_list_from_feagi(raw: Variant) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	if not raw is Array:
+		return ids
+	for item in raw:
+		var area_id: StringName = _optional_id(item)
+		if area_id != &"":
+			ids.append(area_id)
+	return ids
+
+
+static func _class_bindings_from_feagi(raw: Variant) -> Array[Dictionary]:
 	var bindings: Array[Dictionary] = []
-	var raw: Variant = data.get("fields", [])
-	if raw is Array:
-		for item in raw:
-			if not item is Dictionary:
-				continue
-			var field_id: StringName = _optional_id((item as Dictionary).get("field_area_id", null))
-			var twin_id: StringName = StringName(str((item as Dictionary).get("scan_twin_id", "")).strip_edges())
-			if field_id != &"" and twin_id != &"":
-				bindings.append({"field_area_id": field_id, "scan_twin_id": twin_id})
-	if not bindings.is_empty():
+	if not raw is Array:
 		return bindings
-	var singular_field: StringName = _optional_id(data.get("field_area_id", null))
-	var singular_twin: StringName = StringName(str(data.get("scan_twin_id", "")).strip_edges())
-	if singular_field != &"" and singular_twin != &"":
-		bindings.append({"field_area_id": singular_field, "scan_twin_id": singular_twin})
+	for item in raw:
+		if not item is Dictionary:
+			continue
+		var class_id: StringName = _optional_id((item as Dictionary).get("class_area_id", null))
+		var output_id: StringName = StringName(str((item as Dictionary).get("class_output_area_id", "")).strip_edges())
+		if class_id == &"":
+			continue
+		bindings.append({"class_area_id": class_id, "class_output_area_id": output_id})
 	return bindings
 
 
@@ -498,8 +688,3 @@ static func _coords_3d_from_feagi(value: Variant) -> Vector3i:
 	return Vector3i.ZERO
 
 
-static func _kernel_size_from_feagi(value: Variant) -> Vector3i:
-	if value is Array and (value as Array).size() >= 3:
-		var arr: Array = value as Array
-		return Vector3i(maxi(int(arr[0]), 0), maxi(int(arr[1]), 0), maxi(int(arr[2]), 0))
-	return Vector3i.ZERO

@@ -35,6 +35,7 @@ const _PREFAB_CAMERA_ANIMATIONS: PackedScene = preload("res://BrainVisualizer/UI
 const _PREFAB_GUIDE: PackedScene = preload("res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.tscn")
 const _PREFAB_GENOME_CHANGE_HISTORY: PackedScene = preload("res://BrainVisualizer/UI/Windows/GenomeChangeHistory/WindowGenomeChangeHistory.tscn")
 const _PREFAB_GLOBAL_SEARCH: PackedScene = preload("res://BrainVisualizer/UI/Windows/GlobalSearch/WindowGlobalSearch.tscn")
+const _PREFAB_KEYBINDS: PackedScene = preload("res://BrainVisualizer/UI/Windows/Keybinds/WindowKeybinds.tscn")
 const _GENOME_CHANGE_HISTORY_SCRIPT: Script = preload("res://BrainVisualizer/UI/Windows/GenomeChangeHistory/WindowGenomeChangeHistory.gd")
 const _PREFAB_IPU_OPU_CONFIG: PackedScene = preload("res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.tscn")
 const _PREFAB_VOXEL_INSPECTOR: PackedScene = preload("res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.tscn")
@@ -81,6 +82,17 @@ func _close_other_add_flow_windows(except_window_name: StringName) -> void:
 			continue
 		if window_name in loaded_windows:
 			force_close_window(window_name)
+
+## Opens the keyboard shortcuts table. K toggles it.
+func spawn_keybinds() -> void:
+	if WindowKeybinds.WINDOW_NAME in loaded_windows:
+		var existing: WindowKeybinds = loaded_windows[WindowKeybinds.WINDOW_NAME] as WindowKeybinds
+		bring_window_to_top(existing)
+		return
+	var keybinds_window: WindowKeybinds = _default_spawn_window(_PREFAB_KEYBINDS, WindowKeybinds.WINDOW_NAME) as WindowKeybinds
+	keybinds_window.setup()
+	bring_window_to_top(keybinds_window)
+
 
 ## Opens the genome search window. Choosing a row uses the same action as the top-bar lists.
 func spawn_global_search() -> void:
@@ -303,9 +315,10 @@ func spawn_clone_region(source_region: BrainRegion) -> void:
 	
 	import_amalgamation.setup_for_clone(source_region, source_region.friendly_name + &"_clone", default_position)
 
-func spawn_quick_connect(initial_source_area: AbstractCorticalArea = null) -> void:
+func spawn_quick_connect(initial_source_area: AbstractCorticalArea = null) -> WindowQuickConnect:
 	var quick_connect: WindowQuickConnect = _default_spawn_window(_PREFAB_QUICK_CONNECT, WindowQuickConnect.WINDOW_NAME) as WindowQuickConnect
 	quick_connect.setup(initial_source_area)
+	return quick_connect
 
 func spawn_quick_connect_neuron(mode: WindowQuickConnectNeuron.MODE, initial_source_area: AbstractCorticalArea = null) -> void:
 	var quick_connect_neuron: WindowQuickConnectNeuron = _default_spawn_window(_PREFAB_QUICK_CONNECT_NEURON, WindowQuickConnectNeuron.WINDOW_NAME) as WindowQuickConnectNeuron
@@ -420,6 +433,10 @@ func refresh_open_classifier_editor(classifier: GenomeClassifier) -> void:
 func spawn_3d_brain_monitor_tab(region: BrainRegion, force: bool = false) -> void:
 	if region == null:
 		push_error("WindowManager: spawn_3d_brain_monitor_tab called with NULL region!")
+		return
+	if GenomeClassifier.region_hides_interior(region):
+		if BV.NOTIF != null:
+			BV.NOTIF.add_notification(GenomeClassifier.INTEGRATED_CIRCUIT_INTERNALS_TOOLTIP)
 		return
 	if _suppress_auto_open_3d_tabs and not force:
 		return

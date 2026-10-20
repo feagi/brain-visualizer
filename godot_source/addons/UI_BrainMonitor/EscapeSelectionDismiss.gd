@@ -34,3 +34,16 @@ static func resolve(
 	if has_genome_object_selection or has_voxel_selection:
 		return ACTION.CLEAR_SELECTION
 	return ACTION.NONE
+
+
+## Escape uses the bottom-right Stop Inspector button while that button is on screen.
+static func stops_visible_inspector(
+	keycode: Key,
+	physical_keycode: Key,
+	pressed: bool,
+	echo: bool,
+	overlay_visible: bool,
+) -> bool:
+	if not pressed or echo or not overlay_visible:
+		return false
+	return keycode == KEY_ESCAPE or physical_keycode == KEY_ESCAPE

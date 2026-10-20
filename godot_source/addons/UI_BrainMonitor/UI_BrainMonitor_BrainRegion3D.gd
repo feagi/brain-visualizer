@@ -8,6 +8,7 @@ signal region_hover_changed(brain_region: BrainRegion, is_hovered: bool)
 
 const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
 const ExternalRegionIOLib = preload("res://addons/UI_BrainMonitor/ExternalRegionIO.gd")
+const GenomeClassifierLib = preload("res://addons/FeagiCoreIntegration/FeagiCore/LocalCache/Classifiers/GenomeClassifier.gd")
 const FRAME_THICKNESS: float = 0.2
 const FRAME_PADDING: Vector3 = Vector3(1.0, 1.0, 0.5)
 const INPUT_OUTPUT_SPACING: float = 2.0
@@ -34,6 +35,8 @@ const REGION_NAME_LABEL_OFFSET_BELOW_BEZEL_CENTER: float = 2.0
 const REGION_NAME_LABEL_EXTRA_LOWER_Y: float = 5.0
 ## Extra pixels around the on-screen title so clicks match the visible fixed-size text.
 const REGION_TITLE_SCREEN_HIT_PAD_PX: float = 8.0
+## View-depth of the title pick volume. X/Y stay on the glyph box, not the billboard cube.
+const REGION_TITLE_CLICK_DEPTH: float = 0.2
 const DESCRIPTION_HOVER_DELAY_SEC: float = 0.45
 const EXTERNAL_IO_LABEL_TEXT: String = "External Connections"
 
@@ -1573,6 +1576,8 @@ func _place_description_hover_label() -> void:
 
 
 ## On-screen hit rect of the region title. Titles are fixed-size billboards drawn without depth.
+## The rect is the glyph line. Label3D.get_aabb() is a billboard cube as tall as the name is wide,
+## and that cube was stealing clicks from cortical areas on the plates above the title.
 func get_region_title_screen_rect(camera: Camera3D) -> Rect2:
 	if camera == null or _region_name_label == null or not is_instance_valid(_region_name_label):
 		return Rect2()
@@ -1580,19 +1585,7 @@ func get_region_title_screen_rect(camera: Camera3D) -> Rect2:
 		return Rect2()
 	if camera.is_position_behind(_region_name_label.global_position):
 		return Rect2()
-	var aabb: AABB = _region_name_label.get_aabb()
-	var mesh_xy: Vector2 = Vector2(aabb.size.x, aabb.size.y)
-	if mesh_xy.x <= 0.0 or mesh_xy.y <= 0.0:
-		var font: Font = _region_name_label.font
-		if font == null:
-			font = ThemeDB.fallback_font
-		var text_px: Vector2 = font.get_string_size(
-			_region_name_label.text,
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1,
-			_region_name_label.font_size
-		)
-		mesh_xy = text_px * _region_name_label.pixel_size
+	var mesh_xy: Vector2 = _region_title_glyph_mesh_xy()
 	if mesh_xy.x <= 0.0 or mesh_xy.y <= 0.0:
 		return Rect2()
 	var depth: float = absf(camera.to_local(_region_name_label.global_position).z)
@@ -1643,23 +1636,40 @@ func _append_projected_aabb_corners(camera: Camera3D, aabb: AABB, points: Packed
 	return points
 
 
+## Glyph box in label-local units. Ignores the billboard cube from [method Label3D.get_aabb].
+func _region_title_glyph_mesh_xy() -> Vector2:
+	if _region_name_label == null or not is_instance_valid(_region_name_label):
+		return Vector2.ZERO
+	var font: Font = _region_name_label.font
+	if font == null:
+		font = ThemeDB.fallback_font
+	if font == null:
+		return Vector2.ZERO
+	var text_px: Vector2 = font.get_string_size(
+		_region_name_label.text,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		_region_name_label.font_size
+	)
+	return FEAGIUtils.fixed_size_label_glyph_mesh_xy(
+		text_px,
+		_region_name_label.pixel_size,
+		float(_region_name_label.outline_size)
+	)
+
+
 func _sync_region_label_click_area() -> void:
 	if _region_label_click_area == null or not is_instance_valid(_region_label_click_area):
 		return
 	if _region_name_label == null or not is_instance_valid(_region_name_label):
 		return
-	var aabb: AABB = _region_name_label.get_aabb()
-	var size: Vector3 = aabb.size
-	if size.x < 1.0:
-		size.x = 1.0
-	if size.y < 1.0:
-		size.y = 1.0
-	if size.z < 0.5:
-		size.z = 0.5
-	_update_click_area_shape(_region_label_click_area, size)
-	var local_center: Vector3 = aabb.position + (aabb.size * 0.5)
+	var mesh_xy: Vector2 = _region_title_glyph_mesh_xy()
+	if mesh_xy.x <= 0.0 or mesh_xy.y <= 0.0:
+		_region_label_click_area.input_ray_pickable = false
+		return
+	_update_click_area_shape(_region_label_click_area, Vector3(mesh_xy.x, mesh_xy.y, REGION_TITLE_CLICK_DEPTH))
 	if _region_name_label.is_inside_tree() and _region_label_click_area.is_inside_tree():
-		_region_label_click_area.global_position = _region_name_label.to_global(local_center)
+		_region_label_click_area.global_position = _region_name_label.global_position
 	_region_label_click_area.input_ray_pickable = true
 	if not _region_label_click_area.mouse_entered.is_connected(_on_region_label_mouse_entered):
 		_region_label_click_area.mouse_entered.connect(_on_region_label_mouse_entered)
@@ -1790,8 +1800,7 @@ func _add_collision_bodies_for_clicking(input_plate_size: Vector3, output_plate_
 	var collision_center_x = collision_total_width / 2.0
 	label_collision.position = Vector3(collision_center_x, -3.0, 2.0)  # Centered horizontally, 2 units closer to viewer
 	
-	_update_click_area_shape(label_collision, Vector3(8.0, 2.0, 1.0))
-	label_collision.input_ray_pickable = true
+	label_collision.input_ray_pickable = false
 	_sync_region_label_click_area()
 	
 
@@ -2321,6 +2330,9 @@ func _get_input_cortical_areas_internal() -> Array[AbstractCorticalArea]:
 			var area = partial_mapping.internal_target_cortical_area
 			if area not in input_areas:
 				input_areas.append(area)
+	for area in GenomeClassifierLib.classifier_plate_input_areas(_representing_region):
+		if area not in input_areas:
+			input_areas.append(area)
 	
 	return input_areas
 
@@ -2373,6 +2385,9 @@ func _get_output_cortical_areas_internal() -> Array[AbstractCorticalArea]:
 			var area = partial_mapping.internal_target_cortical_area
 			if area not in output_areas:
 				output_areas.append(area)
+	for area in GenomeClassifierLib.classifier_plate_output_areas(_representing_region):
+		if area not in output_areas:
+			output_areas.append(area)
 	
 	return output_areas
 

@@ -382,6 +382,16 @@ static func axis_aligned_rect_from_points(points: PackedVector2Array) -> Rect2:
 	return Rect2(min_p, max_p - min_p)
 
 
+## Visible glyph box for a fixed-size Label3D, in label-local units.
+## [param text_size_px] is [method Font.get_string_size]. [param outline_px] is [member Label3D.outline_size].
+## Billboard [method Label3D.get_aabb] is a cube as wide as the line and must not be used for picking.
+static func fixed_size_label_glyph_mesh_xy(text_size_px: Vector2, pixel_size: float, outline_px: float) -> Vector2:
+	if pixel_size <= 0.0 or text_size_px.x <= 0.0 or text_size_px.y <= 0.0:
+		return Vector2.ZERO
+	var ink: float = maxf(outline_px, 0.0) * 2.0
+	return (text_size_px + Vector2(ink, ink)) * pixel_size
+
+
 ## Godot FLAG_FIXED_SIZE scales a billboard by camera-space depth. Corners are camera-facing.
 static func fixed_size_billboard_world_corners(
 	origin: Vector3,

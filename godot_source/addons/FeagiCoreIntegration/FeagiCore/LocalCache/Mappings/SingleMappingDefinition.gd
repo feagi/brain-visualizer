@@ -24,6 +24,9 @@ static func _get_cached_morphology_for_mapping_rule(morph_id: Variant) -> BaseMo
 	)
 	if m != null:
 		return m
+	var rule_name := StringName(str(morph_id))
+	if GenomeClassifier.is_input_rule(rule_name):
+		return GenomeClassifier.input_rule_morphology(rule_name)
 	push_warning(
 		"SingleMappingDefinition: Skipping rule — morphology '%s' not in cache (reload morphologies or check FEAGI morphologies list)"
 		% morph_id
@@ -374,9 +377,12 @@ func to_FEAGI_JSON() -> Dictionary:
 			out["gate_source_area"] = _gate_source_area
 		return out
 
-## Returns if the morphology is not null and if it is found in the morphology cache
+## True when this rule can be written to FEAGI.
+## Classifier sample and class are mapping rules, not catalog morphologies.
 func is_morphology_valid() -> bool:
 	if _morphology_used == null:
+		return true
+	if GenomeClassifier.is_input_rule(_morphology_used.name):
 		return true
 	return _morphology_used.name in FeagiCore.feagi_local_cache.morphologies.available_morphologies.keys()
 
@@ -386,8 +392,8 @@ func is_memory_mapping() -> bool:
 		return false
 	return _morphology_used.name == &"episodic_memory" # TODO this needs to be a reference
 
-## Episodic write or scan. These mappings are drawn yellow, separate from excitatory and inhibitory.
+## Episodic write, scan, or a classifier sample/class encode. Drawn yellow.
 func is_episodic_mapping() -> bool:
 	if _morphology_used == null:
 		return false
-	return _morphology_used.name == &"episodic_memory" or _morphology_used.name == &"episodic_scan"
+	return _morphology_used.name == &"episodic_memory" or _morphology_used.name == &"episodic_scan" or GenomeClassifier.is_input_rule(_morphology_used.name)

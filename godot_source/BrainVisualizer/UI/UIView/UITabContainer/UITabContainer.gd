@@ -79,6 +79,8 @@ func show_CB_of_region(region: BrainRegion) -> void:
 
 ## SPECIFCIALLY creates a CB of a region, and then adds it to this UITabContainer
 func spawn_CB_of_region(region: BrainRegion) -> void:
+	if GenomeClassifier.region_hides_interior(region):
+		return
 	if does_contain_CB_of_region(region):
 		push_error("UI UITabCOntainer: This tab container already contains region ID %s!" % region.region_ID)
 		return
@@ -99,6 +101,8 @@ func show_BM_of_region(region: BrainRegion) -> UI_BrainMonitor_3DScene:
 
 ## SPECIFICALLY creates a BM of a region, and then adds it to this UITabContainer
 func spawn_BM_of_region(region: BrainRegion) -> void:
+	if GenomeClassifier.region_hides_interior(region):
+		return
 	if does_contain_BM_of_region(region):
 		push_error("UI UITabContainer: This tab container already contains BM for region ID %s!" % region.region_ID)
 		return

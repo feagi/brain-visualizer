@@ -221,7 +221,7 @@ func ensure_classifier_twin_visuals(classifier: GenomeClassifier) -> void:
 func _CACHE_add_classifier_twin_visual(classifier: GenomeClassifier) -> void:
 	if classifier == null:
 		return
-	for twin in classifier.get_twin_areas():
+	for twin in classifier.get_visible_output_areas():
 		_CACHE_add_one_classifier_twin_visual(classifier, twin)
 
 
@@ -282,7 +282,7 @@ func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	cortical_node.node_moved.connect(_genome_object_moved)
 	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
 		var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(area.cortical_ID)
-		if owner != null and owner.is_scan_twin_id(area.cortical_ID):
+		if owner != null and (owner.is_class_output_id(area.cortical_ID) or owner.is_error_area_id(area.cortical_ID)):
 			_CACHE_add_classifier_twin_visual(owner)
 	if not _cb_setup_in_progress:
 		_request_auto_layout_after_topology_change()
@@ -319,8 +319,9 @@ func _CACHE_remove_classifier(classifier: GenomeClassifier) -> void:
 		push_error("UI CB: Unable to find classifier %s to remove node of!" % classifier.classifier_id)
 		return
 	BV.UI.selection_system.clear_all_highlighted()
-	for twin_id in classifier.scan_twin_ids():
+	for twin_id in classifier.class_output_ids():
 		_classifier_twin_visual_ids.erase(twin_id)
+	_classifier_twin_visual_ids.erase(classifier.error_area_id)
 	var node: CBNodeClassifier = _classifier_nodes[classifier.classifier_id]
 	_classifier_nodes.erase(classifier.classifier_id)
 	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
@@ -605,8 +606,12 @@ func _select_single_graph_element(element: GraphElement) -> void:
 		element.selected = true
 
 func _user_double_clicked_region(region_node: CBNodeRegion) -> void:
+	var region: BrainRegion = region_node.representing_region
+	if GenomeClassifier.region_hides_interior(region):
+		BV.NOTIF.add_notification(GenomeClassifier.INTEGRATED_CIRCUIT_INTERNALS_TOOLTIP)
+		return
 	BV.UI.selection_system.clear_all_highlighted()
-	user_request_viewing_subregion.emit(region_node.representing_region)
+	user_request_viewing_subregion.emit(region)
 
 func _on_connection_request(from_node: StringName, _from_port: int, to_node: StringName, _to_port: int) -> void:
 	var source: GenomeObject = null
@@ -622,6 +627,12 @@ func _on_connection_request(from_node: StringName, _from_port: int, to_node: Str
 	elif to_node in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
 		destination = FeagiCore.feagi_local_cache.brain_regions.available_brain_regions[to_node]
 
+	var destination_classifier: GenomeClassifier = FeagiCore.feagi_local_cache.classifiers.get(to_node, null) as GenomeClassifier
+	if destination_classifier != null and source is AbstractCorticalArea:
+		var quick_connect: WindowQuickConnect = BV.UI.window_manager.spawn_quick_connect(source as AbstractCorticalArea)
+		if quick_connect != null:
+			quick_connect.offer_classifier_destination(destination_classifier)
+		return
 	if source is GenomeClassifier or destination is GenomeClassifier:
 		return
 	if from_node in FeagiCore.feagi_local_cache.classifiers or to_node in FeagiCore.feagi_local_cache.classifiers:

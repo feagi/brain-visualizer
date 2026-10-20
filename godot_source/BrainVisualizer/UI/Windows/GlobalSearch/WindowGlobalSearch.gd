@@ -73,6 +73,9 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key := event as InputEventKey
 		if key.keycode == KEY_ESCAPE or key.physical_keycode == KEY_ESCAPE:
+			if BV != null and BV.UI != null and BV.UI.stop_visible_inspector_on_escape(key):
+				accept_event()
+				return
 			accept_event()
 			close_window()
 			return

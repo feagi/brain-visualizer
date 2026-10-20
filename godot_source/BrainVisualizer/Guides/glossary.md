@@ -63,7 +63,7 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 
 **Classifier**
 - Integrated circuit that learns a correspondence between a pattern and a label
-- Built from kernel memory, class memory, the areas you select, and one detection area per connected field
+- Built from sample memory, class memory, one class output per class input, and one error area
 - See also: [Integrated Circuit](#i)
 
 **Circuit Builder**

@@ -45,7 +45,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	# Global ESC-to-close for all windows (works even when a child has focus)
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key := event as InputEventKey
-		if key.keycode == KEY_ESCAPE:
+		if key.keycode == KEY_ESCAPE or key.physical_keycode == KEY_ESCAPE:
+			if BV != null and BV.UI != null and BV.UI.stop_visible_inspector_on_escape(key):
+				get_viewport().set_input_as_handled()
+				return
 			close_window()
 
 func _input(event: InputEvent) -> void:
@@ -53,6 +56,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key := event as InputEventKey
 		if key.keycode == KEY_ESCAPE or key.physical_keycode == KEY_ESCAPE:
+			# Stop Inspector is showing: Escape uses that button and leaves the window open.
+			if BV != null and BV.UI != null and BV.UI.stop_visible_inspector_on_escape(key):
+				accept_event()
+				return
 			# Newest window receives Escape before the 3D view. Clear voxels and
 			# cortical areas here, then keep the existing close-on-Escape behavior.
 			if BV != null and BV.UI != null:

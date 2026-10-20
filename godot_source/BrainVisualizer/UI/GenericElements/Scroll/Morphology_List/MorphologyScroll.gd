@@ -18,6 +18,8 @@ var _filter_line: LineEdit
 var _item_list: ItemList
 var _items: Array[Dictionary] = []
 var _filtered_item_indices: Array[int] = []
+## A caller-provided list, such as the two classifier rules, must not grow back into the catalog.
+var _manual_list: bool = false
 var _base_filter_font_size: int = 0
 var _base_list_font_size: int = 0
 
@@ -59,11 +61,13 @@ static func items_from_morphology_map(morphologies_cache: Dictionary) -> Array[D
 
 ## Clears list, then loads morphology list from FeagiCache
 func repopulate_from_cache() -> void:
+	_manual_list = false
 	_items = items_from_morphology_map(FeagiCore.feagi_local_cache.morphologies.available_morphologies)
 	_apply_filter(_filter_line.text)
 
 ## Sets the morphologies from a manual list
 func set_morphologies(morphologies: Array) -> void:
+	_manual_list = true
 	_items.clear()
 	for entry in morphologies:
 		var morphology: BaseMorphology = entry as BaseMorphology
@@ -72,14 +76,17 @@ func set_morphologies(morphologies: Array) -> void:
 				morphology = FeagiCore.feagi_local_cache.morphologies.available_morphologies[entry]
 		if morphology == null:
 			continue
-		_items.append({"label": String(morphology.name), "payload": morphology})
+		var item_label := String(morphology.name)
+		if morphology.name == GenomeClassifier.SAMPLE_INPUT_MORPHOLOGY or morphology.name == GenomeClassifier.CLASS_INPUT_MORPHOLOGY:
+			item_label = GenomeClassifier.input_rule_label(morphology.name)
+		_items.append({"label": item_label, "payload": morphology})
 	_apply_filter(_filter_line.text)
 
 ## Manually set the selected morphology through code.
 func select_morphology(morphology: BaseMorphology) -> void:
 	_selected_morphology = morphology
 	_select_payload(morphology)
-	if refresh_morphology_from_FEAGI_on_select:
+	if refresh_morphology_from_FEAGI_on_select and not GenomeClassifier.is_input_rule(morphology.name):
 		FeagiCore.requests.get_morphology(morphology.name)
 
 func _respond_to_deleted_morphology(morphology: BaseMorphology) -> void:
@@ -89,10 +96,14 @@ func _respond_to_deleted_morphology(morphology: BaseMorphology) -> void:
 		morphology_selected.emit(_selected_morphology)
 
 func _respond_to_added_morphology(morphology: BaseMorphology) -> void:
+	if _manual_list:
+		return
 	_items.append({"label": morphology.name, "payload": morphology})
 	_apply_filter(_filter_line.text)
 
 func _on_morphologies_reloaded() -> void:
+	if _manual_list:
+		return
 	var keep_selection: BaseMorphology = _selected_morphology
 	repopulate_from_cache()
 	if keep_selection != null and !(keep_selection is NullMorphology):
@@ -132,7 +143,7 @@ func _on_item_selected(index: int) -> void:
 	var morphology: BaseMorphology = _items[item_index].get("payload", NullMorphology.new())
 	_selected_morphology = morphology
 	morphology_selected.emit(morphology)
-	if refresh_morphology_from_FEAGI_on_select:
+	if refresh_morphology_from_FEAGI_on_select and not GenomeClassifier.is_input_rule(morphology.name):
 		FeagiCore.requests.get_morphology(morphology.name)
 
 func _on_item_clicked(index: int, _at_position: Vector2, _mouse_button_index: int) -> void:

@@ -164,7 +164,7 @@ func setup(area: AbstractCorticalArea) -> void:
 	_cortical_area_type = area.cortical_type
 	_cortical_area_id = area.cortical_ID
 	_cortical_area = area  # Store reference for accessing visualization_voxel_granularity
-	_is_classifier_stamp = area.is_classifier_kernel_memory()
+	_is_classifier_stamp = area.is_classifier_sample_memory()
 	
 	# Check if this area uses aggregated rendering mode
 	_visualization_voxel_granularity = area.visualization_voxel_granularity
@@ -1515,7 +1515,7 @@ func _classifier_stamp_memory_neuron_count() -> int:
 		stats = FeagiCore.feagi_local_cache.memory_area_stats
 		var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(_cortical_area_id)
 		if owner != null:
-			for area_id in [owner.kernel_memory_id, owner.class_memory_id]:
+			for area_id in [owner.sample_memory_id, owner.class_memory_id]:
 				if area_id != &"" and stats.has(area_id):
 					var area_stats: Dictionary = stats[area_id]
 					if area_stats.has("neuron_count"):

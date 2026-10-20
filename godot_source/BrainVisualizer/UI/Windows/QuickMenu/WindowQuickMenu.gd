@@ -158,7 +158,14 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 			quick_connect_N_CA_button.visible = false
 			quick_connect_N_N_button.visible = false
 			details_button.tooltip_text = "View Circuit Details"
-			open_3d_tab_button.tooltip_text = "Open Circuit in 3D Tab"
+			open_3d_tab_button.visible = true
+			if region_blocks_interior(_selection):
+				open_3d_tab_button.disabled = true
+				open_3d_tab_button.mouse_filter = Control.MOUSE_FILTER_STOP
+				open_3d_tab_button.tooltip_text = GenomeClassifier.INTEGRATED_CIRCUIT_INTERNALS_TOOLTIP
+			else:
+				open_3d_tab_button.disabled = false
+				open_3d_tab_button.tooltip_text = "Open Circuit in 3D Tab"
 			move_to_region_button.tooltip_text = "Add to a circuit..."
 			clone_button.tooltip_text = "Clone this circuit..."
 			delete_button.tooltip_text = "Delete this Circuit..."
@@ -173,7 +180,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
 			reset_button.visible = true
 			reset_button.disabled = false
-			reset_button.tooltip_text = "Reset kernel and class memory..."
+			reset_button.tooltip_text = "Reset sample and class memory..."
 			iopu_config_button.visible = false
 			open_3d_tab_button.visible = false
 			quick_connect_button.visible = false
@@ -415,7 +422,7 @@ func _button_ipu_opu_config() -> void:
 	close_window()
 
 ## Resets runtime neural state (via FEAGI PUT /v1/cortical_area/reset).
-## A classifier resets its kernel memory and class memory, the same call a memory area uses.
+## A classifier resets its sample memory and class memory, the same call a memory area uses.
 func _button_reset() -> void:
 	if FeagiCore == null or FeagiCore.requests == null:
 		BV.NOTIF.add_notification("Reset unavailable: FEAGI is not ready")
@@ -425,7 +432,7 @@ func _button_reset() -> void:
 	var areas: Array[AbstractCorticalArea] = _reset_target_areas()
 	if areas.is_empty():
 		if resetting_classifier:
-			BV.NOTIF.add_notification("Classifier kernel and class memory are not available to reset")
+			BV.NOTIF.add_notification("Classifier sample and class memory are not available to reset")
 		else:
 			BV.NOTIF.add_notification("No cortical areas selected to reset")
 		close_window()
@@ -464,7 +471,7 @@ func _publish_memory_reset(areas: Array[AbstractCorticalArea]) -> void:
 		inspector.reload_if_showing(area_ids)
 
 
-## Cortical selection resets those areas. A classifier resets kernel memory and class memory only.
+## Cortical selection resets those areas. A classifier resets sample memory and class memory only.
 func _reset_target_areas() -> Array[AbstractCorticalArea]:
 	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
 		return AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
@@ -472,6 +479,12 @@ func _reset_target_areas() -> Array[AbstractCorticalArea]:
 	if classifier == null:
 		return []
 	return classifier.get_memory_areas()
+
+func region_blocks_interior(selection: Array[GenomeObject]) -> bool:
+	if selection.is_empty():
+		return false
+	return GenomeClassifier.region_hides_interior(selection[0] as BrainRegion)
+
 
 func _button_open_3d_tab() -> void:
 	_debug_selection_state("_button_open_3d_tab start")
@@ -491,6 +504,10 @@ func _button_open_3d_tab() -> void:
 	var region: BrainRegion = _selection[0] as BrainRegion
 	if region == null:
 		push_error("BV UI: QuickMenu _button_open_3d_tab: Selected object is not a brain region!")
+		close_window()
+		return
+	if GenomeClassifier.region_hides_interior(region):
+		BV.NOTIF.add_notification(GenomeClassifier.INTEGRATED_CIRCUIT_INTERNALS_TOOLTIP)
 		close_window()
 		return
 	

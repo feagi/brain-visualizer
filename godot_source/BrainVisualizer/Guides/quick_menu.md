@@ -234,7 +234,7 @@ See [Brain Circuits](brain_circuits.md) for more details.
 
 **Classifier:**
 - Shown on a classifier the same way it is on a memory area
-- Clears kernel memory and class memory together
+- Clears sample memory and class memory together
 - Leaves the classifier, its connections, and its input areas in place
 
 **Use When:**

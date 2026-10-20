@@ -24,7 +24,12 @@ const MORPHOLOGY_DISPLAY_NAME_OVERRIDES := {
 	&"episodic_memory": "Episodic Memory",
 	&"episodic_scan": "Episodic Scan",
 	&"associative_memory": "Associative Memory",
+	&"classifier_sample": "Classifier Sample",
+	&"classifier_class": "Classifier Class",
 }
+
+## Restricted lists stay restricted. A later catalog reload must not append the other rules.
+var _listing_locked: bool = false
 
 func _ready():
 	_default_width = custom_minimum_size.x
@@ -43,6 +48,7 @@ func _ready():
 	_on_theme_change()
 
 func reload_available_morphologies() -> void:
+	_listing_locked = false
 	var selected_name: StringName = &""
 	if selected >= 0 and selected < _listed_morphologies.size():
 		selected_name = _listed_morphologies[selected].name
@@ -58,6 +64,7 @@ func clear_all_morphologies() -> void:
 
 ## Replace morphology listing with a new one
 func overwrite_morphologies(new_morphology: Array[BaseMorphology]) -> void:
+	_listing_locked = true
 	clear_all_morphologies()
 	for morphology in new_morphology:
 		add_morphology(morphology)
@@ -119,10 +126,14 @@ func _morphology_was_deleted_from_cache(deleted_morphology: BaseMorphology) -> v
 	remove_morphology(deleted_morphology)
 
 func _morphology_was_added_to_cache(added_morphology: BaseMorphology) -> void:
+	if _listing_locked:
+		return
 	if added_morphology not in _listed_morphologies:
 		add_morphology(added_morphology)
 
 func _on_morphologies_reloaded() -> void:
+	if _listing_locked:
+		return
 	reload_available_morphologies()
 
 func _morphology_was_renamed_in_cache(_old_name: StringName, morphology: BaseMorphology) -> void:

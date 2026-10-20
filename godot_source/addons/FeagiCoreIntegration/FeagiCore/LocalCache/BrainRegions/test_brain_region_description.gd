@@ -15,6 +15,7 @@ func _initialize() -> void:
 	failures += _test_description_from_json_missing_is_empty()
 	failures += _test_tooltip_text_strips_and_hides_empty()
 	failures += _test_axis_aligned_rect_from_points()
+	failures += _test_fixed_size_label_glyph_mesh_stays_on_the_line()
 	failures += _test_fixed_size_billboard_corners_scale_with_depth()
 	failures += _test_screen_rect_from_projected_corners_contains_and_pads()
 	failures += _test_scale_rect_into_container()
@@ -80,6 +81,23 @@ func _test_axis_aligned_rect_from_points() -> int:
 	]))
 	if rect.position != Vector2(10, 5) or rect.size != Vector2(30, 30):
 		push_error("axis-aligned rect should span min/max points, got %s" % rect)
+		return 1
+	return 0
+
+
+func _test_fixed_size_label_glyph_mesh_stays_on_the_line() -> int:
+	if FEAGIUtils.fixed_size_label_glyph_mesh_xy(Vector2.ZERO, 0.001, 4.0) != Vector2.ZERO:
+		push_error("empty title text should not produce a hit box")
+		return 1
+	if FEAGIUtils.fixed_size_label_glyph_mesh_xy(Vector2(400.0, 48.0), 0.0, 4.0) != Vector2.ZERO:
+		push_error("zero pixel size should not produce a hit box")
+		return 1
+	var glyph: Vector2 = FEAGIUtils.fixed_size_label_glyph_mesh_xy(Vector2(400.0, 48.0), 0.001, 4.0)
+	if not glyph.is_equal_approx(Vector2(0.408, 0.056)):
+		push_error("glyph box should be text plus outline, got %s" % glyph)
+		return 1
+	if glyph.y >= 400.0 * 0.001:
+		push_error("title hit height must stay on the glyph line, not the billboard cube")
 		return 1
 	return 0
 

@@ -115,7 +115,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	if (_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
 		AbstractCorticalArea.is_feagi_invariant_core_area(_representing_cortial_area) or
 		_should_use_png_icon(_representing_cortial_area) or
-		_representing_cortial_area.is_classifier_kernel_memory()):
+		_representing_cortial_area.is_classifier_sample_memory()):
 		# Memory, Power, Death, and PNG icon areas use only DirectPoints renderer (no DDA cube)
 		_directpoints_renderer = UI_BrainMonitor_DirectPointsCorticalAreaRenderer.new()
 		add_child(_directpoints_renderer)
@@ -1215,9 +1215,9 @@ func _is_hidden_classifier_internal_mapping(source: AbstractCorticalArea, destin
 	return GenomeClassifier.is_internal_only_classifier_mapping(source, destination, FeagiCore.feagi_local_cache.classifiers)
 
 
-## Stamp has no NPU afferents; draw kernel/class/field → stamp as visual aliases.
+## Stamp has no NPU afferents; draw sample and class inputs onto the stamp.
 func _append_classifier_inbound_visual_aliases(stamp_position: Vector3) -> int:
-	if _representing_cortial_area == null or not _representing_cortial_area.is_classifier_kernel_memory():
+	if _representing_cortial_area == null or not _representing_cortial_area.is_classifier_sample_memory():
 		return 0
 	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
 		return 0
@@ -1225,7 +1225,7 @@ func _append_classifier_inbound_visual_aliases(stamp_position: Vector3) -> int:
 	if owner == null:
 		return 0
 	var added: int = 0
-	var dest_ids: Array[StringName] = [owner.kernel_memory_id, owner.class_memory_id]
+	var dest_ids: Array[StringName] = [owner.sample_memory_id, owner.class_memory_id]
 	for source_id in owner.inbound_visual_source_ids():
 		var source_area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(source_id, null)
 		if source_area == null:
@@ -1246,7 +1246,7 @@ func _append_classifier_inbound_visual_aliases(stamp_position: Vector3) -> int:
 	return added
 
 
-## Class-map twin is a normal interconnect; draw stamp → twin when either end shows connections.
+## Class outputs and the error area are ordinary volumes; draw stamp → output when either end shows connections.
 func _append_classifier_twin_visual_alias(self_position: Vector3) -> int:
 	if _representing_cortial_area == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
 		return 0
@@ -1258,7 +1258,7 @@ func _append_classifier_twin_visual_alias(self_position: Vector3) -> int:
 		return 0
 	var is_stamp: bool = owner.is_stamp_host_id(_representing_cortial_area.cortical_ID)
 	var added: int = 0
-	for twin in owner.get_twin_areas():
+	for twin in owner.get_visible_output_areas():
 		if twin == null:
 			continue
 		var is_this_twin: bool = twin.cortical_ID == _representing_cortial_area.cortical_ID

@@ -4,6 +4,8 @@ class_name MappingRestrictionCorticalMorphology
 @export var cortical_source_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
 @export var cortical_destination_type: AbstractCorticalArea.CORTICAL_AREA_TYPE
 @export var restricted_to_morphology_of_names: Array[StringName]
+## Rules that are not catalog morphologies, such as classifier_sample and classifier_class.
+var preset_morphologies: Array[BaseMorphology] = []
 @export var disallowed_morphology_names: Array[StringName]
 @export var max_number_mappings: int  = -1
 @export var allow_changing_scalar: bool = true
@@ -15,7 +17,7 @@ class_name MappingRestrictionCorticalMorphology
 @export var allow_changing_LTD: bool = true
 
 func has_restricted_morphologies() -> bool:
-	return len(restricted_to_morphology_of_names) > 0
+	return not preset_morphologies.is_empty() or len(restricted_to_morphology_of_names) > 0
 
 func has_disallowed_morphologies() -> bool:
 	return len(disallowed_morphology_names) > 0
@@ -24,6 +26,8 @@ func has_max_number_mappings() -> bool:
 	return max_number_mappings != -1
 
 func get_morphologies_restricted_to() -> Array[BaseMorphology]:
+	if not preset_morphologies.is_empty():
+		return preset_morphologies
 	if len(restricted_to_morphology_of_names) == 0:
 		return []
 	var output: Array[BaseMorphology] = []

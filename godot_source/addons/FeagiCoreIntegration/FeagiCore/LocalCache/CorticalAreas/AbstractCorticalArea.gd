@@ -473,15 +473,20 @@ static func core_cluster_computed_feagi_position(cortical_id: Variant, power_anc
 	var offset_x: int = (my_idx - p_idx) * CORE_CLUSTER_FEAGI_SPACING_X
 	return power_anchor_feagi + Vector3i(offset_x, 0, 0)
 
-## True when this custom area is the classifier class-map twin (field XY x class-count Z).
-func is_scan_twin() -> bool:
-	return _scan_twin and _classifier_role == &"scan_twin"
+## True when this area is a classifier class output (shape copied from its class input).
+func is_classifier_class_output() -> bool:
+	return _classifier_role == &"class_output"
 
 
-func is_classifier_kernel_memory() -> bool:
-	if _classifier_role == &"kernel_memory":
+## True when this area is the classifier's 1x1x1 error output.
+func is_classifier_error_output() -> bool:
+	return _classifier_role == &"error"
+
+
+func is_classifier_sample_memory() -> bool:
+	if _classifier_role == &"sample_memory":
 		return true
-	return String(friendly_name).ends_with("_kernel_mem")
+	return String(friendly_name).ends_with("_sample_mem")
 
 
 func is_classifier_class_memory() -> bool:
@@ -490,19 +495,19 @@ func is_classifier_class_memory() -> bool:
 	return String(friendly_name).ends_with("_class_mem")
 
 
-## True for the hidden kernel/class memory internals of a classifier assembly.
-## Names are the post_classifier contract: `{name}_kernel_mem` and `{name}_class_mem`.
+## True for the sample and class memories of a classifier assembly.
+## Names are the post_classifier contract: `{name}_sample_mem` and `{name}_class_mem`.
 func is_classifier_internal_memory() -> bool:
-	return is_classifier_kernel_memory() or is_classifier_class_memory()
+	return is_classifier_sample_memory() or is_classifier_class_memory()
 
 
 func temporal_depth() -> int:
 	return _temporal_depth
 
 
-## Auto scan twins spawned beside classifier fields (parent stripped, land in root). Hide them.
+## Stray auto twins that are not a class output or an error area. Hide them.
 func is_leftover_classifier_auto_twin() -> bool:
-	if is_scan_twin() or is_classifier_internal_memory():
+	if is_classifier_class_output() or is_classifier_error_output() or is_classifier_internal_memory():
 		return false
 	if _scan_twin:
 		return true

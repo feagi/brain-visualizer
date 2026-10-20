@@ -146,6 +146,8 @@ func _on_user_selection(objects: Array[GenomeObject], context: SelectionSystem.S
 			if not DestinationPick.accepts_mouse_destination_click(_current_state):
 				return
 			var picked_classifier: GenomeClassifier = GenomeClassifier.destination_classifier_from_selection(objects, _is_ctrl_modifier_held())
+			if picked_classifier == null and not _is_ctrl_modifier_held() and objects.size() == 1:
+				picked_classifier = _classifier_for_mapping_destination(objects[0])
 			if picked_classifier != null:
 				_set_classifier_destination(picked_classifier)
 				return
@@ -169,9 +171,12 @@ func establish_connection_button() -> void:
 	if _source == null:
 		return
 	if _destination_classifier != null:
-		var field_result: FeagiRequestOutput = await FeagiCore.requests.attach_classifier_field(
+		if _selected_morphology == null:
+			return
+		var field_result: FeagiRequestOutput = await FeagiCore.requests.map_classifier_input(
 			_destination_classifier,
-			_source.cortical_ID
+			_source,
+			_selected_morphology.name
 		)
 		if field_result == null or not field_result.success:
 			_notify_classifier_mapping_failed(field_result)
@@ -343,6 +348,14 @@ func _apply_locked_episodic_memory_rule() -> void:
 func _setting_morphology() -> void:
 	print("UI: WINDOW: QUICKCONNECT: User Picking Connectivity Rule...")
 	_stop_quick_connect_guide()
+	if _destination_classifier != null:
+		_show_classifier_input_rules()
+		return
+	if _destinations.size() <= 1:
+		var classifier_destination: GenomeClassifier = _classifier_for_mapping_destination(_destination)
+		if classifier_destination != null:
+			_set_classifier_destination(classifier_destination)
+			return
 	if _is_locked_episodic_memory_connection():
 		_apply_locked_episodic_memory_rule()
 		return
@@ -399,6 +412,9 @@ func _on_morphology_renamed_for_cache(_old_name: StringName, m: BaseMorphology) 
 
 func _on_morphology_cache_changed(_m: BaseMorphology) -> void:
 	if _current_state != POSSIBLE_STATES.MORPHOLOGY:
+		return
+	if _destination_classifier != null:
+		_show_classifier_input_rules()
 		return
 	var restrictions = MappingRestrictionsAPI.get_restrictions_between_cortical_areas(_source, _destination)
 	_populate_core_morphology_icons(restrictions)
@@ -583,7 +599,7 @@ func _create_icon_widget_for_morphology(morphology_id: StringName, morphology: B
 	button.set_meta("border_panel", border_panel)
 	button.pressed.connect(Callable(self, "_on_core_icon_pressed").bind(morphology, button))
 	var name_label := Label.new()
-	name_label.text = str(morphology.name)
+	name_label.text = GenomeClassifier.input_rule_label(morphology.name)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var slot := VBoxContainer.new()
@@ -676,21 +692,50 @@ func _set_core_icon_selected(button: TextureButton) -> void:
 			selected_panel.add_theme_stylebox_override("panel", selected_style as StyleBox)
 	_selected_core_icon_button = button
 
-func _source_can_feed_classifier(area: AbstractCorticalArea) -> bool:
+func _classifier_for_mapping_destination(genome_object: GenomeObject) -> GenomeClassifier:
+	if genome_object == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return null
+	return GenomeClassifier.classifier_for_mapping_destination(genome_object, FeagiCore.feagi_local_cache.classifiers)
+
+
+## Classifier Sample and Classifier Class are the only viable rules.
+func _show_classifier_input_rules() -> void:
+	var rules: Array[BaseMorphology] = GenomeClassifier.input_morphologies()
+	_step3_scroll.set_morphologies(rules)
+	_populate_classifier_rule_icons(rules)
+
+
+func _populate_classifier_rule_icons(rules: Array[BaseMorphology]) -> void:
+	for child in _core_icons.get_children():
+		child.queue_free()
+	_core_icon_buttons.clear()
+	_selected_core_icon_button = null
+	for morphology in rules:
+		var icon_widget: Control = _create_icon_widget_for_morphology(morphology.name, morphology)
+		if icon_widget == null:
+			continue
+		_core_icons.add_child(icon_widget)
+
+
+func offer_classifier_destination(classifier: GenomeClassifier) -> void:
+	_set_classifier_destination(classifier)
+
+
+func _source_can_feed_classifier(area: AbstractCorticalArea, classifier: GenomeClassifier) -> bool:
 	if area == null:
 		return false
-	if area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM and area.cortical_type != AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT:
-		return false
-	if area.is_scan_twin() or area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin():
-		return false
-	return true
+	return GenomeClassifier.cortical_type_can_feed_classifier(
+		area.cortical_type,
+		area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin(),
+		classifier != null and classifier.owns_area_id(area.cortical_ID),
+	)
 
 
 func _set_classifier_destination(classifier: GenomeClassifier) -> void:
 	if classifier == null:
 		return
-	if not _source_can_feed_classifier(_source):
-		_step2_label.text = " Classifier mappings start from an interconnect area."
+	if not _source_can_feed_classifier(_source, classifier):
+		_step2_label.text = " Classifier inputs start from a memory, interconnect, input, or output area."
 		_step2_panel.theme_type_variation = "PanelContainer_QC_waiting"
 		return
 	_clear_destination_highlights()
@@ -698,16 +743,18 @@ func _set_classifier_destination(classifier: GenomeClassifier) -> void:
 	_destination = null
 	_destination_classifier = classifier
 	_selected_morphology = null
+	_memory_rule_locked = false
 	_step2_panel.theme_type_variation = "PanelContainer_QC_Complete"
 	_step2_label.text = " Selected Classifier: [" + classifier.friendly_name + "]"
 	_step3_panel.visible = true
-	_step3_panel.theme_type_variation = "PanelContainer_QC_Complete"
-	_step3_label.text = " Connectivity Rule: Classifier"
-	_step3_morphology_container.visible = false
-	_set_core_bar_visibility(false)
-	_finished_selecting = true
-	_step4_button.disabled = false
-	current_state = POSSIBLE_STATES.IDLE
+	_step3_panel.theme_type_variation = "PanelContainer_QC_waiting"
+	_step3_label.text = " Choose Classifier Sample or Classifier Class."
+	_step3_morphology_container.visible = true
+	_set_core_bar_visibility(true)
+	_show_classifier_input_rules()
+	_finished_selecting = false
+	_step4_button.disabled = true
+	current_state = POSSIBLE_STATES.MORPHOLOGY
 	if BV != null and BV.UI != null and BV.UI.selection_system != null:
 		BV.UI.selection_system.clear_all_highlighted()
 		BV.UI.selection_system.add_to_highlighted(classifier)
@@ -729,6 +776,11 @@ func _set_source(cortical_area: AbstractCorticalArea) -> void:
 func _toggle_destination(cortical_area: AbstractCorticalArea) -> void:
 	if cortical_area == null:
 		return
+	if not _is_ctrl_modifier_held():
+		var classifier_destination: GenomeClassifier = _classifier_for_mapping_destination(cortical_area)
+		if classifier_destination != null:
+			_set_classifier_destination(classifier_destination)
+			return
 	var previous_primary: AbstractCorticalArea = _destination
 	if cortical_area in _destinations:
 		_destinations.erase(cortical_area)
@@ -768,6 +820,11 @@ func _sync_destinations_from_selected_objects(objects: Array[GenomeObject]) -> v
 
 ## Applies explorer or 3D multi-select results as destination areas.
 func _apply_destinations_from_objects(objects: Array[GenomeObject], stay_in_destination_mode: bool) -> void:
+	if not stay_in_destination_mode and objects.size() == 1:
+		var classifier_destination: GenomeClassifier = _classifier_for_mapping_destination(objects[0])
+		if classifier_destination != null:
+			_set_classifier_destination(classifier_destination)
+			return
 	var previous_primary: AbstractCorticalArea = _destination
 	_destination_classifier = null
 	_clear_destination_highlights()
@@ -856,10 +913,18 @@ func _clear_destination_highlights() -> void:
 
 func _set_morphology(morphology: BaseMorphology) -> void:
 	_selected_morphology = morphology
-	_step3_label.text = " Selected Connectivity Rule: " + morphology.name
+	var classifier_rule: bool = _destination_classifier != null or GenomeClassifier.is_input_rule(morphology.name)
+	var rule_label: String = GenomeClassifier.input_rule_label(morphology.name) if classifier_rule else morphology.name
+	_step3_label.text = " Selected Connectivity Rule: " + rule_label
 	_step3_panel.theme_type_variation = "PanelContainer_QC_Complete"
-	_step3_morphology_view.load_morphology(morphology)
-	_step3_morphology_details.load_morphology(morphology)
+	if classifier_rule:
+		_step3_morphology_view.visible = false
+		_step3_morphology_details.visible = false
+	else:
+		_step3_morphology_view.visible = true
+		_step3_morphology_details.visible = true
+		_step3_morphology_view.load_morphology(morphology)
+		_step3_morphology_details.load_morphology(morphology)
 	_finished_selecting = true
 	# Return to IDLE so edit buttons reappear and Establish is enabled.
 	# IDLE keeps the core icon bar visible (we adjusted this earlier).

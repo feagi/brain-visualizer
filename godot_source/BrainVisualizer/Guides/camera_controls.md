@@ -317,6 +317,8 @@ Brain Monitor does not respond to touch-screen gestures. A stylus that acts as a
 
 ## Keyboard Shortcuts Reference
 
+Press **K** anywhere outside a text field to open the full shortcuts table. Press **K** or **Escape** to close it.
+
 ### Circuit Builder (2D)
 - **Arrow Keys**: Pan view
 - **Mouse wheel**: Zoom

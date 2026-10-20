@@ -71,6 +71,10 @@ func get_secondary_tab_container() -> UITabContainer:
 
 ## Searches from the root [UIView] for a CB of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer]
 func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> void:
+	if GenomeClassifier.region_hides_interior(region):
+		if BV.NOTIF != null:
+			BV.NOTIF.add_notification(GenomeClassifier.INTEGRATED_CIRCUIT_INTERNALS_TOOLTIP)
+		return
 	var UI_tab: UITabContainer = get_root_UIView().return_UITabContainer_holding_CB_of_given_region(region)
 	if UI_tab != null:
 		UI_tab.bring_existing_region_CB_to_top(region)
@@ -80,6 +84,10 @@ func show_or_create_CB_of_region(region: BrainRegion, UI_tab_to_create_in: UITab
 
 ## Searches from the root [UIView] for a BM of the given region. If one is found, brings it to the top. Otherwise, creates one in the given [UITabContainer].
 func show_or_create_BM_of_region(region: BrainRegion, UI_tab_to_create_in: UITabContainer) -> UI_BrainMonitor_3DScene:
+	if GenomeClassifier.region_hides_interior(region):
+		if BV.NOTIF != null:
+			BV.NOTIF.add_notification(GenomeClassifier.INTEGRATED_CIRCUIT_INTERNALS_TOOLTIP)
+		return null
 	var UI_tab: UITabContainer = get_root_UIView().return_UITabContainer_holding_BM_of_given_region(region)
 	if UI_tab != null:
 		UI_tab.bring_existing_region_BM_to_top(region)

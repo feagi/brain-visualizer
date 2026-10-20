@@ -45,6 +45,8 @@ var partial_mappings: Array[PartialMappingSet]:
 ## Server-persisted integration contract (designated_inputs / designated_outputs from FEAGI API).
 var designated_inputs: Array[StringName] = []
 var designated_outputs: Array[StringName] = []
+## True when this region is a classifier circuit. Its interior is not opened.
+var is_classifier_circuit: bool = false
 
 var _contained_cortical_areas: Array[AbstractCorticalArea]
 var _contained_regions: Array[BrainRegion]
@@ -64,6 +66,7 @@ static func from_FEAGI_JSON_ignore_children(dict: Dictionary, ID: StringName) ->
 		FEAGIUtils.array_to_vector3i(dict["coordinate_3d"]),
 	)
 	region.FEAGI_change_description(FEAGIUtils.brain_region_description_from_json(dict))
+	region.FEAGI_set_classifier_circuit(bool(dict.get("classifier_circuit", false)))
 	return region
 	
 
@@ -137,6 +140,7 @@ func FEAGI_genome_object_register_as_child(genome_object: GenomeObject) -> void:
 			push_error("CORE CACHE: Cannot add classifier %s to region %s that already contains it! Skipping!" % [classifier.classifier_id, _genome_ID])
 			return
 		_contained_classifiers.append(classifier)
+		FEAGI_set_classifier_circuit(true)
 		classifier_added_to_region.emit(classifier)
 		return
 	push_error("CORE CACHE: Unknown GenomeObject type tried to be added to region %s!" % _genome_ID)
@@ -223,6 +227,11 @@ func _FEAGI_partical_mapping_removed(mapping: PartialMappingSet) -> void:
 		return
 	partial_mappings_about_to_be_removed.emit(mapping)
 	_partial_mappings.remove_at(index)
+
+## FEAGI marks a classifier's own circuit. That circuit's interior stays closed.
+func FEAGI_set_classifier_circuit(enabled: bool) -> void:
+	is_classifier_circuit = enabled
+
 
 ## Replaces designated IO lists from API / after a successful PUT.
 func FEAGI_set_designated_io(inputs: Array, outputs: Array) -> void:

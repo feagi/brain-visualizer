@@ -41,8 +41,8 @@ func _test_three_section_titles() -> int:
 	if titles.size() != 3:
 		push_error("edit classifier must have exactly three tunable sections")
 		return 1
-	if titles[0] != "Kernel Memory Area":
-		push_error("first section must be Kernel Memory Area")
+	if titles[0] != "Sample Memory Area":
+		push_error("first section must be Sample Memory Area")
 		return 1
 	if titles[1] != "Class Memory Area":
 		push_error("second section must be Class Memory Area")
@@ -78,7 +78,7 @@ func _test_every_setting_has_a_tooltip() -> int:
 		if Tunables.section_tooltip(title).is_empty():
 			push_error("section %s needs a tooltip" % title)
 			return 1
-	for label in ["Classifier ID", "Training Mode", "Kernel Area", "Answer Area", "Learn Area", "Confidence Area"]:
+	for label in ["Classifier ID", "Sample Inputs", "Class Outputs", "Error Area", "Answer Area", "Learn Area", "Confidence Area"]:
 		if Tunables.setting_tooltip(label).is_empty():
 			push_error("setting %s needs a tooltip" % label)
 			return 1
@@ -357,7 +357,7 @@ func _test_area_dropdowns_open_explorer() -> int:
 	if source.is_empty():
 		push_error("classifier editor script could not be read")
 		return 1
-	for label in ["Kernel Area", "Class Area", "Mask Area", "Answer Area", "Learn Area", "Confidence Area"]:
+	for label in ["Answer Area", "Learn Area", "Confidence Area"]:
 		if not source.contains('_labeled_cortical_area("%s"' % label):
 			push_error("%s must use the explorer edit icon" % label)
 			return 1

@@ -15,6 +15,7 @@ func _initialize() -> void:
 	failures += _test_box_select_wins_over_selection()
 	failures += _test_idle_escape_does_nothing()
 	failures += _test_non_escape_and_repeats_are_ignored()
+	failures += _test_escape_stops_visible_inspector()
 	if failures == 0:
 		print("EscapeSelectionDismiss tests: PASS")
 		quit(0)
@@ -80,5 +81,27 @@ func _test_non_escape_and_repeats_are_ignored() -> int:
 		return 1
 	if Dismiss.resolve(KEY_ESCAPE, KEY_ESCAPE, true, true, false, false, true, true) != Dismiss.ACTION.NONE:
 		push_error("Escape key-repeat must not clear the selection again")
+		return 1
+	return 0
+
+
+func _test_escape_stops_visible_inspector() -> int:
+	if not Dismiss.stops_visible_inspector(KEY_ESCAPE, KEY_NONE, true, false, true):
+		push_error("Escape must stop an inspector while Stop Inspector is showing")
+		return 1
+	if not Dismiss.stops_visible_inspector(KEY_NONE, KEY_ESCAPE, true, false, true):
+		push_error("physical Escape must stop an inspector while Stop Inspector is showing")
+		return 1
+	if Dismiss.stops_visible_inspector(KEY_ESCAPE, KEY_ESCAPE, true, false, false):
+		push_error("Escape must not stop an inspector when Stop Inspector is hidden")
+		return 1
+	if Dismiss.stops_visible_inspector(KEY_ESCAPE, KEY_ESCAPE, true, true, true):
+		push_error("an Escape repeat must not stop the inspector again")
+		return 1
+	if Dismiss.stops_visible_inspector(KEY_ESCAPE, KEY_ESCAPE, false, false, true):
+		push_error("releasing Escape must not stop the inspector")
+		return 1
+	if Dismiss.stops_visible_inspector(KEY_K, KEY_K, true, false, true):
+		push_error("K must not stop the inspector")
 		return 1
 	return 0

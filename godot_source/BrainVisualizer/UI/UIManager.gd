@@ -337,6 +337,17 @@ func set_connection_inspector_stop_overlay_visible(visible: bool) -> void:
 		_connection_inspector_stop_layer.visible = visible
 
 
+## Escape uses the same action as the bottom-right Stop Inspector button while it is showing.
+func stop_visible_inspector_on_escape(key: InputEventKey) -> bool:
+	if key == null:
+		return false
+	var overlay_visible := _connection_inspector_stop_layer != null and _connection_inspector_stop_layer.visible
+	if not EscapeSelectionDismissLib.stops_visible_inspector(key.keycode, key.physical_keycode, key.pressed, key.echo, overlay_visible):
+		return false
+	_on_connection_inspector_stop_pressed()
+	return true
+
+
 func _on_connection_inspector_stop_pressed() -> void:
 	if _stop_overlay_for_live_inspector:
 		var win := _voxel_inspector_window()
@@ -2009,6 +2020,9 @@ func _input(event):
 		var keyboard_event: InputEventKey = event as InputEventKey
 		if keyboard_event.pressed and not keyboard_event.echo:
 			if keyboard_event.keycode == KEY_ESCAPE or keyboard_event.physical_keycode == KEY_ESCAPE:
+				if stop_visible_inspector_on_escape(keyboard_event):
+					get_viewport().set_input_as_handled()
+					return
 				if dismiss_scene_selection_on_escape():
 					get_viewport().set_input_as_handled()
 					return
@@ -2030,6 +2044,20 @@ func _input(event):
 			):
 				get_viewport().set_input_as_handled()
 				_toggle_global_search()
+				return
+			if KeybindCatalog.is_keybinds_shortcut(
+				keyboard_event.keycode,
+				keyboard_event.physical_keycode,
+				keyboard_event.ctrl_pressed or keyboard_event.meta_pressed,
+				keyboard_event.shift_pressed,
+				keyboard_event.alt_pressed,
+				true,
+				false
+			):
+				if _keybinds_shortcut_blocked_by_text():
+					return
+				get_viewport().set_input_as_handled()
+				_toggle_keybinds()
 				return
 			var history_shortcut: StringName = GenomeHistory.history_shortcut(
 				keyboard_event.keycode,
@@ -2102,6 +2130,23 @@ func _open_circuit_brain_monitor(region: BrainRegion) -> UI_BrainMonitor_3DScene
 		return null
 	_root_UI_view.show_or_create_CB_of_region(region, primary_tab_container)
 	return _root_UI_view.show_or_create_BM_of_region(region, secondary_tab_container)
+
+
+## K opens the shortcuts table. The same key closes it when it is already open.
+func _toggle_keybinds() -> void:
+	if _window_manager == null:
+		return
+	if WindowKeybinds.WINDOW_NAME in _window_manager.loaded_windows:
+		_window_manager.force_close_window(WindowKeybinds.WINDOW_NAME)
+		return
+	_window_manager.spawn_keybinds()
+
+
+func _keybinds_shortcut_blocked_by_text() -> bool:
+	var viewport := get_viewport()
+	if viewport == null:
+		return false
+	return KeybindCatalog.focus_blocks_keybinds(viewport.gui_get_focus_owner())
 
 
 ## Ctrl/Cmd+S opens genome search. The same chord closes it when it is already open.

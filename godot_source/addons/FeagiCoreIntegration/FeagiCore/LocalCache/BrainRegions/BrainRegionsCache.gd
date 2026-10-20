@@ -143,6 +143,7 @@ func FEAGI_apply_region_summary_diff(region_summary_data: Dictionary) -> Diction
 			region.FEAGI_change_coordinates_3D(FEAGIUtils.array_to_vector3i(region_data["coordinate_3d"]))
 
 		_apply_designated_io_from_summary(region_data, region)
+		region.FEAGI_set_classifier_circuit(bool(region_data.get("classifier_circuit", false)))
 
 		var parent_id = region_data.get("parent_region_id")
 		if parent_id != null:

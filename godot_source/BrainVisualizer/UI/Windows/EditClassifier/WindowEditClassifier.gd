@@ -15,20 +15,11 @@ const _Tunables = preload("res://BrainVisualizer/UI/Windows/EditClassifier/EditC
 var _name_input: LineEdit
 var _parent_option: OptionButton
 var _vector: Vector3iSpinboxField
-var _mode_option: OptionButton
-var _kernel_option: OptionButton
-var _class_option: OptionButton
-var _mask_option: OptionButton
-var _kernel_size: Vector3iSpinboxField
-var _class_count: SpinBox
-var _kernel_row: Control
-var _class_row: Control
-var _mask_row: Control
-var _kernel_size_row: Control
-var _class_count_row: Control
+var _sample_inputs_value: LineEdit
+var _class_outputs_value: LineEdit
+var _error_area_value: LineEdit
 var _update_button: Button
 var _editing_classifier: GenomeClassifier
-var _area_ids: Array[StringName] = []
 var _region_ids: Array[StringName] = []
 var _kernel_memory_fields: Dictionary = {}
 var _class_memory_fields: Dictionary = {}
@@ -126,51 +117,25 @@ func _build_classifier_fields() -> void:
 	_vector.initial_vector = _editing_classifier.coordinates_3D
 	form.add_child(_labeled("3D Position", _vector))
 
-	_mode_option = OptionButton.new()
-	_mode_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_mode_option.add_item("Kernel training")
-	_mode_option.add_item("Scanner training")
-	_mode_option.item_selected.connect(func(_index: int) -> void: _apply_training_mode_visibility())
-	if _editing_classifier.training_mode == &"scanner":
-		_mode_option.select(1)
-	form.add_child(_labeled("Training Mode", _mode_option))
-
-	_kernel_option = OptionButton.new()
-	_class_option = OptionButton.new()
-	_mask_option = OptionButton.new()
-	_kernel_size = _VECTOR_FIELD_PREFAB.instantiate() as Vector3iSpinboxField
-	_kernel_size.int_x_min = 1
-	_kernel_size.int_y_min = 1
-	_kernel_size.int_z_min = 1
-	var stored_size: Vector3i = _editing_classifier.kernel_size
-	_kernel_size.initial_vector = stored_size if stored_size != Vector3i.ZERO else Vector3i(1, 1, 1)
-	_class_count = GenomeClassifier.make_class_count_spinbox(_editing_classifier.class_count)
-	_populate_area_options()
-	var visual_options: Array[OptionButton] = [_kernel_option, _class_option, _mask_option]
-	_kernel_row = _labeled_cortical_area("Kernel Area", _kernel_option, visual_options, _area_ids, false)
-	_class_row = _labeled_cortical_area("Class Area", _class_option, visual_options, _area_ids, false)
-	_mask_row = _labeled_cortical_area("Mask Area", _mask_option, visual_options, _area_ids, false)
-	_kernel_size_row = _labeled("Kernel Size", _kernel_size)
-	_class_count_row = _labeled("Class Count", _class_count)
-	form.add_child(_kernel_row)
-	form.add_child(_class_row)
-	form.add_child(_mask_row)
-	form.add_child(_kernel_size_row)
-	form.add_child(_class_count_row)
-	_apply_training_mode_visibility()
+	_sample_inputs_value = _read_only_line(_editing_classifier.details_rows(), "sample_inputs")
+	_class_outputs_value = _read_only_line(_editing_classifier.details_rows(), "class_outputs")
+	_error_area_value = _read_only_line(_editing_classifier.details_rows(), "error_area")
+	form.add_child(_labeled("Sample Inputs", _sample_inputs_value))
+	form.add_child(_labeled("Class Outputs", _class_outputs_value))
+	form.add_child(_labeled("Error Area", _error_area_value))
 
 	_kernel_memory_count = _make_memory_count_field()
 	_class_memory_count = _make_memory_count_field()
-	form.add_child(_labeled("Kernel Memory Neurons", _kernel_memory_count))
+	form.add_child(_labeled("Sample Memory Neurons", _kernel_memory_count))
 	form.add_child(_labeled("Class Memory Neurons", _class_memory_count))
-	_show_cached_memory_count(_kernel_memory_count, _editing_classifier.kernel_memory_id)
+	_show_cached_memory_count(_kernel_memory_count, _editing_classifier.sample_memory_id)
 	_show_cached_memory_count(_class_memory_count, _editing_classifier.class_memory_id)
 	_refresh_memory_counts()
 
 	_kernel_memory_apply = _add_memory_section(
 		form,
 		_Tunables.SECTION_KERNEL_MEMORY,
-		_editing_classifier.kernel_memory_id,
+		_editing_classifier.sample_memory_id,
 		_kernel_memory_fields,
 		_on_apply_kernel_memory
 	)
@@ -263,7 +228,9 @@ func _open_area_explorer(option: OptionButton, shared_options: Array[OptionButto
 	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
 	if root_region == null:
 		return
-	var current_id: StringName = _selected_named_area(option) if marks_associative else _selected_area_id(option)
+	var current_id: StringName = &""
+	if option != null and option.selected >= 0 and option.selected < shared_ids.size():
+		current_id = shared_ids[option.selected]
 	var config: SelectGenomeObjectSettings = SelectGenomeObjectSettings.config_for_single_cortical_area_selection(root_region, _cached_area(current_id))
 	var window: WindowSelectGenomeObject = BV.WM.spawn_select_genome_object(config)
 	if window == null:
@@ -377,7 +344,7 @@ func reload_live_memory_counts() -> void:
 func _refresh_memory_counts() -> void:
 	_memory_count_generation += 1
 	var generation: int = _memory_count_generation
-	_refresh_one_memory_count(_editing_classifier.kernel_memory_id, _kernel_memory_count, generation)
+	_refresh_one_memory_count(_editing_classifier.sample_memory_id, _kernel_memory_count, generation)
 	_refresh_one_memory_count(_editing_classifier.class_memory_id, _class_memory_count, generation)
 
 
@@ -633,7 +600,7 @@ func _first_associative_mapping() -> SingleMappingDefinition:
 func _associative_mapping_set() -> Array[SingleMappingDefinition]:
 	if _editing_classifier == null:
 		return []
-	var kernel_memory: AbstractCorticalArea = _cached_area(_editing_classifier.kernel_memory_id)
+	var kernel_memory: AbstractCorticalArea = _cached_area(_editing_classifier.sample_memory_id)
 	var class_memory: AbstractCorticalArea = _cached_area(_editing_classifier.class_memory_id)
 	if kernel_memory == null or class_memory == null:
 		return []
@@ -665,7 +632,7 @@ func _notify_failure(message: String) -> void:
 
 
 func _on_apply_kernel_memory() -> void:
-	await _apply_memory_section(_editing_classifier.kernel_memory_id, _kernel_memory_fields, _kernel_memory_apply)
+	await _apply_memory_section(_editing_classifier.sample_memory_id, _kernel_memory_fields, _kernel_memory_apply)
 
 
 func _on_apply_class_memory() -> void:
@@ -690,11 +657,11 @@ func _refresh_memory_tunables_from_server() -> void:
 		return
 	if not FeagiCore.can_interact_with_feagi():
 		return
-	await FeagiCore.requests.get_cortical_area(_editing_classifier.kernel_memory_id)
+	await FeagiCore.requests.get_cortical_area(_editing_classifier.sample_memory_id)
 	await FeagiCore.requests.get_cortical_area(_editing_classifier.class_memory_id)
 	if not is_instance_valid(self) or _editing_classifier == null:
 		return
-	_fill_memory_fields(_editing_classifier.kernel_memory_id, _kernel_memory_fields)
+	_fill_memory_fields(_editing_classifier.sample_memory_id, _kernel_memory_fields)
 	_fill_memory_fields(_editing_classifier.class_memory_id, _class_memory_fields)
 
 
@@ -727,7 +694,7 @@ func _on_apply_associative() -> void:
 	if FeagiCore == null or FeagiCore.requests == null or _editing_classifier == null:
 		return
 	_commit_focused_editor()
-	var kernel_memory: AbstractCorticalArea = _cached_area(_editing_classifier.kernel_memory_id)
+	var kernel_memory: AbstractCorticalArea = _cached_area(_editing_classifier.sample_memory_id)
 	var class_memory: AbstractCorticalArea = _cached_area(_editing_classifier.class_memory_id)
 	var existing: Array[SingleMappingDefinition] = _associative_mapping_set()
 	if kernel_memory == null or class_memory == null or existing.is_empty():
@@ -823,7 +790,7 @@ func _populate_feedback_options() -> void:
 	for area in areas:
 		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
 			continue
-		if area.is_scan_twin() or area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin():
+		if area.is_classifier_class_output() or area.is_classifier_error_output() or area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin():
 			continue
 		var label := _Tunables.cortical_area_choice_label(String(area.friendly_name), area.dimensions_3D)
 		_feedback_option.add_item(label)
@@ -860,38 +827,17 @@ func _selected_named_area(option: OptionButton) -> String:
 	return String(_feedback_area_ids[option.selected])
 
 
-func _populate_area_options() -> void:
-	_kernel_option.clear()
-	_class_option.clear()
-	_mask_option.clear()
-	_area_ids.clear()
-	var parent_region: BrainRegion = _editing_classifier.current_parent_region
-	var areas: Array[AbstractCorticalArea] = []
-	if parent_region != null:
-		for area in parent_region.contained_cortical_areas:
-			if area != null and area not in areas:
-				areas.append(area)
-	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
-		for area_id in _editing_classifier.inbound_visual_source_ids():
-			var referenced: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(area_id, null)
-			if referenced != null and referenced not in areas:
-				areas.append(referenced)
-	areas.sort_custom(func(a: AbstractCorticalArea, b: AbstractCorticalArea) -> bool:
-		return String(a.friendly_name).to_lower() < String(b.friendly_name).to_lower()
-	)
-	for area in areas:
-		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY:
-			continue
-		if area.is_scan_twin() or area.is_classifier_internal_memory() or area.is_leftover_classifier_auto_twin():
-			continue
-		var label := _Tunables.cortical_area_choice_label(String(area.friendly_name), area.dimensions_3D)
-		_kernel_option.add_item(label)
-		_class_option.add_item(label)
-		_mask_option.add_item(label)
-		_area_ids.append(area.cortical_ID)
-	_select_area(_kernel_option, _editing_classifier.kernel_area_id)
-	_select_area(_class_option, _editing_classifier.class_area_id)
-	_select_area(_mask_option, _editing_classifier.mask_area_id)
+func _read_only_line(rows: Array[Dictionary], key: String) -> LineEdit:
+	var value := ""
+	for row in rows:
+		if str(row.get("key", "")) == key:
+			value = str(row.get("value", ""))
+			break
+	var line := LineEdit.new()
+	line.text = value
+	line.editable = false
+	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return line
 
 
 func _apply_reward_visibility() -> void:
@@ -907,24 +853,6 @@ func _apply_reward_visibility() -> void:
 	_fit_window_to_content()
 
 
-func _apply_training_mode_visibility() -> void:
-	var scanner: bool = _mode_option != null and _mode_option.selected == 1
-	if _kernel_row != null:
-		_kernel_row.visible = not scanner
-	if _class_row != null:
-		_class_row.visible = not scanner
-	if _mask_row != null:
-		_mask_row.visible = scanner
-	if _kernel_size_row != null:
-		_kernel_size_row.visible = scanner
-	if _class_count_row != null:
-		_class_count_row.visible = scanner
-
-
-func _is_scanner_mode() -> bool:
-	return _mode_option != null and _mode_option.selected == 1
-
-
 func _include_assigned_area(area_id: StringName, options: Array[OptionButton], ids: Array[StringName]) -> void:
 	var area: AbstractCorticalArea = _cached_area(area_id)
 	if area == null:
@@ -935,18 +863,6 @@ func _include_assigned_area(area_id: StringName, options: Array[OptionButton], i
 		_Tunables.cortical_area_choice_label(String(area.friendly_name), area.dimensions_3D),
 		options
 	)
-
-
-func _select_area(option: OptionButton, area_id: StringName) -> void:
-	var index: int = _area_ids.find(area_id)
-	if index >= 0:
-		option.select(index)
-
-
-func _selected_area_id(option: OptionButton) -> StringName:
-	if option == null or option.selected < 0 or option.selected >= _area_ids.size():
-		return &""
-	return _area_ids[option.selected]
 
 
 func _selected_region_id() -> StringName:
@@ -965,29 +881,12 @@ func _on_press_update() -> void:
 		return
 	var next_name: String = _name_input.text if _name_input != null else String(_editing_classifier.friendly_name)
 	var coords: Vector3i = _vector.current_vector if _vector != null else _editing_classifier.coordinates_3D
-	var training_mode: String = "scanner" if _is_scanner_mode() else "kernel"
-	if training_mode == "scanner":
-		var kernel_size: Vector3i = _kernel_size.current_vector if _kernel_size != null else Vector3i.ZERO
-		if _selected_area_id(_mask_option) == &"" or kernel_size.x < 1 or kernel_size.y < 1 or kernel_size.z < 1:
-			_update_button.disabled = false
-			_notify_failure("Scanner training needs a mask area and a kernel size.")
-			return
-	elif _selected_area_id(_kernel_option) == &"" or _selected_area_id(_class_option) == &"":
-		_update_button.disabled = false
-		_notify_failure("Kernel training needs a kernel area and a class area.")
-		return
 	_update_button.disabled = true
 	var result: FeagiRequestOutput = await FeagiCore.requests.edit_classifier(
 		_editing_classifier,
 		next_name,
 		coords,
-		_selected_region_id(),
-		training_mode,
-		_selected_area_id(_kernel_option),
-		_selected_area_id(_class_option),
-		_selected_area_id(_mask_option),
-		_kernel_size.current_vector if _kernel_size != null else Vector3i.ZERO,
-		int(_class_count.value) if _class_count != null else 0
+		_selected_region_id()
 	)
 	if result == null or result.has_errored or result.failed_requirement:
 		_update_button.disabled = false

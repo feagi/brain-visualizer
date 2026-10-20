@@ -9,6 +9,7 @@ const CameraStandardViewLib = preload("res://addons/UI_BrainMonitor/CameraStanda
 const CameraOrbitLib = preload("res://addons/UI_BrainMonitor/CameraOrbit.gd")
 const QuickConnectDestinationPickLib = preload("res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectDestinationPick.gd")
 const IsolatedAreaInspectLib = preload("res://addons/UI_BrainMonitor/IsolatedAreaInspect.gd")
+const GenomeClassifierLib = preload("res://addons/FeagiCoreIntegration/FeagiCore/LocalCache/Classifiers/GenomeClassifier.gd")
 
 @export var multi_select_key: Key = KEY_SHIFT
 
@@ -632,6 +633,8 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 			cache.cortical_areas_reloaded.connect(_on_cortical_areas_reloaded)
 		if not cache.brain_regions_reloaded.is_connected(_on_brain_regions_reloaded):
 			cache.brain_regions_reloaded.connect(_on_brain_regions_reloaded)
+		if not cache.classifiers_reloaded.is_connected(_on_cortical_areas_reloaded):
+			cache.classifiers_reloaded.connect(_on_cortical_areas_reloaded)
 
 	# Position camera to frame all 3D objects in this scene
 	if _pancake_cam and region.contained_cortical_areas.size() > 0:
@@ -1085,7 +1088,7 @@ func _quick_connect_classifier_stamp_anchor(space: PhysicsDirectSpaceState3D, ra
 		var blocking_collider: Node = first_hit.get(&"collider") as Node
 		if blocking_collider != null and blocking_collider.get_parent() is UI_BrainMonitor_AbstractCorticalAreaRenderer:
 			other_cortical_in_front = blocking_collider.get_parent() != renderer
-	if not GenomeClassifier.quick_connect_should_anchor_on_stamp(viz.cortical_area.is_classifier_kernel_memory(), other_cortical_in_front):
+	if not GenomeClassifier.quick_connect_should_anchor_on_stamp(viz.cortical_area.is_classifier_sample_memory(), other_cortical_in_front):
 		return Vector3.INF
 	return viz.get_volume_world_center()
 
@@ -2692,7 +2695,8 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					var had_selected_neurons: bool = not bm_cortical_area.get_neuron_selection_states().is_empty()
 					bm_cortical_area.clear_all_neuron_selection_states() # slow but I dont care right now
 					if had_selected_neurons and bm_cortical_area.cortical_area != null:
-						cortical_area_selected_neurons_changed.emit(bm_cortical_area.cortical_area, [])
+						var cleared_selection: Array[Vector3i] = []
+						cortical_area_selected_neurons_changed.emit(bm_cortical_area.cortical_area, cleared_selection)
 				requesting_to_clear_all_selected_neurons.emit()
 			
 			
@@ -2981,7 +2985,8 @@ func clear_all_selected_cortical_area_neurons() -> void:
 			var had_selected_neurons: bool = not area.get_neuron_selection_states().is_empty()
 			area.clear_all_neuron_selection_states()
 			if had_selected_neurons and area.cortical_area != null:
-				cortical_area_selected_neurons_changed.emit(area.cortical_area, [])
+				var cleared_selection: Array[Vector3i] = []
+				cortical_area_selected_neurons_changed.emit(area.cortical_area, cleared_selection)
 	requesting_to_clear_all_selected_neurons.emit()
 
 
@@ -3452,7 +3457,7 @@ func _get_preview_static_body(preview: UI_BrainMonitor_InteractivePreview) -> St
 	return body as StaticBody3D
 
 func _is_classifier_stamp_manipulation() -> bool:
-	if _manipulation_area != null and _manipulation_area.is_classifier_kernel_memory():
+	if _manipulation_area != null and _manipulation_area.is_classifier_sample_memory():
 		return true
 	if _manipulation_preview != null and _manipulation_preview.has_method("is_classifier_stamp_preview"):
 		return _manipulation_preview.is_classifier_stamp_preview()
@@ -5129,6 +5134,8 @@ func _is_area_input_output_of_specific_child_region(area: AbstractCorticalArea, 
 	for partial_mapping in child_region.partial_mappings:
 		if partial_mapping.internal_target_cortical_area == area:
 			return true
+	if GenomeClassifierLib.area_is_classifier_plate_face(area, child_region):
+		return true
 	
 	# print("        ❌ Area %s is NOT I/O of child region '%s'" % [area.cortical_ID, child_region.friendly_name])  # Suppressed - too spammy
 	return false
@@ -5150,6 +5157,8 @@ func _is_area_input_output_of_region(area: AbstractCorticalArea) -> bool:
 	for partial_mapping in _representing_region.partial_mappings:
 		if partial_mapping.internal_target_cortical_area == area:
 			return true
+	if GenomeClassifierLib.area_is_classifier_plate_face(area, _representing_region):
+		return true
 
 	return false
 
@@ -5246,7 +5255,7 @@ func _selection_object_for_cortical_area(area: AbstractCorticalArea) -> GenomeOb
 	var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(area.cortical_ID)
 	if owner == null:
 		return area
-	if owner.is_scan_twin_id(area.cortical_ID):
+	if owner.is_class_output_id(area.cortical_ID) or owner.is_error_area_id(area.cortical_ID):
 		return area
 	return owner
 
@@ -5281,7 +5290,7 @@ func _area_hidden_as_memory_in_this_monitor(area: AbstractCorticalArea) -> bool:
 		return false
 	if GenomeClassifier.should_hide_area_in_brain_monitor(area):
 		return true
-	if area.is_classifier_kernel_memory():
+	if area.is_classifier_sample_memory():
 		return false
 	return _brain_monitor_viewing_feagi_root_region() and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
 
@@ -5540,6 +5549,14 @@ func _add_missing_cortical_area_visualizations() -> void:
 				if area.cortical_ID not in _cortical_visualizations_by_ID:
 					added_any = true
 				_add_cortical_area(area)
+		for area in GenomeClassifierLib.classifier_plate_input_areas(child_region):
+			if area.cortical_ID not in _cortical_visualizations_by_ID:
+				added_any = true
+			_add_cortical_area(area)
+		for area in GenomeClassifierLib.classifier_plate_output_areas(child_region):
+			if area.cortical_ID not in _cortical_visualizations_by_ID:
+				added_any = true
+			_add_cortical_area(area)
 
 	# Areas parented here whose containment list is stale after a cache refresh.
 	if FeagiCore.feagi_local_cache and FeagiCore.feagi_local_cache.cortical_areas:

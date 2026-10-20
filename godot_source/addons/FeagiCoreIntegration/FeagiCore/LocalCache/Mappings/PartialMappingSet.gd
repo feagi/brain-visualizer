@@ -60,8 +60,7 @@ static func from_FEAGI_JSON_array(hints: Array, is_input: bool, brain_region: Br
 		for cortical_area_id in hints:
 			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(cortical_area_id)
 			if area == null:
-				push_error("CORE: Unable to find cortical area %s for partial mapping!" % cortical_area_id)
-				print("📋 PARTIAL MAPPING: ❌ FAILED to find area %s - skipping partial mapping" % cortical_area_id)
+				push_warning("CORE: Skipping partial mapping for missing cortical area %s" % cortical_area_id)
 				continue
 			# Create a simple partial mapping set with no actual mapping data
 			# This allows I/O detection to work (log suppressed during clone)
