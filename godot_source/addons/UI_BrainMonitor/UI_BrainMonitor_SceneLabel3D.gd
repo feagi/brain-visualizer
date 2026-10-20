@@ -3,6 +3,7 @@ class_name UI_BrainMonitor_SceneLabel3D
 ## Shared Label3D setup for BV 3D scene names.
 ## One MSDF font and modest font_size; role-specific pixel_size sets the size.
 ## Area names and region titles use fixed_size so a far title stays the same on-screen size. Plate tags do not.
+## Area names are capped at the top-bar Circuits / Inputs / Outputs font size.
 
 
 enum ROLE {
@@ -17,10 +18,17 @@ const MSDF_PIXEL_RANGE: int = 8
 const OUTLINE_SIZE: int = 4
 const OUTLINE_MODULATE: Color = Color.BLACK
 
+## 1x Circuits / Inputs / Outputs label ([code]Label_Header[/code] in [code]1-DARK.tres[/code]).
+const TOP_BAR_HEADER_FONT_PX: float = 20.0
+## Frustum the reference area-name scale is matched against. Live views recompute from the real header, FOV, and viewport.
+const REFERENCE_VERTICAL_FOV_DEG: float = 75.0
+const REFERENCE_VIEWPORT_HEIGHT_PX: float = 1080.0
+
 ## Screen-constant title height. Godot fixed_size draws this world height as if the camera were 1 unit away,
-## so the title stays readable when the area is far. Area names use the same size as region titles.
+## so the title stays readable when the area is far.
+## Region titles keep the legacy 32px * 0.001 height. Area names match the top-bar header on the reference frustum.
 const REGION_TITLE_VISUAL_SCALE: float = 32.0 * 0.001
-const AREA_NAME_VISUAL_SCALE: float = REGION_TITLE_VISUAL_SCALE
+const AREA_NAME_VISUAL_SCALE: float = 0.028419518
 const PLATE_TAG_VISUAL_SCALE: float = 18.0 * 0.002
 const REGION_DESCRIPTION_VISUAL_SCALE: float = 24.0 * 0.001
 const REGION_DESCRIPTION_WRAP_WIDTH_PX: float = 960.0
@@ -107,6 +115,35 @@ static func scene_font() -> Font:
 		return _msdf_font
 	push_error("UI_BrainMonitor_SceneLabel3D requires ThemeDB.fallback_font to be a FontFile for MSDF")
 	return base_font
+
+
+## Vertical FOV in degrees. [param camera_fov_degrees] is vertical when [param keep_height] is true.
+static func vertical_fov_degrees(camera_fov_degrees: float, keep_height: bool, aspect: float) -> float:
+	if keep_height or aspect <= 0.001 or camera_fov_degrees <= 0.0:
+		return camera_fov_degrees
+	var half_vertical: float = atan(tan(deg_to_rad(camera_fov_degrees) * 0.5) / aspect)
+	return rad_to_deg(half_vertical * 2.0)
+
+
+## World em height of a fixed-size Label3D that occupies [param screen_px] on a KEEP_HEIGHT-equivalent frustum.
+## Godot draws fixed_size as if the label were 1 unit from the camera, then scales by depth.
+static func visual_scale_for_screen_px(screen_px: float, vertical_fov_degrees: float, viewport_height_px: float) -> float:
+	if screen_px <= 0.0 or viewport_height_px <= 1.0 or vertical_fov_degrees <= 0.0:
+		return 0.0
+	var visible_height: float = 2.0 * tan(deg_to_rad(vertical_fov_degrees) * 0.5)
+	if visible_height <= 0.0:
+		return 0.0
+	return screen_px * visible_height / viewport_height_px
+
+
+## On-screen em height of a fixed-size label whose unit-distance height is [param visual_scale].
+static func screen_px_for_visual_scale(visual_scale: float, vertical_fov_degrees: float, viewport_height_px: float) -> float:
+	if visual_scale <= 0.0 or viewport_height_px <= 1.0 or vertical_fov_degrees <= 0.0:
+		return 0.0
+	var visible_height: float = 2.0 * tan(deg_to_rad(vertical_fov_degrees) * 0.5)
+	if visible_height <= 0.0:
+		return 0.0
+	return visual_scale * viewport_height_px / visible_height
 
 
 static func pixel_size_for_role(role: ROLE) -> float:

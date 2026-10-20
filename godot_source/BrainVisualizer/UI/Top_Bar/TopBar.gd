@@ -13,6 +13,7 @@ var _index_scale: int
 var _neuron_count: TextInput
 var _synapse_count: TextInput
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
+const FirstSectionTitles = preload("res://BrainVisualizer/UI/Top_Bar/TopBarFirstSectionTitles.gd")
 const PREFAB_BRAIN_OBJECTS_COMBO: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
 const GENOME_HISTORY_BUTTON: Script = preload("res://BrainVisualizer/UI/Top_Bar/TeamBranch/GenomeHistoryButton.gd")
 var _shared_combo: BrainObjectsCombo = null
@@ -65,6 +66,10 @@ func _ready():
 	_theme_custom_scaler.setup(self, theme_scalar_nodes_to_not_include_or_search, BV.UI.loaded_theme)
 	BV.UI.theme_changed.connect(_theme_updated)
 	_theme_updated(BV.UI.loaded_theme)
+	resized.connect(_sync_first_section_titles)
+	if is_inside_tree() and not get_viewport().size_changed.is_connected(_sync_first_section_titles):
+		get_viewport().size_changed.connect(_sync_first_section_titles)
+	call_deferred("_sync_first_section_titles")
 	FeagiCore.about_to_reload_genome.connect(_on_genome_about_to_reload)
 	toggle_buttons_interactability(false)
 
@@ -446,6 +451,60 @@ func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme
 	_sync_refresh_rate_background_style()
 	_apply_root_combo_row_heights()
+	call_deferred("_sync_first_section_titles")
+
+
+var _first_section_titles_hidden: bool = false
+var _syncing_first_section_titles: bool = false
+
+
+## Drops Circuits, Inputs, Outputs, Connectivity Rules, and Modulators to icons when the bar does not fit.
+func _sync_first_section_titles() -> void:
+	if _syncing_first_section_titles or not is_inside_tree():
+		return
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var available: float = viewport.get_visible_rect().size.x - position.x
+	var full_width: float = get_combined_minimum_size().x
+	for label in _first_section_title_labels():
+		full_width += FirstSectionTitles.hidden_title_slot_width(label)
+	var hide: bool = FirstSectionTitles.should_hide(full_width, available)
+	if hide == _first_section_titles_hidden:
+		return
+	_syncing_first_section_titles = true
+	_first_section_titles_hidden = hide
+	_set_first_section_titles_visible(not hide)
+	_syncing_first_section_titles = false
+
+
+func _set_first_section_titles_visible(show_titles: bool) -> void:
+	if _shared_combo != null:
+		_shared_combo.set_root_strip_titles_visible(show_titles)
+	for label in _root_bar_title_labels():
+		label.visible = show_titles
+
+
+func _first_section_title_labels() -> Array[Label]:
+	var labels: Array[Label] = []
+	if _shared_combo != null:
+		labels.append_array(_shared_combo.root_strip_title_labels())
+	labels.append_array(_root_bar_title_labels())
+	return labels
+
+
+## Connectivity Rules and Modulators live on the root bar, beside the shared combo.
+func _root_bar_title_labels() -> Array[Label]:
+	var labels: Array[Label] = []
+	var paths: Array[NodePath] = [
+		NodePath("Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList/HBoxContainer/Label"),
+		NodePath("Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList/HBoxContainer/Label"),
+	]
+	for path in paths:
+		var label := get_node_or_null(path) as Label
+		if label != null:
+			labels.append(label)
+	return labels
 
 
 ## Connectivity Rules and Modulators keep the icon-button height after the + slot is hidden.

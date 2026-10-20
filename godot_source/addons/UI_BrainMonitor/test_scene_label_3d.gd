@@ -9,6 +9,7 @@ func _initialize() -> void:
 	var failures: int = 0
 	failures += _test_shared_msdf_and_outline()
 	failures += _test_role_visual_scale_matches_legacy_product()
+	failures += _test_area_name_matches_top_bar_header()
 	failures += _test_fixed_size_keeps_far_titles_legible()
 	failures += _test_apply_is_idempotent()
 	failures += _test_create_names_and_priorities()
@@ -62,14 +63,56 @@ func _test_role_visual_scale_matches_legacy_product() -> int:
 	if not is_equal_approx(SceneLabel3D.FONT_SIZE * SceneLabel3D.AREA_NAME_PIXEL_SIZE, SceneLabel3D.AREA_NAME_VISUAL_SCALE):
 		push_error("area name visual scale must stay font_size * pixel_size")
 		return 1
-	if not is_equal_approx(SceneLabel3D.AREA_NAME_VISUAL_SCALE, SceneLabel3D.REGION_TITLE_VISUAL_SCALE):
-		push_error("area name screen size must match the region title")
+	if SceneLabel3D.AREA_NAME_VISUAL_SCALE > SceneLabel3D.REGION_TITLE_VISUAL_SCALE:
+		push_error("area names must stay at or under the region title scale")
 		return 1
 	if not is_equal_approx(SceneLabel3D.FONT_SIZE * SceneLabel3D.REGION_TITLE_PIXEL_SIZE, SceneLabel3D.REGION_TITLE_VISUAL_SCALE):
 		push_error("region title visual scale drifted from legacy 32 * 0.001")
 		return 1
 	if not is_equal_approx(SceneLabel3D.FONT_SIZE * SceneLabel3D.PLATE_TAG_PIXEL_SIZE, SceneLabel3D.PLATE_TAG_VISUAL_SCALE):
 		push_error("plate tag visual scale drifted from legacy 18 * 0.002")
+		return 1
+	return 0
+
+
+func _test_area_name_matches_top_bar_header() -> int:
+	var matched: float = SceneLabel3D.visual_scale_for_screen_px(
+		SceneLabel3D.TOP_BAR_HEADER_FONT_PX,
+		SceneLabel3D.REFERENCE_VERTICAL_FOV_DEG,
+		SceneLabel3D.REFERENCE_VIEWPORT_HEIGHT_PX
+	)
+	if not is_equal_approx(SceneLabel3D.AREA_NAME_VISUAL_SCALE, matched):
+		push_error("area name reference scale must match a %spx header on a %spx view at %s deg" % [
+			SceneLabel3D.TOP_BAR_HEADER_FONT_PX,
+			SceneLabel3D.REFERENCE_VIEWPORT_HEIGHT_PX,
+			SceneLabel3D.REFERENCE_VERTICAL_FOV_DEG,
+		])
+		return 1
+	var drawn: float = SceneLabel3D.screen_px_for_visual_scale(
+		matched,
+		SceneLabel3D.REFERENCE_VERTICAL_FOV_DEG,
+		SceneLabel3D.REFERENCE_VIEWPORT_HEIGHT_PX
+	)
+	if not is_equal_approx(drawn, SceneLabel3D.TOP_BAR_HEADER_FONT_PX):
+		push_error("reference area name must draw at the top-bar header size, got %s" % drawn)
+		return 1
+	var taller: float = SceneLabel3D.visual_scale_for_screen_px(20.0, 75.0, 2160.0)
+	if taller <= 0.0 or taller >= matched:
+		push_error("a taller viewport must shrink the world scale so the on-screen size stays put")
+		return 1
+	var larger_font: float = SceneLabel3D.visual_scale_for_screen_px(40.0, 75.0, 1080.0)
+	if not is_equal_approx(larger_font, matched * 2.0):
+		push_error("doubling the header font must double the area-name scale")
+		return 1
+	if not is_equal_approx(SceneLabel3D.vertical_fov_degrees(75.0, true, 1.6), 75.0):
+		push_error("keep-height cameras already store a vertical FOV")
+		return 1
+	var from_width: float = SceneLabel3D.vertical_fov_degrees(75.0, false, 16.0 / 9.0)
+	if from_width <= 0.0 or from_width >= 75.0:
+		push_error("keep-width FOV must convert to a smaller vertical FOV on a wide view")
+		return 1
+	if SceneLabel3D.visual_scale_for_screen_px(0.0, 75.0, 1080.0) != 0.0:
+		push_error("a zero font size must not produce a scale")
 		return 1
 	return 0
 

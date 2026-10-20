@@ -1770,8 +1770,35 @@ func _compute_previews_aabb() -> AABB:
 				have = true
 	return merged if have else AABB()
 
-## Helper function to collect labels from a cortical area visualization
-func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_data: Array[Dictionary], viewport: Viewport) -> void:
+## Label3D pixel_size that draws an area title at the Circuits / Inputs / Outputs font size.
+## fixed_size titles grow with viewport height, so the world scale shrinks to hold that cap.
+func _area_name_pixel_size_matching_top_bar(viewport: Viewport) -> float:
+	if viewport == null:
+		return SceneLabel3DLib.AREA_NAME_PIXEL_SIZE
+	var height: float = float(viewport.size.y)
+	if height <= 1.0:
+		return SceneLabel3DLib.AREA_NAME_PIXEL_SIZE
+	var header_px: float = SceneLabel3DLib.TOP_BAR_HEADER_FONT_PX
+	if BV != null and BV.UI != null and BV.UI.loaded_theme != null:
+		var theme: Theme = BV.UI.loaded_theme
+		if theme.has_font_size(&"font_size", &"Label_Header"):
+			header_px = float(theme.get_font_size(&"font_size", &"Label_Header"))
+	var fov_deg: float = SceneLabel3DLib.REFERENCE_VERTICAL_FOV_DEG
+	var keep_height: bool = true
+	if _pancake_cam != null:
+		fov_deg = _pancake_cam.fov
+		keep_height = _pancake_cam.keep_aspect == Camera3D.KEEP_HEIGHT
+	var aspect: float = float(viewport.size.x) / height
+	var vertical_fov: float = SceneLabel3DLib.vertical_fov_degrees(fov_deg, keep_height, aspect)
+	var visual_scale: float = SceneLabel3DLib.visual_scale_for_screen_px(header_px, vertical_fov, height)
+	if visual_scale <= 0.0:
+		return SceneLabel3DLib.AREA_NAME_PIXEL_SIZE
+	return visual_scale / float(SceneLabel3DLib.FONT_SIZE)
+
+
+## Helper function to collect labels from a cortical area visualization.
+## [param area_name_pixel_size] keeps each title's on-screen em at the top-bar header size.
+func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_data: Array[Dictionary], viewport: Viewport, area_name_pixel_size: float) -> void:
 	if viz == null or not is_instance_valid(viz):
 		return
 	
@@ -1791,6 +1818,11 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 	var add_label = func(label: Label3D, area_id: StringName, should_be_visible: bool) -> int:
 		if label.text == "":
 			return -1
+		# Skip sub-2% changes so a FOV tween does not rebuild every title mesh each frame.
+		if area_name_pixel_size > 0.0:
+			var current_pixel_size: float = label.pixel_size
+			if current_pixel_size <= 0.0 or absf(current_pixel_size - area_name_pixel_size) / current_pixel_size > 0.02:
+				label.pixel_size = area_name_pixel_size
 		
 		var on_plate = is_label_on_plate.call(label)
 		
@@ -1879,11 +1911,12 @@ func _update_label_overlap_visibility() -> void:
 	# Collect all labels (including hidden ones) with their screen positions
 	# We need to check all labels to restore visibility when they no longer overlap
 	var label_data: Array[Dictionary] = []
+	var area_name_pixel_size := _area_name_pixel_size_matching_top_bar(viewport)
 	
 	# Collect labels from main scene cortical visualizations
 	for viz in _cortical_visualizations_by_ID.values():
 		if viz != null and is_instance_valid(viz):
-			_collect_labels_from_cortical_viz(viz, label_data, viewport)
+			_collect_labels_from_cortical_viz(viz, label_data, viewport, area_name_pixel_size)
 	
 	# Also collect labels from cortical areas within brain region frames (plates)
 	for region_viz in _brain_region_visualizations_by_ID.values():
@@ -1896,7 +1929,7 @@ func _update_label_overlap_visibility() -> void:
 			if cortical_visualizations != null:
 				for cortical_viz in cortical_visualizations.values():
 					if cortical_viz != null and is_instance_valid(cortical_viz):
-						_collect_labels_from_cortical_viz(cortical_viz, label_data, viewport)
+						_collect_labels_from_cortical_viz(cortical_viz, label_data, viewport, area_name_pixel_size)
 	
 	# If no labels found, exit early
 	if label_data.is_empty():

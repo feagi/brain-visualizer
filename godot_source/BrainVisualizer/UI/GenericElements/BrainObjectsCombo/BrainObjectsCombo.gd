@@ -68,6 +68,7 @@ const TAB_OVERLAY_Z_INDEX: int = 10
 const COMBO_ROW_GAP_NAME: StringName = &"RowGap"
 const PREFAB_FILTERABLE_LIST_POPUP: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.tscn")
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
+const FirstSectionTitles = preload("res://BrainVisualizer/UI/Top_Bar/TopBarFirstSectionTitles.gd")
 const CUSTOM_TOOLTIP_TRIGGER_SCRIPT = preload("res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTooltipTrigger.gd")
 const REARRANGE_SIZE_SCALE: float = 1.0
 ## Circuit Builder and Brain Monitor strips use the UI theme two steps below the root bar.
@@ -743,6 +744,27 @@ func set_2d_context(cb_scene: CircuitBuilder, region: BrainRegion) -> void:
 	_on_theme_changed(theme)
 	if not _hosted_styled_tooltips_applied:
 		_try_apply_styled_tooltips_for_current_host()
+
+
+## Circuits, Inputs, and Outputs titles on the root bar. Tab strips are left labeled.
+func root_strip_title_labels() -> Array[Label]:
+	var labels: Array[Label] = []
+	var rows: Array[Array] = [
+		[_circuits_row, "BrainRegionsList"],
+		[_inputs_row, "InputsList"],
+		[_outputs_row, "OutputsList"],
+	]
+	for pair in rows:
+		var label: Label = FirstSectionTitles.category_title_label(pair[0] as Node, str(pair[1]))
+		if label != null:
+			labels.append(label)
+	return labels
+
+
+## Hide or show Circuits, Inputs, and Outputs titles. Icons stay.
+func set_root_strip_titles_visible(show_titles: bool) -> void:
+	for label in root_strip_title_labels():
+		label.visible = show_titles
 
 
 ## Use this component as the shared global top-bar strip.
