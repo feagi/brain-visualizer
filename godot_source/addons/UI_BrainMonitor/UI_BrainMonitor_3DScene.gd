@@ -1770,9 +1770,9 @@ func _compute_previews_aabb() -> AABB:
 				have = true
 	return merged if have else AABB()
 
-## Label3D pixel_size that draws an area title at the Circuits / Inputs / Outputs font size.
+## Label3D pixel_size that draws an area or region title at the Circuits / Inputs / Outputs font size.
 ## fixed_size titles grow with viewport height, so the world scale shrinks to hold that cap.
-func _area_name_pixel_size_matching_top_bar(viewport: Viewport) -> float:
+func _title_pixel_size_matching_top_bar(viewport: Viewport) -> float:
 	if viewport == null:
 		return SceneLabel3DLib.AREA_NAME_PIXEL_SIZE
 	var height: float = float(viewport.size.y)
@@ -1911,17 +1911,19 @@ func _update_label_overlap_visibility() -> void:
 	# Collect all labels (including hidden ones) with their screen positions
 	# We need to check all labels to restore visibility when they no longer overlap
 	var label_data: Array[Dictionary] = []
-	var area_name_pixel_size := _area_name_pixel_size_matching_top_bar(viewport)
+	var title_pixel_size := _title_pixel_size_matching_top_bar(viewport)
 	
 	# Collect labels from main scene cortical visualizations
 	for viz in _cortical_visualizations_by_ID.values():
 		if viz != null and is_instance_valid(viz):
-			_collect_labels_from_cortical_viz(viz, label_data, viewport, area_name_pixel_size)
+			_collect_labels_from_cortical_viz(viz, label_data, viewport, title_pixel_size)
 	
 	# Also collect labels from cortical areas within brain region frames (plates)
 	for region_viz in _brain_region_visualizations_by_ID.values():
 		if region_viz == null or not is_instance_valid(region_viz):
 			continue
+		if region_viz.has_method("apply_region_title_pixel_size"):
+			region_viz.apply_region_title_pixel_size(title_pixel_size)
 		# Brain region frames have cortical area visualizations stored in _cortical_area_visualizations
 		# Access the property directly - it will be null if it doesn't exist
 		if region_viz.get("_cortical_area_visualizations") != null:
@@ -1929,7 +1931,7 @@ func _update_label_overlap_visibility() -> void:
 			if cortical_visualizations != null:
 				for cortical_viz in cortical_visualizations.values():
 					if cortical_viz != null and is_instance_valid(cortical_viz):
-						_collect_labels_from_cortical_viz(cortical_viz, label_data, viewport, area_name_pixel_size)
+						_collect_labels_from_cortical_viz(cortical_viz, label_data, viewport, title_pixel_size)
 	
 	# If no labels found, exit early
 	if label_data.is_empty():
