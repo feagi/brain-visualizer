@@ -6,6 +6,7 @@ class_name UI_BrainMonitor_CorticalArea
 const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
 const AreaNameLabelVisibility = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_AreaNameLabelVisibility.gd")
 const BoxSelectLib = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_BoxSelect.gd")
+const MappingHoverHold = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_MappingHoverHold.gd")
 
 var cortical_area: AbstractCorticalArea:
 	get: return _representing_cortial_area
@@ -33,6 +34,14 @@ var _selected_neuron_coordinates: Array[Vector3i] = [] #TODO we should clear thi
 var _connection_curves: Array[Node3D] = []  # Store all connection curve nodes
 var _are_connections_visible: bool = false
 var _pulse_tweens: Array[Tween] = []  # Store pulse animation tweens
+## Shift is holding this area's mapping lines after the pointer left.
+var _shift_pin_holds_connections: bool = false
+const META_CURVE_ANCHOR := "curve_anchor_local"
+const META_MAPPING_COUNT_BUTTON := "mapping_count_button"
+const META_MAPPING_COUNT := "mapping_count"
+const META_MAPPING_SOURCE := "mapping_source"
+const META_MAPPING_DESTINATION := "mapping_destination"
+const MAPPING_COUNT_ANCHOR_NAME := "MappingCountAnchor"
 ## associative_memory electric arc: run motion at half frequency (slower) vs other electric-arc mappings
 const ASSOCIATIVE_ELECTRIC_ARC_ANIM_FREQ_SCALE: float = 0.5
 ## Directional traveling pulses on associative arcs (distinct from E/I line color — red pulses only)
@@ -896,12 +905,7 @@ func set_hover_over_volume_state(is_moused_over: bool) -> void:
 		_directpoints_renderer.set_cortical_area_mouse_over_highlighting(is_moused_over)
 	_update_friendly_name_label_visibility_for_hover()
 	_update_io_direction_indicator_label_visibility()
-	
-	# Show/hide neural connection curves on hover
-	if is_moused_over:
-		_show_neural_connections()
-	else:
-		_hide_neural_connections()
+	_sync_connection_visibility()
 
 func set_highlighted_neurons(neuron_coordinates: Array[Vector3i]) -> void:
 		_hovered_neuron_coordinates = neuron_coordinates
@@ -1067,6 +1071,96 @@ func _hide_neural_connections() -> void:
 	
 	_connection_curves.clear()
 	_are_connections_visible = false
+
+
+## True while this area's mapping lines are in the scene.
+func neural_connections_visible() -> bool:
+	return _are_connections_visible
+
+
+## True when hover or a Shift hold wants this area's mapping lines drawn.
+func neural_connections_should_show() -> bool:
+	return MappingHoverHold.should_show_connections(_is_volume_moused_over, _shift_pin_holds_connections)
+
+
+## Keeps mapping lines after the pointer leaves, for as long as Shift stays down.
+func set_shift_pin_holds_connections(pinned: bool) -> void:
+	if pinned == _shift_pin_holds_connections:
+		return
+	_shift_pin_holds_connections = pinned
+	_sync_connection_visibility()
+
+
+func _sync_connection_visibility() -> void:
+	if neural_connections_should_show():
+		_show_neural_connections()
+		return
+	_hide_neural_connections()
+
+
+## Rebuilds mapping lines that hover or a Shift hold still wants. Returns true when it redraws them.
+func refresh_neural_connections_if_shown() -> bool:
+	if is_queued_for_deletion():
+		return false
+	if not neural_connections_should_show():
+		return false
+	_hide_neural_connections()
+	_show_neural_connections()
+	return true
+
+
+## World-space anchors for the Shift-held mapping count buttons.
+func mapping_count_button_specs() -> Array[Dictionary]:
+	var specs: Array[Dictionary] = []
+	if not _are_connections_visible:
+		return specs
+	for curve in _connection_curves:
+		if curve == null or not is_instance_valid(curve):
+			continue
+		if not bool(curve.get_meta(META_MAPPING_COUNT_BUTTON, false)):
+			continue
+		var marker := curve.get_node_or_null(MAPPING_COUNT_ANCHOR_NAME) as Node3D
+		if marker == null:
+			continue
+		var source: AbstractCorticalArea = curve.get_meta(META_MAPPING_SOURCE) as AbstractCorticalArea
+		var destination: AbstractCorticalArea = curve.get_meta(META_MAPPING_DESTINATION) as AbstractCorticalArea
+		if source == null or destination == null:
+			continue
+		specs.append({
+			"world_position": marker.global_position,
+			"count": int(curve.get_meta(META_MAPPING_COUNT, 0)),
+			"source": source,
+			"destination": destination,
+		})
+	return specs
+
+
+## Places the Shift-held count button on the visible middle of this mapping line.
+func _attach_mapping_count_anchor(root: Node3D, mapping_set: InterCorticalMappingSet) -> void:
+	if root == null or mapping_set == null:
+		return
+	if mapping_set.number_mappings <= 0:
+		return
+	if mapping_set.source_cortical_area == null or mapping_set.destination_cortical_area == null:
+		return
+	var marker := Node3D.new()
+	marker.name = MAPPING_COUNT_ANCHOR_NAME
+	marker.position = _curve_anchor_local(root)
+	root.add_child(marker)
+	root.set_meta(META_MAPPING_COUNT_BUTTON, true)
+	root.set_meta(META_MAPPING_COUNT, mapping_set.number_mappings)
+	root.set_meta(META_MAPPING_SOURCE, mapping_set.source_cortical_area)
+	root.set_meta(META_MAPPING_DESTINATION, mapping_set.destination_cortical_area)
+
+
+func _curve_anchor_local(root: Node3D) -> Vector3:
+	if root.has_meta(META_CURVE_ANCHOR):
+		return root.get_meta(META_CURVE_ANCHOR) as Vector3
+	for child in root.get_children():
+		if child is Node3D and (child as Node3D).has_meta(META_CURVE_ANCHOR):
+			var child_node := child as Node3D
+			return child_node.position + (child_node.get_meta(META_CURVE_ANCHOR) as Vector3)
+	return Vector3.ZERO
 
 
 ## Live synapse inspector uses the same view, so area-to-area mapping curves stay hidden.
@@ -1339,6 +1433,7 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 			)
 			mixed_node.add_child(curve)
 		_attach_rstdp_tap_if_needed(mixed_node, start_pos, end_pos, mapping_set)
+		_attach_mapping_count_anchor(mixed_node, mapping_set)
 		return mixed_node
 	
 	var is_inhibitory := false
@@ -1348,6 +1443,7 @@ func _create_connection_curve(start_pos: Vector3, end_pos: Vector3, connection_i
 		is_episodic = polarities[0]["episodic"]
 	var single_curve := _create_connection_curve_variant(start_pos, end_pos, connection_id, is_inhibitory, is_plastic, use_electric_arc, apply_reciprocal_offset, has_associative, 0.4, true, 0.0, is_episodic)
 	_attach_rstdp_tap_if_needed(single_curve, start_pos, end_pos, mapping_set)
+	_attach_mapping_count_anchor(single_curve, mapping_set)
 	return single_curve
 
 ## Internal helper that creates a single visual arc for a connection.
@@ -1398,6 +1494,7 @@ func _create_connection_curve_variant(
 	if min_arc_height > 0.0:
 		arc_height = maxf(arc_height, min_arc_height)
 	var control_point = mid_point + Vector3(0, arc_height, 0)
+	connection_node.set_meta(META_CURVE_ANCHOR, _quadratic_bezier(sp, control_point, ep, 0.5))
 	
 	# For plastic connections, add wobble effect by modifying control point and segments
 	var is_wobbly = is_plastic
@@ -2200,6 +2297,7 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 				polarity["episodic"]
 			)
 			mixed_loop.add_child(loop)
+		_attach_mapping_count_anchor(mixed_loop, mapping_set)
 		return mixed_loop
 	
 	var is_inhibitory := false
@@ -2207,7 +2305,9 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 	if polarities.size() == 1:
 		is_inhibitory = polarities[0]["inhibitory"]
 		is_episodic = polarities[0]["episodic"]
-	return _create_recursive_loop_variant(center_pos, area_id, is_inhibitory, is_plastic, 0.0, 3.0, 2.0, true, is_episodic)
+	var loop_node := _create_recursive_loop_variant(center_pos, area_id, is_inhibitory, is_plastic, 0.0, 3.0, 2.0, true, is_episodic)
+	_attach_mapping_count_anchor(loop_node, mapping_set)
+	return loop_node
 
 ## Internal helper that creates a single recursive loop visual.
 ## loop_height_offset vertically shifts the loop relative to its default loop height.
@@ -2319,6 +2419,7 @@ func _create_recursive_loop_variant(
 	
 	if include_pulse_animation:
 		_create_recursive_pulse_animation(loop_node, loop_points, area_id, is_inhibitory)
+	loop_node.set_meta(META_CURVE_ANCHOR, MappingHoverHold.loop_anchor(center_pos, loop_height))
 	
 	return loop_node
 
@@ -2674,9 +2775,7 @@ func _on_cache_reloaded() -> void:
 	if is_queued_for_deletion():
 		return
 	# If we're currently showing connections, refresh them with updated cache data
-	if _is_volume_moused_over:
-		_hide_neural_connections()
-		_show_neural_connections()
+	refresh_neural_connections_if_shown()
 	# Defer the IO indicator refresh; during genome reload hundreds of cache signals
 	# fire per area, so batching into one deferred call prevents queue saturation.
 	if not _io_indicator_refresh_pending:
@@ -2688,9 +2787,7 @@ func _on_mapping_changed(_area = null, _mapping_set = null) -> void:
 	if is_queued_for_deletion():
 		return
 	# If we're currently showing connections, refresh them immediately
-	if _is_volume_moused_over:
-		_hide_neural_connections()
-		_show_neural_connections()
+	refresh_neural_connections_if_shown()
 	# Defer the IO indicator refresh; during genome load thousands of mapping-change
 	# signals can fire across all areas in one frame. One deferred call per area is enough.
 	if not _io_indicator_refresh_pending:
