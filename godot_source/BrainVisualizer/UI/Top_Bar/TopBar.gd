@@ -42,6 +42,7 @@ func _ready():
 	_synapse_count = $DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3/synapse
 	_mount_shared_combo_strip()
 	_mount_genome_history_button()
+	_mount_circuit_schematic_button()
 	# The combo sizes its own icons, including the 20% category-icon reduction.
 	# The root-bar theme scaler would otherwise set those TextureRects back to full size.
 	if _shared_combo != null and not theme_scalar_nodes_to_not_include_or_search.has(_shared_combo):
@@ -124,6 +125,28 @@ func _mount_genome_history_button() -> void:
 	var settings: Node = host.get_node("SettingsButton")
 	host.add_child(button)
 	host.move_child(button, settings.get_index())
+
+
+## Whole-genome Circuit Schematic sits immediately before Camera Animations.
+func _mount_circuit_schematic_button() -> void:
+	var button: ButtonTextureRectScaling = ButtonTextureRectScaling.new()
+	button.name = "CircuitSchematicButton"
+	button.custom_minimum_size = Vector2(64, 64)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	button.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	button.stretch_mode = TextureRect.STRETCH_SCALE
+	var icon_dir := "res://BrainVisualizer/UI/GenericResources/ButtonIcons/"
+	button.texture_normal = load(icon_dir + "map_block_block_S.png")
+	button.texture_hover = load(icon_dir + "map_block_block_H.png")
+	button.texture_pressed = load(icon_dir + "map_block_block_C.png")
+	button.texture_disabled = load(icon_dir + "map_block_block_D.png")
+	button.texture = button.texture_normal
+	button.pressed.connect(func() -> void: BV.UI.show_circuit_schematic())
+	var host := $TopBarControlsPanel/MarginContainer/HBoxContainer
+	var camera: Node = host.get_node("CameraAnimations")
+	host.add_child(button)
+	host.move_child(button, camera.get_index())
 
 
 ## Mount the shared combo implementation used across Circuit Builder and Brain Monitor.
@@ -793,6 +816,7 @@ func _setup_custom_tooltips() -> void:
 	# Hover target is the toggle control; nested TextureButtons kept native-free above.
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown/ToggleImageDropDown, "Split view: Circuit Builder, Brain Monitor, or split layout")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown/ToggleImageDropDown, "Inspectors")
+	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/CircuitSchematicButton, "Circuit schematic: the whole genome in one view")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/CameraAnimations, "Camera animations")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/GuideButton, "User guide and tutorials")
 	_add_tooltip_to_control($TopBarControlsPanel/MarginContainer/HBoxContainer/GenomeHistoryButton, "Genome change history")

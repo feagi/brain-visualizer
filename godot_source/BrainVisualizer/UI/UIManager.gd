@@ -3318,6 +3318,30 @@ func get_brain_monitor_for_active_tab() -> UI_BrainMonitor_3DScene:
 func get_circuit_builder_for_active_tab() -> CircuitBuilder:
 	return _find_active_tab_circuit_builder_in_view(_root_UI_view)
 
+## Brings the whole-genome Circuit Schematic tab to the front, opening it beside the main circuit's
+## Circuit Builder when it isn't open yet. Shows the circuit panel if it is hidden.
+func show_circuit_schematic() -> void:
+	if _root_UI_view == null:
+		return
+	var temp_split: TempSplit = get_node_or_null("CB_Holder") as TempSplit
+	if temp_split != null and temp_split.current_state == TempSplit.STATES.CB_CLOSED:
+		temp_split.set_view(TempSplit.STATES.CB_HORIZONTAL)
+		if _top_bar != null:
+			_top_bar.show_split_view_state(TempSplit.STATES.CB_HORIZONTAL)
+	var tabs: Array[UITabContainer] = _root_UI_view.get_recursive_UITabContainer_children()
+	for tab_container in tabs:
+		if tab_container != null and tab_container.show_circuit_schematic_if_open():
+			return
+	var target: UITabContainer = null
+	var root_region: BrainRegion = FeagiCore.feagi_local_cache.brain_regions.get_root_region()
+	if root_region != null:
+		target = _root_UI_view.return_UITabContainer_holding_CB_of_given_region(root_region)
+	if target == null and not tabs.is_empty():
+		target = tabs[0]
+	if target != null:
+		target.spawn_circuit_schematic()
+
+
 ## Circuit Builder that represents the given region, or null if that tab is not open.
 func get_circuit_builder_for_region(region: BrainRegion) -> CircuitBuilder:
 	if region == null or _root_UI_view == null:

@@ -90,6 +90,23 @@ func spawn_CB_of_region(region: BrainRegion) -> void:
 	new_cb.setup(region)
 	new_cb.request_initial_fit()
 
+## Adds the whole-genome [CircuitSchematic] as a tab and brings it to the top.
+func spawn_circuit_schematic() -> void:
+	if return_circuit_schematic() != null:
+		push_error("UI UITabContainer: This tab container already holds the Circuit Schematic!")
+		return
+	var schematic: CircuitSchematic = CircuitSchematic.new()
+	_add_control_view_as_tab(schematic)
+	schematic.request_initial_fit()
+
+## Brings the [CircuitSchematic] tab to the top if this container holds it. Returns whether it did.
+func show_circuit_schematic_if_open() -> bool:
+	var schematic: CircuitSchematic = return_circuit_schematic()
+	if schematic == null:
+		return false
+	current_tab = get_tab_idx_from_control(schematic)
+	return true
+
 ## If BM of given region exists, brings it to the top. Otherwise, instantiates it and brings it to the top.
 ## Returns that brain monitor. A newly created one has not run [method UI_BrainMonitor_3DScene.setup] yet.
 func show_BM_of_region(region: BrainRegion) -> UI_BrainMonitor_3DScene:
@@ -222,6 +239,8 @@ func is_current_top_view_root_region() -> bool:
 		if cb.representing_region == null:
 			return false
 		return cb.representing_region.is_root_region()
+	elif top_control is CircuitSchematic:
+		return false
 	elif top_control is UI_BrainMonitor_3DScene:
 		var bm = top_control as UI_BrainMonitor_3DScene
 		if bm.representing_region == null:
@@ -249,6 +268,13 @@ func return_CB_of_region(searching_region: BrainRegion) -> CircuitBuilder:
 		if child is CircuitBuilder:
 			if (child as CircuitBuilder).representing_region.region_ID == searching_region.region_ID:
 				return (child as CircuitBuilder)
+	return null
+
+## Returns the [CircuitSchematic] tab, or null if this container doesn't hold it
+func return_circuit_schematic() -> CircuitSchematic:
+	for child in get_children():
+		if child is CircuitSchematic:
+			return child as CircuitSchematic
 	return null
 
 ## Returns true if we have a BM of the specified region
@@ -291,6 +317,8 @@ func _tab_close_target_description(control: Control) -> String:
 		if b.representing_region != null:
 			return "BrainMonitor3D region_id=%s name=%s" % [b.representing_region.region_ID, b.representing_region.friendly_name]
 		return "BrainMonitor3D (no region)"
+	if control is CircuitSchematic:
+		return "CircuitSchematic"
 	return control.get_class()
 
 
@@ -370,6 +398,13 @@ func _add_control_view_as_tab(region_view: Control) -> void:
 		current_tab = tab_idx
 		cb.user_request_viewing_subregion.connect(_internal_CB_requesting_CB_view_of_region)
 		return
+	elif region_view is CircuitSchematic:
+		add_child(region_view)
+		var schematic_tab_idx: int = get_tab_idx_from_control(region_view)
+		set_tab_icon(schematic_tab_idx, ICON_CB)
+		_apply_tab_icon_max_width()
+		current_tab = schematic_tab_idx
+		return
 	elif region_view is UI_BrainMonitor_3DScene:
 		var bm: UI_BrainMonitor_3DScene = region_view as UI_BrainMonitor_3DScene
 		add_child(bm) # Add to tab container
@@ -402,6 +437,9 @@ func _remove_control_view_as_tab(region_view: Control) -> void:
 			cb.user_request_viewing_subregion.disconnect(_internal_CB_requesting_CB_view_of_region)
 		remove_child(cb)
 		cb.queue_free()
+	elif region_view is CircuitSchematic:
+		remove_child(region_view)
+		region_view.queue_free()
 	elif region_view is UI_BrainMonitor_3DScene:
 		var bm: UI_BrainMonitor_3DScene = region_view as UI_BrainMonitor_3DScene
 		# Clean up any open previews before removing
