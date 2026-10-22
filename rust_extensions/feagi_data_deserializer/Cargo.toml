@@ -7,10 +7,11 @@ edition = "2021"
 # Godot Rust bindings
 godot = { version = "0.5.5", features = ["experimental-wasm", "lazy-function-tables", "api-4-7"] }
 
-# FEAGI data serialization (crates.io; unified feagi-core release line)
-feagi-serialization = { version = "^0.0.35" }
-feagi-structures = { version = "^0.0.35" }
-feagi-sensorimotor = { version = "^0.0.35" }
+# FEAGI data serialization (crates.io). 0.0.35 rejects modulator cortical IDs
+# (prefix byte 'g', added in 0.0.42). Caret on 0.0.x does not float past 0.0.35.
+feagi-serialization = { version = "0.0.46" }
+feagi-structures = { version = "0.0.46" }
+feagi-sensorimotor = { version = "0.0.46" }
 
 # Additional dependencies for data handling
 serde = { version = "1.0", features = ["derive"] }
