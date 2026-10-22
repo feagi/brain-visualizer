@@ -446,6 +446,9 @@ func _device_registrations_to_capabilities_configs(device_registrations: Diction
 func refresh_agent_capabilities_cache(include_device_registrations: bool = true) -> FeagiRequestOutput:
 	FeagiCore.feagi_local_cache.clear_configuration_jsons()
 	FeagiCore.feagi_local_cache.clear_agent_capabilities_map()
+	if FeagiCore.network != null and not FeagiCore.network.supports_feature(FEAGINetworking.FEAGI_FEATURE.AGENT_REGISTRY):
+		# This FEAGI has no agent registry; the cache stays empty instead of logging a failed request.
+		return FeagiRequestOutput.requirement_fail("FEAGI_FEATURE_UNSUPPORTED")
 	var query_suffix: StringName = "?include_device_registrations=true" if include_device_registrations else ""
 	var agent_caps_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
 		FeagiCore.network.http_API.address_list.GET_agent_capabilities_all + query_suffix
@@ -528,6 +531,8 @@ func ensure_agent_capabilities_cached_for_delete_guard(objects_to_delete: Array[
 func supplement_agent_capabilities_device_registrations_from_http() -> void:
 	if FeagiCore == null or not FeagiCore.can_interact_with_feagi() or FeagiCore.network == null or FeagiCore.network.http_API == null:
 		return
+	if not FeagiCore.network.supports_feature(FEAGINetworking.FEAGI_FEATURE.DEVICE_REGISTRATIONS):
+		return
 	var list_def: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(
 		FeagiCore.network.http_API.address_list.GET_agent_list
 	)
@@ -580,6 +585,9 @@ func import_device_registrations(agent_id: StringName, device_registrations: Dic
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if FeagiCore.network != null and not FeagiCore.network.supports_feature(FEAGINetworking.FEAGI_FEATURE.DEVICE_REGISTRATIONS):
+		push_warning("FEAGI Requests: This FEAGI does not accept device registrations.")
+		return FeagiRequestOutput.requirement_fail("FEAGI_FEATURE_UNSUPPORTED")
 	var base_url: StringName = FeagiCore.network.http_API.address_list.POST_agent_device_registrations
 	var full_url: StringName = StringName(String(base_url).replace("{agent_id}", str(agent_id)))
 	var dict_to_send: Dictionary = { "device_registrations": device_registrations }

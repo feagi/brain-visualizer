@@ -11,5 +11,7 @@ class_name FeagiGeneralSettings
 @export var seconds_info_notification: float ## how long to show info notifications
 @export var seconds_warning_notification: float ## how long to show warning notifications
 @export var seconds_error_notification: float ## how long to show error notifications
-@export var agent_descriptor_b64: String = "" ## Deprecated: REST registration is disabled
-@export var auth_token_b64: String = "" ## Deprecated: REST registration is disabled
+@export var agent_descriptor_b64: String = "" ## 48-byte agent descriptor (base64) for legacy FEAGI agent registration
+@export var auth_token_b64: String = "" ## 32-byte auth token (base64) for legacy FEAGI agent registration
+## Which FEAGI generation to talk to. "auto" probes the server at connect time; env FEAGI_PROTOCOL overrides.
+@export_enum("auto", "legacy", "zenoh") var feagi_protocol: String = "auto"

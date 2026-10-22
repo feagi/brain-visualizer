@@ -1893,6 +1893,9 @@ func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[Stri
 		FeagiCore.network.http_API.HTTP_HEALTH.ERROR:
 			push_error("Manual stimulation: Connection error")
 			return
+	if not FeagiCore.network.supports_feature(FEAGINetworking.FEAGI_FEATURE.MANUAL_STIMULATION):
+		_notification_system.add_notification("This FEAGI does not support manual stimulation.", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
+		return
 	
 	# Build the correct payload format for manual stimulation API
 	var stimulation_payload: Dictionary = {}

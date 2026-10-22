@@ -852,6 +852,9 @@ func _send_segmentation_to_feagi() -> void:
 	stim["oecc00"] = [[0,0,0],[0,0,1]]
 	stim["omod00"] = [[0,0,0],[0,0,1]]
 	var payload: Dictionary = {"stimulation_payload": stim}
+	if FeagiCore.network != null and not FeagiCore.network.supports_feature(FEAGINetworking.FEAGI_FEATURE.MANUAL_STIMULATION):
+		push_warning("[FEAGI] [SegCtl] This FEAGI does not support manual stimulation; control payload not sent.")
+		return
 	print("[FEAGI] [SegCtl] Sending control stimulation payload: ", payload)
 	var def: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(FeagiCore.network.http_API.address_list.POST_agent_manualStimulation, payload)
 	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(def)

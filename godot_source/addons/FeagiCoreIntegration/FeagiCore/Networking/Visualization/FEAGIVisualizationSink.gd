@@ -9,8 +9,6 @@ signal FEAGI_sent_direct_neural_points_bulk(cortical_ID: StringName, x_array: Pa
 signal FEAGI_sent_SVO_data(cortical_ID: StringName, SVO_data: PackedByteArray)
 signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
 
-const WASMDecoder = preload("res://Utils/WASMDecoder.gd")
-const MAX_RUST_INIT_ATTEMPTS := 5
 const MISSING_AREA_WARNING_INTERVAL: float = 10.0  # Only warn every 10 seconds per area
 const _BV_FAST_CACHE_REFRESH_INTERVAL_MS: int = 1000
 
@@ -25,14 +23,14 @@ const _TYPE11_ROOTCAUSE_REBUILD_LOG_MS: int = 3000
 ## Areas whose packets must be decoded into arrays as well as applied by the MultiMesh fast path.
 var bulk_decode_registry: Type11BulkDecodeRegistry = Type11BulkDecodeRegistry.new()
 
-var _rust_deserializer = null
-var _rust_init_attempts: int = 0
-# One-time warning when Type 11 is skipped due to missing Rust deserializer (no silent drop)
-var _deserializer_missing_warned: bool = false
-# Web: packets that arrived before the WASM decoder finished loading
-var _pending_web_packets: Array[PackedByteArray] = []
+# Decodes frames for the stream format in use; null when BV has no decoder for it.
+var _frame_decoder: VisualizationFrameDecoder = null
+# One-time warning when frames are dropped because no decoder can handle them (no silent drop)
+var _decoder_missing_warned: bool = false
+# Frames that arrived while the decoder was still loading (web WASM)
+var _pending_frames: Array[PackedByteArray] = []
 
-# Desktop fast path: apply Type 11 packets directly to MultiMesh via Rust (no per-area arrays/signal dispatch).
+# Fast path: decoders that support it write frames directly into MultiMeshes (no per-area arrays/signal dispatch).
 var _bv_fast_multimeshes_by_id: Dictionary = {}
 var _bv_fast_dimensions_by_id: Dictionary = {}
 var _bv_fast_cache_last_refresh_ms: int = 0
@@ -56,14 +54,8 @@ var _type11_rootcause_banner_printed: bool = false
 
 
 func _ready() -> void:
-	set_process(false) # only runs while web packets wait for WASM
-	if OS.has_feature("web"):
-		print("🌐 Web build detected: using WASM decoder; native GDExtension is unavailable on Web.")
-		# Kick off WASM loader early so it's ready by the time data arrives
-		WASMDecoder.ensure_wasm_loaded()
-	else:
-		# Initialize Rust-based high-performance deserializer (REQUIRED on desktop)
-		_init_rust_deserializer()
+	set_process(false) # only runs while frames wait for a loading decoder
+	select_frame_decoder_for_protocol(FEAGINetworking.FEAGI_PROTOCOL.UNKNOWN)
 	if FeagiCore.feagi_local_cache:
 		FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_genome_reloaded)
 		FeagiCore.feagi_local_cache.cortical_areas_reloaded.connect(_on_genome_reloaded)
@@ -72,17 +64,17 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if not WASMDecoder.is_wasm_ready():
+	if _frame_decoder == null or not _frame_decoder.is_available():
 		return
-	var queued := _pending_web_packets
-	_pending_web_packets = []
+	var queued := _pending_frames
+	_pending_frames = []
 	set_process(false)
-	for bytes in queued:
-		_ingest_web(bytes)
+	for frame in queued:
+		ingest_frame(frame)
 
 
 ## Route one FEAGI stream packet by its first byte: byte containers and Type 11 neuron data go to
-## [method ingest_type11]; health JSON, raw images and legacy SVO go to their consumers. Every
+## [method ingest_frame]; health JSON, raw images and legacy SVO go to their consumers. Every
 ## transport hands its binary packets here.
 func ingest_packet(bytes: PackedByteArray) -> void:
 	var structure_id = bytes[0] if bytes.size() > 0 else -1
@@ -94,7 +86,7 @@ func ingest_packet(bytes: PackedByteArray) -> void:
 
 	# Current FeagiByteContainer versions (3, 4) wrap Type 11; the Rust/WASM decoders parse the container.
 	if bytes[0] == 3 or bytes[0] == 4:
-		ingest_type11(bytes)
+		ingest_frame(bytes)
 		return
 
 	# FEAGI Byte Container v2 (first byte == 2)
@@ -232,27 +224,57 @@ func ingest_packet(bytes: PackedByteArray) -> void:
 				area.FEAGI_set_SVO_visualization_data(SVO_data)
 		
 		11: # Direct Neural Points (NEW - feagi-data-processing format with bulk arrays)
-			ingest_type11(bytes)
+			ingest_frame(bytes)
 
 		_: # Unknown
 			print("   ❌ ROUTING: UNKNOWN structure type ", structure_id, " - ERROR!")
 			push_error("Unknown data type %d recieved!" % bytes[0])
 
 
-## Decode and apply one Type 11 packet: a FeagiByteContainer (first byte 2, 3 or 4) or raw Type 11
-## bytes (first byte 11).
-func ingest_type11(bytes: PackedByteArray) -> void:
-	if bytes.is_empty():
+## Decode and apply one visualization frame with the current decoder. For Type 11 that is a
+## FeagiByteContainer (first byte 2, 3 or 4) or raw Type 11 bytes (first byte 11).
+func ingest_frame(frame: PackedByteArray) -> void:
+	if frame.is_empty():
 		return
-	if OS.has_feature("web"):
-		_ingest_web(bytes)
+	if _frame_decoder == null or not _frame_decoder.is_available():
+		if _frame_decoder != null and _frame_decoder.queue_until_available():
+			_pending_frames.append(frame.duplicate())
+			set_process(true)
+			return
+		if not _decoder_missing_warned:
+			_decoder_missing_warned = true
+			var why := "no decoder for this FEAGI's stream format" if _frame_decoder == null else "%s decoder is not available (build/enable rust_extensions/feagi_data_deserializer)" % _frame_decoder.get_format_name()
+			push_warning("[VIZ] Neural activity is not being processed: %s." % why)
 		return
-	if _rust_deserializer == null:
-		if not _deserializer_missing_warned:
-			_deserializer_missing_warned = true
-			push_warning("[VIZ] Rust deserializer (FeagiDataDeserializer) not available. Type 11 neural data is not being processed; build/enable rust_extensions/feagi_data_deserializer for neural activity.")
-		return
-	_ingest_desktop(bytes)
+	if _frame_decoder.supports_multimesh_apply():
+		_ingest_with_multimesh_fast_path(frame)
+	else:
+		_ingest_decoding_all_areas(frame)
+
+
+## Use [param decoder] for every following frame (e.g. a zenoh-format decoder). Null drops frames with a warning.
+func set_frame_decoder(decoder: VisualizationFrameDecoder) -> void:
+	_frame_decoder = decoder
+	_decoder_missing_warned = false
+	_pending_frames.clear()
+	set_process(false)
+	request_bv_fastpath_cache_rebuild()
+	print("[VIZ] Frame decoder: %s" % ("none" if decoder == null else decoder.get_format_name()))
+
+
+## Pick the decoder for [param protocol] on this platform. Called by [FEAGINetworking] once it knows
+## which FEAGI it talks to.
+func select_frame_decoder_for_protocol(protocol: FEAGINetworking.FEAGI_PROTOCOL) -> void:
+	match protocol:
+		FEAGINetworking.FEAGI_PROTOCOL.ZENOH:
+			# The feagi-interop stream format is not defined yet.
+			set_frame_decoder(null)
+		_:
+			if OS.has_feature("web"):
+				if not (_frame_decoder is Type11WasmFrameDecoder):
+					set_frame_decoder(Type11WasmFrameDecoder.new())
+			elif not (_frame_decoder is Type11NativeFrameDecoder):
+				set_frame_decoder(Type11NativeFrameDecoder.new())
 
 
 ## Apply already-decoded areas ({cortical_id: {x_array, y_array, z_array, p_array}}) to every consumer.
@@ -296,8 +318,8 @@ func bv_clear_type11_bulk_dispatch_cortical_ids() -> void:
 func request_bv_fastpath_cache_rebuild(pause_ends_owed: int = 0) -> void:
 	_fastpath_rebuild_pause_ends_owed += pause_ends_owed
 	bulk_decode_registry.invalidate_areas()
-	if OS.has_feature("web"):
-		# No desktop fast path (and no pause to release: [method FeagiCore.bv_begin_visual_rebuild_pause]
+	if not _uses_multimesh_fast_path():
+		# No fast path (and no pause to release: [method FeagiCore.bv_begin_visual_rebuild_pause]
 		# is itself a no-op on web) - drain immediately so the counter never grows unbounded.
 		var owed: int = _fastpath_rebuild_pause_ends_owed
 		_fastpath_rebuild_pause_ends_owed = 0
@@ -311,40 +333,23 @@ func request_bv_fastpath_cache_rebuild(pause_ends_owed: int = 0) -> void:
 		call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
 
 
-func _init_rust_deserializer() -> void:
-	if _rust_deserializer != null:
-		return
-	if ClassDB.class_exists("FeagiDataDeserializer"):
-		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
-		if not _rust_deserializer:
-			push_error("🦀 CRITICAL: Failed to instantiate FEAGI Rust deserializer!")
-		return
-	# Class not registered yet – retry a few times to allow GDExtension to finish loading
-	_rust_init_attempts += 1
-	if _rust_init_attempts <= MAX_RUST_INIT_ATTEMPTS:
-		var t := get_tree().create_timer(0.25)
-		t.timeout.connect(_init_rust_deserializer)
-		return
-	push_error("🦀 CRITICAL: FeagiDataDeserializer class not found after retries. Ensure addon is installed and library built (debug/release).")
+func _uses_multimesh_fast_path() -> bool:
+	return _frame_decoder != null and _frame_decoder.supports_multimesh_apply()
 
 
-func _ingest_web(bytes: PackedByteArray) -> void:
-	if not WASMDecoder.is_wasm_ready():
-		# Queue until WASM is ready
-		_pending_web_packets.append(bytes.duplicate())
-		set_process(true)
-		return
-	var decoded: Dictionary = WASMDecoder.decode_type_11(bytes)
-	if not decoded or decoded.get("success", false) != true:
-		var err = decoded.get("error", "unknown") if decoded else "no result"
+## Decoders without a MultiMesh fast path (web WASM): every area goes through bulk arrays.
+func _ingest_decoding_all_areas(frame: PackedByteArray) -> void:
+	var decoded: Dictionary = _frame_decoder.decode_areas(frame)
+	if decoded.get("success", false) != true:
+		var err = decoded.get("error", "unknown")
 		# Suppress noisy logs while WASM is still loading
 		if err != "WASM not ready" and err != "WASM not initialized":
-			print("   ❌ ERROR: Type 11 WASM decode failed: ", err)
+			print("   ❌ ERROR: %s decode failed: %s" % [_frame_decoder.get_format_name(), err])
 		return
 	apply_decoded_areas(decoded.areas)
 
 
-func _ingest_desktop(bytes: PackedByteArray) -> void:
+func _ingest_with_multimesh_fast_path(bytes: PackedByteArray) -> void:
 	var perf: Dictionary
 	if FeagiCore != null and FeagiCore.bv_is_type11_visual_rebuild_pause_active():
 		# Avoid writing neuron instances into MultiMeshes while Brain Monitor is tearing down
@@ -357,7 +362,7 @@ func _ingest_desktop(bytes: PackedByteArray) -> void:
 		}
 	else:
 		_refresh_bv_fastpath_cache_if_needed()
-		perf = _rust_deserializer.apply_type11_packet_to_multimeshes(
+		perf = _frame_decoder.apply_to_multimeshes(
 			bytes,
 			_bv_fast_multimeshes_by_id,
 			_bv_fast_dimensions_by_id,
@@ -376,11 +381,11 @@ func _ingest_desktop(bytes: PackedByteArray) -> void:
 	var decoded: Dictionary = {}
 	var rootcause := _type11_rootcause_enabled()
 	if rootcause:
-		decoded = _rust_deserializer.decode_type_11_data(bytes)
+		decoded = _frame_decoder.decode_areas(bytes)
 	else:
 		var bulk_ids := bulk_decode_registry.get_ids()
 		if not bulk_ids.is_empty():
-			decoded = _rust_deserializer.decode_type_11_data_filtered(bytes, bulk_ids)
+			decoded = _frame_decoder.decode_areas(bytes, bulk_ids)
 	var areas: Dictionary = {}
 	var areas_any: Variant = decoded.get("areas", null)
 	if bool(decoded.get("success", false)) and areas_any is Dictionary:
@@ -472,7 +477,7 @@ func _deferred_rebuild_bv_fastpath_after_cache_touch() -> void:
 	# [method request_bv_fastpath_cache_rebuild] can never be left stuck if this build has no fast path.
 	var pause_ends_owed: int = _fastpath_rebuild_pause_ends_owed
 	_fastpath_rebuild_pause_ends_owed = 0
-	if OS.has_feature("web"):
+	if not _uses_multimesh_fast_path():
 		_release_visual_rebuild_pauses(pause_ends_owed)
 		return
 	_bv_fast_cache_last_refresh_ms = 0

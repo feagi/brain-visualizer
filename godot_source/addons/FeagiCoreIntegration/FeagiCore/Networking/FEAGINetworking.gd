@@ -23,6 +23,22 @@ enum TRANSPORT_MODE {
 	ZMQ
 }
 
+## Which generation of FEAGI this session talks to. Decides the agent client, the stream decoder and
+## which REST-backed features exist. LEGACY is today's FEAGI (feagi-agent registration, WebSocket/SHM
+## Type 11); ZENOH is the feagi-interop server.
+enum FEAGI_PROTOCOL {
+	UNKNOWN,
+	LEGACY,
+	ZENOH
+}
+
+## REST-backed features that not every FEAGI generation serves.
+enum FEAGI_FEATURE {
+	AGENT_REGISTRY, ## /v1/agent/list, /v1/agent/capabilities/all
+	DEVICE_REGISTRATIONS, ## /v1/agent/{agent_id}/device_registrations
+	MANUAL_STIMULATION ## /v1/agent/manual_stimulation
+}
+
 ## Health of the link carrying the data stream, whichever transport it uses.
 enum VISUALIZATION_LINK_HEALTH {
 	NO_CONNECTION,
@@ -33,6 +49,7 @@ enum VISUALIZATION_LINK_HEALTH {
 signal connection_state_changed(prev_state: CONNECTION_STATE, current_state: CONNECTION_STATE)
 signal genome_reset_request_recieved()
 signal visualization_link_health_changed(prev_health: VISUALIZATION_LINK_HEALTH, current_health: VISUALIZATION_LINK_HEALTH)
+signal feagi_protocol_changed(protocol: FEAGI_PROTOCOL)
 
 
 var http_API: FEAGIHTTPAPI = null
@@ -46,10 +63,13 @@ var transport_mode: TRANSPORT_MODE:
 	get: return _transport_mode
 var visualization_link_health: VISUALIZATION_LINK_HEALTH:
 	get: return _visualization_link_health
+var feagi_protocol: FEAGI_PROTOCOL:
+	get: return _feagi_protocol
 
 var _connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
 var _transport_mode: TRANSPORT_MODE = TRANSPORT_MODE.UNKNOWN  # Track which transport is being used
 var _visualization_link_health: VISUALIZATION_LINK_HEALTH = VISUALIZATION_LINK_HEALTH.NO_CONNECTION
+var _feagi_protocol: FEAGI_PROTOCOL = FEAGI_PROTOCOL.UNKNOWN
 var _feagi_endpoint_details: FeagiEndpointDetails = null  # Store endpoint details for later use
 var _heartbeat_timer: Timer = null  # Timer for sending periodic heartbeats to FEAGI
 var _heartbeat_interval: float = 5.0  # Send heartbeat every 5 seconds to provide margin against 30s liveness timeout.
@@ -149,6 +169,8 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		_start_reconnect_loop()
 		return false
 	
+	await _detect_feagi_protocol()
+
 	# REST registration is deprecated; transport setup is now resolved without REST calls.
 	# Ensure a previous registration/session does not block reconnect registration.
 	stop_heartbeat()
@@ -251,6 +273,11 @@ func _normalize_agent_descriptor_b64(b64: String) -> String:
 	return b64
 
 func _register_agent_via_transport() -> bool:
+	if _feagi_protocol == FEAGI_PROTOCOL.ZENOH:
+		# The feagi-interop agent and stream do not exist yet; there is nothing to register with.
+		push_error("FEAGI NETWORK: This FEAGI uses the zenoh protocol, which this Brain Visualizer cannot stream from yet.")
+		_transport_registration_failed = true
+		return false
 	# REST registration is no longer supported. Register via transport-specific client.
 	# STEP 1: Query FEAGI's burst frequency
 	var feagi_hz = await _get_feagi_burst_frequency()
@@ -895,5 +922,77 @@ func _prepare_websocket_transport() -> void:
 	# Ensure WS health signal is wired so this node can update its connection state
 	if not websocket_API.FEAGI_socket_health_changed.is_connected(_WS_health_changed):
 		websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
+
+#endregion
+
+
+#region FEAGI protocol (legacy vs zenoh)
+
+## Whether the connected FEAGI serves [param feature]. Before detection this answers as legacy so
+## nothing changes for today's FEAGI.
+func supports_feature(feature: FEAGI_FEATURE) -> bool:
+	match _feagi_protocol:
+		FEAGI_PROTOCOL.ZENOH:
+			# feagi-interop serves no /v1/agent routes yet.
+			return false
+		_:
+			return true
+
+
+func _configured_feagi_protocol() -> FEAGI_PROTOCOL:
+	var configured: String = OS.get_environment("FEAGI_PROTOCOL").strip_edges().to_lower()
+	if configured == "" and FeagiCore.feagi_settings != null:
+		configured = str(FeagiCore.feagi_settings.feagi_protocol).to_lower()
+	match configured:
+		"legacy":
+			return FEAGI_PROTOCOL.LEGACY
+		"zenoh":
+			return FEAGI_PROTOCOL.ZENOH
+		_:
+			return FEAGI_PROTOCOL.UNKNOWN
+
+
+## Decide which FEAGI generation answers at the HTTP address. A configured value wins. Otherwise an
+## explicit "protocol" field in /v1/system/health_check is used when FEAGI provides one, and failing
+## that the agent registry: legacy FEAGI serves /v1/agent/capabilities/all, feagi-interop answers 404.
+func _detect_feagi_protocol() -> void:
+	var configured := _configured_feagi_protocol()
+	if configured != FEAGI_PROTOCOL.UNKNOWN:
+		_set_feagi_protocol(configured, "configured")
+		return
+	var health := await _probe_get(http_API.address_list.GET_system_healthCheck)
+	if health.success:
+		match str(health.decode_response_as_dict().get("protocol", "")).to_lower():
+			"legacy":
+				_set_feagi_protocol(FEAGI_PROTOCOL.LEGACY, "health_check protocol field")
+				return
+			"zenoh":
+				_set_feagi_protocol(FEAGI_PROTOCOL.ZENOH, "health_check protocol field")
+				return
+	var agent_registry := await _probe_get(http_API.address_list.GET_agent_capabilities_all)
+	if agent_registry.response_code == 404:
+		_set_feagi_protocol(FEAGI_PROTOCOL.ZENOH, "no agent registry (/v1/agent/capabilities/all returned 404)")
+	elif agent_registry.response_code == 200:
+		_set_feagi_protocol(FEAGI_PROTOCOL.LEGACY, "agent registry present")
+	else:
+		_set_feagi_protocol(FEAGI_PROTOCOL.LEGACY, "probe inconclusive (HTTP %d); assuming legacy" % agent_registry.response_code)
+
+
+func _probe_get(address: StringName) -> FeagiRequestOutput:
+	var definition := APIRequestWorkerDefinition.define_single_GET_call(address)
+	definition.number_of_retries_allowed = 0
+	var worker := http_API.make_HTTP_call(definition)
+	await worker.worker_done
+	return worker.retrieve_output_and_close()
+
+
+func _set_feagi_protocol(protocol: FEAGI_PROTOCOL, reason: String) -> void:
+	print("FEAGI NETWORK: FEAGI protocol %s (%s)" % [FEAGI_PROTOCOL.keys()[protocol], reason])
+	if protocol == _feagi_protocol:
+		return
+	_feagi_protocol = protocol
+	if visualization_sink != null:
+		visualization_sink.select_frame_decoder_for_protocol(protocol)
+	feagi_protocol_changed.emit(protocol)
 
 #endregion
