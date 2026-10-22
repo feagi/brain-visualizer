@@ -28,6 +28,8 @@ signal genome_reset_request_recieved()
 
 var http_API: FEAGIHTTPAPI = null
 var websocket_API: FEAGIWebSocketAPI = null
+## Transport-independent consumer of Type 11 visualization packets; every transport feeds it.
+var visualization_sink: FEAGIVisualizationSink = null
 var connection_state: CONNECTION_STATE:
 	get: return _connection_state
 
@@ -50,7 +52,12 @@ func _init():
 	http_API.name = "FEAGIHTTPAPI"
 	add_child(http_API)
 
+	visualization_sink = FEAGIVisualizationSink.new()
+	visualization_sink.name = "FEAGIVisualizationSink"
+	add_child(visualization_sink)
+
 	websocket_API = FEAGIWebSocketAPI.new()
+	websocket_API.visualization_sink = visualization_sink
 	websocket_API.name = "FEAGIWebSocketAPI"
 	websocket_API.process_mode = Node.PROCESS_MODE_DISABLED
 	websocket_API.feagi_requesting_reset.connect(func(): 

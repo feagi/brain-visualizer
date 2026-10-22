@@ -191,32 +191,32 @@ func _reset_accumulation_state() -> void:
 		}
 
 
-func _get_websocket_api() -> FEAGIWebSocketAPI:
+func _get_visualization_sink() -> FEAGIVisualizationSink:
 	if FeagiCore == null or FeagiCore.network == null:
 		return null
-	return FeagiCore.network.websocket_API
+	return FeagiCore.network.visualization_sink
 
 
 func _connect_websocket_listener() -> void:
-	var websocket_api: FEAGIWebSocketAPI = _get_websocket_api()
-	if websocket_api == null:
+	var viz_sink: FEAGIVisualizationSink = _get_visualization_sink()
+	if viz_sink == null:
 		return
-	if not websocket_api.FEAGI_sent_direct_neural_points_bulk.is_connected(_on_websocket_bulk_firing):
-		websocket_api.FEAGI_sent_direct_neural_points_bulk.connect(_on_websocket_bulk_firing)
+	if not viz_sink.FEAGI_sent_direct_neural_points_bulk.is_connected(_on_websocket_bulk_firing):
+		viz_sink.FEAGI_sent_direct_neural_points_bulk.connect(_on_websocket_bulk_firing)
 	_websocket_listener_connected = true
 	var cortical_ids: Array[StringName] = []
 	for area in _monitored_areas:
 		if area != null:
 			cortical_ids.append(area.cortical_ID)
-	websocket_api.bv_set_type11_bulk_dispatch_cortical_ids(cortical_ids)
+	viz_sink.bv_set_type11_bulk_dispatch_cortical_ids(cortical_ids)
 
 
 func _disconnect_websocket_listener() -> void:
-	var websocket_api: FEAGIWebSocketAPI = _get_websocket_api()
-	if websocket_api != null:
-		if websocket_api.FEAGI_sent_direct_neural_points_bulk.is_connected(_on_websocket_bulk_firing):
-			websocket_api.FEAGI_sent_direct_neural_points_bulk.disconnect(_on_websocket_bulk_firing)
-		websocket_api.bv_clear_type11_bulk_dispatch_cortical_ids()
+	var viz_sink: FEAGIVisualizationSink = _get_visualization_sink()
+	if viz_sink != null:
+		if viz_sink.FEAGI_sent_direct_neural_points_bulk.is_connected(_on_websocket_bulk_firing):
+			viz_sink.FEAGI_sent_direct_neural_points_bulk.disconnect(_on_websocket_bulk_firing)
+		viz_sink.bv_clear_type11_bulk_dispatch_cortical_ids()
 	_websocket_listener_connected = false
 
 

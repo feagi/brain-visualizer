@@ -1138,7 +1138,10 @@ func request_live_voxel_inspector(overlay: UI_BrainMonitor_Overlay, cortical_are
 	_live_voxel_mouse_pos = mouse_pos
 	_live_voxel_overlay = overlay
 	_live_voxel_brain_monitor = overlay.owning_brain_monitor()
-	_live_voxel_cortical_id = str(cortical_area.cortical_ID)
+	var hovered_cortical_id: String = str(cortical_area.cortical_ID)
+	if hovered_cortical_id != _live_voxel_cortical_id:
+		_set_live_inspector_bulk_decode(hovered_cortical_id)
+	_live_voxel_cortical_id = hovered_cortical_id
 	_live_voxel_coord = coord
 	_live_voxel_area_name = cortical_area.friendly_name
 	if voxel_changed:
@@ -1199,11 +1202,12 @@ func _live_voxel_query_async(area_name: String, cortical_id: StringName, coord: 
 
 ## Latest visualization frame. Firing neurons report membrane potential at spike time;
 ## the neuron array itself is already reset to 0.
-## Cortical ID under the live inspector cursor, or "" when not hovering a voxel.
-func live_inspector_hovered_cortical_id() -> String:
-	if not _live_voxel_hovering:
-		return ""
-	return _live_voxel_cortical_id
+## Have the visualization sink decode the hovered area's packets so the readout gets fire-time potentials.
+func _set_live_inspector_bulk_decode(cortical_id: String) -> void:
+	if FeagiCore == null or FeagiCore.network == null or FeagiCore.network.visualization_sink == null:
+		return
+	var ids: Array = [] if cortical_id.is_empty() else [cortical_id]
+	FeagiCore.network.visualization_sink.bulk_decode_registry.set_source_ids(Type11BulkDecodeRegistry.SOURCE_LIVE_INSPECTOR, ids)
 
 
 func note_live_inspector_firing_frame(areas: Dictionary) -> void:
@@ -1371,6 +1375,7 @@ func end_live_voxel_inspector_hover(overlay: UI_BrainMonitor_Overlay) -> void:
 	_live_voxel_payload = {}
 	_live_firing_sample = null
 	_live_voxel_cortical_id = ""
+	_set_live_inspector_bulk_decode("")
 	_release_live_synapse_visualization(true)
 	if overlay != null and is_instance_valid(overlay):
 		overlay.hide_live_inspector()
@@ -1393,6 +1398,7 @@ func clear_live_voxel_inspector() -> void:
 	_live_voxel_payload = {}
 	_live_firing_sample = null
 	_live_voxel_cortical_id = ""
+	_set_live_inspector_bulk_decode("")
 	for bm in _find_all_brain_monitors_in_scene_tree():
 		if bm != null and is_instance_valid(bm):
 			bm.hide_live_voxel_inspector()

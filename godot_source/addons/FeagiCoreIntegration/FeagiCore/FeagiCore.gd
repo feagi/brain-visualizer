@@ -802,8 +802,8 @@ func _perform_visualization_resync_after_transport() -> void:
 	var rc := str(OS.get_environment("BV_TYPE11_ROOTCAUSE")).strip_edges().to_lower()
 	if rc == "1" or rc == "true" or rc == "yes":
 		print("[TYPE11-ROOTCAUSE] transport resync: request_bv_fastpath_cache_rebuild + resync_all_brain_monitors_after_transport_recovery")
-	if network and network.websocket_API:
-		network.websocket_API.request_bv_fastpath_cache_rebuild()
+	if network and network.visualization_sink:
+		network.visualization_sink.request_bv_fastpath_cache_rebuild()
 	var ui: Variant = null
 	var bvn: Node = get_node_or_null("/root/BV")
 	if bvn != null:

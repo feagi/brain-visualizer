@@ -5440,14 +5440,14 @@ func _deferred_invoke_ws_fastpath_rebuild() -> void:
 		# No FeagiCore reference means [method FeagiCore.bv_begin_visual_rebuild_pause] could not have
 		# run either, so there is nothing outstanding to release.
 		return
-	var ws: FEAGIWebSocketAPI = FeagiCore.network.websocket_API if FeagiCore.network != null else null
-	if ws == null:
+	var sink: FEAGIVisualizationSink = FeagiCore.network.visualization_sink if FeagiCore.network != null else null
+	if sink == null:
 		# Paired with [method FeagiCore.bv_begin_visual_rebuild_pause]; release all owed pauses if the
-		# network/WebSocket node is gone before rebuild.
+		# network/visualization sink node is gone before rebuild.
 		for _i in range(pause_ends_owed):
 			FeagiCore.bv_end_visual_rebuild_pause_one()
 		return
-	ws.request_bv_fastpath_cache_rebuild(pause_ends_owed)
+	sink.request_bv_fastpath_cache_rebuild(pause_ends_owed)
 
 
 ## Drops every cortical volume node and clears the ID map. Caller must call [method _add_missing_cortical_area_visualizations] next.

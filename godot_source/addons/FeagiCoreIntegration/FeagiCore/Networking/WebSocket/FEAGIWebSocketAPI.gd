@@ -20,7 +20,6 @@ signal FEAGI_socket_health_changed(previous_health: WEBSOCKET_HEALTH, current_he
 signal FEAGI_socket_retrying_connection(retry_count: int, max_retry_count: int)
 signal FEAGI_sent_SVO_data(cortical_ID: StringName, SVO_data: PackedByteArray)
 signal FEAGI_sent_direct_neural_points(cortical_ID: StringName, points_data: PackedByteArray)
-signal FEAGI_sent_direct_neural_points_bulk(cortical_ID: StringName, x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array)
 signal feagi_requesting_reset()
 signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
 signal shm_visualization_enabled(shm_path: String)
@@ -28,6 +27,9 @@ signal shm_visualization_enabled(shm_path: String)
 
 var socket_health: WEBSOCKET_HEALTH:
 	get: return _socket_health
+
+## Receives every Type 11 visualization packet this transport delivers. Set by [FEAGINetworking].
+var visualization_sink: FEAGIVisualizationSink = null
 
 #var _cache_websocket_data: PackedByteArray # outside to try to avoid reallocation penalties # NOTE: Godot doesnt seem to care and reallocates anyways lol
 var _socket_web_address: StringName = ""
@@ -39,31 +41,8 @@ var _last_connect_time: int = 0  # Track when we last attempted to connect
 var _retry_timer_active: bool = false  # Track if a retry timer is already running
 var _last_disconnect_time: int = 0  # Track last disconnect to prevent rapid processing
 
-# Missing cortical area handling
-var _missing_cortical_areas: Dictionary = {}  # cortical_id -> {last_warning_time, fetch_attempted}
-const MISSING_AREA_WARNING_INTERVAL: float = 10.0  # Only warn every 10 seconds per area
-
-# Case-insensitive cortical area mapping cache
-var _case_mapping_cache: Dictionary = {}  # lowercase_id -> actual_cached_id
-
-# Rust-based high-performance deserializer
-var _rust_deserializer = null
 const WASMDecoder = preload("res://Utils/WASMDecoder.gd")
-
-# Desktop-only WS fast-path: apply Type 11 packets directly to MultiMesh via Rust (no per-area arrays/signal dispatch).
-const _USE_DESKTOP_TYPE11_FASTPATH: bool = true
-var _bv_fast_multimeshes_by_id: Dictionary = {}
-var _bv_fast_dimensions_by_id: Dictionary = {}
-var _bv_fast_cache_last_refresh_ms: int = 0
-const _BV_FAST_CACHE_REFRESH_INTERVAL_MS: int = 1000
-# Cortical areas that need Type 11 coordinate dispatch on the desktop fast-path (e.g. firing recorder).
-var _bv_type11_bulk_dispatch_cortical_ids: Dictionary = {}
-
-# Queue Type 11 messages on Web until WASM is ready
-var _pending_type11: Array = []
 var _waiting_for_wasm: bool = false
-var _rust_init_attempts: int = 0
-const MAX_RUST_INIT_ATTEMPTS := 5
 
 # [FEAGI] Shared memory neuron visualization (FEAGI -> Brain Visualizer)
 var _use_shared_mem: bool = false
@@ -92,28 +71,10 @@ var _ws_last_backlog_log_ms: int = 0
 var _ws_last_retry_log_ms: int = 0
 const _WS_RETRY_LOG_INTERVAL_MS: int = 10000
 var _ws_disabled_by_shm_notice_printed: bool = false
-# One-time warning when Type 11 is skipped due to missing Rust deserializer (no silent drop)
-var _ws_deserializer_missing_warned: bool = false
-# Guard: prevents multiple identical call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch") from queuing per frame.
-var _fastpath_rebuild_pending: bool = false
-# Number of [method FeagiCore.bv_end_visual_rebuild_pause_one] calls owed once the fast-path cache rebuild
-# actually completes. Accumulated (never dropped) across coalesced calls so every matching
-# [method FeagiCore.bv_begin_visual_rebuild_pause] is guaranteed a release, even if several rebuild
-# requests overlap and get coalesced into a single deferred cache refresh.
-var _fastpath_rebuild_pause_ends_owed: int = 0
 
 # WS receive diagnostics (rate-limited)
 var _ws_last_rx_log_ms: int = 0
 const _WS_RX_LOG_INTERVAL_MS: int = 1000
-var _ws_last_apply_log_ms: int = 0
-const _WS_APPLY_LOG_INTERVAL_MS: int = 1000
-
-# Opt-in Type 11 root-cause: set env BV_TYPE11_ROOTCAUSE=1 (see RECONNECTION_FIX.md)
-const _TYPE11_ROOTCAUSE_LOG_INTERVAL_MS: int = 2000
-const _TYPE11_ROOTCAUSE_REBUILD_LOG_MS: int = 3000
-var _type11_rootcause_last_packet_log_ms: int = 0
-var _type11_rootcause_last_rebuild_log_ms: int = 0
-var _type11_rootcause_banner_printed: bool = false
 const _WS_DIAGNOSTICS_ENABLED: bool = false
 
 # SHM update rate tracking
@@ -131,47 +92,13 @@ var _shm_poll_interval: float = 0.0  # Calculated from negotiated rate
 # SHM diagnostics (rate-limited)
 var _shm_last_rx_log_ms: int = 0
 const _SHM_RX_LOG_INTERVAL_MS: int = 1000
-var _shm_last_apply_log_ms: int = 0
-const _SHM_APPLY_LOG_INTERVAL_MS: int = 1000
 
 
 func _ready():
-	# Initialize platform-specific decoding path
-	if OS.has_feature("web"):
-		print("🌐 Web build detected: using WASM decoder; native GDExtension is unavailable on Web.")
-		# Kick off WASM loader early so it's ready by the time data arrives
-		WASMDecoder.ensure_wasm_loaded()
-	else:
-		# Initialize Rust-based high-performance deserializer (REQUIRED on desktop)
-		_init_rust_deserializer()
-
 	# [FEAGI] Try to initialize shared memory visualization (env-provided path)
 	_init_shm_visualization()
 	# Defer WS fallback notice to allow registration to provide SHM path
 	_ws_notice_deadline_ms = Time.get_ticks_msec() + 3000
-	
-	# Reset missing area tracking when genome reloads
-	if FeagiCore.feagi_local_cache:
-		FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_genome_reloaded)
-		FeagiCore.feagi_local_cache.cortical_areas_reloaded.connect(_on_genome_reloaded)
-
-func _init_rust_deserializer() -> void:
-	if _rust_deserializer != null:
-		return
-	if ClassDB.class_exists("FeagiDataDeserializer"):
-		_rust_deserializer = ClassDB.instantiate("FeagiDataDeserializer")
-		if _rust_deserializer:
-			return
-		else:
-			push_error("🦀 CRITICAL: Failed to instantiate FEAGI Rust deserializer!")
-			return
-	# Class not registered yet – retry a few times to allow GDExtension to finish loading
-	_rust_init_attempts += 1
-	if _rust_init_attempts <= MAX_RUST_INIT_ATTEMPTS:
-		var t := get_tree().create_timer(0.25)
-		t.timeout.connect(_init_rust_deserializer)
-		return
-	push_error("🦀 CRITICAL: FeagiDataDeserializer class not found after retries. Ensure addon is installed and library built (debug/release).")
 
 func _process(_delta: float):
 	# [FEAGI] Poll SHM for neuron visualization bytes if enabled
@@ -206,32 +133,6 @@ func _process(_delta: float):
 		# and not while we are actively trying to initialize SHM
 		if not _ws_notice_printed and _pending_shm_path == "" and not _shm_attempting and Time.get_ticks_msec() >= _ws_notice_deadline_ms:
 			_ws_notice_printed = true
-	# On Web, flush queued Type 11 packets once WASM is ready
-	if OS.has_feature("web") and WASMDecoder.is_wasm_ready() and _pending_type11.size() > 0:
-		# Process all queued before polling socket
-		for i in range(_pending_type11.size()):
-			var qbytes: PackedByteArray = _pending_type11[i]
-			var decoded_result: Dictionary = WASMDecoder.decode_type_11(qbytes)
-			if decoded_result and decoded_result.has("success") and decoded_result.success == true:
-				_note_live_inspector_firing_frame(decoded_result.areas)
-				for cortical_id in decoded_result.areas.keys():
-					# Filter out _death area (non-visualizable), but allow _power (has custom cone animation)
-					if AbstractCorticalArea.is_death_area(cortical_id):
-						continue
-					var area_data = decoded_result.areas[cortical_id]
-					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
-					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
-					var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
-					var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
-					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
-					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
-					if area:
-						area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
-					else:
-						_handle_missing_cortical_area(cortical_id)
-	# Clear queue after processing
-	if OS.has_feature("web") and WASMDecoder.is_wasm_ready():
-		_pending_type11.clear()
 
 	# [FEAGI] Guard: If socket is null (e.g. never connected when using SHM), skip WebSocket polling but continue to SHM polling below
 	if not _socket:
@@ -274,7 +175,6 @@ func _process(_delta: float):
 			var backlog_start := _socket.get_available_packet_count()
 			var drained_packets := 0
 			var drained_bytes := 0
-			var t_start_us := Time.get_ticks_usec()
 
 			# REAL-TIME SEMANTICS:
 			# Drain backlog but only decode the newest *binary* visualization packet.
@@ -332,140 +232,8 @@ func _process(_delta: float):
 						drained_packets, drained_bytes, backlog_start
 					])
 
-			if newest_binary_len > 0:
-				if not _rust_deserializer:
-					# Deserializer GDExtension not loaded: Type 11 WebSocket data is dropped; neural activity will not render until it is available.
-					if not _ws_deserializer_missing_warned:
-						_ws_deserializer_missing_warned = true
-						push_warning("[WS] Rust deserializer (FeagiDataDeserializer) not available. WebSocket Type 11 neural data is not being processed; build/enable rust_extensions/feagi_data_deserializer for neural activity.")
-				else:
-					if _USE_DESKTOP_TYPE11_FASTPATH and not OS.has_feature("web"):
-						var perf: Dictionary
-						if FeagiCore != null and FeagiCore.bv_is_type11_visual_rebuild_pause_active():
-							# Avoid writing neuron instances into MultiMeshes while Brain Monitor is tearing down
-							# or before deferred fast-path rescan (stale/freed GPU buffers).
-							perf = {
-								"success": false,
-								"areas_applied": 0,
-								"neurons_applied": 0,
-								"error": "type11_gpu_apply_paused_visual_rebuild",
-							}
-						else:
-							_refresh_bv_fastpath_cache_if_needed()
-							perf = _rust_deserializer.apply_type11_packet_to_multimeshes(
-								newest_binary,
-								_bv_fast_multimeshes_by_id,
-								_bv_fast_dimensions_by_id,
-								true # clear_all_before_apply
-							)
-						# Rate-limited decode/apply diagnostics to pinpoint "receiving but not rendering".
-						# This will tell us if Rust decoded/applied any areas at all (and if it errored).
-						var now_ms_apply := Time.get_ticks_msec()
-						if _WS_DIAGNOSTICS_ENABLED and now_ms_apply - _ws_last_apply_log_ms >= _WS_APPLY_LOG_INTERVAL_MS:
-							_ws_last_apply_log_ms = now_ms_apply
-							var ok_apply := bool(perf.get("success", false))
-							var err_apply := String(perf.get("error", ""))
-							var areas_applied := int(perf.get("areas_applied", 0))
-							var neurons_applied := int(perf.get("neurons_applied", 0))
-							print("[WS-APPLY] ok=%s areas_applied=%d neurons_applied=%d err='%s'" % [
-								str(ok_apply), areas_applied, neurons_applied, err_apply
-							])
-						# Memory areas may not have a registered MultiMesh in the desktop fast-path cache.
-						# Areas with multiple BV renderers cannot rely on the single-MultiMesh fast-path either.
-						# Route those areas through the standard bulk-array path using decoded Type11 data.
-						# Perf: decode only the areas something consumes; the fast path above already rendered the rest.
-						var decoded: Dictionary = {}
-						if _type11_rootcause_enabled():
-							decoded = _rust_deserializer.decode_type_11_data(newest_binary)
-						else:
-							var bulk_ids := _type11_bulk_decode_cortical_ids()
-							if not bulk_ids.is_empty():
-								decoded = _rust_deserializer.decode_type_11_data_filtered(newest_binary, bulk_ids)
-						var ok: bool = bool(decoded.get("success", false))
-						var areas_any: Variant = decoded.get("areas", null)
-						var areas: Dictionary = {}
-						if areas_any is Dictionary:
-							areas = areas_any
-						if ok and areas_any is Dictionary:
-							_note_live_inspector_firing_frame(areas)
-							for cortical_id in areas.keys():
-								var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
-								var area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
-								if area_obj == null:
-									continue
-								var requires_bulk := area_obj.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
-								requires_bulk = requires_bulk or area_obj.BV_requires_bulk_directpoints_updates()
-								var dispatch_for_recorder := _bv_requires_type11_bulk_dispatch(clean_id)
-								if not requires_bulk and not dispatch_for_recorder:
-									continue
-								var area_any: Variant = areas.get(cortical_id, null)
-								var area_data: Dictionary = area_any as Dictionary
-								var x_array: PackedInt32Array = area_data.get("x_array", PackedInt32Array())
-								var y_array: PackedInt32Array = area_data.get("y_array", PackedInt32Array())
-								var z_array: PackedInt32Array = area_data.get("z_array", PackedInt32Array())
-								var p_array: PackedFloat32Array = area_data.get("p_array", PackedFloat32Array())
-								var n := x_array.size()
-								if n <= 0:
-									continue
-								if dispatch_for_recorder:
-									FEAGI_sent_direct_neural_points_bulk.emit(StringName(clean_id), x_array, y_array, z_array, p_array)
-								if requires_bulk:
-									area_obj.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
-									area_obj.BV_notify_directpoints_activity(n)
-						# Optional: preserve side-effects (timers/animations) without moving arrays through signals.
-						if perf and perf.has("area_counts"):
-							for cortical_id in perf.area_counts.keys():
-								var count: int = int(perf.area_counts[cortical_id])
-								var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
-								var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
-								if area:
-									area.BV_notify_directpoints_activity(count)
-						# Extend existing diag with stage timings (rate-limited below).
-						if perf:
-							set_meta("_ws_last_perf", perf)
-						_type11_rootcause_log_packet_vs_fastpath(areas, perf)
-					else:
-						# Legacy desktop path (kept for parity/testing); web uses WASM decoder above.
-						var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
-						if not decoded_result or not decoded_result.has("success"):
-							push_error("❌ [WS] Decode failed - no result returned")
-						elif not decoded_result.success:
-							var error_msg := decoded_result.get("error", "unknown error")
-							push_error("❌ [WS] Decode failed: %s" % error_msg)
-						else:
-							_note_live_inspector_firing_frame(decoded_result.areas)
-							for cortical_id in decoded_result.areas.keys():
-								var area_data = decoded_result.areas[cortical_id]
-								# Perf: Rust deserializer already returns PackedArrays; avoid repacking/copying here.
-								var x_array := area_data.get("x_array") as PackedInt32Array
-								var y_array := area_data.get("y_array") as PackedInt32Array
-								var z_array := area_data.get("z_array") as PackedInt32Array
-								var p_array := area_data.get("p_array") as PackedFloat32Array
-								
-								FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
-								var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
-								if area:
-									area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
-								else:
-									_handle_missing_cortical_area(cortical_id)
-
-			var now_ms := Time.get_ticks_msec()
-			if now_ms - _ws_last_backlog_log_ms >= 5000:
-				_ws_last_backlog_log_ms = now_ms
-				var elapsed_ms := float(Time.get_ticks_usec() - t_start_us) / 1000.0
-				var perf_tail := ""
-				if has_meta("_ws_last_perf"):
-					var perf = get_meta("_ws_last_perf")
-					if perf and perf.has("total_ms"):
-						perf_tail = " | lz4_ms=%.2f parse_ms=%.2f clear_ms=%.2f apply_ms=%.2f areas=%d neurons=%d" % [
-							float(perf.get("lz4_ms", 0.0)),
-							float(perf.get("container_parse_ms", 0.0)),
-							float(perf.get("clear_ms", 0.0)),
-							float(perf.get("multimesh_apply_ms", 0.0)),
-							int(perf.get("areas_applied", 0)),
-							int(perf.get("neurons_applied", 0)),
-						]
-				# (Log removed) Periodic WS backlog/perf diagnostics can be noisy in normal operation.
+			if newest_binary_len > 0 and visualization_sink != null:
+				visualization_sink.ingest_type11(newest_binary)
 		WebSocketPeer.State.STATE_CLOSING:
 			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
 			pass
@@ -603,6 +371,12 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 		push_error("FEAGI: Cannot process empty byte array!")
 		return
 
+	# Current FeagiByteContainer versions (3, 4) wrap Type 11; the Rust/WASM decoders parse the container.
+	if bytes[0] == 3 or bytes[0] == 4:
+		if visualization_sink != null:
+			visualization_sink.ingest_type11(bytes)
+		return
+
 	# FEAGI Byte Container v2 (first byte == 2)
 	# This is a wrapper format used by FEAGI (SHM/WS) that can contain one or more structures.
 	# Format (from feagi-serialization::FeagiByteContainer):
@@ -667,22 +441,22 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 			# SHM JSON Type 11 passthrough
 			if dict.has("type") and int(dict.get("type", -1)) == 11 and dict.has("areas") and typeof(dict["areas"]) == TYPE_DICTIONARY:
 				var areas: Dictionary = dict["areas"]
+				var decoded_areas: Dictionary = {}
 				var total_points := 0
 				for cortical_id in areas.keys():
 					var a = areas[cortical_id]
 					if typeof(a) != TYPE_DICTIONARY:
 						continue
 					var x_arr := PackedInt32Array(a.get("x", []))
-					var y_arr := PackedInt32Array(a.get("y", []))
-					var z_arr := PackedInt32Array(a.get("z", []))
-					var p_arr := PackedFloat32Array(a.get("p", []))
 					total_points += x_arr.size()
-					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_arr, y_arr, z_arr, p_arr)
-					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
-					if area:
-						area.FEAGI_set_direct_points_bulk_data(x_arr, y_arr, z_arr, p_arr)
-					else:
-						_handle_missing_cortical_area(cortical_id)
+					decoded_areas[cortical_id] = {
+						"x_array": x_arr,
+						"y_array": PackedInt32Array(a.get("y", [])),
+						"z_array": PackedInt32Array(a.get("z", [])),
+						"p_array": PackedFloat32Array(a.get("p", [])),
+					}
+				if visualization_sink != null:
+					visualization_sink.apply_decoded_areas(decoded_areas)
 				if _shm_debug_logs:
 					print("[FEAGI] [WS] Processed SHM JSON Type 11: areas=", areas.size(), " points=", total_points)
 				# Throttle logging but keep processing subsequent frames without suppression
@@ -741,87 +515,8 @@ func _process_wrapped_byte_structure(bytes: PackedByteArray, from_shm: bool = fa
 				area.FEAGI_set_SVO_visualization_data(SVO_data)
 		
 		11: # Direct Neural Points (NEW - feagi-data-processing format with bulk arrays)
-			# Type 11 structure: [Type:1][Version:1][NumAreas:2][AreaHeaders][NeuronData]
-			# AreaHeaders: [CorticalID:6][DataOffset:4][DataLength:4] per area = 14 bytes per area
-			# NeuronData: [X array][Y array][Z array][P array] per area
-			
-			if OS.has_feature("web"):
-				if not WASMDecoder.is_wasm_ready():
-					# Queue until WASM is ready and return early
-					_pending_type11.append(bytes.duplicate())
-					return
-				var decoded_result: Dictionary = WASMDecoder.decode_type_11(bytes)
-				if !decoded_result or !decoded_result.has("success") or decoded_result.success != true:
-					var err = decoded_result.get("error", "unknown")
-					# Suppress noisy logs while WASM is still loading
-					if err == "WASM not ready" or err == "WASM not initialized":
-						return
-					print("   ❌ ERROR: Type 11 WASM decode failed: ", err)
-					return
-				# Process each decoded cortical area with DIRECT bulk arrays
-				_note_live_inspector_firing_frame(decoded_result.areas)
-				for cortical_id in decoded_result.areas.keys():
-					var area_data = decoded_result.areas[cortical_id]
-					var x_array: PackedInt32Array = PackedInt32Array(area_data.x_array)
-					var y_array: PackedInt32Array = PackedInt32Array(area_data.y_array)
-					var z_array: PackedInt32Array = PackedInt32Array(area_data.z_array)
-					var p_array: PackedFloat32Array = PackedFloat32Array(area_data.p_array)
-					FEAGI_sent_direct_neural_points_bulk.emit(cortical_id, x_array, y_array, z_array, p_array)
-					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(cortical_id)
-					if area:
-						area.FEAGI_set_direct_points_bulk_data(x_array, y_array, z_array, p_array)
-					else:
-						_handle_missing_cortical_area(cortical_id)
-			else:
-				# Use Rust-based high-performance deserializer (required on desktop; optional when GDExtension disabled)
-				if _rust_deserializer == null:
-					if not _ws_deserializer_missing_warned:
-						_ws_deserializer_missing_warned = true
-						push_warning("[WS] Rust deserializer (FeagiDataDeserializer) not available. Type 11 neural data is not being processed; build/enable rust_extensions/feagi_data_deserializer for neural activity.")
-					return
-				var decoded_result: Dictionary = _rust_deserializer.decode_type_11_data(bytes)
-				if !decoded_result.success:
-					print("   ❌ ERROR: Type 11 decode failed: ", decoded_result.error)
-					return
-
-				# Rate-limited SHM decode diagnostics (high-signal for "large scale shows nothing").
-				# Only logs when the packet came from SHM.
-				if from_shm:
-					var now_ms_shm_apply := Time.get_ticks_msec()
-					if now_ms_shm_apply - _shm_last_apply_log_ms >= _SHM_APPLY_LOG_INTERVAL_MS:
-						_shm_last_apply_log_ms = now_ms_shm_apply
-						var areas_dict: Dictionary = decoded_result.get("areas", {})
-						var area_count := areas_dict.size() if typeof(areas_dict) == TYPE_DICTIONARY else 0
-						var power_points := 0
-						if typeof(areas_dict) == TYPE_DICTIONARY:
-							for k in areas_dict.keys():
-								var clean_id := String(k).strip_edges().replace("'", "").replace('"', "")
-								if AbstractCorticalArea.is_power_area(clean_id):
-									var a_any: Variant = areas_dict.get(k)
-									var a: Dictionary = a_any as Dictionary
-									var x_arr: PackedInt32Array = a.get("x_array", PackedInt32Array())
-									power_points = x_arr.size()
-									break
-						print("[SHM-APPLY] ok=true areas=%d power_points=%d" % [area_count, power_points])
-
-				# Process each decoded cortical area with DIRECT bulk arrays (no conversion loops!)
-				_note_live_inspector_firing_frame(decoded_result.areas)
-				for cortical_id in decoded_result.areas.keys():
-					var area_data = decoded_result.areas[cortical_id]
-					# Strip quotes that Rust may add
-					var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
-					FEAGI_sent_direct_neural_points_bulk.emit(
-						clean_id,
-						area_data.x_array,
-						area_data.y_array,
-						area_data.z_array,
-						area_data.p_array
-					)
-					var area: AbstractCorticalArea = _get_cortical_area_case_insensitive(clean_id)
-					if area:
-						area.FEAGI_set_direct_points_bulk_data(area_data.x_array, area_data.y_array, area_data.z_array, area_data.p_array)
-					else:
-						_handle_missing_cortical_area(clean_id)
+			if visualization_sink != null:
+				visualization_sink.ingest_type11(bytes)
 
 		_: # Unknown
 			print("   ❌ ROUTING: UNKNOWN structure type ", structure_id, " - ERROR!")
@@ -867,161 +562,6 @@ func _is_probably_text(bytes: PackedByteArray) -> bool:
 		if b < 32 or b > 126:
 			return false
 	return true
-
-
-func _type11_rootcause_enabled() -> bool:
-	var v := str(OS.get_environment("BV_TYPE11_ROOTCAUSE")).strip_edges().to_lower()
-	return v == "1" or v == "true" or v == "yes"
-
-
-func _normalize_type11_cortical_key(key: Variant) -> String:
-	return String(key).strip_edges().replace("'", "").replace('"', "")
-
-
-func _type11_rootcause_sample_ids(ids: Array, max_n: int) -> String:
-	if ids.is_empty():
-		return "[]"
-	var out: PackedStringArray = []
-	var n: int = mini(ids.size(), max_n)
-	for i in range(n):
-		out.append(str(ids[i]))
-	var tail := ", ..." if ids.size() > max_n else ""
-	return "[%s]%s" % [", ".join(out), tail]
-
-
-## Register cortical areas that need Type 11 bulk coordinates on the desktop fast-path.
-func bv_set_type11_bulk_dispatch_cortical_ids(cortical_ids: Array[StringName]) -> void:
-	_bv_type11_bulk_dispatch_cortical_ids.clear()
-	for cortical_id in cortical_ids:
-		_bv_type11_bulk_dispatch_cortical_ids[String(cortical_id).to_lower()] = true
-
-
-## Clear Type 11 bulk coordinate dispatch registration.
-func bv_clear_type11_bulk_dispatch_cortical_ids() -> void:
-	_bv_type11_bulk_dispatch_cortical_ids.clear()
-
-
-## Cortical IDs the desktop fast path still needs as decoded arrays: memory areas, areas with
-## multiple renderers, recorder registrations, and the area under the live inspector cursor.
-func _type11_bulk_decode_cortical_ids() -> PackedStringArray:
-	var ids: PackedStringArray = []
-	for cortical_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		var area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_id]
-		if area_obj.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or area_obj.BV_requires_bulk_directpoints_updates():
-			ids.append(String(cortical_id))
-	for cortical_id in _bv_type11_bulk_dispatch_cortical_ids.keys():
-		ids.append(String(cortical_id))
-	if BV != null and BV.UI != null:
-		var hovered_id: String = BV.UI.live_inspector_hovered_cortical_id()
-		if not hovered_id.is_empty():
-			ids.append(hovered_id)
-	return ids
-
-
-func _bv_requires_type11_bulk_dispatch(clean_id: String) -> bool:
-	if _bv_type11_bulk_dispatch_cortical_ids.is_empty():
-		return false
-	return _bv_type11_bulk_dispatch_cortical_ids.has(clean_id.to_lower())
-
-
-## Logs fast-path MultiMesh registration count (throttled). Enable with BV_TYPE11_ROOTCAUSE=1.
-func _type11_rootcause_log_fastpath_rebuild(registered_multimesh: int) -> void:
-	if not _type11_rootcause_enabled():
-		return
-	var now_ms := Time.get_ticks_msec()
-	if now_ms - _type11_rootcause_last_rebuild_log_ms < _TYPE11_ROOTCAUSE_REBUILD_LOG_MS:
-		return
-	_type11_rootcause_last_rebuild_log_ms = now_ms
-	if not _type11_rootcause_banner_printed:
-		_type11_rootcause_banner_printed = true
-		print("[TYPE11-ROOTCAUSE] Diagnostics ON (BV_TYPE11_ROOTCAUSE=1). Packet detail every %d ms; rebuild summary every %d ms." % [_TYPE11_ROOTCAUSE_LOG_INTERVAL_MS, _TYPE11_ROOTCAUSE_REBUILD_LOG_MS])
-	print("[TYPE11-ROOTCAUSE] fast_path rebuild: cortical_ids_with_multimesh=%d" % registered_multimesh)
-
-
-## Compare Type 11 payload cortical ids to fast-path map and cache objects (throttled).
-func _type11_rootcause_log_packet_vs_fastpath(decoded_areas: Dictionary, perf: Dictionary) -> void:
-	if not _type11_rootcause_enabled():
-		return
-	var now_ms := Time.get_ticks_msec()
-	if now_ms - _type11_rootcause_last_packet_log_ms < _TYPE11_ROOTCAUSE_LOG_INTERVAL_MS:
-		return
-	_type11_rootcause_last_packet_log_ms = now_ms
-
-	var fast_norm: Dictionary = {}
-	for fk in _bv_fast_multimeshes_by_id.keys():
-		fast_norm[_normalize_type11_cortical_key(fk)] = true
-
-	var packet_norm: PackedStringArray = []
-	var seen: Dictionary = {}
-	for ck in decoded_areas.keys():
-		var cid := _normalize_type11_cortical_key(ck)
-		if cid.is_empty() or seen.has(cid):
-			continue
-		seen[cid] = true
-		packet_norm.append(cid)
-
-	var missing_cache: Array[String] = []
-	var no_mesh_ipu_like: Array[String] = []
-	var in_packet_not_in_fastmap: Array[String] = []
-
-	for cid in packet_norm:
-		var area_obj: AbstractCorticalArea = _get_cortical_area_case_insensitive(cid)
-		if area_obj == null:
-			missing_cache.append(cid)
-			continue
-		var requires_bulk := area_obj.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
-		requires_bulk = requires_bulk or area_obj.BV_requires_bulk_directpoints_updates()
-		var mm = area_obj.BV_get_directpoints_multimesh()
-		if mm == null and not requires_bulk:
-			no_mesh_ipu_like.append(cid)
-		if not fast_norm.has(cid):
-			in_packet_not_in_fastmap.append(cid)
-
-	var ok_apply := bool(perf.get("success", false))
-	var areas_applied := int(perf.get("areas_applied", 0))
-	var neurons_applied := int(perf.get("neurons_applied", 0))
-	var err_apply := str(perf.get("error", ""))
-
-	print("[TYPE11-ROOTCAUSE] frame: packet_cortical_ids=%d fast_path_keys=%d apply_ok=%s areas_applied=%d neurons_applied=%d err='%s'" % [
-		packet_norm.size(), fast_norm.size(), str(ok_apply), areas_applied, neurons_applied, err_apply
-	])
-	if not missing_cache.is_empty():
-		print("[TYPE11-ROOTCAUSE] ids in packet but NO AbstractCorticalArea in BV cache (sample): %s" % _type11_rootcause_sample_ids(missing_cache, 8))
-	if not no_mesh_ipu_like.is_empty():
-		print("[TYPE11-ROOTCAUSE] ids need fast-path MultiMesh but BV_get_directpoints_multimesh()==null (no bulk fallback; sample): %s" % _type11_rootcause_sample_ids(no_mesh_ipu_like, 8))
-	if not in_packet_not_in_fastmap.is_empty():
-		print("[TYPE11-ROOTCAUSE] ids in packet not present in _bv_fast_multimeshes_by_id after refresh (sample): %s" % _type11_rootcause_sample_ids(in_packet_not_in_fastmap, 8))
-
-
-func _refresh_bv_fastpath_cache_if_needed() -> void:
-	if OS.has_feature("web"):
-		return
-	var now_ms := Time.get_ticks_msec()
-	# If the fast-path map is empty (e.g. after genome/cortical reload), always rebuild so Type 11 can target new MultiMeshes.
-	if _bv_fast_multimeshes_by_id.size() > 0 and (now_ms - _bv_fast_cache_last_refresh_ms < _BV_FAST_CACHE_REFRESH_INTERVAL_MS):
-		return
-	_bv_fast_cache_last_refresh_ms = now_ms
-	_bv_fast_multimeshes_by_id.clear()
-	_bv_fast_dimensions_by_id.clear()
-	if not FeagiCore.feagi_local_cache:
-		return
-	var areas_dict: Dictionary = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas
-	var registered_multimesh: int = 0
-	for cortical_id in areas_dict.keys():
-		var area: AbstractCorticalArea = areas_dict.get(cortical_id)
-		if area == null:
-			continue
-		# Normalize keys to String for stable Rust lookups (StringName vs String key mismatches are easy to hit).
-		var key_str := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
-		var mm := area.BV_get_directpoints_multimesh()
-		if mm != null:
-			# Keep renderer visuals (mesh sizing) in sync with latest cortical properties.
-			# Desktop Type11 fast-path bypasses per-area bulk signals, so we refresh explicitly here.
-			area.BV_refresh_directpoints_renderer_visuals()
-			_bv_fast_multimeshes_by_id[key_str] = mm
-			_bv_fast_dimensions_by_id[key_str] = area.BV_get_directpoints_dimensions()
-			registered_multimesh += 1
-	_type11_rootcause_log_fastpath_rebuild(registered_multimesh)
 
 # [FEAGI] -------- Shared Memory Visualization Support --------
 func _init_shm_visualization() -> void:
@@ -1283,188 +823,6 @@ func _decode_u64_le(bytes: PackedByteArray, offset: int) -> int:
 	var lo := int(bytes.decode_u32(offset))
 	var hi := int(bytes.decode_u32(offset + 4))
 	return (hi << 32) | (lo & 0xFFFFFFFF)
-
-func _handle_missing_cortical_area(cortical_id: StringName) -> void:
-	# FILTER CORE AREAS FIRST - before any logging or processing
-	# Convert to String for robust comparison (StringName may have different comparison semantics)
-	var cortical_id_str := String(cortical_id)
-	
-	# Handle both quoted and unquoted versions (cortical ID may come with quotes)
-	var clean_id := cortical_id_str.strip_edges().replace("'", "").replace('"', "")
-	
-	if AbstractCorticalArea.is_death_area(clean_id):
-		# Death area cannot be visualized - silently ignore
-		# Note: Power area CAN be visualized with custom cone animation, so allow it through
-		return
-	
-	# Skip handling missing areas during genome reload/processing to avoid spam
-	var genome_state = FeagiCore.genome_load_state
-	if genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_RELOADING or genome_state == FeagiCore.GENOME_LOAD_STATE.GENOME_PROCESSING:
-		# Suppress debug output during genome reload - this is expected behavior
-		return
-	
-	# Also skip if cache is empty (genome hasn't loaded yet)
-	var cache_size = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size()
-	if cache_size == 0:
-		# Suppress debug output when cache is empty - genome is still loading
-		return
-	
-	# If the cleaned ID is in cache, it's not actually missing - just had quotes
-	if clean_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-		return
-	
-	# DEBUG: Uncomment to trace missing area lookups (disabled to reduce log spam)
-	# print("🔍 DEBUG: _handle_missing_cortical_area() called for '%s'" % cortical_id)
-	var current_time = Time.get_time_dict_from_system()
-	var current_timestamp = current_time.hour * 3600 + current_time.minute * 60 + current_time.second
-	
-	# Initialize tracking for this cortical area if not seen before (use clean_id for tracking)
-	if clean_id not in _missing_cortical_areas:
-		_missing_cortical_areas[clean_id] = {
-			"last_warning_time": 0.0,
-			"fetch_attempted": false
-		}
-	
-	var area_info = _missing_cortical_areas[clean_id]
-	var time_since_last_warning = current_timestamp - area_info.last_warning_time
-	
-	# Only show warning if enough time has passed
-	if time_since_last_warning >= MISSING_AREA_WARNING_INTERVAL:
-		print("   ⚠️  WARNING: Cortical area '", clean_id, "' not found in cache (will retry fetching) - cache size: ", cache_size)
-		area_info.last_warning_time = current_timestamp
-		
-		# Attempt to fetch the missing cortical area from FEAGI (only once per area)
-		if not area_info.fetch_attempted and FeagiCore.can_interact_with_feagi():
-			area_info.fetch_attempted = true
-			print("   🔄 Attempting to fetch missing cortical area '", clean_id, "' from FEAGI...")
-			_fetch_missing_cortical_area_async(clean_id)
-
-func _fetch_missing_cortical_area_async(cortical_id: StringName) -> void:
-	# Clean cortical ID (remove quotes that may come from Rust deserializer)
-	var clean_id := String(cortical_id).strip_edges().replace("'", "").replace('"', "")
-	
-	print("🔍 DEBUG: _fetch_missing_cortical_area_async() called for '%s' (cleaned: '%s')" % [cortical_id, clean_id])
-	# Double-check if the area is actually missing before fetching
-	if clean_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-		print("   ℹ️ Cortical area '", clean_id, "' is already in cache, skipping fetch")
-		_missing_cortical_areas.erase(clean_id)
-		return
-	
-	# Fetch the cortical area details from FEAGI using cleaned ID
-	var result = await FeagiCore.requests.get_cortical_area(clean_id)
-	if not result.has_errored:
-		print("   ✅ Successfully fetched missing cortical area '", clean_id, "' from FEAGI")
-		
-		# Verify it's actually in the cache now
-		await get_tree().process_frame  # Wait one frame for any pending operations
-		if clean_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas:
-			print("   ✅ Confirmed: '", clean_id, "' is now in cache")
-			_missing_cortical_areas.erase(clean_id)
-		else:
-			push_error("   ❌ CRITICAL: '", clean_id, "' was fetched but is NOT in cache! Cache size: ", FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.size())
-			# Don't erase from tracking so it can be retried
-	else:
-		print("   ❌ Failed to fetch cortical area '", clean_id, "' from FEAGI - this may be expected if the area doesn't exist")
-		# Don't retry immediately for areas that return 400 errors
-		_missing_cortical_areas.erase(clean_id)
-
-## Fire-time membrane potentials for the voxel under the live inspector cursor.
-## The neuron array resets membrane potential to 0 when a neuron spikes; the visualization
-## frame still carries the potential from the moment of firing.
-func _note_live_inspector_firing_frame(areas: Dictionary) -> void:
-	if BV == null or BV.UI == null:
-		return
-	BV.UI.note_live_inspector_firing_frame(areas)
-
-
-func _get_cortical_area_case_insensitive(cortical_id: StringName) -> AbstractCorticalArea:
-	# First try exact match (most common case)
-	var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_id)
-	if area:
-		return area
-	
-	# Check case mapping cache
-	var lowercase_id = cortical_id.to_lower()
-	if lowercase_id in _case_mapping_cache:
-		var cached_id = _case_mapping_cache[lowercase_id]
-		area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cached_id)
-		if area:
-			return area
-		else:
-			# Cached mapping is stale, remove it
-			_case_mapping_cache.erase(lowercase_id)
-	
-	# Do case-insensitive search and cache the result
-	for cached_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
-		if cached_id.to_lower() == lowercase_id:
-			_case_mapping_cache[lowercase_id] = cached_id
-			area = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cached_id]
-			# Only log the first time we discover a case mismatch
-			if cortical_id != cached_id:
-				print("   🔄 Case mismatch detected: neuron data '%s' → cached area '%s' (cached for future lookups)" % [cortical_id, cached_id])
-			return area
-	
-	return null
-
-func _on_genome_reloaded() -> void:
-	# Reset missing cortical area tracking when genome reloads
-	# This allows areas to be fetched again if they're still missing after reload
-	# Debug log suppressed to reduce runtime console spam.
-	_missing_cortical_areas.clear()
-	_case_mapping_cache.clear()  # Clear case mapping cache too
-	# Force immediate rebuild of desktop Type11 fast-path caches on next packet.
-	_bv_fast_multimeshes_by_id.clear()
-	_bv_fast_dimensions_by_id.clear()
-	_bv_fast_cache_last_refresh_ms = 0
-	# Brain Monitor may create DirectPoints MultiMeshes after this signal; rebuild fast-path map once the tree has settled.
-	# Guard prevents duplicate deferred calls when both genome_cache_replaced and cortical_areas_reloaded fire in the same frame.
-	if not _fastpath_rebuild_pending:
-		_fastpath_rebuild_pending = true
-		call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
-
-## Re-scan cortical areas for MultiMesh registration after genome / incremental cortical refresh (desktop Type 11 fast path).
-func _deferred_rebuild_bv_fastpath_after_cache_touch() -> void:
-	_fastpath_rebuild_pending = false
-	# Drain every owed release now, regardless of the "web" early-return below, so a pause requested via
-	# [method request_bv_fastpath_cache_rebuild] can never be left stuck if this build has no fast path.
-	var pause_ends_owed: int = _fastpath_rebuild_pause_ends_owed
-	_fastpath_rebuild_pause_ends_owed = 0
-	if OS.has_feature("web"):
-		_release_visual_rebuild_pauses(pause_ends_owed)
-		return
-	_bv_fast_cache_last_refresh_ms = 0
-	_refresh_bv_fastpath_cache_if_needed()
-	_release_visual_rebuild_pauses(pause_ends_owed)
-
-
-func _release_visual_rebuild_pauses(count: int) -> void:
-	if FeagiCore == null:
-		return
-	for _i in range(count):
-		FeagiCore.bv_end_visual_rebuild_pause_one()
-
-
-## Public hook for Brain Monitor: after 3D cortical nodes re-register DirectPoints MultiMeshes on new cache
-## instances, rebuild the desktop Type 11 map so packets target the current MultiMeshes (reconnect safe).
-## Guard prevents duplicate deferred calls when multiple brain monitor instances or signal handlers call this per frame;
-## [param pause_ends_owed] accumulates across coalesced calls so every caller's matching
-## [method FeagiCore.bv_begin_visual_rebuild_pause] is still released exactly once, even when its own
-## rebuild request gets coalesced into an already-pending one.
-func request_bv_fastpath_cache_rebuild(pause_ends_owed: int = 0) -> void:
-	_fastpath_rebuild_pause_ends_owed += pause_ends_owed
-	if OS.has_feature("web"):
-		# No desktop fast path (and no pause to release: [method FeagiCore.bv_begin_visual_rebuild_pause]
-		# is itself a no-op on web) - drain immediately so the counter never grows unbounded.
-		var owed: int = _fastpath_rebuild_pause_ends_owed
-		_fastpath_rebuild_pause_ends_owed = 0
-		_release_visual_rebuild_pauses(owed)
-		return
-	_bv_fast_multimeshes_by_id.clear()
-	_bv_fast_dimensions_by_id.clear()
-	_bv_fast_cache_last_refresh_ms = 0
-	if not _fastpath_rebuild_pending:
-		_fastpath_rebuild_pending = true
-		call_deferred("_deferred_rebuild_bv_fastpath_after_cache_touch")
 
 func _bytes_to_hex(data: PackedByteArray, max_bytes: int = 20) -> String:
 	"""Convert byte array to hex string for debugging"""
