@@ -373,7 +373,14 @@ func _process(_delta: float):
 						# Memory areas may not have a registered MultiMesh in the desktop fast-path cache.
 						# Areas with multiple BV renderers cannot rely on the single-MultiMesh fast-path either.
 						# Route those areas through the standard bulk-array path using decoded Type11 data.
-						var decoded: Dictionary = _rust_deserializer.decode_type_11_data(newest_binary)
+						# Perf: decode only the areas something consumes; the fast path above already rendered the rest.
+						var decoded: Dictionary = {}
+						if _type11_rootcause_enabled():
+							decoded = _rust_deserializer.decode_type_11_data(newest_binary)
+						else:
+							var bulk_ids := _type11_bulk_decode_cortical_ids()
+							if not bulk_ids.is_empty():
+								decoded = _rust_deserializer.decode_type_11_data_filtered(newest_binary, bulk_ids)
 						var ok: bool = bool(decoded.get("success", false))
 						var areas_any: Variant = decoded.get("areas", null)
 						var areas: Dictionary = {}
@@ -892,6 +899,23 @@ func bv_set_type11_bulk_dispatch_cortical_ids(cortical_ids: Array[StringName]) -
 ## Clear Type 11 bulk coordinate dispatch registration.
 func bv_clear_type11_bulk_dispatch_cortical_ids() -> void:
 	_bv_type11_bulk_dispatch_cortical_ids.clear()
+
+
+## Cortical IDs the desktop fast path still needs as decoded arrays: memory areas, areas with
+## multiple renderers, recorder registrations, and the area under the live inspector cursor.
+func _type11_bulk_decode_cortical_ids() -> PackedStringArray:
+	var ids: PackedStringArray = []
+	for cortical_id in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.keys():
+		var area_obj: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas[cortical_id]
+		if area_obj.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or area_obj.BV_requires_bulk_directpoints_updates():
+			ids.append(String(cortical_id))
+	for cortical_id in _bv_type11_bulk_dispatch_cortical_ids.keys():
+		ids.append(String(cortical_id))
+	if BV != null and BV.UI != null:
+		var hovered_id: String = BV.UI.live_inspector_hovered_cortical_id()
+		if not hovered_id.is_empty():
+			ids.append(hovered_id)
+	return ids
 
 
 func _bv_requires_type11_bulk_dispatch(clean_id: String) -> bool:

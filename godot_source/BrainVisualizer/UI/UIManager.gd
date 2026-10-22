@@ -1199,6 +1199,13 @@ func _live_voxel_query_async(area_name: String, cortical_id: StringName, coord: 
 
 ## Latest visualization frame. Firing neurons report membrane potential at spike time;
 ## the neuron array itself is already reset to 0.
+## Cortical ID under the live inspector cursor, or "" when not hovering a voxel.
+func live_inspector_hovered_cortical_id() -> String:
+	if not _live_voxel_hovering:
+		return ""
+	return _live_voxel_cortical_id
+
+
 func note_live_inspector_firing_frame(areas: Dictionary) -> void:
 	if not _live_voxel_hovering or _live_voxel_cortical_id.is_empty():
 		return
