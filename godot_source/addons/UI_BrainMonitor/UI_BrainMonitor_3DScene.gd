@@ -5473,7 +5473,7 @@ func _teardown_all_cortical_area_visualizations() -> void:
 
 ## Full cortical rebuild: same path as genome [signal genome_cache_replaced] — deterministic after hash refresh / reconnect.
 func _rebuild_cortical_visualizations_after_cache_touch() -> void:
-	if FeagiCore != null and FeagiCore.network != null and FeagiCore.network.websocket_API != null:
+	if FeagiCore != null and FeagiCore.network != null and FeagiCore.network.visualization_sink != null:
 		FeagiCore.bv_begin_visual_rebuild_pause()
 	_teardown_all_cortical_area_visualizations()
 	_add_missing_cortical_area_visualizations()

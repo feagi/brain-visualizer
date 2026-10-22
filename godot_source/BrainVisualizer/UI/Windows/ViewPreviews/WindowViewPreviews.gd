@@ -769,8 +769,8 @@ func _init_agent_video_shm_dual(raw_path: String, feagi_path: String) -> void:
 
 func _fallback_to_websocket() -> void:
 	print("[Preview] Using WebSocket visualization stream")
-	if not FeagiCore.network.websocket_API.feagi_return_visual_data.is_connected(_update_preview_texture_from_raw_data):
-		FeagiCore.network.websocket_API.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
+	if not FeagiCore.network.visualization_sink.feagi_return_visual_data.is_connected(_update_preview_texture_from_raw_data):
+		FeagiCore.network.visualization_sink.feagi_return_visual_data.connect(_update_preview_texture_from_raw_data)
 
 func _update_preview_texture_from_raw_data(bytes: PackedByteArray) -> void:
 	# WebSocket fallback: decode and display on FEAGI panel only

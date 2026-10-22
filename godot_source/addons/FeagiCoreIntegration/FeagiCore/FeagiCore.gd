@@ -316,19 +316,7 @@ func _fetch_simulation_timestep() -> void:
 			# Restore HTTP health to CONNECTABLE
 			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.CONNECTABLE)
 			
-			# Only attempt websocket reconnection if using WebSocket transport (not SHM)
-			if network._transport_mode == network.TRANSPORT_MODE.WEBSOCKET:
-				# Access websocket_API - suppressing false positive parser warning
-				var ws_api = network.get("websocket_API")  # Property exists on FEAGINetworking
-				if ws_api and ws_api.socket_health == ws_api.WEBSOCKET_HEALTH.NO_CONNECTION:
-					if _in_use_endpoint_details:
-						ws_api.setup(_in_use_endpoint_details.full_websocket_address)
-						ws_api.process_mode = Node.PROCESS_MODE_INHERIT
-						# Ensure signal is connected (using Callable to bypass parser)
-						var ws_callback := Callable(network, "_WS_health_changed")
-						if not ws_api.FEAGI_socket_health_changed.is_connected(ws_callback):
-							ws_api.FEAGI_socket_health_changed.connect(ws_callback)
-						ws_api.connect_websocket()
+			network.reconnect_visualization_link_if_down()
 		elif network.http_API.http_health == network.http_API.HTTP_HEALTH.NO_CONNECTION:
 			# Just restore HTTP health if it was down but connection wasn't fully disconnected
 			network.http_API._request_state_change(network.http_API.HTTP_HEALTH.CONNECTABLE)
@@ -481,12 +469,11 @@ func reload_genome_await(reload_generation: int):
 	
 	_applied_feagi_session = _reload_target_feagi_session
 	_applied_genome_num = _reload_target_genome_num
-	# Re-register first, then force a WS stream rebind to ensure FEAGI stream attachment.
+	# Re-register first, then rebind the stream to ensure FEAGI stream attachment.
 	if network:
-		await network._register_agent_via_transport()
-	await _force_ws_stream_rebind_after_registration()
-	# Schedule a short watchdog to ensure WS stays connected after reload
-	_ensure_ws_connected_after_reload(30)
+		await network.reregister_and_rebind_visualization_stream()
+	# Schedule a short watchdog to ensure the stream stays connected after reload
+	_ensure_visualization_link_after_reload(30)
 
 	if feagi_local_cache.brain_regions.is_root_available():
 		var root = feagi_local_cache.brain_regions.get_root_region()
@@ -657,9 +644,8 @@ func _begin_same_session_genome_refresh() -> void:
 	_applied_feagi_session = _reload_target_feagi_session
 	_applied_genome_num = _reload_target_genome_num
 	if network:
-		await network._register_agent_via_transport()
-	await _force_ws_stream_rebind_after_registration()
-	_ensure_ws_connected_after_reload(30)
+		await network.reregister_and_rebind_visualization_stream()
+	_ensure_visualization_link_after_reload(30)
 	_reload_in_progress = false
 	if _desired_feagi_session != _applied_feagi_session or _desired_genome_num != _applied_genome_num:
 		call_deferred("_evaluate_reload_coordinator", "same-session-refresh-finished")
@@ -687,69 +673,25 @@ func _on_agent_reregistration_needed(reason: String):
 	# If we're already connected but FEAGI restarted, just re-register
 	if conn_state == network.CONNECTION_STATE.HEALTHY or conn_state == network.CONNECTION_STATE.RETRYING_HTTP or conn_state == network.CONNECTION_STATE.RETRYING_WS:
 		print("🔍 [AGENT-REG] Re-registering agent with FEAGI...")
-		await network._register_agent_via_transport()
+		await network.reregister_and_rebind_visualization_stream()
 		print("🔍 [AGENT-REG] Agent re-registration completed")
-		await _force_ws_stream_rebind_after_registration()
 	else:
 		print("🔍 [AGENT-REG] Skipping re-registration - connection state: %s" % network.CONNECTION_STATE.keys()[conn_state])
 
 #endregion
 
 
-## Ensure websocket reconnects shortly after a genome reload
-## Attempts up to 'attempts' times with a short delay, without spamming if WS is already retrying
-func _ensure_ws_connected_after_reload(attempts: int) -> void:
-	if attempts <= 0:
+## Ensure the stream reconnects shortly after a genome reload
+## Attempts up to 'attempts' times with a short delay, without spamming if the transport is already retrying
+func _ensure_visualization_link_after_reload(attempts: int) -> void:
+	if attempts <= 0 or not network:
 		return
-	if not network:
+	if network.ensure_visualization_link_connected():
 		return
-	# Skip entirely if using Shared Memory transport
-	if network._transport_mode == network.TRANSPORT_MODE.SHARED_MEMORY:
-		return
-	
-	var ws = network.get("websocket_API")
-	if not ws:
-		return
-	# If already connected, nothing to do
-	if ws.socket_health == ws.WEBSOCKET_HEALTH.CONNECTED:
-		return
-	# Prepare WS with known address if available
-	if _in_use_endpoint_details:
-		ws.setup(_in_use_endpoint_details.full_websocket_address)
-	ws.process_mode = Node.PROCESS_MODE_INHERIT
-	# Ensure WS health signal is wired so FEAGINetworking can update its state
-	var ws_callback := Callable(network, "_WS_health_changed")
-	if not ws.FEAGI_socket_health_changed.is_connected(ws_callback):
-		ws.FEAGI_socket_health_changed.connect(ws_callback)
-	# Only kick a connect if not already in RETRYING
-	if ws.socket_health == ws.WEBSOCKET_HEALTH.NO_CONNECTION:
-		ws.connect_websocket()
 	# Re-check shortly in case FEAGI was still coming up
 	get_tree().create_timer(2.0).timeout.connect(func():
-		_ensure_ws_connected_after_reload(attempts - 1)
+		_ensure_visualization_link_after_reload(attempts - 1)
 	)
-
-## Force a post-registration WebSocket rebind to avoid "connected but not streaming" races.
-func _force_ws_stream_rebind_after_registration() -> void:
-	if not network:
-		return
-	if network._transport_mode != network.TRANSPORT_MODE.WEBSOCKET:
-		return
-	var ws = network.get("websocket_API")
-	if not ws:
-		return
-	if _in_use_endpoint_details:
-		ws.setup(_in_use_endpoint_details.full_websocket_address)
-	ws.process_mode = Node.PROCESS_MODE_INHERIT
-	var ws_callback := Callable(network, "_WS_health_changed")
-	if not ws.FEAGI_socket_health_changed.is_connected(ws_callback):
-		ws.FEAGI_socket_health_changed.connect(ws_callback)
-	# Always restart WS after transport registration so FEAGI binds stream to fresh registration.
-	ws.disconnect_websocket()
-	await get_tree().process_frame
-	await get_tree().process_frame
-	ws.connect_websocket()
-	schedule_visualization_resync_after_transport()
 
 
 ## After visualization transport rebind or recovery, refresh Type 11 fast-path maps and Brain Monitor cortical bindings.
@@ -757,34 +699,23 @@ func _force_ws_stream_rebind_after_registration() -> void:
 func schedule_visualization_resync_after_transport() -> void:
 	_viz_transport_resync_generation += 1
 	var gen: int = _viz_transport_resync_generation
-	if network and network.websocket_API:
-		var ws_node: FEAGIWebSocketAPI = network.websocket_API
-		if ws_node.FEAGI_socket_health_changed.is_connected(_on_ws_health_for_pending_viz_resync):
-			ws_node.FEAGI_socket_health_changed.disconnect(_on_ws_health_for_pending_viz_resync)
 	if not network:
 		return
-	if network._transport_mode == network.TRANSPORT_MODE.SHARED_MEMORY:
-		call_deferred("_deferred_viz_resync_if_generation_current", gen)
-		return
-	var ws_api: FEAGIWebSocketAPI = network.websocket_API
-	if ws_api == null or network._transport_mode != network.TRANSPORT_MODE.WEBSOCKET:
-		call_deferred("_deferred_viz_resync_if_generation_current", gen)
-		return
-	if ws_api.socket_health == ws_api.WEBSOCKET_HEALTH.CONNECTED:
+	if network.visualization_link_health_changed.is_connected(_on_link_health_for_pending_viz_resync):
+		network.visualization_link_health_changed.disconnect(_on_link_health_for_pending_viz_resync)
+	# Only a WebSocket stream that is still coming up is worth waiting for.
+	if network.transport_mode != FEAGINetworking.TRANSPORT_MODE.WEBSOCKET or network.visualization_link_health == FEAGINetworking.VISUALIZATION_LINK_HEALTH.CONNECTED:
 		call_deferred("_deferred_viz_resync_if_generation_current", gen)
 		return
 	_viz_resync_wait_generation = gen
-	ws_api.FEAGI_socket_health_changed.connect(_on_ws_health_for_pending_viz_resync)
+	network.visualization_link_health_changed.connect(_on_link_health_for_pending_viz_resync)
 
 
-func _on_ws_health_for_pending_viz_resync(_prev: int, cur: int) -> void:
-	if not network or not network.websocket_API:
+func _on_link_health_for_pending_viz_resync(_prev: int, cur: int) -> void:
+	if not network or cur != FEAGINetworking.VISUALIZATION_LINK_HEALTH.CONNECTED:
 		return
-	var ws_node: FEAGIWebSocketAPI = network.websocket_API
-	if cur != ws_node.WEBSOCKET_HEALTH.CONNECTED:
-		return
-	if ws_node.FEAGI_socket_health_changed.is_connected(_on_ws_health_for_pending_viz_resync):
-		ws_node.FEAGI_socket_health_changed.disconnect(_on_ws_health_for_pending_viz_resync)
+	if network.visualization_link_health_changed.is_connected(_on_link_health_for_pending_viz_resync):
+		network.visualization_link_health_changed.disconnect(_on_link_health_for_pending_viz_resync)
 	call_deferred("_deferred_viz_resync_if_generation_current", _viz_resync_wait_generation)
 
 

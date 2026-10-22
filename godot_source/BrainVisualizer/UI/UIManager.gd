@@ -225,7 +225,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_on_genome_availability_changed)
 	FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_genome_cache_replaced)
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
-	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(_on_websocket_health_changed)
+	FeagiCore.network.visualization_link_health_changed.connect(_on_websocket_health_changed)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_load_state_changed)
 	_sync_position_history_acceptance(FeagiCore.genome_load_state)
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
@@ -1697,8 +1697,8 @@ func _update_loading_screen_visibility() -> void:
 	
 	# Additional check: If using websocket transport, verify websocket is actually connected
 	var websocket_ok = true
-	if FeagiCore.network._transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
-		websocket_ok = FeagiCore.network.websocket_API.socket_health == FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.CONNECTED
+	if FeagiCore.network.transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
+		websocket_ok = FeagiCore.network.visualization_link_health == FEAGINetworking.VISUALIZATION_LINK_HEALTH.CONNECTED
 	
 	
 	# CRITICAL: Only hide loading screen when 3D scene is ACTUALLY instantiated
@@ -2273,11 +2273,12 @@ func _build_loading_status_tooltip() -> String:
 	var endpoint = FeagiCore.network._feagi_endpoint_details
 	var http_addr = endpoint.full_http_address if endpoint != null else "unknown"
 	var ws_addr = endpoint.full_websocket_address if endpoint != null else "unknown"
-	var transport = FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]
-	var ws_retry = FeagiCore.network.websocket_API._retry_count if FeagiCore.network.websocket_API != null else 0
+	var link_status: Dictionary = FeagiCore.network.get_visualization_link_status()
+	var transport = link_status.transport
+	var ws_retry: int = link_status.retry_count
 	var ws_retry_max = FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections if FeagiCore.feagi_settings != null else 0
 	var http_retrying = FeagiCore.network.http_API._retrying_workers.size() if FeagiCore.network.http_API != null else 0
-	var shm_path = FeagiCore.network.websocket_API._shm_path if FeagiCore.network.websocket_API != null else ""
+	var shm_path: String = link_status.shm_path
 	var failure_summary = _build_loading_failure_summary()
 	return "FEAGI HTTP: %s\nFEAGI WS: %s\nTransport: %s\nSHM path: %s\nWS retries: %d / %d\nHTTP retrying workers: %d\nFailure status: %s" % [
 		http_addr,
@@ -2298,8 +2299,8 @@ func _build_loading_failure_summary() -> String:
 	var genome_available = FeagiCore.feagi_local_cache.genome_availability
 	var genome_scene_ready = FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY
 	var websocket_ok = true
-	if FeagiCore.network._transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
-		websocket_ok = FeagiCore.network.websocket_API.socket_health == FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.CONNECTED
+	if FeagiCore.network.transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
+		websocket_ok = FeagiCore.network.visualization_link_health == FEAGINetworking.VISUALIZATION_LINK_HEALTH.CONNECTED
 	if not connection_healthy:
 		reasons.append("connection not healthy")
 	if not brain_ready:

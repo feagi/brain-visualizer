@@ -1,11 +1,13 @@
 extends Node
 class_name FEAGIVisualizationSink
-## Single entry point for Type 11 neuron visualization, whatever transport delivered it (WebSocket,
-## shared memory, later zenoh). Transports hand raw packet bytes to [method ingest_type11]; this node
-## decodes them and drives Brain Monitor MultiMeshes, bulk-array consumers, the firing recorder and
-## the live inspector.
+## Single consumer of the FEAGI data stream, whatever transport delivered it (WebSocket, shared
+## memory, later zenoh). Transports hand raw packet bytes to [method ingest_packet]; this node routes
+## them, decodes Type 11 neuron data and drives Brain Monitor MultiMeshes, bulk-array consumers, the
+## firing recorder and the live inspector.
 
 signal FEAGI_sent_direct_neural_points_bulk(cortical_ID: StringName, x_array: PackedInt32Array, y_array: PackedInt32Array, z_array: PackedInt32Array, p_array: PackedFloat32Array)
+signal FEAGI_sent_SVO_data(cortical_ID: StringName, SVO_data: PackedByteArray)
+signal feagi_return_visual_data(SingleRawImage: PackedByteArray)
 
 const WASMDecoder = preload("res://Utils/WASMDecoder.gd")
 const MAX_RUST_INIT_ATTEMPTS := 5
@@ -79,8 +81,166 @@ func _process(_delta: float) -> void:
 		_ingest_web(bytes)
 
 
-## Decode and apply one visualization packet: a FeagiByteContainer (first byte 2, 3 or 4) or raw
-## Type 11 bytes (first byte 11). Transports call this; they never decode Type 11 themselves.
+## Route one FEAGI stream packet by its first byte: byte containers and Type 11 neuron data go to
+## [method ingest_type11]; health JSON, raw images and legacy SVO go to their consumers. Every
+## transport hands its binary packets here.
+func ingest_packet(bytes: PackedByteArray) -> void:
+	var structure_id = bytes[0] if bytes.size() > 0 else -1
+
+	# SAFETY CHECK: Ensure we have data before processing
+	if bytes.size() == 0:
+		push_error("FEAGI: Cannot process empty byte array!")
+		return
+
+	# Current FeagiByteContainer versions (3, 4) wrap Type 11; the Rust/WASM decoders parse the container.
+	if bytes[0] == 3 or bytes[0] == 4:
+		ingest_type11(bytes)
+		return
+
+	# FEAGI Byte Container v2 (first byte == 2)
+	# This is a wrapper format used by FEAGI (SHM/WS) that can contain one or more structures.
+	# Format (from feagi-serialization::FeagiByteContainer):
+	# - [0]   version (u8) == 2
+	# - [1:3] increment_counter (u16 LE)
+	# - [3]   struct_count (u8)
+	# - then struct_count * u32 LE lengths
+	# - then each structure payload (each payload begins with structure type, e.g., 1 or 11)
+	if bytes[0] == 2:
+		if bytes.size() < 4:
+			push_error("FEAGI: Invalid ByteContainer v2 (too short)")
+			return
+		var struct_count := int(bytes[3])
+		if struct_count <= 0:
+			# Valid empty container
+			return
+		var lookup_len := 4 * struct_count
+		var header_total := 4 + lookup_len
+		if bytes.size() < header_total:
+			push_error("FEAGI: Invalid ByteContainer v2 (header truncated)")
+			return
+		var data_off := header_total
+		for i in range(struct_count):
+			var len_off := 4 + i * 4
+			var struct_len := int(bytes.decode_u32(len_off))
+			if struct_len <= 0:
+				continue
+			if data_off + struct_len > bytes.size():
+				push_error("FEAGI: Invalid ByteContainer v2 (structure out of bounds)")
+				return
+			var struct_bytes := bytes.slice(data_off, data_off + struct_len)
+			ingest_packet(struct_bytes)
+			data_off += struct_len
+		return
+	
+	## respond as per type
+	match(bytes[0]):
+		1: # JSON wrapper (may be legacy status OR SHM JSON Type 11)
+			bytes = bytes.slice(2)
+			var text := bytes.get_string_from_ascii()
+			# 🔍 TEMP DEBUG: Log JSON parsing (first 3)
+			if not has_meta("_json_parse_count"):
+				set_meta("_json_parse_count", 0)
+			var json_count = get_meta("_json_parse_count")
+			if json_count < 3:
+				print("🦀 [VIZ] TYPE 1 JSON PARSE #%d: %d chars, first 80: %s" % [json_count + 1, text.length(), text.substr(0, 80)])
+				set_meta("_json_parse_count", json_count + 1)
+			var dict_any: Variant = str_to_var(text)
+			var dict: Dictionary = {}
+			if typeof(dict_any) == TYPE_DICTIONARY:
+				dict = dict_any
+			else:
+				var json_parsed = JSON.parse_string(text)
+				if typeof(json_parsed) == TYPE_DICTIONARY:
+					dict = json_parsed
+				else:
+					push_error("FEAGI: Unable to parse stream data (neither var nor json)!")
+					return
+			# 🔍 TEMP DEBUG: Log what keys we have
+			if json_count < 3:
+				print("🦀 [VIZ] TYPE 1 PARSED: has_status=%s, keys=%s" % [dict.has("status"), dict.keys()])
+			# SHM JSON Type 11 passthrough
+			if dict.has("type") and int(dict.get("type", -1)) == 11 and dict.has("areas") and typeof(dict["areas"]) == TYPE_DICTIONARY:
+				var areas: Dictionary = dict["areas"]
+				var decoded_areas: Dictionary = {}
+				var total_points := 0
+				for cortical_id in areas.keys():
+					var a = areas[cortical_id]
+					if typeof(a) != TYPE_DICTIONARY:
+						continue
+					var x_arr := PackedInt32Array(a.get("x", []))
+					total_points += x_arr.size()
+					decoded_areas[cortical_id] = {
+						"x_array": x_arr,
+						"y_array": PackedInt32Array(a.get("y", [])),
+						"z_array": PackedInt32Array(a.get("z", [])),
+						"p_array": PackedFloat32Array(a.get("p", [])),
+					}
+				apply_decoded_areas(decoded_areas)
+				if _DIAGNOSTICS_ENABLED:
+					print("[VIZ] Processed JSON Type 11: areas=", areas.size(), " points=", total_points)
+				return
+			if dict.has("status"):
+				var dict_status = dict["status"]
+				# 🔍 TEMP DEBUG: Log health data updates (first 5)
+				if not has_meta("_health_update_count"):
+					set_meta("_health_update_count", 0)
+				var health_count = get_meta("_health_update_count")
+				if health_count < 5:
+					print("🦀 [VIZ] TYPE 1 HEALTH UPDATE #%d:" % [health_count + 1])
+					print("  - connected: %s" % [dict_status.get("connected", "missing")])
+					print("  - brain_readiness: %s" % [dict_status.get("brain_readiness", "missing")])
+					print("  - genome_availability: %s" % [dict_status.get("genome_availability", "missing")])
+					print("  - genome_timestamp: %s" % [dict_status.get("genome_timestamp", "missing")])
+					set_meta("_health_update_count", health_count + 1)
+				FeagiCore.feagi_local_cache.update_health_from_FEAGI_dict(dict_status)
+					
+		7: # ActivatedNeuronLocation
+			# ignore version for now
+			push_warning("ActivatedNeuronLocation data type is deprecated!")
+		8: # SingleRawImage
+			# ignore version for now
+			feagi_return_visual_data.emit(bytes)
+		9: # multi structure
+			# ignore version for now
+			var number_contained_structures: int = bytes[2]
+			var structure_start_index: int = 0 # cached
+			var structure_length: int = 0 # cached
+			var header_offset: int = 3 # cached, lets us know where to read from the subheader
+			# 🔍 TEMP DEBUG: Log Type 9 processing (first 10)
+			if not has_meta("_type9_log_count"):
+				set_meta("_type9_log_count", 0)
+			var type9_count = get_meta("_type9_log_count")
+			if type9_count < 10:
+				print("🦀 [VIZ] TYPE 9 RECEIVED: %d structures, total %d bytes" % [number_contained_structures, bytes.size()])
+				set_meta("_type9_log_count", type9_count + 1)
+			for structure_index in range(number_contained_structures):
+				structure_start_index = bytes.decode_u32(header_offset)        # Little Endian by default
+				structure_length = bytes.decode_u32(header_offset + 4)        # Little Endian by default
+				var structure_data = bytes.slice(structure_start_index, structure_start_index + structure_length)
+				if type9_count < 10 and structure_data.size() > 0:
+					print("   - Structure %d: type=%d, offset=%d, length=%d" % [structure_index, structure_data[0], structure_start_index, structure_length])
+				ingest_packet(structure_data)
+				header_offset += 8
+		10: # SVO neuron activations (legacy support)
+			var cortical_ID: StringName = bytes.slice(2,8).get_string_from_ascii()
+			var SVO_data: PackedByteArray = bytes.slice(8) # TODO this is not efficient at all
+			FEAGI_sent_SVO_data.emit(cortical_ID, SVO_data)
+			
+			# TODO I dont like this
+			var area: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(cortical_ID)
+			if area:
+				area.FEAGI_set_SVO_visualization_data(SVO_data)
+		
+		11: # Direct Neural Points (NEW - feagi-data-processing format with bulk arrays)
+			ingest_type11(bytes)
+
+		_: # Unknown
+			print("   ❌ ROUTING: UNKNOWN structure type ", structure_id, " - ERROR!")
+			push_error("Unknown data type %d recieved!" % bytes[0])
+
+
+## Decode and apply one Type 11 packet: a FeagiByteContainer (first byte 2, 3 or 4) or raw Type 11
+## bytes (first byte 11).
 func ingest_type11(bytes: PackedByteArray) -> void:
 	if bytes.is_empty():
 		return
