@@ -1015,94 +1015,39 @@ func _run_auto_layout_deferred(run_id: int) -> void:
 		return
 	await apply_hierarchical_layout(false)
 
-## Compute layout positions: IPU/OPU fixed columns; interconnect uses directed-bridge SCC layers
-## (longest path on the condensation DAG) for increasing X, barycenter Y within each layer.
+## Compute layout positions with [LayeredGraphLayout]: IPU/OPU fixed columns, region IO in the inner
+## columns, interconnect in directed-bridge SCC layers (longest path on the condensation DAG) for
+## increasing X, barycenter Y within each layer. Returns graph node -> Vector2.
 func _compute_relayout_positions() -> Dictionary:
-	var nodes: Array[CBNodeConnectableBase] = []
-	nodes.assign(_cortical_nodes.values())
-	for region_node in _subregion_nodes.values():
-		nodes.append(region_node)
-	for classifier_node in _classifier_nodes.values():
-		nodes.append(classifier_node)
-	var region_io_nodes: Array[CBAbstractNode] = _collect_region_io_nodes()
-	if nodes.is_empty() and region_io_nodes.is_empty():
-		return {}
-	var adjacency: Dictionary = _build_bridge_adjacency()
-	var outputs: Array[CBNodeConnectableBase] = []
-	var inputs: Array[CBNodeConnectableBase] = []
-	var inner_outputs: Array[CBAbstractNode] = []
-	var inner_inputs: Array[CBAbstractNode] = []
-	var middle: Array[CBNodeConnectableBase] = []
-	for node in nodes:
-		if node is CBNodeCorticalArea:
-			var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
-			var side := _classify_cortical_io_side(area)
-			if side == "left":
-				inputs.append(node)
-			elif side == "right":
-				outputs.append(node)
-			else:
-				middle.append(node)
-		else:
-			middle.append(node)
-	for io_node in region_io_nodes:
-		if _is_region_io_input(io_node):
-			inner_inputs.append(io_node)
-		else:
-			inner_outputs.append(io_node)
-	var min_x := _compute_min_x(nodes)
-	var min_y := _compute_min_y(nodes)
-	var left_x := min_x
-	var inner_left_x := left_x + _compute_max_width(inputs) + LAYOUT_COLUMN_GAP
-	var middle_x := inner_left_x + _compute_max_width_region_io(inner_inputs) + LAYOUT_COLUMN_GAP
-	var middle_width_span := _compute_middle_hierarchy_width_span(middle)
-	var inner_right_x := middle_x + middle_width_span + LAYOUT_COLUMN_GAP
-	var right_x := inner_right_x + _compute_max_width_region_io(inner_outputs) + LAYOUT_COLUMN_GAP
-	# Place IO columns first, then position interconnects between them.
-	var ordered_inputs := _sort_io_nodes(inputs, true)
-	var ordered_outputs := _sort_io_nodes(outputs, false)
-	var input_positions := _layout_column(ordered_inputs, left_x, min_y)
-	var output_positions := _layout_column(ordered_outputs, right_x, min_y)
-	var inner_input_positions := _layout_column_region_io(_sort_region_io_by_current_y(inner_inputs), inner_left_x, min_y)
-	var inner_output_positions := _layout_column_region_io(_sort_region_io_by_current_y(inner_outputs), inner_right_x, min_y)
-	var io_y_map := _build_target_y_map(input_positions)
-	for node in output_positions.keys():
-		io_y_map[node] = (output_positions[node] as Vector2).y
-	for node in inner_input_positions.keys():
-		io_y_map[node] = (inner_input_positions[node] as Vector2).y
-	for node in inner_output_positions.keys():
-		io_y_map[node] = (inner_output_positions[node] as Vector2).y
-	var middle_positions := _layout_middle_hierarchical(middle, adjacency, io_y_map, middle_x, min_y)
-	var layout_positions: Dictionary = {}
-	for node in output_positions.keys():
-		layout_positions[node] = output_positions[node]
-	for node in inner_output_positions.keys():
-		layout_positions[node] = inner_output_positions[node]
-	for node in middle_positions.keys():
-		layout_positions[node] = middle_positions[node]
-	for node in inner_input_positions.keys():
-		layout_positions[node] = inner_input_positions[node]
-	for node in input_positions.keys():
-		layout_positions[node] = input_positions[node]
-	# Enforce strict column placement for IPU/OPU; interconnect uses hierarchical X from middle_positions.
-	for node in nodes:
-		if node is CBNodeCorticalArea:
-			var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
-			var side := _classify_cortical_io_side(area)
-			if side == "left":
-				_set_node_column_x(layout_positions, node, left_x)
-			elif side == "right":
-				_set_node_column_x(layout_positions, node, right_x)
-	for io_node in region_io_nodes:
-		var io_target_x := inner_left_x if _is_region_io_input(io_node) else inner_right_x
-		_set_node_column_x(layout_positions, io_node, io_target_x)
-	return layout_positions
+	var items: Array = []
+	for node: CBNodeConnectableBase in _cortical_nodes.values():
+		items.append(_layout_item(node))
+	for node: CBNodeConnectableBase in _subregion_nodes.values():
+		items.append(_layout_item(node))
+	for node: CBNodeConnectableBase in _classifier_nodes.values():
+		items.append(_layout_item(node))
+	for io_node: CBAbstractNode in _collect_region_io_nodes():
+		var io_column: LayeredGraphLayout.COLUMN = LayeredGraphLayout.COLUMN.INNER_INPUT if _is_region_io_input(io_node) else LayeredGraphLayout.COLUMN.INNER_OUTPUT
+		items.append({"key": io_node, "size": io_node.size, "position": io_node.position_offset, "column": io_column})
+	return LayeredGraphLayout.compute(items, _build_bridge_edges(), LAYOUT_COLUMN_GAP, LAYOUT_ROW_GAP, LAYOUT_MIDDLE_LAYER_GAP)
 
-## Undirected adjacency from bridge links (cortical–cortical and cortical–subregion) for barycenter ordering.
-func _build_bridge_adjacency() -> Dictionary:
-	var adjacency: Dictionary = {}
+
+func _layout_item(node: CBNodeConnectableBase) -> Dictionary:
+	var column: LayeredGraphLayout.COLUMN = LayeredGraphLayout.COLUMN.MIDDLE
+	var priority: int = 0
+	if node is CBNodeCorticalArea:
+		var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
+		column = CorticalLayoutSide.layout_column(area)
+		if column != LayeredGraphLayout.COLUMN.MIDDLE:
+			priority = CorticalLayoutSide.io_priority(area, column == LayeredGraphLayout.COLUMN.INPUT)
+	return {"key": node, "size": node.size, "position": node.position_offset, "column": column, "priority": priority}
+
+
+## Directed bridge edges between this region's graph nodes, in link order (FEAGI direction: source -> destination).
+func _build_bridge_edges() -> Array:
+	var edges: Array = []
 	if _representing_region == null:
-		return adjacency
+		return edges
 	for link: ConnectionChainLink in _representing_region.bridge_chain_links:
 		if _is_hidden_classifier_internal_mapping(link.source, link.destination):
 			continue
@@ -1110,15 +1055,8 @@ func _build_bridge_adjacency() -> Dictionary:
 		var destination_node: CBNodeConnectableBase = _node_for_genome_object(link.destination)
 		if source_node == null or destination_node == null:
 			continue
-		if source_node == destination_node:
-			continue
-		if not adjacency.has(source_node):
-			adjacency[source_node] = []
-		if not adjacency.has(destination_node):
-			adjacency[destination_node] = []
-		adjacency[source_node].append(destination_node)
-		adjacency[destination_node].append(source_node)
-	return adjacency
+		edges.append([source_node, destination_node])
+	return edges
 
 
 func _node_for_genome_object(obj: GenomeObject) -> CBNodeConnectableBase:
@@ -1130,370 +1068,6 @@ func _node_for_genome_object(obj: GenomeObject) -> CBNodeConnectableBase:
 	if resolved is GenomeClassifier:
 		return _classifier_nodes.get((resolved as GenomeClassifier).classifier_id, null)
 	return null
-
-
-## Directed edges between middle-column nodes only (FEAGI bridge direction: source -> destination).
-func _build_directed_middle_edges(middle_membership: Dictionary) -> Array:
-	var edges: Array = []
-	if _representing_region == null:
-		return edges
-	for link: ConnectionChainLink in _representing_region.bridge_chain_links:
-		if _is_hidden_classifier_internal_mapping(link.source, link.destination):
-			continue
-		var sn: CBNodeConnectableBase = _node_for_genome_object(link.source)
-		var dn: CBNodeConnectableBase = _node_for_genome_object(link.destination)
-		if sn == null or dn == null:
-			continue
-		if sn == dn:
-			continue
-		if not middle_membership.has(sn) or not middle_membership.has(dn):
-			continue
-		edges.append([sn, dn])
-	return edges
-
-
-func _build_out_adjacency_for_tarjan(nodes: Array[CBNodeConnectableBase], edges: Array) -> Dictionary:
-	var adj: Dictionary = {}
-	for n in nodes:
-		adj[n] = []
-	for edge in edges:
-		var u: CBNodeConnectableBase = edge[0]
-		var v: CBNodeConnectableBase = edge[1]
-		adj[u].append(v)
-	return adj
-
-
-var _tarjan_index: int = 0
-var _tarjan_indices: Dictionary = {}
-var _tarjan_lowlink: Dictionary = {}
-var _tarjan_stack: Array = []
-var _tarjan_on_stack: Dictionary = {}
-var _tarjan_adj: Dictionary = {}
-var _tarjan_sccs: Array = []
-
-
-func _tarjan_run_scc(nodes: Array[CBNodeConnectableBase], adj: Dictionary) -> Array:
-	_tarjan_index = 0
-	_tarjan_indices.clear()
-	_tarjan_lowlink.clear()
-	_tarjan_stack.clear()
-	_tarjan_on_stack.clear()
-	_tarjan_adj = adj
-	_tarjan_sccs.clear()
-	for n in nodes:
-		if not _tarjan_indices.has(n):
-			_tarjan_strongconnect(n)
-	return _tarjan_sccs
-
-
-func _tarjan_strongconnect(v: CBNodeConnectableBase) -> void:
-	_tarjan_indices[v] = _tarjan_index
-	_tarjan_lowlink[v] = _tarjan_index
-	_tarjan_index += 1
-	_tarjan_stack.append(v)
-	_tarjan_on_stack[v] = true
-	for w in _tarjan_adj.get(v, []):
-		if not _tarjan_indices.has(w):
-			_tarjan_strongconnect(w)
-			_tarjan_lowlink[v] = min(_tarjan_lowlink[v], _tarjan_lowlink[w])
-		elif _tarjan_on_stack.get(w, false):
-			_tarjan_lowlink[v] = min(_tarjan_lowlink[v], _tarjan_indices[w])
-	if _tarjan_lowlink[v] == _tarjan_indices[v]:
-		var scc: Array = []
-		while true:
-			var w: CBNodeConnectableBase = _tarjan_stack.pop_back()
-			_tarjan_on_stack[w] = false
-			scc.append(w)
-			if w == v:
-				break
-		_tarjan_sccs.append(scc)
-
-
-## SCC condensation + longest path on the DAG of components (ties reciprocal cycles to one X layer).
-func _condensation_longest_path_layers(nodes: Array[CBNodeConnectableBase], directed_edges: Array) -> Dictionary:
-	var result: Dictionary = {}
-	if nodes.is_empty():
-		return result
-	var adj: Dictionary = _build_out_adjacency_for_tarjan(nodes, directed_edges)
-	var sccs: Array = _tarjan_run_scc(nodes, adj)
-	var node_to_scc: Dictionary = {}
-	for i in range(sccs.size()):
-		for node in sccs[i]:
-			node_to_scc[node] = i
-	var num_scc: int = sccs.size()
-	var cond_adj: Dictionary = {}
-	var cond_indegree: Array = []
-	cond_indegree.resize(num_scc)
-	for i in range(num_scc):
-		cond_indegree[i] = 0
-		cond_adj[i] = []
-	var edge_seen: Dictionary = {}
-	for edge in directed_edges:
-		var u: CBNodeConnectableBase = edge[0]
-		var v: CBNodeConnectableBase = edge[1]
-		var su: int = node_to_scc[u]
-		var sv: int = node_to_scc[v]
-		if su == sv:
-			continue
-		var key: String = "%d>%d" % [su, sv]
-		if edge_seen.has(key):
-			continue
-		edge_seen[key] = true
-		cond_adj[su].append(sv)
-		cond_indegree[sv] += 1
-	var indegree_copy: Array = []
-	indegree_copy.resize(num_scc)
-	for i in range(num_scc):
-		indegree_copy[i] = cond_indegree[i]
-	var queue: Array = []
-	for i in range(num_scc):
-		if indegree_copy[i] == 0:
-			queue.append(i)
-	var topo: Array = []
-	while not queue.is_empty():
-		var u: int = queue.pop_front()
-		topo.append(u)
-		for v in cond_adj.get(u, []):
-			indegree_copy[v] -= 1
-			if indegree_copy[v] == 0:
-				queue.append(v)
-	for i in range(num_scc):
-		if not i in topo:
-			topo.append(i)
-	var dist: Dictionary = {}
-	for i in range(num_scc):
-		dist[i] = 0
-	for u in topo:
-		for v in cond_adj.get(u, []):
-			if dist[v] < dist[u] + 1:
-				dist[v] = dist[u] + 1
-	for node in nodes:
-		var sid: int = node_to_scc[node]
-		result[node] = dist[sid]
-	return result
-
-
-func _compute_middle_hierarchy_width_span(middle: Array[CBNodeConnectableBase]) -> float:
-	if middle.is_empty():
-		return 0.0
-	var middle_membership: Dictionary = {}
-	for n in middle:
-		middle_membership[n] = true
-	var directed_edges: Array = _build_directed_middle_edges(middle_membership)
-	var layer_of: Dictionary = _condensation_longest_path_layers(middle, directed_edges)
-	var max_layer_idx: int = -1
-	var layers: Dictionary = {}
-	for node in middle:
-		var L: int = layer_of[node]
-		max_layer_idx = max(max_layer_idx, L)
-		if not layers.has(L):
-			var empty_layer: Array[CBNodeConnectableBase] = []
-			layers[L] = empty_layer
-		(layers[L] as Array[CBNodeConnectableBase]).append(node)
-	var span: float = 0.0
-	var first_layer: bool = true
-	for L in range(max_layer_idx + 1):
-		if not layers.has(L):
-			continue
-		if not first_layer:
-			span += LAYOUT_MIDDLE_LAYER_GAP
-		first_layer = false
-		var mw: float = 0.0
-		for node in layers[L] as Array[CBNodeConnectableBase]:
-			mw = max(mw, node.size.x)
-		span += mw
-	return span
-
-
-func _layout_middle_hierarchical(
-	middle: Array[CBNodeConnectableBase],
-	adjacency: Dictionary,
-	io_y_map: Dictionary,
-	middle_base_x: float,
-	start_y: float
-) -> Dictionary:
-	var positions: Dictionary = {}
-	if middle.is_empty():
-		return positions
-	var middle_membership: Dictionary = {}
-	for n in middle:
-		middle_membership[n] = true
-	var directed_edges: Array = _build_directed_middle_edges(middle_membership)
-	var layer_of: Dictionary = _condensation_longest_path_layers(middle, directed_edges)
-	var max_layer_idx: int = -1
-	var layers: Dictionary = {}
-	for node in middle:
-		var L: int = layer_of[node]
-		max_layer_idx = max(max_layer_idx, L)
-		if not layers.has(L):
-			var empty_layer: Array[CBNodeConnectableBase] = []
-			layers[L] = empty_layer
-		(layers[L] as Array[CBNodeConnectableBase]).append(node)
-	var cursor_x: float = middle_base_x
-	for L in range(max_layer_idx + 1):
-		if not layers.has(L):
-			continue
-		var layer_nodes: Array[CBNodeConnectableBase] = layers[L] as Array[CBNodeConnectableBase]
-		var ordered: Array[CBNodeConnectableBase] = _sort_nodes_by_barycenter(layer_nodes, adjacency, io_y_map)
-		var col_positions: Dictionary = _layout_column(ordered, cursor_x, start_y)
-		var layer_max_w: float = 0.0
-		for node in ordered:
-			layer_max_w = max(layer_max_w, node.size.x)
-			positions[node] = col_positions[node]
-		cursor_x += layer_max_w + LAYOUT_MIDDLE_LAYER_GAP
-	return positions
-
-func _sort_nodes_by_barycenter(nodes: Array[CBNodeConnectableBase], adjacency: Dictionary, ref_y_map: Dictionary) -> Array[CBNodeConnectableBase]:
-	var sortable: Array[Dictionary] = []
-	for node in nodes:
-		var neighbors: Array = adjacency.get(node, [])
-		var neighbor_ys: Array[float] = []
-		for neighbor in neighbors:
-			if not ref_y_map.is_empty() and ref_y_map.has(neighbor):
-				neighbor_ys.append(ref_y_map[neighbor])
-			else:
-				neighbor_ys.append((neighbor as CBNodeConnectableBase).position_offset.y)
-		var desired_y: float = node.position_offset.y
-		if not neighbor_ys.is_empty():
-			desired_y = _average(neighbor_ys)
-		sortable.append({"node": node, "y": desired_y})
-	sortable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return float(a.get("y", 0.0)) < float(b.get("y", 0.0))
-	)
-	var ordered: Array[CBNodeConnectableBase] = []
-	for item in sortable:
-		ordered.append(item["node"])
-	return ordered
-
-func _layout_column(nodes: Array[CBNodeConnectableBase], column_x: float, start_y: float) -> Dictionary:
-	var positions: Dictionary = {}
-	var cursor_y: float = start_y
-	for node in nodes:
-		positions[node] = Vector2(column_x, cursor_y)
-		cursor_y += node.size.y + LAYOUT_ROW_GAP
-	return positions
-
-func _layout_column_region_io(nodes: Array[CBAbstractNode], column_x: float, start_y: float) -> Dictionary:
-	var positions: Dictionary = {}
-	var cursor_y: float = start_y
-	for node in nodes:
-		positions[node] = Vector2(column_x, cursor_y)
-		cursor_y += node.size.y + LAYOUT_ROW_GAP
-	return positions
-
-func _sort_region_io_by_current_y(nodes: Array[CBAbstractNode]) -> Array[CBAbstractNode]:
-	var sortable: Array[Dictionary] = []
-	for node in nodes:
-		sortable.append({"node": node, "y": node.position_offset.y})
-	sortable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return float(a.get("y", 0.0)) < float(b.get("y", 0.0))
-	)
-	var ordered: Array[CBAbstractNode] = []
-	for item in sortable:
-		ordered.append(item["node"])
-	return ordered
-
-func _sort_nodes_by_current_y(nodes: Array[CBNodeConnectableBase]) -> Array[CBNodeConnectableBase]:
-	var sortable: Array[Dictionary] = []
-	for node in nodes:
-		sortable.append({"node": node, "y": node.position_offset.y})
-	sortable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return float(a.get("y", 0.0)) < float(b.get("y", 0.0))
-	)
-	var ordered: Array[CBNodeConnectableBase] = []
-	for item in sortable:
-		ordered.append(item["node"])
-	return ordered
-
-func _sort_io_nodes(nodes: Array[CBNodeConnectableBase], is_input_column: bool) -> Array[CBNodeConnectableBase]:
-	var sortable: Array[Dictionary] = []
-	for node in nodes:
-		var priority: int = _io_priority_for_node(node, is_input_column)
-		sortable.append({"node": node, "priority": priority, "y": node.position_offset.y})
-	sortable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		var priority_a: int = int(a.get("priority", 0))
-		var priority_b: int = int(b.get("priority", 0))
-		if priority_a == priority_b:
-			return float(a.get("y", 0.0)) < float(b.get("y", 0.0))
-		return priority_a < priority_b
-	)
-	var ordered: Array[CBNodeConnectableBase] = []
-	for item in sortable:
-		ordered.append(item["node"])
-	return ordered
-
-func _io_priority_for_node(node: CBNodeConnectableBase, is_input_column: bool) -> int:
-	if node is CBNodeCorticalArea:
-		var area: AbstractCorticalArea = (node as CBNodeCorticalArea).representing_cortical_area
-		if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
-			var label := _core_io_label(area)
-			if is_input_column and label == "power":
-				return -100
-			if (not is_input_column) and label == "fatigue":
-				return -100
-			if (not is_input_column) and label == "pain":
-				return -95
-			if (not is_input_column) and label == "pleasure":
-				return -94
-			if (not is_input_column) and label == "fear":
-				return -93
-			if (not is_input_column) and label == "hope":
-				return -92
-			if (not is_input_column) and label == "death":
-				return -90
-	return 0
-
-func _classify_cortical_io_side(area: AbstractCorticalArea) -> String:
-	var area_id_lower := String(area.cortical_ID).to_lower()
-	var area_name_lower := String(area.friendly_name).to_lower()
-	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU:
-		return "left"
-	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
-		return "right"
-	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
-		var core_label := _core_io_label(area)
-		if core_label == "power":
-			return "left"
-		if core_label in ["fatigue", "pain", "pleasure", "fear", "hope", "death"]:
-			return "right"
-		if area_id_lower.begins_with("i") or area_name_lower.contains("input") or area_name_lower.contains("ipu"):
-			return "left"
-		if area_id_lower.begins_with("o") or area_name_lower.contains("output") or area_name_lower.contains("opu"):
-			return "right"
-		return "right"
-	if area_id_lower.begins_with("i"):
-		return "left"
-	if area_id_lower.begins_with("o"):
-		return "right"
-	return "middle"
-
-func _core_io_label(area: AbstractCorticalArea) -> String:
-	var area_id_lower := String(area.cortical_ID).to_lower()
-	var area_name_lower := String(area.friendly_name).to_lower()
-	var special_core_name := AbstractCorticalArea.get_special_core_area_name(area.cortical_ID)
-	if not special_core_name.is_empty():
-		return special_core_name
-	if area_id_lower.contains("pwr") or area_name_lower.contains("power"):
-		return "power"
-	if area_name_lower.contains("fatigue"):
-		return "fatigue"
-	if area_name_lower.contains("pain"):
-		return "pain"
-	if area_name_lower.contains("pleasure"):
-		return "pleasure"
-	if area_name_lower.contains("fear"):
-		return "fear"
-	if area_name_lower.contains("hope"):
-		return "hope"
-	if area_name_lower.contains("death"):
-		return "death"
-	return "other"
-
-func _set_node_column_x(layout_positions: Dictionary, node: GraphElement, target_x: float) -> void:
-	var new_position := Vector2(target_x, node.position_offset.y)
-	if layout_positions.has(node):
-		new_position.y = (layout_positions[node] as Vector2).y
-	layout_positions[node] = new_position
 
 func _collect_region_io_nodes() -> Array[CBAbstractNode]:
 	var nodes: Array[CBAbstractNode] = []
@@ -1594,42 +1168,6 @@ func _cortical_type_to_label(cortical_type: AbstractCorticalArea.CORTICAL_AREA_T
 		_:
 			return "UNKNOWN"
 
-func _build_target_y_map(positions: Dictionary) -> Dictionary:
-	var target_map: Dictionary = {}
-	for node in positions.keys():
-		target_map[node] = (positions[node] as Vector2).y
-	return target_map
-
-func _compute_min_x(nodes: Array[CBNodeConnectableBase]) -> float:
-	var min_x: float = nodes[0].position_offset.x
-	for node in nodes:
-		min_x = min(min_x, node.position_offset.x)
-	return min_x
-
-func _compute_min_y(nodes: Array[CBNodeConnectableBase]) -> float:
-	var min_y: float = nodes[0].position_offset.y
-	for node in nodes:
-		min_y = min(min_y, node.position_offset.y)
-	return min_y
-
-func _compute_max_width(nodes: Array[CBNodeConnectableBase]) -> float:
-	var max_width: float = 0.0
-	for node in nodes:
-		max_width = max(max_width, node.size.x)
-	return max_width
-
-func _compute_max_width_region_io(nodes: Array[CBAbstractNode]) -> float:
-	var max_width: float = 0.0
-	for node in nodes:
-		max_width = max(max_width, node.size.x)
-	return max_width
-
-func _average(values: Array[float]) -> float:
-	var total: float = 0.0
-	for value in values:
-		total += value
-	return total / float(values.size())
-
 ## Ensure the chosen node is on top and visually emphasized.
 func _bring_node_to_front_and_flash(node: GraphElement) -> void:
 	if node == null or not is_instance_valid(node):
@@ -1666,14 +1204,8 @@ func _center_on_graph_element(element: GraphElement) -> void:
 	var fit_zoom_y: float = viewport_px.y / max(node_px.y, 1.0)
 	# Zoom out aggressively so the chosen node is clearly visible within split views
 	var target_zoom: float = min(fit_zoom_x, fit_zoom_y) * 0.3 # zoom out 70%
-	# Clamp to GraphEdit zoom limits if available
-	var min_z: float = 0.2
-	var max_z: float = 2.0
-	if "min_zoom" in self:
-		min_z = self.min_zoom
-	if "max_zoom" in self:
-		max_z = self.max_zoom
-	target_zoom = clamp(target_zoom, min_z, max_z)
+	# Clamp to GraphEdit zoom limits
+	target_zoom = clamp(target_zoom, zoom_min, zoom_max)
 	self.zoom = target_zoom
 
 	# Match [method _fit_circuit_to_viewport]: scroll_offset is in screen pixels; center is in graph space.
@@ -1713,13 +1245,7 @@ func _fit_circuit_to_viewport() -> void:
 	var fit_zoom_x: float = viewport_px.x / max(padded_size.x, 1.0)
 	var fit_zoom_y: float = viewport_px.y / max(padded_size.y, 1.0)
 	var target_zoom: float = min(fit_zoom_x, fit_zoom_y) * 0.5
-	var min_z: float = 0.2
-	var max_z: float = 2.0
-	if "min_zoom" in self:
-		min_z = self.min_zoom
-	if "max_zoom" in self:
-		max_z = self.max_zoom
-	target_zoom = clamp(target_zoom, min_z, max_z)
+	target_zoom = clamp(target_zoom, zoom_min, zoom_max)
 	self.zoom = target_zoom
 	var bounds_center: Vector2 = min_pos + (bounds_size * 0.5)
 	var average_center: Vector2 = bounds_center
