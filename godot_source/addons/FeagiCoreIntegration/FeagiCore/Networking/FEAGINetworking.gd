@@ -75,7 +75,6 @@ var _visualization_link_health: VISUALIZATION_LINK_HEALTH = VISUALIZATION_LINK_H
 var _feagi_protocol: FEAGI_PROTOCOL = FEAGI_PROTOCOL.UNKNOWN
 var _feagi_endpoint_details: FeagiEndpointDetails = null  # Store endpoint details for later use
 var _heartbeat_timer: Timer = null  # Timer for sending periodic heartbeats to FEAGI
-var _heartbeat_interval: float = 5.0  # Send heartbeat every 5 seconds to provide margin against 30s liveness timeout.
 var _reconnect_timer: Timer = null
 var _reconnect_in_progress: bool = false
 var _transport_registration_failed: bool = false
@@ -328,15 +327,10 @@ func _register_agent_via_transport() -> bool:
 
 	var registration_output: Dictionary
 	var registration_started_ms: int = Time.get_ticks_msec()
-	if not agent_client.has_method("register_via_websocket_with_heartbeat"):
-		push_error("[FEAGI] [TRANSPORT] FeagiAgentClient missing register_via_websocket_with_heartbeat.")
-		_transport_registration_failed = true
-		return false
-	registration_output = agent_client.register_via_websocket_with_heartbeat(
+	registration_output = agent_client.register_via_websocket(
 		registration_ws_url,
 		descriptor_b64,
-		auth_token_b64,
-		_heartbeat_interval
+		auth_token_b64
 	)
 	var registration_elapsed_ms: int = Time.get_ticks_msec() - registration_started_ms
 	if not bool(registration_output.get("success", false)):
@@ -757,7 +751,8 @@ func start_heartbeat() -> void:
 	return
 
 
-## Stop sending heartbeats to FEAGI
+## Deregister the current agent session from FEAGI (best effort) and clear registration metadata so the
+## next connect registers fresh. Name kept from the heartbeat era; BV sends no heartbeats.
 func stop_heartbeat() -> void:
 	var registered_agent_id := ""
 	if has_meta("_registered_agent_id_b64"):
@@ -766,12 +761,10 @@ func stop_heartbeat() -> void:
 	if has_meta("_registration_ws_url"):
 		registration_ws_url = str(get_meta("_registration_ws_url")).strip_edges()
 	
-	# Stop heartbeat and deregister (may fail if FEAGI already deregistered us during genome reload)
+	# Deregister (may fail if FEAGI already deregistered us during genome reload)
 	if registered_agent_id != "" and ClassDB.class_exists("FeagiAgentClient"):
 		var agent_client = ClassDB.instantiate("FeagiAgentClient")
 		if agent_client != null:
-			print("[FEAGI] [TRANSPORT] Stopping heartbeat for agent: ", registered_agent_id)
-			agent_client.stop_heartbeat_for_agent(registered_agent_id)
 			if registration_ws_url != "":
 				print("[FEAGI] [TRANSPORT] Attempting deregistration (may already be deregistered by FEAGI)")
 				# Deregistration may fail if FEAGI already deregistered us (genome reload) - that's okay
