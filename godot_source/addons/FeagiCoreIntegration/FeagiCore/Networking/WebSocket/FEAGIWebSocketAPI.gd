@@ -13,6 +13,8 @@ const DEF_SOCKET_INBOUND_BUFFER_SIZE: int = 67108864 # 64 MiB
 const DEF_SOCKET_BUFFER_SIZE: int = 67108864 # 64 MiB
 const DEF_PING_INTERVAL_SECONDS: float = 2.0
 const DEF_CONNECT_TIMEOUT_SECONDS: float = 5.0
+# FEAGI may never acknowledge a close frame; past this the socket is dropped and handled as closed.
+const DEF_CLOSE_TIMEOUT_SECONDS: float = 3.0
 const SOCKET_GENOME_UPDATE_FLAG: String = "updated" # FEAGI sends this string via websocket if genome is reloaded / changed
 const SOCKET_GENEOME_UPDATE_LATENCY: String = "ping" # TODO DELETE
 
@@ -42,6 +44,7 @@ var _is_purposfully_disconnecting: bool = false
 var _last_connect_time: int = 0  # Track when we last attempted to connect
 var _retry_timer_active: bool = false  # Track if a retry timer is already running
 var _last_disconnect_time: int = 0  # Track last disconnect to prevent rapid processing
+var _closing_since_ms: int = 0  # When the socket entered CLOSING; 0 when not closing
 
 const WASMDecoder = preload("res://Utils/WASMDecoder.gd")
 var _waiting_for_wasm: bool = false
@@ -68,6 +71,8 @@ func _process(_delta: float):
 		return
 
 	_socket.poll()
+	if _socket.get_ready_state() != WebSocketPeer.State.STATE_CLOSING:
+		_closing_since_ms = 0
 	match(_socket.get_ready_state()):
 		WebSocketPeer.State.STATE_CONNECTING:
 			# Currently connecting to FEAGI. Guard against indefinite CONNECTING stalls.
@@ -162,8 +167,16 @@ func _process(_delta: float):
 			if newest_binary_len > 0 and visualization_sink != null:
 				visualization_sink.ingest_packet(newest_binary)
 		WebSocketPeer.State.STATE_CLOSING:
-			# Closing connection to FEAGI, waiting for FEAGI to respond to close request
-			pass
+			# Closing connection to FEAGI, waiting for FEAGI to respond to close request.
+			# Without a deadline an unacknowledged close leaves the socket here forever: no data,
+			# health still CONNECTED, and no retry.
+			var now_closing_ms := Time.get_ticks_msec()
+			if _closing_since_ms == 0:
+				_closing_since_ms = now_closing_ms
+			elif now_closing_ms - _closing_since_ms > int(DEF_CLOSE_TIMEOUT_SECONDS * 1000.0):
+				print("[%s] ⚠️ [WS] Close not acknowledged after %dms - dropping socket" % [_get_timestamp(), now_closing_ms - _closing_since_ms])
+				_closing_since_ms = 0
+				_socket.close(-1) # drop without handshake; the next poll takes the CLOSED path
 		WebSocketPeer.State.STATE_CLOSED:
 			# Closed Connection to FEAGI
 			var current_time = Time.get_ticks_msec()

@@ -105,8 +105,10 @@ func _on_shm_visualization_enabled(_path: String) -> void:
 	_set_transport_mode(TRANSPORT_MODE.SHARED_MEMORY)
 	# If WS was in retry mode, stop it (reduces log spam / avoids UI disconnect loops).
 	websocket_API.disconnect_websocket()
-	# If we were waiting on WS, treat connection as healthy (HTTP already validated).
-	if _connection_state != CONNECTION_STATE.HEALTHY:
+	# If we were waiting on WS, treat connection as healthy (HTTP already validated). Only then: SHM can
+	# open at startup before any connection exists, and marking HEALTHY there makes FeagiCore refuse to
+	# load settings and connect. attempt_connection() picks up an active SHM transport by itself.
+	if _connection_state == CONNECTION_STATE.INITIAL_WS_PROBING or _connection_state == CONNECTION_STATE.RETRYING_WS:
 		var prev = _connection_state
 		_connection_state = CONNECTION_STATE.HEALTHY
 		connection_state_changed.emit(prev, CONNECTION_STATE.HEALTHY)
