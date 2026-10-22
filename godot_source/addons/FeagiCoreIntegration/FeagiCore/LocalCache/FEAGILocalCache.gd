@@ -413,7 +413,7 @@ func update_health_from_FEAGI_dict(health: Dictionary) -> void:
 						var conn_state = FeagiCore.network.connection_state
 						var is_already_connected = (conn_state == FeagiCore.network.CONNECTION_STATE.HEALTHY or
 								conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_HTTP or
-								conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_WS)
+								conn_state == FeagiCore.network.CONNECTION_STATE.RETRYING_STREAM)
 						if is_already_connected:
 							print("[AGENT-REG] FEAGI became ready (session: %d) while BV is connected - triggering re-registration" % current_session)
 							agent_reregistration_needed.emit("FEAGI became ready (session: %d)" % current_session)

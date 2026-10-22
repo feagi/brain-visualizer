@@ -1667,15 +1667,15 @@ func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE,
 	match new_state:
 		FEAGINetworking.CONNECTION_STATE.INITIAL_HTTP_PROBING:
 			update_loading_status("Checking FEAGI health...")
-		FEAGINetworking.CONNECTION_STATE.INITIAL_WS_PROBING:
-			update_loading_status("Making Websocket connection...")
+		FEAGINetworking.CONNECTION_STATE.INITIAL_STREAM_PROBING:
+			update_loading_status("Connecting to the FEAGI data stream...")
 		FEAGINetworking.CONNECTION_STATE.HEALTHY:
-			update_loading_status("Websocket connected successfully!")
+			update_loading_status("Connected to FEAGI!")
 		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP:
 			update_loading_status("Retrying HTTP connection...")
-		FEAGINetworking.CONNECTION_STATE.RETRYING_WS:
-			update_loading_status("Retrying Websocket connection...")
-		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP_WS:
+		FEAGINetworking.CONNECTION_STATE.RETRYING_STREAM:
+			update_loading_status("Retrying the FEAGI data stream...")
+		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP_STREAM:
 			update_loading_status("Retrying connections...")
 		FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
 			update_loading_status("Disconnected")
@@ -1715,7 +1715,7 @@ func _update_loading_screen_visibility() -> void:
 		# reports genome_loading (see FEAGILocalCache.genome_loading). Show whenever that flag is true and
 		# HTTP is healthy, even if brain_readiness is still true on the server during a transition.
 		if not websocket_ok:
-			update_loading_status("Websocket disconnected - reconnecting...")
+			update_loading_status("FEAGI data stream disconnected - reconnecting...")
 		elif connection_healthy and FeagiCore.feagi_local_cache.genome_loading:
 			update_loading_status("Genome loading, please wait.")
 		elif not brain_ready and connection_healthy:
@@ -2315,7 +2315,7 @@ func _build_loading_failure_summary() -> String:
 	if genome_scene_ready and not _3d_scene_instantiated:
 		reasons.append("3D scene instantiating")
 	if not websocket_ok:
-		reasons.append("websocket not connected")
+		reasons.append("data stream not connected")
 	return "ok" if reasons.is_empty() else ", ".join(reasons)
 
 ## Show the shutdown screen with custom styling

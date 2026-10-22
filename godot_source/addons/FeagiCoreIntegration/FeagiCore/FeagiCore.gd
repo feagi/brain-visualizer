@@ -570,7 +570,7 @@ func _is_ready_for_deterministic_genome_reload() -> bool:
 	if _is_same_session_genome_bump():
 		return (
 			state == network.CONNECTION_STATE.HEALTHY
-			or state == network.CONNECTION_STATE.RETRYING_WS
+			or state == network.CONNECTION_STATE.RETRYING_STREAM
 		)
 	return state == network.CONNECTION_STATE.HEALTHY
 
@@ -671,7 +671,7 @@ func _on_agent_reregistration_needed(reason: String):
 		return
 	
 	# If we're already connected but FEAGI restarted, just re-register
-	if conn_state == network.CONNECTION_STATE.HEALTHY or conn_state == network.CONNECTION_STATE.RETRYING_HTTP or conn_state == network.CONNECTION_STATE.RETRYING_WS:
+	if conn_state == network.CONNECTION_STATE.HEALTHY or conn_state == network.CONNECTION_STATE.RETRYING_HTTP or conn_state == network.CONNECTION_STATE.RETRYING_STREAM:
 		print("🔍 [AGENT-REG] Re-registering agent with FEAGI...")
 		await network.reregister_and_rebind_visualization_stream()
 		print("🔍 [AGENT-REG] Agent re-registration completed")

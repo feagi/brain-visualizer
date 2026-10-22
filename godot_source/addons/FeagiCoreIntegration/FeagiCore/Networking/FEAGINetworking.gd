@@ -9,11 +9,11 @@ const TRANSPORT_DEBUG_REV: String = "ws-endpoint-resolver-rev-12"
 enum CONNECTION_STATE {
 	DISCONNECTED,
 	INITIAL_HTTP_PROBING,
-	INITIAL_WS_PROBING,
+	INITIAL_STREAM_PROBING, ## HTTP is up; waiting for the data stream (WebSocket today, any transport)
 	HEALTHY,
 	RETRYING_HTTP,
-	RETRYING_WS,
-	RETRYING_HTTP_WS
+	RETRYING_STREAM, ## HTTP is up; the data stream is reconnecting
+	RETRYING_HTTP_STREAM
 }
 
 enum TRANSPORT_MODE {
@@ -128,7 +128,7 @@ func _on_shm_visualization_enabled(_path: String) -> void:
 	# If we were waiting on WS, treat connection as healthy (HTTP already validated). Only then: SHM can
 	# open at startup before any connection exists, and marking HEALTHY there makes FeagiCore refuse to
 	# load settings and connect. attempt_connection() picks up an active SHM transport by itself.
-	if _connection_state == CONNECTION_STATE.INITIAL_WS_PROBING or _connection_state == CONNECTION_STATE.RETRYING_WS:
+	if _connection_state == CONNECTION_STATE.INITIAL_STREAM_PROBING or _connection_state == CONNECTION_STATE.RETRYING_STREAM:
 		var prev = _connection_state
 		_connection_state = CONNECTION_STATE.HEALTHY
 		connection_state_changed.emit(prev, CONNECTION_STATE.HEALTHY)
@@ -204,8 +204,8 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	
 	# No SHM available or not recommended - proceed with WebSocket connection
 	_set_transport_mode(TRANSPORT_MODE.WEBSOCKET)  # Remember we're using WebSocket
-	_connection_state = CONNECTION_STATE.INITIAL_WS_PROBING
-	connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.INITIAL_WS_PROBING)
+	_connection_state = CONNECTION_STATE.INITIAL_STREAM_PROBING
+	connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.INITIAL_STREAM_PROBING)
 	websocket_API.setup(_feagi_endpoint_details.full_websocket_address)
 	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
 	websocket_API.connect_websocket()
@@ -219,7 +219,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	if websocket_API.socket_health == websocket_API.WEBSOCKET_HEALTH.NO_CONNECTION:
 		_connection_state = CONNECTION_STATE.DISCONNECTED
 		http_API.disconnect_http() # HTTP is active, so lets ensure its disabled
-		connection_state_changed.emit(CONNECTION_STATE.INITIAL_WS_PROBING, CONNECTION_STATE.DISCONNECTED)
+		connection_state_changed.emit(CONNECTION_STATE.INITIAL_STREAM_PROBING, CONNECTION_STATE.DISCONNECTED)
 		push_error("FEAGI NETWORK: Unable to commence a new connection as there was no WS response at endpoint %s" % _feagi_endpoint_details.full_websocket_address)
 		_start_reconnect_loop()
 		return false
@@ -227,7 +227,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	# both HTTP and WS are functioning! We are good to go!
 	# CRITICAL: Transition to HEALTHY state now that both HTTP and WebSocket are connected
 	_connection_state = CONNECTION_STATE.HEALTHY
-	connection_state_changed.emit(CONNECTION_STATE.INITIAL_WS_PROBING, CONNECTION_STATE.HEALTHY)
+	connection_state_changed.emit(CONNECTION_STATE.INITIAL_STREAM_PROBING, CONNECTION_STATE.HEALTHY)
 	_stop_reconnect_loop()
 	
 	# connect signals for future changes
@@ -537,11 +537,11 @@ func _HTTP_health_changed(_prev_health: FEAGIHTTPAPI.HTTP_HEALTH, current_health
 			# In WebSocket transport mode, do not promote to HEALTHY unless WS is truly CONNECTED.
 			if _transport_mode == TRANSPORT_MODE.WEBSOCKET:
 				if websocket_API == null:
-					_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+					_change_connection_state(CONNECTION_STATE.RETRYING_STREAM)
 				elif websocket_API.socket_health == FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
 					_change_connection_state(CONNECTION_STATE.HEALTHY)
 				else:
-					_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+					_change_connection_state(CONNECTION_STATE.RETRYING_STREAM)
 			else:
 				_change_connection_state(CONNECTION_STATE.HEALTHY)
 		
@@ -570,8 +570,8 @@ func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, cu
 			# If HTTP is still alive, keep session in WS retry mode instead of dropping to global DISCONNECTED.
 			# This avoids reconnect storms where a transient WS failure tears down healthy HTTP/session state.
 			if _http_is_connectable():
-				print("FEAGI NETWORK: WS NO_CONNECTION while HTTP is healthy → staying in RETRYING_WS")
-				_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+				print("FEAGI NETWORK: WS NO_CONNECTION while HTTP is healthy → staying in RETRYING_STREAM")
+				_change_connection_state(CONNECTION_STATE.RETRYING_STREAM)
 				if _auto_reconnect_enabled and not _ws_recovery_in_progress:
 					_ws_recovery_in_progress = true
 					call_deferred("_recover_ws_transport_after_disconnect")
@@ -590,14 +590,14 @@ func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, cu
 				_change_connection_state(CONNECTION_STATE.RETRYING_HTTP)
 		
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.RETRYING:
-			print("FEAGI NETWORK: WS RETRYING → Changing to RETRYING_WS")
+			print("FEAGI NETWORK: WS RETRYING → Changing to RETRYING_STREAM")
 			# Only path to this is from WEBSOCKET_HEALTH.CONNECTED
 			if _http_is_connectable():
 				_schedule_ws_retry_recovery_watchdog()
-				_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+				_change_connection_state(CONNECTION_STATE.RETRYING_STREAM)
 			else:
 				_invalidate_ws_retry_watchdog()
-				_change_connection_state(CONNECTION_STATE.RETRYING_HTTP_WS)
+				_change_connection_state(CONNECTION_STATE.RETRYING_HTTP_STREAM)
 
 func _invalidate_ws_retry_watchdog() -> void:
 	_ws_retry_watchdog_generation += 1
@@ -719,7 +719,7 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 				_start_reconnect_loop()
 		CONNECTION_STATE.INITIAL_HTTP_PROBING: # not possible:
 			return
-		CONNECTION_STATE.INITIAL_WS_PROBING: # not possible:
+		CONNECTION_STATE.INITIAL_STREAM_PROBING: # not possible:
 			return
 		CONNECTION_STATE.HEALTHY:
 			_stop_reconnect_loop()
@@ -729,17 +729,17 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 			var ws_ok = websocket_API != null and websocket_API.socket_health == FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED
 			if not http_ok:
 				if ws_required and not ws_ok:
-					new_state = CONNECTION_STATE.RETRYING_HTTP_WS
+					new_state = CONNECTION_STATE.RETRYING_HTTP_STREAM
 				else:
 					new_state = CONNECTION_STATE.RETRYING_HTTP
 			elif ws_required and not ws_ok:
-				new_state = CONNECTION_STATE.RETRYING_WS
+				new_state = CONNECTION_STATE.RETRYING_STREAM
 		CONNECTION_STATE.RETRYING_HTTP:
-			if prev_state == CONNECTION_STATE.RETRYING_WS: # are both actually broken?
-				new_state = CONNECTION_STATE.RETRYING_HTTP_WS
-		CONNECTION_STATE.RETRYING_WS:
+			if prev_state == CONNECTION_STATE.RETRYING_STREAM: # are both actually broken?
+				new_state = CONNECTION_STATE.RETRYING_HTTP_STREAM
+		CONNECTION_STATE.RETRYING_STREAM:
 			if prev_state == CONNECTION_STATE.RETRYING_HTTP: # are both actually broken?
-				new_state = CONNECTION_STATE.RETRYING_HTTP_WS
+				new_state = CONNECTION_STATE.RETRYING_HTTP_STREAM
 	
 	# Avoid no-op emissions so UI/state listeners do not process duplicate transitions.
 	if prev_state == new_state:
