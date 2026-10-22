@@ -4,6 +4,7 @@ class_name UITabContainer
 var PREFAB_CIRCUITBUILDER: PackedScene = preload("res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.tscn") #TODO using non const instead of const due to cyclid dependency issue currently
 const SCENE_BRAIN_MONITOR_PATH: StringName = "res://addons/UI_BrainMonitor/BrainMonitor.tscn"
 const ICON_CB: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png")
+const ICON_SCHEMATIC: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/circuit_schematic_S.png")
 const ICON_BM: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png")
 const TAB_ICON_MAX_WIDTH_BASE_PX: int = 20
 const TAB_H_SEPARATION_BASE_PX: int = 12
@@ -401,7 +402,7 @@ func _add_control_view_as_tab(region_view: Control) -> void:
 	elif region_view is CircuitSchematic:
 		add_child(region_view)
 		var schematic_tab_idx: int = get_tab_idx_from_control(region_view)
-		set_tab_icon(schematic_tab_idx, ICON_CB)
+		set_tab_icon(schematic_tab_idx, ICON_SCHEMATIC)
 		_apply_tab_icon_max_width()
 		current_tab = schematic_tab_idx
 		return

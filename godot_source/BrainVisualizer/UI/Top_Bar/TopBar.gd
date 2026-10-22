@@ -137,10 +137,10 @@ func _mount_circuit_schematic_button() -> void:
 	button.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	button.stretch_mode = TextureRect.STRETCH_SCALE
 	var icon_dir := "res://BrainVisualizer/UI/GenericResources/ButtonIcons/"
-	button.texture_normal = load(icon_dir + "map_block_block_S.png")
-	button.texture_hover = load(icon_dir + "map_block_block_H.png")
-	button.texture_pressed = load(icon_dir + "map_block_block_C.png")
-	button.texture_disabled = load(icon_dir + "map_block_block_D.png")
+	button.texture_normal = load(icon_dir + "circuit_schematic_S.png")
+	button.texture_hover = load(icon_dir + "circuit_schematic_H.png")
+	button.texture_pressed = load(icon_dir + "circuit_schematic_C.png")
+	button.texture_disabled = load(icon_dir + "circuit_schematic_D.png")
 	button.texture = button.texture_normal
 	button.pressed.connect(func() -> void: BV.UI.show_circuit_schematic())
 	var host := $TopBarControlsPanel/MarginContainer/HBoxContainer
