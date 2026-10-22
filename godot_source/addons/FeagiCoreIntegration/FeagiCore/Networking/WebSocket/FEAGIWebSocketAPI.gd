@@ -29,6 +29,9 @@ var socket_health: WEBSOCKET_HEALTH:
 ## Connection attempts since the last successful connect.
 var retry_count: int:
 	get: return _retry_count
+## WebSocketPeer state as text (CONNECTING, OPEN, CLOSING, CLOSED), or "NONE" before the first connect.
+var socket_ready_state_name: String:
+	get: return "NONE" if _socket == null else ["CONNECTING", "OPEN", "CLOSING", "CLOSED"][_socket.get_ready_state()]
 
 ## Receives every binary packet this transport delivers. Set by [FEAGINetworking].
 var visualization_sink: FEAGIVisualizationSink = null
@@ -282,6 +285,17 @@ func disconnect_websocket() -> void:
 	_is_purposfully_disconnecting = true
 	_socket.close()
 	
+
+## Test hook: lose the connection the way a network fault would. [param graceful] sends a close frame
+## (which FEAGI does not acknowledge); otherwise the socket is dropped without a handshake. Neither is
+## a purposeful disconnect, so the normal recovery path runs.
+func simulate_connection_loss(graceful: bool) -> void:
+	if _socket == null:
+		return
+	if graceful:
+		_socket.close(1001, "simulated connection loss")
+	else:
+		_socket.close(-1)
 
 ## attempts to send data over websocket
 func websocket_send(data: Variant) -> void:

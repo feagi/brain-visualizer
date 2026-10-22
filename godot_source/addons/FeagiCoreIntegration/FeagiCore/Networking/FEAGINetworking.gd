@@ -65,6 +65,9 @@ var visualization_link_health: VISUALIZATION_LINK_HEALTH:
 	get: return _visualization_link_health
 var feagi_protocol: FEAGI_PROTOCOL:
 	get: return _feagi_protocol
+## True when the last agent registration failed (including a FEAGI whose protocol BV cannot stream from).
+var transport_registration_failed: bool:
+	get: return _transport_registration_failed
 
 var _connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
 var _transport_mode: TRANSPORT_MODE = TRANSPORT_MODE.UNKNOWN  # Track which transport is being used

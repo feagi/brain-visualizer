@@ -1202,6 +1202,48 @@ func _live_voxel_query_async(area_name: String, cortical_id: StringName, coord: 
 
 ## Latest visualization frame. Firing neurons report membrane potential at spike time;
 ## the neuron array itself is already reset to 0.
+#region Self-test hooks (tests/self_test)
+
+## Whether the live voxel inspector currently has a hovered voxel.
+var is_live_voxel_hovering: bool:
+	get: return _live_voxel_hovering
+
+## Latest fire-time sample for the hovered voxel ({found, value, count}), or null before the first frame.
+var live_inspector_firing_sample: Variant:
+	get: return _live_firing_sample
+
+
+## Hover [param coord] of [param cortical_area] with the live neuron inspector as if the mouse were over it:
+## switches to voxel-inspector mode, opens the Voxel Inspector with live readout on, and requests the hover
+## on the first Brain Monitor. Returns false when no Brain Monitor overlay exists.
+func debug_hover_live_inspector(cortical_area: AbstractCorticalArea, coord: Vector3i) -> bool:
+	var overlay: UI_BrainMonitor_Overlay = _debug_first_brain_monitor_overlay()
+	if overlay == null:
+		return false
+	brain_monitor_activity_mode = BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR
+	var win: WindowVoxelInspector = _window_manager.spawn_voxel_inspector()
+	win.set_live_inspector_enabled(true)
+	request_live_voxel_inspector(overlay, cortical_area, coord, Vector2(200, 200))
+	return true
+
+
+## End a hover started by [method debug_hover_live_inspector] and turn the live readout off.
+func debug_end_live_inspector_hover() -> void:
+	end_live_voxel_inspector_hover(_debug_first_brain_monitor_overlay())
+	var win := _voxel_inspector_window()
+	if win != null:
+		win.set_live_inspector_enabled(false)
+
+
+func _debug_first_brain_monitor_overlay() -> UI_BrainMonitor_Overlay:
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm != null and bm._UI_layer_for_BM != null:
+			return bm._UI_layer_for_BM
+	return null
+
+#endregion
+
+
 ## Have the visualization sink decode the hovered area's packets so the readout gets fire-time potentials.
 func _set_live_inspector_bulk_decode(cortical_id: String) -> void:
 	if FeagiCore == null or FeagiCore.network == null or FeagiCore.network.visualization_sink == null:

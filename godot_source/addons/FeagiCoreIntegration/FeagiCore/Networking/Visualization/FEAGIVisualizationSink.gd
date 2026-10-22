@@ -22,6 +22,12 @@ const _TYPE11_ROOTCAUSE_REBUILD_LOG_MS: int = 3000
 
 ## Areas whose packets must be decoded into arrays as well as applied by the MultiMesh fast path.
 var bulk_decode_registry: Type11BulkDecodeRegistry = Type11BulkDecodeRegistry.new()
+## Name of the decoder in use, or "none" when BV cannot decode this FEAGI's stream.
+var frame_decoder_name: String:
+	get: return _frame_decoder.get_format_name() if _frame_decoder != null else "none"
+## Cortical areas currently drawn through the MultiMesh fast path.
+var fast_path_area_count: int:
+	get: return _bv_fast_multimeshes_by_id.size()
 
 # Decodes frames for the stream format in use; null when BV has no decoder for it.
 var _frame_decoder: VisualizationFrameDecoder = null
