@@ -2,7 +2,8 @@ extends GraphEdit
 class_name CircuitSchematic
 ## Read-only view of the whole genome in one scene. Every brain region is a box around its contents:
 ## the root is open, its regions start as closed blocks, and double-clicking a block opens it in place
-## (the header of an open frame closes it again). Shift-clicking a region opens it in Circuit Builder
+## (the header of an open frame closes it again); Show all and Hide all open or close every region at
+## once. Shift-clicking a region opens it in Circuit Builder
 ## and Brain Monitor, and the Export menu saves the whole view as PNG, JPG or PDF. Mappings are merged
 ## into one line per pair of visible ends, with a count when more than one mapping is merged. Editing
 ## stays in Circuit Builder.
@@ -32,7 +33,7 @@ var _fit_pending: bool = true
 func _ready() -> void:
 	name = TAB_TITLE
 	minimap_enabled = not export_mode
-	# The top-left menu holds only the Export button.
+	# The top-left menu holds only the Export, Show all and Hide all buttons.
 	show_zoom_label = false
 	show_zoom_buttons = false
 	show_grid_buttons = false
@@ -47,6 +48,7 @@ func _ready() -> void:
 		rebuild()
 		return
 	_add_export_menu()
+	_add_open_all_buttons()
 	_rebuild_timer = Timer.new()
 	_rebuild_timer.one_shot = true
 	_rebuild_timer.wait_time = REBUILD_DELAY_S
@@ -109,6 +111,19 @@ func set_region_open(item_index: int, is_open: bool) -> void:
 	if (_open[item_index] == 1) == is_open:
 		return
 	_open[item_index] = 1 if is_open else 0
+	_sync_nodes()
+
+
+## Opens every region that can be opened, or closes all but the root.
+func set_all_regions_open(is_open: bool) -> void:
+	if is_open:
+		_open.resize(_model.items.size())
+		for i in _model.items.size():
+			_open[i] = 1 if _model.is_region(i) and not _model.items[i]["closed_only"] else 0
+		if not _model.items.is_empty():
+			_open[0] = 1
+	else:
+		_open = _model.default_open_mask()
 	_sync_nodes()
 
 
@@ -188,6 +203,15 @@ func _add_export_menu() -> void:
 		popup.add_item(SchematicImageFile.LABELS[format], format)
 	popup.id_pressed.connect(func(format: int) -> void: SchematicExporter.export_view(self, format as SchematicImageFile.FORMAT))
 	get_menu_hbox().add_child(button)
+
+
+func _add_open_all_buttons() -> void:
+	for is_open: bool in [true, false]:
+		var button: Button = Button.new()
+		button.text = "Show all" if is_open else "Hide all"
+		button.tooltip_text = "Open every region to show its internals" if is_open else "Close every region"
+		button.pressed.connect(set_all_regions_open.bind(is_open))
+		get_menu_hbox().add_child(button)
 
 
 func _try_fit() -> void:

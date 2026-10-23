@@ -2498,6 +2498,74 @@ func mass_reset_cortical_areas(cortical_areas: Array[AbstractCorticalArea]) -> F
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully reset %s cortical areas" % len(cortical_areas))
 	return FEAGI_response_data
+
+## Reset learned synapse weights of one source->destination mapping to the rule's initial weight.
+## Neuron state and genome are untouched. Response: {src_cortical_area, dst_cortical_area, synapses_reset, weight}.
+func reset_mapping_weights(src: AbstractCorticalArea, dst: AbstractCorticalArea) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var dict_to_send: Dictionary = {
+		"src_cortical_area": String(src.cortical_ID),
+		"dst_cortical_area": String(dst.cortical_ID)
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalMapping_resetWeights, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to reset mapping weights!")
+	return FEAGI_response_data
+
+## Reset learned synapse weights of ALL incoming mappings of each given area.
+## Response: {results: [{cortical_id, mappings_reset, synapses_reset}]}.
+func reset_area_incoming_weights(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var area_list_strings: Array[String] = []
+	for id in AbstractCorticalArea.cortical_area_array_to_ID_array(cortical_areas):
+		area_list_strings.append(String(id))
+	var dict_to_send: Dictionary = {"area_list": area_list_strings}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_resetWeights, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to reset incoming weights for %d cortical areas!" % len(cortical_areas))
+	return FEAGI_response_data
+
+## Static runners so a confirm popup can outlive the window that opened it. Toast the outcome.
+static func run_reset_area_weights(areas: Array[AbstractCorticalArea]) -> void:
+	BV.NOTIF.add_notification("Resetting learned weights...")
+	var result: FeagiRequestOutput = await FeagiCore.requests.reset_area_incoming_weights(areas)
+	BV.NOTIF.add_notification(weight_reset_result_message(result, "%d area(s)" % areas.size()))
+
+static func run_reset_mapping_weights(src: AbstractCorticalArea, dst: AbstractCorticalArea) -> void:
+	BV.NOTIF.add_notification("Resetting learned weights...")
+	var result: FeagiRequestOutput = await FeagiCore.requests.reset_mapping_weights(src, dst)
+	BV.NOTIF.add_notification(weight_reset_result_message(result, "mapping"))
+
+## Toast text for a weight-reset response. A 404 means the route (or area/mapping) is missing.
+static func weight_reset_result_message(output: FeagiRequestOutput, success_noun: String) -> String:
+	if output.success:
+		var body: Dictionary = output.decode_response_as_dict()
+		var total: int = 0
+		if body.has("results") and body["results"] is Array:
+			for entry in body["results"]:
+				if entry is Dictionary:
+					total += int(entry.get("synapses_reset", 0))
+		else:
+			total = int(body.get("synapses_reset", 0))
+		return "Reset learned weights: %d synapses reset (%s)" % [total, success_noun]
+	if output.failed_requirement:
+		return "Weight reset unavailable: FEAGI is not ready"
+	if output.has_timed_out:
+		return "Weight reset failed: FEAGI did not respond"
+	if output.response_code == 404:
+		return "Weight reset failed: this FEAGI does not support weight reset (or the area/mapping was not found)"
+	var details: PackedStringArray = output.decode_response_as_generic_error_code()
+	return "Weight reset failed: %s" % details[1]
 	
 	
 

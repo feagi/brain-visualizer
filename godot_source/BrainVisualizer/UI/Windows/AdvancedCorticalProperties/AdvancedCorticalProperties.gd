@@ -233,6 +233,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_init_psp()
 	_ensure_modulations_section()
 	_ensure_rate_modulated_leak_section()
+	_ensure_reset_weights_row()
 	
 	_refresh_all_relevant()
 	_apply_type_based_ui_restrictions()
@@ -645,6 +646,9 @@ func _apply_core_type_restrictions() -> void:
 		var reset_btn: Node = dz_root.get_node_or_null("VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Reset/ResetButton")
 		if reset_btn is BaseButton:
 			(reset_btn as BaseButton).disabled = true
+		var reset_w_btn: Node = dz_root.get_node_or_null("VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/ResetWeights/ResetWeightsButton")
+		if reset_w_btn is BaseButton:
+			(reset_w_btn as BaseButton).disabled = true
 	if _button_rml_apply != null:
 		_button_rml_apply.disabled = true
 	if _rml_toggle_enabled != null:
@@ -2624,6 +2628,48 @@ func _user_pressed_reset_button() -> void:
 	else:
 		BV.NOTIF.add_notification("Cortical areas reset")
 	close_window()
+
+## Danger-zone row "Reset learned weights" under the neuron Reset row (built in code to keep the scene untouched).
+func _ensure_reset_weights_row() -> void:
+	if _section_dangerzone == null:
+		return
+	var dz: Node = _section_dangerzone.get_node_or_null(
+		"VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone"
+	)
+	if dz == null or not (dz is VBoxContainer) or dz.get_node_or_null("ResetWeights") != null:
+		return
+	var row := HBoxContainer.new()
+	row.name = "ResetWeights"
+	var label := Label.new()
+	label.text = "Reset learned weights (incoming)"
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.tooltip_text = "Set learned synapse weights of all incoming mappings back to their initial weight. Neuron state and genome are unchanged."
+	label.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.add_child(label)
+	var button := Button.new()
+	button.name = "ResetWeightsButton"
+	button.text = " Reset Weights "
+	button.pressed.connect(_user_pressed_reset_weights_button)
+	row.add_child(button)
+	dz.add_child(row)
+	var reset_node: Node = dz.get_node_or_null("Reset")
+	if reset_node != null:
+		dz.move_child(row, reset_node.get_index() + 1)
+
+func _user_pressed_reset_weights_button() -> void:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty() or FeagiCore == null or FeagiCore.requests == null:
+		return
+	var areas: Array[AbstractCorticalArea] = []
+	areas.assign(_cortical_area_refs)
+	var message: String = "Reset learned synapse weights on all incoming mappings of %d cortical area(s) to their initial weights?\nLearned weights are lost. Neuron state and genome are not changed." % areas.size()
+	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Reset Learned Weights",
+		message,
+		FEAGIRequests.run_reset_area_weights.bind(areas),
+		"Reset Weights",
+		"Cancel"
+	)
+	BV.WM.spawn_popup(popup_definition)
 
 const _RML_SECTION_NODE_NAME: NodePath = "RmlRateModulatedLeak"
 

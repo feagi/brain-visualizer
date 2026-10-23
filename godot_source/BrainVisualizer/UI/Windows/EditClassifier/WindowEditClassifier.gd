@@ -608,7 +608,7 @@ func _associative_mapping_set() -> Array[SingleMappingDefinition]:
 
 
 func _mapping_with_associative_overrides(mapping: SingleMappingDefinition, overrides: Dictionary) -> SingleMappingDefinition:
-	return SingleMappingDefinition.new(
+	var overridden := SingleMappingDefinition.new(
 		mapping.morphology_used,
 		mapping.scalar,
 		mapping.post_synaptic_current_multiplier,
@@ -620,10 +620,9 @@ func _mapping_with_associative_overrides(mapping: SingleMappingDefinition, overr
 		int(overrides.get("synaptic_delay_bursts", mapping.synaptic_delay_bursts)),
 		mapping.plasticity_mode,
 		mapping.eligibility_decay_bursts,
-		mapping.reward_source_area,
-		mapping.punishment_source_area,
-		mapping.gate_source_area,
 	)
+	overridden.set_modulator_ids(mapping.modulator_ids)
+	return overridden
 
 
 func _notify_failure(message: String) -> void:
