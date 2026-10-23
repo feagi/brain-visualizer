@@ -188,7 +188,7 @@ func _test_ws_drop(area: AbstractCorticalArea, sink: FEAGIVisualizationSink, gra
 
 
 ## Against a server that answers like the feagi-interop (zenoh) FEAGI: detect it, gate agent features,
-## pick no decoder, and refuse to register instead of falling back to WebSocket.
+## pick no decoder, and fall back to the zenoh transport (or, without the zenoh extension, refuse to register).
 func _test_zenoh_detection() -> void:
 	var t := 0.0
 	while t < 30.0 and (FeagiCore.network == null or FeagiCore.network.feagi_protocol == FEAGINetworking.FEAGI_PROTOCOL.UNKNOWN):
@@ -202,8 +202,19 @@ func _test_zenoh_detection() -> void:
 	var decoder_name := net.visualization_sink.frame_decoder_name
 	_check("protocol detection (zenoh stub)", net.feagi_protocol == FEAGINetworking.FEAGI_PROTOCOL.ZENOH and not any_feature and decoder_name == "none",
 		"protocol=%s any_agent_feature_supported=%s decoder=%s after %.1fs" % [FEAGINetworking.FEAGI_PROTOCOL.keys()[net.feagi_protocol], any_feature, decoder_name, t])
-	_check("no stream registration on zenoh", net.transport_registration_failed and net.connection_state == FEAGINetworking.CONNECTION_STATE.DISCONNECTED,
-		"registration_failed=%s connection_state=%s" % [net.transport_registration_failed, FEAGINetworking.CONNECTION_STATE.keys()[net.connection_state]])
+	if FEAGIZenohTransport.is_available():
+		# Legacy registration fails, so the session falls back to the zenoh transport
+		var waited := 0.0
+		while waited < 30.0 and net.connection_state != FEAGINetworking.CONNECTION_STATE.HEALTHY:
+			await _wait(0.5)
+			waited += 0.5
+		_check("zenoh fallback", net.transport_mode == FEAGINetworking.TRANSPORT_MODE.ZENOH and net.connection_state == FEAGINetworking.CONNECTION_STATE.HEALTHY
+			and net.visualization_link_health == FEAGINetworking.VISUALIZATION_LINK_HEALTH.CONNECTED,
+			"transport=%s connection_state=%s link=%s zenoh_error='%s'" % [FEAGINetworking.TRANSPORT_MODE.keys()[net.transport_mode],
+			FEAGINetworking.CONNECTION_STATE.keys()[net.connection_state], _link_name(net.visualization_link_health), net.zenoh_transport.last_error])
+	else:
+		_check("no stream registration on zenoh", net.transport_registration_failed and net.connection_state == FEAGINetworking.CONNECTION_STATE.DISCONNECTED,
+			"registration_failed=%s connection_state=%s" % [net.transport_registration_failed, FEAGINetworking.CONNECTION_STATE.keys()[net.connection_state]])
 	var out: FeagiRequestOutput = await FeagiCore.requests.refresh_agent_capabilities_cache(true)
 	_check("agent request gated", out.failed_requirement_key == &"FEAGI_FEATURE_UNSUPPORTED",
 		"refresh_agent_capabilities_cache -> failed_requirement=%s" % out.failed_requirement_key)

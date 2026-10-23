@@ -1,0 +1,32 @@
+[package]
+name = "feagi_zenoh_client"
+version = "0.1.0"
+edition = "2021"
+description = "FEAGI zenoh websocket client GDExtension - connects to a feagi-core server over zenoh, as a fallback to the legacy websocket agent"
+
+# Standalone, so its feagi-core path dependencies never meet the crates.io feagi-* crates the
+# other extensions use
+[workspace]
+
+[dependencies]
+godot = { version = "0.5.5", features = ["experimental-wasm", "lazy-function-tables", "api-4-7"] }
+
+# feagi-core is not published yet, so it is used from a checkout next to this repository
+# (RustroverProjects/feagi-core). TODO swap for a git or crates.io dependency once it is
+feagi-basis = { path = "../../../feagi-core/crates/feagi-basis", features = ["std"] }
+feagi-interop = { path = "../../../feagi-core/crates/feagi-interop", features = ["std", "transport_ws"] }
+# Same version and features feagi-interop uses, for the observer session
+zenoh = { version = "1.10.1", default-features = false, features = ["default", "unstable", "internal", "transport_ws"] }
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+debug = true

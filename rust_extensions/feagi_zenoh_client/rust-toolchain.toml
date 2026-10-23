@@ -1,0 +1,5 @@
+# feagi-core needs a newer compiler than the other extensions are pinned to
+[toolchain]
+channel = "1.98.0"
+profile = "minimal"
+components = ["rustfmt", "clippy"]

@@ -24,6 +24,7 @@ SUPPORTED_EXTENSIONS = {
     "feagi_data_deserializer",
     "feagi_agent_client",
     "feagi_type_system",
+    "feagi_zenoh_client",
 }
 
 
@@ -363,6 +364,7 @@ def main():
     built_deserializer = False
     built_agent_client = False
     built_type_system = False
+    built_zenoh_client = False
 
     def should_build(extension_name):
         return not selected_extensions or extension_name in selected_extensions
@@ -478,6 +480,25 @@ def main():
             print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
         built_agent_client = True
     
+    # Build feagi_zenoh_client (zenoh fallback transport). It depends on a feagi-core checkout next
+    # to this repository by path, so it is skipped when there is none
+    if should_build("feagi_zenoh_client"):
+        feagi_core_checkout = root_dir.parent.parent / "feagi-core"
+        if not (feagi_core_checkout / "crates" / "feagi-interop").exists():
+            print(f"[SKIP] feagi_zenoh_client: no feagi-core checkout at {feagi_core_checkout}")
+        else:
+            project5_path, addon5_path, lib5_name = build_rust_library(
+                "feagi_zenoh_client",
+                root_dir / "feagi_zenoh_client",
+                godot_source / "addons" / "FeagiCoreIntegration",
+                build_release=build_release,
+                build_debug=build_debug,
+                no_clean=no_clean
+            )
+            if platform.system() == "Darwin" and not local_arch_only and build_release:
+                build_universal_macos(project5_path, addon5_path, lib5_name, release_only=release_only and not dev_mode)
+            built_zenoh_client = True
+
     # Build feagi_type_system (deploy directly to FeagiCoreIntegration addon)
     if should_build("feagi_type_system"):
         print_section("Building feagi_type_system")
@@ -574,6 +595,8 @@ def main():
         print(f"  - {feagi_core_path} ({lib4_name}, platform-specific location)")
     if built_type_system:
         print(f"  - {feagi_core_path / lib3_name} (feagi_type_system)")
+    if built_zenoh_client:
+        print(f"  - {feagi_core_path} ({lib5_name}, platform-specific location)")
     print("[TIP] Restart Godot to load the new extensions.")
     print("[TEST] To test the integration, run the test_rust_deserializer.tscn scene in Godot.")
 
