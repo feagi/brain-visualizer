@@ -944,6 +944,7 @@ func _compute_world_aabb(node: Node) -> AABB:
 	return aabb
 
 var _scroll_fast_modifier_held: bool = false
+var _area_name_reveal_modifier_held: bool = false
 var _mapping_shift_was_held: bool = false
 var _mapping_pinned_cortical_id: StringName = &""
 var _mapping_count_buttons_active: bool = false
@@ -954,15 +955,16 @@ func is_scroll_fast_modifier_held() -> bool:
 	return _scroll_fast_modifier_held
 
 
-## True while Shift is held and the pointer is inside this 3D view.
+## True while Ctrl is held and the pointer is inside this 3D view.
 ## Other Brain Monitor views keep their titles hidden.
 func reveals_all_area_name_labels() -> bool:
-	return AreaNameLabelVisibility.shift_reveals_titles_in_this_view(_scroll_fast_modifier_held, _is_mouse_hovering_viewport)
+	return AreaNameLabelVisibility.shift_reveals_titles_in_this_view(_area_name_reveal_modifier_held, _is_mouse_hovering_viewport)
 
 
 ## While the intro is running, keep the camera aimed at the scene center as it moves
 func _process(delta: float) -> void:
 	_scroll_fast_modifier_held = Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_SHIFT)
+	_area_name_reveal_modifier_held = Input.is_physical_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_CTRL)
 	_sync_tab_menu_visibility()
 	if _startup_intro_animating and _pancake_cam != null:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
