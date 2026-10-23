@@ -17,6 +17,7 @@ use feagi_structures::neuron_voxels::xyzp::CorticalMappedXYZPNeuronVoxels;
 // Rayon is only available on native platforms (not WASM)
 #[cfg(not(target_family = "wasm"))]
 use rayon::prelude::*;
+use std::collections::HashSet;
 
 /// Cortical dimensions must be positive finite voxel counts; otherwise scale uses div-by-zero or NaN (GPU risk).
 fn dimensions_valid_for_neuron_multimesh(dimensions: Vector3) -> bool {
@@ -112,6 +113,31 @@ impl FeagiDataDeserializer {
     /// Decode Type 11 neuron data (handles both raw Type 11 and FeagiByteContainer wrappers)
     #[func]
     pub fn decode_type_11_data(&self, buffer: PackedByteArray) -> VarDictionary {
+        self.decode_type_11_internal(buffer, None)
+    }
+
+    /// Decode Type 11 neuron data, converting only areas whose base64 cortical ID is in
+    /// `cortical_ids` (case-insensitive). Other areas are skipped without building Godot arrays,
+    /// so callers that need a few areas don't pay for full-frame vision payloads.
+    #[func]
+    pub fn decode_type_11_data_filtered(
+        &self,
+        buffer: PackedByteArray,
+        cortical_ids: PackedStringArray,
+    ) -> VarDictionary {
+        let wanted: HashSet<String> = cortical_ids
+            .as_slice()
+            .iter()
+            .map(|id| id.to_string().to_lowercase())
+            .collect();
+        self.decode_type_11_internal(buffer, Some(&wanted))
+    }
+
+    fn decode_type_11_internal(
+        &self,
+        buffer: PackedByteArray,
+        wanted: Option<&HashSet<String>>,
+    ) -> VarDictionary {
         // Convert PackedByteArray to Vec<u8> for Rust processing
         let rust_buffer: Vec<u8> = buffer.to_vec();
 
@@ -176,14 +202,14 @@ impl FeagiDataDeserializer {
                     .downcast_ref::<CorticalMappedXYZPNeuronVoxels>()
                     .ok_or_else(|| "Wrong structure type".to_string())?;
 
-                Ok(self.convert_neuron_data_to_godot(neuron_data))
+                Ok(self.convert_neuron_data_to_godot(neuron_data, wanted))
             } else if first_byte == 11 {
                 // Raw Type 11 struct bytes
                 let mut neuron_data = CorticalMappedXYZPNeuronVoxels::new();
                 neuron_data
                     .try_deserialize_and_update_self_from_byte_slice(&rust_buffer)
                     .map_err(|e| format!("{:?}", e))?;
-                Ok(self.convert_neuron_data_to_godot(&neuron_data))
+                Ok(self.convert_neuron_data_to_godot(&neuron_data, wanted))
             } else {
                 Err(format!("Unsupported first byte: {}", first_byte))
             }
@@ -1568,6 +1594,7 @@ impl FeagiDataDeserializer {
     fn convert_neuron_data_to_godot(
         &self,
         neuron_data: &CorticalMappedXYZPNeuronVoxels,
+        wanted: Option<&HashSet<String>>,
     ) -> VarDictionary {
         let mut result_dict = VarDictionary::new();
         result_dict.set("success", true);
@@ -1584,29 +1611,29 @@ impl FeagiDataDeserializer {
                 continue;
             }
 
-            total_neurons += num_neurons as i32;
-
             // Convert cortical_id to base64 String to match API format
             // CRITICAL: API responses use base64 format, so BV's cache expects base64 keys
             // Visualization binary uses raw 8-byte ASCII, so we must convert here
             let cortical_id_str = cortical_id.as_base_64();
 
+            if let Some(wanted) = wanted {
+                if !wanted.contains(&cortical_id_str.to_lowercase()) {
+                    continue;
+                }
+            }
+
+            total_neurons += num_neurons as i32;
+
             // Create area data dictionary
             let mut area_dict = VarDictionary::new();
 
-            // Convert arrays to Godot PackedArrays
-            let mut x_array = PackedInt32Array::new();
-            let mut y_array = PackedInt32Array::new();
-            let mut z_array = PackedInt32Array::new();
-            let mut p_array = PackedFloat32Array::new();
-
-            // Use the iterator to access neurons
-            for neuron in neuron_array.iter() {
-                x_array.push(neuron.neuron_voxel_coordinate.x as i32);
-                y_array.push(neuron.neuron_voxel_coordinate.y as i32);
-                z_array.push(neuron.neuron_voxel_coordinate.z as i32);
-                p_array.push(neuron.potential);
-            }
+            // Copy whole slices into Godot PackedArrays (one FFI call per array, not per neuron)
+            let (xs, ys, zs, ps) = neuron_array.borrow_xyzp_vectors();
+            let to_i32 = |v: &Vec<u32>| v.iter().map(|&c| c as i32).collect::<Vec<i32>>();
+            let x_array = PackedInt32Array::from(to_i32(xs).as_slice());
+            let y_array = PackedInt32Array::from(to_i32(ys).as_slice());
+            let z_array = PackedInt32Array::from(to_i32(zs).as_slice());
+            let p_array = PackedFloat32Array::from(ps.as_slice());
 
             area_dict.set("x_array", &x_array);
             area_dict.set("y_array", &y_array);

@@ -127,36 +127,23 @@ func is_recursive() -> bool:
 func is_empty() -> bool:
 	return len(_mappings) == 0
 
-## Returns true if any rule in this mapping set declares a reward source area (R-STDP).
-func has_any_reward_source() -> bool:
+## Known synaptic.reward modulator instances: instance id -> magnitude percent (negative = punishment).
+## Filled by whoever lists modulators from FEAGI (the mapping editor does); the cache does not store modulators.
+static var reward_modulator_magnitudes: Dictionary = {}
+
+## Returns true if any rule in this mapping set subscribes a positive synaptic.reward modulator (R-STDP reward).
+func has_any_reward_modulator() -> bool:
+	return _has_reward_modulator_with_sign(false)
+
+## Returns true if any rule in this mapping set subscribes a negative synaptic.reward modulator (punishment).
+func has_any_punishment_modulator() -> bool:
+	return _has_reward_modulator_with_sign(true)
+
+func _has_reward_modulator_with_sign(negative: bool) -> bool:
 	for mapping: SingleMappingDefinition in _mappings:
-		if mapping.reward_source_area != "":
-			return true
+		for id in mapping.modulator_ids:
+			if reward_modulator_magnitudes.has(id) and (float(reward_modulator_magnitudes[id]) < 0.0) == negative:
+				return true
 	return false
-
-## Returns true if any rule in this mapping set declares a punishment source area (R-STDP).
-func has_any_punishment_source() -> bool:
-	for mapping: SingleMappingDefinition in _mappings:
-		if mapping.punishment_source_area != "":
-			return true
-	return false
-
-## Aggregated set of unique reward-source cortical IDs declared across all rules.
-func collect_reward_source_ids() -> PackedStringArray:
-	var ids := PackedStringArray()
-	for mapping: SingleMappingDefinition in _mappings:
-		var id := mapping.reward_source_area
-		if id != "" and not ids.has(id):
-			ids.append(id)
-	return ids
-
-## Aggregated set of unique punishment-source cortical IDs declared across all rules.
-func collect_punishment_source_ids() -> PackedStringArray:
-	var ids := PackedStringArray()
-	for mapping: SingleMappingDefinition in _mappings:
-		var id := mapping.punishment_source_area
-		if id != "" and not ids.has(id):
-			ids.append(id)
-	return ids
 
 

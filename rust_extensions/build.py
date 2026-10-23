@@ -81,6 +81,22 @@ def linux_gnu_target_triple(machine: str) -> str:
     raise ValueError(f"Unsupported Linux architecture: {machine}")
 
 
+def deploy_library(src, dest):
+    """Install a built library at dest, ad-hoc signed on macOS.
+
+    Copies to a temporary file and renames it into place. Overwriting a loaded or previously
+    signed dylib in place makes macOS reuse the cached signature of the old file, and the next
+    Godot launch is killed with "Code Signature Invalid". lipo output (universal builds) carries
+    no valid signature at all, which Apple Silicon also refuses to load.
+    """
+    dest = Path(dest)
+    tmp = dest.with_name(dest.name + ".tmp")
+    shutil.copy2(src, tmp)
+    if platform.system() == "Darwin":
+        run_command(["codesign", "--force", "--sign", "-", str(tmp)])
+    tmp.replace(dest)
+
+
 def run_command(cmd, cwd=None):
     """Run a shell command and check for errors."""
     print(f"Running: {' '.join(cmd)}")
@@ -175,45 +191,45 @@ def build_rust_library(
         if build_release and release_lib:
             release_dest = addon_path / "target" / target_triple / "release"
             release_dest.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(release_lib, release_dest / lib_name)
+            deploy_library(release_lib, release_dest / lib_name)
         if build_debug and debug_lib:
             debug_dest = addon_path / "target" / target_triple / "debug"
             debug_dest.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(debug_lib, debug_dest / lib_name)
+            deploy_library(debug_lib, debug_dest / lib_name)
     elif system == "Darwin":
         # macOS: copy directly to addon directory (for .gdextension compatibility)
         # Also copy to target/release/ for legacy compatibility
         if build_release and release_lib:
-            shutil.copy2(release_lib, addon_path / lib_name)
+            deploy_library(release_lib, addon_path / lib_name)
             (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
-            shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
+            deploy_library(release_lib, addon_path / "target" / "release" / lib_name)
         if build_debug and debug_lib:
             if not build_release:
                 # Dev/debug-only mode: ensure debug manifest paths resolve directly.
-                shutil.copy2(debug_lib, addon_path / lib_name)
+                deploy_library(debug_lib, addon_path / lib_name)
             else:
-                shutil.copy2(debug_lib, addon_path / lib_name.replace(".dylib", "_debug.dylib"))
+                deploy_library(debug_lib, addon_path / lib_name.replace(".dylib", "_debug.dylib"))
             (addon_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
-            shutil.copy2(debug_lib, addon_path / "target" / "debug" / lib_name)
+            deploy_library(debug_lib, addon_path / "target" / "debug" / lib_name)
     elif system == "Windows":
         # Windows: copy to target/x86_64-pc-windows-msvc/release/
         target_triple = "x86_64-pc-windows-msvc"
         if build_release and release_lib:
             release_dest = addon_path / "target" / target_triple / "release"
             release_dest.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(release_lib, release_dest / lib_name)
+            deploy_library(release_lib, release_dest / lib_name)
         if build_debug and debug_lib:
             debug_dest = addon_path / "target" / target_triple / "debug"
             debug_dest.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(debug_lib, debug_dest / lib_name)
+            deploy_library(debug_lib, debug_dest / lib_name)
     else:
         # Fallback: copy to target/release/
         if build_release and release_lib:
             (addon_path / "target" / "release").mkdir(parents=True, exist_ok=True)
-            shutil.copy2(release_lib, addon_path / "target" / "release" / lib_name)
+            deploy_library(release_lib, addon_path / "target" / "release" / lib_name)
         if build_debug and debug_lib:
             (addon_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
-            shutil.copy2(debug_lib, addon_path / "target" / "debug" / lib_name)
+            deploy_library(debug_lib, addon_path / "target" / "debug" / lib_name)
     
     print("[SUCCESS] Files copied successfully!")
     
@@ -279,7 +295,7 @@ def build_universal_macos(project_path, addon_path, lib_name, release_only=False
         str(project_path / "target" / "aarch64-apple-darwin" / "release" / lib_name),
         str(project_path / "target" / "x86_64-apple-darwin" / "release" / lib_name)
     ])
-    shutil.copy2(universal_release, addon_path / "target" / "release" / lib_name)
+    deploy_library(universal_release, addon_path / "target" / "release" / lib_name)
     
     # Build debug for both architectures (only if not release_only)
     if not release_only:
@@ -302,7 +318,7 @@ def build_universal_macos(project_path, addon_path, lib_name, release_only=False
             str(project_path / "target" / "aarch64-apple-darwin" / "debug" / lib_name),
             str(project_path / "target" / "x86_64-apple-darwin" / "debug" / lib_name)
         ])
-        shutil.copy2(universal_debug, addon_path / "target" / "debug" / lib_name)
+        deploy_library(universal_debug, addon_path / "target" / "debug" / lib_name)
         print("[SUCCESS] Universal binaries installed (release + debug).")
     else:
         print("[SUCCESS] Universal binary installed (release only).")
@@ -374,48 +390,48 @@ def main():
             release_dest = addon2_path / "target" / target_triple / "release"
             release_dest.mkdir(parents=True, exist_ok=True)
             if build_release:
-                shutil.copy2(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
+                deploy_library(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
             if build_debug:
                 debug_dest = addon2_path / "target" / target_triple / "debug"
                 debug_dest.mkdir(parents=True, exist_ok=True)
                 debug_lib = project1_path / "target" / "debug" / lib1_name
                 if debug_lib.exists():
-                    shutil.copy2(debug_lib, debug_dest / lib1_name)
+                    deploy_library(debug_lib, debug_dest / lib1_name)
         elif system == "Darwin":
             # macOS: copy directly to addon directory (as expected by .gdextension)
             if build_release:
-                shutil.copy2(project1_path / "target" / "release" / lib1_name, addon2_path / lib1_name)
+                deploy_library(project1_path / "target" / "release" / lib1_name, addon2_path / lib1_name)
             elif build_debug:
                 debug_lib = project1_path / "target" / "debug" / lib1_name
                 if debug_lib.exists():
-                    shutil.copy2(debug_lib, addon2_path / lib1_name)
+                    deploy_library(debug_lib, addon2_path / lib1_name)
             if build_release and build_debug:
                 debug_lib = project1_path / "target" / "debug" / lib1_name
                 if debug_lib.exists():
-                    shutil.copy2(debug_lib, addon2_path / lib1_name.replace(".dylib", "_debug.dylib"))
+                    deploy_library(debug_lib, addon2_path / lib1_name.replace(".dylib", "_debug.dylib"))
         elif system == "Windows":
             # Windows: copy to target/x86_64-pc-windows-msvc/release/
             target_triple = "x86_64-pc-windows-msvc"
             release_dest = addon2_path / "target" / target_triple / "release"
             release_dest.mkdir(parents=True, exist_ok=True)
             if build_release:
-                shutil.copy2(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
+                deploy_library(project1_path / "target" / "release" / lib1_name, release_dest / lib1_name)
             if build_debug:
                 debug_dest = addon2_path / "target" / target_triple / "debug"
                 debug_dest.mkdir(parents=True, exist_ok=True)
                 debug_lib = project1_path / "target" / "debug" / lib1_name
                 if debug_lib.exists():
-                    shutil.copy2(debug_lib, debug_dest / lib1_name)
+                    deploy_library(debug_lib, debug_dest / lib1_name)
         else:
             # Fallback: copy to target/release/
             if build_release:
                 (addon2_path / "target" / "release").mkdir(parents=True, exist_ok=True)
-                shutil.copy2(project1_path / "target" / "release" / lib1_name, addon2_path / "target" / "release" / lib1_name)
+                deploy_library(project1_path / "target" / "release" / lib1_name, addon2_path / "target" / "release" / lib1_name)
             if build_debug:
                 (addon2_path / "target" / "debug").mkdir(parents=True, exist_ok=True)
                 debug_lib = project1_path / "target" / "debug" / lib1_name
                 if debug_lib.exists():
-                    shutil.copy2(debug_lib, addon2_path / "target" / "debug" / lib1_name)
+                    deploy_library(debug_lib, addon2_path / "target" / "debug" / lib1_name)
         print("[SUCCESS] Deployed to both addon locations!")
         
         # Build universal binaries on macOS (unless --local-arch is specified)
@@ -423,9 +439,9 @@ def main():
             build_universal_macos(project1_path, addon1_path, lib1_name, release_only=release_only and not dev_mode)
             # Also copy universal binaries to FeagiCoreIntegration (directly to addon directory for .gdextension)
             if (addon1_path / "target" / "release" / lib1_name).exists():
-                shutil.copy2(addon1_path / "target" / "release" / lib1_name, addon2_path / lib1_name)
+                deploy_library(addon1_path / "target" / "release" / lib1_name, addon2_path / lib1_name)
             if build_debug and (addon1_path / "target" / "debug" / lib1_name).exists():
-                shutil.copy2(addon1_path / "target" / "debug" / lib1_name, addon2_path / lib1_name.replace(".dylib", "_debug.dylib"))
+                deploy_library(addon1_path / "target" / "debug" / lib1_name, addon2_path / lib1_name.replace(".dylib", "_debug.dylib"))
         elif platform.system() == "Darwin" and local_arch_only and build_release:
             print(f"[INFO] Skipping universal binary build (using local {platform.machine()} only)")
         built_deserializer = True
@@ -504,10 +520,10 @@ def main():
         addon3_path = godot_source / "addons" / "FeagiCoreIntegration"
         addon3_path.mkdir(parents=True, exist_ok=True)
         if build_release and release_lib:
-            shutil.copy2(release_lib, addon3_path / lib3_name)
+            deploy_library(release_lib, addon3_path / lib3_name)
             print(f"[SUCCESS] feagi_type_system deployed (release) to: {addon3_path / lib3_name}")
         elif build_debug and debug_lib:
-            shutil.copy2(debug_lib, addon3_path / lib3_name)
+            deploy_library(debug_lib, addon3_path / lib3_name)
             print(f"[SUCCESS] feagi_type_system deployed (debug) to: {addon3_path / lib3_name}")
         
         # Build universal binary on macOS if needed

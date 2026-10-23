@@ -136,10 +136,9 @@ func _extract_host_port(address: String) -> Dictionary:
 
 ## Returns websocket connection health as readable text.
 func _get_websocket_health_text() -> String:
-	if FeagiCore == null or FeagiCore.network == null or FeagiCore.network.websocket_API == null:
+	if FeagiCore == null or FeagiCore.network == null:
 		return ""
-	var health_enum: int = FeagiCore.network.websocket_API.socket_health
-	return str(FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.keys()[health_enum])
+	return str(FEAGINetworking.VISUALIZATION_LINK_HEALTH.keys()[FeagiCore.network.visualization_link_health])
 
 func _apply_pressed() -> void:
 	

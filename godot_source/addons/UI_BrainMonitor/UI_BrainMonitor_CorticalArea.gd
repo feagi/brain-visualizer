@@ -1796,7 +1796,8 @@ func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, 
 
 ## R-STDP modulator tap visualization (Phase 13).
 ##
-## When a mapping rule declares a reward and/or punishment source area, we render a short
+## When a mapping rule subscribes a reward (positive) and/or punishment (negative magnitude)
+## synaptic.reward modulator, we render a short
 ## perpendicular indicator at the midpoint of the synapse curve. The orientation is the
 ## arc-plane normal (chord x up), so the tap visually "drops in" from the side of the
 ## bezier rather than along it. Reward = green, punishment = red. Both: stacked, reward
@@ -1809,8 +1810,8 @@ const RSTDP_TAP_PUNISHMENT_ALBEDO: Color = Color(1.0, 0.20, 0.30, 1.0)
 const RSTDP_TAP_PUNISHMENT_EMISSION: Color = Color(1.0, 0.05, 0.05, 1.0)
 
 ## Attach a perpendicular reward/punishment tap to the connection if the mapping set
-## declares any reward_source_area or punishment_source_area. No-op when the mapping set
-## has no R-STDP modulation declared.
+## subscribes a synaptic.reward modulator (sign of its magnitude picks reward or punishment).
+## No-op when the mapping set subscribes none, or the modulator magnitudes are not known yet.
 func _attach_rstdp_tap_if_needed(
 	parent: Node3D,
 	start_pos: Vector3,
@@ -1819,8 +1820,8 @@ func _attach_rstdp_tap_if_needed(
 ) -> void:
 	if mapping_set == null:
 		return
-	var has_reward: bool = mapping_set.has_any_reward_source()
-	var has_pain: bool = mapping_set.has_any_punishment_source()
+	var has_reward: bool = mapping_set.has_any_reward_modulator()
+	var has_pain: bool = mapping_set.has_any_punishment_modulator()
 	if not (has_reward or has_pain):
 		return
 

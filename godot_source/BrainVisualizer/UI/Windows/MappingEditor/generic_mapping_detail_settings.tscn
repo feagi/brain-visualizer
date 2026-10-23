@@ -1,18 +1,14 @@
-[gd_scene load_steps=7 format=3 uid="uid://cxb6dif7pqgss"]
+[gd_scene load_steps=2 format=3 uid="uid://cxb6dif7pqgss"]
 
 [ext_resource type="Script" uid="uid://6e2vio7clwsi" path="res://BrainVisualizer/UI/Windows/MappingEditor/GenericMappingDetailSettings.gd" id="1_a7y6g"]
-[ext_resource type="Texture2D" uid="uid://car1lnufwslyi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="2_na2v5"]
-[ext_resource type="Texture2D" uid="uid://cdje4hcnt8pai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="3_5epqe"]
-[ext_resource type="Texture2D" uid="uid://clqnxjuyb23y1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="4_rplnj"]
-[ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_o7ap7"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="6_nnmhp"]
 
 [node name="GenericMappingDetailSettings" type="VBoxContainer"]
 size_flags_vertical = 0
+theme_override_constants/separation = 0
 script = ExtResource("1_a7y6g")
 
 [node name="Label9" type="Label" parent="."]
-custom_minimum_size = Vector2(2032, 0)
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Established Mappings"
@@ -39,267 +35,113 @@ size_flags_horizontal = 4
 theme_type_variation = &"Button_big"
 text = " Add First Mapping "
 
+[node name="HeaderGapTop" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+
 [node name="HeaderRowWrapper" type="HBoxContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-theme_type_variation = &"HBoxContainer_adjacent"
-
-[node name="HeaderAlignLead" type="Control" parent="HeaderRowWrapper"]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 0)
-size_flags_horizontal = 0
-size_flags_vertical = 0
+theme_override_constants/separation = 0
 
 [node name="labels_box" type="HBoxContainer" parent="HeaderRowWrapper"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-theme_type_variation = &"HBoxContainer_farther"
+theme_override_constants/separation = 16
 
-[node name="MappingDefinitionHeaderGroup" type="HBoxContainer" parent="HeaderRowWrapper/labels_box"]
-layout_mode = 2
-theme_type_variation = &"HBoxContainer_adjacent"
-size_flags_horizontal = 0
-
-[node name="Label" type="Label" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
-custom_minimum_size = Vector2(150, 48)
+[node name="Label_Mapping" type="Label" parent="HeaderRowWrapper/labels_box"]
 layout_mode = 2
 size_flags_horizontal = 0
-text = "Mapping Definition"
-autowrap_mode = 3
-vertical_alignment = 1
-
-[node name="edit_placeholder" type="Control" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Spacer_AfterMappingDefinition" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(4, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(210, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-text = "Overwrite Scalar"
-horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
-
-[node name="Spacer_AfterScalar" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(170, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Post-Synaptic Potential Multiplier"
+tooltip_text = "Mapping definition / morphology"
 mouse_filter = 1
-text = "PSP Multiplier"
+text = "Morphology"
 horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
+vertical_alignment = 3
+autowrap_mode = 0
+clip_text = false
 
-[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(12, 0)
+[node name="Label_Scalar" type="Label" parent="HeaderRowWrapper/labels_box"]
 layout_mode = 2
 size_flags_horizontal = 0
+tooltip_text = "Overwrite scalar"
+mouse_filter = 1
+text = "Scalar (x, y, z)"
+horizontal_alignment = 0
+vertical_alignment = 3
+autowrap_mode = 0
+clip_text = false
+
+[node name="Label_PSP" type="Label" parent="HeaderRowWrapper/labels_box"]
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Post-synaptic potential multiplier"
+mouse_filter = 1
+text = "PSP ×"
+horizontal_alignment = 0
+vertical_alignment = 3
+autowrap_mode = 0
+clip_text = false
 
 [node name="Label_Delay" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(100, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "Whole bursts from presynaptic fire until PSP is applied (minimum 1)."
+tooltip_text = "Synaptic delay in bursts (whole bursts from presynaptic fire until PSP is applied, minimum 1)"
 mouse_filter = 1
-text = "Delay (bursts)"
+text = "Delay"
 horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
+vertical_alignment = 3
+autowrap_mode = 0
+clip_text = false
 
-[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(12, 0)
+[node name="Label_Inhibitory" type="Label" parent="HeaderRowWrapper/labels_box"]
 layout_mode = 2
 size_flags_horizontal = 0
-
-[node name="Label8" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(168, 48)
-layout_mode = 2
-size_flags_horizontal = 0
+tooltip_text = "Inhibitory: the synapse subtracts potential instead of adding it"
+mouse_filter = 1
 text = "Inhibitory"
 horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
+vertical_alignment = 3
+autowrap_mode = 0
+clip_text = false
 
-[node name="Spacer_BetweenInhibitoryAndGate" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(12, 0)
+[node name="LabelModulators" type="Label" parent="HeaderRowWrapper/labels_box"]
 layout_mode = 2
 size_flags_horizontal = 0
-
-[node name="LabelGateSource" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(180, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Gate Source: cortical area whose firing gates this synapse"
+tooltip_text = "Synaptic modulators this rule subscribes to: gain, reward / punishment, learning rate (eta), gate"
 mouse_filter = 1
-text = "Gate Source"
+text = "Modulators"
 horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
+vertical_alignment = 3
+autowrap_mode = 0
+clip_text = false
 
-[node name="Spacer_BetweenGateAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(12, 0)
+[node name="Label_Plasticity" type="Label" parent="HeaderRowWrapper/labels_box"]
 layout_mode = 2
 size_flags_horizontal = 0
-
-[node name="Label4" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(168, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Off / STDP / R-STDP"
+tooltip_text = "Plasticity mode: Off / STDP / R-STDP"
 mouse_filter = 1
-text = "Plasticity Mode"
+text = "Plasticity"
 horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
+vertical_alignment = 3
+autowrap_mode = 0
+clip_text = false
 
-[node name="Spacer_AfterPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(8, 0)
+[node name="Label_Actions" type="Label" parent="HeaderRowWrapper/labels_box"]
 layout_mode = 2
 size_flags_horizontal = 0
-
-[node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(150, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Plasticity Window"
-mouse_filter = 1
-text = "Plasticity Window"
+text = ""
 horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
+vertical_alignment = 3
+autowrap_mode = 0
+clip_text = false
 
-[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(8, 0)
+[node name="HeaderGap" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 6)
 layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(150, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Plasticity Constant"
-mouse_filter = 1
-text = "Plasticity Constant"
-horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
-
-[node name="Spacer_AfterPlasticityConst" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(170, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Long-Term Potentiation Multiplier"
-mouse_filter = 1
-text = "LTP Multiplier"
-horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
-
-[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(170, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Long-Term Depression Multiplier"
-mouse_filter = 1
-text = "LTD Multiplier"
-horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
-
-[node name="Spacer_AfterLTD_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Label_EligibilityDecay" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(120, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Eligibility trace decay (bursts) for R-STDP. 0 disables temporal credit."
-mouse_filter = 1
-text = "Eligibility Decay"
-horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
-
-[node name="Spacer_AfterEligibilityDecay_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Label_RewardSource" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(180, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Cortical area whose firing density supplies positive reward R(t) for R-STDP."
-mouse_filter = 1
-text = "Reward Source"
-horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
-
-[node name="Spacer_AfterRewardSource_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Label_PunishmentSource" type="Label" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(180, 48)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Cortical area whose firing density supplies negative reward R(t) for R-STDP."
-mouse_filter = 1
-text = "Punishment Source"
-horizontal_alignment = 0
-autowrap_mode = 3
-vertical_alignment = 1
-
-[node name="Spacer_AfterPunishmentSource_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="add_button" type="TextureButton" parent="HeaderRowWrapper/labels_box"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 4
-tooltip_text = "Add Mapping"
-theme_type_variation = &"TextureButton_icon"
-texture_normal = ExtResource("2_na2v5")
-texture_pressed = ExtResource("3_5epqe")
-texture_hover = ExtResource("4_rplnj")
-texture_disabled = ExtResource("5_o7ap7")
-ignore_texture_size = true
-stretch_mode = 0
 
 [node name="EstablishedScrollViewport" type="Control" parent="."]
-custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -311,5 +153,21 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[connection signal="pressed" from="HeaderRowWrapper/labels_box/add_button" to="." method="_add_mapping_row"]
+[node name="AddRow" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Gap" type="Control" parent="AddRow"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="add_button" type="Button" parent="AddRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+tooltip_text = "Add Mapping"
+focus_mode = 0
+flat = true
+text = "+ Add mapping"
+
+[connection signal="pressed" from="AddRow/add_button" to="." method="_add_mapping_row"]
 [connection signal="pressed" from="EmptyState/AddFirstButton" to="." method="_add_mapping_row"]

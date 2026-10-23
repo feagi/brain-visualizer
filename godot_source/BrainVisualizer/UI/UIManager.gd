@@ -225,7 +225,7 @@ func _ready():
 	FeagiCore.feagi_local_cache.genome_availability_changed.connect(_on_genome_availability_changed)
 	FeagiCore.feagi_local_cache.genome_cache_replaced.connect(_on_genome_cache_replaced)
 	FeagiCore.network.connection_state_changed.connect(_on_connection_state_changed)
-	FeagiCore.network.websocket_API.FEAGI_socket_health_changed.connect(_on_websocket_health_changed)
+	FeagiCore.network.visualization_link_health_changed.connect(_on_websocket_health_changed)
 	FeagiCore.genome_load_state_changed.connect(_on_genome_load_state_changed)
 	_sync_position_history_acceptance(FeagiCore.genome_load_state)
 	BV.UI.selection_system.objects_selection_event_called.connect(_selection_processing)
@@ -1138,7 +1138,10 @@ func request_live_voxel_inspector(overlay: UI_BrainMonitor_Overlay, cortical_are
 	_live_voxel_mouse_pos = mouse_pos
 	_live_voxel_overlay = overlay
 	_live_voxel_brain_monitor = overlay.owning_brain_monitor()
-	_live_voxel_cortical_id = str(cortical_area.cortical_ID)
+	var hovered_cortical_id: String = str(cortical_area.cortical_ID)
+	if hovered_cortical_id != _live_voxel_cortical_id:
+		_set_live_inspector_bulk_decode(hovered_cortical_id)
+	_live_voxel_cortical_id = hovered_cortical_id
 	_live_voxel_coord = coord
 	_live_voxel_area_name = cortical_area.friendly_name
 	if voxel_changed:
@@ -1199,6 +1202,56 @@ func _live_voxel_query_async(area_name: String, cortical_id: StringName, coord: 
 
 ## Latest visualization frame. Firing neurons report membrane potential at spike time;
 ## the neuron array itself is already reset to 0.
+#region Self-test hooks (tests/self_test)
+
+## Whether the live voxel inspector currently has a hovered voxel.
+var is_live_voxel_hovering: bool:
+	get: return _live_voxel_hovering
+
+## Latest fire-time sample for the hovered voxel ({found, value, count}), or null before the first frame.
+var live_inspector_firing_sample: Variant:
+	get: return _live_firing_sample
+
+
+## Hover [param coord] of [param cortical_area] with the live neuron inspector as if the mouse were over it:
+## switches to voxel-inspector mode, opens the Voxel Inspector with live readout on, and requests the hover
+## on the first Brain Monitor. Returns false when no Brain Monitor overlay exists.
+func debug_hover_live_inspector(cortical_area: AbstractCorticalArea, coord: Vector3i) -> bool:
+	var overlay: UI_BrainMonitor_Overlay = _debug_first_brain_monitor_overlay()
+	if overlay == null:
+		return false
+	brain_monitor_activity_mode = BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR
+	var win: WindowVoxelInspector = _window_manager.spawn_voxel_inspector()
+	win.set_live_inspector_enabled(true)
+	request_live_voxel_inspector(overlay, cortical_area, coord, Vector2(200, 200))
+	return true
+
+
+## End a hover started by [method debug_hover_live_inspector] and turn the live readout off.
+func debug_end_live_inspector_hover() -> void:
+	end_live_voxel_inspector_hover(_debug_first_brain_monitor_overlay())
+	var win := _voxel_inspector_window()
+	if win != null:
+		win.set_live_inspector_enabled(false)
+
+
+func _debug_first_brain_monitor_overlay() -> UI_BrainMonitor_Overlay:
+	for bm in _find_all_brain_monitors_in_scene_tree():
+		if bm != null and bm._UI_layer_for_BM != null:
+			return bm._UI_layer_for_BM
+	return null
+
+#endregion
+
+
+## Have the visualization sink decode the hovered area's packets so the readout gets fire-time potentials.
+func _set_live_inspector_bulk_decode(cortical_id: String) -> void:
+	if FeagiCore == null or FeagiCore.network == null or FeagiCore.network.visualization_sink == null:
+		return
+	var ids: Array = [] if cortical_id.is_empty() else [cortical_id]
+	FeagiCore.network.visualization_sink.bulk_decode_registry.set_source_ids(Type11BulkDecodeRegistry.SOURCE_LIVE_INSPECTOR, ids)
+
+
 func note_live_inspector_firing_frame(areas: Dictionary) -> void:
 	if not _live_voxel_hovering or _live_voxel_cortical_id.is_empty():
 		return
@@ -1364,6 +1417,7 @@ func end_live_voxel_inspector_hover(overlay: UI_BrainMonitor_Overlay) -> void:
 	_live_voxel_payload = {}
 	_live_firing_sample = null
 	_live_voxel_cortical_id = ""
+	_set_live_inspector_bulk_decode("")
 	_release_live_synapse_visualization(true)
 	if overlay != null and is_instance_valid(overlay):
 		overlay.hide_live_inspector()
@@ -1386,6 +1440,7 @@ func clear_live_voxel_inspector() -> void:
 	_live_voxel_payload = {}
 	_live_firing_sample = null
 	_live_voxel_cortical_id = ""
+	_set_live_inspector_bulk_decode("")
 	for bm in _find_all_brain_monitors_in_scene_tree():
 		if bm != null and is_instance_valid(bm):
 			bm.hide_live_voxel_inspector()
@@ -1654,15 +1709,15 @@ func _on_connection_state_changed(_prev_state: FEAGINetworking.CONNECTION_STATE,
 	match new_state:
 		FEAGINetworking.CONNECTION_STATE.INITIAL_HTTP_PROBING:
 			update_loading_status("Checking FEAGI health...")
-		FEAGINetworking.CONNECTION_STATE.INITIAL_WS_PROBING:
-			update_loading_status("Making Websocket connection...")
+		FEAGINetworking.CONNECTION_STATE.INITIAL_STREAM_PROBING:
+			update_loading_status("Connecting to the FEAGI data stream...")
 		FEAGINetworking.CONNECTION_STATE.HEALTHY:
-			update_loading_status("Websocket connected successfully!")
+			update_loading_status("Connected to FEAGI!")
 		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP:
 			update_loading_status("Retrying HTTP connection...")
-		FEAGINetworking.CONNECTION_STATE.RETRYING_WS:
-			update_loading_status("Retrying Websocket connection...")
-		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP_WS:
+		FEAGINetworking.CONNECTION_STATE.RETRYING_STREAM:
+			update_loading_status("Retrying the FEAGI data stream...")
+		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP_STREAM:
 			update_loading_status("Retrying connections...")
 		FEAGINetworking.CONNECTION_STATE.DISCONNECTED:
 			update_loading_status("Disconnected")
@@ -1684,8 +1739,8 @@ func _update_loading_screen_visibility() -> void:
 	
 	# Additional check: If using websocket transport, verify websocket is actually connected
 	var websocket_ok = true
-	if FeagiCore.network._transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
-		websocket_ok = FeagiCore.network.websocket_API.socket_health == FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.CONNECTED
+	if FeagiCore.network.transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
+		websocket_ok = FeagiCore.network.visualization_link_health == FEAGINetworking.VISUALIZATION_LINK_HEALTH.CONNECTED
 	
 	
 	# CRITICAL: Only hide loading screen when 3D scene is ACTUALLY instantiated
@@ -1702,7 +1757,7 @@ func _update_loading_screen_visibility() -> void:
 		# reports genome_loading (see FEAGILocalCache.genome_loading). Show whenever that flag is true and
 		# HTTP is healthy, even if brain_readiness is still true on the server during a transition.
 		if not websocket_ok:
-			update_loading_status("Websocket disconnected - reconnecting...")
+			update_loading_status("FEAGI data stream disconnected - reconnecting...")
 		elif connection_healthy and FeagiCore.feagi_local_cache.genome_loading:
 			update_loading_status("Genome loading, please wait.")
 		elif not brain_ready and connection_healthy:
@@ -1880,6 +1935,9 @@ func _send_activations_to_FEAGI(area_IDs_and_neuron_coordinates: Dictionary[Stri
 		FeagiCore.network.http_API.HTTP_HEALTH.ERROR:
 			push_error("Manual stimulation: Connection error")
 			return
+	if not FeagiCore.network.supports_feature(FEAGINetworking.FEAGI_FEATURE.MANUAL_STIMULATION):
+		_notification_system.add_notification("This FEAGI does not support manual stimulation.", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
+		return
 	
 	# Build the correct payload format for manual stimulation API
 	var stimulation_payload: Dictionary = {}
@@ -2129,6 +2187,11 @@ func focus_searched_cortical_area(area: AbstractCorticalArea) -> void:
 	monitor.flash_indicator_for_cortical_area(area)
 
 
+## Opens [param region] in Circuit Builder and Brain Monitor, as Open Circuit does.
+func open_region_in_circuit_builder_and_monitor(region: BrainRegion) -> void:
+	_open_circuit_brain_monitor(region)
+
+
 ## Opens the circuit builder and brain monitor tabs for [param region], the same way Open Circuit does.
 func _open_circuit_brain_monitor(region: BrainRegion) -> UI_BrainMonitor_3DScene:
 	if _root_UI_view == null or region == null:
@@ -2260,11 +2323,12 @@ func _build_loading_status_tooltip() -> String:
 	var endpoint = FeagiCore.network._feagi_endpoint_details
 	var http_addr = endpoint.full_http_address if endpoint != null else "unknown"
 	var ws_addr = endpoint.full_websocket_address if endpoint != null else "unknown"
-	var transport = FEAGINetworking.TRANSPORT_MODE.keys()[FeagiCore.network._transport_mode]
-	var ws_retry = FeagiCore.network.websocket_API._retry_count if FeagiCore.network.websocket_API != null else 0
+	var link_status: Dictionary = FeagiCore.network.get_visualization_link_status()
+	var transport = link_status.transport
+	var ws_retry: int = link_status.retry_count
 	var ws_retry_max = FeagiCore.feagi_settings.number_of_times_to_retry_WS_connections if FeagiCore.feagi_settings != null else 0
 	var http_retrying = FeagiCore.network.http_API._retrying_workers.size() if FeagiCore.network.http_API != null else 0
-	var shm_path = FeagiCore.network.websocket_API._shm_path if FeagiCore.network.websocket_API != null else ""
+	var shm_path: String = link_status.shm_path
 	var failure_summary = _build_loading_failure_summary()
 	return "FEAGI HTTP: %s\nFEAGI WS: %s\nTransport: %s\nSHM path: %s\nWS retries: %d / %d\nHTTP retrying workers: %d\nFailure status: %s" % [
 		http_addr,
@@ -2285,8 +2349,8 @@ func _build_loading_failure_summary() -> String:
 	var genome_available = FeagiCore.feagi_local_cache.genome_availability
 	var genome_scene_ready = FeagiCore.genome_load_state == FeagiCore.GENOME_LOAD_STATE.GENOME_READY
 	var websocket_ok = true
-	if FeagiCore.network._transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
-		websocket_ok = FeagiCore.network.websocket_API.socket_health == FeagiCore.network.websocket_API.WEBSOCKET_HEALTH.CONNECTED
+	if FeagiCore.network.transport_mode == FEAGINetworking.TRANSPORT_MODE.WEBSOCKET:
+		websocket_ok = FeagiCore.network.visualization_link_health == FEAGINetworking.VISUALIZATION_LINK_HEALTH.CONNECTED
 	if not connection_healthy:
 		reasons.append("connection not healthy")
 	if not brain_ready:
@@ -2298,7 +2362,7 @@ func _build_loading_failure_summary() -> String:
 	if genome_scene_ready and not _3d_scene_instantiated:
 		reasons.append("3D scene instantiating")
 	if not websocket_ok:
-		reasons.append("websocket not connected")
+		reasons.append("data stream not connected")
 	return "ok" if reasons.is_empty() else ", ".join(reasons)
 
 ## Show the shutdown screen with custom styling

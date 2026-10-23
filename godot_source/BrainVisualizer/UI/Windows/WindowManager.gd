@@ -218,11 +218,12 @@ func get_open_cortical_inspector() -> WindowCorticalInspector:
 	return null
 
 
-func spawn_create_modulator(placement_anchor: Control = null) -> void:
+func spawn_create_modulator(placement_anchor: Control = null, allowed_types: Array[String] = [], default_type: String = "") -> WindowCreateModulator:
 	_close_other_add_flow_windows(WindowCreateModulator.WINDOW_NAME)
 	var window: WindowCreateModulator = _default_spawn_window(_PREFAB_CREATE_MODULATOR, WindowCreateModulator.WINDOW_NAME, true, placement_anchor) as WindowCreateModulator
-	window.setup()
+	window.setup(allowed_types, default_type)
 	bring_window_to_top(window)
+	return window
 
 
 func spawn_create_morphology() -> void:

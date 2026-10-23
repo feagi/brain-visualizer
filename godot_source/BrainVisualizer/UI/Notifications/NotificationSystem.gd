@@ -58,9 +58,9 @@ func _connection_state_change(_prev_state: FEAGINetworking.CONNECTION_STATE, new
 			add_notification("Disconnected from FEAGI!", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP:
 			add_notification("Waiting for FEAGI API!", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
-		FEAGINetworking.CONNECTION_STATE.RETRYING_WS:
-			add_notification("Waiting for FEAGI WebSocket!", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
-		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP_WS:
+		FEAGINetworking.CONNECTION_STATE.RETRYING_STREAM:
+			add_notification("Waiting for the FEAGI data stream!", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
+		FEAGINetworking.CONNECTION_STATE.RETRYING_HTTP_STREAM:
 			add_notification("Waiting for FEAGI!", NotificationSystemNotification.NOTIFICATION_TYPE.WARNING)
 
 func _genome_state_change(new_state: FeagiCore.GENOME_LOAD_STATE, _prev_state: FeagiCore.GENOME_LOAD_STATE):

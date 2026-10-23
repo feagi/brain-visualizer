@@ -10,7 +10,11 @@ const _TYPES: Array[String] = [
 	"synaptic.transmission_gain",
 	"synaptic.reward",
 	"synaptic.learning_rate",
+	"synaptic.gate",
 ]
+
+## Emitted with the new instance id after FEAGI accepted the create request.
+signal modulator_created(instance_id: String)
 
 var _type_list: OptionButton
 var _instance_id: LineEdit
@@ -23,10 +27,25 @@ var _status: Label
 var _create_button: Button
 
 
-func setup() -> void:
+## [allowed_types] limits the Type list (empty = all kinds); [default_type] preselects a kind.
+func setup(allowed_types: Array[String] = [], default_type: String = "") -> void:
 	_setup_base_window(WINDOW_NAME)
 	_titlebar.title = "Add modulator"
 	_build_form()
+	_restrict_types(allowed_types, default_type)
+
+
+func _restrict_types(allowed_types: Array[String], default_type: String) -> void:
+	if allowed_types.is_empty() and default_type.is_empty():
+		return
+	_type_list.clear()
+	for kind in _TYPES:
+		if allowed_types.is_empty() or kind in allowed_types:
+			_type_list.add_item(kind)
+	for index in _type_list.item_count:
+		if _type_list.get_item_text(index) == default_type:
+			_type_list.select(index)
+			break
 
 
 func _build_form() -> void:
@@ -99,7 +118,7 @@ func _on_create() -> void:
 		_status.text = "Effect duration must be at least 1 burst"
 		return
 	var body := {
-		"type": _TYPES[_type_list.selected],
+		"type": _type_list.get_item_text(_type_list.selected),
 		"magnitude_percent": magnitude,
 		"effect_duration_bursts": duration,
 		"rest_bursts": maxi(0, int(_rest.text)),
@@ -123,4 +142,5 @@ func _on_create() -> void:
 				_status.text = detail
 		return
 	await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
+	modulator_created.emit(instance_id)
 	close_window()

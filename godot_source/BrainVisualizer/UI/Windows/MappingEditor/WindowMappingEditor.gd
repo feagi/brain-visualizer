@@ -19,6 +19,7 @@ var _generic_mapping_settings: GenericMappingDetailSettings
 var _generic_mapping_settings_partial: GenericMappingDetailSettingsPartial
 var _set_mapping_button: Button
 var _classifier_destination: GenomeClassifier = null
+var _reset_weights_button: Button
 
 
 ## Source / Destination cortical are or region, or null.
@@ -32,6 +33,21 @@ func setup(source: GenomeObject, destination: GenomeObject, partial_mapping: Par
 	_generic_mapping_settings_partial = _window_internals.get_node("GenericMappingDetailSettingsPartial")
 	_set_mapping_button = _window_internals.get_node("HBoxContainer/Button")
 	_setup_base_window(WINDOW_NAME)
+	# "Reset weights" sits left of Cancel in the bottom row; built in code to keep the scene untouched.
+	_reset_weights_button = Button.new()
+	_reset_weights_button.name = "ResetWeightsButton"
+	_reset_weights_button.theme_type_variation = &"Button_big"
+	_reset_weights_button.custom_minimum_size = Vector2(128, 64)
+	_reset_weights_button.text = " Reset Weights "
+	_reset_weights_button.tooltip_text = "Set learned synapse weights of this mapping back to the rule's initial weight."
+	_reset_weights_button.pressed.connect(_user_pressed_reset_weights)
+	var bottom_row: Node = _set_mapping_button.get_parent()
+	bottom_row.add_child(_reset_weights_button)
+	bottom_row.move_child(_reset_weights_button, 0)
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(16, 0)
+	bottom_row.add_child(spacer)
+	bottom_row.move_child(spacer, 1)
 	
 	# starting point will be overridden next
 	_source_button.setup(null, GenomeObject.SINGLE_MAKEUP.SINGLE_CORTICAL_AREA)
@@ -42,6 +58,8 @@ func setup(source: GenomeObject, destination: GenomeObject, partial_mapping: Par
 
 func set_ends(source: GenomeObject, destination: GenomeObject, partial_mapping: PartialMappingSet = null) -> void:
 	_classifier_destination = null
+	if _reset_weights_button != null:
+		_reset_weights_button.disabled = not (source is AbstractCorticalArea and destination is AbstractCorticalArea)
 	_source_button.update_selection_no_signal(source)
 	_destination_button.update_selection_no_signal(destination)
 	
@@ -129,6 +147,23 @@ func set_ends(source: GenomeObject, destination: GenomeObject, partial_mapping: 
 		_generic_mapping_settings.load_mappings(current_mappings, restrictions, defaults)
 
 
+func _user_pressed_reset_weights() -> void:
+	var src: AbstractCorticalArea = _source_button.current_selected as AbstractCorticalArea
+	var dst: AbstractCorticalArea = _destination_button.current_selected as AbstractCorticalArea
+	if src == null or dst == null or FeagiCore == null or FeagiCore.requests == null:
+		BV.NOTIF.add_notification("Select a source and destination cortical area to reset weights")
+		return
+	var message: String = "Reset learned synapse weights of this mapping to the mapping rule's initial weight?\nLearned weights are lost. Neuron state and genome are not changed."
+	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Reset Learned Weights",
+		message,
+		FEAGIRequests.run_reset_mapping_weights.bind(src, dst),
+		"Reset Weights",
+		"Cancel"
+	)
+	BV.WM.spawn_popup(popup_definition)
+
+
 func _user_pressed_set_mappings() -> void:
 	if !(_source_button.current_selected is AbstractCorticalArea) or !(_destination_button.current_selected is AbstractCorticalArea):
 		push_error("FEAGI Mapping Editor: Cannot Set mapping on ends that arent cortical areas!")
@@ -149,6 +184,10 @@ func _user_pressed_set_mappings() -> void:
 		return
 	var mappings: Array[SingleMappingDefinition]
 	if _generic_mapping_settings.visible:
+		var validation_error: String = _generic_mapping_settings.get_validation_error()
+		if not validation_error.is_empty():
+			BV.NOTIF.add_notification(validation_error)
+			return
 		mappings = _generic_mapping_settings.export_mappings()
 	else: # assume memory
 		mappings = _memory_mapping_setting.export_mappings()

@@ -98,6 +98,7 @@ static func entries() -> Array[Dictionary]:
 		_row("Camera", "A or Left", "Move the camera left", "Pointer over a Brain Monitor"),
 		_row("Camera", "D or Right", "Move the camera right", "Pointer over a Brain Monitor"),
 		_row("Camera", "Shift", "Move and zoom faster", "Pointer over a Brain Monitor"),
+		_row("Camera", "Ctrl", "Show the name of every cortical area", "Pointer over a Brain Monitor"),
 		_row("Camera", "T", "Top view", "Pointer over a Brain Monitor"),
 		_row("Camera", "B", "Bottom view", "Pointer over a Brain Monitor"),
 		_row("Camera", "F", "Front view", "Pointer over a Brain Monitor"),

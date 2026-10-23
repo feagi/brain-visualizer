@@ -106,8 +106,8 @@ func _test_inhibitory_negates_psp_and_plasticity_exports_stdp() -> int:
 		push_error("LTP or LTD was not exported")
 		panel.queue_free()
 		return 1
-	if payload.has("reward_source_area") or payload.has("morphology_scalar") == false:
-		push_error("compact form must keep scalar and omit reward sources")
+	if payload.has("modulators") or payload.has("morphology_scalar") == false:
+		push_error("compact form must keep scalar and omit modulators")
 		panel.queue_free()
 		return 1
 	panel.queue_free()

@@ -13,6 +13,7 @@ var _btn_move_3d: TextureButton
 var _btn_resize_3d: TextureButton
 var _btn_relocate_2d: TextureButton
 var _btn_arrange: ArrangeDropDown
+var _btn_reset_weights: TextureButton
 var _arrange_in_progress: bool = false
 var _close_requested_during_arrange: bool = false
 var _close_requested_clear_selection: bool = true
@@ -327,6 +328,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 							break
 				delete_button.tooltip_text = mix_reason if not mix_reason.is_empty() else "One or more of the selected objects cannot be deleted."
 			
+	_sync_reset_weights_button(reset_button)
 	# Position after mode-specific visibility/layout changes so vertical distance is consistent.
 	_fit_toolbar()
 	_apply_icon_tooltips()
@@ -452,6 +454,39 @@ func _button_reset() -> void:
 			BV.NOTIF.add_notification("Cortical areas reset")
 	close_window()
 
+
+## "Reset learned weights" sits right after Reset. Built from a copy of Reset so the scene stays untouched.
+## Offered for cortical area selections only (not classifiers or circuits).
+func _sync_reset_weights_button(reset_button: TextureButton) -> void:
+	if _btn_reset_weights == null:
+		_btn_reset_weights = reset_button.duplicate() as TextureButton
+		_btn_reset_weights.name = "ResetWeights"
+		_btn_reset_weights.modulate = Color(1.0, 0.75, 0.4)
+		reset_button.get_parent().add_child(_btn_reset_weights)
+		reset_button.get_parent().move_child(_btn_reset_weights, reset_button.get_index() + 1)
+		_btn_reset_weights.pressed.connect(_button_reset_weights)
+	var offered: bool = _mode in [GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA, GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS]
+	_btn_reset_weights.visible = offered
+	_btn_reset_weights.disabled = false
+	_btn_reset_weights.tooltip_text = "Reset learned weights (incoming mappings)..."
+
+## Resets learned synapse weights of all incoming mappings (PUT /v1/cortical_area/reset_weights), after a confirm.
+func _button_reset_weights() -> void:
+	var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+	if areas.is_empty() or FeagiCore == null or FeagiCore.requests == null:
+		BV.NOTIF.add_notification("No cortical areas selected to reset weights")
+		close_window()
+		return
+	var message: String = "Reset learned synapse weights on all incoming mappings of %d cortical area(s) to their initial weights?\nLearned weights are lost. Neuron state and genome are not changed." % areas.size()
+	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Reset Learned Weights",
+		message,
+		FEAGIRequests.run_reset_area_weights.bind(areas),
+		"Reset Weights",
+		"Cancel"
+	)
+	BV.WM.spawn_popup(popup_definition)
+	close_window()
 
 ## The reset response does not push new ST/LT counts. Reload every open readout for these areas.
 func _publish_memory_reset(areas: Array[AbstractCorticalArea]) -> void:

@@ -2,8 +2,11 @@ extends GraphEdit
 class_name CircuitSchematic
 ## Read-only view of the whole genome in one scene. Every brain region is a box around its contents:
 ## the root is open, its regions start as closed blocks, and double-clicking a block opens it in place
-## (the header of an open frame closes it again). Mappings are merged into one line per pair of
-## visible ends, with a count when more than one mapping is merged. Editing stays in Circuit Builder.
+## (the header of an open frame closes it again); Show all and Hide all open or close every region at
+## once. Shift-clicking a region opens it in Circuit Builder
+## and Brain Monitor, and the Export menu saves the whole view as PNG, JPG or PDF. Mappings are merged
+## into one line per pair of visible ends, with a count when more than one mapping is merged. Editing
+## stays in Circuit Builder.
 ## See docs/CIRCUIT_SCHEMATIC_VIEW_DESIGN.md.
 
 const TAB_TITLE: StringName = &"Circuit Schematic"
@@ -13,6 +16,10 @@ const MAX_ZOOM: float = 2.0
 
 var model: SchematicModel:
 	get: return _model
+
+## Set before adding to the tree: a still copy for [SchematicExporter], with no menu, minimap, grid,
+## fitting or live updates.
+var export_mode: bool = false
 
 var _model: SchematicModel
 var _open: PackedByteArray = []
@@ -25,10 +32,23 @@ var _fit_pending: bool = true
 
 func _ready() -> void:
 	name = TAB_TITLE
-	minimap_enabled = true
+	minimap_enabled = not export_mode
+	# The top-left menu holds only the Export, Show all and Hide all buttons.
+	show_zoom_label = false
+	show_zoom_buttons = false
+	show_grid_buttons = false
+	show_minimap_button = false
 	show_arrange_button = false
 	_edge_layer = SchematicEdgeLayer.new()
 	add_child(_edge_layer)
+	if export_mode:
+		show_menu = false
+		show_grid = false
+		_fit_pending = false
+		rebuild()
+		return
+	_add_export_menu()
+	_add_open_all_buttons()
 	_rebuild_timer = Timer.new()
 	_rebuild_timer.one_shot = true
 	_rebuild_timer.wait_time = REBUILD_DELAY_S
@@ -43,28 +63,40 @@ func _ready() -> void:
 
 ## Rebuilds the model from the cache, keeping open regions that still exist.
 func rebuild() -> void:
-	var open_region_ids: Dictionary = {}
-	if _model != null:
-		for i in _model.items.size():
-			if _open[i] == 1 and _model.items[i]["object"] is BrainRegion:
-				open_region_ids[(_model.items[i]["object"] as BrainRegion).region_ID] = true
+	var open_ids: Dictionary = open_region_ids()
 	var first_build: bool = _model == null
 	_model = SchematicTreeBuilder.build_from_cache()
 	if _model == null:
 		_model = SchematicModel.new()
 		_model.finish()
-	_open = _model.default_open_mask()
-	for i in _model.items.size():
-		var object: Object = _model.items[i]["object"]
-		if object is BrainRegion and open_region_ids.has((object as BrainRegion).region_ID):
-			_open[i] = 1
 	for box: SchematicBox in _boxes.values():
 		remove_child(box)
 		box.queue_free()
 	_boxes.clear()
-	_sync_nodes()
-	if first_build:
+	set_open_region_ids(open_ids)
+	if first_build and not export_mode:
 		request_initial_fit()
+
+
+## region_ID -> true for every region open right now.
+func open_region_ids() -> Dictionary:
+	var ids: Dictionary = {}
+	if _model == null:
+		return ids
+	for i in _model.items.size():
+		if _open[i] == 1 and _model.items[i]["object"] is BrainRegion:
+			ids[(_model.items[i]["object"] as BrainRegion).region_ID] = true
+	return ids
+
+
+## Opens exactly the given regions (plus the root, which is always open).
+func set_open_region_ids(ids: Dictionary) -> void:
+	_open = _model.default_open_mask()
+	for i in _model.items.size():
+		var object: Object = _model.items[i]["object"]
+		if object is BrainRegion and ids.has((object as BrainRegion).region_ID):
+			_open[i] = 1
+	_sync_nodes()
 
 
 ## Fits the whole genome once this view has a size.
@@ -79,6 +111,19 @@ func set_region_open(item_index: int, is_open: bool) -> void:
 	if (_open[item_index] == 1) == is_open:
 		return
 	_open[item_index] = 1 if is_open else 0
+	_sync_nodes()
+
+
+## Opens every region that can be opened, or closes all but the root.
+func set_all_regions_open(is_open: bool) -> void:
+	if is_open:
+		_open.resize(_model.items.size())
+		for i in _model.items.size():
+			_open[i] = 1 if _model.is_region(i) and not _model.items[i]["closed_only"] else 0
+		if not _model.items.is_empty():
+			_open[0] = 1
+	else:
+		_open = _model.default_open_mask()
 	_sync_nodes()
 
 
@@ -105,6 +150,7 @@ func _sync_nodes() -> void:
 		# GraphEdit raises a pressed box to the front, which would put a frame over its own contents.
 		box.raise_request.connect(_restore_order, CONNECT_DEFERRED)
 		box.double_clicked.connect(_on_box_double_clicked)
+		box.shift_clicked.connect(_on_box_shift_clicked)
 		_boxes[index] = box
 	_order.clear()
 	for index in visible:
@@ -141,6 +187,33 @@ func _on_box_double_clicked(item_index: int) -> void:
 	set_region_open(item_index, _open[item_index] == 0)
 
 
+func _on_box_shift_clicked(item_index: int) -> void:
+	if not _model.is_region(item_index) or BV.UI == null:
+		return
+	BV.UI.open_region_in_circuit_builder_and_monitor(_model.items[item_index]["object"] as BrainRegion)
+
+
+func _add_export_menu() -> void:
+	var button: MenuButton = MenuButton.new()
+	button.text = "Export"
+	button.tooltip_text = "Save the whole schematic, with the regions open as shown"
+	button.flat = false
+	var popup: PopupMenu = button.get_popup()
+	for format: int in SchematicImageFile.FORMAT.values():
+		popup.add_item(SchematicImageFile.LABELS[format], format)
+	popup.id_pressed.connect(func(format: int) -> void: SchematicExporter.export_view(self, format as SchematicImageFile.FORMAT))
+	get_menu_hbox().add_child(button)
+
+
+func _add_open_all_buttons() -> void:
+	for is_open: bool in [true, false]:
+		var button: Button = Button.new()
+		button.text = "Show all" if is_open else "Hide all"
+		button.tooltip_text = "Open every region to show its internals" if is_open else "Close every region"
+		button.pressed.connect(set_all_regions_open.bind(is_open))
+		get_menu_hbox().add_child(button)
+
+
 func _try_fit() -> void:
 	if not _fit_pending or not is_visible_in_tree() or size.x <= 1.0 or size.y <= 1.0 or _model == null or _model.canvas_rect.size == Vector2.ZERO:
 		return
@@ -174,3 +247,10 @@ func _connect_cache_signals() -> void:
 func _schedule_rebuild() -> void:
 	if _rebuild_timer != null and is_inside_tree():
 		_rebuild_timer.start()
+
+
+func _input(event: InputEvent) -> void: # TEMP SCHEMATIC-DEBUG
+	var mouse: InputEventMouseButton = event as InputEventMouseButton
+	if mouse != null and is_visible_in_tree() and get_global_rect().has_point(mouse.global_position):
+		var hovered: Control = get_viewport().gui_get_hovered_control()
+		print("SCHEMATIC-DEBUG raw btn=%d pressed=%s dbl=%s dev=%d hovered=%s t=%d" % [mouse.button_index, mouse.pressed, mouse.double_click, mouse.device, hovered.get_path() if hovered != null else "none", Time.get_ticks_msec()])

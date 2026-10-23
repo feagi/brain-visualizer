@@ -3,16 +3,17 @@ class_name FEAGINetworking
 ## Handles All Networking to and from FEAGI
 const TRANSPORT_DEBUG_REV: String = "ws-endpoint-resolver-rev-12"
 
-# NOTE: For most signals, get them from http_API and websocket_API directly, no need for duplicates
+# NOTE: Code outside networking reads link state through connection_state, transport_mode and
+# visualization_link_health, never through a specific transport node.
 
 enum CONNECTION_STATE {
 	DISCONNECTED,
 	INITIAL_HTTP_PROBING,
-	INITIAL_WS_PROBING,
+	INITIAL_STREAM_PROBING, ## HTTP is up; waiting for the data stream (WebSocket today, any transport)
 	HEALTHY,
 	RETRYING_HTTP,
-	RETRYING_WS,
-	RETRYING_HTTP_WS
+	RETRYING_STREAM, ## HTTP is up; the data stream is reconnecting
+	RETRYING_HTTP_STREAM
 }
 
 enum TRANSPORT_MODE {
@@ -22,20 +23,58 @@ enum TRANSPORT_MODE {
 	ZMQ
 }
 
+## Which generation of FEAGI this session talks to. Decides the agent client, the stream decoder and
+## which REST-backed features exist. LEGACY is today's FEAGI (feagi-agent registration, WebSocket/SHM
+## Type 11); ZENOH is the feagi-interop server.
+enum FEAGI_PROTOCOL {
+	UNKNOWN,
+	LEGACY,
+	ZENOH
+}
+
+## REST-backed features that not every FEAGI generation serves.
+enum FEAGI_FEATURE {
+	AGENT_REGISTRY, ## /v1/agent/list, /v1/agent/capabilities/all
+	DEVICE_REGISTRATIONS, ## /v1/agent/{agent_id}/device_registrations
+	MANUAL_STIMULATION ## /v1/agent/manual_stimulation
+}
+
+## Health of the link carrying the data stream, whichever transport it uses.
+enum VISUALIZATION_LINK_HEALTH {
+	NO_CONNECTION,
+	CONNECTED,
+	RETRYING
+}
+
 signal connection_state_changed(prev_state: CONNECTION_STATE, current_state: CONNECTION_STATE)
 signal genome_reset_request_recieved()
+signal visualization_link_health_changed(prev_health: VISUALIZATION_LINK_HEALTH, current_health: VISUALIZATION_LINK_HEALTH)
+signal feagi_protocol_changed(protocol: FEAGI_PROTOCOL)
 
 
 var http_API: FEAGIHTTPAPI = null
 var websocket_API: FEAGIWebSocketAPI = null
+var shm_transport: FEAGISharedMemoryTransport = null
+## Transport-independent consumer of the data stream; every transport feeds it.
+var visualization_sink: FEAGIVisualizationSink = null
 var connection_state: CONNECTION_STATE:
 	get: return _connection_state
+var transport_mode: TRANSPORT_MODE:
+	get: return _transport_mode
+var visualization_link_health: VISUALIZATION_LINK_HEALTH:
+	get: return _visualization_link_health
+var feagi_protocol: FEAGI_PROTOCOL:
+	get: return _feagi_protocol
+## True when the last agent registration failed (including a FEAGI whose protocol BV cannot stream from).
+var transport_registration_failed: bool:
+	get: return _transport_registration_failed
 
 var _connection_state: CONNECTION_STATE = CONNECTION_STATE.DISCONNECTED
 var _transport_mode: TRANSPORT_MODE = TRANSPORT_MODE.UNKNOWN  # Track which transport is being used
+var _visualization_link_health: VISUALIZATION_LINK_HEALTH = VISUALIZATION_LINK_HEALTH.NO_CONNECTION
+var _feagi_protocol: FEAGI_PROTOCOL = FEAGI_PROTOCOL.UNKNOWN
 var _feagi_endpoint_details: FeagiEndpointDetails = null  # Store endpoint details for later use
 var _heartbeat_timer: Timer = null  # Timer for sending periodic heartbeats to FEAGI
-var _heartbeat_interval: float = 5.0  # Send heartbeat every 5 seconds to provide margin against 30s liveness timeout.
 var _reconnect_timer: Timer = null
 var _reconnect_in_progress: bool = false
 var _transport_registration_failed: bool = false
@@ -50,7 +89,20 @@ func _init():
 	http_API.name = "FEAGIHTTPAPI"
 	add_child(http_API)
 
+	visualization_sink = FEAGIVisualizationSink.new()
+	visualization_sink.name = "FEAGIVisualizationSink"
+	add_child(visualization_sink)
+
+	shm_transport = FEAGISharedMemoryTransport.new()
+	shm_transport.name = "FEAGISharedMemoryTransport"
+	shm_transport.visualization_sink = visualization_sink
+	shm_transport.shm_visualization_enabled.connect(_on_shm_visualization_enabled)
+	add_child(shm_transport)
+
 	websocket_API = FEAGIWebSocketAPI.new()
+	websocket_API.visualization_sink = visualization_sink
+	websocket_API.shm_transport = shm_transport
+	websocket_API.FEAGI_socket_health_changed.connect(func(_prev, _cur): _refresh_visualization_link_health())
 	websocket_API.name = "FEAGIWebSocketAPI"
 	websocket_API.process_mode = Node.PROCESS_MODE_DISABLED
 	websocket_API.feagi_requesting_reset.connect(func(): 
@@ -60,7 +112,6 @@ func _init():
 		print("[ok] NETWORKING: genome_reset_request_recieved signal emitted")
 	)
 	add_child(websocket_API)
-	websocket_API.shm_visualization_enabled.connect(_on_shm_visualization_enabled)
 
 func _on_genome_reset_request() -> void:
 	# When FEAGI requests genome reset, it deregisters all agents
@@ -73,13 +124,13 @@ func _on_genome_reset_request() -> void:
 
 func _on_shm_visualization_enabled(_path: String) -> void:
 	# SHM is now active; BV no longer requires WebSocket connectivity for neuron visualization.
-	_transport_mode = TRANSPORT_MODE.SHARED_MEMORY
-	# Ensure SHM polling runs (it lives in FEAGIWebSocketAPI._process()).
-	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
+	_set_transport_mode(TRANSPORT_MODE.SHARED_MEMORY)
 	# If WS was in retry mode, stop it (reduces log spam / avoids UI disconnect loops).
 	websocket_API.disconnect_websocket()
-	# If we were waiting on WS, treat connection as healthy (HTTP already validated).
-	if _connection_state != CONNECTION_STATE.HEALTHY:
+	# If we were waiting on WS, treat connection as healthy (HTTP already validated). Only then: SHM can
+	# open at startup before any connection exists, and marking HEALTHY there makes FeagiCore refuse to
+	# load settings and connect. attempt_connection() picks up an active SHM transport by itself.
+	if _connection_state == CONNECTION_STATE.INITIAL_STREAM_PROBING or _connection_state == CONNECTION_STATE.RETRYING_STREAM:
 		var prev = _connection_state
 		_connection_state = CONNECTION_STATE.HEALTHY
 		connection_state_changed.emit(prev, CONNECTION_STATE.HEALTHY)
@@ -120,6 +171,8 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		_start_reconnect_loop()
 		return false
 	
+	await _detect_feagi_protocol()
+
 	# REST registration is deprecated; transport setup is now resolved without REST calls.
 	# Ensure a previous registration/session does not block reconnect registration.
 	stop_heartbeat()
@@ -129,7 +182,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	# If so, skip WebSocket connection entirely
 	if shm_enabled:
 		print("[FEAGI] [TRANSPORT] SHM enabled during registration - skipping WebSocket connection")
-		_transport_mode = TRANSPORT_MODE.SHARED_MEMORY  # Remember we're using SHM
+		_set_transport_mode(TRANSPORT_MODE.SHARED_MEMORY)  # Remember we're using SHM
 		_connection_state = CONNECTION_STATE.HEALTHY
 		connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.HEALTHY)
 		_stop_reconnect_loop()
@@ -152,9 +205,9 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 		return false
 	
 	# No SHM available or not recommended - proceed with WebSocket connection
-	_transport_mode = TRANSPORT_MODE.WEBSOCKET  # Remember we're using WebSocket
-	_connection_state = CONNECTION_STATE.INITIAL_WS_PROBING
-	connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.INITIAL_WS_PROBING)
+	_set_transport_mode(TRANSPORT_MODE.WEBSOCKET)  # Remember we're using WebSocket
+	_connection_state = CONNECTION_STATE.INITIAL_STREAM_PROBING
+	connection_state_changed.emit(CONNECTION_STATE.INITIAL_HTTP_PROBING, CONNECTION_STATE.INITIAL_STREAM_PROBING)
 	websocket_API.setup(_feagi_endpoint_details.full_websocket_address)
 	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
 	websocket_API.connect_websocket()
@@ -168,7 +221,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	if websocket_API.socket_health == websocket_API.WEBSOCKET_HEALTH.NO_CONNECTION:
 		_connection_state = CONNECTION_STATE.DISCONNECTED
 		http_API.disconnect_http() # HTTP is active, so lets ensure its disabled
-		connection_state_changed.emit(CONNECTION_STATE.INITIAL_WS_PROBING, CONNECTION_STATE.DISCONNECTED)
+		connection_state_changed.emit(CONNECTION_STATE.INITIAL_STREAM_PROBING, CONNECTION_STATE.DISCONNECTED)
 		push_error("FEAGI NETWORK: Unable to commence a new connection as there was no WS response at endpoint %s" % _feagi_endpoint_details.full_websocket_address)
 		_start_reconnect_loop()
 		return false
@@ -176,7 +229,7 @@ func attempt_connection(feagi_endpoint_details: FeagiEndpointDetails) -> bool:
 	# both HTTP and WS are functioning! We are good to go!
 	# CRITICAL: Transition to HEALTHY state now that both HTTP and WebSocket are connected
 	_connection_state = CONNECTION_STATE.HEALTHY
-	connection_state_changed.emit(CONNECTION_STATE.INITIAL_WS_PROBING, CONNECTION_STATE.HEALTHY)
+	connection_state_changed.emit(CONNECTION_STATE.INITIAL_STREAM_PROBING, CONNECTION_STATE.HEALTHY)
 	_stop_reconnect_loop()
 	
 	# connect signals for future changes
@@ -222,6 +275,11 @@ func _normalize_agent_descriptor_b64(b64: String) -> String:
 	return b64
 
 func _register_agent_via_transport() -> bool:
+	if _feagi_protocol == FEAGI_PROTOCOL.ZENOH:
+		# The feagi-interop agent and stream do not exist yet; there is nothing to register with.
+		push_error("FEAGI NETWORK: This FEAGI uses the zenoh protocol, which this Brain Visualizer cannot stream from yet.")
+		_transport_registration_failed = true
+		return false
 	# REST registration is no longer supported. Register via transport-specific client.
 	# STEP 1: Query FEAGI's burst frequency
 	var feagi_hz = await _get_feagi_burst_frequency()
@@ -235,7 +293,7 @@ func _register_agent_via_transport() -> bool:
 	# Ensure SHM polling has a deterministic rate.
 	set_meta("_negotiated_viz_hz", requested_hz)
 	# SHM may already be active from environment variables consumed by FEAGIWebSocketAPI.
-	if websocket_API and websocket_API.get("_use_shared_mem"):
+	if shm_transport != null and shm_transport.is_active:
 		print("[FEAGI] [TRANSPORT] SHM already active via environment configuration")
 		return true
 
@@ -269,15 +327,10 @@ func _register_agent_via_transport() -> bool:
 
 	var registration_output: Dictionary
 	var registration_started_ms: int = Time.get_ticks_msec()
-	if not agent_client.has_method("register_via_websocket_with_heartbeat"):
-		push_error("[FEAGI] [TRANSPORT] FeagiAgentClient missing register_via_websocket_with_heartbeat.")
-		_transport_registration_failed = true
-		return false
-	registration_output = agent_client.register_via_websocket_with_heartbeat(
+	registration_output = agent_client.register_via_websocket(
 		registration_ws_url,
 		descriptor_b64,
-		auth_token_b64,
-		_heartbeat_interval
+		auth_token_b64
 	)
 	var registration_elapsed_ms: int = Time.get_ticks_msec() - registration_started_ms
 	if not bool(registration_output.get("success", false)):
@@ -481,11 +534,11 @@ func _HTTP_health_changed(_prev_health: FEAGIHTTPAPI.HTTP_HEALTH, current_health
 			# In WebSocket transport mode, do not promote to HEALTHY unless WS is truly CONNECTED.
 			if _transport_mode == TRANSPORT_MODE.WEBSOCKET:
 				if websocket_API == null:
-					_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+					_change_connection_state(CONNECTION_STATE.RETRYING_STREAM)
 				elif websocket_API.socket_health == FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
 					_change_connection_state(CONNECTION_STATE.HEALTHY)
 				else:
-					_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+					_change_connection_state(CONNECTION_STATE.RETRYING_STREAM)
 			else:
 				_change_connection_state(CONNECTION_STATE.HEALTHY)
 		
@@ -514,8 +567,8 @@ func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, cu
 			# If HTTP is still alive, keep session in WS retry mode instead of dropping to global DISCONNECTED.
 			# This avoids reconnect storms where a transient WS failure tears down healthy HTTP/session state.
 			if _http_is_connectable():
-				print("FEAGI NETWORK: WS NO_CONNECTION while HTTP is healthy → staying in RETRYING_WS")
-				_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+				print("FEAGI NETWORK: WS NO_CONNECTION while HTTP is healthy → staying in RETRYING_STREAM")
+				_change_connection_state(CONNECTION_STATE.RETRYING_STREAM)
 				if _auto_reconnect_enabled and not _ws_recovery_in_progress:
 					_ws_recovery_in_progress = true
 					call_deferred("_recover_ws_transport_after_disconnect")
@@ -534,14 +587,14 @@ func _WS_health_changed(_previous_health: FEAGIWebSocketAPI.WEBSOCKET_HEALTH, cu
 				_change_connection_state(CONNECTION_STATE.RETRYING_HTTP)
 		
 		FEAGIWebSocketAPI.WEBSOCKET_HEALTH.RETRYING:
-			print("FEAGI NETWORK: WS RETRYING → Changing to RETRYING_WS")
+			print("FEAGI NETWORK: WS RETRYING → Changing to RETRYING_STREAM")
 			# Only path to this is from WEBSOCKET_HEALTH.CONNECTED
 			if _http_is_connectable():
 				_schedule_ws_retry_recovery_watchdog()
-				_change_connection_state(CONNECTION_STATE.RETRYING_WS)
+				_change_connection_state(CONNECTION_STATE.RETRYING_STREAM)
 			else:
 				_invalidate_ws_retry_watchdog()
-				_change_connection_state(CONNECTION_STATE.RETRYING_HTTP_WS)
+				_change_connection_state(CONNECTION_STATE.RETRYING_HTTP_STREAM)
 
 func _invalidate_ws_retry_watchdog() -> void:
 	_ws_retry_watchdog_generation += 1
@@ -617,7 +670,7 @@ func _recover_ws_transport_after_disconnect() -> void:
 		return
 	
 	if shm_enabled:
-		_transport_mode = TRANSPORT_MODE.SHARED_MEMORY
+		_set_transport_mode(TRANSPORT_MODE.SHARED_MEMORY)
 		_change_connection_state(CONNECTION_STATE.HEALTHY)
 		_ws_recovery_in_progress = false
 		_notify_feagicore_schedule_visualization_resync()
@@ -663,7 +716,7 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 				_start_reconnect_loop()
 		CONNECTION_STATE.INITIAL_HTTP_PROBING: # not possible:
 			return
-		CONNECTION_STATE.INITIAL_WS_PROBING: # not possible:
+		CONNECTION_STATE.INITIAL_STREAM_PROBING: # not possible:
 			return
 		CONNECTION_STATE.HEALTHY:
 			_stop_reconnect_loop()
@@ -673,17 +726,17 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 			var ws_ok = websocket_API != null and websocket_API.socket_health == FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED
 			if not http_ok:
 				if ws_required and not ws_ok:
-					new_state = CONNECTION_STATE.RETRYING_HTTP_WS
+					new_state = CONNECTION_STATE.RETRYING_HTTP_STREAM
 				else:
 					new_state = CONNECTION_STATE.RETRYING_HTTP
 			elif ws_required and not ws_ok:
-				new_state = CONNECTION_STATE.RETRYING_WS
+				new_state = CONNECTION_STATE.RETRYING_STREAM
 		CONNECTION_STATE.RETRYING_HTTP:
-			if prev_state == CONNECTION_STATE.RETRYING_WS: # are both actually broken?
-				new_state = CONNECTION_STATE.RETRYING_HTTP_WS
-		CONNECTION_STATE.RETRYING_WS:
+			if prev_state == CONNECTION_STATE.RETRYING_STREAM: # are both actually broken?
+				new_state = CONNECTION_STATE.RETRYING_HTTP_STREAM
+		CONNECTION_STATE.RETRYING_STREAM:
 			if prev_state == CONNECTION_STATE.RETRYING_HTTP: # are both actually broken?
-				new_state = CONNECTION_STATE.RETRYING_HTTP_WS
+				new_state = CONNECTION_STATE.RETRYING_HTTP_STREAM
 	
 	# Avoid no-op emissions so UI/state listeners do not process duplicate transitions.
 	if prev_state == new_state:
@@ -698,7 +751,8 @@ func start_heartbeat() -> void:
 	return
 
 
-## Stop sending heartbeats to FEAGI
+## Deregister the current agent session from FEAGI (best effort) and clear registration metadata so the
+## next connect registers fresh. Name kept from the heartbeat era; BV sends no heartbeats.
 func stop_heartbeat() -> void:
 	var registered_agent_id := ""
 	if has_meta("_registered_agent_id_b64"):
@@ -707,12 +761,10 @@ func stop_heartbeat() -> void:
 	if has_meta("_registration_ws_url"):
 		registration_ws_url = str(get_meta("_registration_ws_url")).strip_edges()
 	
-	# Stop heartbeat and deregister (may fail if FEAGI already deregistered us during genome reload)
+	# Deregister (may fail if FEAGI already deregistered us during genome reload)
 	if registered_agent_id != "" and ClassDB.class_exists("FeagiAgentClient"):
 		var agent_client = ClassDB.instantiate("FeagiAgentClient")
 		if agent_client != null:
-			print("[FEAGI] [TRANSPORT] Stopping heartbeat for agent: ", registered_agent_id)
-			agent_client.stop_heartbeat_for_agent(registered_agent_id)
 			if registration_ws_url != "":
 				print("[FEAGI] [TRANSPORT] Attempting deregistration (may already be deregistered by FEAGI)")
 				# Deregistration may fail if FEAGI already deregistered us (genome reload) - that's okay
@@ -775,3 +827,168 @@ func _on_reconnect_timer_timeout() -> void:
 	_reconnect_in_progress = true
 	await FeagiCore.attempt_connection_to_FEAGI(_feagi_endpoint_details)
 	_reconnect_in_progress = false
+
+
+#region Visualization link (transport-neutral)
+
+func _set_transport_mode(mode: TRANSPORT_MODE) -> void:
+	_transport_mode = mode
+	_refresh_visualization_link_health()
+
+
+func _refresh_visualization_link_health() -> void:
+	var health := VISUALIZATION_LINK_HEALTH.NO_CONNECTION
+	if _transport_mode == TRANSPORT_MODE.SHARED_MEMORY:
+		if shm_transport != null and shm_transport.is_active:
+			health = VISUALIZATION_LINK_HEALTH.CONNECTED
+	elif websocket_API != null:
+		match websocket_API.socket_health:
+			FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
+				health = VISUALIZATION_LINK_HEALTH.CONNECTED
+			FEAGIWebSocketAPI.WEBSOCKET_HEALTH.RETRYING:
+				health = VISUALIZATION_LINK_HEALTH.RETRYING
+	if health == _visualization_link_health:
+		return
+	var prev_health := _visualization_link_health
+	_visualization_link_health = health
+	print("FEAGI NETWORK: visualization link %s → %s (transport %s)" % [
+		VISUALIZATION_LINK_HEALTH.keys()[prev_health], VISUALIZATION_LINK_HEALTH.keys()[health], TRANSPORT_MODE.keys()[_transport_mode]
+	])
+	visualization_link_health_changed.emit(prev_health, health)
+
+
+## Transport details for status displays: transport, health, retry_count, shm_path.
+func get_visualization_link_status() -> Dictionary:
+	var uses_ws := _transport_mode == TRANSPORT_MODE.WEBSOCKET and websocket_API != null
+	return {
+		"transport": TRANSPORT_MODE.keys()[_transport_mode],
+		"health": VISUALIZATION_LINK_HEALTH.keys()[_visualization_link_health],
+		"retry_count": websocket_API.retry_count if uses_ws else 0,
+		"shm_path": shm_transport.shm_path if shm_transport != null else "",
+	}
+
+
+## Reconnect the stream if its transport has given up (e.g. once FEAGI health recovers). No-op otherwise.
+func reconnect_visualization_link_if_down() -> void:
+	if _transport_mode != TRANSPORT_MODE.WEBSOCKET or websocket_API == null:
+		return
+	if websocket_API.socket_health != FEAGIWebSocketAPI.WEBSOCKET_HEALTH.NO_CONNECTION:
+		return
+	_prepare_websocket_transport()
+	websocket_API.connect_websocket()
+
+
+## Start a connect if the stream is down. Returns true when there is nothing left to wait for:
+## the link is connected, or the transport needs no connection.
+func ensure_visualization_link_connected() -> bool:
+	if _transport_mode == TRANSPORT_MODE.SHARED_MEMORY or websocket_API == null:
+		return true
+	if websocket_API.socket_health == FEAGIWebSocketAPI.WEBSOCKET_HEALTH.CONNECTED:
+		return true
+	_prepare_websocket_transport()
+	# Only kick a connect if not already in RETRYING
+	if websocket_API.socket_health == FEAGIWebSocketAPI.WEBSOCKET_HEALTH.NO_CONNECTION:
+		websocket_API.connect_websocket()
+	return false
+
+
+## Re-register the agent, then rebind the stream to the fresh registration (genome reload, FEAGI restart).
+func reregister_and_rebind_visualization_stream() -> void:
+	await _register_agent_via_transport()
+	await rebind_visualization_stream()
+
+
+## Restart the stream so FEAGI binds it to the current registration, avoiding "connected but not
+## streaming" races, then schedule FeagiCore's visualization resync.
+func rebind_visualization_stream() -> void:
+	if _transport_mode != TRANSPORT_MODE.WEBSOCKET or websocket_API == null:
+		return
+	_prepare_websocket_transport()
+	websocket_API.disconnect_websocket()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	websocket_API.connect_websocket()
+	_notify_feagicore_schedule_visualization_resync()
+
+
+func _prepare_websocket_transport() -> void:
+	if _feagi_endpoint_details != null:
+		websocket_API.setup(_feagi_endpoint_details.full_websocket_address)
+	websocket_API.process_mode = Node.PROCESS_MODE_INHERIT
+	# Ensure WS health signal is wired so this node can update its connection state
+	if not websocket_API.FEAGI_socket_health_changed.is_connected(_WS_health_changed):
+		websocket_API.FEAGI_socket_health_changed.connect(_WS_health_changed)
+
+#endregion
+
+
+#region FEAGI protocol (legacy vs zenoh)
+
+## Whether the connected FEAGI serves [param feature]. Before detection this answers as legacy so
+## nothing changes for today's FEAGI.
+func supports_feature(feature: FEAGI_FEATURE) -> bool:
+	match _feagi_protocol:
+		FEAGI_PROTOCOL.ZENOH:
+			# feagi-interop serves no /v1/agent routes yet.
+			return false
+		_:
+			return true
+
+
+func _configured_feagi_protocol() -> FEAGI_PROTOCOL:
+	var configured: String = OS.get_environment("FEAGI_PROTOCOL").strip_edges().to_lower()
+	if configured == "" and FeagiCore.feagi_settings != null:
+		configured = str(FeagiCore.feagi_settings.feagi_protocol).to_lower()
+	match configured:
+		"legacy":
+			return FEAGI_PROTOCOL.LEGACY
+		"zenoh":
+			return FEAGI_PROTOCOL.ZENOH
+		_:
+			return FEAGI_PROTOCOL.UNKNOWN
+
+
+## Decide which FEAGI generation answers at the HTTP address. A configured value wins. Otherwise an
+## explicit "protocol" field in /v1/system/health_check is used when FEAGI provides one, and failing
+## that the agent registry: legacy FEAGI serves /v1/agent/capabilities/all, feagi-interop answers 404.
+func _detect_feagi_protocol() -> void:
+	var configured := _configured_feagi_protocol()
+	if configured != FEAGI_PROTOCOL.UNKNOWN:
+		_set_feagi_protocol(configured, "configured")
+		return
+	var health := await _probe_get(http_API.address_list.GET_system_healthCheck)
+	if health.success:
+		match str(health.decode_response_as_dict().get("protocol", "")).to_lower():
+			"legacy":
+				_set_feagi_protocol(FEAGI_PROTOCOL.LEGACY, "health_check protocol field")
+				return
+			"zenoh":
+				_set_feagi_protocol(FEAGI_PROTOCOL.ZENOH, "health_check protocol field")
+				return
+	var agent_registry := await _probe_get(http_API.address_list.GET_agent_capabilities_all)
+	if agent_registry.response_code == 404:
+		_set_feagi_protocol(FEAGI_PROTOCOL.ZENOH, "no agent registry (/v1/agent/capabilities/all returned 404)")
+	elif agent_registry.response_code == 200:
+		_set_feagi_protocol(FEAGI_PROTOCOL.LEGACY, "agent registry present")
+	else:
+		_set_feagi_protocol(FEAGI_PROTOCOL.LEGACY, "probe inconclusive (HTTP %d); assuming legacy" % agent_registry.response_code)
+
+
+func _probe_get(address: StringName) -> FeagiRequestOutput:
+	var definition := APIRequestWorkerDefinition.define_single_GET_call(address)
+	definition.number_of_retries_allowed = 0
+	var worker := http_API.make_HTTP_call(definition)
+	await worker.worker_done
+	return worker.retrieve_output_and_close()
+
+
+func _set_feagi_protocol(protocol: FEAGI_PROTOCOL, reason: String) -> void:
+	print("FEAGI NETWORK: FEAGI protocol %s (%s)" % [FEAGI_PROTOCOL.keys()[protocol], reason])
+	if protocol == _feagi_protocol:
+		return
+	_feagi_protocol = protocol
+	if visualization_sink != null:
+		visualization_sink.select_frame_decoder_for_protocol(protocol)
+	feagi_protocol_changed.emit(protocol)
+
+#endregion

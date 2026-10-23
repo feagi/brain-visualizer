@@ -5,6 +5,7 @@ class_name SchematicBox
 ## raise it; [CircuitSchematic] puts the order back right after.
 
 signal double_clicked(item_index: int)
+signal shift_clicked(item_index: int)
 
 enum LOOK { LEAF, BLOCK, FRAME }
 
@@ -65,6 +66,8 @@ func setup(index: int, item: Dictionary, box_look: LOOK, hidden_mappings: int) -
 		tip += "\nDouble-click to open"
 	elif look == LOOK.FRAME and int(item["parent"]) != -1:
 		tip += "\nDouble-click the header to close"
+	if look != LOOK.LEAF and not item["closed_only"]:
+		tip += "\nShift-click to open in Circuit Builder and Brain Monitor"
 	tooltip_text = tip
 	queue_redraw()
 
@@ -88,7 +91,16 @@ func _draw() -> void:
 
 func _gui_input(event: InputEvent) -> void:
 	var mouse: InputEventMouseButton = event as InputEventMouseButton
-	if mouse == null or mouse.button_index != MOUSE_BUTTON_LEFT or not mouse.pressed or not mouse.double_click:
+	if mouse != null: print("SCHEMATIC-DEBUG box %d %s btn=%d pressed=%s dbl=%s dev=%d t=%d" % [item_index, _title, mouse.button_index, mouse.pressed, mouse.double_click, mouse.device, Time.get_ticks_msec()]) # TEMP
+	if mouse == null or mouse.button_index != MOUSE_BUTTON_LEFT or not mouse.pressed:
+		return
+	# Shift takes precedence so a shift double-click opens the tabs once and doesn't also toggle the box.
+	if mouse.shift_pressed:
+		if look != LOOK.LEAF and not mouse.double_click:
+			shift_clicked.emit(item_index)
+		accept_event()
+		return
+	if not mouse.double_click:
 		return
 	if look == LOOK.FRAME and mouse.position.y > SchematicModel.HEADER:
 		return

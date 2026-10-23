@@ -7,7 +7,7 @@
 [ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="15_7qf8u"]
 [ext_resource type="Texture2D" uid="uid://cyjkmin6bodpp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="5_taa4s"]
 [ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="6_3sy0c"]
-[ext_resource type="Script" uid="uid://7xygvrncscwh" path="res://BrainVisualizer/UI/GenericElements/DropDown/CorticalDropDown.gd" id="rstdp_cdd"]
+[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorModulatorChips.gd" id="mod_chips"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="7_5oycp"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="8_bbn6j"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="9_21qfw"]
@@ -17,29 +17,37 @@
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="13_s4moh"]
 [ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="14_yxhwi"]
 
-[node name="MappingEditorRowGeneric" type="HBoxContainer"]
-offset_right = 2032.0
+[node name="MappingEditorRowGeneric" type="VBoxContainer"]
+offset_right = 1244.0
 offset_bottom = 32.0
 size_flags_horizontal = 3
-theme_type_variation = &"HBoxContainer_farther"
+theme_override_constants/separation = 0
 script = ExtResource("1_j8fwg")
 
-[node name="MappingDefinitionGroup" type="HBoxContainer" parent="."]
+[node name="MainRow" type="HBoxContainer" parent="."]
 layout_mode = 2
-theme_type_variation = &"HBoxContainer_adjacent"
-size_flags_horizontal = 0
+theme_override_constants/separation = 16
 
-[node name="Morphology_List" type="OptionButton" parent="MappingDefinitionGroup"]
-custom_minimum_size = Vector2(150, 0)
+[node name="MappingDefinitionGroup" type="HBoxContainer" parent="MainRow"]
+custom_minimum_size = Vector2(276, 32)
 layout_mode = 2
 size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="Morphology_List" type="OptionButton" parent="MainRow/MappingDefinitionGroup"]
+custom_minimum_size = Vector2(240, 32)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
 clip_text = true
 fit_to_longest_item = false
 script = ExtResource("2_ndwr8")
 
-[node name="edit" type="TextureButton" parent="MappingDefinitionGroup"]
+[node name="edit" type="TextureButton" parent="MainRow/MappingDefinitionGroup"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("7_5oycp")
 texture_pressed = ExtResource("8_bbn6j")
@@ -48,14 +56,9 @@ texture_disabled = ExtResource("10_jwhcp")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Spacer_AfterMappingDefinition" type="Control" parent="."]
-custom_minimum_size = Vector2(4, 0)
+[node name="Scalar" parent="MainRow" instance=ExtResource("3_7llad")]
 layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Scalar" parent="." instance=ExtResource("3_7llad")]
-custom_minimum_size = Vector2(210, 0)
-layout_mode = 2
+size_flags_vertical = 4
 size_flags_horizontal = 0
 alignment = 1
 label_x_text = &""
@@ -63,14 +66,9 @@ label_y_text = &""
 label_z_text = &""
 initial_vector = Vector3i(1, 1, 1)
 
-[node name="Spacer_AfterScalar" type="Control" parent="."]
-custom_minimum_size = Vector2(8, 0)
+[node name="PSP" type="LineEdit" parent="MainRow"]
 layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="PSP" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(170, 0)
-layout_mode = 2
+size_flags_vertical = 4
 size_flags_horizontal = 0
 tooltip_text = "Post-Synaptic Potential
 "
@@ -81,14 +79,9 @@ min_value = 0.0
 max_value = 9999999999.0
 number_decimal_places = 4
 
-[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="."]
-custom_minimum_size = Vector2(12, 0)
+[node name="Synaptic_Delay" type="LineEdit" parent="MainRow"]
 layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Synaptic_Delay" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(100, 0)
-layout_mode = 2
+size_flags_vertical = 4
 size_flags_horizontal = 0
 tooltip_text = "Synaptic delay in whole bursts (minimum 1). PSP arrives at presynaptic fire burst + this value."
 alignment = 1
@@ -97,165 +90,46 @@ initial_int = 1
 min_value = 1
 max_value = 255
 
-[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="."]
-custom_minimum_size = Vector2(12, 0)
+[node name="InhibitoryCell" type="Control" parent="MainRow"]
+custom_minimum_size = Vector2(80, 32)
 layout_mode = 2
 size_flags_horizontal = 0
+size_flags_vertical = 4
 
-[node name="Inhibitory" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(168, 0)
-layout_mode = 2
-size_flags_horizontal = 0
+[node name="Inhibitory" type="TextureButton" parent="MainRow/InhibitoryCell"]
+custom_minimum_size = Vector2(48, 24)
+layout_mode = 0
+offset_top = 4.0
+offset_right = 48.0
+offset_bottom = 28.0
 theme_type_variation = &"ToggleButton"
 texture_normal = ExtResource("5_taa4s")
 ignore_texture_size = true
-stretch_mode = 0
+stretch_mode = 5
 script = ExtResource("6_3sy0c")
 enable_autoscaling_with_theme = false
 
-[node name="Spacer_BetweenInhibitoryAndGate" type="Control" parent="."]
-custom_minimum_size = Vector2(12, 0)
+[node name="Modulators" type="HBoxContainer" parent="MainRow"]
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 3
+size_flags_vertical = 4
+script = ExtResource("mod_chips")
 
-[node name="Gate_Source_Area" type="OptionButton" parent="."]
-custom_minimum_size = Vector2(180, 0)
+[node name="Plasticity_Mode" type="OptionButton" parent="MainRow"]
 layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Gate Source: cortical area whose firing activity gates this synapse (transistor mode).
-When set, synapses contribute zero PSP unless the gate area fires in the same burst.
-Leave unselected for unconditional propagation."
-clip_text = true
-fit_to_longest_item = false
-script = ExtResource("rstdp_cdd")
-include_none_option = true
-
-[node name="Spacer_BetweenGateAndPlasticity" type="Control" parent="."]
-custom_minimum_size = Vector2(12, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Plasticity_Mode" type="OptionButton" parent="."]
-custom_minimum_size = Vector2(168, 0)
-layout_mode = 2
+size_flags_vertical = 4
 size_flags_horizontal = 0
 tooltip_text = "Plasticity mode for this rule:
   Off    - synaptic weights are frozen
   STDP   - classical spike-timing dependent plasticity
-  R-STDP - reward-modulated STDP (requires reward and/or punishment source)"
+  R-STDP - reward-modulated STDP (needs a synaptic.reward modulator subscribed)"
 clip_text = true
 fit_to_longest_item = false
 
-[node name="Spacer_AfterPlasticity" type="Control" parent="."]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Plasticity_Window" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Plasticity Window"
-alignment = 1
-script = ExtResource("15_7qf8u")
-initial_int = 3
-
-[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="."]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Plasticity_Constant" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Plasticity"
-alignment = 1
-script = ExtResource("4_y0rve")
-initial_float = 1.0
-
-[node name="Spacer_AfterPlasticityConst" type="Control" parent="."]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="LTP_Multiplier" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(170, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-alignment = 1
-script = ExtResource("4_y0rve")
-initial_float = 1.0
-
-[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="."]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="LTD_Multiplier" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(170, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-alignment = 1
-script = ExtResource("4_y0rve")
-initial_float = 1.0
-
-[node name="Spacer_AfterLTD" type="Control" parent="."]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Eligibility_Decay_Bursts" type="LineEdit" parent="."]
-custom_minimum_size = Vector2(120, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Eligibility trace decay constant in bursts (R-STDP only). 0 disables temporal credit assignment."
-alignment = 1
-script = ExtResource("15_7qf8u")
-initial_int = 0
-min_value = 0
-max_value = 1024
-
-[node name="Spacer_AfterEligibilityDecay" type="Control" parent="."]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Reward_Source_Area" type="OptionButton" parent="."]
-custom_minimum_size = Vector2(180, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Cortical area whose firing density drives positive reward R(t) (R-STDP only).
-Leave unselected to use punishment-only learning."
-clip_text = true
-fit_to_longest_item = false
-script = ExtResource("rstdp_cdd")
-include_none_option = true
-
-[node name="Spacer_AfterReward" type="Control" parent="."]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="Punishment_Source_Area" type="OptionButton" parent="."]
-custom_minimum_size = Vector2(180, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-tooltip_text = "Cortical area whose firing density drives negative reward R(t) (R-STDP only).
-Leave unselected to use reward-only learning."
-clip_text = true
-fit_to_longest_item = false
-script = ExtResource("rstdp_cdd")
-include_none_option = true
-
-[node name="Spacer_AfterPunishment" type="Control" parent="."]
-custom_minimum_size = Vector2(8, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-
-[node name="remove" type="TextureButton" parent="."]
+[node name="remove" type="TextureButton" parent="MainRow"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 size_flags_horizontal = 0
 theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("11_owcrx")
@@ -265,7 +139,118 @@ texture_disabled = ExtResource("14_yxhwi")
 ignore_texture_size = true
 stretch_mode = 0
 
-[connection signal="pressed" from="MappingDefinitionGroup/edit" to="." method="_on_edit_pressed"]
-[connection signal="float_confirmed" from="PSP" to="." method="_on_user_PSP"]
-[connection signal="item_selected" from="Plasticity_Mode" to="." method="_on_user_select_plasticity_mode"]
-[connection signal="pressed" from="remove" to="." method="_on_mapping_delete_press"]
+[node name="SubRow" type="HBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Indent" type="Control" parent="SubRow"]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Panel" type="PanelContainer" parent="SubRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Fields" type="HBoxContainer" parent="SubRow/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label_Window" type="Label" parent="SubRow/Panel/Fields"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Window"
+
+[node name="Plasticity_Window" type="LineEdit" parent="SubRow/Panel/Fields"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+tooltip_text = "Plasticity Window (bursts)"
+alignment = 1
+script = ExtResource("15_7qf8u")
+initial_int = 3
+
+[node name="Label_Constant" type="Label" parent="SubRow/Panel/Fields"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Constant"
+
+[node name="Plasticity_Constant" type="LineEdit" parent="SubRow/Panel/Fields"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+tooltip_text = "Plasticity Constant"
+alignment = 1
+script = ExtResource("4_y0rve")
+initial_float = 1.0
+
+[node name="Label_LTP" type="Label" parent="SubRow/Panel/Fields"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "LTP ×"
+
+[node name="LTP_Multiplier" type="LineEdit" parent="SubRow/Panel/Fields"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+tooltip_text = "Long-Term Potentiation Multiplier"
+alignment = 1
+script = ExtResource("4_y0rve")
+initial_float = 1.0
+
+[node name="Label_LTD" type="Label" parent="SubRow/Panel/Fields"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "LTD ×"
+
+[node name="LTD_Multiplier" type="LineEdit" parent="SubRow/Panel/Fields"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+tooltip_text = "Long-Term Depression Multiplier"
+alignment = 1
+script = ExtResource("4_y0rve")
+initial_float = 1.0
+
+[node name="EligibilityGroup" type="HBoxContainer" parent="SubRow/Panel/Fields"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_override_constants/separation = 8
+
+[node name="Label_Eligibility" type="Label" parent="SubRow/Panel/Fields/EligibilityGroup"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Eligibility Decay"
+
+[node name="Eligibility_Decay_Bursts" type="LineEdit" parent="SubRow/Panel/Fields/EligibilityGroup"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+tooltip_text = "Eligibility trace decay constant in bursts (R-STDP only). 0 disables temporal credit assignment."
+alignment = 1
+script = ExtResource("15_7qf8u")
+initial_int = 0
+min_value = 0
+max_value = 1024
+
+[node name="Warning" type="Label" parent="SubRow/Panel/Fields"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 0
+theme_override_colors/font_color = Color(1, 0.45, 0.35, 1)
+text_overrun_behavior = 3
+clip_text = true
+
+[connection signal="pressed" from="MainRow/MappingDefinitionGroup/edit" to="." method="_on_edit_pressed"]
+[connection signal="float_confirmed" from="MainRow/PSP" to="." method="_on_user_PSP"]
+[connection signal="item_selected" from="MainRow/Plasticity_Mode" to="." method="_on_user_select_plasticity_mode"]
+[connection signal="pressed" from="MainRow/remove" to="." method="_on_mapping_delete_press"]

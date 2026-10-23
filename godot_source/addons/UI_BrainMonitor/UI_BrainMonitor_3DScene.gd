@@ -944,6 +944,7 @@ func _compute_world_aabb(node: Node) -> AABB:
 	return aabb
 
 var _scroll_fast_modifier_held: bool = false
+var _area_name_reveal_modifier_held: bool = false
 var _mapping_shift_was_held: bool = false
 var _mapping_pinned_cortical_id: StringName = &""
 var _mapping_count_buttons_active: bool = false
@@ -954,15 +955,16 @@ func is_scroll_fast_modifier_held() -> bool:
 	return _scroll_fast_modifier_held
 
 
-## True while Shift is held and the pointer is inside this 3D view.
+## True while Ctrl is held and the pointer is inside this 3D view.
 ## Other Brain Monitor views keep their titles hidden.
 func reveals_all_area_name_labels() -> bool:
-	return AreaNameLabelVisibility.shift_reveals_titles_in_this_view(_scroll_fast_modifier_held, _is_mouse_hovering_viewport)
+	return AreaNameLabelVisibility.shift_reveals_titles_in_this_view(_area_name_reveal_modifier_held, _is_mouse_hovering_viewport)
 
 
 ## While the intro is running, keep the camera aimed at the scene center as it moves
 func _process(delta: float) -> void:
 	_scroll_fast_modifier_held = Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_SHIFT)
+	_area_name_reveal_modifier_held = Input.is_physical_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_CTRL)
 	_sync_tab_menu_visibility()
 	if _startup_intro_animating and _pancake_cam != null:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
@@ -5440,14 +5442,14 @@ func _deferred_invoke_ws_fastpath_rebuild() -> void:
 		# No FeagiCore reference means [method FeagiCore.bv_begin_visual_rebuild_pause] could not have
 		# run either, so there is nothing outstanding to release.
 		return
-	var ws: FEAGIWebSocketAPI = FeagiCore.network.websocket_API if FeagiCore.network != null else null
-	if ws == null:
+	var sink: FEAGIVisualizationSink = FeagiCore.network.visualization_sink if FeagiCore.network != null else null
+	if sink == null:
 		# Paired with [method FeagiCore.bv_begin_visual_rebuild_pause]; release all owed pauses if the
-		# network/WebSocket node is gone before rebuild.
+		# network/visualization sink node is gone before rebuild.
 		for _i in range(pause_ends_owed):
 			FeagiCore.bv_end_visual_rebuild_pause_one()
 		return
-	ws.request_bv_fastpath_cache_rebuild(pause_ends_owed)
+	sink.request_bv_fastpath_cache_rebuild(pause_ends_owed)
 
 
 ## Drops every cortical volume node and clears the ID map. Caller must call [method _add_missing_cortical_area_visualizations] next.
@@ -5473,7 +5475,7 @@ func _teardown_all_cortical_area_visualizations() -> void:
 
 ## Full cortical rebuild: same path as genome [signal genome_cache_replaced] — deterministic after hash refresh / reconnect.
 func _rebuild_cortical_visualizations_after_cache_touch() -> void:
-	if FeagiCore != null and FeagiCore.network != null and FeagiCore.network.websocket_API != null:
+	if FeagiCore != null and FeagiCore.network != null and FeagiCore.network.visualization_sink != null:
 		FeagiCore.bv_begin_visual_rebuild_pause()
 	_teardown_all_cortical_area_visualizations()
 	_add_missing_cortical_area_visualizations()
