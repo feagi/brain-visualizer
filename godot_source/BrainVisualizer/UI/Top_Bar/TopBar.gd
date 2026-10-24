@@ -305,12 +305,36 @@ func _wire_modulators() -> void:
 func _open_modulators() -> void:
 	if _shared_combo == null:
 		return
-	var items := _build_topbar_cortical_items(AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR)
+	var items: Array[Dictionary] = []
+	if FeagiCore.can_interact_with_feagi():
+		var response: FeagiRequestOutput = await FeagiCore.requests.list_modulators()
+		if response != null and not response.has_errored:
+			items = _build_topbar_modulator_items(response.decode_response_as_dict())
+	if not is_instance_valid(_shared_combo):
+		return
 	_shared_combo.open_category_list(_modulators_list(), items, "Filter modulators...", _on_modulator_chosen, _open_create_modulator, BrainObjectsCombo.ROOT_LIST_MODULATORS)
 
 
-func _on_modulator_chosen(area: AbstractCorticalArea) -> void:
-	_focus_cortical_from_topbar(area)
+## One item per FEAGI modulator instance, sorted by id: label "id (type)", payload {"id", "definition"}.
+func _build_topbar_modulator_items(modulators: Dictionary) -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	var ids: Array = modulators.keys()
+	ids.sort_custom(func(a: Variant, b: Variant) -> bool:
+		return String(a).to_lower() < String(b).to_lower()
+	)
+	for id in ids:
+		var body: Variant = modulators[id]
+		if not body is Dictionary:
+			continue
+		items.append({
+			"label": "%s (%s)" % [id, str(body.get("type", ""))],
+			"payload": {"id": str(id), "definition": body},
+		})
+	return items
+
+
+func _on_modulator_chosen(payload: Dictionary) -> void:
+	BV.WM.spawn_edit_modulator(str(payload.get("id", "")), payload.get("definition", {}), _modulators_list())
 
 
 func _open_create_modulator() -> void:
