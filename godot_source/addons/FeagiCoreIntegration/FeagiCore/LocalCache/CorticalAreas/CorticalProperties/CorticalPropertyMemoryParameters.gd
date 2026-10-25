@@ -9,6 +9,8 @@ signal mp_learning_enabled_updated(val: bool, this_cortical_area: MemoryCortical
 signal mp_change_mode_updated(val: StringName, this_cortical_area: MemoryCorticalArea)
 signal mp_delta_quantization_updated(val: float, this_cortical_area: MemoryCorticalArea)
 signal mp_ratio_quantization_updated(val: float, this_cortical_area: MemoryCorticalArea)
+signal memory_neuron_cap_updated(val: int, this_cortical_area: MemoryCorticalArea)
+signal ltm_eviction_updated(val: StringName, this_cortical_area: MemoryCorticalArea)
 
 ## FEAGI `mp_change_mode` values.
 const MP_CHANGE_NONE: StringName = &"none"
@@ -17,6 +19,22 @@ const MP_CHANGE_RATIO: StringName = &"mp_ratio"
 ## Mirror FEAGI's MemoryAreaProperties defaults; shown until FEAGI reports genome values.
 const DEFAULT_MP_DELTA_QUANTIZATION: float = 1.0
 const DEFAULT_MP_RATIO_QUANTIZATION: float = 20.0
+
+## FEAGI `ltm_eviction` values.
+const LTM_EVICTION_LRU: StringName = &"lru"
+const LTM_EVICTION_NONE: StringName = &"none"
+## Dropdown labels for `ltm_eviction`.
+const LTM_EVICTION_LABEL_LRU: StringName = &"LRU"
+const LTM_EVICTION_LABEL_NONE: StringName = &"None"
+const LTM_EVICTION_LABEL_OPTIONS: Array[StringName] = [LTM_EVICTION_LABEL_LRU, LTM_EVICTION_LABEL_NONE]
+## u32 in FEAGI.
+const MEMORY_NEURON_CAP_MAX: int = 4294967295
+
+static func ltm_eviction_label_from_key(key: StringName) -> StringName:
+	return LTM_EVICTION_LABEL_NONE if key == LTM_EVICTION_NONE else LTM_EVICTION_LABEL_LRU
+
+static func ltm_eviction_key_from_label(label: StringName) -> StringName:
+	return LTM_EVICTION_NONE if label == LTM_EVICTION_LABEL_NONE else LTM_EVICTION_LRU
 
 ## Single user-facing MP encoding choice. FEAGI stores it as two mutually exclusive
 ## keys (`mp_learning_enabled`, `mp_change_mode`); these labels are the dropdown items.
@@ -108,6 +126,17 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		var value = data["mp_ratio_quantization"]
 		if value != null:
 			mp_ratio_quantization = float(value)
+
+	# Per-area cap and eviction policy (absent on older FEAGI; keep defaults)
+	if "memory_neuron_cap" in data.keys():
+		var value = data["memory_neuron_cap"]
+		if value != null:
+			memory_neuron_cap = int(value)
+
+	if "ltm_eviction" in data.keys():
+		var value = data["ltm_eviction"]
+		if value != null:
+			ltm_eviction = StringName(str(value).to_lower())
 	return
 
 var initial_neuron_lifespan: int:
@@ -158,6 +187,23 @@ var mp_ratio_quantization: float:
 	set(v):
 		_set_mp_ratio_quantization(v)
 
+var memory_neuron_cap: int:
+	get:
+		return _memory_neuron_cap
+	set(v):
+		_set_memory_neuron_cap(v)
+
+var ltm_eviction: StringName:
+	get:
+		return _ltm_eviction
+	set(v):
+		_set_ltm_eviction(v)
+
+## Read-only dropdown label derived from `ltm_eviction`.
+var ltm_eviction_label: StringName:
+	get:
+		return ltm_eviction_label_from_key(_ltm_eviction)
+
 ## Read-only dropdown label derived from `mp_learning_enabled` + `mp_change_mode`.
 var mp_encoding: StringName:
 	get:
@@ -171,6 +217,8 @@ var _mp_learning_enabled: bool = false
 var _mp_change_mode: StringName = MP_CHANGE_NONE
 var _mp_delta_quantization: float = DEFAULT_MP_DELTA_QUANTIZATION
 var _mp_ratio_quantization: float = DEFAULT_MP_RATIO_QUANTIZATION
+var _memory_neuron_cap: int = 0
+var _ltm_eviction: StringName = LTM_EVICTION_LRU
 var _cortical_area: AbstractCorticalArea
 
 func _init(cortical_area_ref: AbstractCorticalArea) -> void:
@@ -226,3 +274,17 @@ func _set_mp_ratio_quantization(new_val: float) -> void:
 		return
 	_mp_ratio_quantization = new_val
 	mp_ratio_quantization_updated.emit(new_val, _cortical_area)
+
+func _set_memory_neuron_cap(new_val: int) -> void:
+	if new_val < 0:
+		new_val = 0
+	if new_val == _memory_neuron_cap:
+		return
+	_memory_neuron_cap = new_val
+	memory_neuron_cap_updated.emit(new_val, _cortical_area)
+
+func _set_ltm_eviction(new_val: StringName) -> void:
+	if new_val == _ltm_eviction:
+		return
+	_ltm_eviction = new_val
+	ltm_eviction_updated.emit(new_val, _cortical_area)

@@ -116,6 +116,37 @@ initial_int = 1
 max_value = 99999999999999
 min_value = 1
 
+[node name="memory_neuron_cap" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+layout_mode = 2
+tooltip_text = "Most memory neurons (short and long term) this area may hold. 0 means no per-area cap; only the shared pool limits it."
+
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/memory_neuron_cap"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Max neurons (0 = no cap)"
+
+[node name="memory_neuron_cap" type="LineEdit" parent="PanelContainer/MemoryParameters/memory_neuron_cap"]
+layout_mode = 2
+alignment = 2
+script = ExtResource("5_int")
+initial_int = 0
+max_value = 4294967295
+min_value = 0
+
+[node name="ltm_eviction" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+layout_mode = 2
+tooltip_text = "What happens when this area is at its cap or the shared pool is full. LRU: evict this area's least recently reactivated neuron to make room. None: new memory neurons are not created."
+
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/ltm_eviction"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LTM eviction"
+
+[node name="ltm_eviction" type="OptionButton" parent="PanelContainer/MemoryParameters/ltm_eviction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+script = ExtResource("6_dropdown")
+
 [node name="mp_encoding" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
 layout_mode = 2
 tooltip_text = "How upstream membrane potentials shape memories. None: firing pattern only. MP Learning: store MPs and replay them. MP Differential: the same MP change (e.g. 2 to 4 and 7 to 9) forms one memory. MP Ratio: the same growth ratio (e.g. 2 to 4 and 7 to 14) forms one memory. Change modes need Temporal Depth of 2 or more and do not replay."

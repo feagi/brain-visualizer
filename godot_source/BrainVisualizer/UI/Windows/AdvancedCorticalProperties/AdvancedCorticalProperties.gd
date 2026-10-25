@@ -63,6 +63,7 @@ var _rml_leak_min: SpinBox = null
 var _rml_leak_max: SpinBox = null
 var _rml_every: SpinBox = null
 var _button_rml_apply: Button = null
+var _rml_leak_warning_label: Label = null
 var _memory_count_fetch_generation: int = 0
 
 func _ready():
@@ -2276,6 +2277,8 @@ func _refresh_from_cache_firing_parameters() -> void:
 @export var _line_mp_delta_quantization: FloatInput
 @export var _row_mp_ratio_quantization: Control
 @export var _line_mp_ratio_quantization: FloatInput
+@export var _line_memory_neuron_cap: IntInput
+@export var _dropdown_ltm_eviction: DropDown
 @export var _button_memory_send: Button
 
 func _init_memory() -> void:
@@ -2288,6 +2291,11 @@ func _init_memory() -> void:
 	if _dropdown_mp_encoding != null:
 		_dropdown_mp_encoding.options = CorticalPropertyMemoryParameters.MP_ENCODING_OPTIONS
 		_dropdown_mp_encoding.option_changed.connect(_on_mp_encoding_changed)
+	_connect_control_to_update_button(_line_memory_neuron_cap, "memory_neuron_cap", _button_memory_send)
+	if _dropdown_ltm_eviction != null:
+		_dropdown_ltm_eviction.options = CorticalPropertyMemoryParameters.LTM_EVICTION_LABEL_OPTIONS
+		_dropdown_ltm_eviction.user_interacted.connect(_enable_button.bind(_button_memory_send))
+		_dropdown_ltm_eviction.option_changed.connect(_on_ltm_eviction_changed)
 	
 	_button_memory_send.pressed.connect(_send_update.bind(_button_memory_send))
 
@@ -2297,6 +2305,11 @@ func _on_mp_encoding_changed(_index: int, encoding: StringName) -> void:
 	for key in keys:
 		_add_to_dict_to_send(keys[key], _button_memory_send, StringName(key))
 	_apply_mp_quantization_rows_visibility(encoding)
+
+## Dropdown shows LRU / None; FEAGI key `ltm_eviction` takes "lru" / "none".
+func _on_ltm_eviction_changed(_index: int, label: StringName) -> void:
+	var key: StringName = CorticalPropertyMemoryParameters.ltm_eviction_key_from_label(label)
+	_add_to_dict_to_send(String(key), _button_memory_send, &"ltm_eviction")
 
 ## Show only the quantization that applies to the selected encoding.
 func _apply_mp_quantization_rows_visibility(encoding: StringName) -> void:
@@ -2313,6 +2326,8 @@ func _refresh_from_cache_memory() -> void:
 	_update_control_with_value_from_areas(_dropdown_mp_encoding, "memory_parameters", "mp_encoding")
 	_update_control_with_value_from_areas(_line_mp_delta_quantization, "memory_parameters", "mp_delta_quantization")
 	_update_control_with_value_from_areas(_line_mp_ratio_quantization, "memory_parameters", "mp_ratio_quantization")
+	_update_control_with_value_from_areas(_line_memory_neuron_cap, "memory_parameters", "memory_neuron_cap")
+	_update_control_with_value_from_areas(_dropdown_ltm_eviction, "memory_parameters", "ltm_eviction_label")
 	if _dropdown_mp_encoding != null and _dropdown_mp_encoding.selected >= 0:
 		_apply_mp_quantization_rows_visibility(_dropdown_mp_encoding.selected_item)
 
@@ -2739,6 +2754,12 @@ func _ensure_rate_modulated_leak_section() -> void:
 	_rml_every = _make_rml_float_spin(1.0, 1_000_000.0, 1.0, 1.0)
 	_rml_every.rounded = true
 	_rml_params_vbox.add_child(_add_rml_row("Update every N bursts", _rml_every))
+	_rml_leak_warning_label = Label.new()
+	_rml_leak_warning_label.name = &"RmlLeakRangeWarning"
+	_rml_leak_warning_label.text = "Leak min must not exceed Leak max"
+	_rml_leak_warning_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.35))
+	_rml_leak_warning_label.visible = false
+	section.add_child(_rml_leak_warning_label)
 	_button_rml_apply = Button.new()
 	_button_rml_apply.name = &"RmlRateModulatedApply"
 	_button_rml_apply.text = "Apply Update"
@@ -2819,6 +2840,7 @@ func _rml_rebind_controls_from_scene(container: VBoxContainer) -> void:
 	_rml_leak_min = _find_rml_spin(3)
 	_rml_leak_max = _find_rml_spin(4)
 	_rml_every = _find_rml_spin(5)
+	_rml_leak_warning_label = _rml_root.find_child("RmlLeakRangeWarning", true, false) as Label
 	_button_rml_apply = _rml_root.find_child("RmlRateModulatedApply", true, false) as Button
 
 func _find_rml_enable_toggle(root: VBoxContainer) -> ToggleButton:
@@ -2896,8 +2918,25 @@ func _on_rml_control_changed() -> void:
 		return
 	if _button_rml_apply == null:
 		return
+	if _rml_leak_range_invalid():
+		_growing_cortical_update.erase(_button_rml_apply.name)
+		_rml_set_leak_warning_visible(true)
+		return
+	_rml_set_leak_warning_visible(false)
 	_growing_cortical_update[_button_rml_apply.name] = _rml_build_update_dict()
 	_button_rml_apply.disabled = false
+
+## True when the toggle is enabled and leak_min > leak_max (core rejects this config).
+func _rml_leak_range_invalid() -> bool:
+	if _rml_toggle_enabled == null or _rml_leak_min == null or _rml_leak_max == null:
+		return false
+	return _rml_toggle_enabled.button_pressed and _rml_leak_min.value > _rml_leak_max.value
+
+func _rml_set_leak_warning_visible(show_warning: bool) -> void:
+	if _rml_leak_warning_label != null:
+		_rml_leak_warning_label.visible = show_warning
+	if show_warning and _button_rml_apply != null:
+		_button_rml_apply.disabled = true
 
 func _rml_rate_modulated_leak_section_relevant() -> bool:
 	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
@@ -2960,7 +2999,10 @@ func _refresh_from_cache_rate_modulated_leak() -> void:
 		_rml_default_spin_values()
 	_rml_suppress_change_signals = false
 	if _button_rml_apply != null:
+		if _rml_leak_range_invalid():
+			_growing_cortical_update.erase(_button_rml_apply.name)
 		_button_rml_apply.disabled = not _growing_cortical_update.has(_button_rml_apply.name)
+	_rml_set_leak_warning_visible(_rml_leak_range_invalid())
 	_rml_apply_homeostatic_param_block_state()
 
 #endregion
