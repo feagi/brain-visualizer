@@ -2363,6 +2363,48 @@ func create_modulator(modulator_id: String, definition: Dictionary) -> FeagiRequ
 	return FEAGI_response_data
 
 
+## Replaces a modulator's settings. The body matches [method create_modulator]; FEAGI rejects a type change while subscribers exist.
+func update_modulator(modulator_id: String, definition: Dictionary) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var address := StringName(str(FeagiCore.network.http_API.address_list.PUT_modulator_modulator) + "?modulator_id=" + modulator_id.uri_encode())
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(address, definition)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update modulator %s" % modulator_id)
+	return FEAGI_response_data
+
+
+## Renames a modulator instance; FEAGI rewrites every subscriber reference. Errors with a conflict when [param new_id] exists.
+func rename_modulator(old_id: String, new_id: String) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var body := {"old_modulator_id": old_id, "new_modulator_id": new_id}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_modulator_rename, body)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to rename modulator %s to %s" % [old_id, new_id])
+	return FEAGI_response_data
+
+
+## Areas and mappings subscribed to a modulator. Response: {"areas": [cortical id], "mappings": [{"src": id, "dst": id}]}.
+func get_modulator_usage(modulator_id: String) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var address := StringName(str(FeagiCore.network.http_API.address_list.GET_modulator_usage) + "/" + modulator_id.uri_encode())
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(address)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	return HTTP_FEAGI_request_worker.retrieve_output_and_close()
+
+
 func update_cortical_areas(editing_areas: Array[AbstractCorticalArea], properties: Dictionary) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():

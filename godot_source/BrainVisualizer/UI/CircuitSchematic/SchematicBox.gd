@@ -91,7 +91,6 @@ func _draw() -> void:
 
 func _gui_input(event: InputEvent) -> void:
 	var mouse: InputEventMouseButton = event as InputEventMouseButton
-	if mouse != null: print("SCHEMATIC-DEBUG box %d %s btn=%d pressed=%s dbl=%s dev=%d t=%d" % [item_index, _title, mouse.button_index, mouse.pressed, mouse.double_click, mouse.device, Time.get_ticks_msec()]) # TEMP
 	if mouse == null or mouse.button_index != MOUSE_BUTTON_LEFT or not mouse.pressed:
 		return
 	# Shift takes precedence so a shift double-click opens the tabs once and doesn't also toggle the box.

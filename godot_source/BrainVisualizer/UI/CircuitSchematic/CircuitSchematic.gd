@@ -13,6 +13,25 @@ const TAB_TITLE: StringName = &"Circuit Schematic"
 const REBUILD_DELAY_S: float = 0.3
 const FIT_MARGIN: float = 0.9
 const MAX_ZOOM: float = 2.0
+const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
+const ICON_EXPORT_MENU: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Down_S.png")
+## Plate colors match the tab strips (BrainObjectsCombo ICON_BUTTON_PLATE_COLOR).
+const MENU_PLATE_COLORS: Dictionary = {
+	"normal": Color8(67, 67, 67),
+	"hover": Color8(84, 84, 84),
+	"pressed": Color8(48, 48, 48),
+	"hover_pressed": Color8(48, 48, 48),
+	"disabled": Color8(52, 52, 52),
+}
+const MENU_TEXT_COLOR: Color = Color8(220, 220, 220)
+const MENU_TEXT_COLOR_DISABLED: Color = Color8(130, 130, 130)
+const MENU_INSET: float = 8.0
+## Export is a menu; Show all and Hide all are a pair. The wider gap separates the two.
+const MENU_GROUP_GAP: float = 8.0
+const MENU_GROUP_GAP_NAME: StringName = &"GroupGap"
+const MENU_FALLBACK_HEIGHT: float = 28.0
+## Triangle icons have built-in padding, so they need more than the plus-icon share of the height.
+const MENU_ICON_SCALE: float = 0.6
 
 var model: SchematicModel:
 	get: return _model
@@ -49,6 +68,9 @@ func _ready() -> void:
 		return
 	_add_export_menu()
 	_add_open_all_buttons()
+	_style_menu()
+	if BV.UI != null:
+		BV.UI.theme_changed.connect(_style_menu.unbind(1))
 	_rebuild_timer = Timer.new()
 	_rebuild_timer.one_shot = true
 	_rebuild_timer.wait_time = REBUILD_DELAY_S
@@ -198,11 +220,17 @@ func _add_export_menu() -> void:
 	button.text = "Export"
 	button.tooltip_text = "Save the whole schematic, with the regions open as shown"
 	button.flat = false
+	button.icon = ICON_EXPORT_MENU
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	var popup: PopupMenu = button.get_popup()
 	for format: int in SchematicImageFile.FORMAT.values():
 		popup.add_item(SchematicImageFile.LABELS[format], format)
 	popup.id_pressed.connect(func(format: int) -> void: SchematicExporter.export_view(self, format as SchematicImageFile.FORMAT))
-	get_menu_hbox().add_child(button)
+	_add_menu_button(button)
+	var gap: Control = Control.new()
+	gap.name = MENU_GROUP_GAP_NAME
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	get_menu_hbox().add_child(gap)
 
 
 func _add_open_all_buttons() -> void:
@@ -211,7 +239,69 @@ func _add_open_all_buttons() -> void:
 		button.text = "Show all" if is_open else "Hide all"
 		button.tooltip_text = "Open every region to show its internals" if is_open else "Close every region"
 		button.pressed.connect(set_all_regions_open.bind(is_open))
-		get_menu_hbox().add_child(button)
+		_add_menu_button(button)
+
+
+## Menu buttons are plain plates like the Circuit Builder and Brain Monitor tab strips.
+func _add_menu_button(button: Button) -> void:
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.expand_icon = false
+	for state: String in MENU_PLATE_COLORS:
+		var plate: StyleBoxFlat = StyleBoxFlat.new()
+		plate.bg_color = MENU_PLATE_COLORS[state]
+		plate.content_margin_left = COMBO_STYLER.ROW_PAD_X
+		plate.content_margin_right = COMBO_STYLER.ROW_PAD_X
+		button.add_theme_stylebox_override(state, plate)
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	button.add_theme_color_override("font_color", MENU_TEXT_COLOR)
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	button.add_theme_color_override("font_pressed_color", Color.WHITE)
+	button.add_theme_color_override("font_disabled_color", MENU_TEXT_COLOR_DISABLED)
+	button.add_theme_color_override("icon_normal_color", MENU_TEXT_COLOR)
+	button.add_theme_color_override("icon_hover_color", Color.WHITE)
+	button.add_theme_color_override("icon_pressed_color", Color.WHITE)
+	button.add_theme_constant_override("h_separation", COMBO_STYLER.INNER_CONTENT_SEPARATION)
+	get_menu_hbox().add_child(button)
+
+
+## Sizes the menu like the tab strips: their theme, their button height, and their 8 px inset.
+func _style_menu() -> void:
+	var inset: StyleBoxEmpty = StyleBoxEmpty.new()
+	inset.set_content_margin_all(MENU_INSET)
+	add_theme_stylebox_override("menu_panel", inset)
+	var hbox: HBoxContainer = get_menu_hbox()
+	hbox.add_theme_constant_override("separation", COMBO_STYLER.COMBO_PLATE_GAP)
+	var strip_theme: Theme = _tab_strip_theme()
+	if strip_theme != null:
+		hbox.theme = strip_theme
+	var height: float = _tab_strip_button_height(strip_theme)
+	var icon_size: int = int(round(height * MENU_ICON_SCALE))
+	for child: Node in hbox.get_children():
+		var button: Button = child as Button
+		if button != null:
+			button.custom_minimum_size.y = height
+			button.add_theme_constant_override("icon_max_width", icon_size)
+		elif child.name == MENU_GROUP_GAP_NAME:
+			(child as Control).custom_minimum_size.x = MENU_GROUP_GAP
+
+
+## Same theme as the Circuit Builder and Brain Monitor tab strips (two scale steps smaller).
+func _tab_strip_theme() -> Theme:
+	if BV.UI == null:
+		return null
+	var target_scale: float = BrainObjectsCombo.scale_steps_below(BV.UI.possible_UI_scales, BV.UI.loaded_theme_scale.x, BrainObjectsCombo.TAB_STRIP_SCALE_STEPS_SMALLER)
+	if is_equal_approx(target_scale, BV.UI.loaded_theme_scale.x):
+		return BV.UI.loaded_theme
+	var smaller: Theme = BV.UI.load_theme_resource(target_scale, UIManager.THEME_COLORS.DARK)
+	return smaller if smaller != null else BV.UI.loaded_theme
+
+
+func _tab_strip_button_height(strip_theme: Theme) -> float:
+	var element: StringName = COMBO_STYLER.TOP_BAR_CONTROL_THEME
+	if strip_theme != null and strip_theme.has_constant("size_y", element):
+		return float(strip_theme.get_constant("size_y", element))
+	return MENU_FALLBACK_HEIGHT
 
 
 func _try_fit() -> void:
@@ -247,10 +337,3 @@ func _connect_cache_signals() -> void:
 func _schedule_rebuild() -> void:
 	if _rebuild_timer != null and is_inside_tree():
 		_rebuild_timer.start()
-
-
-func _input(event: InputEvent) -> void: # TEMP SCHEMATIC-DEBUG
-	var mouse: InputEventMouseButton = event as InputEventMouseButton
-	if mouse != null and is_visible_in_tree() and get_global_rect().has_point(mouse.global_position):
-		var hovered: Control = get_viewport().gui_get_hovered_control()
-		print("SCHEMATIC-DEBUG raw btn=%d pressed=%s dbl=%s dev=%d hovered=%s t=%d" % [mouse.button_index, mouse.pressed, mouse.double_click, mouse.device, hovered.get_path() if hovered != null else "none", Time.get_ticks_msec()])

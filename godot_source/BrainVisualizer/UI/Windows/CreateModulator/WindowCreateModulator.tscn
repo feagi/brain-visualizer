@@ -24,4 +24,4 @@ theme_type_variation = &"MarginContainer_WindowBorder"
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 12
