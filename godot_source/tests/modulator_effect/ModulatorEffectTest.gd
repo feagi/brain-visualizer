@@ -34,6 +34,7 @@ func _init() -> void:
 	_expect_sentence("neuro.firing_threshold", -30, 1, 0, false, 1, ["subscribed areas' firing threshold is [b]lowered by 30%[/b]"])
 	_expect_sentence("neuro.leak", 20, 1, 0, false, 1, ["leak is [b]raised by 20%[/b]"])
 	_expect_sentence("neuro.firing_probability", 20, 1, 0, true, 2.5, ["firing probability is [b]raised by 20%[/b]", "Scaled by how strongly the trigger fires (full at charge 2.5)."])
+	_expect_sentence("memory.formation", -100, 1, 0, false, 1, ["subscribed areas form [b]no new memories[/b]"])
 	_check("no rest text at cooldown 0", not Effect.effect_sentence("synaptic.reward", 10, 1, 0, false, 1).contains("rest"))
 	_check("unknown type", Effect.effect_sentence("x.y", 1, 1, 0, false, 1) == "Effect depends on the modulator type.")
 	for info in Effect.TYPES:

@@ -4,6 +4,7 @@ extends RefCounted
 ## when graded) while the trigger fires, else 0. Gain, learning rate, threshold, leak and firing probability
 ## scale their baseline by (1 + signal); leak and firing probability are then clamped to 0..1. Reward adds
 ## signal to the mapping's reward. Gate passes transmission * signal while open and 0 while closed.
+## Memory formation (memory areas) scales new-memory formation by clamp(1 + signal, 0, 1): 0x stops new memory neurons.
 ## The server only requires magnitude_percent >= -100 (no upper bound).
 
 ## How the Strength control looks: "reward" (Reward | Punishment + %), "multiplier" (0x-3x slider),
@@ -37,6 +38,9 @@ const TYPES: Array[Dictionary] = [
 	{"type": "neuro.firing_probability", "label": "Firing probability", "prefix": "firing_probability", "scope": "area", "control": CONTROL_ADJUST, "default": 20.0,
 		"desc": "Changes how likely subscribed areas are to fire.",
 		"hint": "Scales the firing probability of subscribed areas (result is kept between 0 and 1)."},
+	{"type": "memory.formation", "label": "Memory formation", "prefix": "memory_formation", "scope": "area", "control": CONTROL_MULTIPLIER, "default": -100.0,
+		"desc": "Stops subscribed memory areas from forming new memories.",
+		"hint": "Subscribed memory areas form no new memory neurons while the trigger fires at 0x. Existing memories still fire and age."},
 ]
 
 
@@ -121,6 +125,11 @@ static func effect_sentence(raw_type: String, magnitude_percent: float, duration
 				change = "are [b]open[/b] (pass signal)"
 			else:
 				change = "are [b]open at %s%%[/b] (pass %s%% of their signal)" % [_num(magnitude_percent), _num(magnitude_percent)]
+		"memory.formation":
+			if is_zero_approx(multiplier):
+				change = "form [b]no new memories[/b]"
+			else:
+				change = "form new memories [b]as usual[/b]"
 		"neuro.firing_threshold", "neuro.leak", "neuro.firing_probability":
 			var what := "firing threshold" if raw_type == "neuro.firing_threshold" else ("leak" if raw_type == "neuro.leak" else "firing probability")
 			if is_zero_approx(magnitude_percent):
