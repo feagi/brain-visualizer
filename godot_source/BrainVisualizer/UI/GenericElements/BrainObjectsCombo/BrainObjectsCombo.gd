@@ -100,6 +100,11 @@ const TAB_ROW_SPACER_AFTER_CIRCUITS: StringName = &"Spacer_AfterCircuitsRow"
 const TAB_ROW_SPACER_AFTER_INTERCONNECT: StringName = &"Spacer_AfterInterconnectRow"
 ## True after [method apply_custom_topbar_tooltips] succeeded for this instance (TopBar or tab host).
 var _hosted_styled_tooltips_applied: bool = false
+## Tab strip fit: icon-only category chips while the labeled strip is wider than its tab.
+var _tab_fit_icons_only: bool = false
+var _tab_fit_apply_queued: bool = false
+var _syncing_tab_fit: bool = false
+var _tab_fit_host: Control = null
 
 ## Ordered ids for the Elements menu rows.
 static func connectome_menu_item_ids() -> PackedStringArray:
@@ -353,6 +358,7 @@ func _ready() -> void:
 	queue_redraw()
 	# Ensure background redraws on resize/theme changes for consistent back plate
 	resized.connect(func(): queue_redraw())
+	minimum_size_changed.connect(_sync_tab_strip_fit)
 	
 	# BrainMonitor tabs run inside a SubViewport; theme inheritance may not reach this subtree.
 	# Opt-in to BV's theme-driven scaling so these "top bar" buttons resize with +/- UI scaling.
@@ -732,6 +738,7 @@ func set_3d_context(bm_scene: UI_BrainMonitor_3DScene, region: BrainRegion) -> v
 	_place_category_rows_on_tab_strip()
 	_update_buttons_state()
 	_on_theme_changed(theme)
+	_watch_tab_host_width()
 
 ## Switch to 2D context and refresh listings.
 func set_2d_context(cb_scene: CircuitBuilder, region: BrainRegion) -> void:
@@ -742,6 +749,7 @@ func set_2d_context(cb_scene: CircuitBuilder, region: BrainRegion) -> void:
 	_place_category_rows_on_tab_strip()
 	_update_buttons_state()
 	_on_theme_changed(theme)
+	_watch_tab_host_width()
 	if not _hosted_styled_tooltips_applied:
 		_try_apply_styled_tooltips_for_current_host()
 
@@ -765,6 +773,82 @@ func root_strip_title_labels() -> Array[Label]:
 func set_root_strip_titles_visible(show_titles: bool) -> void:
 	for label in root_strip_title_labels():
 		label.visible = show_titles
+
+
+## Circuits, Interconnect, Memory, Inputs, and Outputs titles on a tab strip.
+## Rows hidden in this context are skipped when [param shown_rows_only] is true.
+func tab_strip_title_labels(shown_rows_only: bool = false) -> Array[Label]:
+	var labels: Array[Label] = []
+	var rows: Array[Array] = [
+		[_circuits_row, "BrainRegionsList"],
+		[_interconnect_row, "InterconnectAreasList"],
+		[_memory_row, "MemoryAreasList"],
+		[_inputs_row, "InputsList"],
+		[_outputs_row, "OutputsList"],
+	]
+	for pair in rows:
+		var row := pair[0] as Control
+		if shown_rows_only and not _is_shown_on_strip(row):
+			continue
+		var label: Label = FirstSectionTitles.category_title_label(row, str(pair[1]))
+		if label != null:
+			labels.append(label)
+	return labels
+
+
+## True when [param node] and every parent up to this strip are visible. The strip itself may be hidden.
+func _is_shown_on_strip(node: Node) -> bool:
+	while node != null and node != self:
+		if node is CanvasItem and not (node as CanvasItem).visible:
+			return false
+		node = node.get_parent()
+	return node == self
+
+
+## Re-fit the tab strip whenever its tab changes width.
+func _watch_tab_host_width() -> void:
+	var host := get_parent() as Control
+	if host != _tab_fit_host:
+		if _tab_fit_host != null and is_instance_valid(_tab_fit_host) and _tab_fit_host.resized.is_connected(_sync_tab_strip_fit):
+			_tab_fit_host.resized.disconnect(_sync_tab_strip_fit)
+		_tab_fit_host = host
+		if host != null and not host.resized.is_connected(_sync_tab_strip_fit):
+			host.resized.connect(_sync_tab_strip_fit)
+	call_deferred("_sync_tab_strip_fit")
+
+
+## Tab strips hide category titles when the labeled strip is wider than its tab. Icons stay.
+func _sync_tab_strip_fit() -> void:
+	if _global_topbar_mode or _syncing_tab_fit or not is_inside_tree():
+		return
+	var host := get_parent() as Control
+	if host == null:
+		return
+	# Keep the same gap on the right as the strip's offset on the left.
+	var available: float = host.size.x - 2.0 * position.x
+	var full_width: float = get_combined_minimum_size().x
+	for label in tab_strip_title_labels(true):
+		full_width += FirstSectionTitles.hidden_title_slot_width(label)
+	var icons_only: bool = FirstSectionTitles.should_hide(full_width, available)
+	if icons_only == _tab_fit_icons_only:
+		return
+	_tab_fit_icons_only = icons_only
+	if _tab_fit_apply_queued:
+		return
+	_tab_fit_apply_queued = true
+	call_deferred("_apply_queued_tab_strip_fit")
+
+
+## Layout changes emit resized. Applying them inside that handler re-enters the container and crashes.
+func _apply_queued_tab_strip_fit() -> void:
+	_tab_fit_apply_queued = false
+	_syncing_tab_fit = true
+	for label in tab_strip_title_labels():
+		label.visible = not _tab_fit_icons_only
+	# The strip sits on a plain Control and does not shrink back on its own.
+	reset_size()
+	_syncing_tab_fit = false
+	_sync_tab_strip_fit()
 
 
 ## Use this component as the shared global top-bar strip.
