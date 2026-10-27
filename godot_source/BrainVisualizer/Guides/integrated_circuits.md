@@ -16,7 +16,7 @@ It is made of cortical areas in the brain circuit where you create it:
 - **Sample inputs** and **class inputs** are cortical areas you already have. You connect them after the classifier exists. A sample input uses the **Classifier Sample** rule and lands on sample memory. A class input uses the **Classifier Class** rule and lands on class memory. Several inputs of one kind are hashed together as one pattern. Memory areas and interconnect areas are both valid inputs. Deleting the classifier does not delete those inputs.
 - Each class input gets its own **class output**. FEAGI creates it when you connect that class input, and its shape matches the class input. Disconnecting the class input deletes that output.
 - The **error area** is a 1x1x1 area created with the classifier. It fires on the next burst when a class input and its class output disagree, or when one class output has more than one neuron firing. Several class outputs with one neuron each are not an error.
-- **Answer area**, **learn area**, and **confidence area** are optional cortical areas you store under reward settings. They are not created with the classifier, and they are not peripheral inputs or outputs. Reward settings are stored on the classifier. They do not run a scan.
+- **Correct answer from**, **Learn only while this fires**, and **Confidence output** are optional cortical areas you pick in the Reward Training section. They are not created with the classifier, and they are not peripheral inputs or outputs.
 
 ## How It Appears
 
@@ -73,7 +73,7 @@ If the editor is already open, selecting a different classifier loads that class
 - **3D Position** moves the stamp.
 - **Sample Inputs**, **Class Outputs**, and **Error Area** are read-only. Inputs change through Quick Connect. A class output appears when its class input is connected, and disappears when that mapping is removed.
 
-**Answer Area**, **Learn Area**, and **Confidence Area** each have an edit icon beside the dropdown. The icon opens Cortical Area Explorer at the root circuit so you can pick an area from any other circuit.
+**Correct answer from**, **Learn only while this fires**, and **Confidence output** each have an edit icon beside the dropdown. The icon opens Cortical Area Explorer at the root circuit so you can pick an area from any other circuit.
 
 ### Neuron counts
 
@@ -89,21 +89,16 @@ Three sections start collapsed. **Apply Update** in a section stays disabled unt
 
 These rows are always shown:
 
-- **Plasticity Window** is how many bursts of co-activity count when reward training is off. It does not wait for a late answer. Use **Answer Latency** for that.
+- **Plasticity Window** is how many bursts of co-activity count when reward learning is off. With reward learning on, FEAGI sets the eligibility window from the classifier's answer delay.
 - **Plasticity Constant** is the base size of one weight step.
-- **LTP Multiplier** scales a strengthening step. With reward training on, that step is pleasure.
-- **LTD Multiplier** scales a weakening step. With reward training on, that step is pain.
+- **LTP Multiplier** scales a strengthening step. With reward training on, a Reward modulator commits it.
+- **LTD Multiplier** scales a weakening step. With reward training on, a Punishment modulator commits it.
 - **Synaptic Delay** is how many bursts a spike waits on this mapping before it reaches class memory. The minimum is 1.
-- **Reward Training** stores reward settings on the classifier. Off keeps ordinary co-activation learning on the associative mapping. These settings do not run a scan.
+Reward learning has its own **Reward Training** section, with its own **Apply Update**. It does not need the associative mapping to be in cache.
 
-These rows appear only while **Reward Training** is on. Turning it off hides them. Their values are kept, so turning it back on shows them again.
+- **Learn from right/wrong answers**: when on, the sample-to-class memory link learns with reward-modulated STDP from the modulators in **Reward** and **Punishment**. Those two rows appear only while it is on.
 
-- **Answer Area** is a cortical area you already have. It is stored as the correct-class reference. It is not created for you, and it is not a peripheral input or output.
-- **Answer Latency** is the number of bursts stored between a decision and the answer. Zero is the same burst.
-- **Learn Area** is a cortical area that must fire before pain or pleasure can change weights. Empty allows a correction whenever reward training has an answer or an ambiguous decision. On the image trainer, type this area's id in **Learn area**. The trainer stimulates it on the train split only. Validation and test leave it quiet, so the label can still be present without changing weights.
-- **Confidence Area** is a cortical area that receives one value per class channel: how far that channel's associative weight sits above the class-memory firing threshold. It is not a peripheral output. To have a trainer show those values, map this area onward to a peripheral output and choose that output as the trainer decoder. The run step then lists the class and one number per channel.
-
-Turning reward training on and applying the section creates two hidden areas, named from the classifier plus `_pain` and `_pleasure`. They belong to this classifier. They are not the brain's global pain and pleasure areas. The stored settings do not grade a scan.
+- **Reward** and **Punishment** pick the Reward modulators the classifier learns from, with the same chips as a connection's modulators. **Reward** offers modulators with positive strength; while one fires, the links that were active are strengthened. **Punishment** offers modulators with negative strength; while one fires, those links are weakened. The sample-to-class memory link uses reward-modulated learning (R-STDP). Every classifier has a **correct** area that fires when each class input is answered by its class output, and an **error** area that fires on a wrong or doubled answer. They drive the "*name* correct answer" modulator (offered under Reward) and the "*name* error" modulator (offered under Punishment); both are selected when reward learning is first turned on. Change a modulator's strength in the Modulators window.
 
 If the memory area or the associative mapping is not available, the section says so and **Apply Update** stays disabled.
 
@@ -114,7 +109,7 @@ Right-click the classifier.
 - From Circuit Builder, **Relocate this classifier (2D)** follows the mouse. Left-click to commit the new position.
 - From Brain Monitor, **Relocate this classifier (3D gizmo)** moves the stamp on the monitor that is already showing it.
 - **Reset sample and class memory...** clears stored patterns in both memory areas. It uses the same cortical reset as a memory area. The open classifier editor reloads the short-term and long-term counts. The classifier, its connections, and the areas you connected as inputs stay in place.
-- **Delete this classifier...** deletes the classifier, its sample memory, its class memory, its class outputs, its error area, and the pain and pleasure areas created for reward settings. The sample inputs, class inputs, answer, learn, and confidence areas you selected are left in place.
+- **Delete this classifier...** deletes the classifier, its sample memory, its class memory, its class outputs, its error and correct areas, and the "correct answer" and "error" modulators that fire from them. The sample inputs, class inputs, and any other modulators you selected are left in place.
 
 The classifier quick menu does not include Open 3D Tab, clone, or Quick Connect. On the classifier circuit itself, Open Circuit in 3D Tab stays grayed out. Its tooltip says "this is an integrated circuit and internals are not visible".
 

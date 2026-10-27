@@ -28,6 +28,9 @@ func _run_tests() -> void:
 	failures += _test_help_opens_classifier_guide_section()
 	failures += _test_shared_area_choice_keeps_dropdowns_aligned()
 	failures += _test_area_dropdowns_open_explorer()
+	failures += _test_sources_split_by_sign()
+	failures += _test_empty_sources_default_to_answer_modulators()
+	failures += _test_sources_change_ignores_order()
 	if failures == 0:
 		print("Edit classifier tunable tests: PASS")
 		quit(0)
@@ -38,8 +41,8 @@ func _run_tests() -> void:
 
 func _test_three_section_titles() -> int:
 	var titles: PackedStringArray = Tunables.section_titles()
-	if titles.size() != 3:
-		push_error("edit classifier must have exactly three tunable sections")
+	if titles.size() != 4:
+		push_error("edit classifier must have exactly four tunable sections")
 		return 1
 	if titles[0] != "Sample Memory Area":
 		push_error("first section must be Sample Memory Area")
@@ -49,6 +52,9 @@ func _test_three_section_titles() -> int:
 		return 1
 	if titles[2] != "Associative Memory Parameters":
 		push_error("third section must be Associative Memory Parameters")
+		return 1
+	if titles[3] != Tunables.SECTION_REWARD or Tunables.SECTION_REWARD != "Reward Training":
+		push_error("fourth section must be Reward Training")
 		return 1
 	return 0
 
@@ -78,7 +84,7 @@ func _test_every_setting_has_a_tooltip() -> int:
 		if Tunables.section_tooltip(title).is_empty():
 			push_error("section %s needs a tooltip" % title)
 			return 1
-	for label in ["Classifier ID", "Sample Inputs", "Class Outputs", "Error Area", "Answer Area", "Learn Area", "Confidence Area"]:
+	for label in ["Classifier ID", "Sample Inputs", "Class Outputs", "Error Area", "Correct Area", "Learn from right/wrong answers", "Correct answer from", "Answer delay (bursts)", "Learn only while this fires", "Confidence output", "Reward", "Punishment"]:
 		if Tunables.setting_tooltip(label).is_empty():
 			push_error("setting %s needs a tooltip" % label)
 			return 1
@@ -86,7 +92,7 @@ func _test_every_setting_has_a_tooltip() -> int:
 
 
 func _test_reward_labels_stay_off_peripheral_terms() -> int:
-	for label in ["Answer Area", "Learn Area", "Confidence Area", "Answer Latency"]:
+	for label in ["Correct answer from", "Learn only while this fires", "Confidence output", "Answer delay (bursts)"]:
 		var text: String = label.to_lower()
 		if text.contains("opu") or text.contains("ipu") or text.contains("line") or text.contains("feedback"):
 			push_error("reward label uses a mixed term: %s" % label)
@@ -357,7 +363,7 @@ func _test_area_dropdowns_open_explorer() -> int:
 	if source.is_empty():
 		push_error("classifier editor script could not be read")
 		return 1
-	for label in ["Answer Area", "Learn Area", "Confidence Area"]:
+	for label in ["Correct answer from", "Learn only while this fires", "Confidence output"]:
 		if not source.contains('_labeled_cortical_area("%s"' % label):
 			push_error("%s must use the explorer edit icon" % label)
 			return 1
@@ -372,5 +378,43 @@ func _test_area_dropdowns_open_explorer() -> int:
 		return 1
 	if load("res://BrainVisualizer/UI/Windows/EditClassifier/WindowEditClassifier.gd") == null:
 		push_error("classifier editor script failed to parse")
+		return 1
+	return 0
+
+
+func _test_sources_split_by_sign() -> int:
+	var ids: Array[String] = ["joy", "ouch", "unknown", "flat"]
+	var split: Dictionary = Tunables.split_sources_by_sign(ids, {"joy": 100.0, "ouch": -50.0, "flat": 0.0})
+	if split["reward"] != ["joy", "unknown", "flat"] or split["punishment"] != ["ouch"]:
+		push_error("negative modulators belong to Punishment, everything else to Reward, got %s" % str(split))
+		return 1
+	return 0
+
+
+func _test_empty_sources_default_to_answer_modulators() -> int:
+	var empty: Array[String] = []
+	var defaults: Array[String] = Tunables.default_sources(empty, {"correct_answer": "c1 correct answer", "error": "c1 error"})
+	if defaults != ["c1 correct answer", "c1 error"]:
+		push_error("no applied sources must show the classifier's own answer modulators, got %s" % str(defaults))
+		return 1
+	var applied: Array[String] = ["joy"]
+	if Tunables.default_sources(applied, {"correct_answer": "x", "error": "y"}) != ["joy"]:
+		push_error("applied sources must be kept as they are")
+		return 1
+	if Tunables.default_sources(empty, {}) != []:
+		push_error("a failed answer-modulator request must leave the rows empty")
+		return 1
+	return 0
+
+
+func _test_sources_change_ignores_order() -> int:
+	var a: Array[String] = ["b", "a"]
+	var b: Array[String] = ["a", "b"]
+	var c: Array[String] = ["a"]
+	if Tunables.sources_changed(a, b):
+		push_error("the same sources in another order are not a change")
+		return 1
+	if not Tunables.sources_changed(c, b):
+		push_error("a removed source is a change")
 		return 1
 	return 0

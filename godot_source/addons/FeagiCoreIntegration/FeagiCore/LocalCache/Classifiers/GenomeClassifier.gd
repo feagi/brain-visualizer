@@ -20,13 +20,15 @@ static func classifier_plate_input_ids(classifier: GenomeClassifier) -> Array[St
 	return ids
 
 
-## The error area and each class output sit on a region output plate.
+## The error area, the correct area and each class output sit on a region output plate.
 static func classifier_plate_output_ids(classifier: GenomeClassifier) -> Array[StringName]:
 	var ids: Array[StringName] = []
 	if classifier == null:
 		return ids
 	if classifier.error_area_id != &"":
 		ids.append(classifier.error_area_id)
+	if classifier.correct_area_id != &"":
+		ids.append(classifier.correct_area_id)
 	for output_id in classifier.class_output_ids():
 		if output_id != &"" and output_id not in ids:
 			ids.append(output_id)
@@ -123,6 +125,12 @@ var learn_area_id: StringName:
 	get: return _learn_area_id
 var confidence_area_id: StringName:
 	get: return _confidence_area_id
+## Owned 1x1x1 area that fires when the classifier answers correctly. Drives its "right answer" modulator.
+var correct_area_id: StringName:
+	get: return _correct_area_id
+## Reward modulators the sample -> class memory mapping learns from (R-STDP).
+var reward_modulator_ids: Array[StringName]:
+	get: return _reward_modulator_ids
 
 var _sample_memory_id: StringName = &""
 var _class_memory_id: StringName = &""
@@ -132,6 +140,8 @@ var _answer_feedback_area_id: StringName = &""
 var _answer_latency_bursts: int = 0
 var _learn_area_id: StringName = &""
 var _confidence_area_id: StringName = &""
+var _correct_area_id: StringName = &""
+var _reward_modulator_ids: Array[StringName] = []
 ## Episodic upstreams of sample memory. Several inputs hash as one joint pattern.
 var _sample_area_ids: Array[StringName] = []
 ## Each binding is {class_area_id, class_output_area_id}.
@@ -176,6 +186,8 @@ func apply_feagi_dict(data: Dictionary) -> void:
 	_answer_latency_bursts = int(data.get("answer_latency_bursts", 0))
 	_learn_area_id = _optional_id(data.get("learn_area_id", null))
 	_confidence_area_id = _optional_id(data.get("confidence_area_id", null))
+	_correct_area_id = _optional_id(data.get("correct_area_id", null))
+	_reward_modulator_ids = _id_list_from_feagi(data.get("reward_modulator_ids", []))
 	sync_layout_from_stamp()
 
 
@@ -239,6 +251,15 @@ func is_error_area_id(area_id: StringName) -> bool:
 	return area_id != &"" and area_id == _error_area_id
 
 
+func is_correct_area_id(area_id: StringName) -> bool:
+	return area_id != &"" and area_id == _correct_area_id
+
+
+## Error or correct area: the classifier's visible answer signals, drawn like class outputs.
+func is_answer_area_id(area_id: StringName) -> bool:
+	return is_error_area_id(area_id) or is_correct_area_id(area_id)
+
+
 func has_sample_input(area_id: StringName) -> bool:
 	return area_id != &"" and area_id in _sample_area_ids
 
@@ -253,9 +274,10 @@ func get_visible_output_areas() -> Array[AbstractCorticalArea]:
 		var output_area: AbstractCorticalArea = _cached_area(output_id)
 		if output_area != null:
 			outputs.append(output_area)
-	var error_area: AbstractCorticalArea = _cached_area(_error_area_id)
-	if error_area != null:
-		outputs.append(error_area)
+	for answer_id in [_error_area_id, _correct_area_id]:
+		var answer_area: AbstractCorticalArea = _cached_area(answer_id)
+		if answer_area != null:
+			outputs.append(answer_area)
 	return outputs
 
 
@@ -342,7 +364,7 @@ static func _local_cache() -> FEAGILocalCache:
 	return core.get("feagi_local_cache") as FEAGILocalCache
 
 
-## Owned areas deleted with the classifier: both memories, the error area, and class outputs.
+## Owned areas deleted with the classifier: both memories, the error and correct areas, and class outputs.
 func owned_area_ids() -> Array[StringName]:
 	var owned: Array[StringName] = []
 	if _sample_memory_id != &"":
@@ -351,6 +373,8 @@ func owned_area_ids() -> Array[StringName]:
 		owned.append(_class_memory_id)
 	if _error_area_id != &"":
 		owned.append(_error_area_id)
+	if _correct_area_id != &"":
+		owned.append(_correct_area_id)
 	for output_id in class_output_ids():
 		owned.append(output_id)
 	return owned
@@ -367,7 +391,7 @@ func hidden_owned_area_ids() -> Array[StringName]:
 func owns_area_id(area_id: StringName) -> bool:
 	if area_id == &"":
 		return false
-	return area_id == _sample_memory_id or area_id == _class_memory_id or is_error_area_id(area_id) or is_class_output_id(area_id)
+	return area_id == _sample_memory_id or area_id == _class_memory_id or is_answer_area_id(area_id) or is_class_output_id(area_id)
 
 
 func hides_area_id(area_id: StringName) -> bool:
@@ -419,6 +443,7 @@ func details_rows() -> Array[Dictionary]:
 	rows.append(_details_row("sample_inputs", "Sample Inputs", _named_id_list(_sample_area_ids), false))
 	rows.append(_details_row("class_outputs", "Class Outputs", _class_output_names_text(), false))
 	rows.append(_details_row("error_area", "Error Area", _area_name(_error_area_id), false))
+	rows.append(_details_row("correct_area", "Correct Area", _area_name(_correct_area_id), false))
 	rows.append(_details_row("hidden_internals", "Hidden Internals", hidden_internals_text(), false))
 	return rows
 
@@ -553,7 +578,7 @@ static func resolve_visual_connectable(genome_object: GenomeObject, classifiers:
 	var owner: GenomeClassifier = find_owner_of_area(area_id, classifiers)
 	if owner == null:
 		return genome_object
-	if owner.is_class_output_id(area_id) or owner.is_error_area_id(area_id):
+	if owner.is_class_output_id(area_id) or owner.is_answer_area_id(area_id):
 		return genome_object
 	return owner
 
@@ -569,7 +594,7 @@ static func is_internal_only_classifier_mapping(source: GenomeObject, destinatio
 		return false
 	if owner.is_class_output_id(src_id) or owner.is_class_output_id(dst_id):
 		return false
-	if owner.is_error_area_id(src_id) or owner.is_error_area_id(dst_id):
+	if owner.is_answer_area_id(src_id) or owner.is_answer_area_id(dst_id):
 		return false
 	return owner.owns_area_id(dst_id)
 
@@ -582,7 +607,7 @@ static func is_visual_output_alias(source: GenomeObject, destination: GenomeObje
 	var owner: GenomeClassifier = find_owner_of_area(dest_id, classifiers)
 	if owner == null:
 		return false
-	if not owner.is_class_output_id(dest_id) and not owner.is_error_area_id(dest_id):
+	if not owner.is_class_output_id(dest_id) and not owner.is_answer_area_id(dest_id):
 		return false
 	if source is GenomeClassifier:
 		return (source as GenomeClassifier).classifier_id == owner.classifier_id

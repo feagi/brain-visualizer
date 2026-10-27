@@ -77,7 +77,7 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 #region User Interactions
 
 func _on_single_left_click() -> void:
-	var is_multi := Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_META) or Input.is_physical_key_pressed(KEY_SHIFT)
+	var is_multi := ModifierKeys.ctrl_or_meta_held() or ModifierKeys.shift_held()
 	if not is_multi:
 		var cb_parent = get_parent()
 		if cb_parent is CircuitBuilder:

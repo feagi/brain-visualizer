@@ -80,13 +80,17 @@ var _original_id: String = ""
 var _name_typed: bool = false
 ## Set once the user changes the Strength control, so type changes stop applying the type's default.
 var _strength_edited: bool = false
+## Create mode: starting magnitude_percent instead of the type default. NAN uses the type default.
+var _preset_magnitude: float = NAN
 ## Edit mode: magnitude_percent as stored, kept exact until the user touches Strength (the spin boxes round to their step).
 var _loaded_magnitude: float = NAN
 var _existing_ids: Array = []
 
 
 ## [allowed_types] limits the type tiles (empty = all kinds); [default_type] is used when only that kind remains.
-func setup(allowed_types: Array[String] = [], default_type: String = "") -> void:
+## [preset_magnitude] starts Strength at that magnitude_percent instead of the type default.
+func setup(allowed_types: Array[String] = [], default_type: String = "", preset_magnitude: float = NAN) -> void:
+	_preset_magnitude = preset_magnitude
 	_setup_base_window(WINDOW_NAME)
 	_titlebar.title = "Add modulator"
 	_build_form()
@@ -332,7 +336,8 @@ func _on_type_selected(raw_type: String) -> void:
 	_type = raw_type
 	_configure_strength_controls()
 	if not _edit_mode and not _strength_edited:
-		_set_strength_from_magnitude(_Effect.default_magnitude(raw_type))
+		var magnitude: float = _Effect.default_magnitude(raw_type) if is_nan(_preset_magnitude) else _preset_magnitude
+		_set_strength_from_magnitude(magnitude)
 	_suggest_name_if_untyped()
 	_refresh_summary()
 

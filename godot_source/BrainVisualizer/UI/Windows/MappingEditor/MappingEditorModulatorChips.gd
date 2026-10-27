@@ -32,6 +32,10 @@ const _DOT_COLORS: Dictionary = {
 }
 const _DOT_COLOR_UNKNOWN: Color = Color(0.65, 0.65, 0.65)
 
+## Synaptic types offered in the menu and the create window. Empty offers every synaptic type.
+var allowed_types: Array[String] = []
+## 1 offers only positive magnitudes, -1 only negative ones, 0 any. "+ New..." starts at that sign.
+var magnitude_sign: int = 0
 var _ids: Array[String] = []
 ## modulator instance id -> {"type": String, "magnitude_percent": float}. Only synaptic instances.
 var _known: Dictionary = {}
@@ -44,6 +48,8 @@ var _field: PanelContainer
 var _add_button: TextureButton
 var _add_menu: PopupMenu
 var _fetching: bool = false
+## A refresh was asked for while a listing was in flight; fetch again when it lands.
+var _refetch: bool = false
 
 func _ready() -> void:
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -202,12 +208,21 @@ func has_reward_modulator() -> bool:
 
 ## Re-reads the modulator instances from FEAGI and redraws the chips and the menu.
 func refresh_known_modulators() -> void:
-	if _fetching or not FeagiCore.can_interact_with_feagi():
+	if not FeagiCore.can_interact_with_feagi():
+		return
+	if _fetching:
+		_refetch = true
 		return
 	_fetching = true
 	var response: FeagiRequestOutput = await FeagiCore.requests.list_modulators()
 	_fetching = false
-	if not is_instance_valid(self) or response == null or response.has_errored:
+	if not is_instance_valid(self):
+		return
+	if _refetch:
+		_refetch = false
+		refresh_known_modulators()
+		return
+	if response == null or response.has_errored:
 		return
 	var payload: Dictionary = response.decode_response_as_dict()
 	_known.clear()
@@ -351,7 +366,7 @@ func _rebuild_menu() -> void:
 	popup.clear()
 	var index: int = 0
 	for id in _known.keys():
-		if id in _ids:
+		if id in _ids or not _type_allowed(str(_known[id].get("type", ""))) or not _sign_allowed(float(_known[id].get("magnitude_percent", 0.0))):
 			continue
 		popup.add_item(describe_id(id), index)
 		popup.set_item_metadata(popup.get_item_index(index), id)
@@ -359,6 +374,12 @@ func _rebuild_menu() -> void:
 	if popup.item_count > 0:
 		popup.add_separator()
 	popup.add_item("+ New...", _NEW_ENTRY_ID)
+
+func _type_allowed(type_name: String) -> bool:
+	return allowed_types.is_empty() or type_name in allowed_types
+
+func _sign_allowed(magnitude_percent: float) -> bool:
+	return magnitude_sign == 0 or signf(magnitude_percent) == float(magnitude_sign)
 
 func _on_menu_about_to_popup() -> void:
 	_rebuild_menu()
@@ -375,10 +396,21 @@ func _on_menu_id_pressed(menu_id: int) -> void:
 	add_id(str(popup.get_item_metadata(item_index)))
 
 func _open_create_window() -> void:
-	var window: WindowCreateModulator = BV.WM.spawn_create_modulator(_field, SYNAPTIC_TYPES, TYPE_REWARD)
+	var types: Array[String] = SYNAPTIC_TYPES if allowed_types.is_empty() else allowed_types
+	var preset: float = NAN if magnitude_sign == 0 else 100.0 * magnitude_sign
+	var window: WindowCreateModulator = BV.WM.spawn_create_modulator(_field, types, TYPE_REWARD if TYPE_REWARD in types else types[0], preset)
 	if window != null:
 		window.modulator_created.connect(_on_modulator_created)
 
 func _on_modulator_created(instance_id: String) -> void:
-	add_id(instance_id)
-	refresh_known_modulators()
+	if magnitude_sign == 0:
+		add_id(instance_id)
+		refresh_known_modulators()
+		return
+	# The user may have flipped the preset sign; only keep a modulator this field offers.
+	await refresh_known_modulators()
+	if not is_instance_valid(self):
+		return
+	# Unknown until a listing lands: keep it rather than drop what the user just made.
+	if not _known.has(instance_id) or _sign_allowed(float(_known[instance_id].get("magnitude_percent", 0.0))):
+		add_id(instance_id)

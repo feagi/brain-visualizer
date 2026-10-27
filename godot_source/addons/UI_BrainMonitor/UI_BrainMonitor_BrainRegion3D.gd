@@ -162,6 +162,44 @@ func _get_output_cortical_areas_for_logging(brain_region: BrainRegion) -> Array[
 ## - CENTER coordinates passed to renderers: (front-left + X/2, front-left + Y/2, front-left - Z/2)
 ## - X,Y: Standard center calculation (front-left + dimension/2.0)
 ## - Z: Subtract dimension/2.0 because Godot Z-axis is opposite to FEAGI Z-axis
+## Size an area is drawn at. Plates rest every area's bottom on the plate by this size, so a
+## volume drawn larger than its genome dimensions (a classifier stamp) stays level with the rest.
+func _plate_area_drawn_size(area: AbstractCorticalArea) -> Vector3:
+	var size := Vector3(area.dimensions_3D)
+	var viz = _cortical_area_visualizations.get(area.cortical_ID)
+	if viz != null and is_instance_valid(viz):
+		for renderer in [viz._directpoints_renderer, viz._dda_renderer]:
+			if renderer != null and renderer._static_body != null and renderer._dimensions != Vector3i.ZERO:
+				size = Vector3(renderer._dimensions)
+				break
+	_plate_drawn_sizes[area.cortical_ID] = size
+	return size
+
+
+## A classifier stamp is redrawn larger as it stores memories. Re-level the plate when any
+## drawn size differs from the one its position was computed with.
+func _on_memory_stats_for_plate(_stats: Dictionary) -> void:
+	call_deferred("_relevel_if_drawn_size_changed")
+
+
+func _relevel_if_drawn_size_changed() -> void:
+	if _dimension_recalc_pending or is_queued_for_deletion() or not is_inside_tree():
+		return
+	for cortical_id in _plate_drawn_sizes.keys():
+		var viz = _cortical_area_visualizations.get(cortical_id)
+		if viz == null or not is_instance_valid(viz):
+			continue
+		for renderer in [viz._directpoints_renderer, viz._dda_renderer]:
+			if renderer != null and renderer._static_body != null and renderer._dimensions != Vector3i.ZERO:
+				if Vector3(renderer._dimensions) != _plate_drawn_sizes[cortical_id]:
+					_dimension_recalc_pending = true
+					call_deferred("_recalculate_plates_and_positioning_after_dimension_change")
+					return
+				break
+
+
+## "new_coordinates" are float area centers, so an odd-sized area keeps its half voxel and
+## its bottom sits exactly on the plate.
 func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dictionary:
 	var input_areas = _get_input_cortical_areas()
 	var output_areas = _get_output_cortical_areas()
@@ -206,7 +244,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var current_input_x = input_start_x  # Start at plate front-left + margin
 	for i in input_areas.size():
 		var area = input_areas[i]
-		var area_size = Vector3(area.dimensions_3D)
+		var area_size = _plate_area_drawn_size(area)
 		
 		# Position area: FRONT-LEFT CORNER positioning (lowest x,y,z)
 		var area_front_left_x = current_input_x
@@ -227,7 +265,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 			"area_id": area.cortical_ID,
 			"area_type": area.type_as_string,
 			"original_coordinates": area.coordinates_3D,
-			"new_coordinates": Vector3i(new_position)
+			"new_coordinates": new_position
 		}
 		result.inputs.append(input_data)
 		
@@ -235,7 +273,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var current_output_x = output_start_x  # Start at output plate front-left + margin
 	for i in output_areas.size():
 		var area = output_areas[i]
-		var area_size = Vector3(area.dimensions_3D)
+		var area_size = _plate_area_drawn_size(area)
 		
 		# Position area: FRONT-LEFT CORNER positioning (lowest x,y,z)
 		var area_front_left_x = current_output_x
@@ -256,7 +294,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 			"area_id": area.cortical_ID,
 			"area_type": area.type_as_string, 
 			"original_coordinates": area.coordinates_3D,
-			"new_coordinates": Vector3i(new_position)
+			"new_coordinates": new_position
 		}
 		result.outputs.append(output_data)
 		
@@ -265,7 +303,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 	var current_conflict_x = conflict_start_x  # Start at conflict plate front-left + margin
 	for i in conflict_areas.size():
 		var area_c = conflict_areas[i]
-		var area_size_c = Vector3(area_c.dimensions_3D)
+		var area_size_c = _plate_area_drawn_size(area_c)
 		
 		# Position area exactly like input/output: FRONT-LEFT corner then convert to center
 		var area_front_left_x = current_conflict_x
@@ -285,7 +323,7 @@ func generate_io_coordinates_for_brain_region(brain_region: BrainRegion) -> Dict
 			"area_id": area_c.cortical_ID,
 			"area_type": area_c.type_as_string, 
 			"original_coordinates": area_c.coordinates_3D,
-			"new_coordinates": Vector3i(new_position_c)
+			"new_coordinates": new_position_c
 		}
 		result.conflicts.append(conflict_data)
 		
@@ -363,6 +401,8 @@ func setup(brain_region: BrainRegion) -> void:
 	_representing_region.cortical_area_removed_from_region.connect(_on_cortical_area_removed)
 	_representing_region.coordinates_3D_updated.connect(_update_position)
 	_representing_region.friendly_name_updated.connect(_update_frame_label)
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		FeagiCore.feagi_local_cache.memory_area_stats_updated.connect(_on_memory_stats_for_plate)
 	
 	# Connect to connection monitoring for dynamic I/O status changes
 	_start_connection_monitoring()
@@ -3218,6 +3258,8 @@ var _connection_monitoring_enabled: bool = true
 var _dimension_recalc_in_progress: bool = false
 var _io_check_pending: bool = false
 var _dimension_recalc_pending: bool = false
+## Drawn size per plate area, as last used to place it.
+var _plate_drawn_sizes: Dictionary = {}
 
 func _disable_connection_monitoring() -> void:
 	_connection_monitoring_enabled = false

@@ -58,7 +58,6 @@ var _manipulation_resized_cb: Callable = Callable()  # stored for explicit disco
 var _core_cluster_plate: MeshInstance3D = null
 var _core_cluster_layout_refresh_pending: bool = false
 var _modulator_plate: MeshInstance3D = null
-var _modulator_plate_refresh_pending: bool = false
 var _ws_fastpath_resync_pending: bool = false
 # Number of [method FeagiCore.bv_begin_visual_rebuild_pause] calls awaiting their matching release.
 # Accumulated (never dropped) so overlapping rebuild cycles - e.g. cortical_areas_hash and
@@ -963,8 +962,9 @@ func reveals_all_area_name_labels() -> bool:
 
 ## While the intro is running, keep the camera aimed at the scene center as it moves
 func _process(delta: float) -> void:
-	_scroll_fast_modifier_held = Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_SHIFT)
-	_area_name_reveal_modifier_held = Input.is_physical_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_CTRL)
+	_scroll_fast_modifier_held = ModifierKeys.shift_held()
+	# Ctrl alone reveals titles; Ctrl with Cmd is an OS shortcut.
+	_area_name_reveal_modifier_held = ModifierKeys.ctrl_held() and not ModifierKeys.meta_held()
 	_sync_tab_menu_visibility()
 	if _startup_intro_animating and _pancake_cam != null:
 		_pancake_cam.look_at(_startup_intro_center, Vector3.UP)
@@ -2938,7 +2938,7 @@ func _try_handle_box_select_click(
 	if bm_input_event.button != UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.MAIN:
 		return false
 	if bm_input_event.button_pressed:
-		if not Input.is_physical_key_pressed(multi_select_key) or not _box_select_is_allowed():
+		if not ModifierKeys.is_key_held(multi_select_key) or not _box_select_is_allowed():
 			return false
 		_box_select.begin_press(_get_bm_mouse_position())
 		if _pancake_cam != null:
@@ -3257,27 +3257,40 @@ func start_cortical_area_multi_manipulation(areas: Array[AbstractCorticalArea], 
 func start_core_cluster_cortical_manipulation(trigger_area: AbstractCorticalArea) -> void:
 	if trigger_area == null:
 		return
-	var power: AbstractCorticalArea = _find_power_core_area_in_cache()
-	if power == null:
+	var modulators: Array[AbstractCorticalArea] = _collect_modulator_row_areas()
+	var layout_modulators: Array[AbstractCorticalArea] = []
+	var modulator_layout: Dictionary = _modulator_row_layout()
+	for mod_id in modulator_layout.keys():
+		layout_modulators.append(_find_area_in_array_by_id(modulators, mod_id))
+	var power: AbstractCorticalArea = _find_power_core_area_in_cache() if _can_apply_core_cluster_layout() else null
+	var anchor: AbstractCorticalArea = power
+	var members: Array[AbstractCorticalArea] = []
+	if power != null:
+		members = _collect_present_core_cluster_areas_ordered()
+	elif trigger_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR and not layout_modulators.is_empty():
+		# No power anchor (child tab or power missing): the first modulator carries the row.
+		anchor = layout_modulators[0]
+	members.append_array(layout_modulators)
+	if anchor == null or members.size() <= 1:
 		start_cortical_area_manipulation(trigger_area, MANIPULATION_MODE.MOVE)
 		return
-	var members: Array[AbstractCorticalArea] = _collect_present_core_cluster_areas_ordered()
-	if members.size() <= 1:
-		start_cortical_area_manipulation(trigger_area, MANIPULATION_MODE.MOVE)
-		return
-	start_cortical_area_manipulation(power, MANIPULATION_MODE.MOVE)
+	start_cortical_area_manipulation(anchor, MANIPULATION_MODE.MOVE)
 	if not _manipulation_active:
 		return
 	_manipulation_is_core_cluster = true
 	_manipulation_explicit_members = members.duplicate()
-	_manipulation_group_anchor_pos = power.coordinates_3D
+	_manipulation_group_anchor_pos = anchor.coordinates_3D
 	_manipulation_group_start_positions.clear()
 	_clear_manipulation_group_previews()
 	for member in members:
-		if member == power:
+		if member == anchor:
 			continue
-		var start_pos: Vector3i = AbstractCorticalArea.core_cluster_computed_feagi_position(
-			member.cortical_ID, power.coordinates_3D)
+		var start_pos: Vector3i
+		if modulator_layout.has(member.cortical_ID):
+			start_pos = modulator_layout[member.cortical_ID]
+		else:
+			start_pos = AbstractCorticalArea.core_cluster_computed_feagi_position(
+				member.cortical_ID, anchor.coordinates_3D)
 		_manipulation_group_start_positions[member] = start_pos
 		var preview: UI_BrainMonitor_InteractivePreview = create_preview(
 			start_pos,
@@ -3289,6 +3302,12 @@ func start_core_cluster_cortical_manipulation(trigger_area: AbstractCorticalArea
 			false
 		)
 		_manipulation_group_previews[member] = preview
+
+func _find_area_in_array_by_id(areas: Array[AbstractCorticalArea], cortical_id: Variant) -> AbstractCorticalArea:
+	for a in areas:
+		if String(a.cortical_ID) == String(cortical_id):
+			return a
+	return null
 
 ## Starts a runtime manipulation session for a brain region (move plates in 3D).
 ## Shares gizmo and drag logic with cortical area; only preview type and apply differ.
@@ -4180,7 +4199,8 @@ func _apply_region_move(new_pos: Vector3i) -> void:
 
 ## Persists only the power core position; slaved cores follow via [_refresh_core_cluster_layout].
 func _apply_core_cluster_move(new_pos: Vector3i) -> void:
-	if _manipulation_area == null or not AbstractCorticalArea.is_power_area(_manipulation_area.cortical_ID):
+	if _manipulation_area == null or not (AbstractCorticalArea.is_power_area(_manipulation_area.cortical_ID) \
+			or _manipulation_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR):
 		_end_manipulation_session(true)
 		return
 	var before_pos: Vector3i = _manipulation_area.coordinates_3D
@@ -4775,6 +4795,8 @@ func _collect_present_core_cluster_areas_ordered() -> Array[AbstractCorticalArea
 			out.append(ca)
 	return out
 
+var _last_logged_modulator_row_count: int = -1
+
 func _schedule_core_cluster_layout_refresh() -> void:
 	if _core_cluster_layout_refresh_pending:
 		return
@@ -4788,40 +4810,68 @@ func _deferred_refresh_core_cluster_layout() -> void:
 func _on_power_core_area_coordinates_changed(_new_pos: Vector3i) -> void:
 	_schedule_core_cluster_layout_refresh()
 
-## Places non-power reserved cores on a fixed row relative to power; updates binder plate. Only power coords come from FEAGI.
+## Modulator membership depends on current_parent_region, which the cache may link after the viz is created.
+func _on_modulator_parent_region_updated(_old_region, _new_region) -> void:
+	_schedule_core_cluster_layout_refresh()
+
+## Places non-power reserved cores on a fixed row relative to power and lays out the modulator trigger row; updates binder plates. Only power coords come from FEAGI.
 func _refresh_core_cluster_layout() -> void:
-	if not _can_apply_core_cluster_layout():
-		if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
-			_core_cluster_plate.visible = false
-		return
-	var power := _find_power_core_area_in_cache()
-	if power == null:
-		if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
-			_core_cluster_plate.visible = false
-		return
-	for row_name in AbstractCorticalArea.CORE_CLUSTER_ROW_ORDER:
-		if row_name == "power":
-			continue
-		var slave := _find_core_area_by_special_name(row_name)
-		if slave == null:
-			continue
-		var pos := AbstractCorticalArea.core_cluster_computed_feagi_position(slave.cortical_ID, power.coordinates_3D)
-		if slave.coordinates_3D != pos:
-			slave.FEAGI_change_coordinates_3D(pos)
-		# Slaved cores do not auto-follow coordinates_3D_updated on the DirectPoints renderer (API coords can disagree
-		# with the fixed row layout). Always snap the visualization to the computed plate position.
-		var slave_viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(String(slave.cortical_ID))
-		if slave_viz != null and is_instance_valid(slave_viz):
-			slave_viz.set_new_position(pos)
+	var power: AbstractCorticalArea = _find_power_core_area_in_cache() if _can_apply_core_cluster_layout() else null
+	if power != null:
+		for row_name in AbstractCorticalArea.CORE_CLUSTER_ROW_ORDER:
+			if row_name == "power":
+				continue
+			var slave := _find_core_area_by_special_name(row_name)
+			if slave == null:
+				continue
+			var pos := AbstractCorticalArea.core_cluster_computed_feagi_position(slave.cortical_ID, power.coordinates_3D)
+			if slave.coordinates_3D != pos:
+				slave.FEAGI_change_coordinates_3D(pos)
+			# Slaved cores do not auto-follow coordinates_3D_updated on the DirectPoints renderer (API coords can disagree
+			# with the fixed row layout). Always snap the visualization to the computed plate position.
+			var slave_viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(String(slave.cortical_ID))
+			if slave_viz != null and is_instance_valid(slave_viz):
+				slave_viz.set_new_position(pos)
+	# Modulator trigger row: visual positions only (cache keeps stored coordinates).
+	var mod_layout: Dictionary = _modulator_row_layout()
+	if mod_layout.size() != _last_logged_modulator_row_count:
+		_last_logged_modulator_row_count = mod_layout.size()
+		print("[MOD-ROW] region=%s root=%s members=%d plate=%s" % [
+			String(_representing_region.region_ID) if _representing_region != null else "none",
+			str(_can_apply_core_cluster_layout()),
+			mod_layout.size(),
+			"core" if _can_apply_core_cluster_layout() else "own"])
+	for mod_id in mod_layout.keys():
+		var mod_viz: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(String(mod_id))
+		if mod_viz != null and is_instance_valid(mod_viz):
+			mod_viz.set_new_position(mod_layout[mod_id])
 	call_deferred("_update_core_cluster_plate_transform")
 
-func _ensure_core_cluster_plate() -> void:
-	if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
-		return
+## MODULATOR areas that are direct children of the region this monitor represents.
+func _collect_modulator_row_areas() -> Array[AbstractCorticalArea]:
+	var out: Array[AbstractCorticalArea] = []
+	if _representing_region == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return out
+	for ca in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
+		var a := ca as AbstractCorticalArea
+		if a != null and a.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR and _is_area_direct_child_of_representing_region(a):
+			out.append(a)
+	return out
+
+## Visual FEAGI positions of the modulator row (id -> Vector3i, sorted by ID). Power-anchored on the root monitor when a power core exists, else anchored at the first modulator.
+func _modulator_row_layout() -> Dictionary:
+	var stored: Dictionary = {}
+	for a in _collect_modulator_row_areas():
+		stored[a.cortical_ID] = a.coordinates_3D
+	if stored.is_empty():
+		return stored
+	var power: AbstractCorticalArea = _find_power_core_area_in_cache() if _can_apply_core_cluster_layout() else null
+	return AbstractCorticalArea.modulator_row_layout(stored, power.coordinates_3D if power != null else null)
+
+func _create_row_plate(plate_name: String) -> MeshInstance3D:
 	var plate := MeshInstance3D.new()
-	plate.name = "CoreClusterBinderPlate"
-	var box := BoxMesh.new()
-	plate.mesh = box
+	plate.name = plate_name
+	plate.mesh = BoxMesh.new()
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -4836,29 +4886,23 @@ func _ensure_core_cluster_plate() -> void:
 	plate.material_override = mat
 	plate.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_node_3D_root.add_child(plate)
-	_core_cluster_plate = plate
+	return plate
 
-func _update_core_cluster_plate_transform() -> void:
-	if not _can_apply_core_cluster_layout():
-		return
-	_ensure_core_cluster_plate()
-	var members := _collect_present_core_cluster_areas_ordered()
-	if members.size() < 2:
-		_core_cluster_plate.visible = false
-		return
+## Sizes and places a row plate under [param areas]' volumes; hidden when fewer than [param min_members] have a volume.
+func _fit_row_plate(plate: MeshInstance3D, areas: Array, min_members: int) -> void:
 	var xs: Array[float] = []
 	var zs: Array[float] = []
 	var ys: Array[float] = []
-	for ca in members:
-		var viz := get_cortical_area_visualization(String(ca.cortical_ID))
+	for ca in areas:
+		var viz := get_cortical_area_visualization(String((ca as AbstractCorticalArea).cortical_ID))
 		if viz == null or not is_instance_valid(viz):
 			continue
 		var gp: Vector3 = viz.get_volume_world_center()
 		xs.append(gp.x)
 		zs.append(gp.z)
 		ys.append(gp.y)
-	if xs.is_empty():
-		_core_cluster_plate.visible = false
+	if xs.size() < min_members or xs.is_empty():
+		plate.visible = false
 		return
 	var min_x: float = xs[0]
 	var max_x: float = xs[0]
@@ -4877,16 +4921,51 @@ func _update_core_cluster_plate_transform() -> void:
 	var width: float = maxf(max_x - min_x + pad * 2.0, min_span)
 	var depth: float = maxf(max_z - min_z + pad * 2.0, min_span)
 	var height: float = 0.4
-	var mesh := _core_cluster_plate.mesh as BoxMesh
+	var mesh := plate.mesh as BoxMesh
 	if mesh != null:
 		mesh.size = Vector3(width, height, depth)
-	_core_cluster_plate.global_position = Vector3((min_x + max_x) * 0.5, cy - 1.8, (min_z + max_z) * 0.5)
-	_core_cluster_plate.visible = true
+	plate.global_position = Vector3((min_x + max_x) * 0.5, cy - 1.8, (min_z + max_z) * 0.5)
+	plate.visible = true
+
+func _ensure_core_cluster_plate() -> void:
+	if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
+		return
+	_core_cluster_plate = _create_row_plate("CoreClusterBinderPlate")
+
+func _ensure_modulator_plate() -> void:
+	if _modulator_plate != null and is_instance_valid(_modulator_plate):
+		return
+	_modulator_plate = _create_row_plate("ModulatorRowPlate")
+
+## Root: the core plate spans the core row plus the modulator row. Subregion tab: its own modulator row gets a separate plate.
+func _update_core_cluster_plate_transform() -> void:
+	if _node_3D_root == null:
+		return
+	var modulators: Array[AbstractCorticalArea] = _collect_modulator_row_areas()
+	if _can_apply_core_cluster_layout():
+		if _modulator_plate != null and is_instance_valid(_modulator_plate):
+			_modulator_plate.visible = false
+		_ensure_core_cluster_plate()
+		var members: Array = _collect_present_core_cluster_areas_ordered()
+		members.append_array(modulators)
+		_fit_row_plate(_core_cluster_plate, members, 2)
+		return
+	if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
+		_core_cluster_plate.visible = false
+	if modulators.is_empty():
+		if _modulator_plate != null and is_instance_valid(_modulator_plate):
+			_modulator_plate.visible = false
+		return
+	_ensure_modulator_plate()
+	_fit_row_plate(_modulator_plate, modulators, 1)
 
 func _teardown_core_cluster_plate() -> void:
 	if _core_cluster_plate != null and is_instance_valid(_core_cluster_plate):
 		_core_cluster_plate.queue_free()
 	_core_cluster_plate = null
+	if _modulator_plate != null and is_instance_valid(_modulator_plate):
+		_modulator_plate.queue_free()
+	_modulator_plate = null
 
 #endregion
 
@@ -4963,14 +5042,20 @@ func _add_cortical_area(area: AbstractCorticalArea, allow_external: bool = false
 	if AbstractCorticalArea.is_core_cluster_slaved_to_power_layout(area.cortical_ID):
 		# Visual position comes from [_refresh_core_cluster_layout]; power alone tracks FEAGI.
 		pass
+	elif area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
+		# Modulator positions come from the row layout; a raw coordinate re-apply must not override it.
+		pass
 	else:
 		area.coordinates_3D_updated.connect(rendering_area.set_new_position)
-	if AbstractCorticalArea.is_power_area(area.cortical_ID):
+	if area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
+		var parent_cb := Callable(self, "_on_modulator_parent_region_updated")
+		if not area.parent_region_updated.is_connected(parent_cb):
+			area.parent_region_updated.connect(parent_cb)
+	if AbstractCorticalArea.is_power_area(area.cortical_ID) or area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
 		var power_cb := Callable(self, "_on_power_core_area_coordinates_changed")
 		if not area.coordinates_3D_updated.is_connected(power_cb):
 			area.coordinates_3D_updated.connect(power_cb)
 	_schedule_core_cluster_layout_refresh()
-	_schedule_modulator_plate_refresh()
 	
 	# If this area is I/O of a child region, it will be moved later by the brain region component
 	# For now, position it normally - it will be repositioned when brain regions populate
@@ -5066,69 +5151,7 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	else:
 		_prune_invalid_cortical_refs_from_mouse_tracking()
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
-	_schedule_modulator_plate_refresh()
-
-func _schedule_modulator_plate_refresh() -> void:
-	if _modulator_plate_refresh_pending:
-		return
-	_modulator_plate_refresh_pending = true
-	call_deferred("_update_modulator_plate")
-
-func _ensure_modulator_plate() -> void:
-	if _modulator_plate != null and is_instance_valid(_modulator_plate):
-		return
-	var plate := MeshInstance3D.new()
-	plate.name = "ModulatorPlate"
-	plate.mesh = BoxMesh.new()
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.albedo_color = Color(0.45, 0.32, 0.18, 0.28)
-	mat.emission_enabled = true
-	mat.emission = Color(0.42, 0.28, 0.12, 1.0)
-	mat.emission_energy = 0.35
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	plate.material_override = mat
-	plate.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_node_3D_root.add_child(plate)
-	_modulator_plate = plate
-
-func _update_modulator_plate() -> void:
-	_modulator_plate_refresh_pending = false
-	if _node_3D_root == null or not _brain_monitor_viewing_feagi_root_region():
-		if _modulator_plate != null and is_instance_valid(_modulator_plate):
-			_modulator_plate.visible = false
-		return
-	var members: Array[UI_BrainMonitor_CorticalArea] = []
-	for viz in _cortical_visualizations_by_ID.values():
-		var rendering := viz as UI_BrainMonitor_CorticalArea
-		if rendering == null or not is_instance_valid(rendering):
-			continue
-		var area: AbstractCorticalArea = rendering.cortical_area
-		if area != null and area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
-			members.append(rendering)
-	if members.is_empty():
-		if _modulator_plate != null and is_instance_valid(_modulator_plate):
-			_modulator_plate.visible = false
-		return
-	_ensure_modulator_plate()
-	var min_x: float = members[0].get_volume_world_center().x
-	var max_x: float = min_x
-	var min_z: float = members[0].get_volume_world_center().z
-	var max_z: float = min_z
-	var sum_y: float = members[0].get_volume_world_center().y
-	for i in range(1, members.size()):
-		var center: Vector3 = members[i].get_volume_world_center()
-		min_x = minf(min_x, center.x)
-		max_x = maxf(max_x, center.x)
-		min_z = minf(min_z, center.z)
-		max_z = maxf(max_z, center.z)
-		sum_y += center.y
-	var mesh := _modulator_plate.mesh as BoxMesh
-	if mesh != null:
-		mesh.size = Vector3(maxf(max_x - min_x + 6.0, 6.0), 0.35, maxf(max_z - min_z + 6.0, 6.0))
-	_modulator_plate.global_position = Vector3((min_x + max_x) * 0.5, (sum_y / float(members.size())) - 1.8, (min_z + max_z) * 0.5)
-	_modulator_plate.visible = true
+	_schedule_core_cluster_layout_refresh()
 
 func _ensure_external_io_plates() -> void:
 	if _representing_region == null or _node_3D_root == null or _representing_region.is_root_region():
@@ -5342,7 +5365,7 @@ func _selection_object_for_cortical_area(area: AbstractCorticalArea) -> GenomeOb
 	var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(area.cortical_ID)
 	if owner == null:
 		return area
-	if owner.is_class_output_id(area.cortical_ID) or owner.is_error_area_id(area.cortical_ID):
+	if owner.is_class_output_id(area.cortical_ID) or owner.is_answer_area_id(area.cortical_ID):
 		return area
 	return owner
 
@@ -5548,7 +5571,6 @@ func _perform_coalesced_cache_rebuild() -> void:
 			cortical_viz.refresh_neural_connections_if_shown()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
 	_schedule_core_cluster_layout_refresh()
-	_schedule_modulator_plate_refresh()
 
 
 ## Re-runs region plate population after cortical rebuild so rebuilt nodes are reparented off root.
