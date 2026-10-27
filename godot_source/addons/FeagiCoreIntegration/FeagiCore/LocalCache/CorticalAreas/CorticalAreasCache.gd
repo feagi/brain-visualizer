@@ -48,6 +48,7 @@ func FEAGI_add_custom_cortical_area(cortical_ID: StringName, cortical_name: Stri
 	var leftover_auto_twin: bool = bool(FEAGI_details.get("scan_twin", false)) and classifier_role != "scan_twin"
 	var defer_parent: bool = leftover_auto_twin
 	var new_area: CustomCorticalArea = CustomCorticalArea.new(cortical_ID, cortical_name, dimensions, null if defer_parent else brain_region, is_visible)
+	new_area.is_modulator_trigger = _dict_marks_modulator(FEAGI_details)
 	new_area.FEAGI_change_coordinates_3D(coordinates_3D)
 	if is_coordinate_2D_defined:
 		new_area.FEAGI_change_coordinates_2D(coordinates_2D)
@@ -148,6 +149,13 @@ func _safe_convert_to_vector2i(data: Variant, field_name: String = "") -> Vector
 		push_error("FEAGI CACHE: Unsupported data type for %s: %s" % [field_name, str(type_string(typeof(data)))])
 		return Vector2i(0, 0)  # Default fallback
 
+## True when FEAGI labels the area a modulator trigger via cortical_group or area_type (case-insensitive).
+static func _dict_marks_modulator(feagi_dictionary: Dictionary) -> bool:
+	for key in ["cortical_group", "area_type"]:
+		if feagi_dictionary.get(key) != null and String(feagi_dictionary[key]).strip_edges().to_upper() == "MODULATOR":
+			return true
+	return false
+
 ## Adds a cortical area as per the FEAGI dictionary. Skips over any templates for IPU and OPU and directly creates the object
 func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_region: BrainRegion, override_cortical_ID: StringName = "") -> void:
 	if override_cortical_ID != &"":
@@ -181,11 +189,15 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 			subtype = feagi_dictionary["cortical_sub_group"]
 		if type == AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM and subtype == "MEMORY":
 			type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY
+
+	# FEAGI sends modulator trigger areas with cortical_type "custom" but group/area_type "MODULATOR".
+	if _dict_marks_modulator(feagi_dictionary):
+		type = AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR
 	
 	var subtype: StringName = ""
 	if "cortical_sub_group" in feagi_dictionary:
 		subtype = feagi_dictionary["cortical_sub_group"]
-	
+
 	# NEW: Parse FeagiCorticalType from API if available
 	var feagi_cortical_type: FeagiCorticalType = null
 	if "cortical_type_info" in feagi_dictionary:
@@ -228,6 +240,8 @@ func FEAGI_add_cortical_area_from_dict(feagi_dictionary: Dictionary, brain_regio
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
 			FEAGI_add_core_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM:
+			FEAGI_add_custom_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
 			FEAGI_add_custom_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT:
 			FEAGI_add_custom_cortical_area(cortical_ID, name, position_3D, dimensions, position_2D_defined, position_2D, brain_region, feagi_dictionary, visibility)

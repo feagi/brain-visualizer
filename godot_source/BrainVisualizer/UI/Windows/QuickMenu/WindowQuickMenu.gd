@@ -653,7 +653,7 @@ func _button_move_3d() -> void:
 		))
 		close_window()
 		return
-	if AbstractCorticalArea.is_reserved_system_core_area(area.cortical_ID):
+	if AbstractCorticalArea.is_reserved_system_core_area(area.cortical_ID) or area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
 		bm.start_core_cluster_cortical_manipulation(area)
 	else:
 		bm.start_cortical_area_manipulation(area, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)

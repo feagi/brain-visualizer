@@ -4,6 +4,10 @@ class_name CustomCorticalArea
 
 
 #region Base Functionality
+
+## Set by the cache before details are applied when FEAGI labels this area a MODULATOR (its cortical_type is "custom").
+var is_modulator_trigger: bool = false
+
 func _init(ID: StringName, cortical_name: StringName, cortical_dimensions: Vector3i, parent_region: BrainRegion, visiblity: bool = true):
 	super(ID, cortical_name, cortical_dimensions, parent_region, visiblity) # This abstraction is useless right now! Too Bad!
 
@@ -18,6 +22,8 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 
 
 func _get_group() -> AbstractCorticalArea.CORTICAL_AREA_TYPE:
+	if is_modulator_trigger:
+		return AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR
 	return AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM
 
 func _has_neuron_firing_parameters() -> bool:

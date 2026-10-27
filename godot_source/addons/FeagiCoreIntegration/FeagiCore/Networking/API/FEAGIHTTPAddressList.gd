@@ -66,6 +66,7 @@ var GET_genome_classifier: StringName = "/v1/cortical_area/classifier/{classifie
 var PUT_genome_classifier: StringName = "/v1/cortical_area/classifier/{classifier_id}"
 var DELETE_genome_classifier: StringName = "/v1/cortical_area/classifier/{classifier_id}"
 var POST_genome_classifier_field: StringName = "/v1/cortical_area/classifier/{classifier_id}/field"
+var POST_genome_classifier_answer_modulators: StringName = "/v1/cortical_area/classifier/{classifier_id}/answer_modulators"
 var DELETE_genome_classifier_field: StringName = "/v1/cortical_area/classifier/{classifier_id}/field"
 var POST_corticalArea_clone: StringName = "/v1/cortical_area/clone"
 var POST_genome_morphology: StringName = "/v1/morphology/morphology"

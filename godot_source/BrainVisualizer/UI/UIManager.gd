@@ -2071,6 +2071,7 @@ func _apply_escape_selection_action(action: int, monitors: Array[UI_BrainMonitor
 
 
 func _input(event):
+	ModifierKeys.update_from_event(event) # source of truth for modifier state; never consumes the event
 	if FeagiCore.feagi_settings == null:
 		return
 	

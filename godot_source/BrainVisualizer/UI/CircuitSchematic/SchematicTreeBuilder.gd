@@ -10,6 +10,7 @@ const TYPE_COLORS: Dictionary = {
 	AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM: CBNodeCorticalArea.CUSTOM_BOX_COLOR,
 	AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU: CBNodeCorticalArea.OPU_BOX_COLOR,
 	AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE: CBNodeCorticalArea.CORE_BOX_COLOR,
+	AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR: CBNodeCorticalArea.CORE_BOX_COLOR,
 }
 const CLASSIFIER_COLOR: Color = Color(0.36, 0.25, 0.55)
 const OTHER_AREA_COLOR: Color = Color(0.3, 0.3, 0.3)

@@ -1627,7 +1627,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	return FEAGI_response_data
 
 
-## Creates a classifier assembly: sample memory, class memory, error area, and the associative edge.
+## Creates a classifier assembly: sample memory, class memory, error and correct areas, and the associative edge.
 ## Sample and class inputs are added later with classifier_sample and classifier_class mappings.
 func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, parent_region: BrainRegion) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
@@ -1653,7 +1653,7 @@ func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, 
 	var regions_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_brain_regions_from_feagi()
 	if regions_refresh == null or regions_refresh.has_errored or not regions_refresh.success:
 		push_warning("FEAGI REQUEST: Classifier created, but BV could not synchronize region membership / I/O.")
-	for response_key in ["sample_memory_id", "class_memory_id", "error_area_id"]:
+	for response_key in ["sample_memory_id", "class_memory_id", "error_area_id", "correct_area_id"]:
 		if not response.has(response_key):
 			continue
 		var created_id: StringName = StringName(str(response[response_key]))
@@ -1799,7 +1799,38 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 
 
 ## PUT reward training and the optional correct-answer area. Other classifier fields stay as they are.
-func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_training: bool, answer_feedback_area_id: String, answer_latency_bursts: int, learn_area_id: String, confidence_area_id: String) -> FeagiRequestOutput:
+## Makes sure the classifier's "correct answer" and "error" Reward modulators exist (idempotent).
+## Response: {correct_answer, error, correct_area_id}. When a correct area was just created for an
+## older classifier, syncs the cache and redraws the classifier like a freshly created one.
+func ensure_classifier_answer_modulators(classifier: GenomeClassifier) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if classifier == null or classifier.classifier_id == &"":
+		return FeagiRequestOutput.requirement_fail("INVALID_CLASSIFIER")
+	var address: StringName = StringName(String(FeagiCore.network.http_API.address_list.POST_genome_classifier_answer_modulators).replace("{classifier_id}", str(classifier.classifier_id)))
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(address, {})
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await worker.worker_done
+	var output: FeagiRequestOutput = worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(output):
+		push_error("FEAGI Requests: Unable to prepare answer modulators for classifier %s!" % classifier.friendly_name)
+		return output
+	var created: Dictionary = output.decode_response_as_dict()
+	var correct_area_id: StringName = StringName(str(created.get("correct_area_id", "")))
+	if correct_area_id != &"" and correct_area_id != classifier.correct_area_id:
+		# Classifier first, so the new area is recognized as its output when it lands in the cache.
+		await FeagiCore.feagi_local_cache.refresh_classifiers_from_feagi()
+		await get_cortical_area(correct_area_id)
+		await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
+		var refreshed: GenomeClassifier = FeagiCore.feagi_local_cache.classifiers.get(classifier.classifier_id, classifier)
+		_refresh_classifier_brain_monitor_visuals(refreshed, refreshed.current_parent_region)
+		_refresh_classifier_circuit_builder_visuals(refreshed, refreshed.current_parent_region)
+	return output
+
+
+## [param reward_modulator_ids]: the Reward modulators the classifier learns from. Empty with reward
+## training on selects the classifier's correct-answer and error modulators.
+func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_training: bool, answer_feedback_area_id: String, answer_latency_bursts: int, learn_area_id: String, confidence_area_id: String, reward_modulator_ids: Array[String]) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -1813,6 +1844,7 @@ func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_trainin
 		"answer_latency_bursts": maxi(answer_latency_bursts, 0),
 		"learn_area_id": learn_area_id.strip_edges(),
 		"confidence_area_id": confidence_area_id.strip_edges(),
+		"reward_modulator_ids": reward_modulator_ids,
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(edit_address, dict_to_send)
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)

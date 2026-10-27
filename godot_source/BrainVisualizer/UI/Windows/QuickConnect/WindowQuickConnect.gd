@@ -1025,7 +1025,7 @@ func _release_quick_connect_stick() -> void:
 	_qc_stuck_bm = null
 
 func _is_ctrl_modifier_held() -> bool:
-	return Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_META)
+	return ModifierKeys.ctrl_or_meta_held()
 
 func _is_ctrl_key(keycode: int) -> bool:
 	return keycode == KEY_CTRL or keycode == KEY_META

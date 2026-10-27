@@ -122,6 +122,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	
 	# Create renderers based on cortical area type
 	if (_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
+		_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR or
 		AbstractCorticalArea.is_feagi_invariant_core_area(_representing_cortial_area) or
 		_should_use_png_icon(_representing_cortial_area) or
 		_representing_cortial_area.is_classifier_sample_memory()):

@@ -7,6 +7,7 @@ class_name EditClassifierTunables
 const SECTION_KERNEL_MEMORY: String = "Sample Memory Area"
 const SECTION_CLASS_MEMORY: String = "Class Memory Area"
 const SECTION_ASSOCIATIVE: String = "Associative Memory Parameters"
+const SECTION_REWARD: String = "Reward Training"
 
 const MEMORY_FIELD_SPECS: Array[Dictionary] = [
 	{"key": "neuron_init_lifespan", "label": "Initial Neuron Lifespan", "kind": "int", "min": 1, "default": 1, "property": "initial_neuron_lifespan", "tooltip": "Bursts a new memory neuron survives before it is removed, unless it is activated again. The same setting exists on sample memory and on class memory."},
@@ -23,34 +24,37 @@ const CLASSIFIER_GUIDE_HEADING: String = "Edit a Classifier"
 const BOTTOM_HUD_CLEARANCE_PX: int = 8
 
 const ASSOCIATIVE_FIELD_SPECS: Array[Dictionary] = [
-	{"key": "plasticity_window", "label": "Plasticity Window", "kind": "int", "min": 1, "default": 1, "tooltip": "Bursts of co-activity used when reward training is off and the associative mapping learns by spike timing. It does not hold a decision until a late answer arrives. Use Answer Latency for that."},
-	{"key": "plasticity_constant", "label": "Plasticity Constant", "kind": "float", "default": 1, "tooltip": "Base size of one weight step on the associative mapping. The pleasure step is this value times the LTP multiplier. The pain step is this value times the LTD multiplier."},
-	{"key": "ltp_multiplier", "label": "LTP Multiplier", "kind": "float", "default": 1, "tooltip": "Scale of one strengthening step. With reward training on, this is the pleasure step for a class channel that matches the answer. With reward training off, it scales co-activation potentiation."},
-	{"key": "ltd_multiplier", "label": "LTD Multiplier", "kind": "float", "default": 1, "tooltip": "Scale of one weakening step. With reward training on, this is the pain step for a class channel that does not match the answer, and for every channel of an ambiguous decision when no answer area is connected."},
+	{"key": "plasticity_window", "label": "Plasticity Window", "kind": "int", "min": 1, "default": 1, "tooltip": "Bursts of co-activity used when reward learning is off and the associative mapping learns by spike timing. With reward learning on, FEAGI sets the eligibility window from the classifier's answer delay instead."},
+	{"key": "plasticity_constant", "label": "Plasticity Constant", "kind": "float", "default": 1, "tooltip": "Base size of one weight step on the associative mapping. With reward learning on, a Reward modulator commits LTP steps and a Punishment modulator LTD steps."},
+	{"key": "ltp_multiplier", "label": "LTP Multiplier", "kind": "float", "default": 1, "tooltip": "Scale of one strengthening step. With reward learning on, links active while a Reward modulator fires are strengthened by this step. With it off, it scales co-activation potentiation."},
+	{"key": "ltd_multiplier", "label": "LTD Multiplier", "kind": "float", "default": 1, "tooltip": "Scale of one weakening step. With reward learning on, links active while a Punishment modulator fires are weakened by this step."},
 	{"key": "synaptic_delay_bursts", "label": "Synaptic Delay", "kind": "int", "min": 1, "default": 1, "tooltip": "Bursts a spike waits on the sample-memory to class-memory mapping before it arrives. Minimum is 1. This does not choose which earlier decision an answer grades."},
 ]
 
 ## Labels and tooltips for classifier fields that are not memory or mapping keys.
 const SETTING_TOOLTIPS: Dictionary = {
 	"Classifier ID": "Stable id of this classifier in the genome. It is not a cortical area and cannot be edited.",
-	"Classifier Name": "Name shown on the classifier stamp. Sample memory, class memory, the error area, pain, and pleasure areas are named from this.",
+	"Classifier Name": "Name shown on the classifier stamp. Sample memory, class memory, the error and correct areas, and its answer modulators are named from this.",
 	"Parent Circuit": "Brain region that contains this classifier. The classifier itself is not a region and is not exported as a circuit.",
 	"3D Position": "Voxel position of the classifier stamp. Sample memory hosts the stamp. Class memory stays hidden at the same position.",
 	"Sample Inputs": "Areas mapped to sample memory with Classifier Sample. Several inputs are hashed together as one pattern. Connect them with Quick Connect.",
 	"Class Outputs": "One output per class input. FEAGI creates it when you map that input with Classifier Class, and its shape matches the class input.",
-	"Error Area": "1x1x1 area owned by this classifier. It fires on the next burst when a class input and its output disagree, or when one class output has more than one neuron firing.",
+	"Error Area": "1x1x1 area owned by this classifier. It fires on the next burst when a class output disagrees with its class input from the classifier's answer delay earlier, or when one class output has more than one neuron firing. It drives the classifier's \"error\" Punishment modulator.",
+	"Correct Area": "1x1x1 area owned by this classifier. It fires on the next burst when every class input that fired, the classifier's answer delay earlier, is answered by its class output with no error. It drives the classifier's \"correct answer\" Reward modulator.",
 	"Sample Memory Neurons": "Memory neurons currently stored for samples. The count is short-term plus long-term.",
 	"Class Memory Neurons": "Memory neurons currently stored for classes. The count is short-term plus long-term.",
-	"Reward Training": "Stores reward settings on this classifier. These settings do not run a scan. Off keeps ordinary co-activation on the associative mapping.",
-	"Answer Area": "Cortical area stored as the correct-class reference for reward settings. It is not a peripheral input. It is not created for you.",
-	"Answer Latency": "Bursts between a decision and the answer that grades it. Zero grades the same burst. Set this to the number of synaptic hops from the image area to the classifier field. The trainer hold, in ticks per sample, must be longer than this or the answer lands on the next image.",
-	"Learn Area": "Cortical area that must fire before pain or pleasure can change weights. It is not a peripheral input. The trainer stimulates it on the train split and leaves it quiet for validation and test. Empty allows a correction on any burst where reward training has an answer or an ambiguous decision.",
-	"Confidence Area": "Cortical area that receives one value per class channel: how far that channel's associative weight sits above the class-memory firing threshold. It is not a peripheral output. To let a trainer read the values, map this area onward to a peripheral output and select that output as the trainer decoder.",
+	"Learn from right/wrong answers": "When on, the sample-to-class memory link learns with reward-modulated STDP from the Reward and Punishment modulators below. The classifier's own correct-answer and error modulators are selected when it is first turned on.",
+	"Reward": "Reward modulators (positive strength) the classifier learns from. While one fires, the links that were active are strengthened. Its own correct-answer modulator fires when it answers right and is selected when reward learning is first turned on. Change a modulator's strength in the Modulators window.",
+	"Punishment": "Reward modulators with negative strength the classifier learns from. While one fires, the links that were active are weakened. Its own error modulator fires when it answers wrong and is selected when reward learning is first turned on. Change a modulator's strength in the Modulators window.",
+	"Correct answer from": "Area that fires the correct class during training. Pick an existing area. It is not created for you.",
+	"Answer delay (bursts)": "Bursts between the decision and the correct answer that grades it. 0 grades the same burst. Set this to the number of synaptic hops from the image area to the classifier field. The trainer hold, in ticks per sample, must be longer than this or the answer lands on the next image.",
+	"Learn only while this fires": "Optional training gate. Weights change only on bursts where this area fires. None learns on every graded burst. The trainer fires it on the train split and leaves it quiet for validation and test.",
+	"Confidence output": "Optional. Receives one value per class showing how far each class link sits above the firing threshold. To read it in a trainer, map this area onward to an OPU and select that output as the trainer decoder.",
 }
 
 
 static func section_titles() -> PackedStringArray:
-	return PackedStringArray([SECTION_KERNEL_MEMORY, SECTION_CLASS_MEMORY, SECTION_ASSOCIATIVE])
+	return PackedStringArray([SECTION_KERNEL_MEMORY, SECTION_CLASS_MEMORY, SECTION_ASSOCIATIVE, SECTION_REWARD])
 
 
 static func memory_feagi_keys() -> PackedStringArray:
@@ -64,6 +68,7 @@ const SECTION_TOOLTIPS: Dictionary = {
 	SECTION_KERNEL_MEMORY: "Lifecycle of the neurons that store sample patterns. Temporal depth is how many bursts of the pattern are stacked.",
 	SECTION_CLASS_MEMORY: "Lifecycle of the neurons that store class patterns. A firing class-memory neuron replays its stored frame onto the paired class output.",
 	SECTION_ASSOCIATIVE: "The sample-memory to class-memory mapping. The window, constant, and multipliers stay on this edge. Synaptic delay is the wait on this mapping.",
+	SECTION_REWARD: "Grades each decision against the correct answer so right answers strengthen the class link and wrong ones weaken it. Applies separately from the associative mapping.",
 }
 
 
@@ -181,6 +186,42 @@ static func ensure_shared_area_choice(area_ids: Array[StringName], area_id: Stri
 
 
 ## Match Cortical Area Details: source art is 486x256, so the control must ignore texture size.
+## Splits applied reward sources by modulator sign: negative ones are Punishment, the rest Reward.
+## [param magnitudes]: modulator id -> magnitude_percent. Unknown ids count as Reward.
+static func split_sources_by_sign(ids: Array[String], magnitudes: Dictionary) -> Dictionary:
+	var reward: Array[String] = []
+	var punishment: Array[String] = []
+	for id in ids:
+		if float(magnitudes.get(id, 0.0)) < 0.0:
+			punishment.append(id)
+		else:
+			reward.append(id)
+	return {"reward": reward, "punishment": punishment}
+
+
+## Reward sources shown when the classifier has none applied yet: its own correct-answer and
+## error modulators from the answer-modulators response, which the server also falls back to.
+static func default_sources(applied: Array[String], answer_modulators: Dictionary) -> Array[String]:
+	if not applied.is_empty():
+		return applied.duplicate()
+	var ids: Array[String] = []
+	for key in ["correct_answer", "error"]:
+		var id: String = str(answer_modulators.get(key, ""))
+		if not id.is_empty():
+			ids.append(id)
+	ids.sort()
+	return ids
+
+
+## True when the chips hold a different set of sources than [param applied]. Order is ignored.
+static func sources_changed(selected: Array[String], applied: Array[String]) -> bool:
+	var a: Array[String] = selected.duplicate()
+	var b: Array[String] = applied.duplicate()
+	a.sort()
+	b.sort()
+	return a != b
+
+
 static func configure_theme_toggle(toggle: TextureButton) -> void:
 	toggle.theme_type_variation = &"ToggleButton"
 	toggle.ignore_texture_size = true
