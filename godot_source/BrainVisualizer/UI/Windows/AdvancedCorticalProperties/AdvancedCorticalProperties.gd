@@ -2214,11 +2214,11 @@ func _enable_3D_preview(): #NOTE only currently works with single
 @export var _firing_row_leak_variability: Control
 @export var _firing_threshold_increment_label: Control
 @export var _line_Fire_Threshold: FloatInput
-@export var _line_Threshold_Limit: IntInput
+@export var _line_Threshold_Limit: FloatInput
 @export var _line_neuron_excitability: IntInput
 @export var _line_Degeneracy_Constant: FloatInput
 @export var _line_Refactory_Period: IntInput
-@export var _line_Leak_Constant: IntInput
+@export var _line_Leak_Constant: FloatInput
 @export var _line_Leak_Variability: FloatInput
 @export var _line_Consecutive_Fire_Count: IntInput
 @export var _line_Snooze_Period: IntInput
@@ -2742,18 +2742,21 @@ func _ensure_rate_modulated_leak_section() -> void:
 	rml_indent.add_child(_rml_params_vbox)
 	section.add_child(rml_indent)
 	_rml_target = _make_rml_float_spin(0.0, 1.0, 0.001, 0.1)
-	_rml_params_vbox.add_child(_add_rml_row("Target firing / burst", _rml_target))
-	_rml_tau = _make_rml_float_spin(1.0, 1_000_000.0, 0.5, 50.0)
-	_rml_params_vbox.add_child(_add_rml_row("EMA tau (bursts)", _rml_tau))
+	_rml_params_vbox.add_child(_add_rml_row("Target firing / burst", _rml_target, true, "Expected fraction of bursts (0 to 1) in which a neuron fires."))
+	# Core requires tau > 0 (not >= 1), so the lower bound is the smallest step above zero.
+	_rml_tau = _make_rml_float_spin(0.001, 1_000_000.0, 0.001, 50.0)
+	_rml_tau.custom_arrow_step = 1.0
+	_rml_params_vbox.add_child(_add_rml_row("EMA tau (bursts)", _rml_tau, true, "Time constant, in bursts, of the firing-rate moving average. Must be greater than 0."))
 	_rml_gain = _make_rml_float_spin(0.0, 10.0, 0.001, 0.2)
-	_rml_params_vbox.add_child(_add_rml_row("Gain", _rml_gain))
+	_rml_params_vbox.add_child(_add_rml_row("Gain", _rml_gain, true, "How strongly the leak follows the firing-rate error. Must be 0 or more."))
 	_rml_leak_min = _make_rml_float_spin(0.0, 1.0, 0.001, 0.02)
-	_rml_params_vbox.add_child(_add_rml_row("Leak min", _rml_leak_min))
+	_rml_params_vbox.add_child(_add_rml_row("Leak min", _rml_leak_min, true, "Lowest leak the homeostat may set, as a fraction from 0 to 1. Must not exceed Leak max."))
 	_rml_leak_max = _make_rml_float_spin(0.0, 1.0, 0.001, 0.5)
-	_rml_params_vbox.add_child(_add_rml_row("Leak max", _rml_leak_max))
+	_rml_params_vbox.add_child(_add_rml_row("Leak max", _rml_leak_max, true, "Highest leak the homeostat may set, as a fraction from 0 to 1. Must be at least Leak min."))
+	# Core treats 0 as 1 for update_every_n_bursts, so BV's minimum of 1 loses nothing.
 	_rml_every = _make_rml_float_spin(1.0, 1_000_000.0, 1.0, 1.0)
 	_rml_every.rounded = true
-	_rml_params_vbox.add_child(_add_rml_row("Update every N bursts", _rml_every))
+	_rml_params_vbox.add_child(_add_rml_row("Update every N bursts", _rml_every, true, "The leak is adjusted once every N bursts (whole number, minimum 1; FEAGI treats 0 the same as 1)."))
 	_rml_leak_warning_label = Label.new()
 	_rml_leak_warning_label.name = &"RmlLeakRangeWarning"
 	_rml_leak_warning_label.text = "Leak min must not exceed Leak max"
@@ -2780,10 +2783,14 @@ func _ensure_rate_modulated_leak_section() -> void:
 	_rml_rebind_controls_from_scene(section)
 	_connect_rml_ui_signals()
 
-func _add_rml_row(label_text: String, field: Control, field_fills_width: bool = true) -> HBoxContainer:
+func _add_rml_row(label_text: String, field: Control, field_fills_width: bool = true, tooltip: String = "") -> HBoxContainer:
 	var row := HBoxContainer.new()
 	var lab := Label.new()
 	lab.text = label_text
+	if not tooltip.is_empty():
+		row.tooltip_text = tooltip
+		lab.tooltip_text = tooltip
+		field.tooltip_text = tooltip
 	lab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lab.custom_minimum_size.x = 180
 	row.add_child(lab)
