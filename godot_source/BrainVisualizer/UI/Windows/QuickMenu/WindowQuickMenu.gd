@@ -564,6 +564,16 @@ func _button_open_3d_tab() -> void:
 	_debug_selection_state("_button_open_3d_tab before close")
 	close_window()
 
+## First 3D monitor for [param region], else for the nearest ancestor that has one.
+func _find_brain_monitor_up_from(region: BrainRegion) -> UI_BrainMonitor_3DScene:
+	var current: BrainRegion = region
+	while current != null:
+		var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(current)
+		if bm != null:
+			return bm
+		current = current.current_parent_region
+	return null
+
 func _button_move_3d() -> void:
 	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
@@ -623,15 +633,22 @@ func _button_move_3d() -> void:
 			))
 			close_window()
 			return
-		var bm_classifier: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(stamp.current_parent_region)
+		# A classifier lives in its own circuit, drawn as a box with plates in that circuit's parent.
+		# Moving it there moves that circuit box. A stamp shown directly in its region moves as an area.
+		var host: BrainRegion = stamp.current_parent_region
+		var moves_circuit: bool = host.is_classifier_circuit and host.current_parent_region != null
+		var bm_classifier: UI_BrainMonitor_3DScene = _find_brain_monitor_up_from(host.current_parent_region if moves_circuit else host)
 		if bm_classifier == null:
 			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
 				"Move (3D) Unavailable",
-				"No active 3D Brain Monitor found for this classifier.\n\nOpen a 3D tab for the parent circuit, then try again."
+				"No active 3D Brain Monitor shows this classifier.\n\nOpen a 3D tab for the circuit that contains it (or one of its parent circuits), then try again."
 			))
 			close_window()
 			return
-		bm_classifier.start_cortical_area_manipulation(stamp, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
+		if moves_circuit:
+			bm_classifier.start_brain_region_manipulation(host)
+		else:
+			bm_classifier.start_cortical_area_manipulation(stamp, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
 		close_window(false)
 		return
 	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:

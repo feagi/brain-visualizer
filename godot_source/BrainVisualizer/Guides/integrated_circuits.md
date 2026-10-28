@@ -63,7 +63,7 @@ Right-click the classifier and choose **Details**. The button tooltip is **Class
 
 If the editor is already open, selecting a different classifier loads that classifier. Selecting the same one again refreshes the neuron counts.
 
-**Help**, at the bottom left, opens this section of the user guide. **Update** applies the settings in the main form and closes the editor. **Cancel** closes it without applying those settings. The collapsed sections below the form have their own **Apply Update** buttons and are not part of that commit.
+**Help**, at the bottom left, opens this section of the user guide. **Update** applies the main form and every section you changed below it, then closes the editor. If a section fails, the editor stays open and says which one. **Cancel** closes it without applying anything.
 
 ### Main form
 
@@ -81,7 +81,7 @@ If the editor is already open, selecting a different classifier loads that class
 
 ### Sample memory, class memory, and the associative mapping
 
-Three sections start collapsed. **Apply Update** in a section stays disabled until you change a value in that section.
+Three sections start collapsed. **Update** sends a section only when you changed a value in it.
 
 **Sample Memory Area** and **Class Memory Area** edit the memory parameters of those two areas: Initial Neuron Lifespan, Lifespan Growth Rate, Longterm Memory Threshold, Temporal Depth, and MP Learning. Those parameters are the same ones documented for any memory area in [Cortical Area Details](cortical_area_details.md).
 
@@ -94,13 +94,13 @@ These rows are always shown:
 - **LTP Multiplier** scales a strengthening step. With reward training on, a Reward modulator commits it.
 - **LTD Multiplier** scales a weakening step. With reward training on, a Punishment modulator commits it.
 - **Synaptic Delay** is how many bursts a spike waits on this mapping before it reaches class memory. The minimum is 1.
-Reward learning has its own **Reward Training** section, with its own **Apply Update**. It does not need the associative mapping to be in cache.
+Reward learning has its own **Reward Training** section. It does not need the associative mapping to be in cache.
 
 - **Learn from right/wrong answers**: when on, the sample-to-class memory link learns with reward-modulated STDP from the modulators in **Reward** and **Punishment**. Those two rows appear only while it is on.
 
 - **Reward** and **Punishment** pick the Reward modulators the classifier learns from, with the same chips as a connection's modulators. **Reward** offers modulators with positive strength; while one fires, the links that were active are strengthened. **Punishment** offers modulators with negative strength; while one fires, those links are weakened. The sample-to-class memory link uses reward-modulated learning (R-STDP). Every classifier has a **correct** area that fires when each class input is answered by its class output, and an **error** area that fires on a wrong or doubled answer. They drive the "*name* correct answer" modulator (offered under Reward) and the "*name* error" modulator (offered under Punishment); both are selected when reward learning is first turned on. Change a modulator's strength in the Modulators window.
 
-If the memory area or the associative mapping is not available, the section says so and **Apply Update** stays disabled.
+If the memory area or the associative mapping is not available, the section says so and **Update** leaves it alone.
 
 ## Move, Reset, or Delete
 

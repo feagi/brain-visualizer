@@ -55,6 +55,7 @@ texture_hover = ExtResource("9_21qfw")
 texture_disabled = ExtResource("10_jwhcp")
 ignore_texture_size = true
 stretch_mode = 0
+tooltip_text = "Edit this morphology (connectivity rule): opens its parameters. Changes the wiring pattern between the two areas."
 
 [node name="Scalar" parent="MainRow" instance=ExtResource("3_7llad")]
 layout_mode = 2
@@ -70,8 +71,7 @@ initial_vector = Vector3i(1, 1, 1)
 layout_mode = 2
 size_flags_vertical = 4
 size_flags_horizontal = 0
-tooltip_text = "Post-Synaptic Potential
-"
+tooltip_text = "PSP multiplier: becomes the initial WEIGHT of each synapse this mapping creates (not the PSP).\nA synapse delivers weight x source-area PSP x sign. Silent if weight or PSP is 0."
 alignment = 1
 script = ExtResource("4_y0rve")
 initial_float = 1.0
@@ -83,7 +83,7 @@ number_decimal_places = 4
 layout_mode = 2
 size_flags_vertical = 4
 size_flags_horizontal = 0
-tooltip_text = "Synaptic delay in whole bursts (minimum 1). PSP arrives at presynaptic fire burst + this value."
+tooltip_text = "Synaptic delay in whole bursts (minimum 1). The synapse delivers its drive at (source fire burst + this value)."
 alignment = 1
 script = ExtResource("15_7qf8u")
 initial_int = 1
@@ -108,6 +108,7 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("6_3sy0c")
 enable_autoscaling_with_theme = false
+tooltip_text = "Inhibitory toggle: ON makes every synapse of this mapping subtract (sign -1) instead of add; the drive is weight x PSP x sign."
 
 [node name="Modulators" type="HBoxContainer" parent="MainRow"]
 layout_mode = 2
@@ -119,10 +120,7 @@ script = ExtResource("mod_chips")
 layout_mode = 2
 size_flags_vertical = 4
 size_flags_horizontal = 0
-tooltip_text = "Plasticity mode for this rule:
-  Off    - synaptic weights are frozen
-  STDP   - classical spike-timing dependent plasticity
-  R-STDP - reward-modulated STDP (needs a synaptic.reward modulator subscribed)"
+tooltip_text = "Plasticity mode for this mapping (changes synapse WEIGHT only, never PSP):\n  Off    - weights stay fixed\n  STDP   - trace is rebuilt each burst; weight += eta x trace\n  R-STDP - trace persists (decays by Eligibility Decay); weight += eta x (reward - punishment) x trace. Needs a synaptic.reward modulator."
 clip_text = true
 fit_to_longest_item = false
 
@@ -138,6 +136,7 @@ texture_hover = ExtResource("13_s4moh")
 texture_disabled = ExtResource("14_yxhwi")
 ignore_texture_size = true
 stretch_mode = 0
+tooltip_text = "Remove this rule from the mapping. Its synapses are deleted when the mapping is applied."
 
 [node name="SubRow" type="HBoxContainer" parent="."]
 visible = false
@@ -167,7 +166,7 @@ custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-tooltip_text = "Plasticity Window (bursts)"
+tooltip_text = "Window (bursts): a synapse is potentiated or depressed only if its source/destination neurons fired within the last Window bursts.\nBoth fired: trace += Constant x LTP x. Only one fired: trace -= Constant x LTD x."
 alignment = 1
 script = ExtResource("15_7qf8u")
 initial_int = 3
@@ -182,7 +181,7 @@ custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-tooltip_text = "Plasticity Constant"
+tooltip_text = "Constant: base size of each trace change per burst.\nBoth fired: trace += Constant x LTP x. One side fired: trace -= Constant x LTD x. Each step is clamped to 0-255."
 alignment = 1
 script = ExtResource("4_y0rve")
 initial_float = 1.0
@@ -197,7 +196,7 @@ custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-tooltip_text = "Long-Term Potentiation Multiplier"
+tooltip_text = "LTP x: scales the trace increase when both neurons fired within the Window (Constant x LTP x). 0 disables potentiation."
 alignment = 1
 script = ExtResource("4_y0rve")
 initial_float = 1.0
@@ -212,7 +211,7 @@ custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-tooltip_text = "Long-Term Depression Multiplier"
+tooltip_text = "LTD x: scales the trace decrease when only one neuron fired within the Window (Constant x LTD x). Ignored on associative-memory mappings."
 alignment = 1
 script = ExtResource("4_y0rve")
 initial_float = 1.0
@@ -233,7 +232,7 @@ custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-tooltip_text = "Eligibility trace decay constant in bursts (R-STDP only). 0 disables temporal credit assignment."
+tooltip_text = "Eligibility Decay (bursts, R-STDP only): each burst the trace is multiplied by exp(-1/Decay), so reward arriving later still counts.\n0 disables temporal credit assignment."
 alignment = 1
 script = ExtResource("15_7qf8u")
 initial_int = 0
