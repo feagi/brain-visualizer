@@ -248,6 +248,20 @@ func FEAGI_remove_region_and_raise_internals(region: BrainRegion) -> void:
 	region.FEAGI_delete_this_region()
 	_available_brain_regions.erase(region.region_ID)
 
+## FEAGI states that an already emptied region is removed (its areas and child regions were removed first).
+## Used by the delete-with-internals path; emits [signal region_about_to_be_removed] so views drop the region.
+func FEAGI_remove_emptied_region(region: BrainRegion) -> void:
+	if region == null or not is_instance_valid(region):
+		return
+	if not _available_brain_regions.has(region.region_ID):
+		return
+	if region.is_root_region():
+		push_warning("CORE CACHE: Cannot remove root region. Skipping.")
+		return
+	region_about_to_be_removed.emit(region)
+	region.FEAGI_delete_this_region()
+	_available_brain_regions.erase(region.region_ID)
+
 #endregion
 
 

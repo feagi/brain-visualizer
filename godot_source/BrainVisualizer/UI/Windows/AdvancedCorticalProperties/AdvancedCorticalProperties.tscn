@@ -781,7 +781,7 @@ script = ExtResource("13_ypuy1")
 
 [node name="Leak_Constant" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
 layout_mode = 2
-tooltip_text = "The amount of membrane potential a neuron will loose with the passing of a single burst duration"
+tooltip_text = "Percent of the membrane potential a neuron loses each burst (0 to 100). Shown as a percent; stored and sent to FEAGI as a fraction from 0 to 1."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Leak_Constant"]
 layout_mode = 2
@@ -791,11 +791,15 @@ text = "Leak Constant"
 [node name="Leak_Constant" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Leak_Constant"]
 layout_mode = 2
 alignment = 2
-script = ExtResource("9_xe4wg")
+script = ExtResource("14_3jdx4")
+max_value = 100.0
+min_value = 0.0
+number_decimal_places = 1
+suffix = " %"
 
 [node name="Leak_Variability" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
 layout_mode = 2
-tooltip_text = "The percentage of inconsistency that each neuron can have in their leak constant value"
+tooltip_text = "Random spread of the leak across neurons, as a percent (0 to 100). Shown as a percent; stored and sent to FEAGI as a fraction from 0 to 1."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Leak_Variability"]
 layout_mode = 2
@@ -806,11 +810,15 @@ text = "Leak Variability"
 layout_mode = 2
 alignment = 2
 script = ExtResource("14_3jdx4")
+max_value = 100.0
+min_value = 0.0
+number_decimal_places = 1
+suffix = " %"
 string_representing_invalid = "mult."
 
 [node name="Consecutive_Fire_Count" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
 layout_mode = 2
-tooltip_text = "The max number of consecutive firing a neuron can have at a time"
+tooltip_text = "Whole number of bursts in a row a neuron may fire before it is snoozed (0 to 65535, 0 means unlimited)."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Consecutive_Fire_Count"]
 layout_mode = 2
@@ -821,6 +829,8 @@ text = "Consecutive Fire Count"
 layout_mode = 2
 alignment = 2
 script = ExtResource("9_xe4wg")
+max_value = 65535
+min_value = 0
 
 [node name="Snooze_Period" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
 layout_mode = 2
@@ -866,7 +876,7 @@ script = ExtResource("14_3jdx4")
 
 [node name="Threshold_Limit" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
 layout_mode = 2
-tooltip_text = "The max level of membrane potential value that can trigger a neuron firing. Membrane potentials beyond this limit will not lead to neuron firing"
+tooltip_text = "The max level of membrane potential value that can trigger a neuron firing. Membrane potentials beyond this limit will not lead to neuron firing. Fractions are allowed; 0 means no cap."
 
 [node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Threshold_Limit"]
 layout_mode = 2
@@ -876,7 +886,8 @@ text = "Firing Threshold Limit"
 [node name="Threshold_Limit" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters/Threshold_Limit"]
 layout_mode = 2
 alignment = 2
-script = ExtResource("9_xe4wg")
+script = ExtResource("14_3jdx4")
+min_value = 0.0
 
 [node name="Neuron_Excitability" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Neuron_Firing/VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesNeuronFiringParameters"]
 layout_mode = 2

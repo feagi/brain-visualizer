@@ -22,6 +22,7 @@ func _run_tests() -> void:
 	failures += _test_window_fits_content_inside_available_height()
 	failures += _test_memory_count_matches_cortical_details()
 	failures += _test_numeric_defaults_are_one()
+	failures += _test_class_memory_firing_threshold()
 	failures += _test_every_setting_has_a_tooltip()
 	failures += _test_reward_labels_stay_off_peripheral_terms()
 	failures += _test_tooltips_wrap_to_a_column()
@@ -71,10 +72,49 @@ func _test_memory_keys_match_cortical_details() -> int:
 	return 0
 
 
+func _test_class_memory_firing_threshold() -> int:
+	var class_specs: Array[Dictionary] = Tunables.memory_specs_for_section(Tunables.SECTION_CLASS_MEMORY)
+	var kernel_specs: Array[Dictionary] = Tunables.memory_specs_for_section(Tunables.SECTION_KERNEL_MEMORY)
+	if class_specs.size() != kernel_specs.size() + 1 or kernel_specs.size() != Tunables.MEMORY_FIELD_SPECS.size():
+		push_error("only class memory may add Firing Threshold")
+		return 1
+	var spec: Dictionary = class_specs[class_specs.size() - 1]
+	if String(spec["key"]) != "neuron_fire_threshold" or String(spec["label"]) != "Firing Threshold" or String(spec["kind"]) != "float":
+		push_error("class memory must expose a float Firing Threshold on neuron_fire_threshold")
+		return 1
+	if String(spec.get("tooltip", "")).is_empty() or float(spec.get("min", -1.0)) != 0.0:
+		push_error("Firing Threshold needs a tooltip and min 0")
+		return 1
+	# Load: a stored 0 or a decimal is kept, null falls back to 0.
+	if float(Tunables.numeric_or_default(0.0, spec)) != 0.0 or float(Tunables.numeric_or_default(2.5, spec)) != 2.5:
+		push_error("Firing Threshold must keep 0 and decimals")
+		return 1
+	if float(Tunables.numeric_or_default(null, spec)) != 0.0:
+		push_error("missing Firing Threshold must load as 0")
+		return 1
+	# Save: same payload as the other class memory tunables.
+	var payload: Dictionary = Tunables.memory_update_payload({
+		"neuron_init_lifespan": 40,
+		"neuron_fire_threshold": 2.5,
+		"cortical_id": "drop",
+	}, class_specs)
+	if payload.size() != 2 or float(payload.get("neuron_fire_threshold", -1.0)) != 2.5 or payload.get("neuron_init_lifespan", 0) != 40:
+		push_error("class memory payload must carry neuron_fire_threshold with the other tunables")
+		return 1
+	if Tunables.memory_update_payload({"neuron_fire_threshold": 2.5}, kernel_specs).has("neuron_fire_threshold"):
+		push_error("sample memory payload must not carry neuron_fire_threshold")
+		return 1
+	return 0
+
+
 func _test_every_setting_has_a_tooltip() -> int:
 	for spec in Tunables.MEMORY_FIELD_SPECS:
 		if String(spec.get("tooltip", "")).is_empty():
 			push_error("memory field %s needs a tooltip" % String(spec["key"]))
+			return 1
+	for spec in Tunables.CLASS_MEMORY_EXTRA_FIELD_SPECS:
+		if String(spec.get("tooltip", "")).is_empty():
+			push_error("class memory field %s needs a tooltip" % String(spec["key"]))
 			return 1
 	for spec in Tunables.ASSOCIATIVE_FIELD_SPECS:
 		if String(spec.get("tooltip", "")).is_empty():

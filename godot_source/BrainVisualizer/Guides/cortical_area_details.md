@@ -305,44 +305,43 @@ Controls the strength and behavior of synaptic connections.
 
 **Range:** Typically 0.0 - 1.0
 
-Base strength of incoming connections:
-- Higher values = stronger synaptic influence
-- Uniform for all connections if PSP Uniformity is ON
-- Overridden if MP-Driven PSP is ON
+Strength multiplier of this area's OUTGOING synapses (it is set on the source area):
+- A synapse delivers `weight x PSP x sign` (sign is -1 for inhibitory)
+- The value is stamped on each outgoing synapse when it is created; changing it later affects only synapses created afterwards (including learned ones)
+- If PSP Uniformity is OFF, the contribution is divided by the source neuron's number of outgoing synapses
+- Overridden by the membrane potential if MP-Driven PSP is ON
+- Plasticity never changes PSP; a synapse is silent if its weight or PSP is 0
 
 ### PSP Max
 
 **Range:** Typically 0.0 - 2.0
 
-Maximum allowed synaptic strength:
-- Caps connection weights
-- Prevents runaway strengthening
-- Upper bound for plasticity
+Upper bound value stored in the genome and editable here:
+- The burst engine does not currently enforce it
+- It does not cap weights; the weight cap is the mapping's max_weight (set via API/MCP)
 
 ### Degeneracy Coefficient
 
 **Range:** Typically 0.0 - 1.0
 
-Rate of synaptic weakening over time:
-- 0 = no decay, permanent connections
-- Higher values = faster forgetting
-- Implements synaptic homeostasis
+Amount subtracted from a source neuron's outgoing PSP each time it fires:
+- Per fire, not per time (floored at 0)
+- 0 = no degeneration
+- Does not change synapse weight
 
 ### PSP Uniformity
 
 **Toggle:** ON/OFF
 
-- **ON** - All connections use the same PSP value
-- **OFF** - Connections can have individual strengths
-- OFF enables connection-specific learning
+- **ON** - Each synapse delivers its full `weight x PSP x sign`
+- **OFF** - That contribution is divided by the source neuron's number of outgoing synapses
 
 ### MP-Driven PSP
 
 **Toggle:** ON/OFF
 
-- **ON** - PSP determined by pre-synaptic neuron's membrane potential
-- **OFF** - PSP uses the fixed base value
-- Creates activity-dependent connection strength
+- **ON** - The source neuron's membrane potential is used instead of the stored PSP
+- **OFF** - The stored PSP value is used
 
 ---
 

@@ -14,6 +14,7 @@ var _neuron_count: TextInput
 var _synapse_count: TextInput
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
 const FirstSectionTitles = preload("res://BrainVisualizer/UI/Top_Bar/TopBarFirstSectionTitles.gd")
+const ModulatorEffect = preload("res://BrainVisualizer/UI/Windows/CreateModulator/ModulatorEffect.gd")
 const PREFAB_BRAIN_OBJECTS_COMBO: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
 const GENOME_HISTORY_BUTTON: Script = preload("res://BrainVisualizer/UI/Top_Bar/TeamBranch/GenomeHistoryButton.gd")
 var _shared_combo: BrainObjectsCombo = null
@@ -316,6 +317,7 @@ func _open_modulators() -> void:
 
 
 ## One item per FEAGI modulator instance, sorted by id: label "id (type)", payload {"id", "definition"}.
+## Reward-type modulators show Reward or Punishment from the sign of their strength.
 func _build_topbar_modulator_items(modulators: Dictionary) -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	var ids: Array = modulators.keys()
@@ -327,7 +329,7 @@ func _build_topbar_modulator_items(modulators: Dictionary) -> Array[Dictionary]:
 		if not body is Dictionary:
 			continue
 		items.append({
-			"label": "%s (%s)" % [id, str(body.get("type", ""))],
+			"label": "%s (%s)" % [id, ModulatorEffect.list_type_label(str(body.get("type", "")), float(body.get("magnitude_percent", 0)))],
 			"payload": {"id": str(id), "definition": body},
 		})
 	return items

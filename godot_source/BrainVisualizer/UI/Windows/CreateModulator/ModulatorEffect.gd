@@ -52,6 +52,14 @@ static func type_info(raw_type: String) -> Dictionary:
 	return {"type": raw_type, "label": raw_type, "prefix": "modulator", "scope": "", "control": CONTROL_ADJUST, "default": 0.0, "desc": "", "hint": ""}
 
 
+## Type shown next to a modulator in lists. Reward and punishment share "synaptic.reward", so its sign
+## picks "Reward" (>= 0) or "Punishment" (< 0); other types keep the raw string.
+static func list_type_label(raw_type: String, magnitude_percent: float) -> String:
+	if control_kind(raw_type) == CONTROL_REWARD:
+		return "Punishment" if magnitude_percent < 0.0 else "Reward"
+	return raw_type
+
+
 static func control_kind(raw_type: String) -> String:
 	return str(type_info(raw_type)["control"])
 

@@ -26,13 +26,23 @@ Each mapping consists of:
 - Determines connection density and pattern
 - Can be shared across multiple mappings
 
-See [Connectivity Rules](connectivity rules.md) for details.
+See [Connectivity Rules](connectivity_rules.md) for details.
 
 ### Parameters
-- **Postsynaptic Current**: Strength of influence
-- **Plasticity**: Whether connections learn
-- **Learning Rate**: Speed of adaptation
-- **Weight Limits**: Min/max connection strengths
+- **PSP**: The mapping's PSP multiplier; becomes the initial weight of each synapse
+- **Inhibitory**: Synapses subtract instead of add
+- **Delay**: Synaptic delay in whole bursts (minimum 1)
+- **Plasticity mode**: Off, STDP or R-STDP
+- **Window / Constant / LTP x / LTD x**: Learning parameters (see below)
+- **Eligibility Decay**: Trace decay in bursts (R-STDP only)
+
+## How learning and PSP interact
+
+- A synapse delivers `weight x PSP x sign`; PSP is the source area's value, stamped on its outgoing synapses at creation
+- LTP/LTD change weight only, never PSP (weight is floored at 0; punishment never raises it)
+- PSP scales every learned change: a synapse is silent if either weight or PSP is 0
+- Changing an area's PSP affects only synapses created afterwards
+- The weight cap (max_weight), learning rate (eta) and freeze are set via API/MCP, not this editor
 
 ## Creating Mappings
 
@@ -138,27 +148,26 @@ The Mapping Editor is your detailed interface for configuring connections.
 
 ### Configuring Parameters
 
-**Postsynaptic Current (PSC):**
-- Strength of synaptic influence
-- Higher values = stronger effect
-- Can be positive (excitatory) or negative (inhibitory)
-- Typical range: 0.1 to 10.0
+**PSP (multiplier):**
+- Becomes the initial weight of each synapse (not the PSP itself)
+- Must be 0 or higher; use the Inhibitory toggle for negative effect
 
-**Plasticity:**
-- **Enabled**: Connections strengthen/weaken based on activity
-- **Disabled**: Fixed connection weights
-- Enable for learning applications
+**Inhibitory / Delay:**
+- Inhibitory: drive is multiplied by -1
+- Delay: bursts between source firing and delivery (minimum 1)
 
-**Learning Rate:**
-- Speed of synaptic adaptation
-- Higher = faster learning
-- Too high = instability
-- Typical range: 0.001 to 0.1
+**Plasticity mode:**
+- **Off**: Weights stay fixed
+- **STDP**: Eligibility trace is rebuilt each burst; weight changes by eta x trace
+- **R-STDP**: Trace persists and decays; weight changes by eta x (reward - punishment) x trace
 
-**Weight Limits:**
-- **Min Weight**: Minimum synaptic strength
-- **Max Weight**: Maximum synaptic strength
-- Prevents runaway growth or decay
+**Window / Constant / LTP x / LTD x:**
+- If source and destination both fired within the last Window bursts: trace += Constant x LTP x
+- If only one fired: trace -= Constant x LTD x (skipped on associative-memory mappings)
+- Each step (Constant x LTP x or Constant x LTD x) is clamped to 0-255; LTP x = 0 disables potentiation
+
+**Eligibility Decay:**
+- R-STDP only: trace is multiplied by exp(-1/Decay) each burst
 
 ### Creating the Mapping
 

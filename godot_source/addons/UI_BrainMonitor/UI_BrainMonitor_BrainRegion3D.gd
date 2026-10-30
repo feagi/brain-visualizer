@@ -2788,6 +2788,14 @@ func _start_connection_monitoring() -> void:
 			_representing_region.partial_mappings_inputted.connect(_on_region_partial_mappings_changed)
 		if not _representing_region.partial_mappings_about_to_be_removed.is_connected(_on_region_partial_mappings_changed):
 			_representing_region.partial_mappings_about_to_be_removed.connect(_on_region_partial_mappings_changed)
+		# A classifier that arrives after the plates were built adds its stamp and outputs to them.
+		if not _representing_region.classifier_added_to_region.is_connected(_on_region_classifiers_changed):
+			_representing_region.classifier_added_to_region.connect(_on_region_classifiers_changed)
+		if not _representing_region.classifier_removed_from_region.is_connected(_on_region_classifiers_changed):
+			_representing_region.classifier_removed_from_region.connect(_on_region_classifiers_changed)
+	if FeagiCore and FeagiCore.feagi_local_cache:
+		if not FeagiCore.feagi_local_cache.classifiers_reloaded.is_connected(_on_region_classifiers_changed):
+			FeagiCore.feagi_local_cache.classifiers_reloaded.connect(_on_region_classifiers_changed)
 
 func _connect_external_io_tree(region: BrainRegion) -> void:
 	if region == null:
@@ -2889,6 +2897,13 @@ func _on_global_mapping_changed(mapping: InterCorticalMappingSet) -> void:
 
 
 ## Region-level partial mappings change handler
+## Classifiers loaded, added to or removed from the region: re-run the same plate refresh as an IO change.
+func _on_region_classifiers_changed(_classifier = null) -> void:
+	if not _connection_monitoring_enabled or not is_inside_tree():
+		return
+	_check_io_status_and_refresh()
+
+
 func _on_region_partial_mappings_changed(_param) -> void:
 	if not _connection_monitoring_enabled:
 		return
@@ -3281,6 +3296,13 @@ func _disable_connection_monitoring() -> void:
 			_representing_region.partial_mappings_inputted.disconnect(_on_region_partial_mappings_changed)
 		if _representing_region.partial_mappings_about_to_be_removed.is_connected(_on_region_partial_mappings_changed):
 			_representing_region.partial_mappings_about_to_be_removed.disconnect(_on_region_partial_mappings_changed)
+		if _representing_region.classifier_added_to_region.is_connected(_on_region_classifiers_changed):
+			_representing_region.classifier_added_to_region.disconnect(_on_region_classifiers_changed)
+		if _representing_region.classifier_removed_from_region.is_connected(_on_region_classifiers_changed):
+			_representing_region.classifier_removed_from_region.disconnect(_on_region_classifiers_changed)
+	if FeagiCore and FeagiCore.feagi_local_cache:
+		if FeagiCore.feagi_local_cache.classifiers_reloaded.is_connected(_on_region_classifiers_changed):
+			FeagiCore.feagi_local_cache.classifiers_reloaded.disconnect(_on_region_classifiers_changed)
 
 func _enable_connection_monitoring() -> void:
 	_connection_monitoring_enabled = true

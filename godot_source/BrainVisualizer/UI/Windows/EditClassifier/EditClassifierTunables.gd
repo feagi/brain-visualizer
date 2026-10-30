@@ -17,6 +17,12 @@ const MEMORY_FIELD_SPECS: Array[Dictionary] = [
 	{"key": "mp_learning_enabled", "label": "MP Learning", "kind": "bool", "property": "mp_learning_enabled", "tooltip": "Store the membrane potential that was present when the pattern was encoded, and restore it on replay. Off stores only which voxels fired."},
 ]
 
+## Extra fields only the class memory area offers. They live in the area's firing parameters,
+## not its memory parameters, and 0 is a valid stored value.
+const CLASS_MEMORY_EXTRA_FIELD_SPECS: Array[Dictionary] = [
+	{"key": "neuron_fire_threshold", "label": "Firing Threshold", "kind": "float", "min": 0.0, "default": 0, "allow_zero": true, "source": "firing", "property": "neuron_fire_threshold", "tooltip": "Membrane potential a class memory neuron must reach before it fires from learned associative input. Raise it so a class fires only after the sample-to-class synapse weight has built up, not on the first weak association."},
+]
+
 const WINDOW_CONTENT_WIDTH: int = 640
 const AREA_EXPLORER_BUTTON_TOOLTIP: String = "Open Cortical Area Explorer and pick an area from any circuit."
 const CLASSIFIER_GUIDE_FILE: String = "integrated_circuits.md"
@@ -129,15 +135,25 @@ static func numeric_or_default(value: Variant, spec: Dictionary) -> Variant:
 	var default_value: Variant = spec_numeric_default(spec)
 	if value == null:
 		return default_value
+	if bool(spec.get("allow_zero", false)):
+		return value
 	if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
 		if is_zero_approx(float(value)):
 			return default_value
 	return value
 
 
-static func memory_update_payload(values: Dictionary) -> Dictionary:
+## Specs shown for a memory section: sample memory gets the shared set, class memory adds the extras.
+static func memory_specs_for_section(section: String) -> Array[Dictionary]:
+	var specs: Array[Dictionary] = MEMORY_FIELD_SPECS.duplicate()
+	if section == SECTION_CLASS_MEMORY:
+		specs.append_array(CLASS_MEMORY_EXTRA_FIELD_SPECS)
+	return specs
+
+
+static func memory_update_payload(values: Dictionary, specs: Array[Dictionary] = MEMORY_FIELD_SPECS) -> Dictionary:
 	var payload: Dictionary = {}
-	for spec in MEMORY_FIELD_SPECS:
+	for spec in specs:
 		var key: String = String(spec["key"])
 		if values.has(key):
 			payload[key] = values[key]
