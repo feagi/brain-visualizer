@@ -39,6 +39,12 @@ autowrap_mode = 3
 custom_minimum_size = Vector2(420, 160)
 layout_mode = 2
 
+[node name="DeleteInternalsToggle" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+tooltip_text = "Checked: deletes this circuit, its sub-circuits and every cortical area inside them from FEAGI. Unchecked: deletes only the circuit and moves its contents to the parent circuit."
+text = "Also delete everything inside this circuit"
+
 [node name="ButtonSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 12)
 layout_mode = 2

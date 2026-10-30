@@ -19,6 +19,8 @@ func setup(selection: Array[GenomeObject], region_deleting_internals: bool = fal
 	# Keep button labels consistent with confirmation intent.
 	cancel_button.text = "Cancel"
 	confirm_button.text = "Confirm"
+	cancel_button.tooltip_text = "Close this window without deleting anything."
+	confirm_button.tooltip_text = "Permanently delete the objects listed here in FEAGI. Pressing Enter does the same."
 	_deletion_targets = selection
 	_is_deleting_internals = region_deleting_internals
 	_mode = GenomeObject.get_makeup_of_array(selection)
@@ -36,12 +38,12 @@ func setup(selection: Array[GenomeObject], region_deleting_internals: bool = fal
 				_scroll.visible = false
 			else:
 				_scroll_show_objects(internals)
-			if region_deleting_internals:
-				_label.text = "Are you sure you wish to delete neural circuit %s with these %d internals?" % [selection[0].friendly_name, len(internals)]
-			else:
-				# raising internals instead
-				_label.text = "Are you sure you wish to delete neural circuit %s and raise its %d internals to the parent circuit %s?" % [selection[0].friendly_name, len(internals), selection[0].current_parent_region.friendly_name]
-				
+				var toggle: CheckBox = _window_internals.get_node("DeleteInternalsToggle")
+				toggle.visible = true
+				toggle.set_pressed_no_signal(region_deleting_internals)
+				if not toggle.toggled.is_connected(_on_delete_internals_toggled):
+					toggle.toggled.connect(_on_delete_internals_toggled)
+			_update_region_label()
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS:
 			_label.text = "Are you sure you wish to delete %d cortical areas?" % len(selection)
 			_scroll_show_objects(selection)
@@ -55,6 +57,20 @@ func setup(selection: Array[GenomeObject], region_deleting_internals: bool = fal
 			push_error("UI: Unknown deletion target for deletion confirmation window! Closing!")
 			close_window()
 	set_process_unhandled_key_input(true)
+
+## Rewrites the single-circuit label for the current delete-internals choice.
+func _update_region_label() -> void:
+	var region: BrainRegion = _deletion_targets[0] as BrainRegion
+	var count: int = region.get_all_included_genome_objects().size()
+	if _is_deleting_internals:
+		_label.text = "Are you sure you wish to delete neural circuit %s with these %d internals?" % [region.friendly_name, count]
+	else:
+		# raising internals instead
+		_label.text = "Are you sure you wish to delete neural circuit %s and raise its %d internals to the parent circuit %s?" % [region.friendly_name, count, region.current_parent_region.friendly_name]
+
+func _on_delete_internals_toggled(pressed: bool) -> void:
+	_is_deleting_internals = pressed
+	_update_region_label()
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -79,26 +95,39 @@ func _yes_pressed() -> void:
 		GenomeObject.ARRAY_MAKEUP.SINGLE_CLASSIFIER:
 			FeagiCore.requests.delete_classifier(_deletion_targets[0] as GenomeClassifier)
 		GenomeObject.ARRAY_MAKEUP.SINGLE_BRAIN_REGION:
-			if _is_deleting_internals:
-				pass #TODO
-			else:
-				FeagiCore.requests.delete_regions_and_raise_internals(_deletion_targets[0] as BrainRegion)
+			var single_region: BrainRegion = _deletion_targets[0] as BrainRegion
+			deleted = await _delete_regions([single_region], _is_deleting_internals)
 		GenomeObject.ARRAY_MAKEUP.MULTIPLE_BRAIN_REGIONS:
-			# Backend exposes single-region delete for "raise internals", so batch via iteration.
-			for region in GenomeObject.filter_brain_regions(_deletion_targets):
-				FeagiCore.requests.delete_regions_and_raise_internals(region)
+			# Dialog says "and their internals", so delete members too.
+			deleted = await _delete_regions(GenomeObject.filter_brain_regions(_deletion_targets), true)
 		GenomeObject.ARRAY_MAKEUP.VARIOUS_GENOME_OBJECTS:
 			var cortical_areas: Array[AbstractCorticalArea] = GenomeObject.filter_cortical_areas(_deletion_targets)
 			if not cortical_areas.is_empty():
 				deleted = await _delete_areas_with_history(cortical_areas)
 			if deleted:
-				for region in GenomeObject.filter_brain_regions(_deletion_targets):
-					FeagiCore.requests.delete_regions_and_raise_internals(region)
+				deleted = await _delete_regions(GenomeObject.filter_brain_regions(_deletion_targets), true)
 		_:
 			push_warning("UI: ConfirmDeletion received unsupported mode %s." % _mode)
 	_delete_in_progress = false
 	if deleted:
 		close_window()
+
+
+## Deletes regions one by one. [param with_internals] true deletes members too; false raises them to the parent.
+## Regions already removed by an earlier delete in this batch (nested selections) are skipped. Returns false on the first failure.
+func _delete_regions(regions: Array[BrainRegion], with_internals: bool) -> bool:
+	for region in regions:
+		if not is_instance_valid(region) or not (region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions):
+			continue
+		var result: FeagiRequestOutput
+		if with_internals:
+			result = await FeagiCore.requests.delete_region_and_internals(region)
+		else:
+			result = await FeagiCore.requests.delete_regions_and_raise_internals(region)
+		if result == null or result.has_errored or not result.success or result.failed_requirement:
+			BV.NOTIF.add_notification("Delete failed", NotificationSystemNotification.NOTIFICATION_TYPE.ERROR)
+			return false
+	return true
 
 
 ## Snapshots restorable areas, deletes them, and records one undo step when FEAGI accepts the delete.
