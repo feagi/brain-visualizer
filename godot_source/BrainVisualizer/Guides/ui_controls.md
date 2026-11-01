@@ -138,7 +138,7 @@ The main toolbar provides quick access to essential features:
 **Inspectors Button:**
 - On the root scene top bar and the Brain Monitor tab bar
 - Opens on hover
-- Connection inspector, voxel inspector, and memory inspector
+- Connection inspector, voxel inspector, and memory inspector. The backtick key (`` ` ``), outside a text field, shows or hides the connection inspector and draws every mapping. Press it again, press Escape, or use Stop Inspector to hide them
 - Voxel inspector: Live neuron inspector shows the summary above the cursor while hovering voxels in the 3D view. Live synapse inspector draws that voxel's synapses, the same arcs as Inspect, and hides cortical mapping curves while it is on. Stop Inspector, at the bottom right, turns connection inspector and the live inspectors off. Escape does the same while that button is showing.
 
 **Activity Rendering Toggle:**

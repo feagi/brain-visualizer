@@ -2274,6 +2274,20 @@ func _create_pulse_animation(
 		# Add a brief pause at the end before restarting
 		pulse_tween.tween_interval(0.3)
 
+## Vertical offsets for coexisting recursive-loop polarities.
+## Array literals in a ternary are an untyped Array, which cannot be stored in Array[float].
+static func recursive_loop_height_offsets(polarity_count: int) -> Array[float]:
+	var height_offsets: Array[float] = []
+	if polarity_count == 2:
+		height_offsets.append(0.6)
+		height_offsets.append(-0.6)
+		return height_offsets
+	height_offsets.append(0.6)
+	height_offsets.append(0.0)
+	height_offsets.append(-0.6)
+	return height_offsets
+
+
 ## Create a recursive (self-looping) connection
 func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet) -> Node3D:
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
@@ -2284,7 +2298,7 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 		var mixed_loop := Node3D.new()
 		var plastic_prefix = "PLA_" if is_plastic else "STD_"
 		mixed_loop.name = "MIXED_RECURS_" + plastic_prefix + area_id
-		var height_offsets: Array[float] = [0.6, -0.6] if polarities.size() == 2 else [0.6, 0.0, -0.6]
+		var height_offsets: Array[float] = recursive_loop_height_offsets(polarities.size())
 		for index in polarities.size():
 			var polarity: Dictionary = polarities[index]
 			var loop = _create_recursive_loop_variant(

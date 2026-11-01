@@ -11,6 +11,21 @@ const KEY_ACTION := "action"
 const KEY_CONTEXT := "context"
 
 
+## Bare backtick, including the physical key so a non-US layout still toggles the inspector.
+static func is_connection_inspector_shortcut(
+	keycode: Key,
+	physical_keycode: Key,
+	with_command: bool,
+	shift_pressed: bool,
+	alt_pressed: bool,
+	pressed: bool,
+	echo: bool,
+) -> bool:
+	if not pressed or echo or with_command or shift_pressed or alt_pressed:
+		return false
+	return keycode == KEY_QUOTELEFT or physical_keycode == KEY_QUOTELEFT
+
+
 ## Bare K, including the physical key so a non-US layout still opens the window.
 static func is_keybinds_shortcut(
 	keycode: Key,
@@ -78,6 +93,7 @@ static func entries() -> Array[Dictionary]:
 		_row("App", "Ctrl/Cmd + S", "Search the genome by name", "Anywhere except a text field"),
 		_row("App", "Ctrl/Cmd + Z", "Undo the last genome change", "Anywhere except a text field"),
 		_row("App", "Shift + Ctrl/Cmd + Z", "Redo", "Anywhere except a text field"),
+		_row("App", "`", "Show or hide the connection inspector. Every mapping is drawn", "Anywhere except a text field"),
 		_row("App", "Escape", "Stop Inspector when that button is showing. Otherwise close the front window, or cancel a move, a box select, or the current selection", "Anywhere"),
 		_row("App", "Enter", "Confirm the open dialog, or confirm a move or resize", "Dialogs and Brain Monitor"),
 		_row("App", "1", "Show only the main 3D scene. Split tabs stay ready to reopen", "Anywhere except a text field"),

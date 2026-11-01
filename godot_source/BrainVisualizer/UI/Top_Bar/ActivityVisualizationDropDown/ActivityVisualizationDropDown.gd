@@ -64,6 +64,11 @@ func _refresh_global_button_visual_state() -> void:
 		_global_button.button_pressed = _global_connections_enabled
 
 
+## True while this menu's connection inspector latch is on.
+func is_connection_inspector_enabled() -> bool:
+	return _global_connections_enabled
+
+
 ## Syncs the Connection inspector latch and eye button visuals without emitting [signal activity_mode_changed].
 ## Used when turning the mode off from the floating "Stop Inspector" control so UI matches scene state.
 func set_connection_inspector_enabled(enabled: bool) -> void:

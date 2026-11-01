@@ -24,6 +24,7 @@ func _initialize() -> void:
 		return
 	var failures := 0
 	failures += _test_shortcut()
+	failures += _test_connection_inspector_shortcut()
 	failures += _test_split_layout_shortcut()
 	failures += _test_text_focus()
 	failures += _test_catalog()
@@ -61,6 +62,34 @@ func _test_shortcut() -> int:
 		return 1
 	if _catalog.is_keybinds_shortcut(KEY_S, KEY_S, false, false, false, true, false):
 		push_error("S should not open the shortcuts window")
+		return 1
+	return 0
+
+
+func _test_connection_inspector_shortcut() -> int:
+	if not _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_NONE, false, false, false, true, false):
+		push_error("backtick should show the connection inspector")
+		return 1
+	if not _catalog.is_connection_inspector_shortcut(KEY_NONE, KEY_QUOTELEFT, false, false, false, true, false):
+		push_error("physical backtick should show the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, true, false, false, true, false):
+		push_error("Ctrl/Cmd+backtick should not show the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, false, true, false, true, false):
+		push_error("Shift+backtick should not show the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, false, false, true, true, false):
+		push_error("Alt+backtick should not show the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, false, false, false, true, true):
+		push_error("a key repeat should not toggle the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, false, false, false, false, false):
+		push_error("releasing backtick should not toggle the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_K, KEY_K, false, false, false, true, false):
+		push_error("K should not show the connection inspector")
 		return 1
 	return 0
 
@@ -123,6 +152,7 @@ func _test_catalog() -> int:
 	var seen: Dictionary = {}
 	var sections: Array[String] = []
 	var has_open := false
+	var has_connection_inspector := false
 	var has_search := false
 	var has_undo := false
 	var has_views := false
@@ -149,6 +179,8 @@ func _test_catalog() -> int:
 			sections.append(section)
 		if keys == "K":
 			has_open = true
+		if keys == "`" and action.find("connection inspector") >= 0:
+			has_connection_inspector = true
 		if keys == "Ctrl/Cmd + S":
 			has_search = true
 		if keys == "Ctrl/Cmd + Z":
@@ -161,8 +193,8 @@ func _test_catalog() -> int:
 			has_vertical_split = true
 		if keys == "3" and action.find("horizontal split") >= 0:
 			has_horizontal_split = true
-	if not has_open or not has_search or not has_undo or not has_views:
-		push_error("the table is missing K, search, undo, or the top view")
+	if not has_open or not has_connection_inspector or not has_search or not has_undo or not has_views:
+		push_error("the table is missing K, the connection inspector, search, undo, or the top view")
 		return 1
 	if not has_main_scene or not has_vertical_split or not has_horizontal_split:
 		push_error("the table is missing the 1, 2, or 3 split layout shortcuts")

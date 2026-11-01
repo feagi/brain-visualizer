@@ -10,6 +10,7 @@ extends Node
 ## Messages (JSON text frames):
 ## - {"type": "team_brain_state", "team": bool, "branch": {"mode": ...}}
 ## - {"type": "team_main_branch_event", "event": {...}}
+## - {"type": "team_members", "members": [{"agent_id": "NU-…", "display_name": "…"}]}
 
 signal team_brain_state_changed(state: Dictionary)
 signal team_main_branch_event(event: Dictionary)
@@ -35,6 +36,8 @@ const RECONNECT_ENV: String = "FEAGI_DESKTOP_EVENTS_RECONNECT_SECONDS"
 
 ## Last branch state received; empty until the desktop sends one.
 var latest_state: Dictionary = {}
+## Team members' display names by FEAGI agent id (their account id), from the desktop.
+var member_names: Dictionary = {}
 
 var _url: String = ""
 var _reconnect_seconds: float = 0.0
@@ -98,6 +101,8 @@ func handle_message(text: String) -> void:
 			var event = message.get("event")
 			if typeof(event) == TYPE_DICTIONARY:
 				team_main_branch_event.emit(event)
+		"team_members":
+			_set_member_names(message.get("members", []))
 
 
 ## Append ledger rows newer than [member ledger_cursor]. Returns the number added.
@@ -152,10 +157,23 @@ func _is_own_change(event: Dictionary) -> bool:
 func _actor_label(event: Dictionary) -> String:
 	if _is_own_change(event):
 		return "You"
-	var actor := str(event.get("actor_display_name", "")).strip_edges()
-	if actor == "" or actor == "<null>":
-		return "A teammate"
-	return actor
+	return TeamBranchText.actor_name(event, member_names)
+
+
+## Replace the agent id → name map and redraw anything that names people.
+func _set_member_names(members) -> void:
+	if typeof(members) != TYPE_ARRAY:
+		return
+	var names := {}
+	for member in members:
+		if typeof(member) != TYPE_DICTIONARY:
+			continue
+		var agent := str(member.get("agent_id", "")).strip_edges()
+		var name := str(member.get("display_name", "")).strip_edges()
+		if agent != "" and name != "":
+			names[agent] = name
+	member_names = names
+	change_history_changed.emit()
 
 
 func _sync_unseen_total() -> void:

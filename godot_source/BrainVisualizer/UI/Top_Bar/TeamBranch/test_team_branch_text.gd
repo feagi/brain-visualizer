@@ -15,6 +15,8 @@ func _initialize() -> void:
 	failures += _test_history_line()
 	failures += _test_message_dispatch()
 	failures += _test_live_health_poll_refreshes_change_chip()
+	failures += _test_layout_moves_fold_into_one_row()
+	failures += _test_teammate_names()
 	if failures == 0:
 		print("TeamBranchText tests: PASS")
 		quit(0)
@@ -271,3 +273,69 @@ func _test_live_health_poll_refreshes_change_chip() -> int:
 		push_error("periodic health check must refresh the history chip")
 		return 1
 	return 0
+
+
+func _move(agent: String, sequence: int, stamp_ms: int, name: String) -> Dictionary:
+	return {
+		"sequence": sequence,
+		"agent_id": agent,
+		"origin": "replayed",
+		"timestamp_ms": stamp_ms,
+		"targets": [{"kind": "cortical_area", "id": "aWQ%d" % sequence}],
+		"after": {"name": name},
+		"operation": {"kind": "update_cortical_area", "changes": {"coordinate_2d": [10, sequence]}},
+	}
+
+
+## A burst of moves by one person in one second is one row; a delete inside it stays its own row.
+func _test_layout_moves_fold_into_one_row() -> int:
+	var failures := 0
+	var ledger := [
+		_move("NU-1", 1, 5_000, "a"),
+		_move("NU-1", 2, 5_100, "b"),
+		_move("NU-1", 3, 5_900, "c"),
+		{
+			"sequence": 4, "agent_id": "NU-1", "timestamp_ms": 5_950,
+			"targets": [{"kind": "classifier", "id": "cl-1"}], "before": {"name": "c2"},
+			"operation": {"kind": "delete_classifier"},
+		},
+		_move("NU-1", 5, 5_990, "d"),
+		_move("NU-2", 6, 5_995, "e"),
+		_move("NU-1", 7, 6_100, "f"),
+		{
+			"sequence": 8, "agent_id": "NU-1", "timestamp_ms": 6_200,
+			"targets": [{"kind": "cortical_area", "id": "aWQ8"}],
+			"operation": {"kind": "update_cortical_area", "changes": {"coordinate_2d": [1, 1], "neuron_fire_threshold": 2}},
+		},
+	]
+	var rows: Array = TeamBranchTextScript.grouped_history(TeamBranchTextScript.events_from_ledger(ledger, "NU-0"))
+	failures += _expect(rows.size() == 6, "moves fold, others stay: got %d rows" % rows.size())
+	failures += _expect(int(rows[0].get("group_count", 0)) == 3, "three moves in one second are one row")
+	failures += _expect(str(rows[0].get("detail", "")) == "Moved 3 areas", "folded row says how many moved")
+	failures += _expect(str(rows[0].get("target_id", "")) == "3 areas", "folded row target counts areas")
+	failures += _expect(str(rows[1].get("operation", "")) == "delete_classifier", "a delete keeps its own row")
+	failures += _expect(not rows[2].has("group_count"), "a move after the delete starts a new row")
+	failures += _expect(str(rows[3].get("agent_id", "")) == "NU-2", "another person's move is its own row")
+	failures += _expect(not rows[4].has("group_count"), "a move in the next second is a new row")
+	failures += _expect(not bool(rows[5].get("position_only", true)), "a move with a parameter edit is an edit")
+	return failures
+
+
+func _test_teammate_names() -> int:
+	var failures := 0
+	var row := {"kind": "genome_change", "agent_id": "NU-5605143836", "actor_display_name": "NU-5605143836", "mine": false}
+	failures += _expect(TeamBranchTextScript.actor_name(row, {"NU-5605143836": "Sam"}) == "Sam", "known teammate shows by name")
+	failures += _expect(TeamBranchTextScript.actor_name(row, {}) == "A teammate", "unknown account id is not shown raw")
+	failures += _expect(TeamBranchTextScript.actor_name({"mine": true}, {}) == "You", "own change is You")
+	failures += _expect(
+		TeamBranchTextScript.actor_name({"agent_id": "", "actor_display_name": "Bob", "mine": false}, {}) == "Bob",
+		"a name the desktop already sent is kept"
+	)
+	var events: Node = DesktopTeamEventsScript.new()
+	var redraws := [0]
+	events.change_history_changed.connect(func(): redraws[0] += 1)
+	events.handle_message(JSON.stringify({"type": "team_members", "members": [{"agent_id": "NU-7", "display_name": "Ana"}, {"agent_id": "", "display_name": "x"}]}))
+	failures += _expect(events.member_names == {"NU-7": "Ana"}, "team list is kept by agent id")
+	failures += _expect(redraws[0] == 1, "a new team list redraws the history")
+	events.free()
+	return failures

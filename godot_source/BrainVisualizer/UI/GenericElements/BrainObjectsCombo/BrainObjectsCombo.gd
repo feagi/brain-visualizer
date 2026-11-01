@@ -1011,6 +1011,11 @@ func _toggle_global_neural_connections_for_scene(brain_monitor: UI_BrainMonitor_
 			cortical_area_obj.set_hover_over_volume_state(false)
 
 
+## True while this tab strip's connection inspector latch is on.
+func is_connection_inspector_enabled() -> bool:
+	return _activity_visualization_dropdown != null and _activity_visualization_dropdown.is_connection_inspector_enabled()
+
+
 ## Keeps the Connection inspector toggle visuals aligned when the mode is cleared from elsewhere (e.g. floating stop button).
 func sync_connection_inspector_enabled(enabled: bool) -> void:
 	if _activity_visualization_dropdown != null:

@@ -374,6 +374,36 @@ func set_live_inspector_stop_overlay(enabled: bool) -> void:
 	set_connection_inspector_stop_overlay_visible(false)
 
 
+## Bare backtick shows every mapping, or hides them when the connection inspector is already on.
+func toggle_connection_inspector() -> void:
+	if _any_connection_inspector_enabled():
+		stop_connection_inspector()
+		return
+	clear_live_voxel_inspector()
+	_set_connection_inspector_enabled_for_all_brain_monitors(true)
+	_sync_connection_inspector_toggle_visuals(true)
+	set_connection_inspector_stop_overlay_visible(true)
+
+
+## True when the top bar or any Brain Monitor tab strip has the connection inspector latched on.
+func _any_connection_inspector_enabled() -> bool:
+	var top_bar_dropdown := _top_bar_activity_dropdown()
+	if top_bar_dropdown != null and top_bar_dropdown.is_connection_inspector_enabled():
+		return true
+	for combo in _find_all_brain_objects_combo_nodes():
+		if combo != null and is_instance_valid(combo) and combo.is_connection_inspector_enabled():
+			return true
+	return false
+
+
+func _top_bar_activity_dropdown() -> ActivityVisualizationDropDown:
+	if _top_bar == null:
+		return null
+	return _top_bar.get_node_or_null(
+		"TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown"
+	) as ActivityVisualizationDropDown
+
+
 ## Hard-stops Connection inspector regardless of which toolbar instance enabled it.
 ## This is used by the floating stop button to reliably clear inspector arcs in the active monitor tab.
 func stop_connection_inspector() -> void:
@@ -411,12 +441,9 @@ func _collect_brain_monitor_cortical_area_nodes(node: Node, cortical_areas: Arra
 
 ## Keeps all inspector toggle controls (top bar and per-tab strips) in sync after a forced stop.
 func _sync_connection_inspector_toggle_visuals(enabled: bool) -> void:
-	if _top_bar != null:
-		var top_bar_dropdown: ActivityVisualizationDropDown = _top_bar.get_node_or_null(
-			"TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown"
-		) as ActivityVisualizationDropDown
-		if top_bar_dropdown != null:
-			top_bar_dropdown.set_connection_inspector_enabled(enabled)
+	var top_bar_dropdown := _top_bar_activity_dropdown()
+	if top_bar_dropdown != null:
+		top_bar_dropdown.set_connection_inspector_enabled(enabled)
 	var combos: Array[BrainObjectsCombo] = _find_all_brain_objects_combo_nodes()
 	for combo in combos:
 		if combo == null or not is_instance_valid(combo):
@@ -2117,6 +2144,20 @@ func _input(event):
 					return
 				get_viewport().set_input_as_handled()
 				_toggle_keybinds()
+				return
+			if KeybindCatalog.is_connection_inspector_shortcut(
+				keyboard_event.keycode,
+				keyboard_event.physical_keycode,
+				keyboard_event.ctrl_pressed or keyboard_event.meta_pressed,
+				keyboard_event.shift_pressed,
+				keyboard_event.alt_pressed,
+				true,
+				false
+			):
+				if _keybinds_shortcut_blocked_by_text():
+					return
+				get_viewport().set_input_as_handled()
+				toggle_connection_inspector()
 				return
 			var split_digit: int = KeybindCatalog.split_layout_digit(
 				keyboard_event.keycode,

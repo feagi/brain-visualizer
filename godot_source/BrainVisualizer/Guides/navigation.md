@@ -387,6 +387,7 @@ See [Split View](split_view.md) for more details.
 ### Essential Shortcuts
 
 - **K**: Open or close the keyboard shortcuts table. Does not type into a text field. Escape also closes that window
+- **Backtick** (`` ` ``): Show or hide the connection inspector. Every mapping is drawn in Brain Monitor. Does not type into a text field. Press it again, press Escape, or use Stop Inspector to hide the mappings
 - **1**: Show only the main 3D scene. Closes a split and keeps its tabs for the next open. Does not type into a text field
 - **2**: Vertical split. The main 3D scene sits beside the split tabs
 - **3**: Horizontal split. The main 3D scene sits above the split tabs
