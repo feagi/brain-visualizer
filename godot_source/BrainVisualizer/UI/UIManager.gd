@@ -404,24 +404,17 @@ func _any_connection_inspector_latched() -> bool:
 
 ## The visible, active Brain Monitor the pointer is on.
 ## The control under the pointer wins, so a scene behind the split or another view does not.
+## The main scene clears its hover flag while the pointer is still on it, so that view uses its rect.
 func _brain_monitor_for_connection_inspector_shortcut() -> UI_BrainMonitor_3DScene:
-	var hovered_control := get_viewport().gui_get_hovered_control()
-	var hovered_monitor := _brain_monitor_ancestor(hovered_control)
-	var pointer_is_on_other_ui := hovered_control != null and hovered_monitor == null
 	var ordered: Array[UI_BrainMonitor_3DScene] = []
 	var candidates: Array = []
 	for brain_monitor in _find_all_brain_monitors_in_scene_tree():
 		if brain_monitor == null or not is_instance_valid(brain_monitor):
 			continue
-		var pointer_inside := false
-		if hovered_monitor != null:
-			pointer_inside = brain_monitor == hovered_monitor
-		elif not pointer_is_on_other_ui:
-			pointer_inside = _pointer_inside_control(brain_monitor) and brain_monitor.is_pointer_over_view()
 		ordered.append(brain_monitor)
 		candidates.append({
 			KeybindCatalog.SCENE_VISIBLE: brain_monitor.is_visible_in_tree(),
-			KeybindCatalog.SCENE_POINTER_INSIDE: pointer_inside,
+			KeybindCatalog.SCENE_POINTER_INSIDE: _pointer_is_on_brain_monitor(brain_monitor),
 			KeybindCatalog.SCENE_ACTIVE: _brain_monitor_is_active_scene(brain_monitor),
 			KeybindCatalog.SCENE_COVERED: _root_scene_covered_at_pointer(brain_monitor),
 			KeybindCatalog.SCENE_AREA: brain_monitor.get_global_rect().get_area(),
@@ -430,6 +423,42 @@ func _brain_monitor_for_connection_inspector_shortcut() -> UI_BrainMonitor_3DSce
 	if index < 0 or index >= ordered.size():
 		return null
 	return ordered[index]
+
+
+## True when this scene is the one under the pointer.
+## Tab scenes report themselves as the hovered control. The main scene often does not.
+func _pointer_is_on_brain_monitor(brain_monitor: UI_BrainMonitor_3DScene) -> bool:
+	if brain_monitor == null or not is_instance_valid(brain_monitor) or not brain_monitor.is_visible_in_tree():
+		return false
+	if _root_scene_covered_at_pointer(brain_monitor):
+		return false
+	var hovered_control := get_viewport().gui_get_hovered_control()
+	if _brain_monitor_ancestor(hovered_control) == brain_monitor:
+		return true
+	var subviewport := brain_monitor.get_node_or_null("SubViewport") as SubViewport
+	if subviewport != null and _pointer_inside_control(brain_monitor):
+		if _brain_monitor_ancestor(subviewport.gui_get_hovered_control()) == brain_monitor:
+			return true
+	if brain_monitor.is_pointer_over_view() and _pointer_inside_control(brain_monitor):
+		return true
+	# mouse_exited runs on the main scene while the 3D view is still under the pointer.
+	if brain_monitor != temp_root_bm or not _pointer_inside_control(brain_monitor):
+		return false
+	return not _pointer_is_on_blocking_chrome(hovered_control)
+
+
+## The top bar and floating windows sit over the main scene. Backtick there is not for that scene.
+func _pointer_is_on_blocking_chrome(hovered_control: Control) -> bool:
+	if hovered_control == null:
+		return false
+	if hovered_control is LineEdit or hovered_control is TextEdit:
+		return true
+	var current: Node = hovered_control
+	while current != null:
+		if current == _top_bar or current is BaseDraggableWindow:
+			return true
+		current = current.get_parent()
+	return false
 
 
 func _brain_monitor_ancestor(node: Node) -> UI_BrainMonitor_3DScene:
@@ -447,7 +476,13 @@ func _pointer_inside_control(control: Control) -> bool:
 	var rect := control.get_global_rect()
 	if rect.size.x < 1.0 or rect.size.y < 1.0:
 		return false
-	return rect.has_point(control.get_global_mouse_position())
+	if rect.has_point(control.get_global_mouse_position()):
+		return true
+	# The main scene is parented under a plain Node, so its own mouse position can disagree with the window.
+	var viewport := control.get_viewport()
+	if viewport == null:
+		return false
+	return rect.has_point(viewport.get_mouse_position())
 
 
 ## A tab scene is active only while its tab is the current one. The main scene and floating views are active while visible.
