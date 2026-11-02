@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=27 format=3 uid="uid://dudre7anlx6ml"]
+[gd_resource type="Theme" load_steps=34 format=3 uid="uid://dudre7anlx6ml"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -105,7 +105,72 @@ shadow_offset = Vector2(0, 2)
 shadow_color = Color(0, 0, 0, 0.4)
 anti_aliasing = true
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn_panel"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+border_color = Color(0.325, 0.325, 0.325, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.6)
+anti_aliasing = true
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn_panel_sel"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+border_color = Color(0.625, 0.625, 0.625, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.6)
+anti_aliasing = true
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gn_slot"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn_title"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.37, 0.37, 0.37, 0.6)
+border_color = Color(0.8, 0.8, 0.8, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.6)
+anti_aliasing = true
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn_title_sel"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.625, 0.625, 0.6)
+border_color = Color(0.325, 0.325, 0.325, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.6)
+anti_aliasing = true
+
 [resource]
+GraphNode/constants/port_h_offset = 0
+GraphNode/constants/separation = 2
+GraphNode/styles/panel = SubResource("StyleBoxFlat_gn_panel")
+GraphNode/styles/panel_selected = SubResource("StyleBoxFlat_gn_panel_sel")
+GraphNode/styles/slot = SubResource("StyleBoxEmpty_gn_slot")
+GraphNode/styles/titlebar = SubResource("StyleBoxFlat_gn_title")
+GraphNode/styles/titlebar_selected = SubResource("StyleBoxFlat_gn_title_sel")
 SplitContainer/colors/touch_dragger_color = Color(0.82, 0.84, 0.88, 0.38)
 SplitContainer/colors/touch_dragger_hover_color = Color(0.9, 0.92, 0.96, 0.52)
 SplitContainer/colors/touch_dragger_pressed_color = Color(0.97, 0.98, 0.99, 0.68)

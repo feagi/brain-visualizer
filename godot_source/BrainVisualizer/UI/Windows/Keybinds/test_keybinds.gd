@@ -25,6 +25,7 @@ func _initialize() -> void:
 	var failures := 0
 	failures += _test_shortcut()
 	failures += _test_connection_inspector_shortcut()
+	failures += _test_connection_inspector_target()
 	failures += _test_split_layout_shortcut()
 	failures += _test_text_focus()
 	failures += _test_catalog()
@@ -90,6 +91,53 @@ func _test_connection_inspector_shortcut() -> int:
 		return 1
 	if _catalog.is_connection_inspector_shortcut(KEY_K, KEY_K, false, false, false, true, false):
 		push_error("K should not show the connection inspector")
+		return 1
+	return 0
+
+
+func _scene(visible: bool, pointer_inside: bool, active: bool, covered: bool, area: float) -> Dictionary:
+	return {
+		_catalog.SCENE_VISIBLE: visible,
+		_catalog.SCENE_POINTER_INSIDE: pointer_inside,
+		_catalog.SCENE_ACTIVE: active,
+		_catalog.SCENE_COVERED: covered,
+		_catalog.SCENE_AREA: area,
+	}
+
+
+func _test_connection_inspector_target() -> int:
+	var main_only: Array = [_scene(true, true, true, false, 1000.0)]
+	if _catalog.connection_inspector_target_index(main_only) != 0:
+		push_error("backtick should use the active scene under the pointer")
+		return 1
+	var covered_main: Array = [
+		_scene(true, true, true, true, 2000.0),
+		_scene(true, true, true, false, 800.0),
+	]
+	if _catalog.connection_inspector_target_index(covered_main) != 1:
+		push_error("a scene under the open split should not take the connection inspector")
+		return 1
+	var inactive: Array = [_scene(true, true, false, false, 500.0)]
+	if _catalog.connection_inspector_target_index(inactive) != -1:
+		push_error("an inactive scene should not take the connection inspector")
+		return 1
+	var hidden: Array = [_scene(false, true, true, false, 500.0)]
+	if _catalog.connection_inspector_target_index(hidden) != -1:
+		push_error("a hidden scene should not take the connection inspector")
+		return 1
+	var elsewhere: Array = [
+		_scene(true, false, true, false, 2000.0),
+		_scene(true, false, true, false, 800.0),
+	]
+	if _catalog.connection_inspector_target_index(elsewhere) != -1:
+		push_error("backtick should do nothing when the pointer is not on a 3D scene")
+		return 1
+	var front_view: Array = [
+		_scene(true, true, true, false, 2000.0),
+		_scene(true, true, true, false, 400.0),
+	]
+	if _catalog.connection_inspector_target_index(front_view) != 1:
+		push_error("the smaller scene in front should take the connection inspector")
 		return 1
 	return 0
 
@@ -181,6 +229,9 @@ func _test_catalog() -> int:
 			has_open = true
 		if keys == "`" and action.find("connection inspector") >= 0:
 			has_connection_inspector = true
+			if context.find("active 3D scene") < 0:
+				push_error("backtick should be limited to the active 3D scene")
+				return 1
 		if keys == "Ctrl/Cmd + S":
 			has_search = true
 		if keys == "Ctrl/Cmd + Z":

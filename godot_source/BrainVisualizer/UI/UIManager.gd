@@ -374,26 +374,105 @@ func set_live_inspector_stop_overlay(enabled: bool) -> void:
 	set_connection_inspector_stop_overlay_visible(false)
 
 
-## Bare backtick shows every mapping, or hides them when the connection inspector is already on.
+## Bare backtick toggles mappings on the active 3D scene under the pointer.
+## Other scenes stay as they are. No scene under the pointer means the key does nothing.
 func toggle_connection_inspector() -> void:
-	if _any_connection_inspector_enabled():
-		stop_connection_inspector()
+	var target := _brain_monitor_for_connection_inspector_shortcut()
+	if target == null:
 		return
-	clear_live_voxel_inspector()
-	_set_connection_inspector_enabled_for_all_brain_monitors(true)
-	_sync_connection_inspector_toggle_visuals(true)
-	set_connection_inspector_stop_overlay_visible(true)
+	var enable := not target.is_connection_inspector_latched()
+	if enable:
+		clear_live_voxel_inspector()
+	_set_connection_inspector_enabled_for_brain_monitor(target, enable)
+	_sync_connection_inspector_toggle_for_brain_monitor(target, enable)
+	refresh_connection_inspector_stop_overlay()
 
 
-## True when the top bar or any Brain Monitor tab strip has the connection inspector latched on.
-func _any_connection_inspector_enabled() -> bool:
-	var top_bar_dropdown := _top_bar_activity_dropdown()
-	if top_bar_dropdown != null and top_bar_dropdown.is_connection_inspector_enabled():
-		return true
-	for combo in _find_all_brain_objects_combo_nodes():
-		if combo != null and is_instance_valid(combo) and combo.is_connection_inspector_enabled():
+## Shows Stop Inspector while any scene still has the connection inspector latched.
+func refresh_connection_inspector_stop_overlay() -> void:
+	if _stop_overlay_for_live_inspector:
+		return
+	set_connection_inspector_stop_overlay_visible(_any_connection_inspector_latched())
+
+
+func _any_connection_inspector_latched() -> bool:
+	for brain_monitor in _find_all_brain_monitors_in_scene_tree():
+		if brain_monitor != null and is_instance_valid(brain_monitor) and brain_monitor.is_connection_inspector_latched():
 			return true
 	return false
+
+
+## The visible, active Brain Monitor the pointer is on.
+## The control under the pointer wins, so a scene behind the split or another view does not.
+func _brain_monitor_for_connection_inspector_shortcut() -> UI_BrainMonitor_3DScene:
+	var hovered_control := get_viewport().gui_get_hovered_control()
+	var hovered_monitor := _brain_monitor_ancestor(hovered_control)
+	var pointer_is_on_other_ui := hovered_control != null and hovered_monitor == null
+	var ordered: Array[UI_BrainMonitor_3DScene] = []
+	var candidates: Array = []
+	for brain_monitor in _find_all_brain_monitors_in_scene_tree():
+		if brain_monitor == null or not is_instance_valid(brain_monitor):
+			continue
+		var pointer_inside := false
+		if hovered_monitor != null:
+			pointer_inside = brain_monitor == hovered_monitor
+		elif not pointer_is_on_other_ui:
+			pointer_inside = _pointer_inside_control(brain_monitor) and brain_monitor.is_pointer_over_view()
+		ordered.append(brain_monitor)
+		candidates.append({
+			KeybindCatalog.SCENE_VISIBLE: brain_monitor.is_visible_in_tree(),
+			KeybindCatalog.SCENE_POINTER_INSIDE: pointer_inside,
+			KeybindCatalog.SCENE_ACTIVE: _brain_monitor_is_active_scene(brain_monitor),
+			KeybindCatalog.SCENE_COVERED: _root_scene_covered_at_pointer(brain_monitor),
+			KeybindCatalog.SCENE_AREA: brain_monitor.get_global_rect().get_area(),
+		})
+	var index := KeybindCatalog.connection_inspector_target_index(candidates)
+	if index < 0 or index >= ordered.size():
+		return null
+	return ordered[index]
+
+
+func _brain_monitor_ancestor(node: Node) -> UI_BrainMonitor_3DScene:
+	var current := node
+	while current != null:
+		if current is UI_BrainMonitor_3DScene:
+			return current as UI_BrainMonitor_3DScene
+		current = current.get_parent()
+	return null
+
+
+func _pointer_inside_control(control: Control) -> bool:
+	if control == null or not is_instance_valid(control) or not control.is_visible_in_tree():
+		return false
+	var rect := control.get_global_rect()
+	if rect.size.x < 1.0 or rect.size.y < 1.0:
+		return false
+	return rect.has_point(control.get_global_mouse_position())
+
+
+## A tab scene is active only while its tab is the current one. The main scene and floating views are active while visible.
+func _brain_monitor_is_active_scene(brain_monitor: UI_BrainMonitor_3DScene) -> bool:
+	if brain_monitor == null or not is_instance_valid(brain_monitor) or not brain_monitor.is_visible_in_tree():
+		return false
+	var current: Node = brain_monitor.get_parent()
+	while current != null:
+		if current is UITabContainer:
+			var tab_container := current as UITabContainer
+			if tab_container.get_tab_count() <= 0:
+				return false
+			var current_control := tab_container.get_tab_control(tab_container.current_tab)
+			if current_control == null:
+				return false
+			return current_control == brain_monitor or current_control.is_ancestor_of(brain_monitor)
+		current = current.get_parent()
+	return true
+
+
+## The main scene draws behind the split. It is not the scene under the pointer while the pointer is on that split.
+func _root_scene_covered_at_pointer(brain_monitor: UI_BrainMonitor_3DScene) -> bool:
+	if brain_monitor != temp_root_bm or not is_split_view_open():
+		return false
+	return _pointer_inside_control(get_node_or_null("CB_Holder") as Control)
 
 
 func _top_bar_activity_dropdown() -> ActivityVisualizationDropDown:
@@ -422,21 +501,23 @@ func _set_connection_inspector_enabled_for_all_brain_monitors(enabled: bool) -> 
 		_set_connection_inspector_enabled_for_brain_monitor(brain_monitor, enabled)
 
 
-## Forces all cortical area visuals in one monitor to update the global connection hover state.
+## Forces one monitor to draw every mapping, or return that scene to pointer hover.
 func _set_connection_inspector_enabled_for_brain_monitor(brain_monitor: UI_BrainMonitor_3DScene, enabled: bool) -> void:
-	if brain_monitor == null:
+	if brain_monitor == null or not is_instance_valid(brain_monitor):
 		return
-	var cortical_area_objects: Array = []
-	_collect_brain_monitor_cortical_area_nodes(brain_monitor, cortical_area_objects)
-	for cortical_area_obj in cortical_area_objects:
-		cortical_area_obj.set_hover_over_volume_state(enabled)
+	brain_monitor.set_connection_inspector_latched(enabled)
 
 
-func _collect_brain_monitor_cortical_area_nodes(node: Node, cortical_areas: Array) -> void:
-	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
-		cortical_areas.append(node)
-	for child in node.get_children():
-		_collect_brain_monitor_cortical_area_nodes(child, cortical_areas)
+## Matches the inspector button for this scene only. The top bar belongs to the main scene.
+func _sync_connection_inspector_toggle_for_brain_monitor(brain_monitor: UI_BrainMonitor_3DScene, enabled: bool) -> void:
+	if brain_monitor == null or not is_instance_valid(brain_monitor):
+		return
+	brain_monitor.sync_connection_inspector_combo(enabled)
+	if brain_monitor != temp_root_bm:
+		return
+	var top_bar_dropdown := _top_bar_activity_dropdown()
+	if top_bar_dropdown != null:
+		top_bar_dropdown.set_connection_inspector_enabled(enabled)
 
 
 ## Keeps all inspector toggle controls (top bar and per-tab strips) in sync after a forced stop.

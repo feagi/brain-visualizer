@@ -9,6 +9,39 @@ const KEY_SECTION := "section"
 const KEY_KEYS := "keys"
 const KEY_ACTION := "action"
 const KEY_CONTEXT := "context"
+## Fields for [method connection_inspector_target_index].
+const SCENE_VISIBLE := "visible"
+const SCENE_POINTER_INSIDE := "pointer_inside"
+const SCENE_ACTIVE := "active"
+const SCENE_COVERED := "covered"
+const SCENE_AREA := "area"
+
+
+## Index of the 3D scene backtick may toggle, or -1.
+## A row needs [constant SCENE_VISIBLE], [constant SCENE_POINTER_INSIDE], and [constant SCENE_ACTIVE].
+## [constant SCENE_COVERED] is the main scene sitting under an open split at the pointer.
+## [constant SCENE_AREA] breaks ties by picking the smaller scene, which is the one in front.
+static func connection_inspector_target_index(candidates: Array) -> int:
+	var best := -1
+	var best_area := INF
+	for index in candidates.size():
+		var row: Variant = candidates[index]
+		if not (row is Dictionary):
+			continue
+		var candidate: Dictionary = row
+		if not bool(candidate.get(SCENE_VISIBLE, false)):
+			continue
+		if not bool(candidate.get(SCENE_POINTER_INSIDE, false)):
+			continue
+		if not bool(candidate.get(SCENE_ACTIVE, false)):
+			continue
+		if bool(candidate.get(SCENE_COVERED, false)):
+			continue
+		var area := float(candidate.get(SCENE_AREA, INF))
+		if best < 0 or area < best_area:
+			best = index
+			best_area = area
+	return best
 
 
 ## Bare backtick, including the physical key so a non-US layout still toggles the inspector.
@@ -93,7 +126,7 @@ static func entries() -> Array[Dictionary]:
 		_row("App", "Ctrl/Cmd + S", "Search the genome by name", "Anywhere except a text field"),
 		_row("App", "Ctrl/Cmd + Z", "Undo the last genome change", "Anywhere except a text field"),
 		_row("App", "Shift + Ctrl/Cmd + Z", "Redo", "Anywhere except a text field"),
-		_row("App", "`", "Show or hide the connection inspector. Every mapping is drawn", "Anywhere except a text field"),
+		_row("App", "`", "Show or hide the connection inspector. Every mapping in that scene is drawn", "Pointer over the active 3D scene"),
 		_row("App", "Escape", "Stop Inspector when that button is showing. Otherwise close the front window, or cancel a move, a box select, or the current selection", "Anywhere"),
 		_row("App", "Enter", "Confirm the open dialog, or confirm a move or resize", "Dialogs and Brain Monitor"),
 		_row("App", "1", "Show only the main 3D scene. Split tabs stay ready to reopen", "Anywhere except a text field"),

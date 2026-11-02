@@ -187,6 +187,8 @@ var _cache_rebuild_pending: bool = false
 var _active_preview_indicators: Array[Node3D] = []
 var _last_scene_center: Vector3 = Vector3.ZERO
 var _is_mouse_hovering_viewport: bool = false
+## Backtick or the inspector control is drawing every mapping in this scene.
+var _connection_inspector_latched: bool = false
 var _box_select = BoxSelectLib.new()
 var _enter_key_latched: bool = false
 var _debug_hover_identity_enabled: bool = false
@@ -2123,6 +2125,27 @@ func is_pointer_over_view() -> bool:
 	return _is_mouse_hovering_viewport
 
 
+## True while this scene is drawing every mapping, not only the area under the pointer.
+func is_connection_inspector_latched() -> bool:
+	return _connection_inspector_latched
+
+
+## Draws every mapping in this scene, or returns areas to the real pointer hover.
+func set_connection_inspector_latched(enabled: bool) -> void:
+	_connection_inspector_latched = enabled
+	for viz in _cortical_visualizations_by_ID.values():
+		if viz == null or not is_instance_valid(viz):
+			continue
+		if enabled or viz not in _previously_moused_over_volumes:
+			viz.set_hover_over_volume_state(enabled)
+
+
+## Keeps this scene's tab-strip inspector button matched to [param enabled].
+func sync_connection_inspector_combo(enabled: bool) -> void:
+	if _combo != null and is_instance_valid(_combo):
+		_combo.sync_connection_inspector_enabled(enabled)
+
+
 ## Forwards a key into this view's camera. Used when the camera's SubViewport does not receive root-viewport keys.
 func forward_key_to_camera(event: InputEvent) -> void:
 	if _pancake_cam == null:
@@ -2836,7 +2859,9 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 	)
 	for previously_moused_over_volume in prev_valid_volumes:
 		if previously_moused_over_volume not in curr_valid_volumes:
-			previously_moused_over_volume.set_hover_over_volume_state(false)
+			# A latched inspector keeps every mapping until backtick or Stop Inspector.
+			if not _connection_inspector_latched:
+				previously_moused_over_volume.set_hover_over_volume_state(false)
 	for currently_moused_over_volume in curr_valid_volumes:
 		if currently_moused_over_volume not in prev_valid_volumes:
 			currently_moused_over_volume.set_hover_over_volume_state(true)

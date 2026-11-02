@@ -76,9 +76,8 @@ const CORE_BOX_COLOR: Color = Color(0.0, 0.204, 0.384)
 ## Dark green. A little blue in it so it is not the same green as excitatory wires (Color.DARK_GREEN).
 const MODULATOR_BOX_COLOR: Color = Color8(0, 100, 32)
 
-## Set the color depnding on cortical type. Both `titlebar` and `panel` styleboxes
-## are tinted with the type color so the GraphEdit minimap (which reads
-## `panel.bg_color`) renders nodes in their type-distinct colors.
+## Set the color depending on cortical type. Padding stays on the copied stylebox
+## so the minimap can still read panel.bg_color. See [GraphNodeStyle].
 func _setup_node_color(area: AbstractCorticalArea) -> void:
 	var type_color: Color
 	match(area.cortical_type):
@@ -97,12 +96,8 @@ func _setup_node_color(area: AbstractCorticalArea) -> void:
 		_:
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
 			return
-	var titlebar_box: StyleBoxFlat = StyleBoxFlat.new()
-	titlebar_box.bg_color = type_color
-	add_theme_stylebox_override("titlebar", titlebar_box)
-	var panel_box: StyleBoxFlat = StyleBoxFlat.new()
-	panel_box.bg_color = type_color
-	add_theme_stylebox_override("panel", panel_box)
+	add_theme_stylebox_override("titlebar", GraphNodeStyle.tinted(self, &"titlebar", type_color))
+	add_theme_stylebox_override("panel", GraphNodeStyle.tinted(self, &"panel", type_color))
 
 
 #endregion

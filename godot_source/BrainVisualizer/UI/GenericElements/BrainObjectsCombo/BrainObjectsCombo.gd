@@ -990,7 +990,7 @@ func _on_monitor_activity_mode_changed(action: StringName, enabled: bool) -> voi
 		BV.UI.clear_live_voxel_inspector()
 	if action == ActivityVisualizationDropDown.ACTION_GLOBAL_NEURAL_CONNECTIONS:
 		_toggle_global_neural_connections_for_scene(_bm_scene, enabled)
-		BV.UI.set_connection_inspector_stop_overlay_visible(enabled)
+		BV.UI.refresh_connection_inspector_stop_overlay()
 	elif action == ActivityVisualizationDropDown.ACTION_VOXEL_INSPECTOR:
 		BV.UI.brain_monitor_activity_mode = UIManager.BRAIN_MONITOR_ACTIVITY_MODE.VOXEL_INSPECTOR
 		BV.WM.spawn_voxel_inspector()
@@ -1003,12 +1003,9 @@ func _on_monitor_activity_mode_changed(action: StringName, enabled: bool) -> voi
 
 
 func _toggle_global_neural_connections_for_scene(brain_monitor: UI_BrainMonitor_3DScene, enabled: bool) -> void:
-	var cortical_area_objects: Array = _find_all_cortical_area_objects_in_scene(brain_monitor)
-	for cortical_area_obj in cortical_area_objects:
-		if enabled:
-			cortical_area_obj.set_hover_over_volume_state(true)
-		else:
-			cortical_area_obj.set_hover_over_volume_state(false)
+	if brain_monitor == null:
+		return
+	brain_monitor.set_connection_inspector_latched(enabled)
 
 
 ## True while this tab strip's connection inspector latch is on.
@@ -1020,19 +1017,6 @@ func is_connection_inspector_enabled() -> bool:
 func sync_connection_inspector_enabled(enabled: bool) -> void:
 	if _activity_visualization_dropdown != null:
 		_activity_visualization_dropdown.set_connection_inspector_enabled(enabled)
-
-
-func _find_all_cortical_area_objects_in_scene(root: Node) -> Array:
-	var cortical_areas: Array = []
-	_recursive_find_cortical_areas_bm(root, cortical_areas)
-	return cortical_areas
-
-
-func _recursive_find_cortical_areas_bm(node: Node, cortical_areas: Array) -> void:
-	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
-		cortical_areas.append(node)
-	for child in node.get_children():
-		_recursive_find_cortical_areas_bm(child, cortical_areas)
 
 
 func _on_monitor_camera_animations_pressed() -> void:
