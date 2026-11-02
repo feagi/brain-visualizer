@@ -9,6 +9,8 @@ func _initialize() -> void:
 	failures += _test_scale_caps()
 	failures += _test_encoders()
 	failures += _test_pdf_layout()
+	failures += _test_legend_composite()
+	failures += _test_logo_plate_cleared()
 	if failures == 0:
 		print("Schematic image file tests: PASS")
 		quit(0)
@@ -68,6 +70,47 @@ func _test_pdf_layout() -> int:
 		file.store_buffer(pdf)
 		file.close()
 	return failures
+
+
+func _test_legend_composite() -> int:
+	var canvas := Image.create(20, 10, false, Image.FORMAT_RGBA8)
+	canvas.fill(Color.RED)
+	var legend := Image.create(8, 4, false, Image.FORMAT_RGBA8)
+	legend.fill(Color.GREEN)
+	var combined := SchematicImageFile.composite_legend(canvas, legend)
+	var gap := SchematicImageFile.MARGIN_PX
+	if combined.get_width() != legend.get_width() + gap * 2 or combined.get_height() != 10 + gap + 4:
+		return _fail("legend should sit under the canvas, got %s" % combined.get_size())
+	if combined.get_pixel(0, 0) != Color.RED:
+		return _fail("canvas pixel was replaced")
+	if combined.get_pixel(gap, 10 + gap) != Color.GREEN:
+		return _fail("legend pixel missing under the canvas")
+	var brand := Image.create(6, 6, false, Image.FORMAT_RGBA8)
+	brand.fill(Color.BLUE)
+	var marked := SchematicImageFile.composite_legend(canvas, legend, brand)
+	var footer_h := maxi(legend.get_height(), brand.get_height())
+	var marked_w := maxi(canvas.get_width(), legend.get_width() + brand.get_width() + gap * 3)
+	if marked.get_width() != marked_w or marked.get_height() != 10 + gap + footer_h:
+		return _fail("brand should widen the footer, got %s" % marked.get_size())
+	var brand_x := marked.get_width() - gap - brand.get_width()
+	var brand_y := marked.get_height() - gap - brand.get_height()
+	if marked.get_pixel(brand_x, brand_y) != Color.BLUE:
+		return _fail("FEAGI mark missing at the bottom right")
+	if marked.get_pixel(gap, 10 + gap) != Color.GREEN:
+		return _fail("legend moved when the mark was added")
+	return 0
+
+
+func _test_logo_plate_cleared() -> int:
+	var image := Image.create(2, 1, false, Image.FORMAT_RGBA8)
+	image.set_pixel(0, 0, Color8(230, 232, 232))
+	image.set_pixel(1, 0, Color(0, 0, 0, 1))
+	SchematicImageFile.clear_logo_plate(image)
+	if image.get_pixel(0, 0).a != 0.0:
+		return _fail("gray logo plate was left opaque")
+	if image.get_pixel(1, 0).a == 0.0:
+		return _fail("logo ink was cleared with the plate")
+	return 0
 
 
 ## 320 x 160 px with a gradient, so the JPG has real content.

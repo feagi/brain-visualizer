@@ -7,41 +7,55 @@
 [ext_resource type="Texture2D" uid="uid://dmq0ksiypocoo" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/close_D.png" id="4_l3jaq"]
 
 [node name="NotificationSystemNotification" type="PanelContainer"]
-offset_right = 97.0
-offset_bottom = 41.0
-size_flags_horizontal = 3
+offset_right = 360.0
+offset_bottom = 36.0
+size_flags_horizontal = 8
+size_flags_vertical = 4
+mouse_filter = 0
 script = ExtResource("1_3jel5")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
+mouse_filter = 2
 theme_type_variation = &"MarginContainer_Notification"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="icon" type="TextureRect" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_type_variation = &"TextureRect_Icon"
+theme_type_variation = &"TextureRect_NotificationIcon"
 expand_mode = 1
+stretch_mode = 5
 
-[node name="error_label" type="RichTextLabel" parent="MarginContainer/HBoxContainer"]
+[node name="message_label" type="Label" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 2
-selection_enabled = true
-text = "Text"
+mouse_filter = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_type_variation = &"Label"
+vertical_alignment = 1
+autowrap_mode = 3
+max_lines_visible = 2
+text_overrun_behavior = 3
 
 [node name="TextureButton" type="TextureButton" parent="MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
+mouse_filter = 0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_type_variation = &"TextureButton_NotificationDismiss"
+tooltip_text = "Dismiss this notification"
 texture_normal = ExtResource("1_7skoh")
 texture_pressed = ExtResource("2_s5grv")
 texture_hover = ExtResource("3_43p67")
 texture_disabled = ExtResource("4_l3jaq")
 ignore_texture_size = true
-stretch_mode = 0
+stretch_mode = 5
 
 [node name="Timer" type="Timer" parent="."]
 

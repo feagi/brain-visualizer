@@ -39,6 +39,7 @@ func _initialize() -> void:
 	if schematic_rows[-1]["color"] != SchematicTreeBuilder.CLASSIFIER_COLOR:
 		push_error("schematic legend must use the schematic classifier color")
 		failures += 1
+	failures += _test_mapping_legend()
 	failures += _test_tint_keeps_padding()
 	failures += _test_header_ports_disabled()
 	failures += _test_theme_locks_graph_node()
@@ -107,4 +108,41 @@ func _test_theme_locks_graph_node() -> int:
 		if not (theme.get_stylebox(&"slot", &"GraphNode") is StyleBoxEmpty):
 			push_error("theme slot style is not empty in %s" % path)
 			failed = 1
+	return failed
+
+
+func _test_mapping_legend() -> int:
+	var builder: Array[Dictionary] = AreaTypeLegend.mapping_entries(false)
+	var schematic: Array[Dictionary] = AreaTypeLegend.mapping_entries(true)
+	var failed := 0
+	var builder_labels: PackedStringArray = []
+	for row: Dictionary in builder:
+		builder_labels.append(row["label"])
+		if String(row["tip"]).is_empty():
+			push_error("mapping row %s has no tooltip" % row["label"])
+			failed = 1
+	if builder_labels != PackedStringArray(["Excitatory", "Inhibitory", "Episodic", "Plastic", "Partial"]):
+		push_error("circuit builder mapping legend: %s" % [", ".join(builder_labels)])
+		failed = 1
+	if builder[0]["color"] != CBLineInterTerminal.LINE_COLOR_PSPP or builder[1]["color"] != CBLineInterTerminal.LINE_COLOR_PSPN or builder[2]["color"] != CBLineInterTerminal.LINE_COLOR_EPISODIC:
+		push_error("mapping colors drifted from the line colors")
+		failed = 1
+	if not builder[3]["dashed"] or builder[4]["dashed"]:
+		push_error("plastic must be dashed and partial must be solid")
+		failed = 1
+	if not is_equal_approx(builder[4]["color"].a, CBLineInterTerminal.LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY):
+		push_error("partial legend line is not the partial-mapping fade")
+		failed = 1
+	var schematic_labels: PackedStringArray = []
+	for row: Dictionary in schematic:
+		schematic_labels.append(row["label"])
+	if schematic_labels != PackedStringArray(["Excitatory", "Inhibitory", "Episodic", "Plastic", "Mixed"]):
+		push_error("schematic mapping legend: %s" % [", ".join(schematic_labels)])
+		failed = 1
+	if not schematic[3]["dashed"]:
+		push_error("plastic must be dashed on the schematic legend too")
+		failed = 1
+	if schematic[-1]["color"] != SchematicEdgeLayer.MIXED_COLOR or schematic[-1]["dashed"]:
+		push_error("mixed schematic line must be solid gray")
+		failed = 1
 	return failed

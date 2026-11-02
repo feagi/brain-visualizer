@@ -2707,7 +2707,7 @@ func _update_screen_size():
 
 ## Used to reposition notifications so they dont intersect with top bar
 func _top_bar_resized() -> void:
-	_notification_system.position.y = _top_bar.size.y + _top_bar.position.y
+	_notification_system.place_below_top_bar(_top_bar.position.y + _top_bar.size.y)
 	if has_node("/root/BrainVisualizer/UIManager/CB_Holder"):
 		$CB_Holder.offset_top = _top_bar.position.y + _top_bar.size.y + 8
 

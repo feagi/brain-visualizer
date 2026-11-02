@@ -21,6 +21,62 @@ static func default_file_name(format: FORMAT) -> String:
 	return "circuit_schematic_%s.%s" % [stamp, EXTENSIONS[format]]
 
 
+## Canvas with the legend under it, separated by [constant MARGIN_PX].
+## [param brand] is the FEAGI logo, pinned to the bottom-right corner of the page.
+## When growing the page would pass a size cap, both are drawn over the bottom of the canvas instead.
+static func composite_legend(canvas: Image, legend: Image, brand: Image = null) -> Image:
+	var gap := MARGIN_PX
+	var key := _matched(legend, canvas.get_format())
+	var mark := _matched(brand, canvas.get_format()) if brand != null else null
+	var footer_h := key.get_height()
+	if mark != null:
+		footer_h = maxi(footer_h, mark.get_height())
+	var width := maxi(canvas.get_width(), key.get_width() + gap * 2)
+	if mark != null:
+		width = maxi(width, key.get_width() + mark.get_width() + gap * 3)
+	var height := canvas.get_height() + gap + footer_h
+	var over_cap := height > int(MAX_SIDE_PX) or width > int(MAX_SIDE_PX) or float(width * height) > MAX_PIXELS
+	if over_cap:
+		var over := canvas.duplicate() as Image
+		var key_dest := Vector2i(mini(gap, over.get_width() - 1), maxi(0, over.get_height() - key.get_height() - gap))
+		var key_copy := Vector2i(mini(key.get_width(), over.get_width() - key_dest.x), mini(key.get_height(), over.get_height() - key_dest.y))
+		over.blit_rect(key, Rect2i(Vector2i.ZERO, key_copy), key_dest)
+		if mark != null:
+			var mark_dest := Vector2i(maxi(0, over.get_width() - mark.get_width() - gap), maxi(0, over.get_height() - mark.get_height() - gap))
+			var mark_copy := Vector2i(mini(mark.get_width(), over.get_width() - mark_dest.x), mini(mark.get_height(), over.get_height() - mark_dest.y))
+			over.blend_rect(mark, Rect2i(Vector2i.ZERO, mark_copy), mark_dest)
+		return over
+	var combined := Image.create(width, height, false, canvas.get_format())
+	combined.fill(canvas.get_pixel(0, 0))
+	combined.blit_rect(canvas, Rect2i(Vector2i.ZERO, canvas.get_size()), Vector2i.ZERO)
+	combined.blit_rect(key, Rect2i(Vector2i.ZERO, key.get_size()), Vector2i(gap, canvas.get_height() + gap))
+	if mark != null:
+		var mark_y := height - gap - mark.get_height()
+		combined.blend_rect(mark, Rect2i(Vector2i.ZERO, mark.get_size()), Vector2i(width - gap - mark.get_width(), mark_y))
+	return combined
+
+
+## Drops the light gray plate that was saved as opaque pixels, leaving the mark on a clear background.
+static func clear_logo_plate(image: Image) -> void:
+	var plate := Color8(230, 232, 232)
+	var tolerance := 18.0 / 255.0
+	for y in image.get_height():
+		for x in image.get_width():
+			var pixel := image.get_pixel(x, y)
+			if pixel.a < 0.5:
+				continue
+			if absf(pixel.r - plate.r) > tolerance or absf(pixel.g - plate.g) > tolerance or absf(pixel.b - plate.b) > tolerance:
+				continue
+			image.set_pixel(x, y, Color(0, 0, 0, 0))
+
+
+static func _matched(image: Image, format: Image.Format) -> Image:
+	var copy := image.duplicate() as Image
+	if copy.get_format() != format:
+		copy.convert(format)
+	return copy
+
+
 ## Pixels per canvas unit: up to [constant MAX_SCALE], shrunk to keep the image within the size caps.
 static func export_scale(canvas_size: Vector2) -> float:
 	var usable_side: float = MAX_SIDE_PX - MARGIN_PX * 2
