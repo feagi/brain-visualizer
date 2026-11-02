@@ -1645,15 +1645,11 @@ func _add_dash_wave_animation(connection_node: Node3D, curve_start: Vector3, cur
 			original_scales.append(dash.scale)
 	
 	# Create traveling wave animation
-	var wave_tween = create_tween()
+	# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+	var wave_tween = create_tween().bind_node(connection_node)
 	wave_tween.set_loops()  # Infinite animation
 	
 	var wave_cb = func(animation_time: float):
-		# Safety check
-		if not connection_node or not is_instance_valid(connection_node):
-			wave_tween.kill()
-			return
-		
 		# Traveling wave parameters
 		var wave_speed = 1.0  # Speed of traveling effect
 		var pulse_width = 2.5  # How many dashes are bright at once
@@ -1731,15 +1727,11 @@ func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, 
 			original_scales.append(dash.scale)
 	
 	# Create circular rotating wave animation
-	var circular_tween = create_tween()
+	# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+	var circular_tween = create_tween().bind_node(loop_node)
 	circular_tween.set_loops()  # Infinite animation
 	
 	var circular_cb = func(animation_time: float):
-		# Safety check
-		if not loop_node or not is_instance_valid(loop_node):
-			circular_tween.kill()
-			return
-		
 		# Circular wave parameters
 		var rotation_speed = 0.8  # Speed of rotating wave
 		var pulse_width = 3.0  # How many dashes are bright at once
@@ -2093,14 +2085,12 @@ func _add_electric_arc_animation(connection_node: Node3D, start_pos: Vector3, co
 		return
 	
 	var seed_offset = float(connection_node.get_meta("electric_arc_seed", 0.0))
-	var arc_tween = create_tween()
+	# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+	var arc_tween = create_tween().bind_node(connection_node)
 	arc_tween.set_loops()
 	var tween_step_sec: float = 0.35 / anim_freq_scale
 	
 	var arc_callback = func(animation_time: float) -> void:
-		if connection_node == null or not is_instance_valid(connection_node):
-			arc_tween.kill()
-			return
 		var jitter_strength = max(0.35, _estimate_curve_length(start_pos, control_point, end_pos) * 0.03)
 		var points = _build_electric_arc_points(
 			start_pos,
@@ -2231,7 +2221,8 @@ func _create_pulse_animation(
 		_apply_distance_scale_to_pulse(pulse_sphere)
 		
 		# Create animation tween
-		var pulse_tween = create_tween()
+		# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+		var pulse_tween = create_tween().bind_node(pulse_sphere)
 		pulse_tween.set_loops()  # Infinite loop
 		_pulse_tweens.append(pulse_tween)
 		
@@ -2245,13 +2236,6 @@ func _create_pulse_animation(
 		
 		# Animate the pulse along the curve points (callable variable avoids multiline-lambda + comma parse issues)
 		var pulse_cb = func(progress: float):
-			# Overlay clears queue_free curve nodes; stop this tween immediately when targets are gone.
-			if curve_node == null or not is_instance_valid(curve_node):
-				pulse_tween.kill()
-				return
-			if pulse_sphere == null or not is_instance_valid(pulse_sphere):
-				pulse_tween.kill()
-				return
 			var point_index = int(progress * (curve_points.size() - 1))
 			var local_progress = (progress * (curve_points.size() - 1)) - point_index
 			
@@ -2506,7 +2490,8 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		_apply_distance_scale_to_pulse(pulse_sphere)
 		
 		# Create animation tween
-		var pulse_tween = create_tween()
+		# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+		var pulse_tween = create_tween().bind_node(pulse_sphere)
 		pulse_tween.set_loops()  # Infinite loop
 		_pulse_tweens.append(pulse_tween)
 		
@@ -2700,7 +2685,8 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 		return
 	
 	# Create a tween for continuous thickness animation
-	var thickness_tween = create_tween()
+	# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+	var thickness_tween = create_tween().bind_node(segment)
 	thickness_tween.set_loops()  # Infinite animation
 	
 	# Store reference to the original cylinder mesh
@@ -2714,11 +2700,6 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 	
 	# Animate thickness with breathing effect
 	var thickness_cb = func(scale_factor: float):
-		# Safety checks - ensure objects still exist
-		if not segment or not is_instance_valid(segment):
-			thickness_tween.kill()  # Stop animation if segment is destroyed
-			return
-		
 		if not cylinder_mesh or not is_instance_valid(cylinder_mesh):
 			thickness_tween.kill()  # Stop animation if mesh is destroyed
 			return
