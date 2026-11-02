@@ -98,6 +98,7 @@ func _ready():
 		if _representing_region != null:
 			_combo.set_2d_context(self, _representing_region)
 		_sync_tab_menu_visibility()
+	AreaTypeLegend.add_to(self, CBNodeClassifier.CLASSIFIER_BOX_COLOR)
 	set_process(is_visible_in_tree())
 
 func _notification(what: int) -> void:

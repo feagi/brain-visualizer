@@ -73,6 +73,8 @@ const CUSTOM_BOX_COLOR: Color = Color(0, 0.32941176470588235, 0.5764705882352941
 const MEMORY_BOX_COLOR: Color = Color(0.5803921568627451, 0.06666666666666667, 0)
 const OPU_BOX_COLOR: Color = Color(0.5803921568627451, 0.3215686274509804, 0)
 const CORE_BOX_COLOR: Color = Color(0.0, 0.204, 0.384)
+## Dark green. A little blue in it so it is not the same green as excitatory wires (Color.DARK_GREEN).
+const MODULATOR_BOX_COLOR: Color = Color8(0, 100, 32)
 
 ## Set the color depnding on cortical type. Both `titlebar` and `panel` styleboxes
 ## are tinted with the type color so the GraphEdit minimap (which reads
@@ -88,8 +90,10 @@ func _setup_node_color(area: AbstractCorticalArea) -> void:
 			type_color = CUSTOM_BOX_COLOR
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU:
 			type_color = OPU_BOX_COLOR
-		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE, AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
 			type_color = CORE_BOX_COLOR
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
+			type_color = MODULATOR_BOX_COLOR
 		_:
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
 			return
