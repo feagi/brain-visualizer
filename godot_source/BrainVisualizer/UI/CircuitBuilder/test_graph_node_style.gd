@@ -25,6 +25,11 @@ func _test_row_ports_then_quit() -> void:
 		push_error("graph node style: %d check(s) failed" % failed)
 		quit(1)
 		return
+	failed = await _test_hidden_parent_port()
+	if failed > 0:
+		push_error("graph node style: %d check(s) failed" % failed)
+		quit(1)
+		return
 	print("graph node style: PASS")
 	quit(0)
 
@@ -153,3 +158,45 @@ func _test_theme_locks_graph_node() -> int:
 			push_error("theme port offset is not locked in %s" % path)
 			failed = 1
 	return failed
+
+
+var _slot_sizes_fired := 0
+
+
+func _on_slot_sizes() -> void:
+	_slot_sizes_fired += 1
+
+
+func _test_hidden_parent_port() -> int:
+	var host := Control.new()
+	host.visible = false
+	root.add_child(host)
+	var graph := GraphNode.new()
+	graph.position_offset = Vector2(40, 70)
+	host.add_child(graph)
+	var row := Label.new()
+	row.text = "Row"
+	row.custom_minimum_size = Vector2(120, 22)
+	graph.add_child(row)
+	GraphNodeStyle.configure_row_slot(graph, 0, false, true, GraphNodeStyle.port_icon(&"full"))
+	graph.slot_sizes_changed.connect(_on_slot_sizes)
+	await process_frame
+	await process_frame
+	var hidden_pos := GraphNodeStyle.graph_port_position(graph, false, 0)
+	if hidden_pos != graph.position_offset:
+		push_error("hidden node port position should be position_offset, got %s" % hidden_pos)
+		return 1
+	_slot_sizes_fired = 0
+	host.visible = true
+	for i in 4:
+		await process_frame
+	print("slot_sizes_changed fired after show: %d" % _slot_sizes_fired)
+	if _slot_sizes_fired < 1:
+		push_error("slot_sizes_changed did not fire after the node became visible")
+		return 1
+	var shown_pos := GraphNodeStyle.graph_port_position(graph, false, 0)
+	if shown_pos == graph.position_offset:
+		push_error("shown node port position still equals position_offset")
+		return 1
+	host.queue_free()
+	return 0

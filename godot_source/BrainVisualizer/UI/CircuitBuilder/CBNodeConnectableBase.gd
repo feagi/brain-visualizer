@@ -86,6 +86,8 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 	position_offset_changed.connect(_on_position_changed)
 	_dragged = false
 	minimum_size_changed.connect(_on_node_move)
+	# Re-anchor wires after every layout pass, including the one when the node becomes visible.
+	slot_sizes_changed.connect(_on_node_move)
 	# Group containers stay in the scene for their node paths, but a hidden child is not a slot.
 	# Each connection row is added as its own visible child so it can have one port.
 	if _inputs != null:

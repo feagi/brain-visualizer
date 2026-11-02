@@ -66,5 +66,9 @@ static func visible_slot_index(node: Node, target: Node) -> int:
 
 ## Graph-space center of one port. Same sum GraphEdit uses for its own wires.
 static func graph_port_position(node: GraphNode, input_side: bool, port_index: int) -> Vector2:
+	# The engine has no port positions while the node is not visible in the tree (empty port cache).
+	var count: int = node.get_input_port_count() if input_side else node.get_output_port_count()
+	if port_index < 0 or port_index >= count:
+		return node.position_offset
 	var local: Vector2 = node.get_input_port_position(port_index) if input_side else node.get_output_port_position(port_index)
 	return local + node.position_offset
