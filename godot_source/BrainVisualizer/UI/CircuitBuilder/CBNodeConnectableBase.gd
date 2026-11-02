@@ -86,6 +86,14 @@ func setup_base(recursive_path: NodePath, input_path: NodePath, output_path: Nod
 	position_offset_changed.connect(_on_position_changed)
 	_dragged = false
 	minimum_size_changed.connect(_on_node_move)
+	# Group containers stay in the scene for their node paths, but a hidden child is not a slot.
+	# Each connection row is added as its own visible child so it can have one port.
+	if _inputs != null:
+		_inputs.visible = false
+	if _outputs != null:
+		_outputs.visible = false
+	if _recursives != null:
+		_recursives.visible = false
 
 
 ## Assign [member position_offset] from genome/cache updates. Does not set [member _dragged] (unlike user dragging the node).
@@ -100,58 +108,115 @@ func apply_model_position_offset(new_position: Vector2i) -> void:
 func CB_add_connection_terminal(connection_type: CBNodeTerminal.TYPE, text: StringName, port_prefab: PackedScene) -> CBNodeTerminal:
 	# NOTE: We ask for the prefab as an input since its a waste to have every instance of this object store a copy in memory
 	var terminal: CBNodeTerminal = port_prefab.instantiate()
-	terminal.tree_exited.connect(_force_shrink)
+	terminal.tree_exited.connect(_on_terminal_left)
+	var position_signal: Signal
 	match(connection_type):
-		CBNodeTerminal.TYPE.INPUT:
-			if _inputs == null or !is_instance_valid(_inputs):
-				push_warning("CBNodeConnectableBase: INPUT container is null/invalid; skipping add_child")
-				terminal.queue_free()
-				return null
-			_inputs.add_child(terminal)
-			terminal.setup(connection_type, text, self, input_container_offset_changed)
-
-		CBNodeTerminal.TYPE.OUTPUT:
-			if _outputs == null or !is_instance_valid(_outputs):
-				push_warning("CBNodeConnectableBase: OUTPUT container is null/invalid; skipping add_child")
-				terminal.queue_free()
-				return null
-			_outputs.add_child(terminal)
-			terminal.setup(connection_type, text, self, output_container_offset_changed)
-
+		CBNodeTerminal.TYPE.INPUT, CBNodeTerminal.TYPE.INPUT_OPEN:
+			position_signal = input_container_offset_changed
+		CBNodeTerminal.TYPE.OUTPUT, CBNodeTerminal.TYPE.OUTPUT_OPEN:
+			position_signal = output_container_offset_changed
 		CBNodeTerminal.TYPE.RECURSIVE:
 			if _recursives == null or !is_instance_valid(_recursives):
 				push_warning("CBNodeConnectableBase: RECURSIVE container is null/invalid; skipping add_child")
 				terminal.queue_free()
 				return null
-			_recursives.add_child(terminal)
-			terminal.setup(connection_type, text, self, recursive_container_offset_changed)
-
-		CBNodeTerminal.TYPE.INPUT_OPEN:
-			if _inputs == null or !is_instance_valid(_inputs):
-				push_warning("CBNodeConnectableBase: INPUT_OPEN container is null/invalid; skipping add_child")
-				terminal.queue_free()
-				return null
-			_inputs.add_child(terminal)
-			terminal.setup(connection_type, text, self, input_container_offset_changed)
-
-		CBNodeTerminal.TYPE.OUTPUT_OPEN:
-			if _outputs == null or !is_instance_valid(_outputs):
-				push_warning("CBNodeConnectableBase: OUTPUT_OPEN container is null/invalid; skipping add_child")
-				terminal.queue_free()
-				return null
-			_outputs.add_child(terminal)
-			terminal.setup(connection_type, text, self, output_container_offset_changed)
-	
+			position_signal = recursive_container_offset_changed
+		_:
+			terminal.queue_free()
+			return null
+	add_child(terminal)
+	move_child(terminal, _tree_index_for_terminal(connection_type, terminal))
+	terminal.setup(connection_type, text, self, position_signal)
+	_refresh_terminal_slots()
 	terminal.button.resized.connect(_on_node_move)
-	#terminal.active_port.resized.connect(_on_node_move)
-	#terminal.terminal_about_to_be_deleted.connect(_on_node_move)
+	_on_node_move()
 	return terminal
 
+
+func _on_terminal_left() -> void:
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+	_force_shrink()
+	_refresh_terminal_slots()
+	_on_node_move()
+
+
+## Recursive rows, then inputs, then outputs. Hidden group containers are skipped by the layout.
+func _tree_index_for_terminal(connection_type: CBNodeTerminal.TYPE, terminal: CBNodeTerminal) -> int:
+	var rank := _terminal_rank(connection_type)
+	for i: int in get_child_count():
+		var other := get_child(i) as CBNodeTerminal
+		if other == null or other == terminal:
+			continue
+		if _terminal_rank(other.terminal_type) > rank:
+			return i
+	return get_child_count() - 1
+
+
+func _terminal_rank(connection_type: CBNodeTerminal.TYPE) -> int:
+	match connection_type:
+		CBNodeTerminal.TYPE.RECURSIVE:
+			return 0
+		CBNodeTerminal.TYPE.INPUT, CBNodeTerminal.TYPE.INPUT_OPEN:
+			return 1
+		_:
+			return 2
+
+
+func _refresh_terminal_slots() -> void:
+	var input_index := 0
+	var output_index := 0
+	for child: Node in get_children():
+		var terminal := child as CBNodeTerminal
+		if terminal == null or not is_instance_valid(terminal):
+			continue
+		var slot_index := GraphNodeStyle.visible_slot_index(self, terminal)
+		if slot_index < 0:
+			continue
+		var left := false
+		var right := false
+		var kind: StringName = &"full"
+		match terminal.terminal_type:
+			CBNodeTerminal.TYPE.INPUT:
+				left = true
+			CBNodeTerminal.TYPE.INPUT_OPEN:
+				left = true
+				kind = &"ring"
+			CBNodeTerminal.TYPE.OUTPUT:
+				right = true
+			CBNodeTerminal.TYPE.OUTPUT_OPEN:
+				right = true
+				kind = &"ring"
+			CBNodeTerminal.TYPE.RECURSIVE:
+				left = true
+				kind = &"recursive"
+		GraphNodeStyle.configure_row_slot(self, slot_index, left, right, GraphNodeStyle.port_icon(kind))
+		if left:
+			terminal.assign_graph_port(true, input_index)
+			input_index += 1
+		elif right:
+			terminal.assign_graph_port(false, output_index)
+			output_index += 1
+
+
 func get_number_inputs() -> int:
-	return _inputs.get_child_count()
+	return _count_terminals(true)
 
 func get_number_outputs() -> int:
-	return _outputs.get_child_count()
+	return _count_terminals(false)
+
+
+func _count_terminals(inputs: bool) -> int:
+	var count := 0
+	for child: Node in get_children():
+		var terminal := child as CBNodeTerminal
+		if terminal == null:
+			continue
+		var is_input := terminal.terminal_type == CBNodeTerminal.TYPE.INPUT or terminal.terminal_type == CBNodeTerminal.TYPE.INPUT_OPEN
+		var is_output := terminal.terminal_type == CBNodeTerminal.TYPE.OUTPUT or terminal.terminal_type == CBNodeTerminal.TYPE.OUTPUT_OPEN
+		if (inputs and is_input) or (not inputs and is_output):
+			count += 1
+	return count
 
 func _on_single_left_click() -> void:
 	pass
