@@ -1347,6 +1347,50 @@ func delete_regions_and_raise_internals(deleting_region: BrainRegion) -> FeagiRe
 	FeagiCore.feagi_local_cache.brain_regions.FEAGI_remove_region_and_raise_internals(deleting_region)
 	return FEAGI_response_data
 
+
+## DELETE /v1/region/region_and_members: deletes the region, all descendant regions and every cortical area inside them.
+func delete_region_and_internals(deleting_region: BrainRegion) -> FeagiRequestOutput:
+	# Requirement checking
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if !deleting_region.region_ID in FeagiCore.feagi_local_cache.brain_regions.available_brain_regions:
+		push_error("FEAGI Requests: No such region ID %s to edit!" % deleting_region.region_ID)
+		return FeagiRequestOutput.requirement_fail("INVALID_REGION_ID")
+	if deleting_region.is_root_region():
+		push_error("FEAGI Requests: Unable to delete Root Region!")
+		return FeagiRequestOutput.requirement_fail("CANNOT_DELETE_ROOT")
+
+	# Define Request
+	var dict_to_send: Dictionary = {
+		"id": deleting_region.region_ID
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_DELETE_call(FeagiCore.network.http_API.address_list.DELETE_region_regionAndMembers, dict_to_send)
+
+	# Send request and await results
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to delete region and internals of name %s!" % deleting_region.friendly_name)
+		return FEAGI_response_data
+
+	# Mirror the delete locally, deepest first: areas of a region (with their mappings), then the emptied region.
+	var regions_deepest_first: Array[BrainRegion] = []
+	_collect_regions_deepest_first(deleting_region, regions_deepest_first)
+	for region in regions_deepest_first:
+		for area in region.contained_cortical_areas.duplicate():
+			FeagiCore.feagi_local_cache.FEAGI_delete_all_mappings_involving_area_and_area(area)
+		FeagiCore.feagi_local_cache.brain_regions.FEAGI_remove_emptied_region(region)
+	await _synchronize_cache_after_cortical_delete()
+	return FEAGI_response_data
+
+## Post-order walk: descendants are appended before their parent.
+func _collect_regions_deepest_first(region: BrainRegion, out: Array[BrainRegion]) -> void:
+	for child in region.contained_regions.duplicate():
+		_collect_regions_deepest_first(child, out)
+	out.append(region)
+
 	
 	
 	
@@ -1627,7 +1671,7 @@ func add_custom_cortical_area(cortical_name: StringName, coordinates_3D: Vector3
 	return FEAGI_response_data
 
 
-## Creates a classifier assembly: sample memory, class memory, error area, and the associative edge.
+## Creates a classifier assembly: sample memory, class memory, error and correct areas, and the associative edge.
 ## Sample and class inputs are added later with classifier_sample and classifier_class mappings.
 func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, parent_region: BrainRegion) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
@@ -1653,7 +1697,7 @@ func add_classifier_assembly(classifier_name: String, coordinates_3D: Vector3i, 
 	var regions_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_brain_regions_from_feagi()
 	if regions_refresh == null or regions_refresh.has_errored or not regions_refresh.success:
 		push_warning("FEAGI REQUEST: Classifier created, but BV could not synchronize region membership / I/O.")
-	for response_key in ["sample_memory_id", "class_memory_id", "error_area_id"]:
+	for response_key in ["sample_memory_id", "class_memory_id", "error_area_id", "correct_area_id"]:
 		if not response.has(response_key):
 			continue
 		var created_id: StringName = StringName(str(response[response_key]))
@@ -1799,7 +1843,38 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 
 
 ## PUT reward training and the optional correct-answer area. Other classifier fields stay as they are.
-func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_training: bool, answer_feedback_area_id: String, answer_latency_bursts: int, learn_area_id: String, confidence_area_id: String) -> FeagiRequestOutput:
+## Makes sure the classifier's "correct answer" and "error" Reward modulators exist (idempotent).
+## Response: {correct_answer, error, correct_area_id}. When a correct area was just created for an
+## older classifier, syncs the cache and redraws the classifier like a freshly created one.
+func ensure_classifier_answer_modulators(classifier: GenomeClassifier) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	if classifier == null or classifier.classifier_id == &"":
+		return FeagiRequestOutput.requirement_fail("INVALID_CLASSIFIER")
+	var address: StringName = StringName(String(FeagiCore.network.http_API.address_list.POST_genome_classifier_answer_modulators).replace("{classifier_id}", str(classifier.classifier_id)))
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_POST_call(address, {})
+	var worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await worker.worker_done
+	var output: FeagiRequestOutput = worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(output):
+		push_error("FEAGI Requests: Unable to prepare answer modulators for classifier %s!" % classifier.friendly_name)
+		return output
+	var created: Dictionary = output.decode_response_as_dict()
+	var correct_area_id: StringName = StringName(str(created.get("correct_area_id", "")))
+	if correct_area_id != &"" and correct_area_id != classifier.correct_area_id:
+		# Classifier first, so the new area is recognized as its output when it lands in the cache.
+		await FeagiCore.feagi_local_cache.refresh_classifiers_from_feagi()
+		await get_cortical_area(correct_area_id)
+		await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
+		var refreshed: GenomeClassifier = FeagiCore.feagi_local_cache.classifiers.get(classifier.classifier_id, classifier)
+		_refresh_classifier_brain_monitor_visuals(refreshed, refreshed.current_parent_region)
+		_refresh_classifier_circuit_builder_visuals(refreshed, refreshed.current_parent_region)
+	return output
+
+
+## [param reward_modulator_ids]: the Reward modulators the classifier learns from. Empty with reward
+## training on selects the classifier's correct-answer and error modulators.
+func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_training: bool, answer_feedback_area_id: String, answer_latency_bursts: int, learn_area_id: String, confidence_area_id: String, reward_modulator_ids: Array[String]) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -1813,6 +1888,7 @@ func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_trainin
 		"answer_latency_bursts": maxi(answer_latency_bursts, 0),
 		"learn_area_id": learn_area_id.strip_edges(),
 		"confidence_area_id": confidence_area_id.strip_edges(),
+		"reward_modulator_ids": reward_modulator_ids,
 	}
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(edit_address, dict_to_send)
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
@@ -2363,6 +2439,48 @@ func create_modulator(modulator_id: String, definition: Dictionary) -> FeagiRequ
 	return FEAGI_response_data
 
 
+## Replaces a modulator's settings. The body matches [method create_modulator]; FEAGI rejects a type change while subscribers exist.
+func update_modulator(modulator_id: String, definition: Dictionary) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var address := StringName(str(FeagiCore.network.http_API.address_list.PUT_modulator_modulator) + "?modulator_id=" + modulator_id.uri_encode())
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(address, definition)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to update modulator %s" % modulator_id)
+	return FEAGI_response_data
+
+
+## Renames a modulator instance; FEAGI rewrites every subscriber reference. Errors with a conflict when [param new_id] exists.
+func rename_modulator(old_id: String, new_id: String) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var body := {"old_modulator_id": old_id, "new_modulator_id": new_id}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_modulator_rename, body)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to rename modulator %s to %s" % [old_id, new_id])
+	return FEAGI_response_data
+
+
+## Areas and mappings subscribed to a modulator. Response: {"areas": [cortical id], "mappings": [{"src": id, "dst": id}]}.
+func get_modulator_usage(modulator_id: String) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var address := StringName(str(FeagiCore.network.http_API.address_list.GET_modulator_usage) + "/" + modulator_id.uri_encode())
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(address)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	return HTTP_FEAGI_request_worker.retrieve_output_and_close()
+
+
 func update_cortical_areas(editing_areas: Array[AbstractCorticalArea], properties: Dictionary) -> FeagiRequestOutput:
 	# Requirement checking
 	if !FeagiCore.can_interact_with_feagi():
@@ -2498,6 +2616,74 @@ func mass_reset_cortical_areas(cortical_areas: Array[AbstractCorticalArea]) -> F
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	print("FEAGI REQUEST: Successfully reset %s cortical areas" % len(cortical_areas))
 	return FEAGI_response_data
+
+## Reset learned synapse weights of one source->destination mapping to the rule's initial weight.
+## Neuron state and genome are untouched. Response: {src_cortical_area, dst_cortical_area, synapses_reset, weight}.
+func reset_mapping_weights(src: AbstractCorticalArea, dst: AbstractCorticalArea) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var dict_to_send: Dictionary = {
+		"src_cortical_area": String(src.cortical_ID),
+		"dst_cortical_area": String(dst.cortical_ID)
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalMapping_resetWeights, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to reset mapping weights!")
+	return FEAGI_response_data
+
+## Reset learned synapse weights of ALL incoming mappings of each given area.
+## Response: {results: [{cortical_id, mappings_reset, synapses_reset}]}.
+func reset_area_incoming_weights(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		push_error("FEAGI Requests: Not ready for requests!")
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var area_list_strings: Array[String] = []
+	for id in AbstractCorticalArea.cortical_area_array_to_ID_array(cortical_areas):
+		area_list_strings.append(String(id))
+	var dict_to_send: Dictionary = {"area_list": area_list_strings}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_resetWeights, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		push_error("FEAGI Requests: Unable to reset incoming weights for %d cortical areas!" % len(cortical_areas))
+	return FEAGI_response_data
+
+## Static runners so a confirm popup can outlive the window that opened it. Toast the outcome.
+static func run_reset_area_weights(areas: Array[AbstractCorticalArea]) -> void:
+	BV.NOTIF.add_notification("Resetting learned weights...")
+	var result: FeagiRequestOutput = await FeagiCore.requests.reset_area_incoming_weights(areas)
+	BV.NOTIF.add_notification(weight_reset_result_message(result, "%d area(s)" % areas.size()))
+
+static func run_reset_mapping_weights(src: AbstractCorticalArea, dst: AbstractCorticalArea) -> void:
+	BV.NOTIF.add_notification("Resetting learned weights...")
+	var result: FeagiRequestOutput = await FeagiCore.requests.reset_mapping_weights(src, dst)
+	BV.NOTIF.add_notification(weight_reset_result_message(result, "mapping"))
+
+## Toast text for a weight-reset response. A 404 means the route (or area/mapping) is missing.
+static func weight_reset_result_message(output: FeagiRequestOutput, success_noun: String) -> String:
+	if output.success:
+		var body: Dictionary = output.decode_response_as_dict()
+		var total: int = 0
+		if body.has("results") and body["results"] is Array:
+			for entry in body["results"]:
+				if entry is Dictionary:
+					total += int(entry.get("synapses_reset", 0))
+		else:
+			total = int(body.get("synapses_reset", 0))
+		return "Reset learned weights: %d synapses reset (%s)" % [total, success_noun]
+	if output.failed_requirement:
+		return "Weight reset unavailable: FEAGI is not ready"
+	if output.has_timed_out:
+		return "Weight reset failed: FEAGI did not respond"
+	if output.response_code == 404:
+		return "Weight reset failed: this FEAGI does not support weight reset (or the area/mapping was not found)"
+	var details: PackedStringArray = output.decode_response_as_generic_error_code()
+	return "Weight reset failed: %s" % details[1]
 	
 	
 

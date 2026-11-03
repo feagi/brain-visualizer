@@ -1312,7 +1312,13 @@ func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
 	if mappings_output.has_errored or not mappings_output.success:
 		return mappings_output
 	
-	mapping_data.FEAGI_apply_mapping_summary_diff(mappings_output.decode_response_as_dict())
+	var mapping_summary: Dictionary = mappings_output.decode_response_as_dict()
+	# Mappings depend on areas, but hash refreshes run independently; a mapping created with its areas can arrive first.
+	if not mapping_data.get_unresolved_cortical_ids(mapping_summary).is_empty():
+		var areas_output: FeagiRequestOutput = await _refresh_cortical_areas_from_feagi()
+		if areas_output.has_errored or not areas_output.success:
+			return areas_output
+	mapping_data.FEAGI_apply_mapping_summary_diff(mapping_summary)
 	mappings_reloaded.emit()
 	return mappings_output
 

@@ -2,7 +2,11 @@ extends RefCounted
 class_name SchematicExporter
 ## Saves the whole Circuit Schematic, not just the part on screen, in a [SchematicImageFile] format.
 ## A still copy of the view, with the same regions open, is drawn in an off-screen SubViewport sized
-## to the whole canvas. Desktop asks where to save; the web build downloads.
+## to the whole canvas. The legend is drawn under that canvas, and the FEAGI logo with the word FEAGI
+## sits at the bottom right. Desktop asks where to save; the web build downloads.
+
+const _LOGO: Texture2D = preload("res://BrainVisualizer/UI/GenericResources/feagi_org_logo_square.png")
+const _MARK_PX: int = 180
 
 
 ## Asks for a file (or downloads on web), then renders and writes [param source] in [param format].
@@ -64,8 +68,47 @@ static func render(source: CircuitSchematic) -> Image:
 	copy.scroll_offset = canvas.position * scale - Vector2(SchematicImageFile.MARGIN_PX, SchematicImageFile.MARGIN_PX)
 	await RenderingServer.frame_post_draw
 	await RenderingServer.frame_post_draw
+	var canvas_image: Image = viewport.get_texture().get_image()
+	viewport.queue_free()
+	var theme: Theme = _theme_of(source)
+	var legend_image: Image = await _render_legend(theme, source.get_tree())
+	if legend_image == null:
+		return canvas_image
+	return SchematicImageFile.composite_legend(canvas_image, legend_image, _brand_image())
+
+
+## The schematic key, at its own size, on an opaque plate.
+static func _render_legend(theme: Theme, tree: SceneTree) -> Image:
+	var viewport := SubViewport.new()
+	viewport.disable_3d = true
+	viewport.transparent_bg = false
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var legend := AreaTypeLegend.new()
+	legend.configure_for_export(SchematicTreeBuilder.CLASSIFIER_COLOR)
+	legend.theme = theme
+	viewport.add_child(legend)
+	tree.root.add_child(viewport)
+	await tree.process_frame
+	await tree.process_frame
+	var legend_size := legend.get_combined_minimum_size().ceil()
+	viewport.size = Vector2i(maxi(1, int(legend_size.x)), maxi(1, int(legend_size.y)))
+	legend.position = Vector2.ZERO
+	legend.size = Vector2(viewport.size)
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
 	var image: Image = viewport.get_texture().get_image()
 	viewport.queue_free()
+	return image
+
+
+## The square FEAGI.org mark, plate removed, scaled for the corner.
+static func _brand_image() -> Image:
+	var image: Image = _LOGO.get_image()
+	image = image.duplicate()
+	SchematicImageFile.clear_logo_plate(image)
+	var height := _MARK_PX
+	var width := maxi(1, int(round(float(height) * float(image.get_width()) / float(image.get_height()))))
+	image.resize(width, height, Image.INTERPOLATE_LANCZOS)
 	return image
 
 

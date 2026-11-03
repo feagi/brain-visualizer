@@ -268,7 +268,7 @@ func _test_delete_snapshot_keeps_properties_and_mappings() -> int:
 	for write in writes:
 		var rules: Array = write["rules"]
 		if write["source_id"] == "A2" and write["destination_id"] == "B2":
-			restored_internal = rules.size() == 1 and rules[0]["gate_source_area"] == "A2"
+			restored_internal = rules.size() == 1 and rules[0]["modulators"] == ["A2"]
 		if write["source_id"] == "C" and write["destination_id"] == "A2":
 			restored_incoming = true
 	if not restored_internal or not restored_incoming:
@@ -312,7 +312,7 @@ func _test_memory_replay_edge_is_not_restored() -> int:
 func _delete_edit(original_id: String, restored_id: String) -> DeleteAreaEdit:
 	var edit := DeleteAreaEdit.new()
 	edit.add_area(_area_snapshot(original_id, restored_id, {
-		"B": [{"morphology_id": "block_to_block", "gate_source_area": original_id}],
+		"B": [{"morphology_id": "block_to_block", "modulators": [original_id]}],
 	}))
 	return edit
 

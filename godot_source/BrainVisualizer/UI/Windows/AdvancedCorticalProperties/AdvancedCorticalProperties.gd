@@ -63,6 +63,7 @@ var _rml_leak_min: SpinBox = null
 var _rml_leak_max: SpinBox = null
 var _rml_every: SpinBox = null
 var _button_rml_apply: Button = null
+var _rml_leak_warning_label: Label = null
 var _memory_count_fetch_generation: int = 0
 
 func _ready():
@@ -233,6 +234,7 @@ func setup(cortical_area_references: Array[AbstractCorticalArea]) -> void:
 		_init_psp()
 	_ensure_modulations_section()
 	_ensure_rate_modulated_leak_section()
+	_ensure_reset_weights_row()
 	
 	_refresh_all_relevant()
 	_apply_type_based_ui_restrictions()
@@ -645,6 +647,9 @@ func _apply_core_type_restrictions() -> void:
 		var reset_btn: Node = dz_root.get_node_or_null("VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/Reset/ResetButton")
 		if reset_btn is BaseButton:
 			(reset_btn as BaseButton).disabled = true
+		var reset_w_btn: Node = dz_root.get_node_or_null("VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone/ResetWeights/ResetWeightsButton")
+		if reset_w_btn is BaseButton:
+			(reset_w_btn as BaseButton).disabled = true
 	if _button_rml_apply != null:
 		_button_rml_apply.disabled = true
 	if _rml_toggle_enabled != null:
@@ -2209,11 +2214,11 @@ func _enable_3D_preview(): #NOTE only currently works with single
 @export var _firing_row_leak_variability: Control
 @export var _firing_threshold_increment_label: Control
 @export var _line_Fire_Threshold: FloatInput
-@export var _line_Threshold_Limit: IntInput
+@export var _line_Threshold_Limit: FloatInput
 @export var _line_neuron_excitability: IntInput
 @export var _line_Degeneracy_Constant: FloatInput
 @export var _line_Refactory_Period: IntInput
-@export var _line_Leak_Constant: IntInput
+@export var _line_Leak_Constant: FloatInput
 @export var _line_Leak_Variability: FloatInput
 @export var _line_Consecutive_Fire_Count: IntInput
 @export var _line_Snooze_Period: IntInput
@@ -2272,6 +2277,8 @@ func _refresh_from_cache_firing_parameters() -> void:
 @export var _line_mp_delta_quantization: FloatInput
 @export var _row_mp_ratio_quantization: Control
 @export var _line_mp_ratio_quantization: FloatInput
+@export var _line_memory_neuron_cap: IntInput
+@export var _dropdown_ltm_eviction: DropDown
 @export var _button_memory_send: Button
 
 func _init_memory() -> void:
@@ -2284,6 +2291,11 @@ func _init_memory() -> void:
 	if _dropdown_mp_encoding != null:
 		_dropdown_mp_encoding.options = CorticalPropertyMemoryParameters.MP_ENCODING_OPTIONS
 		_dropdown_mp_encoding.option_changed.connect(_on_mp_encoding_changed)
+	_connect_control_to_update_button(_line_memory_neuron_cap, "memory_neuron_cap", _button_memory_send)
+	if _dropdown_ltm_eviction != null:
+		_dropdown_ltm_eviction.options = CorticalPropertyMemoryParameters.LTM_EVICTION_LABEL_OPTIONS
+		_dropdown_ltm_eviction.user_interacted.connect(_enable_button.bind(_button_memory_send))
+		_dropdown_ltm_eviction.option_changed.connect(_on_ltm_eviction_changed)
 	
 	_button_memory_send.pressed.connect(_send_update.bind(_button_memory_send))
 
@@ -2293,6 +2305,11 @@ func _on_mp_encoding_changed(_index: int, encoding: StringName) -> void:
 	for key in keys:
 		_add_to_dict_to_send(keys[key], _button_memory_send, StringName(key))
 	_apply_mp_quantization_rows_visibility(encoding)
+
+## Dropdown shows LRU / None; FEAGI key `ltm_eviction` takes "lru" / "none".
+func _on_ltm_eviction_changed(_index: int, label: StringName) -> void:
+	var key: StringName = CorticalPropertyMemoryParameters.ltm_eviction_key_from_label(label)
+	_add_to_dict_to_send(String(key), _button_memory_send, &"ltm_eviction")
 
 ## Show only the quantization that applies to the selected encoding.
 func _apply_mp_quantization_rows_visibility(encoding: StringName) -> void:
@@ -2309,6 +2326,8 @@ func _refresh_from_cache_memory() -> void:
 	_update_control_with_value_from_areas(_dropdown_mp_encoding, "memory_parameters", "mp_encoding")
 	_update_control_with_value_from_areas(_line_mp_delta_quantization, "memory_parameters", "mp_delta_quantization")
 	_update_control_with_value_from_areas(_line_mp_ratio_quantization, "memory_parameters", "mp_ratio_quantization")
+	_update_control_with_value_from_areas(_line_memory_neuron_cap, "memory_parameters", "memory_neuron_cap")
+	_update_control_with_value_from_areas(_dropdown_ltm_eviction, "memory_parameters", "ltm_eviction_label")
 	if _dropdown_mp_encoding != null and _dropdown_mp_encoding.selected >= 0:
 		_apply_mp_quantization_rows_visibility(_dropdown_mp_encoding.selected_item)
 
@@ -2625,6 +2644,48 @@ func _user_pressed_reset_button() -> void:
 		BV.NOTIF.add_notification("Cortical areas reset")
 	close_window()
 
+## Danger-zone row "Reset learned weights" under the neuron Reset row (built in code to keep the scene untouched).
+func _ensure_reset_weights_row() -> void:
+	if _section_dangerzone == null:
+		return
+	var dz: Node = _section_dangerzone.get_node_or_null(
+		"VerticalCollapsible/PanelContainer/PutThingsHere/CorticalPropertiesDangerZone"
+	)
+	if dz == null or not (dz is VBoxContainer) or dz.get_node_or_null("ResetWeights") != null:
+		return
+	var row := HBoxContainer.new()
+	row.name = "ResetWeights"
+	var label := Label.new()
+	label.text = "Reset learned weights (incoming)"
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.tooltip_text = "Set learned synapse weights of all incoming mappings back to their initial weight. Neuron state and genome are unchanged."
+	label.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.add_child(label)
+	var button := Button.new()
+	button.name = "ResetWeightsButton"
+	button.text = " Reset Weights "
+	button.pressed.connect(_user_pressed_reset_weights_button)
+	row.add_child(button)
+	dz.add_child(row)
+	var reset_node: Node = dz.get_node_or_null("Reset")
+	if reset_node != null:
+		dz.move_child(row, reset_node.get_index() + 1)
+
+func _user_pressed_reset_weights_button() -> void:
+	if _cortical_area_refs == null or _cortical_area_refs.is_empty() or FeagiCore == null or FeagiCore.requests == null:
+		return
+	var areas: Array[AbstractCorticalArea] = []
+	areas.assign(_cortical_area_refs)
+	var message: String = "Reset learned synapse weights on all incoming mappings of %d cortical area(s) to their initial weights?\nLearned weights are lost. Neuron state and genome are not changed." % areas.size()
+	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Reset Learned Weights",
+		message,
+		FEAGIRequests.run_reset_area_weights.bind(areas),
+		"Reset Weights",
+		"Cancel"
+	)
+	BV.WM.spawn_popup(popup_definition)
+
 const _RML_SECTION_NODE_NAME: NodePath = "RmlRateModulatedLeak"
 
 func _rml_spin_list() -> Array:
@@ -2681,18 +2742,27 @@ func _ensure_rate_modulated_leak_section() -> void:
 	rml_indent.add_child(_rml_params_vbox)
 	section.add_child(rml_indent)
 	_rml_target = _make_rml_float_spin(0.0, 1.0, 0.001, 0.1)
-	_rml_params_vbox.add_child(_add_rml_row("Target firing / burst", _rml_target))
-	_rml_tau = _make_rml_float_spin(1.0, 1_000_000.0, 0.5, 50.0)
-	_rml_params_vbox.add_child(_add_rml_row("EMA tau (bursts)", _rml_tau))
+	_rml_params_vbox.add_child(_add_rml_row("Target firing / burst", _rml_target, true, "Expected fraction of bursts (0 to 1) in which a neuron fires."))
+	# Core requires tau > 0 (not >= 1), so the lower bound is the smallest step above zero.
+	_rml_tau = _make_rml_float_spin(0.001, 1_000_000.0, 0.001, 50.0)
+	_rml_tau.custom_arrow_step = 1.0
+	_rml_params_vbox.add_child(_add_rml_row("EMA tau (bursts)", _rml_tau, true, "Time constant, in bursts, of the firing-rate moving average. Must be greater than 0."))
 	_rml_gain = _make_rml_float_spin(0.0, 10.0, 0.001, 0.2)
-	_rml_params_vbox.add_child(_add_rml_row("Gain", _rml_gain))
+	_rml_params_vbox.add_child(_add_rml_row("Gain", _rml_gain, true, "How strongly the leak follows the firing-rate error. Must be 0 or more."))
 	_rml_leak_min = _make_rml_float_spin(0.0, 1.0, 0.001, 0.02)
-	_rml_params_vbox.add_child(_add_rml_row("Leak min", _rml_leak_min))
+	_rml_params_vbox.add_child(_add_rml_row("Leak min", _rml_leak_min, true, "Lowest leak the homeostat may set, as a fraction from 0 to 1. Must not exceed Leak max."))
 	_rml_leak_max = _make_rml_float_spin(0.0, 1.0, 0.001, 0.5)
-	_rml_params_vbox.add_child(_add_rml_row("Leak max", _rml_leak_max))
+	_rml_params_vbox.add_child(_add_rml_row("Leak max", _rml_leak_max, true, "Highest leak the homeostat may set, as a fraction from 0 to 1. Must be at least Leak min."))
+	# Core treats 0 as 1 for update_every_n_bursts, so BV's minimum of 1 loses nothing.
 	_rml_every = _make_rml_float_spin(1.0, 1_000_000.0, 1.0, 1.0)
 	_rml_every.rounded = true
-	_rml_params_vbox.add_child(_add_rml_row("Update every N bursts", _rml_every))
+	_rml_params_vbox.add_child(_add_rml_row("Update every N bursts", _rml_every, true, "The leak is adjusted once every N bursts (whole number, minimum 1; FEAGI treats 0 the same as 1)."))
+	_rml_leak_warning_label = Label.new()
+	_rml_leak_warning_label.name = &"RmlLeakRangeWarning"
+	_rml_leak_warning_label.text = "Leak min must not exceed Leak max"
+	_rml_leak_warning_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.35))
+	_rml_leak_warning_label.visible = false
+	section.add_child(_rml_leak_warning_label)
 	_button_rml_apply = Button.new()
 	_button_rml_apply.name = &"RmlRateModulatedApply"
 	_button_rml_apply.text = "Apply Update"
@@ -2713,10 +2783,14 @@ func _ensure_rate_modulated_leak_section() -> void:
 	_rml_rebind_controls_from_scene(section)
 	_connect_rml_ui_signals()
 
-func _add_rml_row(label_text: String, field: Control, field_fills_width: bool = true) -> HBoxContainer:
+func _add_rml_row(label_text: String, field: Control, field_fills_width: bool = true, tooltip: String = "") -> HBoxContainer:
 	var row := HBoxContainer.new()
 	var lab := Label.new()
 	lab.text = label_text
+	if not tooltip.is_empty():
+		row.tooltip_text = tooltip
+		lab.tooltip_text = tooltip
+		field.tooltip_text = tooltip
 	lab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lab.custom_minimum_size.x = 180
 	row.add_child(lab)
@@ -2773,6 +2847,7 @@ func _rml_rebind_controls_from_scene(container: VBoxContainer) -> void:
 	_rml_leak_min = _find_rml_spin(3)
 	_rml_leak_max = _find_rml_spin(4)
 	_rml_every = _find_rml_spin(5)
+	_rml_leak_warning_label = _rml_root.find_child("RmlLeakRangeWarning", true, false) as Label
 	_button_rml_apply = _rml_root.find_child("RmlRateModulatedApply", true, false) as Button
 
 func _find_rml_enable_toggle(root: VBoxContainer) -> ToggleButton:
@@ -2850,8 +2925,25 @@ func _on_rml_control_changed() -> void:
 		return
 	if _button_rml_apply == null:
 		return
+	if _rml_leak_range_invalid():
+		_growing_cortical_update.erase(_button_rml_apply.name)
+		_rml_set_leak_warning_visible(true)
+		return
+	_rml_set_leak_warning_visible(false)
 	_growing_cortical_update[_button_rml_apply.name] = _rml_build_update_dict()
 	_button_rml_apply.disabled = false
+
+## True when the toggle is enabled and leak_min > leak_max (core rejects this config).
+func _rml_leak_range_invalid() -> bool:
+	if _rml_toggle_enabled == null or _rml_leak_min == null or _rml_leak_max == null:
+		return false
+	return _rml_toggle_enabled.button_pressed and _rml_leak_min.value > _rml_leak_max.value
+
+func _rml_set_leak_warning_visible(show_warning: bool) -> void:
+	if _rml_leak_warning_label != null:
+		_rml_leak_warning_label.visible = show_warning
+	if show_warning and _button_rml_apply != null:
+		_button_rml_apply.disabled = true
 
 func _rml_rate_modulated_leak_section_relevant() -> bool:
 	if _cortical_area_refs == null or _cortical_area_refs.is_empty():
@@ -2914,7 +3006,10 @@ func _refresh_from_cache_rate_modulated_leak() -> void:
 		_rml_default_spin_values()
 	_rml_suppress_change_signals = false
 	if _button_rml_apply != null:
+		if _rml_leak_range_invalid():
+			_growing_cortical_update.erase(_button_rml_apply.name)
 		_button_rml_apply.disabled = not _growing_cortical_update.has(_button_rml_apply.name)
+	_rml_set_leak_warning_visible(_rml_leak_range_invalid())
 	_rml_apply_homeostatic_param_block_state()
 
 #endregion

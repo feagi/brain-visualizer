@@ -30,7 +30,7 @@ func setup(cortical_area_ref: AbstractCorticalArea) -> void:
 func _on_single_left_click() -> void:
 	if _dragged:
 		return
-	var is_multi := Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_META) or Input.is_physical_key_pressed(KEY_SHIFT)
+	var is_multi := ModifierKeys.ctrl_or_meta_held() or ModifierKeys.shift_held()
 	if not is_multi:
 		var cb_parent = get_parent()
 		if cb_parent is CircuitBuilder:
@@ -73,10 +73,11 @@ const CUSTOM_BOX_COLOR: Color = Color(0, 0.32941176470588235, 0.5764705882352941
 const MEMORY_BOX_COLOR: Color = Color(0.5803921568627451, 0.06666666666666667, 0)
 const OPU_BOX_COLOR: Color = Color(0.5803921568627451, 0.3215686274509804, 0)
 const CORE_BOX_COLOR: Color = Color(0.0, 0.204, 0.384)
+## Dark green. A little blue in it so it is not the same green as excitatory wires (Color.DARK_GREEN).
+const MODULATOR_BOX_COLOR: Color = Color8(0, 100, 32)
 
-## Set the color depnding on cortical type. Both `titlebar` and `panel` styleboxes
-## are tinted with the type color so the GraphEdit minimap (which reads
-## `panel.bg_color`) renders nodes in their type-distinct colors.
+## Set the color depending on cortical type. Padding stays on the copied stylebox
+## so the minimap can still read panel.bg_color. See [GraphNodeStyle].
 func _setup_node_color(area: AbstractCorticalArea) -> void:
 	var type_color: Color
 	match(area.cortical_type):
@@ -90,15 +91,13 @@ func _setup_node_color(area: AbstractCorticalArea) -> void:
 			type_color = OPU_BOX_COLOR
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
 			type_color = CORE_BOX_COLOR
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
+			type_color = MODULATOR_BOX_COLOR
 		_:
 			push_error("Cortical Node loaded unknown or invalid cortical area type!")
 			return
-	var titlebar_box: StyleBoxFlat = StyleBoxFlat.new()
-	titlebar_box.bg_color = type_color
-	add_theme_stylebox_override("titlebar", titlebar_box)
-	var panel_box: StyleBoxFlat = StyleBoxFlat.new()
-	panel_box.bg_color = type_color
-	add_theme_stylebox_override("panel", panel_box)
+	add_theme_stylebox_override("titlebar", GraphNodeStyle.tinted(self, &"titlebar", type_color))
+	add_theme_stylebox_override("panel", GraphNodeStyle.tinted(self, &"panel", type_color))
 
 
 #endregion

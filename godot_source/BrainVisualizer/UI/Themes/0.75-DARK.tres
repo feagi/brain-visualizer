@@ -1,4 +1,4 @@
-[gd_resource type="Theme" format=3 uid="uid://cjj7gjjgek6t2"]
+[gd_resource type="Theme" load_steps=34 format=3 uid="uid://cjj7gjjgek6t2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -66,9 +66,9 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.270588, 0.337255, 0.431373, 0.9)
-shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 8
 shadow_offset = Vector2(0, 2)
+shadow_color = Color(0, 0, 0, 0.35)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i680b"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -100,11 +100,85 @@ border_width_top = 2
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.5, 0.5, 0.6, 0.5)
-shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 6
 shadow_offset = Vector2(0, 2)
+shadow_color = Color(0, 0, 0, 0.4)
+anti_aliasing = true
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn_panel"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+border_color = Color(0.325, 0.325, 0.325, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.6)
+anti_aliasing = true
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn_panel_sel"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+border_color = Color(0.625, 0.625, 0.625, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.6)
+anti_aliasing = true
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gn_slot"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn_title"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.37, 0.37, 0.37, 0.6)
+border_color = Color(0.8, 0.8, 0.8, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.6)
+anti_aliasing = true
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gn_title_sel"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.625, 0.625, 0.6)
+border_color = Color(0.325, 0.325, 0.325, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.6)
+anti_aliasing = true
 
 [resource]
+GraphNode/constants/port_h_offset = 0
+GraphNode/constants/separation = 2
+GraphNode/styles/panel = SubResource("StyleBoxFlat_gn_panel")
+GraphNode/styles/panel_selected = SubResource("StyleBoxFlat_gn_panel_sel")
+GraphNode/styles/slot = SubResource("StyleBoxEmpty_gn_slot")
+GraphNode/styles/titlebar = SubResource("StyleBoxFlat_gn_title")
+GraphNode/styles/titlebar_selected = SubResource("StyleBoxFlat_gn_title_sel")
+SplitContainer/colors/touch_dragger_color = Color(0.82, 0.84, 0.88, 0.38)
+SplitContainer/colors/touch_dragger_hover_color = Color(0.9, 0.92, 0.96, 0.52)
+SplitContainer/colors/touch_dragger_pressed_color = Color(0.97, 0.98, 0.99, 0.68)
+SplitContainer/constants/autohide = 0
+SplitContainer/constants/separation = 20
+HSplitContainer/constants/separation = 20
+VSplitContainer/constants/separation = 20
+SplitContainer/constants/minimum_grab_thickness = 10
 BasePanelContainerButton/base_type = &"PanelContainer"
 BasePanelContainerButton/styles/panel = SubResource("StyleBoxFlat_8j6la")
 BasePanelContainerButton/styles/panel_disabled = SubResource("StyleBoxFlat_fesjy")
@@ -164,8 +238,8 @@ HBoxContainer_farther/base_type = &"HBoxContainer"
 HBoxContainer_farther/constants/separation = 24
 HBoxContainer_fatherest/base_type = &"HBoxContainer"
 HBoxContainer_fatherest/constants/separation = 32
-HSplitContainer/constants/separation = 20
 Label/font_sizes/font_size = 12
+TooltipLabel/font_sizes/font_size = 14
 Label_Header/base_type = &"Label"
 Label_Header/font_sizes/font_size = 15
 Label_Title/base_type = &"Label"
@@ -209,6 +283,16 @@ NotificationSystemNotification_Error/base_type = &"NotificationSystemNotificatio
 NotificationSystemNotification_Error/styles/panel = SubResource("StyleBoxFlat_ixcsb")
 NotificationSystemNotification_Warning/base_type = &"NotificationSystemNotification"
 NotificationSystemNotification_Warning/styles/panel = SubResource("StyleBoxFlat_al8ae")
+NotificationSystem/base_type = &"VBoxContainer"
+NotificationSystem/constants/separation = 8
+NotificationSystem/constants/size_x = 270
+NotificationSystem/constants/size_y = 9
+TextureButton_NotificationDismiss/base_type = &"TextureButton"
+TextureButton_NotificationDismiss/constants/size_x = 15
+TextureButton_NotificationDismiss/constants/size_y = 15
+TextureRect_NotificationIcon/base_type = &"TextureRect"
+TextureRect_NotificationIcon/constants/size_x = 15
+TextureRect_NotificationIcon/constants/size_y = 15
 Panel/styles/panel = SubResource("StyleBoxFlat_3bdj3")
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_2l4ko")
 PanelContainerButton/base_type = &"PanelContainer"
@@ -228,12 +312,6 @@ RichTextLabel/font_sizes/bold_italics_font_size = 12
 RichTextLabel/font_sizes/italics_font_size = 12
 RichTextLabel/font_sizes/mono_font_size = 12
 RichTextLabel/font_sizes/normal_font_size = 12
-SplitContainer/colors/touch_dragger_color = Color(0.82, 0.84, 0.88, 0.38)
-SplitContainer/colors/touch_dragger_hover_color = Color(0.9, 0.92, 0.96, 0.52)
-SplitContainer/colors/touch_dragger_pressed_color = Color(0.97, 0.98, 0.99, 0.68)
-SplitContainer/constants/autohide = 0
-SplitContainer/constants/minimum_grab_thickness = 10
-SplitContainer/constants/separation = 20
 TabContainer/font_sizes/font_size = 12
 TextEdit/font_sizes/font_size = 12
 TextEdit/styles/normal = SubResource("StyleBoxFlat_242sy")
@@ -253,12 +331,12 @@ TextureButton_icon/constants/size_x = 24
 TextureButton_icon/constants/size_y = 24
 TextureRect/constants/size_x = 48
 TextureRect/constants/size_y = 48
-TextureRect_ConnectivityRule/base_type = &"TextureRect"
-TextureRect_ConnectivityRule/constants/size_x = 96
-TextureRect_ConnectivityRule/constants/size_y = 96
 TextureRect_Icon/base_type = &"TextureRect"
 TextureRect_Icon/constants/size_x = 24
 TextureRect_Icon/constants/size_y = 24
+TextureRect_ConnectivityRule/base_type = &"TextureRect"
+TextureRect_ConnectivityRule/constants/size_x = 96
+TextureRect_ConnectivityRule/constants/size_y = 96
 TextureRect_wide/base_type = &"TextureRect"
 TextureRect_wide/constants/size_x = 48
 TextureRect_wide/constants/size_y = 24
@@ -267,7 +345,6 @@ TitleBarContainer/styles/panel = SubResource("StyleBoxFlat_i4413")
 ToggleButton/base_type = &"TextureButton"
 ToggleButton/constants/size_x = 48
 ToggleButton/constants/size_y = 24
-TooltipLabel/font_sizes/font_size = 14
 VBoxContainer/constants/separation = 4
 VBoxContainer_adjacent/base_type = &"VBoxContainer"
 VBoxContainer_adjacent/constants/separation = 0
@@ -275,6 +352,5 @@ VBoxContainer_far/base_type = &"VBoxContainer"
 VBoxContainer_far/constants/separation = 8
 VBoxContainer_farther/base_type = &"VBoxContainer"
 VBoxContainer_farther/constants/separation = 24
-VSplitContainer/constants/separation = 20
 generic_scale/constants/size_x = 3
 generic_scale/constants/size_y = 3

@@ -1,10 +1,10 @@
-[gd_scene format=3 uid="uid://5pv3bw08pc2j"]
+[gd_scene load_steps=4 format=3 uid="uid://5pv3bw08pc2j"]
 
 [ext_resource type="Script" uid="uid://d14vltibbfq3b" path="res://BrainVisualizer/UI/Windows/ConfirmDeletion/WindowConfirmDeletion.gd" id="1_0wmb7"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_uq1ts"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="3_cunev"]
 
-[node name="WindowConfirmDeletion" type="VBoxContainer" unique_id=989861243]
+[node name="WindowConfirmDeletion" type="VBoxContainer"]
 offset_right = 420.0
 offset_bottom = 180.0
 size_flags_horizontal = 0
@@ -13,48 +13,54 @@ theme_override_constants/separation = 0
 script = ExtResource("1_0wmb7")
 window_spawn_location = Vector2i(900, 600)
 
-[node name="TitleBar" parent="." unique_id=475442789 instance=ExtResource("2_uq1ts")]
+[node name="TitleBar" parent="." instance=ExtResource("2_uq1ts")]
 layout_mode = 2
 title = "Confirm Deletion"
 
-[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1194589176]
+[node name="WindowPanel" type="PanelContainer" parent="."]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1963756052]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=775338844]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="DeleteText" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=2015390089]
+[node name="DeleteText" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "DELETE_TEXT"
 autowrap_mode = 3
 
-[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1578295020 instance=ExtResource("3_cunev")]
+[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_cunev")]
 custom_minimum_size = Vector2(420, 160)
 layout_mode = 2
 
-[node name="ButtonSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1295460737]
+[node name="DeleteInternalsToggle" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals"]
+visible = false
+layout_mode = 2
+tooltip_text = "Checked: deletes this circuit, its sub-circuits and every cortical area inside them from FEAGI. Unchecked: deletes only the circuit and moves its contents to the parent circuit."
+text = "Also delete everything inside this circuit"
+
+[node name="ButtonSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
 custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=110984174]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
 alignment = 2
 
-[node name="No" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=922987086]
+[node name="No" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "No
 "
 
-[node name="Yes" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=66429493]
+[node name="Yes" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

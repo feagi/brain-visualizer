@@ -41,7 +41,7 @@ func CACHE_updated_2D_position(new_position: Vector2i) -> void:
 func _on_single_left_click() -> void:
 	if _dragged:
 		return
-	var is_multi := Input.is_physical_key_pressed(KEY_CTRL) or Input.is_physical_key_pressed(KEY_META) or Input.is_physical_key_pressed(KEY_SHIFT)
+	var is_multi := ModifierKeys.ctrl_or_meta_held() or ModifierKeys.shift_held()
 	if not is_multi:
 		var cb_parent = get_parent()
 		if cb_parent is CircuitBuilder:
@@ -52,9 +52,5 @@ func _on_single_left_click() -> void:
 
 
 func _setup_node_color() -> void:
-	var titlebar_box: StyleBoxFlat = StyleBoxFlat.new()
-	titlebar_box.bg_color = CLASSIFIER_BOX_COLOR
-	add_theme_stylebox_override("titlebar", titlebar_box)
-	var panel_box: StyleBoxFlat = StyleBoxFlat.new()
-	panel_box.bg_color = CLASSIFIER_BOX_COLOR
-	add_theme_stylebox_override("panel", panel_box)
+	add_theme_stylebox_override("titlebar", GraphNodeStyle.tinted(self, &"titlebar", CLASSIFIER_BOX_COLOR))
+	add_theme_stylebox_override("panel", GraphNodeStyle.tinted(self, &"panel", CLASSIFIER_BOX_COLOR))

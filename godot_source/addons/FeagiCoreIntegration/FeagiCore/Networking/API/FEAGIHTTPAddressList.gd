@@ -52,6 +52,9 @@ var GET_network_connection_info: StringName = "/v1/network/connection_info"
 var GET_input_vision: StringName = "/v1/input/vision"
 var GET_modulator_modulators: StringName = "/v1/modulator/modulators"
 var POST_modulator_modulator: StringName = "/v1/modulator/modulator"
+var PUT_modulator_modulator: StringName = "/v1/modulator/modulator"
+var PUT_modulator_rename: StringName = "/v1/modulator/rename"
+var GET_modulator_usage: StringName = "/v1/modulator/usage"
 
 # Post Requests
 var POST_feagi_burstEngine: StringName = "/v1/burst_engine/simulation_timestep"
@@ -63,6 +66,7 @@ var GET_genome_classifier: StringName = "/v1/cortical_area/classifier/{classifie
 var PUT_genome_classifier: StringName = "/v1/cortical_area/classifier/{classifier_id}"
 var DELETE_genome_classifier: StringName = "/v1/cortical_area/classifier/{classifier_id}"
 var POST_genome_classifier_field: StringName = "/v1/cortical_area/classifier/{classifier_id}/field"
+var POST_genome_classifier_answer_modulators: StringName = "/v1/cortical_area/classifier/{classifier_id}/answer_modulators"
 var DELETE_genome_classifier_field: StringName = "/v1/cortical_area/classifier/{classifier_id}/field"
 var POST_corticalArea_clone: StringName = "/v1/cortical_area/clone"
 var POST_genome_morphology: StringName = "/v1/morphology/morphology"
@@ -97,6 +101,8 @@ var PUT_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/corti
 var PUT_system_corticalAreaVisualizationSupressionThreshold: StringName = "v1/system/cortical_area_visualization_suppression_threshold"
 var PUT_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
 var PUT_corticalArea_reset: StringName = "/v1/cortical_area/reset"
+var PUT_corticalMapping_resetWeights: StringName = "/v1/cortical_mapping/reset_weights"
+var PUT_corticalArea_resetWeights: StringName = "/v1/cortical_area/reset_weights"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"

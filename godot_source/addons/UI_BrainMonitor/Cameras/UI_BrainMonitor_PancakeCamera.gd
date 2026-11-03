@@ -170,7 +170,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 		# BM Interactions
 		var held_bm_buttons: Array[UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON] = _mouse_bitmask_to_selection_array(event.button_mask)
-		if Input.is_key_pressed(key_to_select_neurons):
+		if ModifierKeys.is_key_held(key_to_select_neurons):
 			held_bm_buttons.append(UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.HOLD_TO_SELECT_NEURONS)
 		
 		if event is InputEventMouseButton:
@@ -270,7 +270,7 @@ func apply_key_input(event: InputEvent) -> void:
 			if Input.is_action_pressed("right"):
 				dir += Vector3(1, 0, 0)
 			var speed: float = TANK_CAMERA_MOVEMENT_SPEED
-			if Input.is_key_pressed(key_tank_fast_camera):
+			if ModifierKeys.is_key_held(key_tank_fast_camera):
 				speed *= TANK_CAMERA_FAST_MULTIPLIER
 			dir = dir.normalized() * speed
 			translate(dir)
@@ -330,7 +330,7 @@ func _process(delta):
 				float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))
 			).normalized()
 			
-			if Input.is_physical_key_pressed(KEY_SHIFT): # boost
+			if ModifierKeys.shift_held(): # boost
 				translate(direction * _fps_velocity * delta * FPS_BOOST_MULTIPLIER)
 			else:
 				translate(direction * _fps_velocity * delta)
@@ -367,7 +367,7 @@ func _apply_trackpad_scroll(pan_event: InputEventPanGesture) -> void:
 func _scroll_is_fast(event: InputEvent) -> bool:
 	if event != null and event.shift_pressed:
 		return true
-	if Input.is_key_pressed(KEY_SHIFT) or Input.is_physical_key_pressed(KEY_SHIFT):
+	if ModifierKeys.shift_held():
 		return true
 	var node: Node = self
 	while node != null:

@@ -10,6 +10,7 @@ func _initialize() -> void:
 	failures += _test_scripts_compile()
 	failures += _test_wire_values()
 	failures += _test_default_spans()
+	failures += _test_percent_rows_keep_decimals()
 	failures += _test_span_and_bounds()
 	failures += _test_visibility_and_locks()
 	failures += _test_menu_labels()
@@ -50,6 +51,21 @@ func _test_wire_values() -> int:
 	if not is_equal_approx(float(Model.ui_to_wire("neuron_excitability", -10)), 0.0):
 		push_error("excitability below 0 must clamp to 0")
 		return 1
+	if not is_equal_approx(float(Model.ui_to_wire("neuron_leak_coefficient", 25)), 0.25):
+		push_error("leak percent must be sent as a 0-1 fraction")
+		return 1
+	if not is_equal_approx(float(Model.ui_to_wire("neuron_leak_coefficient", 25.5)), 0.255):
+		push_error("leak 25.5 percent must be sent as 0.255 (no whole-percent rounding)")
+		return 1
+	if not is_equal_approx(float(Model.ui_to_wire("neuron_leak_coefficient", 250)), 1.0):
+		push_error("leak above 100 must clamp to 1")
+		return 1
+	if not is_equal_approx(float(Model.ui_to_wire("neuron_firing_threshold_limit", 2.5)), 2.5):
+		push_error("threshold limit must stay fractional (core takes a number)")
+		return 1
+	if int(Model.ui_to_wire("neuron_consecutive_fire_count", 70000)) != 65535:
+		push_error("consecutive fire count must clamp to the u16 maximum")
+		return 1
 	var excitability: Dictionary = Model.spec_by_id("neuron_excitability")
 	if not is_equal_approx(Model.clamp_ui_value(excitability, 140.0), 100.0):
 		push_error("excitability UI must stay at or below 100")
@@ -69,6 +85,14 @@ func _test_wire_values() -> int:
 		return 1
 	if bool(Model.ui_to_wire("neuron_mp_driven_psp", true)) != true:
 		push_error("MP-driven PSP must stay a bool")
+		return 1
+	return 0
+
+
+func _test_percent_rows_keep_decimals() -> int:
+	var leak: Dictionary = Model.spec_by_id("neuron_leak_coefficient")
+	if int(leak["decimals"]) < 1 or float(leak["step"]) > 0.1:
+		push_error("percent rows must show one decimal so 0.255 is not rounded to 26")
 		return 1
 	return 0
 

@@ -98,6 +98,7 @@ func _ready():
 		if _representing_region != null:
 			_combo.set_2d_context(self, _representing_region)
 		_sync_tab_menu_visibility()
+	AreaTypeLegend.add_to(self, CBNodeClassifier.CLASSIFIER_BOX_COLOR)
 	set_process(is_visible_in_tree())
 
 func _notification(what: int) -> void:
@@ -282,7 +283,7 @@ func _CACHE_add_cortical_area(area: AbstractCorticalArea) -> void:
 	cortical_node.node_moved.connect(_genome_object_moved)
 	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
 		var owner: GenomeClassifier = FeagiCore.feagi_local_cache.get_classifier_owning_area(area.cortical_ID)
-		if owner != null and (owner.is_class_output_id(area.cortical_ID) or owner.is_error_area_id(area.cortical_ID)):
+		if owner != null and (owner.is_class_output_id(area.cortical_ID) or owner.is_answer_area_id(area.cortical_ID)):
 			_CACHE_add_classifier_twin_visual(owner)
 	if not _cb_setup_in_progress:
 		_request_auto_layout_after_topology_change()
@@ -322,6 +323,7 @@ func _CACHE_remove_classifier(classifier: GenomeClassifier) -> void:
 	for twin_id in classifier.class_output_ids():
 		_classifier_twin_visual_ids.erase(twin_id)
 	_classifier_twin_visual_ids.erase(classifier.error_area_id)
+	_classifier_twin_visual_ids.erase(classifier.correct_area_id)
 	var node: CBNodeClassifier = _classifier_nodes[classifier.classifier_id]
 	_classifier_nodes.erase(classifier.classifier_id)
 	if node != null and is_instance_valid(node) and not node.is_queued_for_deletion():
@@ -1165,6 +1167,8 @@ func _cortical_type_to_label(cortical_type: AbstractCorticalArea.CORTICAL_AREA_T
 			return "MEMORY"
 		AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE:
 			return "CORE"
+		AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
+			return "MODULATOR"
 		_:
 			return "UNKNOWN"
 
@@ -1185,7 +1189,8 @@ func _bring_node_to_front_and_flash(node: GraphElement) -> void:
 	var rise_s: float = FOCUS_FLASH_DURATION_S * 0.22
 	var fall_s: float = FOCUS_FLASH_DURATION_S - rise_s
 	const FLASH_LERP_TO_WHITE: float = 0.88
-	var tween := create_tween()
+	# Bound to the flashed node so the tween dies with it (apply_lerp captures it).
+	var tween := create_tween().bind_node(node)
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
 	var apply_lerp := func(lerp_w: float) -> void:

@@ -28,6 +28,8 @@ layout_mode = 2
 [node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=891646938]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
 
 [node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1128914699]
 layout_mode = 2
@@ -67,11 +69,12 @@ layout_mode = 2
 
 [node name="GenericMappingDetailSettings" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=893255528 instance=ExtResource("4_n57ep")]
 visible = false
-custom_minimum_size = Vector2(2032, 0)
+custom_minimum_size = Vector2(1244, 0)
 layout_mode = 2
 
 [node name="GenericMappingDetailSettingsPartial" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1246793073 instance=ExtResource("6_yr7ns")]
 visible = false
+custom_minimum_size = Vector2(1244, 0)
 layout_mode = 2
 
 [node name="ButtonSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=591824299]

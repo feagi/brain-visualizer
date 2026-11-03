@@ -475,6 +475,14 @@ static func core_cluster_computed_feagi_position(cortical_id: Variant, power_anc
 	var offset_x: int = (my_idx - p_idx) * CORE_CLUSTER_FEAGI_SPACING_X
 	return power_anchor_feagi + Vector3i(offset_x, 0, 0)
 
+## Visual layout of the modulator trigger row, id -> FEAGI position, in cortical-ID order.
+## [param stored_positions] maps each modulator id to its stored FEAGI coordinates. With a [param power_anchor]
+## (Vector3i) the row continues the invariant core row one slot past its last core; with null it starts at the
+## first modulator's own stored coordinates. Positions are visual only and are never persisted.
+static func modulator_row_layout(stored_positions: Dictionary, power_anchor: Variant = null) -> Dictionary:
+	var first_slot: int = CORE_CLUSTER_ROW_ORDER.size() - CORE_CLUSTER_ROW_ORDER.find("power")
+	return preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_ModulatorRowLayout.gd").compute(stored_positions, CORE_CLUSTER_FEAGI_SPACING_X, first_slot, power_anchor)
+
 ## True when this area is a classifier class output (shape copied from its class input).
 func is_classifier_class_output() -> bool:
 	return _classifier_role == &"class_output"

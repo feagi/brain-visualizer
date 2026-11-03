@@ -36,11 +36,11 @@ static func parameter_specs() -> Array[Dictionary]:
 	return [
 		_bool_spec(&"neuron_mp_charge_accumulation", KEY_MP_ACCUMULATION, "MP charge accumulation", SECTION_FIRING, CACHE_FIRING, "neuron_mp_charge_accumulation", true, "Add incoming charge onto the current membrane potential."),
 		_number_spec(&"neuron_fire_threshold", KEY_FIRE_THRESHOLD, "Fire threshold", SECTION_FIRING, CACHE_FIRING, "neuron_fire_threshold", "float", 0.0, 20.0, 0.01, 3, false, "Membrane potential required for a neuron to fire."),
-		_number_spec(&"neuron_firing_threshold_limit", KEY_THRESHOLD_LIMIT, "Threshold limit", SECTION_FIRING, CACHE_FIRING, "neuron_firing_threshold_limit", "int", 0.0, 100.0, 1.0, 0, false, "Upper cap on the firing threshold."),
-		_number_spec(&"neuron_excitability", KEY_EXCITABILITY, "Excitability", SECTION_FIRING, CACHE_FIRING, "neuron_excitability", "percent", 0.0, 100.0, 1.0, 0, false, "Excitability from 0 to 100. Sent to FEAGI as 0 to 1."),
+		_number_spec(&"neuron_firing_threshold_limit", KEY_THRESHOLD_LIMIT, "Threshold limit", SECTION_FIRING, CACHE_FIRING, "neuron_firing_threshold_limit", "float", 0.0, 100.0, 0.01, 3, false, "Upper cap on the firing threshold. Fractions are allowed; 0 means no cap."),
+		_number_spec(&"neuron_excitability", KEY_EXCITABILITY, "Excitability", SECTION_FIRING, CACHE_FIRING, "neuron_excitability", "percent", 0.0, 100.0, 0.1, 1, false, "Excitability from 0 to 100. Stored and sent to FEAGI as a fraction from 0 to 1."),
 		_number_spec(&"neuron_refractory_period", KEY_REFRACTORY, "Refractory period", SECTION_FIRING, CACHE_FIRING, "neuron_refractory_period", "int", 0.0, 64.0, 1.0, 0, false, "Bursts a neuron stays silent after it fires."),
-		_number_spec(&"neuron_leak_coefficient", KEY_LEAK, "Leak", SECTION_FIRING, CACHE_FIRING, "neuron_leak_coefficient", "percent", 0.0, 100.0, 1.0, 0, true, "Percent of membrane potential removed each burst."),
-		_number_spec(&"neuron_consecutive_fire_count", KEY_CONSECUTIVE, "Consecutive fire count", SECTION_FIRING, CACHE_FIRING, "neuron_consecutive_fire_count", "int", 0.0, 64.0, 1.0, 0, false, "How many bursts a neuron may fire in a row."),
+		_number_spec(&"neuron_leak_coefficient", KEY_LEAK, "Leak", SECTION_FIRING, CACHE_FIRING, "neuron_leak_coefficient", "percent", 0.0, 100.0, 0.1, 1, true, "Percent of membrane potential removed each burst (0 to 100). Stored and sent to FEAGI as a fraction from 0 to 1."),
+		_number_spec(&"neuron_consecutive_fire_count", KEY_CONSECUTIVE, "Consecutive fire count", SECTION_FIRING, CACHE_FIRING, "neuron_consecutive_fire_count", "int", 0.0, 64.0, 1.0, 0, false, "Whole number of bursts a neuron may fire in a row (0 means unlimited, at most 65535)."),
 		_number_spec(&"neuron_snooze_period", KEY_SNOOZE, "Snooze period", SECTION_FIRING, CACHE_FIRING, "neuron_snooze_period", "int", 0.0, 64.0, 1.0, 0, false, "Bursts a neuron waits after hitting the consecutive-fire limit."),
 		_vector_spec(&"neuron_fire_threshold_increment_x", 0, "Threshold increment X"),
 		_vector_spec(&"neuron_fire_threshold_increment_y", 1, "Threshold increment Y"),
@@ -131,7 +131,10 @@ static func ui_to_wire(key: String, ui_value: Variant) -> Variant:
 		return _vector_components(ui_value)
 	if key == str(KEY_MP_ACCUMULATION) or key == str(KEY_PSP_UNIFORM) or key == str(KEY_MP_DRIVEN_PSP):
 		return bool(ui_value)
-	if key == str(KEY_THRESHOLD_LIMIT) or key == str(KEY_REFRACTORY) or key == str(KEY_CONSECUTIVE) or key == str(KEY_SNOOZE):
+	if key == str(KEY_CONSECUTIVE):
+		# Core stores this as a u16 count.
+		return clampi(int(round(float(ui_value))), 0, 65535)
+	if key == str(KEY_REFRACTORY) or key == str(KEY_SNOOZE):
 		return int(round(float(ui_value)))
 	return float(ui_value)
 

@@ -58,21 +58,10 @@ var plasticity_mode: String:
 ## Decay time constant (in bursts) for the eligibility trace under R-STDP. 0 means no temporal credit.
 var eligibility_decay_bursts: int:
 	get: return _eligibility_decay_bursts
-## Base64 cortical_id of the area whose density drives positive R(t) (empty when not configured)
-var reward_source_area: String:
-	get: return _reward_source_area
-## Base64 cortical_id of the area whose density drives negative R(t) (empty when not configured)
-var punishment_source_area: String:
-	get: return _punishment_source_area
-## Base64 cortical_id of the area whose firing gates propagation (empty = unconditional)
-var gate_source_area: String:
-	get: return _gate_source_area
-## Instance ids of synaptic modulators subscribed by this mapping rule.
+## Instance ids of synaptic modulators (gain, reward, learning rate, gate) subscribed by this mapping rule.
+## Gate, reward and punishment effects are all expressed this way; there are no per-rule source areas.
 var modulator_ids: Array[String]:
 	get: return _modulator_ids
-## True iff this rule subscribes to a modulator or still carries a legacy reward source.
-var has_reward_modulation: bool:
-	get: return not _modulator_ids.is_empty() or _reward_source_area != "" or _punishment_source_area != ""
 
 var _morphology_used: BaseMorphology
 var _scalar: Vector3i # must all be non-zero positive
@@ -85,9 +74,6 @@ var _plasticity_window: int
 var _synaptic_delay_bursts: int
 var _plasticity_mode: String = ""
 var _eligibility_decay_bursts: int = 0
-var _reward_source_area: String = ""
-var _punishment_source_area: String
-var _gate_source_area: String = ""
 var _modulator_ids: Array[String] = []
 
 ## Creates a mapping with default settings (given a morphology)
@@ -199,9 +185,8 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 	if morphology_cached.name == &"associative_memory":
 		plasticity = true
 	var delay_parsed: int = maxi(1, int(mapping_property.get("synaptic_delay_bursts", DEFAULT_SYNAPTIC_DELAY_BURSTS)))
-	var gate_area_used: String = String(mapping_property.get("gate_source_area", ""))
 	if !plasticity:
-		return SingleMappingDefinition.new(
+		var static_defn := SingleMappingDefinition.new(
 			morphology_cached,
 			scalar_used,
 			psp_multiplier,
@@ -211,12 +196,9 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 			DEFAULT_LTD_MULTIPLIER,
 			DEFAULT_PLASTICITY_WINDOW,
 			delay_parsed,
-			"",
-			0,
-			"",
-			"",
-			gate_area_used,
 		)
+		static_defn.set_modulator_ids(mapping_property.get("modulators", []))
+		return static_defn
 	var plasticity_constant_used: float = float(mapping_property.get("plasticity_constant", 0.0))
 	var LTP_multiplier_used: float = float(mapping_property.get("ltp_multiplier", 0.0))
 	var LTD_multiplier_used: float = float(mapping_property.get("ltd_multiplier", 0.0))
@@ -226,8 +208,6 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 	var plasticity_mode_raw: Variant = mapping_property.get("plasticity_mode", "")
 	var plasticity_mode_used: String = String(plasticity_mode_raw).to_lower() if plasticity_mode_raw != null else ""
 	var eligibility_decay_used: int = int(mapping_property.get("eligibility_decay_bursts", 0))
-	var reward_area_used: String = String(mapping_property.get("reward_source_area", ""))
-	var punishment_area_used: String = String(mapping_property.get("punishment_source_area", ""))
 	var defn := SingleMappingDefinition.new(
 		morphology_cached,
 		scalar_used,
@@ -241,9 +221,6 @@ static func _from_FEAGI_JSON_dict_rule(mapping_property: Dictionary) -> SingleMa
 	)
 	defn._plasticity_mode = plasticity_mode_used
 	defn._eligibility_decay_bursts = eligibility_decay_used
-	defn._reward_source_area = reward_area_used
-	defn._punishment_source_area = punishment_area_used
-	defn._gate_source_area = gate_area_used
 	defn.set_modulator_ids(mapping_property.get("modulators", []))
 	return defn
 
@@ -289,7 +266,7 @@ static func get_involved_morphologies(input_mappings: Array[SingleMappingDefinit
 
 ## Create Object
 ##
-## R-STDP fields are optional and default to "unset" (empty string / 0). When all four
+## R-STDP fields are optional and default to "unset" (empty string / 0). When the
 ## R-STDP params are left at their defaults, the resulting object behaves exactly like
 ## a legacy STDP definition: to_FEAGI_JSON() omits them and consumers fall back to the
 ## STDP path. This keeps the constructor backward compatible with all existing callers.
@@ -305,9 +282,6 @@ func _init(
 	synaptic_delay_bursts_: int = DEFAULT_SYNAPTIC_DELAY_BURSTS,
 	plasticity_mode_: String = "",
 	eligibility_decay_bursts_: int = 0,
-	reward_source_area_: String = "",
-	punishment_source_area_: String = "",
-	gate_source_area_: String = "",
 ):
 	_morphology_used = morphology
 	_scalar = positive_scalar
@@ -322,9 +296,6 @@ func _init(
 	_synaptic_delay_bursts = maxi(1, synaptic_delay_bursts_)
 	_plasticity_mode = plasticity_mode_.to_lower()
 	_eligibility_decay_bursts = maxi(0, eligibility_decay_bursts_)
-	_reward_source_area = reward_source_area_
-	_punishment_source_area = punishment_source_area_
-	_gate_source_area = gate_source_area_
 
 func set_modulator_ids(ids: Variant) -> void:
 	_modulator_ids.clear()
@@ -350,8 +321,6 @@ func to_FEAGI_JSON() -> Dictionary:
 			"plasticity_flag": _plasticity_flag,
 			"synaptic_delay_bursts": int(_synaptic_delay_bursts),
 		}
-		if _gate_source_area != "":
-			out["gate_source_area"] = _gate_source_area
 		if not _modulator_ids.is_empty():
 			out["modulators"] = _modulator_ids
 		return out
@@ -373,8 +342,6 @@ func to_FEAGI_JSON() -> Dictionary:
 			out["eligibility_decay_bursts"] = _eligibility_decay_bursts
 		if not _modulator_ids.is_empty():
 			out["modulators"] = _modulator_ids
-		if _gate_source_area != "":
-			out["gate_source_area"] = _gate_source_area
 		return out
 
 ## True when this rule can be written to FEAGI.

@@ -13,6 +13,7 @@ var _btn_move_3d: TextureButton
 var _btn_resize_3d: TextureButton
 var _btn_relocate_2d: TextureButton
 var _btn_arrange: ArrangeDropDown
+var _btn_reset_weights: TextureButton
 var _arrange_in_progress: bool = false
 var _close_requested_during_arrange: bool = false
 var _close_requested_clear_selection: bool = true
@@ -327,6 +328,7 @@ func setup(selection: Array[GenomeObject], context: SelectionSystem.SOURCE_CONTE
 							break
 				delete_button.tooltip_text = mix_reason if not mix_reason.is_empty() else "One or more of the selected objects cannot be deleted."
 			
+	_sync_reset_weights_button(reset_button)
 	# Position after mode-specific visibility/layout changes so vertical distance is consistent.
 	_fit_toolbar()
 	_apply_icon_tooltips()
@@ -453,6 +455,39 @@ func _button_reset() -> void:
 	close_window()
 
 
+## "Reset learned weights" sits right after Reset. Built from a copy of Reset so the scene stays untouched.
+## Offered for cortical area selections only (not classifiers or circuits).
+func _sync_reset_weights_button(reset_button: TextureButton) -> void:
+	if _btn_reset_weights == null:
+		_btn_reset_weights = reset_button.duplicate() as TextureButton
+		_btn_reset_weights.name = "ResetWeights"
+		_btn_reset_weights.modulate = Color(1.0, 0.75, 0.4)
+		reset_button.get_parent().add_child(_btn_reset_weights)
+		reset_button.get_parent().move_child(_btn_reset_weights, reset_button.get_index() + 1)
+		_btn_reset_weights.pressed.connect(_button_reset_weights)
+	var offered: bool = _mode in [GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA, GenomeObject.ARRAY_MAKEUP.MULTIPLE_CORTICAL_AREAS]
+	_btn_reset_weights.visible = offered
+	_btn_reset_weights.disabled = false
+	_btn_reset_weights.tooltip_text = "Reset learned weights (incoming mappings)..."
+
+## Resets learned synapse weights of all incoming mappings (PUT /v1/cortical_area/reset_weights), after a confirm.
+func _button_reset_weights() -> void:
+	var areas: Array[AbstractCorticalArea] = AbstractCorticalArea.genome_array_to_cortical_area_array(_selection)
+	if areas.is_empty() or FeagiCore == null or FeagiCore.requests == null:
+		BV.NOTIF.add_notification("No cortical areas selected to reset weights")
+		close_window()
+		return
+	var message: String = "Reset learned synapse weights on all incoming mappings of %d cortical area(s) to their initial weights?\nLearned weights are lost. Neuron state and genome are not changed." % areas.size()
+	var popup_definition: ConfigurablePopupDefinition = ConfigurablePopupDefinition.create_cancel_and_action_popup(
+		"Reset Learned Weights",
+		message,
+		FEAGIRequests.run_reset_area_weights.bind(areas),
+		"Reset Weights",
+		"Cancel"
+	)
+	BV.WM.spawn_popup(popup_definition)
+	close_window()
+
 ## The reset response does not push new ST/LT counts. Reload every open readout for these areas.
 func _publish_memory_reset(areas: Array[AbstractCorticalArea]) -> void:
 	var area_ids: Array[StringName] = AbstractCorticalArea.cortical_area_array_to_ID_array(areas)
@@ -529,6 +564,16 @@ func _button_open_3d_tab() -> void:
 	_debug_selection_state("_button_open_3d_tab before close")
 	close_window()
 
+## First 3D monitor for [param region], else for the nearest ancestor that has one.
+func _find_brain_monitor_up_from(region: BrainRegion) -> UI_BrainMonitor_3DScene:
+	var current: BrainRegion = region
+	while current != null:
+		var bm: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(current)
+		if bm != null:
+			return bm
+		current = current.current_parent_region
+	return null
+
 func _button_move_3d() -> void:
 	if _selection.size() == 0:
 		BV.NOTIF.add_notification("Please select something!")
@@ -588,15 +633,22 @@ func _button_move_3d() -> void:
 			))
 			close_window()
 			return
-		var bm_classifier: UI_BrainMonitor_3DScene = BV.UI.get_brain_monitor_for_region(stamp.current_parent_region)
+		# A classifier lives in its own circuit, drawn as a box with plates in that circuit's parent.
+		# Moving it there moves that circuit box. A stamp shown directly in its region moves as an area.
+		var host: BrainRegion = stamp.current_parent_region
+		var moves_circuit: bool = host.is_classifier_circuit and host.current_parent_region != null
+		var bm_classifier: UI_BrainMonitor_3DScene = _find_brain_monitor_up_from(host.current_parent_region if moves_circuit else host)
 		if bm_classifier == null:
 			BV.WM.spawn_popup(ConfigurablePopupDefinition.create_single_button_close_popup(
 				"Move (3D) Unavailable",
-				"No active 3D Brain Monitor found for this classifier.\n\nOpen a 3D tab for the parent circuit, then try again."
+				"No active 3D Brain Monitor shows this classifier.\n\nOpen a 3D tab for the circuit that contains it (or one of its parent circuits), then try again."
 			))
 			close_window()
 			return
-		bm_classifier.start_cortical_area_manipulation(stamp, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
+		if moves_circuit:
+			bm_classifier.start_brain_region_manipulation(host)
+		else:
+			bm_classifier.start_cortical_area_manipulation(stamp, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)
 		close_window(false)
 		return
 	if _mode != GenomeObject.ARRAY_MAKEUP.SINGLE_CORTICAL_AREA:
@@ -618,7 +670,7 @@ func _button_move_3d() -> void:
 		))
 		close_window()
 		return
-	if AbstractCorticalArea.is_reserved_system_core_area(area.cortical_ID):
+	if AbstractCorticalArea.is_reserved_system_core_area(area.cortical_ID) or area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR:
 		bm.start_core_cluster_cortical_manipulation(area)
 	else:
 		bm.start_cortical_area_manipulation(area, UI_BrainMonitor_3DScene.MANIPULATION_MODE.MOVE)

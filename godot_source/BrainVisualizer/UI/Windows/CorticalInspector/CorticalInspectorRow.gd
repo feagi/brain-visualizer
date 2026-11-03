@@ -132,7 +132,7 @@ func _build_slider_row() -> void:
 	_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_slider.custom_minimum_size = Vector2(140, 24)
 	_slider.step = float(_spec["step"])
-	if str(_spec["kind"]) == "int" or str(_spec["kind"]) == "percent":
+	if str(_spec["kind"]) == "int":
 		_slider.rounded = true
 	_slider.tooltip_text = str(_spec["tooltip"])
 	row.add_child(_slider)
@@ -147,7 +147,7 @@ func _build_slider_row() -> void:
 	_spin.custom_minimum_size = Vector2(120, 0)
 	_spin.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_spin.step = _micro_step()
-	_spin.rounded = str(_spec["kind"]) == "int" or str(_spec["kind"]) == "percent"
+	_spin.rounded = str(_spec["kind"]) == "int"
 	_spin.allow_greater = false
 	_spin.allow_lesser = false
 	_spin.tooltip_text = str(_spec["tooltip"])
@@ -213,8 +213,10 @@ func _on_spin_value(value: float) -> void:
 ## Arrow step is finer than the slider for fractional tunables, and 1 for integers.
 func _micro_step() -> float:
 	var kind := str(_spec["kind"])
-	if kind == "int" or kind == "percent":
+	if kind == "int":
 		return 1.0
+	if kind == "percent":
+		return 0.1
 	return float(_spec["step"]) / 10.0
 
 

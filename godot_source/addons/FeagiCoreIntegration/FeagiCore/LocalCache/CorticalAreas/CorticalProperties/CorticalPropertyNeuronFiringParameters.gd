@@ -2,13 +2,13 @@ extends RefCounted
 class_name CorticalPropertyNeuronFiringParameters
 
 signal neuron_mp_charge_accumulation_updated(val: bool, this_cortical_area: CoreCorticalArea)
-signal neuron_leak_coefficient_updated(val: int, this_cortical_area: CoreCorticalArea)
-signal neuron_leak_variability_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_leak_coefficient_updated(val: float, this_cortical_area: CoreCorticalArea)
+signal neuron_leak_variability_updated(val: float, this_cortical_area: CoreCorticalArea)
 signal neuron_refractory_period_updated(val: int, this_cortical_area: CoreCorticalArea)
 signal neuron_consecutive_fire_count_updated(val: int, this_cortical_area: CoreCorticalArea)
 signal neuron_snooze_period_updated(val: int, this_cortical_area: CoreCorticalArea)
 signal neuron_fire_threshold_updated(val: float, this_cortical_area: CoreCorticalArea)
-signal neuron_firing_threshold_limit_updated(val: int, this_cortical_area: CoreCorticalArea)
+signal neuron_firing_threshold_limit_updated(val: float, this_cortical_area: CoreCorticalArea)
 signal neuron_fire_threshold_increment_updated(val: Vector3, this_cortical_area: CoreCorticalArea)
 signal neuron_excitability_updated(val: int, this_cortical_area: CoreCorticalArea)
 
@@ -39,11 +39,11 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 	if "neuron_firing_threshold_limit" in data.keys(): 
 		var value = data["neuron_firing_threshold_limit"]
 		if value != null:
-			neuron_firing_threshold_limit = int(value)
+			neuron_firing_threshold_limit = float(value)
 	elif "firing_threshold_limit" in data.keys():
 		var value = data["firing_threshold_limit"]
 		if value != null:
-			neuron_firing_threshold_limit = int(value)
+			neuron_firing_threshold_limit = float(value)
 	
 	# Refractory Period - check both formats
 	if "neuron_refractory_period" in data.keys(): 
@@ -61,13 +61,13 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		if value != null:
 			# Convert from 0-1 range to 0-100 percentage for UI display
 			var leak_coefficient_float = float(value)
-			neuron_leak_coefficient = int(round(leak_coefficient_float * 100.0))
+			neuron_leak_coefficient = snappedf(leak_coefficient_float * 100.0, 0.1)
 	elif "leak_coefficient" in data.keys():
 		var value = data["leak_coefficient"]
 		if value != null:
 			# Convert from 0-1 range to 0-100 percentage for UI display
 			var leak_coefficient_float = float(value)
-			neuron_leak_coefficient = int(round(leak_coefficient_float * 100.0))
+			neuron_leak_coefficient = snappedf(leak_coefficient_float * 100.0, 0.1)
 	
 	# Leak Variability - check both formats
 	if "neuron_leak_variability" in data.keys(): 
@@ -75,13 +75,13 @@ func FEAGI_apply_detail_dictionary(data: Dictionary) -> void:
 		if value != null:
 			# Convert from 0-1 range to 0-100 percentage for UI display
 			var leak_variability_float = float(value)
-			neuron_leak_variability = int(round(leak_variability_float * 100.0))
+			neuron_leak_variability = snappedf(leak_variability_float * 100.0, 0.1)
 	elif "leak_variability" in data.keys():
 		var value = data["leak_variability"]
 		if value != null:
 			# Convert from 0-1 range to 0-100 percentage for UI display
 			var leak_variability_float = float(value)
-			neuron_leak_variability = int(round(leak_variability_float * 100.0))
+			neuron_leak_variability = snappedf(leak_variability_float * 100.0, 0.1)
 	
 	# Consecutive Fire Count - check both formats
 	if "neuron_consecutive_fire_count" in data.keys(): 
@@ -144,13 +144,13 @@ var neuron_mp_charge_accumulation: bool:
 	set(v):
 		_set_neuron_mp_charge_accumulation(v)
 
-var neuron_leak_coefficient: int:
+var neuron_leak_coefficient: float:
 	get:
 		return _neuron_leak_coefficient
 	set(v):
 		_set_neuron_leak_coefficient(v)
 
-var neuron_leak_variability: int:
+var neuron_leak_variability: float:
 	get:
 		return _neuron_leak_variability
 	set(v):
@@ -180,7 +180,7 @@ var neuron_fire_threshold: float:
 	set(v):
 		_set_neuron_fire_threshold(v)
 
-var neuron_firing_threshold_limit: int:
+var neuron_firing_threshold_limit: float:
 	get:
 		return _neuron_firing_threshold_limit
 	set(v):
@@ -199,13 +199,13 @@ var neuron_excitability: int = 0:
 		_set_neuron_excitability(v)
 
 var _neuron_mp_charge_accumulation: bool = false
-var _neuron_leak_coefficient: int = 0
-var _neuron_leak_variability: int = 0
+var _neuron_leak_coefficient: float = 0.0
+var _neuron_leak_variability: float = 0.0
 var _neuron_refractory_period: int = 0
 var _neuron_consecutive_fire_count: int = 0
 var _neuron_snooze_period: int = 0
 var _neuron_fire_threshold: float = 0
-var _neuron_firing_threshold_limit: int = 0
+var _neuron_firing_threshold_limit: float = 0.0
 var _neuron_fire_threshold_increment: Vector3 = Vector3(0,0,0)
 var _neuron_excitability: int = 0
 var _cortical_area: AbstractCorticalArea
@@ -219,13 +219,13 @@ func _set_neuron_mp_charge_accumulation(new_val: bool) -> void:
 	_neuron_mp_charge_accumulation = new_val
 	neuron_mp_charge_accumulation_updated.emit(new_val, _cortical_area)
 
-func _set_neuron_leak_coefficient(new_val: int) -> void:
+func _set_neuron_leak_coefficient(new_val: float) -> void:
 	if new_val == _neuron_leak_coefficient: 
 		return
 	_neuron_leak_coefficient = new_val
 	neuron_leak_coefficient_updated.emit(new_val, _cortical_area)
 
-func _set_neuron_leak_variability(new_val: int) -> void:
+func _set_neuron_leak_variability(new_val: float) -> void:
 	if new_val == _neuron_leak_variability: 
 		return
 	_neuron_leak_variability = new_val
@@ -255,7 +255,7 @@ func _set_neuron_fire_threshold(new_val: float) -> void:
 	_neuron_fire_threshold = new_val
 	neuron_fire_threshold_updated.emit(new_val, _cortical_area)
 
-func _set_neuron_firing_threshold_limit(new_val: int) -> void:
+func _set_neuron_firing_threshold_limit(new_val: float) -> void:
 	if new_val == _neuron_firing_threshold_limit: 
 		return
 	_neuron_firing_threshold_limit = new_val

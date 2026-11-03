@@ -50,6 +50,7 @@ func _make_classifier() -> GenomeClassifier:
 		"sample_memory_id": "smem",
 		"class_memory_id": "cmem",
 		"error_area_id": "err",
+		"correct_area_id": "ok",
 	})
 	return classifier
 
@@ -124,8 +125,8 @@ func _test_owns_internals_and_references_inputs() -> int:
 func _test_owned_area_ids_match_delete_contract() -> int:
 	var classifier: GenomeClassifier = _make_classifier()
 	var owned: Array[StringName] = classifier.owned_area_ids()
-	if owned.size() != 5 or owned[0] != &"smem" or owned[1] != &"cmem" or owned[2] != &"err" or owned[3] != &"out" or owned[4] != &"out-b":
-		push_error("owned_area_ids must be sample memory, class memory, error, then each class output")
+	if owned.size() != 6 or owned[0] != &"smem" or owned[1] != &"cmem" or owned[2] != &"err" or owned[3] != &"ok" or owned[4] != &"out" or owned[5] != &"out-b":
+		push_error("owned_area_ids must be sample memory, class memory, error, correct, then each class output")
 		return 1
 	var delete_path := "/v1/cortical_area/classifier/{classifier_id}".replace("{classifier_id}", str(classifier.classifier_id))
 	if delete_path != "/v1/cortical_area/classifier/clf-1":
@@ -471,6 +472,9 @@ func _test_classifier_plate_faces() -> int:
 	var outputs: Array[StringName] = GenomeClassifier.classifier_plate_output_ids(classifier)
 	if classifier.error_area_id not in outputs:
 		push_error("the error area must sit on the output plate")
+		return 1
+	if classifier.correct_area_id not in outputs:
+		push_error("the correct area must sit on the output plate")
 		return 1
 	if &"out" not in outputs or &"out-b" not in outputs:
 		push_error("each class output must sit on the output plate")

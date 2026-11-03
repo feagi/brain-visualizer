@@ -14,6 +14,7 @@ var _neuron_count: TextInput
 var _synapse_count: TextInput
 const COMBO_STYLER = preload("res://BrainVisualizer/UI/GenericElements/Buttons/ComboButtonStripStyler.gd")
 const FirstSectionTitles = preload("res://BrainVisualizer/UI/Top_Bar/TopBarFirstSectionTitles.gd")
+const ModulatorEffect = preload("res://BrainVisualizer/UI/Windows/CreateModulator/ModulatorEffect.gd")
 const PREFAB_BRAIN_OBJECTS_COMBO: PackedScene = preload("res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn")
 const GENOME_HISTORY_BUTTON: Script = preload("res://BrainVisualizer/UI/Top_Bar/TeamBranch/GenomeHistoryButton.gd")
 var _shared_combo: BrainObjectsCombo = null
@@ -305,12 +306,37 @@ func _wire_modulators() -> void:
 func _open_modulators() -> void:
 	if _shared_combo == null:
 		return
-	var items := _build_topbar_cortical_items(AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR)
+	var items: Array[Dictionary] = []
+	if FeagiCore.can_interact_with_feagi():
+		var response: FeagiRequestOutput = await FeagiCore.requests.list_modulators()
+		if response != null and not response.has_errored:
+			items = _build_topbar_modulator_items(response.decode_response_as_dict())
+	if not is_instance_valid(_shared_combo):
+		return
 	_shared_combo.open_category_list(_modulators_list(), items, "Filter modulators...", _on_modulator_chosen, _open_create_modulator, BrainObjectsCombo.ROOT_LIST_MODULATORS)
 
 
-func _on_modulator_chosen(area: AbstractCorticalArea) -> void:
-	_focus_cortical_from_topbar(area)
+## One item per FEAGI modulator instance, sorted by id: label "id (type)", payload {"id", "definition"}.
+## Reward-type modulators show Reward or Punishment from the sign of their strength.
+func _build_topbar_modulator_items(modulators: Dictionary) -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	var ids: Array = modulators.keys()
+	ids.sort_custom(func(a: Variant, b: Variant) -> bool:
+		return String(a).to_lower() < String(b).to_lower()
+	)
+	for id in ids:
+		var body: Variant = modulators[id]
+		if not body is Dictionary:
+			continue
+		items.append({
+			"label": "%s (%s)" % [id, ModulatorEffect.list_type_label(str(body.get("type", "")), float(body.get("magnitude_percent", 0)))],
+			"payload": {"id": str(id), "definition": body},
+		})
+	return items
+
+
+func _on_modulator_chosen(payload: Dictionary) -> void:
+	BV.WM.spawn_edit_modulator(str(payload.get("id", "")), payload.get("definition", {}), _modulators_list())
 
 
 func _open_create_modulator() -> void:
@@ -395,34 +421,16 @@ func _on_activity_visualization_mode_changed(action: StringName, enabled: bool) 
 
 func _toggle_global_neural_connections(enabled: bool) -> void:
 	print("🔗 Toggling global neural connections: ", enabled)
-	
-	# Find the brain monitor scene
-	var brain_monitor = _find_brain_monitor_scene()
-	if not brain_monitor:
+	var brain_monitor := _find_brain_monitor_scene() as UI_BrainMonitor_3DScene
+	if brain_monitor == null:
 		print("🔗 ❌ Could not find brain monitor scene")
 		return
-	
-	# Get all cortical area objects in the 3D scene
-	var cortical_area_objects = _find_all_cortical_area_objects(brain_monitor)
-	if cortical_area_objects.is_empty():
-		print("🔗 ❌ No cortical area objects found in brain monitor")
-		return
-	
-	
-	# Toggle connections for all cortical areas
-	for cortical_area_obj in cortical_area_objects:
-		if enabled:
-			# Show connections (simulate hover) with global mode
-			cortical_area_obj.set_hover_over_volume_state(true)
-		else:
-			# Hide connections (simulate unhover)
-			cortical_area_obj.set_hover_over_volume_state(false)
-	
+	brain_monitor.set_connection_inspector_latched(enabled)
 	if enabled:
-		print("🔗 ✅ Global neural connections ENABLED for ", cortical_area_objects.size(), " areas")
+		print("🔗 ✅ Global neural connections ENABLED")
 	else:
-		print("🔗 ❌ Global neural connections DISABLED for ", cortical_area_objects.size(), " areas")
-	BV.UI.set_connection_inspector_stop_overlay_visible(enabled)
+		print("🔗 ❌ Global neural connections DISABLED")
+	BV.UI.refresh_connection_inspector_stop_overlay()
 
 
 ## Turns off connection inspector from the bottom-right overlay; keeps top bar and monitor strip toggles in sync.
@@ -454,21 +462,6 @@ func _recursive_find_node_by_class(node: Node, target_class_name: String) -> Nod
 			return result
 	
 	return null
-
-func _find_all_cortical_area_objects(brain_monitor: Node) -> Array:
-	# Find all UI_BrainMonitor_CorticalArea objects in the brain monitor
-	var cortical_areas = []
-	_recursive_find_cortical_areas(brain_monitor, cortical_areas)
-	return cortical_areas
-
-func _recursive_find_cortical_areas(node: Node, cortical_areas: Array) -> void:
-	# Check if current node is a cortical area
-	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
-		cortical_areas.append(node)
-	
-	# Check children recursively
-	for child in node.get_children():
-		_recursive_find_cortical_areas(child, cortical_areas)
 
 func _theme_updated(new_theme: Theme) -> void:
 	theme = new_theme

@@ -123,7 +123,15 @@ func _is_fatigue_style_core_area_by_id(cortical_id: Variant) -> bool:
 		or AbstractCorticalArea.is_pain_area(cortical_id) \
 		or AbstractCorticalArea.is_pleasure_area(cortical_id) \
 		or AbstractCorticalArea.is_fear_area(cortical_id) \
-		or AbstractCorticalArea.is_hope_area(cortical_id)
+		or AbstractCorticalArea.is_hope_area(cortical_id) \
+		or _is_modulator_area_by_id(cortical_id)
+
+## Modulator trigger areas share the pain/pleasure core billboard look. Resolved from the cached area type.
+func _is_modulator_area_by_id(cortical_id: Variant) -> bool:
+	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return false
+	var area: Variant = FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.get(StringName(cortical_id))
+	return area is AbstractCorticalArea and (area as AbstractCorticalArea).cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR
 
 func _is_fatigue_style_core_area(area: AbstractCorticalArea) -> bool:
 	return _is_fatigue_style_core_area_by_id(area.cortical_ID)
@@ -915,7 +923,7 @@ func _apply_fatigue_billboard_idle_state() -> void:
 	var cortical_idle := Color(0.172451, 0.315246, 0.861982, 0.8)
 	_fatigue_billboard_material.albedo_color = cortical_idle
 	_fatigue_billboard_material.emission_enabled = true
-	_fatigue_billboard_material.emission = Color(0.172451, 0.315246, 0.861982, 1.0)
+	_fatigue_billboard_material.emission = Color(cortical_idle, 1.0)
 	_fatigue_billboard_material.emission_energy = 0.3
 
 func _apply_fatigue_billboard_firing_state() -> void:

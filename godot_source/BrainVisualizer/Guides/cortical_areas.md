@@ -283,6 +283,7 @@ The type list in **Add modulator** uses these ids:
 - **synaptic.transmission_gain**: raises or lowers the postsynaptic effect of a mapping
 - **synaptic.reward**: sends a reward signal into R-STDP learning on a mapping. Positive magnitude is pleasure. Negative magnitude is pain
 - **synaptic.learning_rate**: raises or lowers the learning rate of a mapping
+- **memory.formation**: on a memory area, a magnitude of -100% (0x) stops new memory neurons forming. Existing memories still fire and age
 
 ### Add a modulator
 

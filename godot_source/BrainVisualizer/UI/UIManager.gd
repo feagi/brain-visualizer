@@ -374,6 +374,150 @@ func set_live_inspector_stop_overlay(enabled: bool) -> void:
 	set_connection_inspector_stop_overlay_visible(false)
 
 
+## Bare backtick toggles mappings on the active 3D scene under the pointer.
+## Other scenes stay as they are. No scene under the pointer means the key does nothing.
+func toggle_connection_inspector() -> void:
+	var target := _brain_monitor_for_connection_inspector_shortcut()
+	if target == null:
+		return
+	var enable := not target.is_connection_inspector_latched()
+	if enable:
+		clear_live_voxel_inspector()
+	_set_connection_inspector_enabled_for_brain_monitor(target, enable)
+	_sync_connection_inspector_toggle_for_brain_monitor(target, enable)
+	refresh_connection_inspector_stop_overlay()
+
+
+## Shows Stop Inspector while any scene still has the connection inspector latched.
+func refresh_connection_inspector_stop_overlay() -> void:
+	if _stop_overlay_for_live_inspector:
+		return
+	set_connection_inspector_stop_overlay_visible(_any_connection_inspector_latched())
+
+
+func _any_connection_inspector_latched() -> bool:
+	for brain_monitor in _find_all_brain_monitors_in_scene_tree():
+		if brain_monitor != null and is_instance_valid(brain_monitor) and brain_monitor.is_connection_inspector_latched():
+			return true
+	return false
+
+
+## The visible, active Brain Monitor the pointer is on.
+## The control under the pointer wins, so a scene behind the split or another view does not.
+## The main scene clears its hover flag while the pointer is still on it, so that view uses its rect.
+func _brain_monitor_for_connection_inspector_shortcut() -> UI_BrainMonitor_3DScene:
+	var ordered: Array[UI_BrainMonitor_3DScene] = []
+	var candidates: Array = []
+	for brain_monitor in _find_all_brain_monitors_in_scene_tree():
+		if brain_monitor == null or not is_instance_valid(brain_monitor):
+			continue
+		ordered.append(brain_monitor)
+		candidates.append({
+			KeybindCatalog.SCENE_VISIBLE: brain_monitor.is_visible_in_tree(),
+			KeybindCatalog.SCENE_POINTER_INSIDE: _pointer_is_on_brain_monitor(brain_monitor),
+			KeybindCatalog.SCENE_ACTIVE: _brain_monitor_is_active_scene(brain_monitor),
+			KeybindCatalog.SCENE_COVERED: _root_scene_covered_at_pointer(brain_monitor),
+			KeybindCatalog.SCENE_AREA: brain_monitor.get_global_rect().get_area(),
+		})
+	var index := KeybindCatalog.connection_inspector_target_index(candidates)
+	if index < 0 or index >= ordered.size():
+		return null
+	return ordered[index]
+
+
+## True when this scene is the one under the pointer.
+## Tab scenes report themselves as the hovered control. The main scene often does not.
+func _pointer_is_on_brain_monitor(brain_monitor: UI_BrainMonitor_3DScene) -> bool:
+	if brain_monitor == null or not is_instance_valid(brain_monitor) or not brain_monitor.is_visible_in_tree():
+		return false
+	if _root_scene_covered_at_pointer(brain_monitor):
+		return false
+	var hovered_control := get_viewport().gui_get_hovered_control()
+	if _brain_monitor_ancestor(hovered_control) == brain_monitor:
+		return true
+	var subviewport := brain_monitor.get_node_or_null("SubViewport") as SubViewport
+	if subviewport != null and _pointer_inside_control(brain_monitor):
+		if _brain_monitor_ancestor(subviewport.gui_get_hovered_control()) == brain_monitor:
+			return true
+	if brain_monitor.is_pointer_over_view() and _pointer_inside_control(brain_monitor):
+		return true
+	# mouse_exited runs on the main scene while the 3D view is still under the pointer.
+	if brain_monitor != temp_root_bm or not _pointer_inside_control(brain_monitor):
+		return false
+	return not _pointer_is_on_blocking_chrome(hovered_control)
+
+
+## The top bar and floating windows sit over the main scene. Backtick there is not for that scene.
+func _pointer_is_on_blocking_chrome(hovered_control: Control) -> bool:
+	if hovered_control == null:
+		return false
+	if hovered_control is LineEdit or hovered_control is TextEdit:
+		return true
+	var current: Node = hovered_control
+	while current != null:
+		if current == _top_bar or current is BaseDraggableWindow:
+			return true
+		current = current.get_parent()
+	return false
+
+
+func _brain_monitor_ancestor(node: Node) -> UI_BrainMonitor_3DScene:
+	var current := node
+	while current != null:
+		if current is UI_BrainMonitor_3DScene:
+			return current as UI_BrainMonitor_3DScene
+		current = current.get_parent()
+	return null
+
+
+func _pointer_inside_control(control: Control) -> bool:
+	if control == null or not is_instance_valid(control) or not control.is_visible_in_tree():
+		return false
+	var rect := control.get_global_rect()
+	if rect.size.x < 1.0 or rect.size.y < 1.0:
+		return false
+	if rect.has_point(control.get_global_mouse_position()):
+		return true
+	# The main scene is parented under a plain Node, so its own mouse position can disagree with the window.
+	var viewport := control.get_viewport()
+	if viewport == null:
+		return false
+	return rect.has_point(viewport.get_mouse_position())
+
+
+## A tab scene is active only while its tab is the current one. The main scene and floating views are active while visible.
+func _brain_monitor_is_active_scene(brain_monitor: UI_BrainMonitor_3DScene) -> bool:
+	if brain_monitor == null or not is_instance_valid(brain_monitor) or not brain_monitor.is_visible_in_tree():
+		return false
+	var current: Node = brain_monitor.get_parent()
+	while current != null:
+		if current is UITabContainer:
+			var tab_container := current as UITabContainer
+			if tab_container.get_tab_count() <= 0:
+				return false
+			var current_control := tab_container.get_tab_control(tab_container.current_tab)
+			if current_control == null:
+				return false
+			return current_control == brain_monitor or current_control.is_ancestor_of(brain_monitor)
+		current = current.get_parent()
+	return true
+
+
+## The main scene draws behind the split. It is not the scene under the pointer while the pointer is on that split.
+func _root_scene_covered_at_pointer(brain_monitor: UI_BrainMonitor_3DScene) -> bool:
+	if brain_monitor != temp_root_bm or not is_split_view_open():
+		return false
+	return _pointer_inside_control(get_node_or_null("CB_Holder") as Control)
+
+
+func _top_bar_activity_dropdown() -> ActivityVisualizationDropDown:
+	if _top_bar == null:
+		return null
+	return _top_bar.get_node_or_null(
+		"TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown"
+	) as ActivityVisualizationDropDown
+
+
 ## Hard-stops Connection inspector regardless of which toolbar instance enabled it.
 ## This is used by the floating stop button to reliably clear inspector arcs in the active monitor tab.
 func stop_connection_inspector() -> void:
@@ -392,31 +536,30 @@ func _set_connection_inspector_enabled_for_all_brain_monitors(enabled: bool) -> 
 		_set_connection_inspector_enabled_for_brain_monitor(brain_monitor, enabled)
 
 
-## Forces all cortical area visuals in one monitor to update the global connection hover state.
+## Forces one monitor to draw every mapping, or return that scene to pointer hover.
 func _set_connection_inspector_enabled_for_brain_monitor(brain_monitor: UI_BrainMonitor_3DScene, enabled: bool) -> void:
-	if brain_monitor == null:
+	if brain_monitor == null or not is_instance_valid(brain_monitor):
 		return
-	var cortical_area_objects: Array = []
-	_collect_brain_monitor_cortical_area_nodes(brain_monitor, cortical_area_objects)
-	for cortical_area_obj in cortical_area_objects:
-		cortical_area_obj.set_hover_over_volume_state(enabled)
+	brain_monitor.set_connection_inspector_latched(enabled)
 
 
-func _collect_brain_monitor_cortical_area_nodes(node: Node, cortical_areas: Array) -> void:
-	if node.get_script() and node.get_script().get_global_name() == "UI_BrainMonitor_CorticalArea":
-		cortical_areas.append(node)
-	for child in node.get_children():
-		_collect_brain_monitor_cortical_area_nodes(child, cortical_areas)
+## Matches the inspector button for this scene only. The top bar belongs to the main scene.
+func _sync_connection_inspector_toggle_for_brain_monitor(brain_monitor: UI_BrainMonitor_3DScene, enabled: bool) -> void:
+	if brain_monitor == null or not is_instance_valid(brain_monitor):
+		return
+	brain_monitor.sync_connection_inspector_combo(enabled)
+	if brain_monitor != temp_root_bm:
+		return
+	var top_bar_dropdown := _top_bar_activity_dropdown()
+	if top_bar_dropdown != null:
+		top_bar_dropdown.set_connection_inspector_enabled(enabled)
 
 
 ## Keeps all inspector toggle controls (top bar and per-tab strips) in sync after a forced stop.
 func _sync_connection_inspector_toggle_visuals(enabled: bool) -> void:
-	if _top_bar != null:
-		var top_bar_dropdown: ActivityVisualizationDropDown = _top_bar.get_node_or_null(
-			"TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown"
-		) as ActivityVisualizationDropDown
-		if top_bar_dropdown != null:
-			top_bar_dropdown.set_connection_inspector_enabled(enabled)
+	var top_bar_dropdown := _top_bar_activity_dropdown()
+	if top_bar_dropdown != null:
+		top_bar_dropdown.set_connection_inspector_enabled(enabled)
 	var combos: Array[BrainObjectsCombo] = _find_all_brain_objects_combo_nodes()
 	for combo in combos:
 		if combo == null or not is_instance_valid(combo):
@@ -2071,6 +2214,7 @@ func _apply_escape_selection_action(action: int, monitors: Array[UI_BrainMonitor
 
 
 func _input(event):
+	ModifierKeys.update_from_event(event) # source of truth for modifier state; never consumes the event
 	if FeagiCore.feagi_settings == null:
 		return
 	
@@ -2116,6 +2260,20 @@ func _input(event):
 					return
 				get_viewport().set_input_as_handled()
 				_toggle_keybinds()
+				return
+			if KeybindCatalog.is_connection_inspector_shortcut(
+				keyboard_event.keycode,
+				keyboard_event.physical_keycode,
+				keyboard_event.ctrl_pressed or keyboard_event.meta_pressed,
+				keyboard_event.shift_pressed,
+				keyboard_event.alt_pressed,
+				true,
+				false
+			):
+				if _keybinds_shortcut_blocked_by_text():
+					return
+				get_viewport().set_input_as_handled()
+				toggle_connection_inspector()
 				return
 			var split_digit: int = KeybindCatalog.split_layout_digit(
 				keyboard_event.keycode,
@@ -2549,7 +2707,7 @@ func _update_screen_size():
 
 ## Used to reposition notifications so they dont intersect with top bar
 func _top_bar_resized() -> void:
-	_notification_system.position.y = _top_bar.size.y + _top_bar.position.y
+	_notification_system.place_below_top_bar(_top_bar.position.y + _top_bar.size.y)
 	if has_node("/root/BrainVisualizer/UIManager/CB_Holder"):
 		$CB_Holder.offset_top = _top_bar.position.y + _top_bar.size.y + 8
 

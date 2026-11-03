@@ -18,6 +18,7 @@ var _vector: Vector3iSpinboxField
 var _sample_inputs_value: LineEdit
 var _class_outputs_value: LineEdit
 var _error_area_value: LineEdit
+var _correct_area_value: LineEdit
 var _update_button: Button
 var _editing_classifier: GenomeClassifier
 var _region_ids: Array[StringName] = []
@@ -36,10 +37,19 @@ var _learn_row: HBoxContainer
 var _confidence_row: HBoxContainer
 var _kernel_memory_count: IntInput
 var _class_memory_count: IntInput
-var _kernel_memory_apply: Button
-var _class_memory_apply: Button
 var _memory_count_generation: int = 0
-var _associative_apply: Button
+## Sections the user changed since opening; Update applies each of them before closing.
+var _dirty_sections: Dictionary = {}
+var _reward_row: HBoxContainer
+var _punishment_row: HBoxContainer
+## Positive Reward modulators the classifier learns from, including its correct-answer one.
+var _reward_sources: MappingEditorModulatorChips
+## Negative Reward modulators the classifier learns from, including its error one.
+var _punishment_sources: MappingEditorModulatorChips
+## Reward sources as last applied, to tell a user change from a listing refresh.
+var _applied_sources: Array[String] = []
+## False until the rows are filled from the classifier, so early listing refreshes are not edits.
+var _sources_loaded: bool = false
 
 
 func _ready() -> void:
@@ -123,6 +133,8 @@ func _build_classifier_fields() -> void:
 	form.add_child(_labeled("Sample Inputs", _sample_inputs_value))
 	form.add_child(_labeled("Class Outputs", _class_outputs_value))
 	form.add_child(_labeled("Error Area", _error_area_value))
+	_correct_area_value = _read_only_line(_editing_classifier.details_rows(), "correct_area")
+	form.add_child(_labeled("Correct Area", _correct_area_value))
 
 	_kernel_memory_count = _make_memory_count_field()
 	_class_memory_count = _make_memory_count_field()
@@ -132,21 +144,21 @@ func _build_classifier_fields() -> void:
 	_show_cached_memory_count(_class_memory_count, _editing_classifier.class_memory_id)
 	_refresh_memory_counts()
 
-	_kernel_memory_apply = _add_memory_section(
+	_dirty_sections.clear()
+	_add_memory_section(
 		form,
 		_Tunables.SECTION_KERNEL_MEMORY,
 		_editing_classifier.sample_memory_id,
-		_kernel_memory_fields,
-		_on_apply_kernel_memory
+		_kernel_memory_fields
 	)
-	_class_memory_apply = _add_memory_section(
+	_add_memory_section(
 		form,
 		_Tunables.SECTION_CLASS_MEMORY,
 		_editing_classifier.class_memory_id,
-		_class_memory_fields,
-		_on_apply_class_memory
+		_class_memory_fields
 	)
-	_associative_apply = _add_associative_section(form)
+	_add_associative_section(form)
+	_add_reward_section(form)
 
 	var buttons := HBoxContainer.new()
 	var help := Button.new()
@@ -157,9 +169,11 @@ func _build_classifier_fields() -> void:
 	button_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var cancel := Button.new()
 	cancel.text = "Cancel"
+	cancel.tooltip_text = "Close this window and discard any edits you have not applied."
 	cancel.pressed.connect(_on_press_cancel)
 	_update_button = Button.new()
 	_update_button.text = "Update"
+	_update_button.tooltip_text = "Apply every changed section to this classifier in FEAGI, then close the window."
 	_update_button.pressed.connect(_on_press_update)
 	buttons.add_child(help)
 	buttons.add_child(button_spacer)
@@ -181,6 +195,9 @@ func _labeled(label_text: String, control: Control, tooltip: String = "") -> HBo
 	label.text = label_text
 	label.custom_minimum_size = Vector2(220, 0)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# Wrap instead of widening, so a long label never pushes its control out of the value column.
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var tip: String = _Tunables.wrap_tooltip(tooltip) if not tooltip.is_empty() else _Tunables.setting_tooltip(label_text)
 	if not tip.is_empty():
 		row.tooltip_text = tip
@@ -254,8 +271,8 @@ func _apply_explorer_area(option: OptionButton, shared_options: Array[OptionButt
 	if index < 0:
 		return
 	option.select(index)
-	if marks_associative and _associative_apply != null:
-		_associative_apply.disabled = false
+	if marks_associative:
+		_dirty_sections[_Tunables.SECTION_REWARD] = true
 
 
 func _add_collapsible(parent: Control, title: String, tooltip: String = "") -> Dictionary:
@@ -392,9 +409,8 @@ func _add_memory_section(
 	parent: Control,
 	title: String,
 	area_id: StringName,
-	field_store: Dictionary,
-	apply_callback: Callable
-) -> Button:
+	field_store: Dictionary
+) -> void:
 	var section_pack: Dictionary = _add_collapsible(parent, title, _Tunables.section_tooltip(title))
 	var holder: VBoxContainer = section_pack["holder"]
 	var area: AbstractCorticalArea = _cached_area(area_id)
@@ -403,26 +419,18 @@ func _add_memory_section(
 		missing.text = "Memory area is not in cache."
 		holder.add_child(missing)
 	var params: CorticalPropertyMemoryParameters = _memory_parameters(area)
-	for spec in _Tunables.MEMORY_FIELD_SPECS:
+	for spec in _Tunables.memory_specs_for_section(title):
 		var key: String = String(spec["key"])
 		var control: Control = _make_spec_control(spec)
 		field_store[key] = control
 		holder.add_child(_labeled(String(spec["label"]), control, String(spec.get("tooltip", ""))))
-		_apply_spec_value(control, spec, _memory_spec_value(params, spec))
-	var apply := Button.new()
-	apply.text = "Apply Update"
-	apply.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	apply.disabled = area == null
-	apply.pressed.connect(apply_callback)
-	holder.add_child(apply)
+		_apply_spec_value(control, spec, _memory_spec_value(area, params, spec))
 	if area != null:
-		_wire_section_dirty(field_store, apply)
-		apply.disabled = true
+		_wire_section_dirty(field_store, title)
 	_close_section(section_pack)
-	return apply
 
 
-func _add_associative_section(parent: Control) -> Button:
+func _add_associative_section(parent: Control) -> void:
 	var section_pack: Dictionary = _add_collapsible(parent, _Tunables.SECTION_ASSOCIATIVE, _Tunables.section_tooltip(_Tunables.SECTION_ASSOCIATIVE))
 	var holder: VBoxContainer = section_pack["holder"]
 	var mapping: SingleMappingDefinition = _first_associative_mapping()
@@ -436,11 +444,19 @@ func _add_associative_section(parent: Control) -> Button:
 		_associative_fields[key] = control
 		holder.add_child(_labeled(String(spec["label"]), control, String(spec.get("tooltip", ""))))
 		_apply_spec_value(control, spec, _associative_spec_value(mapping, spec))
+	if mapping != null:
+		_wire_section_dirty(_associative_fields, _Tunables.SECTION_ASSOCIATIVE)
+	_close_section(section_pack)
+
+
+func _add_reward_section(parent: Control) -> void:
+	var section_pack: Dictionary = _add_collapsible(parent, _Tunables.SECTION_REWARD, _Tunables.section_tooltip(_Tunables.SECTION_REWARD))
+	var holder: VBoxContainer = section_pack["holder"]
 	_reward_toggle = ToggleButton.new()
 	_Tunables.configure_theme_toggle(_reward_toggle)
 	if _editing_classifier != null:
 		_reward_toggle.set_toggle_no_signal(_editing_classifier.reward_training)
-	holder.add_child(_labeled("Reward Training", _reward_toggle))
+	holder.add_child(_labeled("Learn from right/wrong answers", _reward_toggle))
 	_feedback_option = OptionButton.new()
 	_feedback_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_latency_field = IntInput.new()
@@ -449,45 +465,104 @@ func _add_associative_section(parent: Control) -> Button:
 	_latency_field.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_latency_field.min_value = 0
 	_latency_field.current_int = _editing_classifier.answer_latency_bursts if _editing_classifier != null else 0
-	_latency_row = _labeled("Answer Latency", _latency_field)
+	_latency_row = _labeled("Answer delay (bursts)", _latency_field)
 	_learn_option = OptionButton.new()
 	_learn_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_confidence_option = OptionButton.new()
 	_confidence_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var reward_options: Array[OptionButton] = [_feedback_option, _learn_option, _confidence_option]
-	_feedback_row = _labeled_cortical_area("Answer Area", _feedback_option, reward_options, _feedback_area_ids, true)
+	_feedback_row = _labeled_cortical_area("Correct answer from", _feedback_option, reward_options, _feedback_area_ids, true)
 	holder.add_child(_feedback_row)
 	holder.add_child(_latency_row)
-	_learn_row = _labeled_cortical_area("Learn Area", _learn_option, reward_options, _feedback_area_ids, true)
+	_learn_row = _labeled_cortical_area("Learn only while this fires", _learn_option, reward_options, _feedback_area_ids, true)
 	holder.add_child(_learn_row)
-	_confidence_row = _labeled_cortical_area("Confidence Area", _confidence_option, reward_options, _feedback_area_ids, true)
+	_confidence_row = _labeled_cortical_area("Confidence output", _confidence_option, reward_options, _feedback_area_ids, true)
 	holder.add_child(_confidence_row)
 	_populate_feedback_options()
+	_reward_sources = _make_sources_chips(1)
+	_punishment_sources = _make_sources_chips(-1)
+	_reward_row = _labeled("Reward", _reward_sources, _Tunables.setting_tooltip("Reward"))
+	_punishment_row = _labeled("Punishment", _punishment_sources, _Tunables.setting_tooltip("Punishment"))
+	holder.add_child(_reward_row)
+	holder.add_child(_punishment_row)
+	_applied_sources = _classifier_reward_sources()
+	_split_sources_into_rows()
 	_apply_reward_visibility()
-	var apply := Button.new()
-	apply.text = "Apply Update"
-	apply.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	apply.disabled = mapping == null
-	apply.pressed.connect(_on_apply_associative)
-	holder.add_child(apply)
-	if mapping != null:
-		_wire_section_dirty(_associative_fields, apply)
-		if _reward_toggle != null:
-			_reward_toggle.toggled.connect(func(_pressed: bool) -> void:
-				apply.disabled = false
-				_apply_reward_visibility()
-			)
-		if _feedback_option != null:
-			_feedback_option.item_selected.connect(func(_index: int) -> void: apply.disabled = false)
-		if _latency_field != null and _latency_field.has_signal("user_interacted"):
-			_latency_field.user_interacted.connect(func() -> void: apply.disabled = false)
-		if _learn_option != null:
-			_learn_option.item_selected.connect(func(_index: int) -> void: apply.disabled = false)
-		if _confidence_option != null:
-			_confidence_option.item_selected.connect(func(_index: int) -> void: apply.disabled = false)
-		apply.disabled = true
+	var mark_dirty := func() -> void: _dirty_sections[_Tunables.SECTION_REWARD] = true
+	_reward_toggle.toggled.connect(func(_pressed: bool) -> void:
+		mark_dirty.call()
+		_apply_reward_visibility()
+	)
+	_feedback_option.item_selected.connect(func(_index: int) -> void: mark_dirty.call())
+	if _latency_field.has_signal("user_interacted"):
+		_latency_field.user_interacted.connect(mark_dirty)
+	_learn_option.item_selected.connect(func(_index: int) -> void: mark_dirty.call())
+	_confidence_option.item_selected.connect(func(_index: int) -> void: mark_dirty.call())
+	for chips in [_reward_sources, _punishment_sources]:
+		chips.subscriptions_changed.connect(func() -> void:
+			# Ignore listing refreshes before the rows are filled, and refreshes that change nothing.
+			if _sources_loaded and _Tunables.sources_changed(_selected_sources(), _applied_sources):
+				mark_dirty.call()
+		)
 	_close_section(section_pack)
-	return apply
+
+
+## Multi-select of Reward modulators of one sign, the same chips as a mapping row.
+func _make_sources_chips(magnitude_sign: int) -> MappingEditorModulatorChips:
+	var chips := MappingEditorModulatorChips.new()
+	chips.allowed_types = [MappingEditorModulatorChips.TYPE_REWARD]
+	chips.magnitude_sign = magnitude_sign
+	chips.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return chips
+
+
+## Puts each applied source in the Reward or Punishment row by its magnitude sign.
+## First makes sure the classifier's own correct-answer and error modulators exist, so both
+## rows can offer them before the first Apply.
+func _split_sources_into_rows() -> void:
+	_sources_loaded = false
+	var magnitudes: Dictionary = {}
+	if FeagiCore != null and FeagiCore.requests != null and FeagiCore.can_interact_with_feagi():
+		var ensured: FeagiRequestOutput = await FeagiCore.requests.ensure_classifier_answer_modulators(_editing_classifier)
+		if not is_instance_valid(self):
+			return
+		if ensured != null and ensured.success:
+			_applied_sources = _Tunables.default_sources(_applied_sources, ensured.decode_response_as_dict())
+			_correct_area_value.text = _details_value(_editing_classifier.details_rows(), "correct_area")
+		_reward_sources.refresh_known_modulators()
+		_punishment_sources.refresh_known_modulators()
+		var response: FeagiRequestOutput = await FeagiCore.requests.list_modulators()
+		if not is_instance_valid(self):
+			return
+		if response != null and not response.has_errored and not response.failed_requirement:
+			var listing: Dictionary = response.decode_response_as_dict()
+			for id in listing.keys():
+				if listing[id] is Dictionary:
+					magnitudes[str(id)] = float((listing[id] as Dictionary).get("magnitude_percent", 0.0))
+	var split: Dictionary = _Tunables.split_sources_by_sign(_applied_sources, magnitudes)
+	_reward_sources.set_ids(split["reward"])
+	_punishment_sources.set_ids(split["punishment"])
+	_sources_loaded = true
+
+
+## Reward then Punishment ids, sorted.
+func _selected_sources() -> Array[String]:
+	var ids: Array[String] = []
+	if _reward_sources != null:
+		ids.append_array(_reward_sources.get_ids())
+	if _punishment_sources != null:
+		ids.append_array(_punishment_sources.get_ids())
+	ids.sort()
+	return ids
+
+
+func _classifier_reward_sources() -> Array[String]:
+	var ids: Array[String] = []
+	if _editing_classifier != null:
+		for id in _editing_classifier.reward_modulator_ids:
+			ids.append(String(id))
+	ids.sort()
+	return ids
 
 
 func _make_spec_control(spec: Dictionary) -> Control:
@@ -524,17 +599,21 @@ func _apply_spec_value(control: Control, spec: Dictionary, value: Variant) -> vo
 		(control as IntInput).current_int = int(value)
 
 
-func _wire_section_dirty(fields: Dictionary, apply: Button) -> void:
+func _wire_section_dirty(fields: Dictionary, section: String) -> void:
 	for control in fields.values():
 		if control == null:
 			continue
 		if (control as Variant).has_signal("user_interacted"):
-			(control as Variant).user_interacted.connect(func() -> void: apply.disabled = false)
+			(control as Variant).user_interacted.connect(func() -> void: _dirty_sections[section] = true)
 		if control is ToggleButton:
-			(control as ToggleButton).toggled.connect(func(_pressed: bool) -> void: apply.disabled = false)
+			(control as ToggleButton).toggled.connect(func(_pressed: bool) -> void: _dirty_sections[section] = true)
 
 
-func _memory_spec_value(params: CorticalPropertyMemoryParameters, spec: Dictionary) -> Variant:
+func _memory_spec_value(area: AbstractCorticalArea, params: CorticalPropertyMemoryParameters, spec: Dictionary) -> Variant:
+	if String(spec.get("source", "")) == "firing":
+		if area == null or area.neuron_firing_parameters == null:
+			return _Tunables.spec_numeric_default(spec)
+		return _Tunables.numeric_or_default(area.neuron_firing_parameters.get(String(spec["property"])), spec)
 	if String(spec.get("kind", "int")) == "bool":
 		if params == null:
 			return false
@@ -608,7 +687,7 @@ func _associative_mapping_set() -> Array[SingleMappingDefinition]:
 
 
 func _mapping_with_associative_overrides(mapping: SingleMappingDefinition, overrides: Dictionary) -> SingleMappingDefinition:
-	return SingleMappingDefinition.new(
+	var overridden := SingleMappingDefinition.new(
 		mapping.morphology_used,
 		mapping.scalar,
 		mapping.post_synaptic_current_multiplier,
@@ -620,23 +699,14 @@ func _mapping_with_associative_overrides(mapping: SingleMappingDefinition, overr
 		int(overrides.get("synaptic_delay_bursts", mapping.synaptic_delay_bursts)),
 		mapping.plasticity_mode,
 		mapping.eligibility_decay_bursts,
-		mapping.reward_source_area,
-		mapping.punishment_source_area,
-		mapping.gate_source_area,
 	)
+	overridden.set_modulator_ids(mapping.modulator_ids)
+	return overridden
 
 
 func _notify_failure(message: String) -> void:
 	if BV != null and BV.NOTIF != null:
 		BV.NOTIF.add_notification(message)
-
-
-func _on_apply_kernel_memory() -> void:
-	await _apply_memory_section(_editing_classifier.sample_memory_id, _kernel_memory_fields, _kernel_memory_apply)
-
-
-func _on_apply_class_memory() -> void:
-	await _apply_memory_section(_editing_classifier.class_memory_id, _class_memory_fields, _class_memory_apply)
 
 
 ## Line edits keep the last confirmed number until focus leaves. Apply must commit
@@ -661,45 +731,39 @@ func _refresh_memory_tunables_from_server() -> void:
 	await FeagiCore.requests.get_cortical_area(_editing_classifier.class_memory_id)
 	if not is_instance_valid(self) or _editing_classifier == null:
 		return
-	_fill_memory_fields(_editing_classifier.sample_memory_id, _kernel_memory_fields)
-	_fill_memory_fields(_editing_classifier.class_memory_id, _class_memory_fields)
+	_fill_memory_fields(_editing_classifier.sample_memory_id, _kernel_memory_fields, _Tunables.SECTION_KERNEL_MEMORY)
+	_fill_memory_fields(_editing_classifier.class_memory_id, _class_memory_fields, _Tunables.SECTION_CLASS_MEMORY)
 
 
-func _fill_memory_fields(area_id: StringName, fields: Dictionary) -> void:
-	var params: CorticalPropertyMemoryParameters = _memory_parameters(_cached_area(area_id))
-	for spec in _Tunables.MEMORY_FIELD_SPECS:
+func _fill_memory_fields(area_id: StringName, fields: Dictionary, section: String) -> void:
+	var area: AbstractCorticalArea = _cached_area(area_id)
+	var params: CorticalPropertyMemoryParameters = _memory_parameters(area)
+	for spec in _Tunables.memory_specs_for_section(section):
 		var key: String = String(spec["key"])
 		var control: Variant = fields.get(key, null)
 		if control is Control:
-			_apply_spec_value(control, spec, _memory_spec_value(params, spec))
+			_apply_spec_value(control, spec, _memory_spec_value(area, params, spec))
 
 
-func _apply_memory_section(area_id: StringName, fields: Dictionary, apply: Button) -> void:
-	if FeagiCore == null or FeagiCore.requests == null:
-		return
-	_commit_focused_editor()
-	var payload: Dictionary = _Tunables.memory_update_payload(
-		_values_from_fields(fields, _Tunables.MEMORY_FIELD_SPECS)
-	)
+func _apply_memory_section(area_id: StringName, fields: Dictionary, section: String) -> bool:
+	var specs: Array[Dictionary] = _Tunables.memory_specs_for_section(section)
+	var payload: Dictionary = _Tunables.memory_update_payload(_values_from_fields(fields, specs), specs)
 	if payload.is_empty():
-		return
-	apply.disabled = true
+		return true
 	var result: FeagiRequestOutput = await FeagiCore.requests.update_cortical_area(area_id, payload)
 	if result == null or result.has_errored or result.failed_requirement:
-		apply.disabled = false
 		_notify_failure("Failed to update classifier memory tunables.")
+		return false
+	return true
 
 
-func _on_apply_associative() -> void:
-	if FeagiCore == null or FeagiCore.requests == null or _editing_classifier == null:
-		return
-	_commit_focused_editor()
+func _apply_associative_section() -> bool:
 	var kernel_memory: AbstractCorticalArea = _cached_area(_editing_classifier.sample_memory_id)
 	var class_memory: AbstractCorticalArea = _cached_area(_editing_classifier.class_memory_id)
 	var existing: Array[SingleMappingDefinition] = _associative_mapping_set()
 	if kernel_memory == null or class_memory == null or existing.is_empty():
 		_notify_failure("Associative mapping is not in cache.")
-		return
+		return false
 	var overrides: Dictionary = _values_from_fields(_associative_fields, _Tunables.ASSOCIATIVE_FIELD_SPECS)
 	var next_mappings: Array[SingleMappingDefinition] = []
 	var patched_any: bool = false
@@ -712,17 +776,19 @@ func _on_apply_associative() -> void:
 			next_mappings.append(mapping)
 	if not patched_any:
 		_notify_failure("No associative mapping to update.")
-		return
-	_associative_apply.disabled = true
+		return false
 	var result: FeagiRequestOutput = await FeagiCore.requests.set_mappings_between_corticals(
 		kernel_memory,
 		class_memory,
 		next_mappings
 	)
 	if result == null or result.has_errored or result.failed_requirement:
-		_associative_apply.disabled = false
 		_notify_failure("Failed to update associative memory parameters.")
-		return
+		return false
+	return true
+
+
+func _apply_reward_section() -> bool:
 	var feedback_id := ""
 	if _feedback_option != null and _feedback_option.selected > 0 and _feedback_option.selected < _feedback_area_ids.size():
 		feedback_id = String(_feedback_area_ids[_feedback_option.selected])
@@ -736,11 +802,36 @@ func _on_apply_associative() -> void:
 		feedback_id,
 		latency,
 		learn_id,
-		confidence_id
+		confidence_id,
+		_selected_sources()
 	)
 	if reward_result == null or reward_result.has_errored or reward_result.failed_requirement:
-		_associative_apply.disabled = false
-		_notify_failure("Failed to update classifier reward training.")
+		_notify_failure("Failed to update classifier reward learning.")
+		return false
+	_applied_sources = _classifier_reward_sources()
+	return true
+
+
+## Applies each changed section in turn; a section that fails stays marked for the next Update.
+func _apply_dirty_sections() -> bool:
+	var appliers: Dictionary = {
+		_Tunables.SECTION_KERNEL_MEMORY: func() -> bool: return await _apply_memory_section(_editing_classifier.sample_memory_id, _kernel_memory_fields, _Tunables.SECTION_KERNEL_MEMORY),
+		_Tunables.SECTION_CLASS_MEMORY: func() -> bool: return await _apply_memory_section(_editing_classifier.class_memory_id, _class_memory_fields, _Tunables.SECTION_CLASS_MEMORY),
+		_Tunables.SECTION_ASSOCIATIVE: _apply_associative_section,
+		_Tunables.SECTION_REWARD: _apply_reward_section,
+	}
+	var all_applied: bool = true
+	for section in _Tunables.section_titles():
+		if not _dirty_sections.get(section, false):
+			continue
+		var applied: bool = await (appliers[section] as Callable).call()
+		if not is_instance_valid(self):
+			return false
+		if applied:
+			_dirty_sections.erase(section)
+		else:
+			all_applied = false
+	return all_applied
 
 
 func _populate_parent_options() -> void:
@@ -827,14 +918,16 @@ func _selected_named_area(option: OptionButton) -> String:
 	return String(_feedback_area_ids[option.selected])
 
 
-func _read_only_line(rows: Array[Dictionary], key: String) -> LineEdit:
-	var value := ""
+func _details_value(rows: Array[Dictionary], key: String) -> String:
 	for row in rows:
 		if str(row.get("key", "")) == key:
-			value = str(row.get("value", ""))
-			break
+			return str(row.get("value", ""))
+	return ""
+
+
+func _read_only_line(rows: Array[Dictionary], key: String) -> LineEdit:
 	var line := LineEdit.new()
-	line.text = value
+	line.text = _details_value(rows, key)
 	line.editable = false
 	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return line
@@ -842,14 +935,15 @@ func _read_only_line(rows: Array[Dictionary], key: String) -> LineEdit:
 
 func _apply_reward_visibility() -> void:
 	var reward_on: bool = _reward_toggle != null and _reward_toggle.button_pressed
-	if _feedback_row != null:
-		_feedback_row.visible = reward_on
-	if _latency_row != null:
-		_latency_row.visible = reward_on
-	if _learn_row != null:
-		_learn_row.visible = reward_on
-	if _confidence_row != null:
-		_confidence_row.visible = reward_on
+	# Correct answer, answer delay, learn gate and confidence fed the per-answer grading that
+	# feagi-core no longer runs; R-STDP learns from the Reward and Punishment rows instead.
+	for unused_row in [_feedback_row, _latency_row, _learn_row, _confidence_row]:
+		if unused_row != null:
+			unused_row.visible = false
+	if _reward_row != null:
+		_reward_row.visible = reward_on
+	if _punishment_row != null:
+		_punishment_row.visible = reward_on
 	_fit_window_to_content()
 
 
@@ -879,9 +973,14 @@ func _on_press_update() -> void:
 	if _editing_classifier == null or FeagiCore == null or FeagiCore.requests == null:
 		close_window()
 		return
+	_commit_focused_editor()
 	var next_name: String = _name_input.text if _name_input != null else String(_editing_classifier.friendly_name)
 	var coords: Vector3i = _vector.current_vector if _vector != null else _editing_classifier.coordinates_3D
 	_update_button.disabled = true
+	if not await _apply_dirty_sections():
+		if is_instance_valid(self):
+			_update_button.disabled = false
+		return
 	var result: FeagiRequestOutput = await FeagiCore.requests.edit_classifier(
 		_editing_classifier,
 		next_name,

@@ -6,7 +6,7 @@ show a brain, and which only matter once the user edits.
 
 Snapshot of `circuit-schematic-phase0` on 2026-10-22. Paths are relative to `godot_source/`.
 Routes are declared in `addons/FeagiCoreIntegration/FeagiCore/Networking/API/FEAGIHTTPAddressList.gd`
-(96 vars) plus one inline route in `Autoload/FeagiProcessManager.gd`.
+(98 vars) plus one inline route in `Autoload/FeagiProcessManager.gd`.
 
 Abbreviations: FR = `FeagiCore/FEAGIRequests.gd`, FC = `FeagiCore/FeagiCore.gd`,
 FN = `FeagiCore/Networking/FEAGINetworking.gd`, LC = `FeagiCore/LocalCache/FEAGILocalCache.gd`.
@@ -19,7 +19,7 @@ FN = `FeagiCore/Networking/FEAGINetworking.gd`, LC = `FeagiCore/LocalCache/FEAGI
 | GENOME_LOAD | 11 | Called automatically to load or reload a genome |
 | RUNTIME_AUTO | 2 | Called automatically during a session, without user action |
 | EDIT | 29 | Only when the user edits the genome |
-| USER_FEATURE | 16 | Other user-triggered features (inspectors, stimulation, settings) |
+| USER_FEATURE | 18 | Other user-triggered features (inspectors, stimulation, settings) |
 | UNUSED | 34 | Declared, never called |
 
 **To connect and show a loaded genome with live activity, BV needs 9 routes, and the feagi-interop
@@ -195,6 +195,8 @@ Gaps against that server:
 | 94 | PUT | v1/system/cortical_area_visualization_suppression_threshold | PUT_system_corticalAreaVisualizationSupressionThreshold | FR.change_supression_threshold exists, no callers (see known issue 2) | UNUSED | no |
 | 95 | PUT | /v1/neuroplasticity/plasticity_queue_depth | PUT_neuroplasticity_plasticityQueueDepth | FR.update_plasticity_queue_depth exists, no callers | UNUSED | no |
 | 96 | DELETE | /v1/region/region_and_members | DELETE_region_regionAndMembers | — | UNUSED | no |
+| 97 | PUT | /v1/cortical_mapping/reset_weights | PUT_corticalMapping_resetWeights | FR.reset_mapping_weights ← WindowMappingEditor.gd ("Reset Weights" button, confirm). 404 shown as "this FEAGI does not support weight reset" | USER_FEATURE | no |
+| 98 | PUT | /v1/cortical_area/reset_weights | PUT_corticalArea_resetWeights | FR.reset_area_incoming_weights ← WindowQuickMenu.gd, AdvancedCorticalProperties.gd ("Reset learned weights", confirm). Distinct from neuron reset #59 | USER_FEATURE | no |
 
 Agent routes: 9. One is used automatically (#4); two are EDIT (#20, #21); three are USER_FEATURE
 (#60-62); three are unused (#84, #90, #91). `supports_feature()` gates #4, #20, #21, #61 and #62 off

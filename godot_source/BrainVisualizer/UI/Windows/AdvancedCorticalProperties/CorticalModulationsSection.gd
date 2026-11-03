@@ -8,6 +8,7 @@ const _NEURO_MODULATOR_TYPES: Array[String] = [
 	"neuro.firing_threshold",
 	"neuro.leak",
 	"neuro.firing_probability",
+	"memory.formation",
 ]
 ## Matches the dropdown and id fields already used in this window.
 const _MODULATOR_FIELD_MIN_SIZE := Vector2(150, 0)

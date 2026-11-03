@@ -127,11 +127,10 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 ## D
 
 **Degeneracy Coefficient**
-- Rate at which synaptic connections weaken over time
+- Amount a source neuron's outgoing PSP drops each time it fires (floored at 0)
+- Per fire, not per time; does not change synapse weight
 - Part of Post-Synaptic Potential parameters
-- 0 = no decay (permanent connections)
-- Higher values = faster forgetting
-- Implements synaptic homeostasis
+- 0 = no degeneration
 
 **Dimensions**
 - The X, Y, Z size of a cortical area in voxels
@@ -309,11 +308,10 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - Helps understand spatial relationships in genome
 
 **Post-Synaptic Potential (PSP)**
-- The strength of a synaptic connection
-- Determines how much influence one neuron has on another
-- Can be uniform or vary per connection
-- Can degenerate over time
-- Part of connection weight and plasticity system
+- A source-area value stamped on its outgoing synapses when they are created
+- Multiplies weight: a synapse delivers weight x PSP x sign
+- Degenerates per fire (Degeneracy Coefficient), not over time
+- Not changed by plasticity; plasticity changes weight
 
 ---
 

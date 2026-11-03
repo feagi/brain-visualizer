@@ -122,6 +122,7 @@ func setup(defined_cortical_area: AbstractCorticalArea) -> void:
 	
 	# Create renderers based on cortical area type
 	if (_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY or 
+		_representing_cortial_area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR or
 		AbstractCorticalArea.is_feagi_invariant_core_area(_representing_cortial_area) or
 		_should_use_png_icon(_representing_cortial_area) or
 		_representing_cortial_area.is_classifier_sample_memory()):
@@ -1644,15 +1645,11 @@ func _add_dash_wave_animation(connection_node: Node3D, curve_start: Vector3, cur
 			original_scales.append(dash.scale)
 	
 	# Create traveling wave animation
-	var wave_tween = create_tween()
+	# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+	var wave_tween = create_tween().bind_node(connection_node)
 	wave_tween.set_loops()  # Infinite animation
 	
 	var wave_cb = func(animation_time: float):
-		# Safety check
-		if not connection_node or not is_instance_valid(connection_node):
-			wave_tween.kill()
-			return
-		
 		# Traveling wave parameters
 		var wave_speed = 1.0  # Speed of traveling effect
 		var pulse_width = 2.5  # How many dashes are bright at once
@@ -1730,15 +1727,11 @@ func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, 
 			original_scales.append(dash.scale)
 	
 	# Create circular rotating wave animation
-	var circular_tween = create_tween()
+	# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+	var circular_tween = create_tween().bind_node(loop_node)
 	circular_tween.set_loops()  # Infinite animation
 	
 	var circular_cb = func(animation_time: float):
-		# Safety check
-		if not loop_node or not is_instance_valid(loop_node):
-			circular_tween.kill()
-			return
-		
 		# Circular wave parameters
 		var rotation_speed = 0.8  # Speed of rotating wave
 		var pulse_width = 3.0  # How many dashes are bright at once
@@ -1796,7 +1789,8 @@ func _add_circular_dash_wave_animation(loop_node: Node3D, loop_center: Vector3, 
 
 ## R-STDP modulator tap visualization (Phase 13).
 ##
-## When a mapping rule declares a reward and/or punishment source area, we render a short
+## When a mapping rule subscribes a reward (positive) and/or punishment (negative magnitude)
+## synaptic.reward modulator, we render a short
 ## perpendicular indicator at the midpoint of the synapse curve. The orientation is the
 ## arc-plane normal (chord x up), so the tap visually "drops in" from the side of the
 ## bezier rather than along it. Reward = green, punishment = red. Both: stacked, reward
@@ -1809,8 +1803,8 @@ const RSTDP_TAP_PUNISHMENT_ALBEDO: Color = Color(1.0, 0.20, 0.30, 1.0)
 const RSTDP_TAP_PUNISHMENT_EMISSION: Color = Color(1.0, 0.05, 0.05, 1.0)
 
 ## Attach a perpendicular reward/punishment tap to the connection if the mapping set
-## declares any reward_source_area or punishment_source_area. No-op when the mapping set
-## has no R-STDP modulation declared.
+## subscribes a synaptic.reward modulator (sign of its magnitude picks reward or punishment).
+## No-op when the mapping set subscribes none, or the modulator magnitudes are not known yet.
 func _attach_rstdp_tap_if_needed(
 	parent: Node3D,
 	start_pos: Vector3,
@@ -1819,8 +1813,8 @@ func _attach_rstdp_tap_if_needed(
 ) -> void:
 	if mapping_set == null:
 		return
-	var has_reward: bool = mapping_set.has_any_reward_source()
-	var has_pain: bool = mapping_set.has_any_punishment_source()
+	var has_reward: bool = mapping_set.has_any_reward_modulator()
+	var has_pain: bool = mapping_set.has_any_punishment_modulator()
 	if not (has_reward or has_pain):
 		return
 
@@ -2091,14 +2085,12 @@ func _add_electric_arc_animation(connection_node: Node3D, start_pos: Vector3, co
 		return
 	
 	var seed_offset = float(connection_node.get_meta("electric_arc_seed", 0.0))
-	var arc_tween = create_tween()
+	# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+	var arc_tween = create_tween().bind_node(connection_node)
 	arc_tween.set_loops()
 	var tween_step_sec: float = 0.35 / anim_freq_scale
 	
 	var arc_callback = func(animation_time: float) -> void:
-		if connection_node == null or not is_instance_valid(connection_node):
-			arc_tween.kill()
-			return
 		var jitter_strength = max(0.35, _estimate_curve_length(start_pos, control_point, end_pos) * 0.03)
 		var points = _build_electric_arc_points(
 			start_pos,
@@ -2229,7 +2221,8 @@ func _create_pulse_animation(
 		_apply_distance_scale_to_pulse(pulse_sphere)
 		
 		# Create animation tween
-		var pulse_tween = create_tween()
+		# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+		var pulse_tween = create_tween().bind_node(pulse_sphere)
 		pulse_tween.set_loops()  # Infinite loop
 		_pulse_tweens.append(pulse_tween)
 		
@@ -2243,13 +2236,6 @@ func _create_pulse_animation(
 		
 		# Animate the pulse along the curve points (callable variable avoids multiline-lambda + comma parse issues)
 		var pulse_cb = func(progress: float):
-			# Overlay clears queue_free curve nodes; stop this tween immediately when targets are gone.
-			if curve_node == null or not is_instance_valid(curve_node):
-				pulse_tween.kill()
-				return
-			if pulse_sphere == null or not is_instance_valid(pulse_sphere):
-				pulse_tween.kill()
-				return
 			var point_index = int(progress * (curve_points.size() - 1))
 			var local_progress = (progress * (curve_points.size() - 1)) - point_index
 			
@@ -2272,6 +2258,20 @@ func _create_pulse_animation(
 		# Add a brief pause at the end before restarting
 		pulse_tween.tween_interval(0.3)
 
+## Vertical offsets for coexisting recursive-loop polarities.
+## Array literals in a ternary are an untyped Array, which cannot be stored in Array[float].
+static func recursive_loop_height_offsets(polarity_count: int) -> Array[float]:
+	var height_offsets: Array[float] = []
+	if polarity_count == 2:
+		height_offsets.append(0.6)
+		height_offsets.append(-0.6)
+		return height_offsets
+	height_offsets.append(0.6)
+	height_offsets.append(0.0)
+	height_offsets.append(-0.6)
+	return height_offsets
+
+
 ## Create a recursive (self-looping) connection
 func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_set: InterCorticalMappingSet) -> Node3D:
 	var is_plastic = _is_mapping_set_plastic(mapping_set)  # Back to original logic
@@ -2282,7 +2282,7 @@ func _create_recursive_loop(center_pos: Vector3, area_id: StringName, mapping_se
 		var mixed_loop := Node3D.new()
 		var plastic_prefix = "PLA_" if is_plastic else "STD_"
 		mixed_loop.name = "MIXED_RECURS_" + plastic_prefix + area_id
-		var height_offsets: Array[float] = [0.6, -0.6] if polarities.size() == 2 else [0.6, 0.0, -0.6]
+		var height_offsets: Array[float] = recursive_loop_height_offsets(polarities.size())
 		for index in polarities.size():
 			var polarity: Dictionary = polarities[index]
 			var loop = _create_recursive_loop_variant(
@@ -2490,7 +2490,8 @@ func _create_recursive_pulse_animation(loop_node: Node3D, loop_points: Array[Vec
 		_apply_distance_scale_to_pulse(pulse_sphere)
 		
 		# Create animation tween
-		var pulse_tween = create_tween()
+		# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+		var pulse_tween = create_tween().bind_node(pulse_sphere)
 		pulse_tween.set_loops()  # Infinite loop
 		_pulse_tweens.append(pulse_tween)
 		
@@ -2684,7 +2685,8 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 		return
 	
 	# Create a tween for continuous thickness animation
-	var thickness_tween = create_tween()
+	# Bound to the node it animates (not self) so it dies with that node; the node may not be in the tree yet, so bind_node is used instead of Node.create_tween().
+	var thickness_tween = create_tween().bind_node(segment)
 	thickness_tween.set_loops()  # Infinite animation
 	
 	# Store reference to the original cylinder mesh
@@ -2698,11 +2700,6 @@ func _add_plastic_thickness_animation(segment: MeshInstance3D, t_position: float
 	
 	# Animate thickness with breathing effect
 	var thickness_cb = func(scale_factor: float):
-		# Safety checks - ensure objects still exist
-		if not segment or not is_instance_valid(segment):
-			thickness_tween.kill()  # Stop animation if segment is destroyed
-			return
-		
 		if not cylinder_mesh or not is_instance_valid(cylinder_mesh):
 			thickness_tween.kill()  # Stop animation if mesh is destroyed
 			return

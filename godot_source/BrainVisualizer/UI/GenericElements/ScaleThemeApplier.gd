@@ -40,6 +40,9 @@ func search_for_matching_children(starting_node: Node) -> void:
 		if child is ScrollSectionGeneric:
 			continue # Has its own sizing system
 		
+		elif child.has_meta(&"skip_scale_applier"):
+			pass # Sizes itself (e.g. mapping editor row cells); still search its children
+		
 		elif child is TextureButton:
 			_texture_buttons.append(child)
 		

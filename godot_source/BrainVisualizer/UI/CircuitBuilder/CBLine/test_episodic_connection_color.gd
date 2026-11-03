@@ -24,11 +24,27 @@ func _initialize() -> void:
 		if load(script_path) == null:
 			push_error("failed to parse %s" % script_path)
 			failures += 1
+	failures += _test_recursive_loop_height_offsets()
 	if failures > 0:
 		push_error("episodic connection color: %d check(s) failed" % failures)
 		quit(1)
 		return
 	quit(0)
+
+
+func _test_recursive_loop_height_offsets() -> int:
+	var monitor: GDScript = load(MONITOR)
+	if monitor == null:
+		return 1
+	var two: Array[float] = monitor.recursive_loop_height_offsets(2)
+	if two.size() != 2 or not is_equal_approx(two[0], 0.6) or not is_equal_approx(two[1], -0.6):
+		push_error("two polarities should use two loop heights, got %s" % str(two))
+		return 1
+	var three: Array[float] = monitor.recursive_loop_height_offsets(3)
+	if three.size() != 3 or not is_equal_approx(three[1], 0.0):
+		push_error("three polarities should use three loop heights, got %s" % str(three))
+		return 1
+	return 0
 
 
 func _require(path: String, needle: String) -> int:

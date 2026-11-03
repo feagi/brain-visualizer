@@ -18,6 +18,8 @@ var _row_mp_delta_quantization: Control
 var _line_mp_delta_quantization: FloatInput
 var _row_mp_ratio_quantization: Control
 var _line_mp_ratio_quantization: FloatInput
+var _line_memory_neuron_cap: IntInput
+var _dropdown_ltm_eviction: DropDown
 var _active_brain_monitor: UI_BrainMonitor_3DScene = null
 var _preview: UI_BrainMonitor_InteractivePreview = null
 
@@ -33,7 +35,10 @@ func _ready() -> void:
 	_line_mp_delta_quantization = $PanelContainer/MemoryParameters/mp_delta_quantization/mp_delta_quantization
 	_row_mp_ratio_quantization = $PanelContainer/MemoryParameters/mp_ratio_quantization
 	_line_mp_ratio_quantization = $PanelContainer/MemoryParameters/mp_ratio_quantization/mp_ratio_quantization
+	_line_memory_neuron_cap = $PanelContainer/MemoryParameters/memory_neuron_cap/memory_neuron_cap
+	_dropdown_ltm_eviction = $PanelContainer/MemoryParameters/ltm_eviction/ltm_eviction
 	_dropdown_mp_encoding.options = CorticalPropertyMemoryParameters.MP_ENCODING_OPTIONS
+	_dropdown_ltm_eviction.options = CorticalPropertyMemoryParameters.LTM_EVICTION_LABEL_OPTIONS
 	_line_mp_delta_quantization.set_float(CorticalPropertyMemoryParameters.DEFAULT_MP_DELTA_QUANTIZATION)
 	_line_mp_ratio_quantization.set_float(CorticalPropertyMemoryParameters.DEFAULT_MP_RATIO_QUANTIZATION)
 	_dropdown_mp_encoding.option_changed.connect(_on_mp_encoding_changed)
@@ -94,6 +99,8 @@ func get_memory_parameters_for_api() -> Dictionary:
 		"neuron_lifespan_growth_rate": _line_lifespan_growth_rate.current_int,
 		"neuron_longterm_mem_threshold": _line_longterm_memory_threshold.current_int,
 		"temporal_depth": _line_temporal_depth.current_int,
+		"memory_neuron_cap": _line_memory_neuron_cap.current_int,
+		"ltm_eviction": String(CorticalPropertyMemoryParameters.ltm_eviction_key_from_label(_dropdown_ltm_eviction.selected_item)),
 	}
 	var encoding: StringName = _dropdown_mp_encoding.selected_item
 	params.merge(CorticalPropertyMemoryParameters.mp_encoding_to_keys(encoding))
