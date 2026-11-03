@@ -33,6 +33,21 @@ func _resolve_cortical_cache_key(ambiguous_id: Variant) -> Variant:
 	return null
 
 
+## Returns the source and destination ids in a mapping summary that are not in the cortical areas cache.
+func get_unresolved_cortical_ids(mapping_summary: Dictionary) -> Array:
+	var unresolved: Array = []
+	for raw_source in mapping_summary.keys():
+		if _resolve_cortical_cache_key(raw_source) == null:
+			unresolved.append(raw_source)
+		var mapping_targets: Variant = mapping_summary[raw_source]
+		if not mapping_targets is Dictionary:
+			continue
+		for raw_destination in (mapping_targets as Dictionary).keys():
+			if _resolve_cortical_cache_key(raw_destination) == null:
+				unresolved.append(raw_destination)
+	return unresolved
+
+
 ## cortical_mapping_dst may store one rule as a JSON object or as an array of rules.
 ## Returns [null] on parse failure, or an [Array] (possibly empty) of rules.
 func _normalize_mapping_rules_to_array(raw: Variant) -> Variant:

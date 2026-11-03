@@ -215,9 +215,9 @@ Neural activity can be visualized in different ways:
 
 ### Global Neural Connections Toggle
 
-Hover **Inspectors** on the main top bar or the Brain Monitor tab bar, then choose the connection inspector:
-- **Enable**: Show all connections globally
-- **Disable**: Show connections only on hover
+Hover **Inspectors** on the main top bar or the Brain Monitor tab bar, then choose the connection inspector. Outside a text field, the backtick key (`` ` ``) does the same thing:
+- **Enable**: Show all mappings globally
+- **Disable**: Show mappings only on hover. Press backtick again, press Escape, or use Stop Inspector
 - Useful for understanding overall architecture
 - Can be visually overwhelming with many connections
 

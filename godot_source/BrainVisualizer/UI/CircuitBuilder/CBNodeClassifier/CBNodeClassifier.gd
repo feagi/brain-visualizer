@@ -52,9 +52,5 @@ func _on_single_left_click() -> void:
 
 
 func _setup_node_color() -> void:
-	var titlebar_box: StyleBoxFlat = StyleBoxFlat.new()
-	titlebar_box.bg_color = CLASSIFIER_BOX_COLOR
-	add_theme_stylebox_override("titlebar", titlebar_box)
-	var panel_box: StyleBoxFlat = StyleBoxFlat.new()
-	panel_box.bg_color = CLASSIFIER_BOX_COLOR
-	add_theme_stylebox_override("panel", panel_box)
+	add_theme_stylebox_override("titlebar", GraphNodeStyle.tinted(self, &"titlebar", CLASSIFIER_BOX_COLOR))
+	add_theme_stylebox_override("panel", GraphNodeStyle.tinted(self, &"panel", CLASSIFIER_BOX_COLOR))

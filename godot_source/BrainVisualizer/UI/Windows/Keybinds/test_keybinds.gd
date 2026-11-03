@@ -24,6 +24,8 @@ func _initialize() -> void:
 		return
 	var failures := 0
 	failures += _test_shortcut()
+	failures += _test_connection_inspector_shortcut()
+	failures += _test_connection_inspector_target()
 	failures += _test_split_layout_shortcut()
 	failures += _test_text_focus()
 	failures += _test_catalog()
@@ -61,6 +63,81 @@ func _test_shortcut() -> int:
 		return 1
 	if _catalog.is_keybinds_shortcut(KEY_S, KEY_S, false, false, false, true, false):
 		push_error("S should not open the shortcuts window")
+		return 1
+	return 0
+
+
+func _test_connection_inspector_shortcut() -> int:
+	if not _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_NONE, false, false, false, true, false):
+		push_error("backtick should show the connection inspector")
+		return 1
+	if not _catalog.is_connection_inspector_shortcut(KEY_NONE, KEY_QUOTELEFT, false, false, false, true, false):
+		push_error("physical backtick should show the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, true, false, false, true, false):
+		push_error("Ctrl/Cmd+backtick should not show the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, false, true, false, true, false):
+		push_error("Shift+backtick should not show the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, false, false, true, true, false):
+		push_error("Alt+backtick should not show the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, false, false, false, true, true):
+		push_error("a key repeat should not toggle the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_QUOTELEFT, KEY_QUOTELEFT, false, false, false, false, false):
+		push_error("releasing backtick should not toggle the connection inspector")
+		return 1
+	if _catalog.is_connection_inspector_shortcut(KEY_K, KEY_K, false, false, false, true, false):
+		push_error("K should not show the connection inspector")
+		return 1
+	return 0
+
+
+func _scene(visible: bool, pointer_inside: bool, active: bool, covered: bool, area: float) -> Dictionary:
+	return {
+		_catalog.SCENE_VISIBLE: visible,
+		_catalog.SCENE_POINTER_INSIDE: pointer_inside,
+		_catalog.SCENE_ACTIVE: active,
+		_catalog.SCENE_COVERED: covered,
+		_catalog.SCENE_AREA: area,
+	}
+
+
+func _test_connection_inspector_target() -> int:
+	var main_only: Array = [_scene(true, true, true, false, 1000.0)]
+	if _catalog.connection_inspector_target_index(main_only) != 0:
+		push_error("backtick should use the active scene under the pointer")
+		return 1
+	var covered_main: Array = [
+		_scene(true, true, true, true, 2000.0),
+		_scene(true, true, true, false, 800.0),
+	]
+	if _catalog.connection_inspector_target_index(covered_main) != 1:
+		push_error("a scene under the open split should not take the connection inspector")
+		return 1
+	var inactive: Array = [_scene(true, true, false, false, 500.0)]
+	if _catalog.connection_inspector_target_index(inactive) != -1:
+		push_error("an inactive scene should not take the connection inspector")
+		return 1
+	var hidden: Array = [_scene(false, true, true, false, 500.0)]
+	if _catalog.connection_inspector_target_index(hidden) != -1:
+		push_error("a hidden scene should not take the connection inspector")
+		return 1
+	var elsewhere: Array = [
+		_scene(true, false, true, false, 2000.0),
+		_scene(true, false, true, false, 800.0),
+	]
+	if _catalog.connection_inspector_target_index(elsewhere) != -1:
+		push_error("backtick should do nothing when the pointer is not on a 3D scene")
+		return 1
+	var front_view: Array = [
+		_scene(true, true, true, false, 2000.0),
+		_scene(true, true, true, false, 400.0),
+	]
+	if _catalog.connection_inspector_target_index(front_view) != 1:
+		push_error("the smaller scene in front should take the connection inspector")
 		return 1
 	return 0
 
@@ -123,6 +200,7 @@ func _test_catalog() -> int:
 	var seen: Dictionary = {}
 	var sections: Array[String] = []
 	var has_open := false
+	var has_connection_inspector := false
 	var has_search := false
 	var has_undo := false
 	var has_views := false
@@ -149,6 +227,11 @@ func _test_catalog() -> int:
 			sections.append(section)
 		if keys == "K":
 			has_open = true
+		if keys == "`" and action.find("connection inspector") >= 0:
+			has_connection_inspector = true
+			if context.find("active 3D scene") < 0:
+				push_error("backtick should be limited to the active 3D scene")
+				return 1
 		if keys == "Ctrl/Cmd + S":
 			has_search = true
 		if keys == "Ctrl/Cmd + Z":
@@ -161,8 +244,8 @@ func _test_catalog() -> int:
 			has_vertical_split = true
 		if keys == "3" and action.find("horizontal split") >= 0:
 			has_horizontal_split = true
-	if not has_open or not has_search or not has_undo or not has_views:
-		push_error("the table is missing K, search, undo, or the top view")
+	if not has_open or not has_connection_inspector or not has_search or not has_undo or not has_views:
+		push_error("the table is missing K, the connection inspector, search, undo, or the top view")
 		return 1
 	if not has_main_scene or not has_vertical_split or not has_horizontal_split:
 		push_error("the table is missing the 1, 2, or 3 split layout shortcuts")

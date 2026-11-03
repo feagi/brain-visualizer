@@ -5,6 +5,7 @@ Use this quick lookup for navigation and camera actions currently implemented in
 ## Global Navigation Actions
 
 - **Open or close Search** -> Ctrl+S (Cmd+S on macOS). Type part of a name. Click a row, or press Enter, to open it. Escape closes Search and leaves the 3D selection in place
+- **Show or hide every mapping** -> Backtick (`` ` ``), or hover Inspectors and choose the connection inspector. Draws every mapping in Brain Monitor. Does not type into a text field. Press backtick again, press Escape, or use Stop Inspector to hide them
 - **Jump to a searched cortical area** -> Search -> choose the area. The camera moves to it, a red 3D arrow points at it, and the area title stays visible while that arrow is showing. An area inside a sub-circuit opens that circuit's tab first
 - **Jump to a searched circuit** -> Search -> choose the circuit. The current view moves to it
 - **Open a searched connectivity rule** -> Search -> choose the rule. The Connectivity Rules Manager opens on that rule

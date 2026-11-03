@@ -69,6 +69,7 @@ func _ready() -> void:
 	_add_export_menu()
 	_add_open_all_buttons()
 	_style_menu()
+	AreaTypeLegend.add_to(self, SchematicTreeBuilder.CLASSIFIER_COLOR, true)
 	if BV.UI != null:
 		BV.UI.theme_changed.connect(_style_menu.unbind(1))
 	_rebuild_timer = Timer.new()

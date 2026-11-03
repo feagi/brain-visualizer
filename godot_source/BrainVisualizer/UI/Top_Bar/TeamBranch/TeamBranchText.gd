@@ -15,6 +15,8 @@ const ACTOR_COLOR: String = "8ab4f8"
 const TARGET_COLOR: String = "f5bd6b"
 ## Keys that identify an area. They are not a change a person reads.
 const _HIDDEN_CHANGE_KEYS: Array[String] = ["cortical_id", "cortical_id_list", "previous_cortical_id", "new_cortical_id"]
+## Fields a layout move writes. A change touching only these is a move, not an edit.
+const _POSITION_KEYS: Array[String] = ["coordinates_3d", "coordinate_3d", "coordinates", "position", "coordinate_2d", "coordinates_2d"]
 
 
 ## True when the badge should be shown (a team experiment is running).
@@ -113,14 +115,124 @@ static func events_from_ledger(changes: Array, self_agent_id: String) -> Array[D
 		events.append({
 			"kind": "genome_change",
 			"actor_display_name": actor,
+			"agent_id": agent,
 			"operation": str(operation.get("kind", "change")),
 			"target_id": _ledger_target_label(entry),
 			"target_ids": _ledger_target_ids(entry),
 			"detail": _change_detail(entry),
 			"timestamp_ms": entry.get("timestamp_ms"),
 			"mine": mine,
+			"position_only": _is_position_only(entry),
 		})
 	return events
+
+
+## History rows, oldest first, with each burst of layout moves folded into one row.
+## A burst is consecutive moves by the same person, of the same kind, in the same second.
+## Every other change (deletes, creates, renames, parameter edits) keeps its own row.
+static func grouped_history(events: Array) -> Array:
+	var rows: Array = []
+	var burst: Array = []
+	for event in events:
+		if typeof(event) != TYPE_DICTIONARY:
+			continue
+		if not burst.is_empty() and not _same_burst(burst[0], event):
+			rows.append(_fold_burst(burst))
+			burst = []
+		if bool(event.get("position_only", false)) and str(event.get("kind", "")) == "genome_change":
+			burst.append(event)
+		else:
+			rows.append(event)
+	if not burst.is_empty():
+		rows.append(_fold_burst(burst))
+	return rows
+
+
+static func _same_burst(first: Dictionary, event: Dictionary) -> bool:
+	if not bool(event.get("position_only", false)) or str(event.get("kind", "")) != "genome_change":
+		return false
+	return (
+		str(event.get("operation", "")) == str(first.get("operation", ""))
+		and bool(event.get("mine", false)) == bool(first.get("mine", false))
+		and str(event.get("agent_id", "")) == str(first.get("agent_id", ""))
+		and _second_of(event) == _second_of(first)
+	)
+
+
+static func _second_of(event: Dictionary) -> int:
+	var stamp = event.get("timestamp_ms")
+	if typeof(stamp) != TYPE_INT and typeof(stamp) != TYPE_FLOAT:
+		return -1
+	return int(stamp) / 1000
+
+
+static func _fold_burst(burst: Array) -> Dictionary:
+	if burst.size() == 1:
+		return burst[0]
+	var row: Dictionary = (burst[0] as Dictionary).duplicate()
+	var ids: Array = []
+	var labels := PackedStringArray()
+	for event in burst:
+		for raw_id in event.get("target_ids", []):
+			ids.append(raw_id)
+		var label := str(event.get("target_id", "")).strip_edges()
+		if label != "" and not looks_like_cortical_id(label):
+			labels.append(label)
+	var noun := "regions" if str(row.get("operation", "")) == "update_brain_region" else "areas"
+	row["group_count"] = burst.size()
+	row["group_labels"] = labels
+	row["target_ids"] = ids
+	row["target_id"] = "%d %s" % [burst.size(), noun]
+	row["detail"] = "Moved %d %s" % [burst.size(), noun]
+	return row
+
+
+## True for an area or region update whose visible fields are all positions.
+static func _is_position_only(change: Dictionary) -> bool:
+	var operation = change.get("operation", {})
+	if typeof(operation) != TYPE_DICTIONARY:
+		return false
+	var kind := str(operation.get("kind", ""))
+	if kind != "update_cortical_area" and kind != "update_brain_region":
+		return false
+	var patch = operation.get("changes", null)
+	if typeof(patch) != TYPE_DICTIONARY:
+		patch = operation.get("properties", {})
+	if typeof(patch) != TYPE_DICTIONARY:
+		return false
+	var saw_position := false
+	for key in patch.keys():
+		var field := str(key)
+		if field in _HIDDEN_CHANGE_KEYS:
+			continue
+		if not (field in _POSITION_KEYS):
+			return false
+		saw_position = true
+	return saw_position
+
+
+## Who to show for a row: "You", the teammate's name from `names_by_agent`, or "A teammate".
+## `names_by_agent` maps a FEAGI agent id (the member's account id) to a display name.
+static func actor_name(event: Dictionary, names_by_agent: Dictionary) -> String:
+	if bool(event.get("mine", false)) or str(event.get("actor_display_name", "")) == "You":
+		return "You"
+	var agent := str(event.get("agent_id", "")).strip_edges()
+	if agent != "" and names_by_agent.has(agent):
+		var name := str(names_by_agent[agent]).strip_edges()
+		if name != "":
+			return name
+	var shown := str(event.get("actor_display_name", "")).strip_edges()
+	if shown == "" or shown == "<null>" or shown == agent or looks_like_account_id(shown):
+		return "A teammate"
+	return shown
+
+
+## True for a FEAGI agent id that is a member's account id (e.g. `NU-5605143836`).
+static func looks_like_account_id(value: String) -> bool:
+	var text := value.strip_edges()
+	if not text.begins_with("NU-") or text.length() < 5:
+		return false
+	return text.substr(3).is_valid_int()
 
 
 ## Table cells for one history row: time, who, action, target.

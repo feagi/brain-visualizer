@@ -216,8 +216,10 @@ func _refresh() -> void:
 	for child in _rows.get_children():
 		child.queue_free()
 	var history: Array = []
+	var names_by_agent: Dictionary = {}
 	if events != null:
-		history = events.change_history
+		history = TeamBranchText.grouped_history(events.change_history)
+		names_by_agent = events.member_names
 	if history.is_empty():
 		var empty := Label.new()
 		empty.text = "No genome changes yet."
@@ -225,7 +227,7 @@ func _refresh() -> void:
 		_rows.add_child(empty)
 		return
 	var time_width := _time_column_width()
-	var who_width := _who_column_width(history)
+	var who_width := _who_column_width(history, names_by_agent)
 	if _header_time != null:
 		_header_time.custom_minimum_size.x = time_width
 	if _header_who != null:
@@ -233,8 +235,11 @@ func _refresh() -> void:
 	for index in range(history.size() - 1, -1, -1):
 		var event: Dictionary = history[index]
 		var shown := event.duplicate()
-		shown["target_id"] = _target_text(event)
-		_rows.add_child(_data_row(TeamBranchText.history_columns(shown), time_width, who_width))
+		shown["actor_display_name"] = TeamBranchText.actor_name(event, names_by_agent)
+		var tips := _row_tooltips(event, str(shown["actor_display_name"]))
+		if int(event.get("group_count", 0)) <= 1:
+			shown["target_id"] = _target_text(event)
+		_rows.add_child(_data_row(TeamBranchText.history_columns(shown), time_width, who_width, tips))
 
 
 func _header_row() -> HBoxContainer:
@@ -249,11 +254,11 @@ func _header_row() -> HBoxContainer:
 	return row
 
 
-func _data_row(columns: Dictionary, time_width: float, who_width: float) -> HBoxContainer:
+func _data_row(columns: Dictionary, time_width: float, who_width: float, tips: Dictionary = {}) -> HBoxContainer:
 	var row := _column_row()
 	row.add_child(_plain_cell(str(columns.get("time", "")), time_width, false, false, Color(0.82, 0.84, 0.88)))
-	row.add_child(_plain_cell(str(columns.get("who", "")), who_width, false, true, _WHO_COLOR))
-	row.add_child(_plain_cell(str(columns.get("target", "")), _TARGET_WIDTH, true, false, _TARGET_COLOR))
+	row.add_child(_with_tooltip(_plain_cell(str(columns.get("who", "")), who_width, false, true, _WHO_COLOR), str(tips.get("who", ""))))
+	row.add_child(_with_tooltip(_plain_cell(str(columns.get("target", "")), _TARGET_WIDTH, true, false, _TARGET_COLOR), str(tips.get("target", ""))))
 	row.add_child(_plain_cell(str(columns.get("action", "")), _ACTION_WIDTH, true, false, Color(0.9, 0.91, 0.93)))
 	return row
 
@@ -291,13 +296,35 @@ func _time_column_width() -> float:
 
 
 ## Who is one line. The column is as wide as the longest name so the text is not clipped.
-func _who_column_width(history: Array) -> float:
+func _who_column_width(history: Array, names_by_agent: Dictionary) -> float:
 	var widest := _measure_text("Who", true)
 	for event in history:
 		if typeof(event) != TYPE_DICTIONARY:
 			continue
-		widest = maxf(widest, _measure_text(str(TeamBranchText.history_columns(event).get("who", "")), true))
+		widest = maxf(widest, _measure_text(TeamBranchText.actor_name(event, names_by_agent), true))
 	return widest
+
+
+## Hover text: the account behind an unnamed teammate, and the areas in a folded move.
+func _row_tooltips(event: Dictionary, who: String) -> Dictionary:
+	var tips := {}
+	var agent := str(event.get("agent_id", "")).strip_edges()
+	if who == "A teammate" and agent != "":
+		tips["who"] = "Teammate account %s. Their name shows once Neurorobotics Studio sends the team list." % agent
+	var count := int(event.get("group_count", 0))
+	if count > 1:
+		var names := PackedStringArray(event.get("group_labels", PackedStringArray()))
+		if names.is_empty():
+			names = _names_for_ids(event.get("target_ids", []))
+		tips["target"] = "%d layout moves in the same second, shown as one row:\n%s" % [count, ", ".join(names)]
+	return tips
+
+
+func _with_tooltip(label: Label, tip: String) -> Label:
+	if tip != "":
+		label.tooltip_text = tip
+		label.mouse_filter = Control.MOUSE_FILTER_PASS
+	return label
 
 
 func _measure_text(text: String, bold: bool) -> float:

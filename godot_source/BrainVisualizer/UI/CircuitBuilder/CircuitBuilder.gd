@@ -98,6 +98,7 @@ func _ready():
 		if _representing_region != null:
 			_combo.set_2d_context(self, _representing_region)
 		_sync_tab_menu_visibility()
+	AreaTypeLegend.add_to(self, CBNodeClassifier.CLASSIFIER_BOX_COLOR)
 	set_process(is_visible_in_tree())
 
 func _notification(what: int) -> void:
@@ -1188,7 +1189,8 @@ func _bring_node_to_front_and_flash(node: GraphElement) -> void:
 	var rise_s: float = FOCUS_FLASH_DURATION_S * 0.22
 	var fall_s: float = FOCUS_FLASH_DURATION_S - rise_s
 	const FLASH_LERP_TO_WHITE: float = 0.88
-	var tween := create_tween()
+	# Bound to the flashed node so the tween dies with it (apply_lerp captures it).
+	var tween := create_tween().bind_node(node)
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
 	var apply_lerp := func(lerp_w: float) -> void:

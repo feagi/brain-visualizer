@@ -20,6 +20,9 @@ var button: Button:
 
 var _terminal_type: TYPE ## The type of terminal
 var _active_port: CBNodePort = null # becomes valid after setup
+## Index among this node's input ports, or among its output ports. -1 until the slot is assigned.
+var graph_port_index: int = -1
+var graph_port_is_input: bool = true
 
 var _tex_input: CBNodePort
 var _tex_output: CBNodePort
@@ -62,8 +65,30 @@ func setup(terminal_type_: TYPE, terminal_text: StringName, parent_node: CBNodeC
 			_tex_output.texture = load("res://BrainVisualizer/UI/CircuitBuilder/Resources/Ports/cb-port-ring.png")
 			_button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			
+	_tex_input.visible = false
+	_tex_output.visible = false
+	_tex_recursive.visible = false
+	_add_port_gutter(_terminal_type == TYPE.OUTPUT or _terminal_type == TYPE.OUTPUT_OPEN)
 	_active_port.setup(parent_node, signal_to_report_updated_position)
+	_active_port.use_graph_slot()
 	_active_port.deletion_requested.connect(_port_reporting_deletion)
+
+
+## Keeps the label clear of the port dot, which is drawn on the row edge.
+func _add_port_gutter(at_end: bool) -> void:
+	var gutter := Control.new()
+	gutter.name = "PortGutter"
+	gutter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gutter.custom_minimum_size = Vector2(GraphNodeStyle.PORT_ICON_PX, 0)
+	add_child(gutter)
+	if not at_end:
+		move_child(gutter, 0)
+
+
+## Called when this row's slot is created or when an earlier row is added or removed.
+func assign_graph_port(input_side: bool, port_index: int) -> void:
+	graph_port_is_input = input_side
+	graph_port_index = port_index
 
 
 func update_text(new_text: StringName) -> void:

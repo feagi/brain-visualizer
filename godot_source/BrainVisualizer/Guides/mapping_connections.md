@@ -194,7 +194,9 @@ Mappings appear as lines between cortical areas:
 
 ### In Brain Monitor
 
-Hover over cortical area to see:
+Outside a text field, press the backtick key (`` ` ``) to show every mapping at once. Press it again, press Escape, or use Stop Inspector to hide them. The same control is under **Inspectors** on the main top bar and the Brain Monitor tab bar.
+
+Hover over a cortical area to see:
 - Outgoing connections (from this area)
 - Incoming connections (to this area)
 - Active data flow (if neuron activity present)
