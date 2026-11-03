@@ -31,6 +31,8 @@ var last_error: String:
 
 ## Receives every visualization packet this transport delivers. Set by [FEAGINetworking].
 var visualization_sink: FEAGIVisualizationSink = null
+## Neural activity streamed by the server as bits, drawn by the cortical areas' bit shader
+var bit_visualization: FEAGIBitVisualization = null
 
 var _client: RefCounted = null
 var _health: ZENOH_HEALTH = ZENOH_HEALTH.NO_CONNECTION
@@ -42,6 +44,9 @@ var _server_missing_since_ms: int = 0
 
 func _init() -> void:
 	set_process(false)
+	bit_visualization = FEAGIBitVisualization.new()
+	bit_visualization.name = "FEAGIBitVisualization"
+	add_child(bit_visualization)
 
 
 ## Whether the FeagiZenohClient extension is loaded
@@ -104,6 +109,7 @@ func disconnect_zenoh() -> void:
 	_is_connecting = false
 	_server_missing_since_ms = 0
 	_health = ZENOH_HEALTH.NO_CONNECTION
+	bit_visualization.reset()
 	if _client != null:
 		_client.disconnect_zenoh()
 		_client = null
@@ -151,6 +157,7 @@ func _process(_delta: float) -> void:
 
 func _give_up(error: String) -> void:
 	var was_connecting := _is_connecting
+	bit_visualization.reset()
 	if _client != null:
 		_client.disconnect_zenoh()
 		_client = null

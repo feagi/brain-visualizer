@@ -5,6 +5,8 @@ class_name UI_BrainMonitor_DDACorticalAreaRenderer
 const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
 const PREFAB: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/CorticalArea_DDA_Body.tscn")
 const WEBGL_DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/WebGL_RayMarch.tres"
+## Used instead of the SVO activation material while a feagi-core server streams activity as bits
+const BIT_VISUALIZATION_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/BitVisualization_RayMarch.tres"
 const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
 const FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE: int = 18
 const FRIENDLY_NAME_LABEL_SMOOTH_SPEED: float = 10.0
@@ -15,7 +17,13 @@ const FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE: float = 0.18
 # TODO right now, particularly for selection, we recreate the SVO tree entirely every time a single node is added / removed. This is slow, and we should be adding / removing SVO nodes instead
 
 var _static_body: StaticBody3D
+## The material in use, either [member _svo_activation_mat] or [member _bit_activation_mat]
 var _DDA_mat: ShaderMaterial
+## Draws activity from per area SVOs (legacy FEAGI)
+var _svo_activation_mat: ShaderMaterial
+## Draws activity from the brain wide bits a feagi-core server streams. Made on first use
+var _bit_activation_mat: ShaderMaterial = null
+var _cortical_ID: StringName
 var _outline_mat: ShaderMaterial
 var _friendly_name_label: Label3D
 
@@ -45,7 +53,9 @@ func setup(area: AbstractCorticalArea) -> void:
 	else:
 		_visualization_settings = VisualizationSettings.new()
 	_static_body = PREFAB.instantiate()
-	_DDA_mat = load(WEBGL_DDA_MAT_PATH).duplicate()
+	_cortical_ID = area.cortical_ID
+	_svo_activation_mat = load(WEBGL_DDA_MAT_PATH).duplicate()
+	_DDA_mat = _svo_activation_mat
 	_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
 	
 	(_static_body.get_node("MeshInstance3D") as MeshInstance3D).material_override = _DDA_mat
@@ -73,6 +83,11 @@ func setup(area: AbstractCorticalArea) -> void:
 	update_dimensions(area.dimensions_3D)
 	# Initialize activation texture to empty so shader never samples unset texture (avoids out-of-region red)
 	_clear_activation_texture()
+
+	var bit_visualization := _get_bit_visualization()
+	if bit_visualization != null:
+		bit_visualization.visualization_context_changed.connect(_on_bit_visualization_context_changed)
+		_on_bit_visualization_context_changed(bit_visualization.read_start_byte_indexes)
 
 func update_friendly_name(new_name: String) -> void:
 	_friendly_name_label.text = _wrap_friendly_name_text(new_name)
@@ -177,6 +192,36 @@ func update_visualization_data(visualization_data: PackedByteArray) -> void:
 	_activation_image_texture.set_image(_activation_image)
 	_activation_image_dimensions = retrieved_image_dimensions
 	_DDA_mat.set_shader_parameter("activation_SVO", _activation_image_texture)
+
+## The bit visualization of the zenoh transport, or null when networking is not set up
+func _get_bit_visualization() -> FEAGIBitVisualization:
+	if FeagiCore.network == null or FeagiCore.network.zenoh_transport == null:
+		return null
+	return FeagiCore.network.zenoh_transport.bit_visualization
+
+## Uses the bit material while the server's visualization context is known, reading this area's
+## bits from where the context says they start. Otherwise uses the SVO material
+func _on_bit_visualization_context_changed(read_start_byte_indexes: Dictionary) -> void:
+	var bit_visualization := _get_bit_visualization()
+	var use_bits: bool = bit_visualization != null and bit_visualization.context_change_counter >= 0
+	if use_bits and _bit_activation_mat == null:
+		_bit_activation_mat = load(BIT_VISUALIZATION_MAT_PATH).duplicate()
+		_bit_activation_mat.set_shader_parameter("feagi_bit_visualization_bytes", bit_visualization.texture)
+	var material: ShaderMaterial = _bit_activation_mat if use_bits else _svo_activation_mat
+	if use_bits:
+		_bit_activation_mat.set_shader_parameter("read_start_byte_index", int(read_start_byte_indexes.get(_cortical_ID, -1)))
+	if material == _DDA_mat:
+		return
+	_switch_material(material)
+
+## Makes [param material] the one drawn, carrying over the parameters both materials share
+func _switch_material(material: ShaderMaterial) -> void:
+	for parameter in [&"voxel_count_x", &"voxel_count_y", &"voxel_count_z", &"shared_SVO_depth", &"highlight_SVO", &"selection_SVO"]:
+		material.set_shader_parameter(parameter, _DDA_mat.get_shader_parameter(parameter))
+	_DDA_mat.next_pass = null
+	_DDA_mat = material
+	(_static_body.get_node("MeshInstance3D") as MeshInstance3D).material_override = _DDA_mat
+	_apply_outline_visual_state()
 
 func _clear_activation_texture() -> void:
 	# Set activation to empty SVO (no nodes) so shader does not draw spurious red. Avoids faint
