@@ -84,8 +84,8 @@ unique_name_in_owner = true
 [node name="MarginContainer" type="MarginContainer" parent="ConnectomeGroup/ConnectomeMenu" unique_id=906509033]
 offset_left = 4.0
 offset_top = 4.0
-offset_right = 260.0
-offset_bottom = 156.0
+offset_right = 96.0
+offset_bottom = 96.0
 size_flags_horizontal = 3
 theme_type_variation = &"MarginContainer_far"
 theme_override_constants/margin_left = 8

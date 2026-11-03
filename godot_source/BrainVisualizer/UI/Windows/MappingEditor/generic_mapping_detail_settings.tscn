@@ -1,151 +1,126 @@
-[gd_scene load_steps=2 format=3 uid="uid://cxb6dif7pqgss"]
+[gd_scene format=3 uid="uid://cxb6dif7pqgss"]
 
 [ext_resource type="Script" uid="uid://6e2vio7clwsi" path="res://BrainVisualizer/UI/Windows/MappingEditor/GenericMappingDetailSettings.gd" id="1_a7y6g"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="6_nnmhp"]
 
-[node name="GenericMappingDetailSettings" type="VBoxContainer"]
+[node name="GenericMappingDetailSettings" type="VBoxContainer" unique_id=1085958793]
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_a7y6g")
 
-[node name="Label9" type="Label" parent="."]
+[node name="Label9" type="Label" parent="." unique_id=965174820]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Established Mappings"
 
-[node name="EmptyState" type="VBoxContainer" parent="."]
+[node name="EmptyState" type="VBoxContainer" parent="." unique_id=88909809]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 alignment = 1
 
-[node name="EmptyMessage" type="Label" parent="EmptyState"]
+[node name="EmptyMessage" type="Label" parent="EmptyState" unique_id=456167997]
 layout_mode = 2
 text = "No mapping currently defined for this connection"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Spacer" type="Control" parent="EmptyState"]
+[node name="Spacer" type="Control" parent="EmptyState" unique_id=1427601721]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
-[node name="AddFirstButton" type="Button" parent="EmptyState"]
+[node name="AddFirstButton" type="Button" parent="EmptyState" unique_id=1024782858]
 custom_minimum_size = Vector2(200, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_type_variation = &"Button_big"
 text = " Add First Mapping "
 
-[node name="HeaderGapTop" type="Control" parent="."]
+[node name="HeaderGapTop" type="Control" parent="." unique_id=1122205967]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 
-[node name="HeaderRowWrapper" type="HBoxContainer" parent="."]
+[node name="HeaderRowWrapper" type="HBoxContainer" parent="." unique_id=1857575696]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 
-[node name="labels_box" type="HBoxContainer" parent="HeaderRowWrapper"]
+[node name="labels_box" type="HBoxContainer" parent="HeaderRowWrapper" unique_id=1271242857]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_override_constants/separation = 16
 
-[node name="Label_Mapping" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Mapping" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=943382221]
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Mapping definition / morphology"
 mouse_filter = 1
 text = "Morphology"
-horizontal_alignment = 0
 vertical_alignment = 3
-autowrap_mode = 0
-clip_text = false
 
-[node name="Label_Scalar" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Scalar" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=901960002]
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Overwrite scalar"
 mouse_filter = 1
 text = "Scalar (x, y, z)"
-horizontal_alignment = 0
 vertical_alignment = 3
-autowrap_mode = 0
-clip_text = false
 
-[node name="Label_PSP" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_PSP" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=38205182]
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Post-synaptic potential multiplier"
 mouse_filter = 1
 text = "PSP ×"
-horizontal_alignment = 0
 vertical_alignment = 3
-autowrap_mode = 0
-clip_text = false
 
-[node name="Label_Delay" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Delay" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=177970842]
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Synaptic delay in bursts (whole bursts from presynaptic fire until PSP is applied, minimum 1)"
 mouse_filter = 1
 text = "Delay"
-horizontal_alignment = 0
 vertical_alignment = 3
-autowrap_mode = 0
-clip_text = false
 
-[node name="Label_Inhibitory" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Inhibitory" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=257244666]
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Inhibitory: the synapse subtracts potential instead of adding it"
 mouse_filter = 1
 text = "Inhibitory"
-horizontal_alignment = 0
 vertical_alignment = 3
-autowrap_mode = 0
-clip_text = false
 
-[node name="LabelModulators" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="LabelModulators" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=126969201]
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Synaptic modulators this rule subscribes to: gain, reward / punishment, learning rate (eta), gate"
 mouse_filter = 1
 text = "Modulators"
-horizontal_alignment = 0
 vertical_alignment = 3
-autowrap_mode = 0
-clip_text = false
 
-[node name="Label_Plasticity" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Plasticity" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=869731195]
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity mode: Off / STDP / R-STDP"
 mouse_filter = 1
 text = "Plasticity"
-horizontal_alignment = 0
 vertical_alignment = 3
-autowrap_mode = 0
-clip_text = false
 
-[node name="Label_Actions" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Actions" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=1701176747]
 layout_mode = 2
 size_flags_horizontal = 0
-text = ""
-horizontal_alignment = 0
 vertical_alignment = 3
-autowrap_mode = 0
-clip_text = false
 
-[node name="HeaderGap" type="Control" parent="."]
+[node name="HeaderGap" type="Control" parent="." unique_id=1049972879]
 custom_minimum_size = Vector2(0, 6)
 layout_mode = 2
 
-[node name="EstablishedScrollViewport" type="Control" parent="."]
+[node name="EstablishedScrollViewport" type="Control" parent="." unique_id=661376921]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ScrollSectionGeneric" parent="EstablishedScrollViewport" instance=ExtResource("6_nnmhp")]
+[node name="ScrollSectionGeneric" parent="EstablishedScrollViewport" unique_id=251789098 instance=ExtResource("6_nnmhp")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -153,21 +128,21 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="AddRow" type="VBoxContainer" parent="."]
+[node name="AddRow" type="VBoxContainer" parent="." unique_id=691287960]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="Gap" type="Control" parent="AddRow"]
+[node name="Gap" type="Control" parent="AddRow" unique_id=385740500]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="add_button" type="Button" parent="AddRow"]
+[node name="add_button" type="Button" parent="AddRow" unique_id=968813268]
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Add Mapping"
 focus_mode = 0
-flat = true
 text = "+ Add mapping"
+flat = true
 
-[connection signal="pressed" from="AddRow/add_button" to="." method="_add_mapping_row"]
 [connection signal="pressed" from="EmptyState/AddFirstButton" to="." method="_add_mapping_row"]
+[connection signal="pressed" from="AddRow/add_button" to="." method="_add_mapping_row"]

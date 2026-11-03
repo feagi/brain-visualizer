@@ -1,114 +1,111 @@
-[gd_scene load_steps=7 format=3 uid="uid://csvjqt8dbo5ec"]
+[gd_scene format=3 uid="uid://csvjqt8dbo5ec"]
 
 [ext_resource type="Script" uid="uid://bjgbpc5y6tnmd" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaMemory.gd" id="1_se87m"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="3_dcueh"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_af2cq"]
 [ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="5_int"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/DropDown.gd" id="6_dropdown"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="7_float"]
+[ext_resource type="Script" uid="uid://dr18otm88iyvt" path="res://BrainVisualizer/UI/GenericElements/DropDown/DropDown.gd" id="6_dropdown"]
+[ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="7_float"]
 
-[node name="Definition_Memory" type="VBoxContainer"]
+[node name="Definition_Memory" type="VBoxContainer" unique_id=975571275]
 offset_right = 473.0
 offset_bottom = 128.0
 theme_override_constants/separation = 8
 script = ExtResource("1_se87m")
 
-[node name="name" type="HBoxContainer" parent="."]
+[node name="name" type="HBoxContainer" parent="." unique_id=1530216812]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="name"]
+[node name="Label" type="Label" parent="name" unique_id=555779587]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Select a name:"
 
-[node name="name" type="LineEdit" parent="name"]
+[node name="name" type="LineEdit" parent="name" unique_id=956928138]
 custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 script = ExtResource("4_af2cq")
 
-[node name="location" type="HBoxContainer" parent="."]
+[node name="location" type="HBoxContainer" parent="." unique_id=842672676]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="location"]
+[node name="Label" type="Label" parent="location" unique_id=168802998]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Choose a location"
 
-[node name="location" parent="location" instance=ExtResource("3_dcueh")]
+[node name="location" parent="location" unique_id=1470816995 instance=ExtResource("3_dcueh")]
 layout_mode = 2
 initial_vector = Vector3i(40, 0, 0)
 
-[node name="Gap" type="Control" parent="."]
+[node name="Gap" type="Control" parent="." unique_id=1332885396]
 custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=1305929327]
 layout_mode = 2
 text = "Advanced"
 horizontal_alignment = 1
 
-[node name="PanelContainer" type="PanelContainer" parent="."]
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=662927338]
 layout_mode = 2
 
-[node name="MemoryParameters" type="VBoxContainer" parent="PanelContainer"]
+[node name="MemoryParameters" type="VBoxContainer" parent="PanelContainer" unique_id=568583713]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="initial_neuron_lifespan" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="initial_neuron_lifespan" type="HBoxContainer" parent="PanelContainer/MemoryParameters" unique_id=9674178]
 layout_mode = 2
 tooltip_text = "Starting lifespan in bursts for newly created memory neurons."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/initial_neuron_lifespan"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/initial_neuron_lifespan" unique_id=1119355439]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Initial Neuron Lifespan"
 
-[node name="initial_neuron_lifespan" type="LineEdit" parent="PanelContainer/MemoryParameters/initial_neuron_lifespan"]
+[node name="initial_neuron_lifespan" type="LineEdit" parent="PanelContainer/MemoryParameters/initial_neuron_lifespan" unique_id=1716190813]
 layout_mode = 2
 alignment = 2
 script = ExtResource("5_int")
-initial_int = 0
 
-[node name="lifespan_growth_rate" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="lifespan_growth_rate" type="HBoxContainer" parent="PanelContainer/MemoryParameters" unique_id=1007736321]
 layout_mode = 2
 tooltip_text = "Amount added to lifespan on each reactivation (non-LTM only)."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/lifespan_growth_rate"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/lifespan_growth_rate" unique_id=1564253514]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Lifespan Growth Rate"
 
-[node name="lifespan_growth_rate" type="LineEdit" parent="PanelContainer/MemoryParameters/lifespan_growth_rate"]
+[node name="lifespan_growth_rate" type="LineEdit" parent="PanelContainer/MemoryParameters/lifespan_growth_rate" unique_id=506142468]
 layout_mode = 2
 alignment = 2
 script = ExtResource("5_int")
-initial_int = 0
 
-[node name="longterm_memory_threshold" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="longterm_memory_threshold" type="HBoxContainer" parent="PanelContainer/MemoryParameters" unique_id=491307845]
 layout_mode = 2
 tooltip_text = "Lifespan threshold at which memory neurons become long-term."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/longterm_memory_threshold"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/longterm_memory_threshold" unique_id=701140110]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Longterm Memory Threshold"
 
-[node name="longterm_memory_threshold" type="LineEdit" parent="PanelContainer/MemoryParameters/longterm_memory_threshold"]
+[node name="longterm_memory_threshold" type="LineEdit" parent="PanelContainer/MemoryParameters/longterm_memory_threshold" unique_id=727050394]
 layout_mode = 2
 alignment = 2
 script = ExtResource("5_int")
-initial_int = 0
 
-[node name="temporal_depth" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="temporal_depth" type="HBoxContainer" parent="PanelContainer/MemoryParameters" unique_id=1636001304]
 layout_mode = 2
 tooltip_text = "Number of bursts to include when detecting upstream firing patterns."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/temporal_depth"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/temporal_depth" unique_id=450946676]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Temporal Depth"
 
-[node name="temporal_depth" type="LineEdit" parent="PanelContainer/MemoryParameters/temporal_depth"]
+[node name="temporal_depth" type="LineEdit" parent="PanelContainer/MemoryParameters/temporal_depth" unique_id=238426807]
 layout_mode = 2
 alignment = 2
 script = ExtResource("5_int")
@@ -116,78 +113,77 @@ initial_int = 1
 max_value = 99999999999999
 min_value = 1
 
-[node name="memory_neuron_cap" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="memory_neuron_cap" type="HBoxContainer" parent="PanelContainer/MemoryParameters" unique_id=1332650823]
 layout_mode = 2
 tooltip_text = "Most memory neurons (short and long term) this area may hold. 0 means no per-area cap; only the shared pool limits it."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/memory_neuron_cap"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/memory_neuron_cap" unique_id=2069175126]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Max neurons (0 = no cap)"
 
-[node name="memory_neuron_cap" type="LineEdit" parent="PanelContainer/MemoryParameters/memory_neuron_cap"]
+[node name="memory_neuron_cap" type="LineEdit" parent="PanelContainer/MemoryParameters/memory_neuron_cap" unique_id=624202570]
 layout_mode = 2
 alignment = 2
 script = ExtResource("5_int")
-initial_int = 0
 max_value = 4294967295
 min_value = 0
 
-[node name="ltm_eviction" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="ltm_eviction" type="HBoxContainer" parent="PanelContainer/MemoryParameters" unique_id=632608296]
 layout_mode = 2
 tooltip_text = "What happens when this area is at its cap or the shared pool is full. LRU: evict this area's least recently reactivated neuron to make room. None: new memory neurons are not created."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/ltm_eviction"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/ltm_eviction" unique_id=1809109367]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "LTM eviction"
 
-[node name="ltm_eviction" type="OptionButton" parent="PanelContainer/MemoryParameters/ltm_eviction"]
+[node name="ltm_eviction" type="OptionButton" parent="PanelContainer/MemoryParameters/ltm_eviction" unique_id=240598837]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 script = ExtResource("6_dropdown")
 
-[node name="mp_encoding" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="mp_encoding" type="HBoxContainer" parent="PanelContainer/MemoryParameters" unique_id=1782392663]
 layout_mode = 2
 tooltip_text = "How upstream membrane potentials shape memories. None: firing pattern only. MP Learning: store MPs and replay them. MP Differential: the same MP change (e.g. 2 to 4 and 7 to 9) forms one memory. MP Ratio: the same growth ratio (e.g. 2 to 4 and 7 to 14) forms one memory. Change modes need Temporal Depth of 2 or more and do not replay."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_encoding"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_encoding" unique_id=1659485174]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "MP Encoding"
 
-[node name="mp_encoding" type="OptionButton" parent="PanelContainer/MemoryParameters/mp_encoding"]
+[node name="mp_encoding" type="OptionButton" parent="PanelContainer/MemoryParameters/mp_encoding" unique_id=1804691314]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 script = ExtResource("6_dropdown")
 
-[node name="mp_delta_quantization" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="mp_delta_quantization" type="HBoxContainer" parent="PanelContainer/MemoryParameters" unique_id=2105107551]
 visible = false
 layout_mode = 2
 tooltip_text = "MP Differential rounding step in membrane potential units. Changes are rounded to the nearest multiple of this value."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_delta_quantization"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_delta_quantization" unique_id=1148591188]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Delta Quantization"
 
-[node name="mp_delta_quantization" type="LineEdit" parent="PanelContainer/MemoryParameters/mp_delta_quantization"]
+[node name="mp_delta_quantization" type="LineEdit" parent="PanelContainer/MemoryParameters/mp_delta_quantization" unique_id=1437723328]
 layout_mode = 2
 alignment = 2
 script = ExtResource("7_float")
 min_value = 0.001
 
-[node name="mp_ratio_quantization" type="HBoxContainer" parent="PanelContainer/MemoryParameters"]
+[node name="mp_ratio_quantization" type="HBoxContainer" parent="PanelContainer/MemoryParameters" unique_id=888445642]
 visible = false
 layout_mode = 2
 tooltip_text = "MP Ratio rounding step in percent, compounding. At 20, a doubling is +4 steps and a halving is -4 steps."
 
-[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_ratio_quantization"]
+[node name="Label" type="Label" parent="PanelContainer/MemoryParameters/mp_ratio_quantization" unique_id=1293300695]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Ratio Quantization (%)"
 
-[node name="mp_ratio_quantization" type="LineEdit" parent="PanelContainer/MemoryParameters/mp_ratio_quantization"]
+[node name="mp_ratio_quantization" type="LineEdit" parent="PanelContainer/MemoryParameters/mp_ratio_quantization" unique_id=2064285382]
 layout_mode = 2
 alignment = 2
 script = ExtResource("7_float")

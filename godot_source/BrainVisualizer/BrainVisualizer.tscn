@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://xy35ep21wxy"]
+[gd_scene format=3 uid="uid://xy35ep21wxy"]
 
 [ext_resource type="Script" uid="uid://dkpx8psa1xbfm" path="res://BrainVisualizer/BrainVisualizer.gd" id="1_234dh"]
 [ext_resource type="PackedScene" uid="uid://fksp0qyuwqxy" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.tscn" id="1_rjw0f"]
@@ -9,7 +9,7 @@
 [ext_resource type="Script" uid="uid://xuo7sffioktt" path="res://BrainVisualizer/UI/CircuitBuilder/TempSplit.gd" id="6_r3y8u"]
 [ext_resource type="PackedScene" uid="uid://bpam2w7i6dg8w" path="res://BrainVisualizer/UI/UIView/UIView.tscn" id="7_ee4d5"]
 [ext_resource type="Shader" uid="uid://b5oarw35cybvu" path="res://BrainVisualizer/UI/sky.tres" id="7_wiv4s"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/ScaleControl/ScaleControl.tscn" id="8_scale"]
+[ext_resource type="PackedScene" uid="uid://6yp8m5tp3331" path="res://BrainVisualizer/UI/ScaleControl/ScaleControl.tscn" id="8_scale"]
 [ext_resource type="Script" uid="uid://ceahb5atex4dj" path="res://BrainVisualizer/UI/Windows/WindowManager.gd" id="9_eg4r6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ouwte"]
@@ -44,17 +44,17 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[node name="BrainVisualizer" type="Node"]
+[node name="BrainVisualizer" type="Node" unique_id=1461271077]
 script = ExtResource("1_234dh")
 FEAGI_configuration = ExtResource("2_iu6jq")
 default_FEAGI_network_settings = ExtResource("3_m3l25")
 
-[node name="UIManager" type="Node" parent="."]
+[node name="UIManager" type="Node" parent="." unique_id=135356958]
 script = ExtResource("4_qdn3k")
 
-[node name="test" type="Node" parent="UIManager"]
+[node name="test" type="Node" parent="UIManager" unique_id=1097254789]
 
-[node name="CB_Holder" type="SplitContainer" parent="UIManager"]
+[node name="CB_Holder" type="SplitContainer" parent="UIManager" unique_id=1977562096]
 visible = false
 offset_top = 103.0
 offset_right = 1280.0
@@ -62,31 +62,29 @@ offset_bottom = 720.0
 mouse_filter = 2
 script = ExtResource("6_r3y8u")
 
-[node name="Control" type="Control" parent="UIManager/CB_Holder"]
+[node name="Control" type="Control" parent="UIManager/CB_Holder" unique_id=969348958]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="UIView" parent="UIManager/CB_Holder" instance=ExtResource("7_ee4d5")]
+[node name="UIView" parent="UIManager/CB_Holder" unique_id=2116655535 instance=ExtResource("7_ee4d5")]
 layout_mode = 2
 
-[node name="NotificationSystem" parent="UIManager" instance=ExtResource("1_rjw0f")]
+[node name="NotificationSystem" parent="UIManager" unique_id=1848795761 instance=ExtResource("1_rjw0f")]
 
-[node name="TopBar" parent="UIManager" instance=ExtResource("1_yk4pp")]
+[node name="TopBar" parent="UIManager" unique_id=2022838683 instance=ExtResource("1_yk4pp")]
 mouse_filter = 2
 
-[node name="ScaleControl" parent="UIManager" instance=ExtResource("8_scale")]
-layout_mode = 3
+[node name="ScaleControl" parent="UIManager" unique_id=1288606995 instance=ExtResource("8_scale")]
 
-[node name="FloatingWindowsLayer" type="CanvasLayer" parent="UIManager"]
-layer = 1
+[node name="FloatingWindowsLayer" type="CanvasLayer" parent="UIManager" unique_id=135907716]
 
-[node name="WindowManager" type="Node" parent="UIManager/FloatingWindowsLayer"]
+[node name="WindowManager" type="Node" parent="UIManager/FloatingWindowsLayer" unique_id=1182722610]
 script = ExtResource("9_eg4r6")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="UIManager"]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="UIManager" unique_id=1526897673]
 environment = SubResource("Environment_rks2y")
 
-[node name="VersionLabel" type="Label" parent="UIManager"]
+[node name="VersionLabel" type="Label" parent="UIManager" unique_id=402067241]
 visible = false
 anchors_preset = 3
 anchor_left = 1.0
@@ -99,10 +97,10 @@ grow_horizontal = 0
 grow_vertical = 0
 horizontal_alignment = 2
 
-[node name="LoadingScreenOverlayLayer" type="CanvasLayer" parent="UIManager"]
+[node name="LoadingScreenOverlayLayer" type="CanvasLayer" parent="UIManager" unique_id=932430069]
 layer = 128
 
-[node name="TempLoadingScreen" type="PanelContainer" parent="UIManager/LoadingScreenOverlayLayer"]
+[node name="TempLoadingScreen" type="PanelContainer" parent="UIManager/LoadingScreenOverlayLayer" unique_id=977217528]
 z_index = 100
 anchors_preset = 15
 anchor_right = 1.0
@@ -111,52 +109,52 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_rogx1")
 
-[node name="LoadingOverlay" type="BoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen"]
+[node name="LoadingOverlay" type="BoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen" unique_id=791675103]
 layout_mode = 2
 alignment = 2
 vertical = true
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay" unique_id=425078142]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="TitleLabel" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer" unique_id=2061847351]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 60
 text = "FEAGI BRAIN VISUALIZER"
 
-[node name="Label" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
+[node name="Label" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer" unique_id=950875939]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 40
 text = " "
 
-[node name="WarningPanel" type="PanelContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer"]
+[node name="WarningPanel" type="PanelContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer" unique_id=1573173013]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_warning_panel")
 
-[node name="WarningMargin" type="MarginContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel"]
+[node name="WarningMargin" type="MarginContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel" unique_id=1982296499]
 layout_mode = 2
 theme_override_constants/margin_left = 72
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 72
 theme_override_constants/margin_bottom = 8
 
-[node name="WarningVBox" type="VBoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin"]
+[node name="WarningVBox" type="VBoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin" unique_id=933424802]
 layout_mode = 2
 alignment = 1
 
-[node name="WarningTitle" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox"]
+[node name="WarningTitle" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox" unique_id=1742920591]
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Warning: Flashing Lights"
 horizontal_alignment = 1
 
-[node name="WarningBody" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox"]
+[node name="WarningBody" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/VBoxContainer/WarningPanel/WarningMargin/WarningVBox" unique_id=598610976]
 custom_minimum_size = Vector2(900, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
@@ -167,24 +165,24 @@ If you feel unwell, stop using the application immediately."
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Bottom_Row" type="BoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay"]
+[node name="Bottom_Row" type="BoxContainer" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay" unique_id=311469082]
 layout_mode = 2
 
-[node name="Control" type="Control" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
+[node name="Control" type="Control" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/Bottom_Row" unique_id=1822784983]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 
-[node name="StatusLabel" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/Bottom_Row"]
+[node name="StatusLabel" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/LoadingOverlay/Bottom_Row" unique_id=355502672]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Initializing..."
 
-[node name="BottomCenterOverlay" type="Control" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen"]
+[node name="BottomCenterOverlay" type="Control" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen" unique_id=1477477869]
 z_index = 101
 layout_mode = 2
 mouse_filter = 2
 
-[node name="CopyrightLabel" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/BottomCenterOverlay"]
+[node name="CopyrightLabel" type="Label" parent="UIManager/LoadingScreenOverlayLayer/TempLoadingScreen/BottomCenterOverlay" unique_id=476578316]
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 1.0
