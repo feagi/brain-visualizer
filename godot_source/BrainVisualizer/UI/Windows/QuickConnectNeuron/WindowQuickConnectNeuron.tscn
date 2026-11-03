@@ -1,21 +1,21 @@
-[gd_scene load_steps=15 format=3 uid="uid://jjxpbkym537m"]
+[gd_scene format=3 uid="uid://jjxpbkym537m"]
 
 [ext_resource type="Script" uid="uid://bt4hvlcblfybq" path="res://BrainVisualizer/UI/Windows/QuickConnectNeuron/WindowQuickConnectNeuron.gd" id="1_xsnx8"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_now4c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="3_tq10i"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="4_1wwy8"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="5_smclk"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="6_5pfvd"]
-[ext_resource type="Texture2D" uid="uid://cgkynnt7icxbp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_S.png" id="7_dkp02"]
-[ext_resource type="Texture2D" uid="uid://bb1koiuqt23fn" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_C.png" id="8_w4h15"]
-[ext_resource type="Texture2D" uid="uid://3p7xrje62t1b" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_H.png" id="9_et2nk"]
-[ext_resource type="Texture2D" uid="uid://cujpfgo6o63hg" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_D.png" id="10_6622n"]
-[ext_resource type="Texture2D" uid="uid://bt11f6y0pdrwq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_S.png" id="11_pastes"]
-[ext_resource type="Texture2D" uid="uid://ditnngl227va2" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_C.png" id="12_pastec"]
-[ext_resource type="Texture2D" uid="uid://dlj5qdg1x8fhy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_H.png" id="13_pasteh"]
-[ext_resource type="Texture2D" uid="uid://ckvawum8e7h4u" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_D.png" id="14_pasted"]
+[ext_resource type="Texture2D" uid="uid://by4h733mp88h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="3_tq10i"]
+[ext_resource type="Texture2D" uid="uid://bwdt0vsrgwdd5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="4_1wwy8"]
+[ext_resource type="Texture2D" uid="uid://cbs36m2eday77" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="5_smclk"]
+[ext_resource type="Texture2D" uid="uid://cixo1mepghmvv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="6_5pfvd"]
+[ext_resource type="Texture2D" uid="uid://yanqlqnfrw7x" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_S.png" id="7_dkp02"]
+[ext_resource type="Texture2D" uid="uid://btdawo4dbty3c" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_C.png" id="8_w4h15"]
+[ext_resource type="Texture2D" uid="uid://bdwqpfyca7uvf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_H.png" id="9_et2nk"]
+[ext_resource type="Texture2D" uid="uid://58ghrnro6usi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Gear_D.png" id="10_6622n"]
+[ext_resource type="Texture2D" uid="uid://5giay4kjaey" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_S.png" id="11_pastes"]
+[ext_resource type="Texture2D" uid="uid://crdp0qpjhgeu8" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_C.png" id="12_pastec"]
+[ext_resource type="Texture2D" uid="uid://cnxoov7tfyrra" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_H.png" id="13_pasteh"]
+[ext_resource type="Texture2D" uid="uid://dd7mfrwhwtlqo" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/copy_cortical_area_D.png" id="14_pasted"]
 
-[node name="WindowQuickConnectNeuron" type="VBoxContainer"]
+[node name="WindowQuickConnectNeuron" type="VBoxContainer" unique_id=760912400]
 offset_right = 126.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
@@ -24,35 +24,35 @@ theme_override_constants/separation = 0
 script = ExtResource("1_xsnx8")
 window_spawn_location = Vector2i(400, 400)
 
-[node name="TitleBar" parent="." instance=ExtResource("2_now4c")]
+[node name="TitleBar" parent="." unique_id=846634206 instance=ExtResource("2_now4c")]
 layout_mode = 2
 enforce_bottom_bound = false
 title = "Quick Connect"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1329315864]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=8427378]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=2091173881]
 layout_mode = 2
 
-[node name="source" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="source" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=17233161]
 custom_minimum_size = Vector2(512, 192)
 layout_mode = 2
 
-[node name="step1" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/source"]
+[node name="step1" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/source" unique_id=6371108]
 layout_mode = 2
 
-[node name="Label" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/source/step1"]
+[node name="Label" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/source/step1" unique_id=62350423]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Source"
 
-[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/source/step1"]
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/source/step1" unique_id=1772725239]
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -65,11 +65,12 @@ texture_disabled = ExtResource("6_5pfvd")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="PasteTextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/source/step1"]
+[node name="PasteTextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/source/step1" unique_id=1426573775]
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "Paste voxel selection from clipboard"
 theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("11_pastes")
 texture_pressed = ExtResource("12_pastec")
@@ -77,32 +78,31 @@ texture_hover = ExtResource("13_pasteh")
 texture_disabled = ExtResource("14_pasted")
 ignore_texture_size = true
 stretch_mode = 0
-tooltip_text = "Paste voxel selection from clipboard"
 
-[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/source/step1"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/source/step1" unique_id=1929473676]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="destination" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="destination" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=836676391]
 custom_minimum_size = Vector2(512, 192)
 layout_mode = 2
 
-[node name="step2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/destination"]
+[node name="step2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/destination" unique_id=942579897]
 layout_mode = 2
 
-[node name="Label" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2"]
+[node name="Label" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2" unique_id=2123566805]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Destination"
 
-[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2"]
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2" unique_id=297522529]
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_type_variation = &"TextureButton_icon"
 tooltip_text = "Open Cortical Area Explorer to pick one or more destinations"
+theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("3_tq10i")
 texture_pressed = ExtResource("4_1wwy8")
 texture_hover = ExtResource("5_smclk")
@@ -110,11 +110,12 @@ texture_disabled = ExtResource("6_5pfvd")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="PasteTextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2"]
+[node name="PasteTextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2" unique_id=1092351395]
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = "Paste voxel selection from clipboard"
 theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("11_pastes")
 texture_pressed = ExtResource("12_pastec")
@@ -122,26 +123,25 @@ texture_hover = ExtResource("13_pasteh")
 texture_disabled = ExtResource("14_pasted")
 ignore_texture_size = true
 stretch_mode = 0
-tooltip_text = "Paste voxel selection from clipboard"
 
-[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/destination/step2" unique_id=208438844]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="confirm" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="confirm" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=40071995]
 custom_minimum_size = Vector2(512, 192)
 layout_mode = 2
 
-[node name="step3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/confirm"]
+[node name="step3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/confirm" unique_id=884709246]
 layout_mode = 2
 
-[node name="Label" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/confirm/step3"]
+[node name="Label" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/confirm/step3" unique_id=1009397877]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Waiting..."
 
-[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/confirm/step3"]
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/confirm/step3" unique_id=1789332830]
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -155,15 +155,15 @@ texture_disabled = ExtResource("10_6622n")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/confirm/step3"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/confirm/step3" unique_id=606486827]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1559825023]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1197222793]
 layout_mode = 2
 theme_type_variation = &"Button_Tall"
 disabled = true

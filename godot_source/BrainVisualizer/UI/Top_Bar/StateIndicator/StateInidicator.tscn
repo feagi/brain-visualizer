@@ -1,76 +1,76 @@
-[gd_scene load_steps=3 format=3 uid="uid://byvcu1dqoe5uo"]
+[gd_scene format=3 uid="uid://byvcu1dqoe5uo"]
 
 [ext_resource type="Script" uid="uid://s40t45s266jb" path="res://BrainVisualizer/UI/Top_Bar/StateIndicator/StateInidicator.gd" id="1_0acba"]
 [ext_resource type="PackedScene" uid="uid://ch82fu6g530dm" path="res://BrainVisualizer/UI/GenericElements/BooleanIndicator/BooleanIndicator.tscn" id="2_otodu"]
 
-[node name="StateInidicator" type="HBoxContainer"]
+[node name="StateInidicator" type="HBoxContainer" unique_id=620828134]
 offset_right = 176.0
 offset_bottom = 61.0
 size_flags_horizontal = 0
 script = ExtResource("1_0acba")
 
-[node name="state_label" type="Label" parent="."]
+[node name="state_label" type="Label" parent="." unique_id=1917040124]
 layout_mode = 2
 tooltip_text = "The overall health of FEAGI"
 theme_type_variation = &"Label_Header"
 text = "System Health"
 vertical_alignment = 1
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1524963214]
 layout_mode = 2
 
-[node name="BurstEngine" parent="HBoxContainer" instance=ExtResource("2_otodu")]
+[node name="BurstEngine" parent="HBoxContainer" unique_id=1781157047 instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
 color_false = Color(0.24, 0.24, 0.24, 1)
 
-[node name="ColorRect" parent="HBoxContainer/BurstEngine" index="0"]
+[node name="ColorRect" parent="HBoxContainer/BurstEngine" index="0" unique_id=1371941223]
 tooltip_text = "Burst Engine"
 
-[node name="GenomeAvailability" parent="HBoxContainer" instance=ExtResource("2_otodu")]
+[node name="GenomeAvailability" parent="HBoxContainer" unique_id=1652182852 instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
 color_false = Color(0.24, 0.24, 0.24, 1)
 
-[node name="ColorRect" parent="HBoxContainer/GenomeAvailability" index="0"]
+[node name="ColorRect" parent="HBoxContainer/GenomeAvailability" index="0" unique_id=1371941223]
 tooltip_text = "Genome Availibility"
 
-[node name="GenomeValidity" parent="HBoxContainer" instance=ExtResource("2_otodu")]
+[node name="GenomeValidity" parent="HBoxContainer" unique_id=140816660 instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
 color_false = Color(0.24, 0.24, 0.24, 1)
 
-[node name="ColorRect" parent="HBoxContainer/GenomeValidity" index="0"]
+[node name="ColorRect" parent="HBoxContainer/GenomeValidity" index="0" unique_id=1371941223]
 tooltip_text = "Genome Validity"
 
-[node name="BrainReadiness" parent="HBoxContainer" instance=ExtResource("2_otodu")]
+[node name="BrainReadiness" parent="HBoxContainer" unique_id=333235925 instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
 color_false = Color(0.24, 0.24, 0.24, 1)
 
-[node name="ColorRect" parent="HBoxContainer/BrainReadiness" index="0"]
+[node name="ColorRect" parent="HBoxContainer/BrainReadiness" index="0" unique_id=1371941223]
 tooltip_text = "Brain Readiness"
 
-[node name="Data" parent="HBoxContainer" instance=ExtResource("2_otodu")]
+[node name="Data" parent="HBoxContainer" unique_id=635655563 instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
 color_false = Color(0.24, 0.24, 0.24, 1)
 
-[node name="ColorRect" parent="HBoxContainer/Data" index="0"]
+[node name="ColorRect" parent="HBoxContainer/Data" index="0" unique_id=1371941223]
 tooltip_text = "Brain Data"
 
-[node name="Summary" parent="HBoxContainer" instance=ExtResource("2_otodu")]
+[node name="Summary" parent="HBoxContainer" unique_id=1136497466 instance=ExtResource("2_otodu")]
 layout_mode = 2
 size_flags_horizontal = 3
 color_true = Color(0.360784, 1, 0.623529, 1)
 color_false = Color(0.24, 0.24, 0.24, 1)
 
-[node name="ColorRect" parent="HBoxContainer/Summary" index="0"]
+[node name="ColorRect" parent="HBoxContainer/Summary" index="0" unique_id=1371941223]
 tooltip_text = "System State"
 
 [editable path="HBoxContainer/BurstEngine"]

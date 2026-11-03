@@ -1,12 +1,12 @@
-[gd_scene load_steps=6 format=3 uid="uid://c0v1sjxbjdmgb"]
+[gd_scene format=3 uid="uid://c0v1sjxbjdmgb"]
 
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_eli5q"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="2_k5xd5"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="3_c2jyu"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="4_cvhnd"]
+[ext_resource type="Texture2D" uid="uid://byfmywjeq2rv1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_eli5q"]
+[ext_resource type="Texture2D" uid="uid://cj8lbvc4q2osf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="2_k5xd5"]
+[ext_resource type="Texture2D" uid="uid://do70brd17kvj0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="3_c2jyu"]
+[ext_resource type="Texture2D" uid="uid://j57u5ir3knxc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="4_cvhnd"]
 [ext_resource type="Script" uid="uid://cym6uapywvgmg" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDeleteButton/UIMorphologyDeleteButton.gd" id="5_qq287"]
 
-[node name="Delete" type="TextureButton"]
+[node name="Delete" type="TextureButton" unique_id=539577349]
 custom_minimum_size = Vector2(64, 64)
 size_flags_horizontal = 4
 size_flags_vertical = 4

@@ -1,19 +1,18 @@
-[gd_scene load_steps=2 format=3 uid="uid://bv_device_string"]
+[gd_scene format=3 uid="uid://bmjasp3uw6vyn"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditStringParameter.gd" id="1_string"]
+[ext_resource type="Script" uid="uid://biuy10e87vk7b" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditStringParameter.gd" id="1_string"]
 
-[node name="String" type="HBoxContainer"]
+[node name="String" type="HBoxContainer" unique_id=571234422]
 script = ExtResource("1_string")
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=202568850]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
-mouse_filter = 1
 size_flags_horizontal = 0
-horizontal_alignment = 0
+mouse_filter = 1
 text = "NAME: "
 
-[node name="Value" type="LineEdit" parent="."]
+[node name="Value" type="LineEdit" parent="." unique_id=1470956133]
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 3

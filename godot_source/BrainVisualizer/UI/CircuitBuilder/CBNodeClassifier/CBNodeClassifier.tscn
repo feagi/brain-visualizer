@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://cbnodeclassifier01"]
+[gd_scene format=3 uid="uid://ceqg1dnecy7nw"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeClassifier/CBNodeClassifier.gd" id="1_clf"]
+[ext_resource type="Script" uid="uid://bjxkciblud7gl" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeClassifier/CBNodeClassifier.gd" id="1_clf"]
 
-[node name="CBNodeClassifier" type="GraphNode"]
+[node name="CBNodeClassifier" type="GraphNode" unique_id=287090536]
 custom_minimum_size = Vector2(280, 50)
 offset_right = 280.0
 offset_bottom = 78.0
@@ -38,22 +38,22 @@ slot/2/right_icon = null
 slot/2/draw_stylebox = true
 script = ExtResource("1_clf")
 
-[node name="Top_Connector" type="HBoxContainer" parent="."]
+[node name="Top_Connector" type="HBoxContainer" parent="." unique_id=45425636]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Top_Connector"]
+[node name="Label" type="Label" parent="Top_Connector" unique_id=860658397]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Classifier"
 horizontal_alignment = 1
 
-[node name="Inputs" type="VBoxContainer" parent="."]
+[node name="Inputs" type="VBoxContainer" parent="." unique_id=252980132]
 layout_mode = 2
 size_flags_vertical = 0
 theme_type_variation = &"VBoxContainer_far"
 
-[node name="Outputs" type="VBoxContainer" parent="."]
+[node name="Outputs" type="VBoxContainer" parent="." unique_id=2107597569]
 layout_mode = 2
 size_flags_vertical = 0
 theme_type_variation = &"VBoxContainer_far"

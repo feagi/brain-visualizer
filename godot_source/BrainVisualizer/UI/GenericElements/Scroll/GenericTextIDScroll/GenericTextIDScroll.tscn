@@ -1,17 +1,17 @@
-[gd_scene load_steps=2 format=3 uid="uid://cpgia4kcxknfm"]
+[gd_scene format=3 uid="uid://cpgia4kcxknfm"]
 
 [ext_resource type="Script" uid="uid://gk8lm07bix0v" path="res://BrainVisualizer/UI/GenericElements/Scroll/GenericTextIDScroll/GenericTextIDScroll.gd" id="1_niuke"]
 
-[node name="GenericTextIDScroll" type="VBoxContainer"]
+[node name="GenericTextIDScroll" type="VBoxContainer" unique_id=227665514]
 offset_right = 59.0
 offset_bottom = 23.0
 script = ExtResource("1_niuke")
 
-[node name="filter" type="LineEdit" parent="."]
+[node name="filter" type="LineEdit" parent="." unique_id=809570592]
 layout_mode = 2
 
-[node name="GenericTextIDScroll" type="ScrollContainer" parent="."]
+[node name="GenericTextIDScroll" type="ScrollContainer" parent="." unique_id=617785038]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="GenericTextIDScroll"]
+[node name="VBoxContainer" type="VBoxContainer" parent="GenericTextIDScroll" unique_id=1128550705]
 layout_mode = 2

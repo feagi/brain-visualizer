@@ -1,17 +1,16 @@
-[gd_scene load_steps=12 format=3 uid="uid://dwk5m8n7pq2xa"]
+[gd_scene format=3 uid="uid://dwk5m8n7pq2xa"]
 
 [ext_resource type="Script" uid="uid://bn88ws6po6f24" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu.gd" id="1_sn8x3"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_m61t8"]
 [ext_resource type="Script" uid="uid://ckxev546v6y5y" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu_General.gd" id="3_g33ho"]
 [ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="3_y5jb7"]
 [ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="4_u56br"]
-[ext_resource type="PackedScene" uid="uid://cya0u5xbn7bro" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsible.tscn" id="5_glyhf"]
 [ext_resource type="Script" uid="uid://cvf0xeuwvsqiw" path="res://BrainVisualizer/UI/Windows/OptionsMenu/WindowOptionsMenu_Vision.gd" id="7_tri27"]
 [ext_resource type="PackedScene" uid="uid://cjyix5p3tp3nr" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn" id="8_dx5bi"]
 [ext_resource type="PackedScene" uid="uid://bua3t8kprcx3n" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.tscn" id="10_vgmew"]
 [ext_resource type="PackedScene" uid="uid://lavpe4aaitvu" path="res://BrainVisualizer/UI/GenericElements/Sliders/SliderPercentage.tscn" id="12_gaeu8"]
 
-[node name="WindowOptionsMenu" type="VBoxContainer"]
+[node name="WindowOptionsMenu" type="VBoxContainer" unique_id=50193506]
 offset_right = 760.0
 offset_bottom = 520.0
 size_flags_horizontal = 0
@@ -19,14 +18,14 @@ size_flags_vertical = 0
 theme_override_constants/separation = 8
 script = ExtResource("1_sn8x3")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_m61t8")]
+[node name="TitleBar" parent="." unique_id=1302151023 instance=ExtResource("2_m61t8")]
 layout_mode = 2
 title = "Brain Visualizer Settings"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1144918813]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1668027039]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 theme_override_constants/margin_left = 14
@@ -34,85 +33,86 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1146517780]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_far"
 theme_override_constants/separation = 10
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=528574552]
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="SettingSelector" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="SettingSelector" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1596731294]
 custom_minimum_size = Vector2(170, 320)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector"]
+[node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector" unique_id=1395643835]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="General" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection"]
+[node name="General" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection" unique_id=1752336405]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 text = "General
 "
 
-[node name="Network" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection"]
+[node name="Network" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection" unique_id=2037573573]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 text = "Network"
 
-[node name="Vision" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection"]
+[node name="Vision" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SettingSelector/Selection" unique_id=683096657]
 visible = false
 layout_mode = 2
 text = "Vision"
 
-[node name="SpecificSettings" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="SpecificSettings" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=704540618]
 custom_minimum_size = Vector2(520, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 14
 
-[node name="General" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+[node name="General" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings" unique_id=1544639413]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 script = ExtResource("3_g33ho")
 
-[node name="VBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
+[node name="VBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General" unique_id=571090499]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer" unique_id=1614665290]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 text = "Version"
 
-[node name="Version" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer"]
+[node name="Version" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer" unique_id=1499199560]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="VBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
+[node name="VBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General" unique_id=1524313839]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer2"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer2" unique_id=1675654283]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 text = "UI Magnification"
 
-[node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer2"]
+[node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer2" unique_id=1487405774]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 fit_to_longest_item = false
 item_count = 6
 popup/item_0/text = "0.5 Scale"
+popup/item_0/id = 0
 popup/item_1/text = "0.75 Scale"
 popup/item_1/id = 1
 popup/item_2/text = "1.0 Scale"
@@ -124,178 +124,178 @@ popup/item_4/id = 4
 popup/item_5/text = "2.0 Scale"
 popup/item_5/id = 5
 
-[node name="VBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
+[node name="VBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General" unique_id=1726894508]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer3"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer3" unique_id=698027133]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Advanced Mode"
 
-[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer3"]
+[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer3" unique_id=1065909016]
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("3_y5jb7")
 
-[node name="VBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
+[node name="VBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General" unique_id=699041803]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer4"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer4" unique_id=102835698]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Auto-create Inputs / Outputs"
 
-[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer4"]
+[node name="ToggleButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General/VBoxContainer4" unique_id=539134715]
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("3_y5jb7")
 
-[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/General" unique_id=881429214]
 custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
 
-[node name="Network" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+[node name="Network" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings" unique_id=1920622504]
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="VBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+[node name="VBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network" unique_id=1858477854]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer5"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer5" unique_id=304001788]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 text = "FEAGI API URL"
 
-[node name="APIURL" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer5"]
+[node name="APIURL" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer5" unique_id=1181596490]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="VBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+[node name="VBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network" unique_id=144547652]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer6"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer6" unique_id=870561901]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 text = "FEAGI API IP / Host"
 
-[node name="APIHost" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer6"]
+[node name="APIHost" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer6" unique_id=1708411935]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="VBoxContainer7" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+[node name="VBoxContainer7" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network" unique_id=1535540227]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer7"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer7" unique_id=1766441283]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 text = "FEAGI API Port"
 
-[node name="APIPort" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer7"]
+[node name="APIPort" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer7" unique_id=163479382]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="VBoxContainer8" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+[node name="VBoxContainer8" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network" unique_id=1834883889]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer8"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer8" unique_id=1037864211]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 text = "WebSocket URL"
 
-[node name="WebSocketURL" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer8"]
+[node name="WebSocketURL" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer8" unique_id=647069145]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="VBoxContainer9" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+[node name="VBoxContainer9" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network" unique_id=623602362]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer9"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer9" unique_id=103609908]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 text = "WebSocket IP / Host"
 
-[node name="WebSocketHost" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer9"]
+[node name="WebSocketHost" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer9" unique_id=1804199862]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="VBoxContainer10" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+[node name="VBoxContainer10" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network" unique_id=1986463487]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer10"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer10" unique_id=1309739406]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 text = "WebSocket Port"
 
-[node name="WebSocketPort" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer10"]
+[node name="WebSocketPort" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer10" unique_id=309112710]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="VBoxContainer11" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network"]
+[node name="VBoxContainer11" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network" unique_id=1473616635]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer11"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer11" unique_id=1517490992]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 text = "WebSocket Health"
 
-[node name="WebSocketHealth" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer11"]
+[node name="WebSocketHealth" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Network/VBoxContainer11" unique_id=478789236]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="Vision" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+[node name="Vision" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings" unique_id=623656580]
 visible = false
 layout_mode = 2
 script = ExtResource("7_tri27")
 
-[node name="General" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("8_dx5bi")]
+[node name="General" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" unique_id=1531139705 instance=ExtResource("8_dx5bi")]
 layout_mode = 2
 section_text = &"General"
 
-[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/HBoxContainer" index="1"]
+[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/HBoxContainer" parent_id_path=PackedInt32Array(1531139705, 1096859135) index="1" unique_id=573790308]
 text = "General"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere" parent_id_path=PackedInt32Array(1531139705, 1040100339) index="0" unique_id=1456179855]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=61004094]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer" unique_id=506700832]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Central Vision resolution"
 
-[node name="Vector2iField" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer" instance=ExtResource("10_vgmew")]
+[node name="Vector2iField" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer" unique_id=1041607610 instance=ExtResource("10_vgmew")]
 layout_mode = 2
 int_x_max = 1024
 int_y_max = 1024
@@ -303,15 +303,15 @@ int_x_min = 1
 int_y_min = 1
 initial_vector = Vector2i(1, 1)
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=1725520816]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer2"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer2" unique_id=1607149354]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Peripheral Vision Resolution "
 
-[node name="Vector2iField2" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer2" instance=ExtResource("10_vgmew")]
+[node name="Vector2iField2" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer2" unique_id=60229520 instance=ExtResource("10_vgmew")]
 layout_mode = 2
 int_x_max = 1024
 int_y_max = 1024
@@ -319,113 +319,113 @@ int_x_min = 1
 int_y_min = 1
 initial_vector = Vector2i(1, 1)
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=685580338]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3" unique_id=2089209560]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Flicker Period
 "
 
-[node name="flicker" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3"]
+[node name="flicker" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer3" unique_id=377025978]
 layout_mode = 2
 alignment = 1
 script = ExtResource("4_u56br")
 
-[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer"]
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=1932818664]
 layout_mode = 2
 
-[node name="Color" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+[node name="Color" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4" unique_id=620328180]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Color"
 flat = true
 
-[node name="Grayscale" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4"]
+[node name="Grayscale" type="CheckBox" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/General/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer/HBoxContainer4" unique_id=817946498]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "GrayScale
 "
 flat = true
 
-[node name="Adjustments" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("8_dx5bi")]
+[node name="Adjustments" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" unique_id=1680823663 instance=ExtResource("8_dx5bi")]
 layout_mode = 2
 section_text = &"Central/Peripheral adjustments"
 
-[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/HBoxContainer" index="1"]
+[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/HBoxContainer" parent_id_path=PackedInt32Array(1680823663, 1096859135) index="1" unique_id=573790308]
 text = "Adjustments"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere" parent_id_path=PackedInt32Array(1680823663, 1040100339) index="0" unique_id=1218882769]
 layout_mode = 2
 
-[node name="Eccentricity_X" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+[node name="Eccentricity_X" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=912608374 instance=ExtResource("12_gaeu8")]
 layout_mode = 2
 initial_label_text = &"Eccentricity (X)"
 
-[node name="Eccentricity_Y" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+[node name="Eccentricity_Y" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=757193213 instance=ExtResource("12_gaeu8")]
 layout_mode = 2
 initial_label_text = &"Eccentricity (Y)"
 
-[node name="Modulation_X" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+[node name="Modulation_X" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=1279212585 instance=ExtResource("12_gaeu8")]
 layout_mode = 2
 initial_label_text = &"Modulation (X)"
 
-[node name="Modulation_Y" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+[node name="Modulation_Y" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Adjustments/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=2044282815 instance=ExtResource("12_gaeu8")]
 layout_mode = 2
 initial_label_text = &"Modulation (Y)"
 
-[node name="Enhancements" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("8_dx5bi")]
+[node name="Enhancements" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" unique_id=1126823479 instance=ExtResource("8_dx5bi")]
 layout_mode = 2
 section_text = &"Enchancements"
 
-[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/HBoxContainer" index="1"]
+[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/HBoxContainer" parent_id_path=PackedInt32Array(1126823479, 1096859135) index="1" unique_id=573790308]
 text = "Enhancements"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere" parent_id_path=PackedInt32Array(1126823479, 1040100339) index="0" unique_id=17796500]
 layout_mode = 2
 
-[node name="Brightness" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+[node name="Brightness" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=873811699 instance=ExtResource("12_gaeu8")]
 layout_mode = 2
 initial_label_text = &"Brightness"
 
-[node name="Contrast" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+[node name="Contrast" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=989722634 instance=ExtResource("12_gaeu8")]
 layout_mode = 2
 initial_label_text = &"Constrast"
 
-[node name="Shadows" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+[node name="Shadows" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Enhancements/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=1785716313 instance=ExtResource("12_gaeu8")]
 layout_mode = 2
 initial_label_text = &"Shadows"
 
-[node name="Thresholds" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" instance=ExtResource("8_dx5bi")]
+[node name="Thresholds" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision" unique_id=712203664 instance=ExtResource("8_dx5bi")]
 layout_mode = 2
 section_text = &"Thresholds"
 
-[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/HBoxContainer" index="1"]
+[node name="Section_Title" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/HBoxContainer" parent_id_path=PackedInt32Array(712203664, 1096859135) index="1" unique_id=573790308]
 text = "Thresholds"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere" index="0"]
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere" parent_id_path=PackedInt32Array(712203664, 1040100339) index="0" unique_id=1753846270]
 layout_mode = 2
 
-[node name="PixelChange" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" instance=ExtResource("12_gaeu8")]
+[node name="PixelChange" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Vision/Thresholds/VerticalCollapsible/PanelContainer/PutThingsHere/VBoxContainer" unique_id=1866365318 instance=ExtResource("12_gaeu8")]
 layout_mode = 2
 initial_label_text = &"Pixel Change"
 
-[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings"]
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings" unique_id=1859654974]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons" unique_id=40163363]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons" unique_id=906919204]
 custom_minimum_size = Vector2(140, 52)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
-[node name="Accept" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons"]
+[node name="Accept" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer/SpecificSettings/Buttons" unique_id=551329939]
 custom_minimum_size = Vector2(140, 52)
 layout_mode = 2
 theme_type_variation = &"Button_big"

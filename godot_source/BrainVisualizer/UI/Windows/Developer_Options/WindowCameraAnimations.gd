@@ -17,4 +17,3 @@ func setup(host_brain_monitor: UI_BrainMonitor_3DScene = null) -> void:
 	if part != null:
 		var bm: UI_BrainMonitor_3DScene = host_brain_monitor if host_brain_monitor != null else BV.UI.get_active_brain_monitor()
 		part.configure_from_brain_monitor(bm)
-

@@ -18,4 +18,3 @@ func set_highlighting(is_higlighted: bool) -> void:
 		_text_button_ref.theme_type_variation = _default_theme_variation
 	else:
 		_text_button_ref.theme_type_variation = _default_theme_variation + HOVER_THEME_VARIATION_AFFIX
-

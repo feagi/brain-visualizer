@@ -1,11 +1,12 @@
-[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cqn7f2twyqkhs"]
 
-[ext_resource type="Shader" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/ClassifierStamp.gdshader" id="1"]
+[ext_resource type="Shader" uid="uid://bbhxbresg4sbi" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/ClassifierStamp.gdshader" id="1"]
 
 [resource]
+render_priority = 0
 shader = ExtResource("1")
-shader_parameter/band_a = Color(0.12, 0.86, 0.80, 0.78)
-shader_parameter/band_b = Color(0.64, 0.30, 0.92, 0.78)
+shader_parameter/band_a = Color(0.12, 0.86, 0.8, 0.78)
+shader_parameter/band_b = Color(0.64, 0.3, 0.92, 0.78)
 shader_parameter/class_count = 1.0
 shader_parameter/chamfer = 0.16
 shader_parameter/emission_energy = 1.15

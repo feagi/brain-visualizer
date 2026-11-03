@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://gfnxslv7ysws"]
 
-[node name="WindowViewCorticalAreaItem" type="HBoxContainer"]
+[node name="WindowViewCorticalAreaItem" type="HBoxContainer" unique_id=2068892587]
 size_flags_horizontal = 3
 
-[node name="CheckBox" type="CheckBox" parent="."]
+[node name="CheckBox" type="CheckBox" parent="." unique_id=776116311]
 layout_mode = 2
 tooltip_text = "Toggle if visualizations should be allowed on this cortical area"
 
-[node name="Button" type="Button" parent="."]
+[node name="Button" type="Button" parent="." unique_id=1106514735]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "NAME"

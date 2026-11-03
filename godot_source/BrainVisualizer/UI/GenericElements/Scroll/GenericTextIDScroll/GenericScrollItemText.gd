@@ -27,6 +27,3 @@ func user_selected():
 func user_deselected():
 	add_theme_stylebox_override("normal", _default)
 	
-
-
-

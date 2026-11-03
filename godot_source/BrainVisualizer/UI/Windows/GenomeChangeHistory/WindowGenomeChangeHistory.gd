@@ -371,4 +371,3 @@ func _cached_name(element_id: String) -> String:
 			if region_name != "" and region_name != "<null>":
 				return region_name
 	return ""
-

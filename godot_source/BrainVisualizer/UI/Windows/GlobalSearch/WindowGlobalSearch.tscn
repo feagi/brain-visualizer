@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://c5fds5tnmiqnk"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/GlobalSearch/WindowGlobalSearch.gd" id="1_search"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
+[ext_resource type="Script" uid="uid://6kv2oqot4mnu" path="res://BrainVisualizer/UI/Windows/GlobalSearch/WindowGlobalSearch.gd" id="1_search"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
 
-[node name="WindowGlobalSearch" type="VBoxContainer"]
+[node name="WindowGlobalSearch" type="VBoxContainer" unique_id=874579169]
 custom_minimum_size = Vector2(360, 280)
 offset_right = 460.0
 offset_bottom = 520.0
@@ -13,20 +13,20 @@ theme_override_constants/separation = 0
 script = ExtResource("1_search")
 window_spawn_location = Vector2i(240, 120)
 
-[node name="TitleBar" parent="." instance=ExtResource("2_title")]
+[node name="TitleBar" parent="." unique_id=343336322 instance=ExtResource("2_title")]
 layout_mode = 2
 title = "Search"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=2021706543]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=403701763]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1608206477]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

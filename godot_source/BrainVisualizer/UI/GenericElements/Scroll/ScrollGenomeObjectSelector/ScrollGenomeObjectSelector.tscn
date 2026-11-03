@@ -1,15 +1,15 @@
-[gd_scene load_steps=2 format=3 uid="uid://b1lf2ayhmnh34"]
+[gd_scene format=3 uid="uid://b1lf2ayhmnh34"]
 
 [ext_resource type="Script" uid="uid://7p5hp4opgfhr" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.gd" id="1_4wwv0"]
 
-[node name="ScrollGenomeObjectSelector" type="ScrollContainer"]
+[node name="ScrollGenomeObjectSelector" type="ScrollContainer" unique_id=180748317]
 custom_minimum_size = Vector2(650, 300)
 offset_right = 534.0
 offset_bottom = 393.0
 vertical_scroll_mode = 0
 script = ExtResource("1_4wwv0")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=105428746]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

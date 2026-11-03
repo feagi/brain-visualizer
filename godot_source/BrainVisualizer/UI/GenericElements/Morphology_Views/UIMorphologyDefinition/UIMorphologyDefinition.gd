@@ -109,4 +109,3 @@ func request_feagi_apply_morphology_settings(morphology_name: StringName) -> Fea
 
 func _morphology_updated(_self_morphology: BaseMorphology) -> void:
 	load_morphology(_morphology_loaded)
-

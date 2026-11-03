@@ -1,35 +1,35 @@
-[gd_scene load_steps=17 format=3 uid="uid://ckfda4upmty53"]
+[gd_scene format=3 uid="uid://ckfda4upmty53"]
 
 [ext_resource type="Script" uid="uid://cfnq802dlqokv" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorRowGeneric.gd" id="1_j8fwg"]
 [ext_resource type="Script" uid="uid://c3kgtsjp4sogl" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="2_ndwr8"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.tscn" id="3_7llad"]
 [ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="4_y0rve"]
-[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="15_7qf8u"]
-[ext_resource type="Texture2D" uid="uid://cyjkmin6bodpp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="5_taa4s"]
+[ext_resource type="Texture2D" uid="uid://bemkh0x1ase5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="5_taa4s"]
 [ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="6_3sy0c"]
+[ext_resource type="Texture2D" uid="uid://by4h733mp88h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="7_5oycp"]
+[ext_resource type="Texture2D" uid="uid://bwdt0vsrgwdd5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="8_bbn6j"]
+[ext_resource type="Texture2D" uid="uid://cbs36m2eday77" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="9_21qfw"]
+[ext_resource type="Texture2D" uid="uid://cixo1mepghmvv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="10_jwhcp"]
+[ext_resource type="Texture2D" uid="uid://byfmywjeq2rv1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="11_owcrx"]
+[ext_resource type="Texture2D" uid="uid://cj8lbvc4q2osf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="12_s71nl"]
+[ext_resource type="Texture2D" uid="uid://do70brd17kvj0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="13_s4moh"]
+[ext_resource type="Texture2D" uid="uid://j57u5ir3knxc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="14_yxhwi"]
+[ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="15_7qf8u"]
 [ext_resource type="Script" uid="uid://7xygvrncscwh" path="res://BrainVisualizer/UI/GenericElements/DropDown/CorticalDropDown.gd" id="rstdp_cdd"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="7_5oycp"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="8_bbn6j"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="9_21qfw"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="10_jwhcp"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="11_owcrx"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="12_s71nl"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="13_s4moh"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="14_yxhwi"]
 
-[node name="MappingEditorRowGeneric" type="HBoxContainer"]
+[node name="MappingEditorRowGeneric" type="HBoxContainer" unique_id=226260270]
 offset_right = 2032.0
 offset_bottom = 32.0
 size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
 script = ExtResource("1_j8fwg")
 
-[node name="MappingDefinitionGroup" type="HBoxContainer" parent="."]
+[node name="MappingDefinitionGroup" type="HBoxContainer" parent="." unique_id=614366775]
 layout_mode = 2
-theme_type_variation = &"HBoxContainer_adjacent"
 size_flags_horizontal = 0
+theme_type_variation = &"HBoxContainer_adjacent"
 
-[node name="Morphology_List" type="OptionButton" parent="MappingDefinitionGroup"]
+[node name="Morphology_List" type="OptionButton" parent="MappingDefinitionGroup" unique_id=1054804850]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -37,7 +37,7 @@ clip_text = true
 fit_to_longest_item = false
 script = ExtResource("2_ndwr8")
 
-[node name="edit" type="TextureButton" parent="MappingDefinitionGroup"]
+[node name="edit" type="TextureButton" parent="MappingDefinitionGroup" unique_id=1955395474]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 theme_type_variation = &"TextureButton_icon"
@@ -48,12 +48,12 @@ texture_disabled = ExtResource("10_jwhcp")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Spacer_AfterMappingDefinition" type="Control" parent="."]
+[node name="Spacer_AfterMappingDefinition" type="Control" parent="." unique_id=1394506057]
 custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Scalar" parent="." instance=ExtResource("3_7llad")]
+[node name="Scalar" parent="." unique_id=1128169505 instance=ExtResource("3_7llad")]
 custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -63,12 +63,12 @@ label_y_text = &""
 label_z_text = &""
 initial_vector = Vector3i(1, 1, 1)
 
-[node name="Spacer_AfterScalar" type="Control" parent="."]
+[node name="Spacer_AfterScalar" type="Control" parent="." unique_id=929420442]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="PSP" type="LineEdit" parent="."]
+[node name="PSP" type="LineEdit" parent="." unique_id=1863324188]
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -78,15 +78,14 @@ alignment = 1
 script = ExtResource("4_y0rve")
 initial_float = 1.0
 min_value = 0.0
-max_value = 9999999999.0
 number_decimal_places = 4
 
-[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="."]
+[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="." unique_id=1102398486]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Synaptic_Delay" type="LineEdit" parent="."]
+[node name="Synaptic_Delay" type="LineEdit" parent="." unique_id=1900230260]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -94,15 +93,15 @@ tooltip_text = "Synaptic delay in whole bursts (minimum 1). PSP arrives at presy
 alignment = 1
 script = ExtResource("15_7qf8u")
 initial_int = 1
-min_value = 1
 max_value = 255
+min_value = 1
 
-[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="."]
+[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="." unique_id=623301024]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Inhibitory" type="TextureButton" parent="."]
+[node name="Inhibitory" type="TextureButton" parent="." unique_id=2072651074]
 custom_minimum_size = Vector2(168, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -113,12 +112,12 @@ stretch_mode = 0
 script = ExtResource("6_3sy0c")
 enable_autoscaling_with_theme = false
 
-[node name="Spacer_BetweenInhibitoryAndGate" type="Control" parent="."]
+[node name="Spacer_BetweenInhibitoryAndGate" type="Control" parent="." unique_id=944956427]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Gate_Source_Area" type="OptionButton" parent="."]
+[node name="Gate_Source_Area" type="OptionButton" parent="." unique_id=1688548739]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -130,12 +129,12 @@ fit_to_longest_item = false
 script = ExtResource("rstdp_cdd")
 include_none_option = true
 
-[node name="Spacer_BetweenGateAndPlasticity" type="Control" parent="."]
+[node name="Spacer_BetweenGateAndPlasticity" type="Control" parent="." unique_id=114542541]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Plasticity_Mode" type="OptionButton" parent="."]
+[node name="Plasticity_Mode" type="OptionButton" parent="." unique_id=1359710949]
 custom_minimum_size = Vector2(168, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -146,12 +145,12 @@ tooltip_text = "Plasticity mode for this rule:
 clip_text = true
 fit_to_longest_item = false
 
-[node name="Spacer_AfterPlasticity" type="Control" parent="."]
+[node name="Spacer_AfterPlasticity" type="Control" parent="." unique_id=617750343]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Plasticity_Window" type="LineEdit" parent="."]
+[node name="Plasticity_Window" type="LineEdit" parent="." unique_id=2106991424]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -160,12 +159,12 @@ alignment = 1
 script = ExtResource("15_7qf8u")
 initial_int = 3
 
-[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="."]
+[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="." unique_id=615491648]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Plasticity_Constant" type="LineEdit" parent="."]
+[node name="Plasticity_Constant" type="LineEdit" parent="." unique_id=1028884107]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -174,12 +173,12 @@ alignment = 1
 script = ExtResource("4_y0rve")
 initial_float = 1.0
 
-[node name="Spacer_AfterPlasticityConst" type="Control" parent="."]
+[node name="Spacer_AfterPlasticityConst" type="Control" parent="." unique_id=1909575547]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="LTP_Multiplier" type="LineEdit" parent="."]
+[node name="LTP_Multiplier" type="LineEdit" parent="." unique_id=1074386724]
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -187,12 +186,12 @@ alignment = 1
 script = ExtResource("4_y0rve")
 initial_float = 1.0
 
-[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="."]
+[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="." unique_id=404416293]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="LTD_Multiplier" type="LineEdit" parent="."]
+[node name="LTD_Multiplier" type="LineEdit" parent="." unique_id=302463154]
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -200,28 +199,27 @@ alignment = 1
 script = ExtResource("4_y0rve")
 initial_float = 1.0
 
-[node name="Spacer_AfterLTD" type="Control" parent="."]
+[node name="Spacer_AfterLTD" type="Control" parent="." unique_id=994207073]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Eligibility_Decay_Bursts" type="LineEdit" parent="."]
+[node name="Eligibility_Decay_Bursts" type="LineEdit" parent="." unique_id=1886161438]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Eligibility trace decay constant in bursts (R-STDP only). 0 disables temporal credit assignment."
 alignment = 1
 script = ExtResource("15_7qf8u")
-initial_int = 0
-min_value = 0
 max_value = 1024
+min_value = 0
 
-[node name="Spacer_AfterEligibilityDecay" type="Control" parent="."]
+[node name="Spacer_AfterEligibilityDecay" type="Control" parent="." unique_id=1173117805]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Reward_Source_Area" type="OptionButton" parent="."]
+[node name="Reward_Source_Area" type="OptionButton" parent="." unique_id=607313622]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -232,12 +230,12 @@ fit_to_longest_item = false
 script = ExtResource("rstdp_cdd")
 include_none_option = true
 
-[node name="Spacer_AfterReward" type="Control" parent="."]
+[node name="Spacer_AfterReward" type="Control" parent="." unique_id=124337676]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Punishment_Source_Area" type="OptionButton" parent="."]
+[node name="Punishment_Source_Area" type="OptionButton" parent="." unique_id=866344233]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -248,12 +246,12 @@ fit_to_longest_item = false
 script = ExtResource("rstdp_cdd")
 include_none_option = true
 
-[node name="Spacer_AfterPunishment" type="Control" parent="."]
+[node name="Spacer_AfterPunishment" type="Control" parent="." unique_id=1892706867]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="remove" type="TextureButton" parent="."]
+[node name="remove" type="TextureButton" parent="." unique_id=784836440]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 0

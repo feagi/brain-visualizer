@@ -1,19 +1,18 @@
-[gd_scene load_steps=2 format=3 uid="uid://bv_device_float"]
+[gd_scene format=3 uid="uid://bxveu3a7r5epu"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditFloatParameter.gd" id="1_float"]
+[ext_resource type="Script" uid="uid://d4kic0soe7jol" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditFloatParameter.gd" id="1_float"]
 
-[node name="Float" type="HBoxContainer"]
+[node name="Float" type="HBoxContainer" unique_id=1639740139]
 script = ExtResource("1_float")
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=1163363010]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
-mouse_filter = 1
 size_flags_horizontal = 0
-horizontal_alignment = 0
+mouse_filter = 1
 text = "NAME: "
 
-[node name="Value" type="SpinBox" parent="."]
+[node name="Value" type="SpinBox" parent="." unique_id=1156890761]
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 3

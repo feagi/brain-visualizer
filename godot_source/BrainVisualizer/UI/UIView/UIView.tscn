@@ -1,25 +1,24 @@
-[gd_scene load_steps=2 format=3 uid="uid://bpam2w7i6dg8w"]
+[gd_scene format=3 uid="uid://bpam2w7i6dg8w"]
 
 [ext_resource type="Script" uid="uid://c46qilvwhoi4g" path="res://BrainVisualizer/UI/UIView/UIView.gd" id="1_m6ysq"]
 
-[node name="UIView" type="PanelContainer"]
+[node name="UIView" type="PanelContainer" unique_id=1594285551]
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_m6ysq")
 
-[node name="SplitContainer" type="SplitContainer" parent="."]
+[node name="SplitContainer" type="SplitContainer" parent="." unique_id=50653636]
 layout_mode = 2
 collapsed = true
 dragger_visibility = 2
-touch_dragger_enabled = false
 vertical = true
 
-[node name="Primary" type="MarginContainer" parent="SplitContainer"]
+[node name="Primary" type="MarginContainer" parent="SplitContainer" unique_id=1187178468]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="Secondary" type="MarginContainer" parent="SplitContainer"]
+[node name="Secondary" type="MarginContainer" parent="SplitContainer" unique_id=91883061]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.0

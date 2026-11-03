@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://cav0qsdij6r3j"]
+[gd_scene format=3 uid="uid://cav0qsdij6r3j"]
 
 [ext_resource type="Script" uid="uid://drb42tdubcl04" path="res://BrainVisualizer/UI/Windows/EditRegion/WindowEditRegion.gd" id="1_1ef3e"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_shuhl"]
@@ -7,7 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="11_fciic"]
 [ext_resource type="Script" uid="uid://bdii5h3dsyuhi" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/MultiLineTextInput.gd" id="12_desc"]
 
-[node name="WindowEditRegion" type="VBoxContainer"]
+[node name="WindowEditRegion" type="VBoxContainer" unique_id=510472196]
 offset_right = 620.0
 offset_bottom = 680.0
 size_flags_horizontal = 0
@@ -15,47 +15,47 @@ size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_1ef3e")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_shuhl")]
+[node name="TitleBar" parent="." unique_id=734622680 instance=ExtResource("2_shuhl")]
 layout_mode = 2
 title = "Edit Neural Circuit"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1086727418]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1059032952]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=384132918]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1226452012]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3" unique_id=7516267]
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Circuit Name"
 
-[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3" unique_id=922810863]
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("4_x0h7e")
 
-[node name="DescriptionSection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="DescriptionSection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1681386257]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/DescriptionSection"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/DescriptionSection" unique_id=1051578331]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Description"
 
-[node name="DescriptionText" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals/DescriptionSection"]
+[node name="DescriptionText" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals/DescriptionSection" unique_id=1365766743]
 custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -63,97 +63,97 @@ placeholder_text = "What this circuit is intended to do"
 wrap_mode = 1
 script = ExtResource("12_desc")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1018620412]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1848534415]
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Region ID"
 
-[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1947033540]
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 script = ExtResource("4_x0h7e")
 
-[node name="HBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1407376630]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5" unique_id=1058147723]
 custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Parent Circuit"
 
-[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5" unique_id=642914087]
 custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "PARENT"
 
-[node name="HBoxContainer2" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer2" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1288681849]
 layout_mode = 2
 theme_override_constants/separation = 8
 vertical = true
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" unique_id=2126781019]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "3D Position"
 
-[node name="Vector3fField" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" instance=ExtResource("5_ysyug")]
+[node name="Vector3fField" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" unique_id=929590725 instance=ExtResource("5_ysyug")]
 layout_mode = 2
 
-[node name="HBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer6" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=2114479976]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="OpenCircuit" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer6"]
+[node name="OpenCircuit" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer6" unique_id=1997032157]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Open Circuit"
 
-[node name="ScrollSectionGenericTemplate" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ScrollSectionGenericTemplate" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1677572080]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate" unique_id=1088741850]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer" unique_id=521803983]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Circuit internals"
 
-[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate"]
+[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate" unique_id=2132137452]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/PanelContainer" instance=ExtResource("11_fciic")]
+[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/PanelContainer" unique_id=1301208699 instance=ExtResource("11_fciic")]
 layout_mode = 2
 
-[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=19481892]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Label" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+[node name="Label" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4" unique_id=1928282274]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4" unique_id=845752271]
 custom_minimum_size = Vector2(128, 0)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
-[node name="Button2" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+[node name="Button2" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4" unique_id=1699860765]
 custom_minimum_size = Vector2(128, 0)
 layout_mode = 2
 theme_type_variation = &"Button_big"

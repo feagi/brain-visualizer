@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://c8custom_tooltip"]
+[gd_scene format=3 uid="uid://bw1r4ak2jpamx"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTopBarTooltip.gd" id="1_custom_tooltip"]
+[ext_resource type="Script" uid="uid://bmktoixyfnwit" path="res://BrainVisualizer/UI/GenericElements/CustomTooltip/CustomTopBarTooltip.gd" id="1_custom_tooltip"]
 
-[node name="CustomTopBarTooltip" type="VBoxContainer"]
+[node name="CustomTopBarTooltip" type="VBoxContainer" unique_id=862455459]
 custom_minimum_size = Vector2(360, 0)
 mouse_filter = 2
 script = ExtResource("1_custom_tooltip")

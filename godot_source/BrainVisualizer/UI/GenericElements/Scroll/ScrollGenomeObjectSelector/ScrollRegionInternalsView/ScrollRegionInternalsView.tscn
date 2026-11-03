@@ -1,20 +1,20 @@
-[gd_scene load_steps=2 format=3 uid="uid://c6w8yrqjhicjn"]
+[gd_scene format=3 uid="uid://c6w8yrqjhicjn"]
 
 [ext_resource type="Script" uid="uid://d21of7b70imt4" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollRegionInternalsView/ScrollRegionInternalsView.gd" id="1_kt4lb"]
 
-[node name="ScrollRegionInternalsView" type="PanelContainer"]
+[node name="ScrollRegionInternalsView" type="PanelContainer" unique_id=2064386634]
 custom_minimum_size = Vector2(300, 0)
 offset_right = 200.0
 offset_bottom = 261.0
 size_flags_horizontal = 0
 script = ExtResource("1_kt4lb")
 
-[node name="Scroll" type="ScrollContainer" parent="."]
+[node name="Scroll" type="ScrollContainer" parent="." unique_id=503535595]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Scroll"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Scroll" unique_id=1578156540]
 layout_mode = 2
 size_flags_horizontal = 3

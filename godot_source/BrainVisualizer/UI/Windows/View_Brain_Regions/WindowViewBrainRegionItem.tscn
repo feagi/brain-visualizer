@@ -1,11 +1,9 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://peegqxwnrn8s"]
 
-[node name="WindowViewBrainRegionItem" type="HBoxContainer"]
+[node name="WindowViewBrainRegionItem" type="HBoxContainer" unique_id=966815205]
 size_flags_horizontal = 3
 
-[node name="Button" type="Button" parent="."]
+[node name="Button" type="Button" parent="." unique_id=1711839152]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "REGION"
-
-

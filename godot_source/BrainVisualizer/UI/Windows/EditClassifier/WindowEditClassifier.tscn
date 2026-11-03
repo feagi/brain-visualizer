@@ -1,25 +1,25 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://bv643hdvdey78"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/EditClassifier/WindowEditClassifier.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
+[ext_resource type="Script" uid="uid://b667tjjmdu708" path="res://BrainVisualizer/UI/Windows/EditClassifier/WindowEditClassifier.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
 
-[node name="WindowEditClassifier" type="VBoxContainer"]
+[node name="WindowEditClassifier" type="VBoxContainer" unique_id=2012747638]
 offset_right = 640.0
 offset_bottom = 560.0
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_title")]
+[node name="TitleBar" parent="." unique_id=1781934050 instance=ExtResource("2_title")]
 layout_mode = 2
 title = "Classifier Properties"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1727542707]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=17456211]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=883864942]
 layout_mode = 2
 theme_override_constants/separation = 12

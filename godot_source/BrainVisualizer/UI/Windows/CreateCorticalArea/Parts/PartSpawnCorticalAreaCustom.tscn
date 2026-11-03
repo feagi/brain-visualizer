@@ -1,37 +1,37 @@
-[gd_scene load_steps=4 format=3 uid="uid://vm8thgnbjojc"]
+[gd_scene format=3 uid="uid://vm8thgnbjojc"]
 
 [ext_resource type="Script" uid="uid://b0clqju1k15n7" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaCustom.gd" id="1_ita8s"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="2_k6lwm"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="3_wwnb4"]
 
-[node name="Definition_Custom" type="VBoxContainer"]
+[node name="Definition_Custom" type="VBoxContainer" unique_id=49403828]
 offset_right = 466.0
 offset_bottom = 85.0
 theme_override_constants/separation = 8
 script = ExtResource("1_ita8s")
 
-[node name="name" type="HBoxContainer" parent="."]
+[node name="name" type="HBoxContainer" parent="." unique_id=877920358]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="name"]
+[node name="Label" type="Label" parent="name" unique_id=2136642219]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Select a name:"
 
-[node name="name" type="LineEdit" parent="name"]
+[node name="name" type="LineEdit" parent="name" unique_id=1798344737]
 custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 script = ExtResource("2_k6lwm")
 
-[node name="dimensions" type="HBoxContainer" parent="."]
+[node name="dimensions" type="HBoxContainer" parent="." unique_id=1656736866]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="dimensions"]
+[node name="Label" type="Label" parent="dimensions" unique_id=1828992818]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Select  dimensions: "
 
-[node name="dimensions" parent="dimensions" instance=ExtResource("3_wwnb4")]
+[node name="dimensions" parent="dimensions" unique_id=528387611 instance=ExtResource("3_wwnb4")]
 layout_mode = 2
 label_x_text = &"W"
 label_y_text = &"H"
@@ -41,14 +41,14 @@ int_y_min = 1
 int_z_min = 1
 initial_vector = Vector3i(1, 1, 1)
 
-[node name="location" type="HBoxContainer" parent="."]
+[node name="location" type="HBoxContainer" parent="." unique_id=2140109281]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="location"]
+[node name="Label" type="Label" parent="location" unique_id=684668179]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Choose a location:"
 
-[node name="location" parent="location" instance=ExtResource("3_wwnb4")]
+[node name="location" parent="location" unique_id=420190553 instance=ExtResource("3_wwnb4")]
 layout_mode = 2
 initial_vector = Vector3i(40, 0, 0)

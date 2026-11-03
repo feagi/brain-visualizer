@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://cmfh6gb04wy3i"]
+[gd_scene format=3 uid="uid://cmfh6gb04wy3i"]
 
 [ext_resource type="Script" uid="uid://jxb6d6r1jtvo" path="res://BrainVisualizer/UI/CircuitBuilder/CircuitBuilder.gd" id="1_75y4c"]
 [ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.tscn" id="2_combo"]
@@ -6,24 +6,24 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_74usq"]
 bg_color = Color(0.14902, 0.14902, 0.14902, 1)
 
-[node name="CircuitBuilder" type="GraphEdit"]
+[node name="CircuitBuilder" type="GraphEdit" unique_id=1104898920]
 custom_minimum_size = Vector2(64, 64)
 offset_right = 644.0
 offset_bottom = 460.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_74usq")
-scroll_offset = Vector2(-64, -64)
 snapping_enabled = false
 show_grid_buttons = false
 show_minimap_button = false
 show_arrange_button = false
 script = ExtResource("1_75y4c")
 
-[node name="Timer" type="Timer" parent="."]
+[node name="Timer" type="Timer" parent="." unique_id=1086995856]
 one_shot = true
 
-[node name="BrainObjectsCombo" parent="." instance=ExtResource("2_combo")]
+[node name="BrainObjectsCombo" parent="." unique_id=601141943 instance=ExtResource("2_combo")]
+z_index = 10
+layout_mode = 0
 offset_left = 8.0
 offset_top = 8.0
-z_index = 10

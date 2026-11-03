@@ -1,11 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://camerawin_tmp_uid"]
+[gd_scene format=3 uid="uid://b57c4xg3ve1s2"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://87vrejfoeetq" path="res://BrainVisualizer/UI/Windows/Developer_Options/WindowCameraAnimations.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
 [ext_resource type="PackedScene" uid="uid://c2jdrm0arstht" path="res://BrainVisualizer/UI/Windows/Developer_Options/Parts/WindowDeveloperOptionsPartCameraAnimations.tscn" id="3_cam_part"]
 [ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="4_float_input"]
 
-[node name="WindowCameraAnimations" type="VBoxContainer"]
+[node name="WindowCameraAnimations" type="VBoxContainer" unique_id=1248338166]
 offset_right = 520.0
 offset_bottom = 520.0
 size_flags_horizontal = 0
@@ -13,39 +13,39 @@ size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+[node name="TitleBar" parent="." unique_id=632088684 instance=ExtResource("2_titlebar")]
 layout_mode = 2
 title = "Camera Animations"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1616488957]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=28262074]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1345539923]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_far"
 
-[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=811587680]
 custom_minimum_size = Vector2(480, 0)
 layout_mode = 2
-autowrap_mode = 3
 text = "Create and play camera presets to generate 3D walkthroughs of neural circuits for demonstrations. Add camera positions or paths, then play the sequence."
+autowrap_mode = 3
 
-[node name="Separator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Separator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1738014978]
 layout_mode = 2
 
-[node name="TransitionTime" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="TransitionTime" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=338475983]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/TransitionTime"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/TransitionTime" unique_id=730768812]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Transition Time"
 
-[node name="transition_time" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/TransitionTime"]
+[node name="transition_time" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/TransitionTime" unique_id=254467304]
 layout_mode = 2
 tooltip_text = "transition time"
 script = ExtResource("4_float_input")
@@ -53,19 +53,19 @@ initial_float = 3.0
 min_value = 0.1
 suffix = " seconds"
 
-[node name="MovementInterp" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="MovementInterp" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1068951573]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/MovementInterp"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/MovementInterp" unique_id=1894785766]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Movement Interp "
 
-[node name="move_interp" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/MovementInterp"]
+[node name="move_interp" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/MovementInterp" unique_id=277891872]
 layout_mode = 2
-item_count = 5
 selected = 1
 fit_to_longest_item = false
+item_count = 5
 popup/item_0/text = "Nearest"
 popup/item_0/id = 0
 popup/item_1/text = "Linear "
@@ -77,19 +77,19 @@ popup/item_3/id = 3
 popup/item_4/text = "Angle Cubic"
 popup/item_4/id = 4
 
-[node name="RotationInterp" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="RotationInterp" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=975498467]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/RotationInterp"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/RotationInterp" unique_id=439293185]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Rotation Interp "
 
-[node name="rot_interp" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/RotationInterp"]
+[node name="rot_interp" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/RotationInterp" unique_id=1644365271]
 layout_mode = 2
-item_count = 5
 selected = 1
 fit_to_longest_item = false
+item_count = 5
 popup/item_0/text = "Nearest"
 popup/item_0/id = 0
 popup/item_1/text = "Linear "
@@ -101,12 +101,11 @@ popup/item_3/id = 3
 popup/item_4/text = "Angle Cubic"
 popup/item_4/id = 4
 
-[node name="AddCurrentPosition" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="AddCurrentPosition" type="Button" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1896508285]
 layout_mode = 2
 text = "Add Current Position"
 
-[node name="CameraAnimations" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_cam_part")]
+[node name="CameraAnimations" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1266647734 instance=ExtResource("3_cam_part")]
 layout_mode = 2
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/AddCurrentPosition" to="WindowPanel/WindowMargin/WindowInternals/CameraAnimations" method="add_frame"]
-

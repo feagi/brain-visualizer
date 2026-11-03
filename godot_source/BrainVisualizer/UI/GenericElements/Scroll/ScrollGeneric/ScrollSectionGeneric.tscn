@@ -1,12 +1,12 @@
-[gd_scene load_steps=2 format=3 uid="uid://b4cfpdwwgj8q8"]
+[gd_scene format=3 uid="uid://b4cfpdwwgj8q8"]
 
 [ext_resource type="Script" uid="uid://u0lilit85skx" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.gd" id="1_keluv"]
 
-[node name="ScrollSectionGeneric" type="ScrollContainer"]
+[node name="ScrollSectionGeneric" type="ScrollContainer" unique_id=806506245]
 size_flags_horizontal = 3
 script = ExtResource("1_keluv")
 
-[node name="BoxContainer" type="BoxContainer" parent="."]
+[node name="BoxContainer" type="BoxContainer" parent="." unique_id=1170409284]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

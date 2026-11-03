@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://dojgkcnlpiq4v"]
+[gd_scene format=3 uid="uid://dojgkcnlpiq4v"]
 
 [ext_resource type="Script" uid="uid://ctfl2yq7y5ehp" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyOverviews/UIMorpologyOverviews.gd" id="1_7f4of"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://BrainVisualizer/UI/GenericElements/Scroll/Morphology_List/MorphologyScroll.tscn" id="1_saprm"]
@@ -11,124 +11,124 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vxism"]
 bg_color = Color(0.2, 0.223529, 0.270588, 1)
 
-[node name="UIMorphologyOverviews" type="HBoxContainer" node_paths=PackedStringArray("controls_to_scale_by_min_size")]
+[node name="UIMorphologyOverviews" type="HBoxContainer" unique_id=745388890 node_paths=PackedStringArray("controls_to_scale_by_min_size")]
 theme_override_constants/separation = 12
 script = ExtResource("1_7f4of")
 controls_to_scale_by_min_size = [NodePath("SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/PanelContainer/SmartMorphologyView"), NodePath("SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyImage"), NodePath("SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer/UIMorphologyUsage"), NodePath("SelectedDetails/Details/MarginContainer/VBoxContainer/UIMorphologyDescription")]
 
-[node name="Listings" type="VBoxContainer" parent="."]
+[node name="Listings" type="VBoxContainer" parent="." unique_id=238393345]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ListHeader" type="Label" parent="Listings"]
+[node name="ListHeader" type="Label" parent="Listings" unique_id=2015450703]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Connectivity Rules"
 
-[node name="AddMorphology" type="Button" parent="Listings"]
+[node name="AddMorphology" type="Button" parent="Listings" unique_id=225907180]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Define New Connectivity Rule"
 
-[node name="MorphologyScroll" parent="Listings" instance=ExtResource("1_saprm")]
+[node name="MorphologyScroll" parent="Listings" unique_id=1617437347 instance=ExtResource("1_saprm")]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SelectedDetails" type="VBoxContainer" parent="."]
+[node name="SelectedDetails" type="VBoxContainer" parent="." unique_id=2045755536]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="SelectedHeader" type="Label" parent="SelectedDetails"]
+[node name="SelectedHeader" type="Label" parent="SelectedDetails" unique_id=865172221]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Selected Rule"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="SelectedDetails"]
+[node name="HBoxContainer" type="HBoxContainer" parent="SelectedDetails" unique_id=874494332]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Gap" type="Control" parent="SelectedDetails/HBoxContainer"]
+[node name="Gap" type="Control" parent="SelectedDetails/HBoxContainer" unique_id=207402977]
 custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
 
-[node name="Name" type="LineEdit" parent="SelectedDetails/HBoxContainer"]
+[node name="Name" type="LineEdit" parent="SelectedDetails/HBoxContainer" unique_id=863750835]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "No Connectivity Rule Loaded!"
 editable = false
 
-[node name="Separator" type="HSeparator" parent="SelectedDetails"]
+[node name="Separator" type="HSeparator" parent="SelectedDetails" unique_id=18857443]
 layout_mode = 2
 
-[node name="Details" type="PanelContainer" parent="SelectedDetails"]
+[node name="Details" type="PanelContainer" parent="SelectedDetails" unique_id=1240194299]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="SelectedDetails/Details"]
+[node name="MarginContainer" type="MarginContainer" parent="SelectedDetails/Details" unique_id=357574398]
 layout_mode = 2
 theme_override_constants/margin_left = 12
-theme_override_constants/margin_right = 12
 theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="VBoxContainer" type="VBoxContainer" parent="SelectedDetails/Details/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="SelectedDetails/Details/MarginContainer" unique_id=527878644]
 custom_minimum_size = Vector2(0, 500)
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="HBoxContainer" type="HBoxContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer" unique_id=1898580239]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="PanelContainer" type="PanelContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="PanelContainer" type="PanelContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer" unique_id=403961212]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_vxism")
 
-[node name="SmartMorphologyView" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/PanelContainer" instance=ExtResource("2_i6hmf")]
+[node name="SmartMorphologyView" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/PanelContainer" unique_id=1121848418 instance=ExtResource("2_i6hmf")]
 custom_minimum_size = Vector2(700, 256)
 layout_mode = 2
 title_enabled = false
 
-[node name="VBoxContainer" type="VBoxContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1367974995]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 
-[node name="UIMorphologyImage" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer" instance=ExtResource("3_chxvu")]
+[node name="UIMorphologyImage" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer" unique_id=1824802331 instance=ExtResource("3_chxvu")]
 visible = false
 custom_minimum_size = Vector2(192, 192)
 layout_mode = 2
 
-[node name="UIMorphologyUsage" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer" instance=ExtResource("4_5atic")]
+[node name="UIMorphologyUsage" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/HBoxContainer/VBoxContainer" unique_id=1556113853 instance=ExtResource("4_5atic")]
 custom_minimum_size = Vector2(192, 128)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="UIMorphologyDescription" parent="SelectedDetails/Details/MarginContainer/VBoxContainer" instance=ExtResource("5_isl0m")]
+[node name="UIMorphologyDescription" parent="SelectedDetails/Details/MarginContainer/VBoxContainer" unique_id=1804542077 instance=ExtResource("5_isl0m")]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
-[node name="Buttons" type="HBoxContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer"]
+[node name="Buttons" type="HBoxContainer" parent="SelectedDetails/Details/MarginContainer/VBoxContainer" unique_id=312043756]
 layout_mode = 2
-alignment = 2
 theme_override_constants/separation = 12
+alignment = 2
 
-[node name="Delete" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons" instance=ExtResource("7_26hxb")]
+[node name="Delete" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons" unique_id=1255688846 instance=ExtResource("7_26hxb")]
 layout_mode = 2
 
-[node name="Gap" type="Control" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons"]
+[node name="Gap" type="Control" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons" unique_id=2020313415]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Close" type="Button" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons"]
+[node name="Close" type="Button" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons" unique_id=1628472446]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Close"
 
-[node name="Update" type="Button" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons"]
+[node name="Update" type="Button" parent="SelectedDetails/Details/MarginContainer/VBoxContainer/Buttons" unique_id=562835384]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

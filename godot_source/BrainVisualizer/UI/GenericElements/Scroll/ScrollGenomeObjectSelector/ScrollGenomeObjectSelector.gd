@@ -226,4 +226,3 @@ func _user_selected_object(genome_object: GenomeObject, is_on: bool, from_view: 
 		if index != -1:
 			_selected_objects.remove_at(index)
 			object_removed.emit(genome_object)
-

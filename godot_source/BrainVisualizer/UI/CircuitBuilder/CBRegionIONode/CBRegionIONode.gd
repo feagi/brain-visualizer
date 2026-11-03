@@ -139,4 +139,3 @@ func _set_icon() -> void:
 			_icon.texture = load(ICON_UNKNOWN_OUTPUT)
 		return
 	_icon.texture = UIManager.get_icon_texture_by_ID(area.cortical_ID, _is_region_input)
-

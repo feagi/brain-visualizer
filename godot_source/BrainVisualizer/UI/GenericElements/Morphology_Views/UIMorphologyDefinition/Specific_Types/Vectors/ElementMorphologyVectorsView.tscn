@@ -1,33 +1,33 @@
-[gd_scene load_steps=12 format=3 uid="uid://d1tg3odgc36tb"]
+[gd_scene format=3 uid="uid://d1tg3odgc36tb"]
 
 [ext_resource type="Script" uid="uid://cw68qeqibkye2" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.gd" id="1_5hdhx"]
-[ext_resource type="Texture2D" uid="uid://car1lnufwslyi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="2_iw5kc"]
-[ext_resource type="Texture2D" uid="uid://cdje4hcnt8pai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="3_li0mh"]
+[ext_resource type="Texture2D" uid="uid://crmsk82gu4mji" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="2_iw5kc"]
+[ext_resource type="Texture2D" uid="uid://t3s8chta6i04" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="3_li0mh"]
 [ext_resource type="PackedScene" uid="uid://cujhi16cmpffu" path="res://BrainVisualizer/UI/GenericElements/Scroll/Scroll_Vertical.tscn" id="4_8mw72"]
-[ext_resource type="Texture2D" uid="uid://clqnxjuyb23y1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="4_qk7tm"]
+[ext_resource type="Texture2D" uid="uid://05m4faw18ba2" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="4_qk7tm"]
 [ext_resource type="PackedScene" uid="uid://xyxwcmpgu8a" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/Prefab_VectorWithDelete.tscn" id="5_dnbvl"]
-[ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_excb5"]
-[ext_resource type="Texture2D" uid="uid://einorua52n7p" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_S.jpg" id="6_guide_s"]
-[ext_resource type="Texture2D" uid="uid://dwulffs7g3h5l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_C.jpg" id="7_guide_c"]
-[ext_resource type="Texture2D" uid="uid://c6xiogyoy4lkj" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_H.jpg" id="8_guide_h"]
-[ext_resource type="Texture2D" uid="uid://clf4jq4cjtlyf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_D.jpg" id="9_guide_d"]
+[ext_resource type="Texture2D" uid="uid://celkulxou7o3s" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_excb5"]
+[ext_resource type="Texture2D" uid="uid://bahayp8mph84u" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_S.jpg" id="6_guide_s"]
+[ext_resource type="Texture2D" uid="uid://d2kst702ciwog" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_C.jpg" id="7_guide_c"]
+[ext_resource type="Texture2D" uid="uid://b0c7rqo22hwjd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_H.jpg" id="8_guide_h"]
+[ext_resource type="Texture2D" uid="uid://ddkbxndwbmui0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_D.jpg" id="9_guide_d"]
 
-[node name="ElementMorphologyVectorsView" type="VBoxContainer"]
+[node name="ElementMorphologyVectorsView" type="VBoxContainer" unique_id=557964655]
 offset_right = 172.0
 offset_bottom = 36.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_5hdhx")
 
-[node name="header" type="HBoxContainer" parent="."]
+[node name="header" type="HBoxContainer" parent="." unique_id=1882184097]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="header"]
+[node name="Label" type="Label" parent="header" unique_id=903991377]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Vector Definition:"
 
-[node name="help" type="TextureButton" parent="header"]
+[node name="help" type="TextureButton" parent="header" unique_id=1434224527]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Vector connectivity guide"
@@ -39,7 +39,7 @@ texture_disabled = ExtResource("9_guide_d")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="add_vector" type="TextureButton" parent="header"]
+[node name="add_vector" type="TextureButton" parent="header" unique_id=656165571]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 theme_type_variation = &"TextureButton_icon"
@@ -50,15 +50,15 @@ texture_disabled = ExtResource("5_excb5")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="raw_edit" type="Button" parent="header"]
+[node name="raw_edit" type="Button" parent="header" unique_id=515597908]
 layout_mode = 2
 text = "Raw edit"
 
-[node name="visual_edit" type="Button" parent="header"]
+[node name="visual_edit" type="Button" parent="header" unique_id=1093213887]
 layout_mode = 2
 text = "Visual edit"
 
-[node name="Vectors" parent="." node_paths=PackedStringArray("main_window") instance=ExtResource("4_8mw72")]
+[node name="Vectors" parent="." unique_id=1235500467 node_paths=PackedStringArray("main_window") instance=ExtResource("4_8mw72")]
 custom_minimum_size = Vector2(300, 180)
 layout_mode = 2
 size_flags_vertical = 3

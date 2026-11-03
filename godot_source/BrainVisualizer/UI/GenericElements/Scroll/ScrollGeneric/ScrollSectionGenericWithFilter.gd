@@ -17,4 +17,3 @@ func _on_text_entered(text: String) -> void:
 		_scroll_section.toggle_all_visiblity(true)
 		return
 	_scroll_section.filter_by_friendly_name(text)
-

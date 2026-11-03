@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://dtoic0bf8v2f2"]
+[gd_scene format=3 uid="uid://dtoic0bf8v2f2"]
 
 [ext_resource type="Script" uid="uid://bn5tlrl5kye80" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3Labels.gd" id="1_joewg"]
 
-[node name="Vector3Labels" type="BoxContainer"]
+[node name="Vector3Labels" type="BoxContainer" unique_id=1374594583]
 offset_right = 42.0
 offset_bottom = 22.0
 theme_type_variation = &"BoxContainer_far"
@@ -11,21 +11,21 @@ label_x_text = &""
 label_y_text = &""
 label_z_text = &""
 
-[node name="LabelX" type="Label" parent="."]
+[node name="LabelX" type="Label" parent="." unique_id=1312102324]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Label_UniformWidth"
 text = "X"
 horizontal_alignment = 1
 
-[node name="LabelY" type="Label" parent="."]
+[node name="LabelY" type="Label" parent="." unique_id=1246871003]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Label_UniformWidth"
 text = "Y"
 horizontal_alignment = 1
 
-[node name="LabelZ" type="Label" parent="."]
+[node name="LabelZ" type="Label" parent="." unique_id=1983458894]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Label_UniformWidth"

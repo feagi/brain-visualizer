@@ -1,122 +1,119 @@
-[gd_scene load_steps=3 format=3 uid="uid://craawda1yun5y"]
+[gd_scene format=3 uid="uid://craawda1yun5y"]
 
 [ext_resource type="Script" uid="uid://b4pdwtu5ymmil" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaIOPU.gd" id="1_ucbj0"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iinf.png" id="4_1tced"]
+[ext_resource type="Texture2D" uid="uid://edjj1s21t7f0" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iinf.png" id="4_1tced"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_yjcxe"]
 
-[node name="Definition_IOPU" type="VBoxContainer"]
+[node name="Definition_IOPU" type="VBoxContainer" unique_id=1622296665]
 offset_right = 489.0
 offset_bottom = 117.0
 theme_type_variation = &"VBoxContainer_farther"
 script = ExtResource("1_ucbj0")
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="." unique_id=1825368029]
 layout_mode = 2
 
-[node name="TopLabels" type="VBoxContainer" parent="HBoxContainer2"]
+[node name="TopLabels" type="VBoxContainer" parent="HBoxContainer2" unique_id=1691188400]
 custom_minimum_size = Vector2(112, 0)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="HBoxContainer2/TopLabels"]
+[node name="Label" type="Label" parent="HBoxContainer2/TopLabels" unique_id=390627881]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Device Name:"
 vertical_alignment = 1
 
-[node name="TopSection" type="VBoxContainer" parent="HBoxContainer2"]
+[node name="TopSection" type="VBoxContainer" parent="HBoxContainer2" unique_id=1694102810]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Spacer" type="Control" parent="HBoxContainer2/TopSection"]
+[node name="Spacer" type="Control" parent="HBoxContainer2/TopSection" unique_id=1568905059]
 layout_mode = 2
 
-[node name="DeviceName" type="Label" parent="HBoxContainer2/TopSection"]
+[node name="DeviceName" type="Label" parent="HBoxContainer2/TopSection" unique_id=1072436157]
 layout_mode = 2
 vertical_alignment = 1
 autowrap_mode = 1
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=50229718]
 layout_mode = 2
 
-[node name="Labels" type="VBoxContainer" parent="HBoxContainer"]
+[node name="Labels" type="VBoxContainer" parent="HBoxContainer" unique_id=1163045090]
 custom_minimum_size = Vector2(112, 0)
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_farther"
 
-[node name="Label" type="Label" parent="HBoxContainer/Labels"]
+[node name="Label" type="Label" parent="HBoxContainer/Labels" unique_id=287803373]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Unit ID:"
 vertical_alignment = 1
 
-[node name="Label3" type="Label" parent="HBoxContainer/Labels"]
+[node name="Label3" type="Label" parent="HBoxContainer/Labels" unique_id=570404361]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Device Count:"
 vertical_alignment = 1
 
-[node name="Label2" type="Label" parent="HBoxContainer/Labels"]
+[node name="Label2" type="Label" parent="HBoxContainer/Labels" unique_id=2083895926]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Location:"
 vertical_alignment = 1
 
-[node name="Label4" type="Label" parent="HBoxContainer/Labels"]
+[node name="Label4" type="Label" parent="HBoxContainer/Labels" unique_id=126421295]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Data Type:"
 vertical_alignment = 1
 
-[node name="Label5" type="Label" parent="HBoxContainer/Labels"]
+[node name="Label5" type="Label" parent="HBoxContainer/Labels" unique_id=195102492]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Frame Handling:"
 vertical_alignment = 1
 
-[node name="Label6" type="Label" parent="HBoxContainer/Labels"]
+[node name="Label6" type="Label" parent="HBoxContainer/Labels" unique_id=296606851]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Positioning:"
 vertical_alignment = 1
 
-[node name="Fields" type="VBoxContainer" parent="HBoxContainer"]
+[node name="Fields" type="VBoxContainer" parent="HBoxContainer" unique_id=742053631]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_farther"
 
-[node name="UnitID" type="SpinBox" parent="HBoxContainer/Fields"]
+[node name="UnitID" type="SpinBox" parent="HBoxContainer/Fields" unique_id=215389387]
 layout_mode = 2
-min_value = 0.0
 max_value = 65535.0
-value = 0.0
 alignment = 1
 
-[node name="ChannelCount" type="SpinBox" parent="HBoxContainer/Fields"]
+[node name="ChannelCount" type="SpinBox" parent="HBoxContainer/Fields" unique_id=17024853]
 layout_mode = 2
-max_value = 1e+10
+max_value = 10000000000.0
 value = 1.0
 alignment = 1
 
-[node name="Location" parent="HBoxContainer/Fields" instance=ExtResource("6_yjcxe")]
+[node name="Location" parent="HBoxContainer/Fields" unique_id=781776211 instance=ExtResource("6_yjcxe")]
 layout_mode = 2
 initial_vector = Vector3i(40, 0, 0)
 
-[node name="DataTypeVariant" type="OptionButton" parent="HBoxContainer/Fields"]
+[node name="DataTypeVariant" type="OptionButton" parent="HBoxContainer/Fields" unique_id=31261365]
 layout_mode = 2
 
-[node name="FrameHandling" type="OptionButton" parent="HBoxContainer/Fields"]
+[node name="FrameHandling" type="OptionButton" parent="HBoxContainer/Fields" unique_id=2005346764]
 layout_mode = 2
 
-[node name="Positioning" type="OptionButton" parent="HBoxContainer/Fields"]
+[node name="Positioning" type="OptionButton" parent="HBoxContainer/Fields" unique_id=924925540]
 layout_mode = 2
 
-[node name="TextureRect" type="TextureRect" parent="HBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer" unique_id=748401735]
 layout_mode = 2
 texture = ExtResource("4_1tced")
 expand_mode = 2
 
-[node name="UnitIDStatus" type="Label" parent="."]
+[node name="UnitIDStatus" type="Label" parent="." unique_id=1657025767]
 layout_mode = 2
-text = ""
 horizontal_alignment = 1
 
 [connection signal="value_changed" from="HBoxContainer/Fields/UnitID" to="." method="_on_unit_id_changed"]

@@ -1,290 +1,276 @@
-[gd_scene load_steps=7 format=3 uid="uid://cxb6dif7pqgss"]
+[gd_scene format=3 uid="uid://cxb6dif7pqgss"]
 
 [ext_resource type="Script" uid="uid://6e2vio7clwsi" path="res://BrainVisualizer/UI/Windows/MappingEditor/GenericMappingDetailSettings.gd" id="1_a7y6g"]
-[ext_resource type="Texture2D" uid="uid://car1lnufwslyi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="2_na2v5"]
-[ext_resource type="Texture2D" uid="uid://cdje4hcnt8pai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="3_5epqe"]
-[ext_resource type="Texture2D" uid="uid://clqnxjuyb23y1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="4_rplnj"]
-[ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_o7ap7"]
+[ext_resource type="Texture2D" uid="uid://crmsk82gu4mji" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="2_na2v5"]
+[ext_resource type="Texture2D" uid="uid://t3s8chta6i04" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="3_5epqe"]
+[ext_resource type="Texture2D" uid="uid://05m4faw18ba2" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="4_rplnj"]
+[ext_resource type="Texture2D" uid="uid://celkulxou7o3s" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_o7ap7"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="6_nnmhp"]
 
-[node name="GenericMappingDetailSettings" type="VBoxContainer"]
+[node name="GenericMappingDetailSettings" type="VBoxContainer" unique_id=1224853714]
 size_flags_vertical = 0
 script = ExtResource("1_a7y6g")
 
-[node name="Label9" type="Label" parent="."]
+[node name="Label9" type="Label" parent="." unique_id=694084583]
 custom_minimum_size = Vector2(2032, 0)
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Established Mappings"
 
-[node name="EmptyState" type="VBoxContainer" parent="."]
+[node name="EmptyState" type="VBoxContainer" parent="." unique_id=1558646527]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 alignment = 1
 
-[node name="EmptyMessage" type="Label" parent="EmptyState"]
+[node name="EmptyMessage" type="Label" parent="EmptyState" unique_id=2111842941]
 layout_mode = 2
 text = "No mapping currently defined for this connection"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Spacer" type="Control" parent="EmptyState"]
+[node name="Spacer" type="Control" parent="EmptyState" unique_id=1117488573]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
-[node name="AddFirstButton" type="Button" parent="EmptyState"]
+[node name="AddFirstButton" type="Button" parent="EmptyState" unique_id=1618127943]
 custom_minimum_size = Vector2(200, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_type_variation = &"Button_big"
 text = " Add First Mapping "
 
-[node name="HeaderRowWrapper" type="HBoxContainer" parent="."]
+[node name="HeaderRowWrapper" type="HBoxContainer" parent="." unique_id=123221067]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_type_variation = &"HBoxContainer_adjacent"
 
-[node name="HeaderAlignLead" type="Control" parent="HeaderRowWrapper"]
+[node name="HeaderAlignLead" type="Control" parent="HeaderRowWrapper" unique_id=1038775958]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 0)
 size_flags_horizontal = 0
 size_flags_vertical = 0
 
-[node name="labels_box" type="HBoxContainer" parent="HeaderRowWrapper"]
+[node name="labels_box" type="HBoxContainer" parent="HeaderRowWrapper" unique_id=1166484163]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_type_variation = &"HBoxContainer_farther"
 
-[node name="MappingDefinitionHeaderGroup" type="HBoxContainer" parent="HeaderRowWrapper/labels_box"]
+[node name="MappingDefinitionHeaderGroup" type="HBoxContainer" parent="HeaderRowWrapper/labels_box" unique_id=587923326]
 layout_mode = 2
-theme_type_variation = &"HBoxContainer_adjacent"
 size_flags_horizontal = 0
+theme_type_variation = &"HBoxContainer_adjacent"
 
-[node name="Label" type="Label" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
+[node name="Label" type="Label" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup" unique_id=870561003]
 custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Mapping Definition"
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="edit_placeholder" type="Control" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
+[node name="edit_placeholder" type="Control" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup" unique_id=1674912573]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Spacer_AfterMappingDefinition" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterMappingDefinition" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=73401088]
 custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=840075054]
 custom_minimum_size = Vector2(210, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Overwrite Scalar"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterScalar" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterScalar" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=1682239825]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=1583982875]
 custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Post-Synaptic Potential Multiplier"
 mouse_filter = 1
 text = "PSP Multiplier"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=1565326081]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label_Delay" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Delay" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=360313309]
 custom_minimum_size = Vector2(100, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Whole bursts from presynaptic fire until PSP is applied (minimum 1)."
 mouse_filter = 1
 text = "Delay (bursts)"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=130052555]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label8" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label8" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=2119061857]
 custom_minimum_size = Vector2(168, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Inhibitory"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenInhibitoryAndGate" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenInhibitoryAndGate" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=2000047855]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="LabelGateSource" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="LabelGateSource" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=763905191]
 custom_minimum_size = Vector2(180, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Gate Source: cortical area whose firing gates this synapse"
 mouse_filter = 1
 text = "Gate Source"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenGateAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenGateAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=1328942774]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label4" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label4" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=903870310]
 custom_minimum_size = Vector2(168, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Off / STDP / R-STDP"
 mouse_filter = 1
 text = "Plasticity Mode"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterPlasticity" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=534969394]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=589998070]
 custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
 mouse_filter = 1
 text = "Plasticity Window"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=993016505]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=294118588]
 custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Constant"
 mouse_filter = 1
 text = "Plasticity Constant"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterPlasticityConst" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterPlasticityConst" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=1862037048]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=739130511]
 custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Long-Term Potentiation Multiplier"
 mouse_filter = 1
 text = "LTP Multiplier"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=1005589232]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=584224824]
 custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Long-Term Depression Multiplier"
 mouse_filter = 1
 text = "LTD Multiplier"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterLTD_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterLTD_Header" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=46305463]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label_EligibilityDecay" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_EligibilityDecay" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=1193769473]
 custom_minimum_size = Vector2(120, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Eligibility trace decay (bursts) for R-STDP. 0 disables temporal credit."
 mouse_filter = 1
 text = "Eligibility Decay"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterEligibilityDecay_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterEligibilityDecay_Header" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=426710428]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label_RewardSource" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_RewardSource" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=1694290898]
 custom_minimum_size = Vector2(180, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Cortical area whose firing density supplies positive reward R(t) for R-STDP."
 mouse_filter = 1
 text = "Reward Source"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterRewardSource_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterRewardSource_Header" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=597327237]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label_PunishmentSource" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_PunishmentSource" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=1260600030]
 custom_minimum_size = Vector2(180, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Cortical area whose firing density supplies negative reward R(t) for R-STDP."
 mouse_filter = 1
 text = "Punishment Source"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterPunishmentSource_Header" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterPunishmentSource_Header" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=775422967]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="add_button" type="TextureButton" parent="HeaderRowWrapper/labels_box"]
+[node name="add_button" type="TextureButton" parent="HeaderRowWrapper/labels_box" unique_id=1476513641]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -298,12 +284,12 @@ texture_disabled = ExtResource("5_o7ap7")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="EstablishedScrollViewport" type="Control" parent="."]
+[node name="EstablishedScrollViewport" type="Control" parent="." unique_id=1273957072]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ScrollSectionGeneric" parent="EstablishedScrollViewport" instance=ExtResource("6_nnmhp")]
+[node name="ScrollSectionGeneric" parent="EstablishedScrollViewport" unique_id=1456442824 instance=ExtResource("6_nnmhp")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -311,5 +297,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[connection signal="pressed" from="HeaderRowWrapper/labels_box/add_button" to="." method="_add_mapping_row"]
 [connection signal="pressed" from="EmptyState/AddFirstButton" to="." method="_add_mapping_row"]
+[connection signal="pressed" from="HeaderRowWrapper/labels_box/add_button" to="." method="_add_mapping_row"]

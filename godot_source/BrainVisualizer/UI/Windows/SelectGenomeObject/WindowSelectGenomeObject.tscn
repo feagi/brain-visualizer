@@ -1,75 +1,75 @@
-[gd_scene load_steps=5 format=3 uid="uid://cevmyu0h3jk73"]
+[gd_scene format=3 uid="uid://cevmyu0h3jk73"]
 
 [ext_resource type="Script" uid="uid://delyuh8secp1" path="res://BrainVisualizer/UI/Windows/SelectGenomeObject/WindowSelectGenomeObject.gd" id="1_63jkm"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_1e0a2"]
 [ext_resource type="PackedScene" uid="uid://b1lf2ayhmnh34" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.tscn" id="3_e2y22"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_ypcw4"]
 
-[node name="SelectGenomeObject" type="VBoxContainer"]
+[node name="SelectGenomeObject" type="VBoxContainer" unique_id=437799101]
+custom_minimum_size = Vector2(1300, 0)
 offset_right = 252.0
 offset_bottom = 40.0
-custom_minimum_size = Vector2(1300, 0)
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_63jkm")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_1e0a2")]
+[node name="TitleBar" parent="." unique_id=650892095 instance=ExtResource("2_1e0a2")]
 layout_mode = 2
 title = "Cortical Area Explorer"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=252677580]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1040597953]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=739997631]
 layout_mode = 2
 
-[node name="Instructions" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Instructions" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1481979190]
 layout_mode = 2
 
-[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=484894721]
 layout_mode = 2
 
-[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1897266354]
 layout_mode = 2
 placeholder_text = "Filter..."
 script = ExtResource("3_ypcw4")
 
-[node name="ScrollGenomeObjectSelector" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_e2y22")]
+[node name="ScrollGenomeObjectSelector" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=2042279951 instance=ExtResource("3_e2y22")]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=316012959]
 custom_minimum_size = Vector2(1300, 0)
 layout_mode = 2
 text = "Please Select"
 autowrap_mode = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=78613358]
 layout_mode = 2
 alignment = 2
 
-[node name="Deselect" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Deselect" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=977096340]
 visible = false
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Deselect All"
 
-[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=939683569]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=702243237]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
-[node name="Select" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Select" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1007607768]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

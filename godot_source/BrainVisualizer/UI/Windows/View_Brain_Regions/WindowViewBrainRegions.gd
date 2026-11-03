@@ -52,4 +52,3 @@ func _press_region(region: BrainRegion) -> void:
 	if BV.UI.temp_root_bm and BV.UI.temp_root_bm.get_pancake_camera():
 		BV.UI.temp_root_bm.get_pancake_camera().teleport_to_look_at_without_changing_angle(Vector3(region.coordinates_3D))
 		return
-

@@ -1,61 +1,58 @@
-[gd_scene load_steps=3 format=3 uid="uid://crwe0qv8b5k2m"]
+[gd_scene format=3 uid="uid://crwe0qv8b5k2m"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/RawConnectivityEdit/WindowRawConnectivityEdit.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://defp64rovsy6v" path="res://BrainVisualizer/UI/Windows/RawConnectivityEdit/WindowRawConnectivityEdit.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
 
-[node name="WindowRawConnectivityEdit" type="VBoxContainer"]
+[node name="WindowRawConnectivityEdit" type="VBoxContainer" unique_id=1218503256]
 custom_minimum_size = Vector2(480, 360)
-layout_mode = 3
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+[node name="TitleBar" parent="." unique_id=2262868 instance=ExtResource("2_titlebar")]
 layout_mode = 2
 title = "Raw Edit"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1898569729]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=167701761]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=822759568]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Content" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Content" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=2033331188]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TextEdit" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals/Content"]
+[node name="TextEdit" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals/Content" unique_id=958770057]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "[[0,0,0], [1,2,3], ...]"
-wrap_mode = 0
 
-[node name="ErrorLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ErrorLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=557696336]
 layout_mode = 2
-text = ""
 
-[node name="ButtonRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ButtonRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=2140669069]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 2
 
-[node name="Spacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+[node name="Spacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow" unique_id=87266464]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow" unique_id=1888404781]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
-[node name="Save" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+[node name="Save" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow" unique_id=1855868381]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

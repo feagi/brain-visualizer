@@ -1,13 +1,13 @@
-[gd_scene load_steps=3 format=3 uid="uid://blxys1onn81v2"]
+[gd_scene format=3 uid="uid://blxys1onn81v2"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_82px7"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_q3hpt"]
 
-[node name="CorticalArea_DDA_Body" type="StaticBody3D"]
+[node name="CorticalArea_DDA_Body" type="StaticBody3D" unique_id=523789061]
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=614033460]
 mesh = SubResource("BoxMesh_82px7")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1788949449]
 shape = SubResource("BoxShape3D_q3hpt")

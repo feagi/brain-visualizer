@@ -1,37 +1,37 @@
-[gd_scene load_steps=8 format=3 uid="uid://dsf0flbf8igka"]
+[gd_scene format=3 uid="uid://dsf0flbf8igka"]
 
 [ext_resource type="Script" uid="uid://lxclss3qbcnu" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/Prefab_PatternVectorPairWithDelete.gd" id="1_2vxwp"]
 [ext_resource type="PackedScene" uid="uid://cmxa7e3wifiy2" path="res://BrainVisualizer/UI/GenericElements/Vectors/PatternVector3Field.tscn" id="2_mjcu5"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="3_bamig"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="4_eye_s"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="4_eye_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="4_eye_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_D.png" id="4_eye_d"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="5_34f6o"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="6_dnub2"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="7_dtmaw"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="8_xd8ej"]
+[ext_resource type="Texture2D" uid="uid://bbmchtv12op1w" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrow1.png" id="3_bamig"]
+[ext_resource type="Texture2D" uid="uid://chnxt32clty34" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_C.png" id="4_eye_c"]
+[ext_resource type="Texture2D" uid="uid://ywd1bdafkfd6" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_D.png" id="4_eye_d"]
+[ext_resource type="Texture2D" uid="uid://c2d8eppiw7j1d" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_H.png" id="4_eye_h"]
+[ext_resource type="Texture2D" uid="uid://cb4f51x7vorsy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Eye_S.png" id="4_eye_s"]
+[ext_resource type="Texture2D" uid="uid://byfmywjeq2rv1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="5_34f6o"]
+[ext_resource type="Texture2D" uid="uid://cj8lbvc4q2osf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="6_dnub2"]
+[ext_resource type="Texture2D" uid="uid://do70brd17kvj0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="7_dtmaw"]
+[ext_resource type="Texture2D" uid="uid://j57u5ir3knxc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="8_xd8ej"]
 
-[node name="Prefab_PatternVectorPairWithDelete" type="HBoxContainer"]
+[node name="Prefab_PatternVectorPairWithDelete" type="HBoxContainer" unique_id=1093098487]
 offset_right = 562.0
 offset_bottom = 32.0
 size_flags_horizontal = 3
 alignment = 1
 script = ExtResource("1_2vxwp")
 
-[node name="PV1" parent="." instance=ExtResource("2_mjcu5")]
+[node name="PV1" parent="." unique_id=465369608 instance=ExtResource("2_mjcu5")]
 layout_mode = 2
 
-[node name="TextureRect" type="TextureRect" parent="."]
+[node name="TextureRect" type="TextureRect" parent="." unique_id=103098247]
 custom_minimum_size = Vector2(64, 32)
 layout_mode = 2
 texture = ExtResource("3_bamig")
 expand_mode = 1
 
-[node name="PV2" parent="." instance=ExtResource("2_mjcu5")]
+[node name="PV2" parent="." unique_id=1570894001 instance=ExtResource("2_mjcu5")]
 layout_mode = 2
 
-[node name="VisualEditButton" type="TextureButton" parent="."]
+[node name="VisualEditButton" type="TextureButton" parent="." unique_id=487490327]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 theme_type_variation = &"TextureButton_icon"
@@ -42,7 +42,7 @@ texture_disabled = ExtResource("4_eye_d")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="DeleteButton" type="TextureButton" parent="."]
+[node name="DeleteButton" type="TextureButton" parent="." unique_id=1116692358]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 texture_normal = ExtResource("5_34f6o")

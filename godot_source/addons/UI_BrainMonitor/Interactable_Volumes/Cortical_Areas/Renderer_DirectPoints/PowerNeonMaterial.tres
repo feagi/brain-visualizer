@@ -1,8 +1,9 @@
-[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cacrwtbxqmtwc"]
 
-[ext_resource type="Shader" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonCone.gdshader" id="1"]
+[ext_resource type="Shader" uid="uid://cxb5b6ravwfat" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/PowerNeonCone.gdshader" id="1"]
 
 [resource]
+render_priority = 0
 shader = ExtResource("1")
 shader_parameter/albedo_color = Color(1, 0.1, 0.1, 0.8)
 shader_parameter/emission_color = Color(1, 0.2, 0.2, 1)

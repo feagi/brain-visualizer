@@ -134,4 +134,3 @@ func _on_press_update() -> void:
 		edit.add_region_3d(region_id, before_pos, after_pos)
 		BV.UI.record_position_edit(edit)
 	close_window()
-

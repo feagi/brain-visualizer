@@ -1,231 +1,223 @@
-[gd_scene load_steps=10 format=3 uid="uid://c7ov4mq4cau4l"]
+[gd_scene format=3 uid="uid://c7ov4mq4cau4l"]
 
 [ext_resource type="Script" uid="uid://bq1is02n2pkrg" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorMemoryMapping.gd" id="1_evrjv"]
 [ext_resource type="Script" uid="uid://c3kgtsjp4sogl" path="res://BrainVisualizer/UI/GenericElements/DropDown/MorphologyDropDown.gd" id="2_ndwr8"]
 [ext_resource type="PackedScene" uid="uid://boj8wsv76jqlm" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iField.tscn" id="3_7llad"]
 [ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="4_y0rve"]
 [ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="5_7qf8u"]
-[ext_resource type="Texture2D" uid="uid://cyjkmin6bodpp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="6_taa4s"]
+[ext_resource type="Texture2D" uid="uid://bemkh0x1ase5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_on_disabled.png" id="6_taa4s"]
 [ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="7_3sy0c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="8_5oycp"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="9_jwhcp"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="10_owcrx"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="11_s71nl"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="12_s4moh"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="13_yxhwi"]
+[ext_resource type="Texture2D" uid="uid://by4h733mp88h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="8_5oycp"]
+[ext_resource type="Texture2D" uid="uid://cixo1mepghmvv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="9_jwhcp"]
+[ext_resource type="Texture2D" uid="uid://byfmywjeq2rv1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="10_owcrx"]
+[ext_resource type="Texture2D" uid="uid://cj8lbvc4q2osf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="11_s71nl"]
+[ext_resource type="Texture2D" uid="uid://do70brd17kvj0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="12_s4moh"]
+[ext_resource type="Texture2D" uid="uid://j57u5ir3knxc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="13_yxhwi"]
 
-[node name="MappingEditorMemoryMapping" type="VBoxContainer"]
+[node name="MappingEditorMemoryMapping" type="VBoxContainer" unique_id=749843659]
 script = ExtResource("1_evrjv")
 
-[node name="label" type="Label" parent="."]
+[node name="label" type="Label" parent="." unique_id=1646879336]
 custom_minimum_size = Vector2(1520, 0)
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Established Mappings"
 
-[node name="HeaderRowWrapper" type="HBoxContainer" parent="."]
+[node name="HeaderRowWrapper" type="HBoxContainer" parent="." unique_id=154693964]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_type_variation = &"HBoxContainer_adjacent"
 
-[node name="labels_box" type="HBoxContainer" parent="HeaderRowWrapper"]
+[node name="labels_box" type="HBoxContainer" parent="HeaderRowWrapper" unique_id=231651680]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_type_variation = &"HBoxContainer_farther"
 
-[node name="MappingDefinitionHeaderGroup" type="HBoxContainer" parent="HeaderRowWrapper/labels_box"]
+[node name="MappingDefinitionHeaderGroup" type="HBoxContainer" parent="HeaderRowWrapper/labels_box" unique_id=197399846]
 layout_mode = 2
-theme_type_variation = &"HBoxContainer_adjacent"
 size_flags_horizontal = 0
+theme_type_variation = &"HBoxContainer_adjacent"
 
-[node name="Label" type="Label" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
+[node name="Label" type="Label" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup" unique_id=537630734]
 custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Mapping Definition"
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="edit_placeholder" type="Control" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup"]
+[node name="edit_placeholder" type="Control" parent="HeaderRowWrapper/labels_box/MappingDefinitionHeaderGroup" unique_id=154601511]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Spacer_AfterMappingDefinition" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterMappingDefinition" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=597676893]
 custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label2" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=770866862]
 custom_minimum_size = Vector2(210, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Overwrite Scalar"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterScalar" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterScalar" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=794221731]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label3" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=1604775056]
 custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Post-Synaptic Potential Multiplier"
 mouse_filter = 1
 text = "PSP Multiplier"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=300467546]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label_Delay" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Delay" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=833128784]
 custom_minimum_size = Vector2(100, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Whole bursts from presynaptic fire until PSP is applied (minimum 1)."
 mouse_filter = 1
 text = "Delay (bursts)"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=988079826]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label8" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label8" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=1858038803]
 custom_minimum_size = Vector2(168, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Inhibitory"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=1673371864]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label4" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label4" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=752390390]
 custom_minimum_size = Vector2(168, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Plasticity"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterPlasticity" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterPlasticity" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=85443415]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label_Window" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=1386839764]
 custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
 mouse_filter = 1
 text = "Plasticity Window"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=1629586908]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label5" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=683558696]
 custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Constant"
 mouse_filter = 1
 text = "Plasticity Constant"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_AfterPlasticityConst" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_AfterPlasticityConst" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=1868497509]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label6" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=22043711]
 custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Long-Term Potentiation Multiplier"
 mouse_filter = 1
 text = "LTP Multiplier"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="HeaderRowWrapper/labels_box"]
+[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="HeaderRowWrapper/labels_box" unique_id=374084977]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box"]
+[node name="Label7" type="Label" parent="HeaderRowWrapper/labels_box" unique_id=781467991]
 custom_minimum_size = Vector2(170, 48)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Long-Term Depression Multiplier"
 mouse_filter = 1
 text = "LTD Multiplier"
-horizontal_alignment = 0
-autowrap_mode = 3
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="RowContainer" type="HBoxContainer" parent="."]
+[node name="RowContainer" type="HBoxContainer" parent="." unique_id=2099135998]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
 
-[node name="MappingDefinitionGroup" type="HBoxContainer" parent="RowContainer"]
+[node name="MappingDefinitionGroup" type="HBoxContainer" parent="RowContainer" unique_id=1392358452]
 layout_mode = 2
-theme_type_variation = &"HBoxContainer_adjacent"
 size_flags_horizontal = 0
+theme_type_variation = &"HBoxContainer_adjacent"
 
-[node name="Morphology_List" type="OptionButton" parent="RowContainer/MappingDefinitionGroup"]
+[node name="Morphology_List" type="OptionButton" parent="RowContainer/MappingDefinitionGroup" unique_id=933289966]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+disabled = true
 clip_text = true
 fit_to_longest_item = false
-disabled = true
 script = ExtResource("2_ndwr8")
 
-[node name="edit" type="TextureButton" parent="RowContainer/MappingDefinitionGroup"]
+[node name="edit" type="TextureButton" parent="RowContainer/MappingDefinitionGroup" unique_id=538094378]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 theme_type_variation = &"TextureButton_icon"
+disabled = true
 texture_normal = ExtResource("8_5oycp")
 texture_disabled = ExtResource("9_jwhcp")
 ignore_texture_size = true
 stretch_mode = 0
-disabled = true
 
-[node name="Spacer_AfterMappingDefinition" type="Control" parent="RowContainer"]
+[node name="Spacer_AfterMappingDefinition" type="Control" parent="RowContainer" unique_id=52678204]
 custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Scalar" parent="RowContainer" instance=ExtResource("3_7llad")]
+[node name="Scalar" parent="RowContainer" unique_id=771038898 instance=ExtResource("3_7llad")]
+modulate = Color(0.5, 0.5, 0.5, 1)
 custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -234,149 +226,147 @@ label_x_text = &""
 label_y_text = &""
 label_z_text = &""
 initial_vector = Vector3i(1, 1, 1)
-modulate = Color(0.5, 0.5, 0.5, 1)
 
-[node name="Spacer_AfterScalar" type="Control" parent="RowContainer"]
+[node name="Spacer_AfterScalar" type="Control" parent="RowContainer" unique_id=368561762]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="PSP" type="LineEdit" parent="RowContainer"]
+[node name="PSP" type="LineEdit" parent="RowContainer" unique_id=1617636270]
+modulate = Color(0.5, 0.5, 0.5, 1)
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Post-Synaptic Potential"
 alignment = 1
 editable = false
-modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("4_y0rve")
 initial_float = 1.0
 min_value = 0.0
-max_value = 9999999999.0
 number_decimal_places = 4
 
-[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="RowContainer"]
+[node name="Spacer_BetweenPSPAndDelay" type="Control" parent="RowContainer" unique_id=1471033028]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Synaptic_Delay" type="LineEdit" parent="RowContainer"]
+[node name="Synaptic_Delay" type="LineEdit" parent="RowContainer" unique_id=1227195369]
+modulate = Color(0.5, 0.5, 0.5, 1)
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Synaptic delay in whole bursts (minimum 1)."
 alignment = 1
 editable = false
-modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("5_7qf8u")
 initial_int = 1
-min_value = 1
 max_value = 255
+min_value = 1
 
-[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="RowContainer"]
+[node name="Spacer_BetweenDelayAndInhibitory" type="Control" parent="RowContainer" unique_id=1423484141]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Inhibitory" type="TextureButton" parent="RowContainer"]
+[node name="Inhibitory" type="TextureButton" parent="RowContainer" unique_id=503805900]
+modulate = Color(0.5, 0.5, 0.5, 1)
 custom_minimum_size = Vector2(168, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_type_variation = &"ToggleButton"
+disabled = true
 texture_normal = ExtResource("6_taa4s")
 ignore_texture_size = true
 stretch_mode = 0
-disabled = true
-modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("7_3sy0c")
 enable_autoscaling_with_theme = false
 
-[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="RowContainer"]
+[node name="Spacer_BetweenInhibitoryAndPlasticity" type="Control" parent="RowContainer" unique_id=898686884]
 custom_minimum_size = Vector2(12, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Plasticity" type="TextureButton" parent="RowContainer"]
+[node name="Plasticity" type="TextureButton" parent="RowContainer" unique_id=398362421]
+modulate = Color(0.5, 0.5, 0.5, 1)
 custom_minimum_size = Vector2(168, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_type_variation = &"ToggleButton"
+disabled = true
 texture_normal = ExtResource("6_taa4s")
 ignore_texture_size = true
 stretch_mode = 0
-disabled = true
-modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("7_3sy0c")
 enable_autoscaling_with_theme = false
 
-[node name="Spacer_AfterPlasticity" type="Control" parent="RowContainer"]
+[node name="Spacer_AfterPlasticity" type="Control" parent="RowContainer" unique_id=426708007]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Plasticity_Window" type="LineEdit" parent="RowContainer"]
+[node name="Plasticity_Window" type="LineEdit" parent="RowContainer" unique_id=860008038]
+modulate = Color(0.5, 0.5, 0.5, 1)
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity Window"
 alignment = 1
 editable = false
-modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("5_7qf8u")
 initial_int = 3
 
-[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="RowContainer"]
+[node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="RowContainer" unique_id=2015345166]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Plasticity_Constant" type="LineEdit" parent="RowContainer"]
+[node name="Plasticity_Constant" type="LineEdit" parent="RowContainer" unique_id=92439001]
+modulate = Color(0.5, 0.5, 0.5, 1)
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 tooltip_text = "Plasticity"
 alignment = 1
 editable = false
-modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("4_y0rve")
 initial_float = 1.0
 
-[node name="Spacer_AfterPlasticityConst" type="Control" parent="RowContainer"]
+[node name="Spacer_AfterPlasticityConst" type="Control" parent="RowContainer" unique_id=1288214946]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="LTP_Multiplier" type="LineEdit" parent="RowContainer"]
+[node name="LTP_Multiplier" type="LineEdit" parent="RowContainer" unique_id=1966139836]
+modulate = Color(0.5, 0.5, 0.5, 1)
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 alignment = 1
 editable = false
-modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("4_y0rve")
 initial_float = 1.0
 
-[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="RowContainer"]
+[node name="Spacer_BetweenLTPAndLTD" type="Control" parent="RowContainer" unique_id=374251602]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="LTD_Multiplier" type="LineEdit" parent="RowContainer"]
+[node name="LTD_Multiplier" type="LineEdit" parent="RowContainer" unique_id=1054451135]
+modulate = Color(0.5, 0.5, 0.5, 1)
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 alignment = 1
 editable = false
-modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("4_y0rve")
 initial_float = 1.0
 
-[node name="remove_placeholder" type="Control" parent="RowContainer"]
+[node name="remove_placeholder" type="Control" parent="RowContainer" unique_id=338969619]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="remove" type="TextureButton" parent="RowContainer"]
+[node name="remove" type="TextureButton" parent="RowContainer" unique_id=1713255467]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 0

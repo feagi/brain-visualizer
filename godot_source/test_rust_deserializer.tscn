@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8yxvqhvwgqhq"]
+[gd_scene format=3 uid="uid://b8yxvqhvwgqhq"]
 
-[ext_resource type="Script" path="res://test_rust_deserializer.gd" id="1_0hdqc"]
+[ext_resource type="Script" uid="uid://difhwk637eum" path="res://test_rust_deserializer.gd" id="1_0hdqc"]
 
-[node name="TestRustDeserializer" type="Node"]
+[node name="TestRustDeserializer" type="Node" unique_id=46811478]
 script = ExtResource("1_0hdqc")

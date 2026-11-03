@@ -1,7 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://bvectgrid01"]
+[gd_scene format=3 uid="uid://bvectgrid01"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/VisualVectorEdit/VectorEditGrid.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bpp1eq67uwjgu" path="res://BrainVisualizer/UI/Windows/VisualVectorEdit/VectorEditGrid.gd" id="1_script"]
 
-[node name="VectorEditGrid" type="Control"]
+[node name="VectorEditGrid" type="Control" unique_id=544178502]
 custom_minimum_size = Vector2(360, 360)
+layout_mode = 3
+anchors_preset = 0
 script = ExtResource("1_script")

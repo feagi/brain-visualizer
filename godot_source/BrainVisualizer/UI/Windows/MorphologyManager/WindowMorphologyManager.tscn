@@ -1,10 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://cdymw36o30rp1"]
+[gd_scene format=3 uid="uid://cdymw36o30rp1"]
 
 [ext_resource type="Script" uid="uid://7lboh0kftcox" path="res://BrainVisualizer/UI/Windows/MorphologyManager/WindowMorphologyManager.gd" id="1_11gqg"]
 [ext_resource type="PackedScene" uid="uid://dojgkcnlpiq4v" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyOverviews/UIMorphologyOverviews.tscn" id="3_08frl"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="13_kgtr3"]
 
-[node name="MorphologyManager" type="VBoxContainer"]
+[node name="MorphologyManager" type="VBoxContainer" unique_id=759044195]
 offset_right = 126.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
@@ -12,21 +12,21 @@ size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_11gqg")
 
-[node name="TitleBar" parent="." instance=ExtResource("13_kgtr3")]
+[node name="TitleBar" parent="." unique_id=1821134690 instance=ExtResource("13_kgtr3")]
 layout_mode = 2
 title = "Connectivity Rule Manager"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1154157382]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1629975741]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1145425116]
 layout_mode = 2
 
-[node name="UIMorphologyOverviews" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_08frl")]
+[node name="UIMorphologyOverviews" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1526002068 instance=ExtResource("3_08frl")]
 layout_mode = 2
 
 [connection signal="request_close" from="WindowPanel/WindowMargin/WindowInternals/UIMorphologyOverviews" to="." method="close_window"]

@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://pf14odvqdxgc"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/GenomeChangeHistory/WindowGenomeChangeHistory.gd" id="1_history"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
+[ext_resource type="Script" uid="uid://e26r75idbtep" path="res://BrainVisualizer/UI/Windows/GenomeChangeHistory/WindowGenomeChangeHistory.gd" id="1_history"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
 
-[node name="WindowGenomeChangeHistory" type="VBoxContainer"]
+[node name="WindowGenomeChangeHistory" type="VBoxContainer" unique_id=1731963026]
 custom_minimum_size = Vector2(720, 400)
 offset_right = 920.0
 offset_bottom = 560.0
@@ -13,20 +13,20 @@ theme_override_constants/separation = 0
 script = ExtResource("1_history")
 window_spawn_location = Vector2i(240, 120)
 
-[node name="TitleBar" parent="." instance=ExtResource("2_title")]
+[node name="TitleBar" parent="." unique_id=229301126 instance=ExtResource("2_title")]
 layout_mode = 2
 title = "Change history"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1826063266]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1879454686]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1811236553]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

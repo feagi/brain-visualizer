@@ -1,38 +1,38 @@
-[gd_scene load_steps=2 format=3 uid="uid://brwx50pyfywb7"]
+[gd_scene format=3 uid="uid://brwx50pyfywb7"]
 
 [ext_resource type="Script" uid="uid://da4h0uohgf0uh" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinboxField.gd" id="1_ppcmy"]
 
-[node name="Vector2iSpingBoxField" type="BoxContainer"]
+[node name="Vector2iSpingBoxField" type="BoxContainer" unique_id=1003870862]
 offset_right = 184.0
 offset_bottom = 23.0
 theme_type_variation = &"BoxContainer_far"
 script = ExtResource("1_ppcmy")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=2129074274]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LabelX" type="Label" parent="HBoxContainer"]
+[node name="LabelX" type="Label" parent="HBoxContainer" unique_id=902744215]
 layout_mode = 2
 theme_type_variation = &"Label_UniformWidth"
 text = "X"
 
-[node name="IntX" type="SpinBox" parent="HBoxContainer"]
+[node name="IntX" type="SpinBox" parent="HBoxContainer" unique_id=1810140507]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 1
 custom_arrow_step = 1.0
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="." unique_id=1739322760]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LabelY" type="Label" parent="HBoxContainer2"]
+[node name="LabelY" type="Label" parent="HBoxContainer2" unique_id=1926080833]
 layout_mode = 2
 theme_type_variation = &"Label_UniformWidth"
 text = "Y"
 
-[node name="IntY" type="SpinBox" parent="HBoxContainer2"]
+[node name="IntY" type="SpinBox" parent="HBoxContainer2" unique_id=281746590]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 1

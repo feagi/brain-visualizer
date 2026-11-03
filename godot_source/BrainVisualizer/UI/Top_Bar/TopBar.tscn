@@ -1,53 +1,51 @@
-[gd_scene load_steps=40 format=3 uid="uid://ceyo23uu67e8h"]
+[gd_scene format=3 uid="uid://ceyo23uu67e8h"]
 
 [ext_resource type="Script" uid="uid://yg0uidt8aocq" path="res://BrainVisualizer/UI/Top_Bar/TopBar.gd" id="1_f5hja"]
 [ext_resource type="Script" uid="uid://dqxgqll112i2k" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_o4dth"]
 [ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="3_v82xb"]
-[ext_resource type="Texture2D" uid="uid://4nqvb666obtc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="3_x3r8j"]
-[ext_resource type="Texture2D" uid="uid://car1lnufwslyi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
-[ext_resource type="Texture2D" uid="uid://cdje4hcnt8pai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_etpv8"]
-[ext_resource type="Texture2D" uid="uid://clqnxjuyb23y1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="6_fkuh3"]
+[ext_resource type="Texture2D" uid="uid://nwad0he8yiho" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="3_x3r8j"]
+[ext_resource type="Texture2D" uid="uid://crmsk82gu4mji" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="4_e2mvc"]
+[ext_resource type="Texture2D" uid="uid://t3s8chta6i04" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_etpv8"]
+[ext_resource type="Texture2D" uid="uid://05m4faw18ba2" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="6_fkuh3"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="7_g1qxj"]
-[ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
-[ext_resource type="Texture2D" uid="uid://bk40nytvlo77n" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
-[ext_resource type="Texture2D" uid="uid://dxocxtd21klr" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_output"]
-[ext_resource type="Texture2D" uid="uid://bju6nvb78mvmc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
-[ext_resource type="Texture2D" uid="uid://dh415j4p2qk2b" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
-[ext_resource type="Texture2D" uid="uid://iwxqjaw2as5t" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="11_0uis6"]
-[ext_resource type="Texture2D" uid="uid://c3limm84uggd7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_D.png" id="12_2iype"]
-[ext_resource type="Texture2D" uid="uid://cg426mv2xsngk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_S.png" id="13_3kcdr"]
-[ext_resource type="Texture2D" uid="uid://p50gm8kyuyqf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_C.png" id="14_ww002"]
-[ext_resource type="Texture2D" uid="uid://btc3gkgoeomma" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_H.png" id="15_585hi"]
-[ext_resource type="Texture2D" uid="uid://brc1qexp6eajy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_S.jpg" id="19_fxjdk"]
+[ext_resource type="Texture2D" uid="uid://celkulxou7o3s" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="7_puuh8"]
+[ext_resource type="Texture2D" uid="uid://bht0ik7f3dwnb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/neuron.png" id="8_cdeim"]
+[ext_resource type="Texture2D" uid="uid://bmdymoiobbjfi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_output"]
+[ext_resource type="Texture2D" uid="uid://dusucn05f6ohn" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_S.png" id="9_5f4b8"]
+[ext_resource type="Texture2D" uid="uid://c5el5kb5s13xx" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_C.png" id="10_k4lex"]
+[ext_resource type="Texture2D" uid="uid://nsyo7abvbnlb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_H.png" id="11_0uis6"]
+[ext_resource type="Texture2D" uid="uid://b4vhx8gbxjyyy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_out_D.png" id="12_2iype"]
+[ext_resource type="Texture2D" uid="uid://b6owfyqb6ydck" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_S.png" id="13_3kcdr"]
+[ext_resource type="Texture2D" uid="uid://bnko1xt23lgaj" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_C.png" id="14_ww002"]
+[ext_resource type="Texture2D" uid="uid://c1g2qyppnja8v" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_H.png" id="15_585hi"]
+[ext_resource type="Texture2D" uid="uid://bwcwtgy2kij3h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/zoom_in_D.png" id="16_48dar"]
+[ext_resource type="Texture2D" uid="uid://dwsnqv7rv4ccy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_S.jpg" id="19_fxjdk"]
 [ext_resource type="Script" uid="uid://dfllqleqyhqy4" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="20_6yf7l"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_S.jpg" id="27_cam_anim_s"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="28_cam_anim_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="29_cam_anim_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="30_cam_anim_d"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_S.jpg" id="31_guide_s"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_H.jpg" id="32_guide_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_C.jpg" id="33_guide_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_D.jpg" id="34_guide_d"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_H.jpg" id="35_settings_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_C.jpg" id="36_settings_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_D.jpg" id="37_settings_d"]
 [ext_resource type="PackedScene" uid="uid://0pa5al454wse" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.tscn" id="20_ugrg0"]
-[ext_resource type="PackedScene" uid="uid://cm2activityvizdd1" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.tscn" id="38_activity_dd"]
 [ext_resource type="PackedScene" uid="uid://bmc8qgeccqy5m" path="res://BrainVisualizer/UI/GenericElements/MultiItemCollapsible/MultiItemCollapsible.tscn" id="21_b22q2"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/CorticalAreaIcons/knowns/iimg.png" id="21_n6kq0"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="26_brain_regions_icon"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/modulators.png" id="39_modulators"]
+[ext_resource type="Texture2D" uid="uid://cmtbytx0rklss" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="26_brain_regions_icon"]
+[ext_resource type="Texture2D" uid="uid://ec17uhndijxf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_S.jpg" id="27_cam_anim_s"]
+[ext_resource type="Texture2D" uid="uid://dvvb52cu7epn3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="28_cam_anim_h"]
+[ext_resource type="Texture2D" uid="uid://y1ojng5lscqk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="29_cam_anim_c"]
+[ext_resource type="Texture2D" uid="uid://cimbp81v8sdey" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="30_cam_anim_d"]
+[ext_resource type="Texture2D" uid="uid://bahayp8mph84u" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_S.jpg" id="31_guide_s"]
+[ext_resource type="Texture2D" uid="uid://b0c7rqo22hwjd" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_H.jpg" id="32_guide_h"]
+[ext_resource type="Texture2D" uid="uid://d2kst702ciwog" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_C.jpg" id="33_guide_c"]
+[ext_resource type="Texture2D" uid="uid://ddkbxndwbmui0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/guide_D.jpg" id="34_guide_d"]
+[ext_resource type="Texture2D" uid="uid://b2q33jhsyo5tj" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_H.jpg" id="35_settings_h"]
+[ext_resource type="Texture2D" uid="uid://kibtjfgl21p0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_C.jpg" id="36_settings_c"]
+[ext_resource type="Texture2D" uid="uid://j6biwxn6hvpy" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/settings_D.jpg" id="37_settings_d"]
+[ext_resource type="PackedScene" uid="uid://dqs0m5wfk2cvk" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.tscn" id="38_activity_dd"]
+[ext_resource type="Texture2D" uid="uid://cmjppm5yhj74t" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/modulators.png" id="39_modulators"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_combo_row"]
-bg_color = Color(0.262745, 0.262745, 0.262745, 1)
 content_margin_left = 12.0
 content_margin_top = 0.0
 content_margin_right = 12.0
 content_margin_bottom = 0.0
+bg_color = Color(0.262745, 0.262745, 0.262745, 1)
 
-
-[node name="TopBar" type="HBoxContainer" node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
+[node name="TopBar" type="HBoxContainer" unique_id=1755392120 node_paths=PackedStringArray("theme_scalar_nodes_to_not_include_or_search")]
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 1605.0
@@ -57,32 +55,32 @@ theme_override_constants/separation = 8
 script = ExtResource("1_f5hja")
 theme_scalar_nodes_to_not_include_or_search = [NodePath("DetailsPanel/MarginContainer/Details/texture_button")]
 
-[node name="Buttons" type="PanelContainer" parent="."]
+[node name="Buttons" type="PanelContainer" parent="." unique_id=491492785]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="Buttons"]
+[node name="MarginContainer" type="MarginContainer" parent="Buttons" unique_id=845014341]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_far"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer" unique_id=1212038623]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_farther"
 theme_override_constants/separation = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer" unique_id=104769782]
 visible = false
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BrainRegionsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="BrainRegionsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" unique_id=499054368]
 layout_mode = 2
 script = ExtResource("2_o4dth")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList" unique_id=1546565281]
 layout_mode = 2
 metadata/hover_scale_target = true
 
-[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer" unique_id=1051263276]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -90,12 +88,12 @@ size_flags_vertical = 4
 texture = ExtResource("26_brain_regions_icon")
 expand_mode = 1
 
-[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer"]
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/BrainRegionsList/HBoxContainer" unique_id=1773258665]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Circuits"
 
-[node name="TextureButton_BrainRegions" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="TextureButton_BrainRegions" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" unique_id=688225351]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -109,20 +107,20 @@ ignore_texture_size = true
 stretch_mode = 0
 metadata/ignore_parent_press = true
 
-[node name="Spacer_AfterAddCircuits" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="Spacer_AfterAddCircuits" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" unique_id=779674626]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="InputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="InputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" unique_id=1323167443]
 layout_mode = 2
 script = ExtResource("2_o4dth")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList" unique_id=811424898]
 layout_mode = 2
 metadata/hover_scale_target = true
 
-[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer" unique_id=1252574668]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -130,12 +128,12 @@ size_flags_vertical = 4
 texture = ExtResource("3_x3r8j")
 expand_mode = 1
 
-[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer"]
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/InputsList/HBoxContainer" unique_id=1202473445]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Inputs"
 
-[node name="TextureButton_Inputs" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="TextureButton_Inputs" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" unique_id=1626189037]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -149,20 +147,20 @@ ignore_texture_size = true
 stretch_mode = 0
 metadata/ignore_parent_press = true
 
-[node name="Spacer_AfterAddInputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="Spacer_AfterAddInputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" unique_id=282739932]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="OutputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="OutputsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" unique_id=642632438]
 layout_mode = 2
 script = ExtResource("2_o4dth")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList" unique_id=522140318]
 layout_mode = 2
 metadata/hover_scale_target = true
 
-[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer" unique_id=1717907618]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -170,12 +168,12 @@ size_flags_vertical = 4
 texture = ExtResource("8_output")
 expand_mode = 1
 
-[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer"]
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer/OutputsList/HBoxContainer" unique_id=271804317]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Outputs"
 
-[node name="TextureButton_Outputs" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="TextureButton_Outputs" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" unique_id=364493288]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -189,157 +187,154 @@ ignore_texture_size = true
 stretch_mode = 0
 metadata/ignore_parent_press = true
 
-[node name="Spacer_AfterAddOutputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer"]
+[node name="Spacer_AfterAddOutputs" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer" unique_id=1482818703]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer" unique_id=2259714]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="BrainAreasRow" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
-mouse_filter = 2
+[node name="BrainAreasRow" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3" unique_id=2110026713]
 layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_combo_row")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow"]
-mouse_filter = 2
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow" unique_id=400936255]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer"]
+[node name="BrainAreasList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer" unique_id=575110584]
 layout_mode = 2
 size_flags_vertical = 4
-clip_contents = false
 script = ExtResource("2_o4dth")
 metadata/flat_on_backdrop = true
 metadata/disable_hover_scale = true
 metadata/plate_padding_x = 0
 metadata/plate_padding_y = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList"]
-mouse_filter = 2
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList" unique_id=1302230038]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList/HBoxContainer"]
-mouse_filter = 2
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList/HBoxContainer" unique_id=1511600777]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
 texture = ExtResource("8_cdeim")
 expand_mode = 1
 metadata/category_icon = true
 
-[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList/HBoxContainer"]
-mouse_filter = 1
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer/BrainAreasList/HBoxContainer" unique_id=308657929]
 layout_mode = 2
+mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Connectivity Rules"
 
-[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer"]
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3/BrainAreasRow/HBoxContainer" unique_id=103064886]
 visible = false
 custom_minimum_size = Vector2(48, 48)
-theme_type_variation = &"TextureButton_TopBar"
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Add connectivity rule"
+focus_mode = 0
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("4_e2mvc")
 texture_pressed = ExtResource("5_etpv8")
 texture_hover = ExtResource("6_fkuh3")
 texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 metadata/ignore_parent_press = true
 metadata/plus_icon = true
 
-[node name="Spacer_AfterAddBrainAreas" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3"]
-custom_minimum_size = Vector2(0, 0)
+[node name="Spacer_AfterAddBrainAreas" type="Control" parent="Buttons/MarginContainer/HBoxContainer/HBoxContainer3" unique_id=1984303758]
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="ModulatorsHost" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer"]
+[node name="ModulatorsHost" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer" unique_id=1289399239]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="ModulatorsRow" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost"]
-mouse_filter = 2
+[node name="ModulatorsRow" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost" unique_id=1669732826]
 layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_combo_row")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow"]
-mouse_filter = 2
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow" unique_id=2022994448]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="ModulatorsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer"]
+[node name="ModulatorsList" type="PanelContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer" unique_id=1208499059]
 layout_mode = 2
 size_flags_vertical = 4
-clip_contents = false
 script = ExtResource("2_o4dth")
 metadata/flat_on_backdrop = true
 metadata/disable_hover_scale = true
 metadata/plate_padding_x = 0
 metadata/plate_padding_y = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList"]
-mouse_filter = 2
+[node name="HBoxContainer" type="HBoxContainer" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList" unique_id=1454978866]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList/HBoxContainer"]
-mouse_filter = 2
+[node name="TextureRect" type="TextureRect" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList/HBoxContainer" unique_id=1719314559]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
 texture = ExtResource("39_modulators")
 expand_mode = 1
 stretch_mode = 5
 metadata/category_icon = true
 
-[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList/HBoxContainer"]
-mouse_filter = 1
+[node name="Label" type="Label" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer/ModulatorsList/HBoxContainer" unique_id=304061647]
 layout_mode = 2
+mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Modulators"
 
-[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer"]
+[node name="TextureButton" type="TextureButton" parent="Buttons/MarginContainer/HBoxContainer/ModulatorsHost/ModulatorsRow/HBoxContainer" unique_id=333288725]
 visible = false
 custom_minimum_size = Vector2(48, 48)
-theme_type_variation = &"TextureButton_TopBar"
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+focus_mode = 0
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("4_e2mvc")
 texture_pressed = ExtResource("5_etpv8")
 texture_hover = ExtResource("6_fkuh3")
 texture_disabled = ExtResource("7_puuh8")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 metadata/ignore_parent_press = true
 metadata/plus_icon = true
 
-[node name="ChangeSize" type="PanelContainer" parent="."]
+[node name="ChangeSize" type="PanelContainer" parent="." unique_id=425533233]
 visible = false
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="ChangeSize"]
+[node name="MarginContainer" type="MarginContainer" parent="ChangeSize" unique_id=1987541455]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_far"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ChangeSize/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ChangeSize/MarginContainer" unique_id=1055343709]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_far"
 
-[node name="Smaller" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
+[node name="Smaller" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer" unique_id=1678737763]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -353,7 +348,7 @@ texture_disabled = ExtResource("12_2iype")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Bigger" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer"]
+[node name="Bigger" type="TextureButton" parent="ChangeSize/MarginContainer/HBoxContainer" unique_id=1276549930]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -367,31 +362,31 @@ texture_disabled = ExtResource("16_48dar")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="TopBarControlsPanel" type="PanelContainer" parent="."]
+[node name="TopBarControlsPanel" type="PanelContainer" parent="." unique_id=242681295]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="TopBarControlsPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="TopBarControlsPanel" unique_id=189277336]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_far"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="TopBarControlsPanel/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="TopBarControlsPanel/MarginContainer" unique_id=1268185607]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_farther"
 theme_override_constants/separation = 0
 
-[node name="SplitViewDropDown" parent="TopBarControlsPanel/MarginContainer/HBoxContainer" instance=ExtResource("20_ugrg0")]
+[node name="SplitViewDropDown" parent="TopBarControlsPanel/MarginContainer/HBoxContainer" unique_id=1292120551 instance=ExtResource("20_ugrg0")]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Split view options (Circuit Builder / Brain Monitor / Split View)"
 
-[node name="ActivityVisualizationDropDown" parent="TopBarControlsPanel/MarginContainer/HBoxContainer" instance=ExtResource("38_activity_dd")]
+[node name="ActivityVisualizationDropDown" parent="TopBarControlsPanel/MarginContainer/HBoxContainer" unique_id=774573334 instance=ExtResource("38_activity_dd")]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Inspectors"
 
-[node name="CameraAnimations" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer"]
+[node name="CameraAnimations" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer" unique_id=1183620210]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -405,7 +400,7 @@ texture_pressed = ExtResource("29_cam_anim_c")
 texture_hover = ExtResource("28_cam_anim_h")
 texture_disabled = ExtResource("30_cam_anim_d")
 
-[node name="GuideButton" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer"]
+[node name="GuideButton" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer" unique_id=1191367532]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -419,7 +414,7 @@ texture_pressed = ExtResource("33_guide_c")
 texture_hover = ExtResource("32_guide_h")
 texture_disabled = ExtResource("34_guide_d")
 
-[node name="SettingsButton" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer"]
+[node name="SettingsButton" type="TextureRect" parent="TopBarControlsPanel/MarginContainer/HBoxContainer" unique_id=1971717361]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -433,31 +428,30 @@ texture_pressed = ExtResource("36_settings_c")
 texture_hover = ExtResource("35_settings_h")
 texture_disabled = ExtResource("37_settings_d")
 
-[node name="DetailsPanel" type="PanelContainer" parent="."]
+[node name="DetailsPanel" type="PanelContainer" parent="." unique_id=1718806125]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="DetailsPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="DetailsPanel" unique_id=1708564249]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_far"
 
-[node name="Details" parent="DetailsPanel/MarginContainer" node_paths=PackedStringArray("child_nodes_to_run_toggle_collapse_on") instance=ExtResource("21_b22q2")]
+[node name="Details" parent="DetailsPanel/MarginContainer" unique_id=976680027 instance=ExtResource("21_b22q2")]
 layout_mode = 2
 size_flags_horizontal = 1
 size_flags_vertical = 1
-child_nodes_to_run_toggle_collapse_on = []
 start_open = true
 show_toggle_button = false
 
-[node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="2"]
+[node name="HBoxContainer" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" parent_id_path=PackedInt32Array(976680027, 1249066369) index="0" unique_id=1733082724]
 layout_mode = 2
 
-[node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
+[node name="RR_Label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer" unique_id=1484669743]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Refresh Rate (Hz)"
 vertical_alignment = 1
 
-[node name="RR_Float" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer"]
+[node name="RR_Float" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer" unique_id=1216266236]
 layout_mode = 2
 tooltip_text = "The frequency FEAGI runs at"
 theme_type_variation = &"LineEdit_TopBar"
@@ -466,16 +460,16 @@ expand_to_text_length = true
 script = ExtResource("3_v82xb")
 min_value = 0.1
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="3"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" parent_id_path=PackedInt32Array(976680027, 1249066369) index="1" unique_id=486425637]
 layout_mode = 2
 
-[node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"]
+[node name="neuron_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2" unique_id=1699344675]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Neurons"
 vertical_alignment = 1
 
-[node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2"]
+[node name="neuron" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer2" unique_id=1469247250]
 layout_mode = 2
 tooltip_text = "The total number of neurons"
 theme_type_variation = &"LineEdit_TopBar"
@@ -484,16 +478,16 @@ editable = false
 expand_to_text_length = true
 script = ExtResource("7_g1qxj")
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" index="4"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here" parent_id_path=PackedInt32Array(976680027, 1249066369) index="2" unique_id=134755029]
 layout_mode = 2
 
-[node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3"]
+[node name="synapse_label" type="Label" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3" unique_id=1078148613]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Synapses"
 vertical_alignment = 1
 
-[node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3"]
+[node name="synapse" type="LineEdit" parent="DetailsPanel/MarginContainer/Details/Place_child_nodes_here/HBoxContainer3" unique_id=905546789]
 layout_mode = 2
 tooltip_text = "The total number of synapses"
 theme_type_variation = &"LineEdit_TopBar"
@@ -513,8 +507,8 @@ script = ExtResource("7_g1qxj")
 [connection signal="pressed" from="ChangeSize/MarginContainer/HBoxContainer/Bigger" to="." method="_bigger_scale"]
 [connection signal="requesting_view_change" from="TopBarControlsPanel/MarginContainer/HBoxContainer/SplitViewDropDown" to="." method="_view_selected"]
 [connection signal="activity_mode_changed" from="TopBarControlsPanel/MarginContainer/HBoxContainer/ActivityVisualizationDropDown" to="." method="_on_activity_visualization_mode_changed"]
-[connection signal="pressed" from="TopBarControlsPanel/MarginContainer/HBoxContainer/SettingsButton" to="." method="_open_options"]
 [connection signal="pressed" from="TopBarControlsPanel/MarginContainer/HBoxContainer/CameraAnimations" to="." method="_open_camera_animations"]
 [connection signal="pressed" from="TopBarControlsPanel/MarginContainer/HBoxContainer/GuideButton" to="." method="_open_guide"]
+[connection signal="pressed" from="TopBarControlsPanel/MarginContainer/HBoxContainer/SettingsButton" to="." method="_open_options"]
 
 [editable path="DetailsPanel/MarginContainer/Details"]

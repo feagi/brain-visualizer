@@ -1,66 +1,65 @@
-[gd_scene load_steps=19 format=3 uid="uid://0pa5al454wse"]
+[gd_scene format=3 uid="uid://0pa5al454wse"]
 
 [ext_resource type="PackedScene" uid="uid://mwx2wythpo1l" path="res://BrainVisualizer/UI/GenericElements/DropDown/ToggleImageDropDown/ToggleImageDropDown.tscn" id="1_4pks6"]
 [ext_resource type="Script" uid="uid://c0iobaknwi0gs" path="res://BrainVisualizer/UI/Top_Bar/SplitViewDropDown/SplitViewDropDown.gd" id="1_henmy"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png" id="3_667mu"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_C.png" id="4_jrywm"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_H.png" id="5_uivfl"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_D.png" id="6_hj26w"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png" id="7_7a8kb"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_C.png" id="8_xcbkx"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_H.png" id="9_hdmos"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_D.png" id="10_wf58x"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_S.png" id="11_g57ge"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_C.png" id="12_1otf1"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_H.png" id="13_sih8b"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_D.png" id="14_sn7dj"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_S.png" id="15_raxn5"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_C.png" id="16_f4pb0"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_H.png" id="17_uvwvj"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_D.png" id="18_37mbk"]
+[ext_resource type="Texture2D" uid="uid://cgv80kaakpnht" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_S.png" id="3_667mu"]
+[ext_resource type="Texture2D" uid="uid://dk2u1gcwvfwxu" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_C.png" id="4_jrywm"]
+[ext_resource type="Texture2D" uid="uid://cx3jwppdi3wh5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_H.png" id="5_uivfl"]
+[ext_resource type="Texture2D" uid="uid://bwjd8l1vgiiog" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Circuit_Builder_D.png" id="6_hj26w"]
+[ext_resource type="Texture2D" uid="uid://ut7rgmpi1jut" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_S.png" id="7_7a8kb"]
+[ext_resource type="Texture2D" uid="uid://dqcnk1ogl06y8" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_C.png" id="8_xcbkx"]
+[ext_resource type="Texture2D" uid="uid://v0xmeqath0ba" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_H.png" id="9_hdmos"]
+[ext_resource type="Texture2D" uid="uid://cdmjj7v4y33p2" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Brain_Visualizer_D.png" id="10_wf58x"]
+[ext_resource type="Texture2D" uid="uid://726awx24mv5b" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_S.png" id="11_g57ge"]
+[ext_resource type="Texture2D" uid="uid://dla5qnikljc7l" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_C.png" id="12_1otf1"]
+[ext_resource type="Texture2D" uid="uid://dkki1c5taahta" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_H.png" id="13_sih8b"]
+[ext_resource type="Texture2D" uid="uid://cmnxfnvndpk7" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vertical_split_D.png" id="14_sn7dj"]
+[ext_resource type="Texture2D" uid="uid://cy66wa4jxpvy0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_S.png" id="15_raxn5"]
+[ext_resource type="Texture2D" uid="uid://3qirk445py0k" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_C.png" id="16_f4pb0"]
+[ext_resource type="Texture2D" uid="uid://bgv1a5tcsf04p" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_H.png" id="17_uvwvj"]
+[ext_resource type="Texture2D" uid="uid://da7mihttl0wf6" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/horiozontal_split_D.png" id="18_37mbk"]
 
-[node name="SplitViewDropDown" type="BoxContainer"]
+[node name="SplitViewDropDown" type="BoxContainer" unique_id=1328510643]
 script = ExtResource("1_henmy")
 
-[node name="ToggleImageDropDown" parent="." instance=ExtResource("1_4pks6")]
+[node name="ToggleImageDropDown" parent="." unique_id=1682687108 instance=ExtResource("1_4pks6")]
 layout_mode = 2
+tooltip_text = "Split view options"
 theme_type_variation = &"TextureButton_TopBar"
 initial_index = 1
-select_on_press = true
 open_on_hover = true
-tooltip_text = "Split view options"
 
-[node name="Circuit Builder" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="0"]
+[node name="Circuit Builder" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" parent_id_path=PackedInt32Array(1682687108, 323948181) index="0" unique_id=958831545]
 layout_mode = 2
-theme_type_variation = &"TextureButton_TopBar"
 tooltip_text = "Show Circuit Builder"
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("3_667mu")
 texture_pressed = ExtResource("4_jrywm")
 texture_hover = ExtResource("5_uivfl")
 texture_disabled = ExtResource("6_hj26w")
 
-[node name="Brain Monitor" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="1"]
+[node name="Brain Monitor" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" parent_id_path=PackedInt32Array(1682687108, 323948181) index="1" unique_id=1446699943]
 layout_mode = 2
-theme_type_variation = &"TextureButton_TopBar"
 tooltip_text = "Show Brain Monitor"
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("7_7a8kb")
 texture_pressed = ExtResource("8_xcbkx")
 texture_hover = ExtResource("9_hdmos")
 texture_disabled = ExtResource("10_wf58x")
 
-[node name="Split Vertical" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="2"]
+[node name="Split Vertical" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" parent_id_path=PackedInt32Array(1682687108, 323948181) index="2" unique_id=596724126]
 layout_mode = 2
-theme_type_variation = &"TextureButton_TopBar"
 tooltip_text = "Split view: Vertical"
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("11_g57ge")
 texture_pressed = ExtResource("12_1otf1")
 texture_hover = ExtResource("13_sih8b")
 texture_disabled = ExtResource("14_sn7dj")
 
-[node name="Split Horizontal" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" index="3"]
+[node name="Split Horizontal" type="TextureButton" parent="ToggleImageDropDown/PanelContainer/BoxContainer" parent_id_path=PackedInt32Array(1682687108, 323948181) index="3" unique_id=931014191]
 layout_mode = 2
-theme_type_variation = &"TextureButton_TopBar"
 tooltip_text = "Split view: Horizontal"
+theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("15_raxn5")
 texture_pressed = ExtResource("16_f4pb0")
 texture_hover = ExtResource("17_uvwvj")

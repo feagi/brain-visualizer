@@ -1,24 +1,24 @@
-[gd_scene load_steps=6 format=3 uid="uid://c2h24k1yjitll"]
+[gd_scene format=3 uid="uid://c2h24k1yjitll"]
 
 [ext_resource type="Script" uid="uid://i6krre7sl3n1" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/Prefab_Items/ScrollSectionTextButton.gd" id="1_aume3"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_v7sdi"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="2_fkj1r"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="3_0ads0"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="4_nwkad"]
+[ext_resource type="Texture2D" uid="uid://byfmywjeq2rv1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_S.png" id="1_v7sdi"]
+[ext_resource type="Texture2D" uid="uid://cj8lbvc4q2osf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_C.png" id="2_fkj1r"]
+[ext_resource type="Texture2D" uid="uid://do70brd17kvj0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_H.png" id="3_0ads0"]
+[ext_resource type="Texture2D" uid="uid://j57u5ir3knxc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Delete_D.png" id="4_nwkad"]
 
-[node name="HBoxContainer" type="HBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" unique_id=810446198]
 offset_right = 34.0
 offset_bottom = 23.0
 size_flags_horizontal = 3
 script = ExtResource("1_aume3")
 
-[node name="Text" type="Button" parent="."]
+[node name="Text" type="Button" parent="." unique_id=479714393]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Button_List"
 text = "Text"
 
-[node name="Delete" type="TextureButton" parent="."]
+[node name="Delete" type="TextureButton" parent="." unique_id=121318332]
 layout_mode = 2
 theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("1_v7sdi")

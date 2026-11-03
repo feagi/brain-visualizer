@@ -1,17 +1,17 @@
-[gd_scene load_steps=11 format=3 uid="uid://cflmy4e5hfxah"]
+[gd_scene format=3 uid="uid://cflmy4e5hfxah"]
 
 [ext_resource type="Script" uid="uid://h7g0chyq5drw" path="res://BrainVisualizer/UI/Windows/QuickConnect/WindowQuickConnect.gd" id="1_pefds"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="2_3u6kv"]
+[ext_resource type="Texture2D" uid="uid://by4h733mp88h" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_S.png" id="2_3u6kv"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="3_ad4rt"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="3_atlgv"]
+[ext_resource type="Texture2D" uid="uid://bwdt0vsrgwdd5" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_C.png" id="3_atlgv"]
 [ext_resource type="PackedScene" uid="uid://bxqu4fr885cv2" path="res://BrainVisualizer/UI/GenericElements/Scroll/Morphology_List/MorphologyScroll.tscn" id="3_ftgka"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="4_d1vcp"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="5_udoep"]
+[ext_resource type="Texture2D" uid="uid://cbs36m2eday77" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_H.png" id="4_d1vcp"]
+[ext_resource type="Texture2D" uid="uid://cixo1mepghmvv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/edit_D.png" id="5_udoep"]
 [ext_resource type="PackedScene" uid="uid://c8gpa1figwpvw" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/UIMorphologyDefinition.tscn" id="8_i85u6"]
 [ext_resource type="PackedScene" uid="uid://geytg8x6c7no" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/GenericDetails/MorphologyGenericDetails.tscn" id="9_fi7li"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectAdvancedMapping.tscn" id="10_adv"]
+[ext_resource type="PackedScene" uid="uid://d1y8xxsvjdofv" path="res://BrainVisualizer/UI/Windows/QuickConnect/QuickConnectAdvancedMapping.tscn" id="10_adv"]
 
-[node name="WindowQuickConnect" type="VBoxContainer"]
+[node name="WindowQuickConnect" type="VBoxContainer" unique_id=392170168]
 offset_right = 126.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
@@ -20,35 +20,35 @@ theme_override_constants/separation = 0
 script = ExtResource("1_pefds")
 window_spawn_location = Vector2i(800, 400)
 
-[node name="TitleBar" parent="." instance=ExtResource("3_ad4rt")]
+[node name="TitleBar" parent="." unique_id=1415353941 instance=ExtResource("3_ad4rt")]
 layout_mode = 2
 enforce_bottom_bound = false
 title = "Quick Connect"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1840110387]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=495144765]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=373221965]
 layout_mode = 2
 
-[node name="step1" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="step1" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=975610618]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
-[node name="step1" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step1"]
+[node name="step1" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step1" unique_id=501567629]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1" unique_id=936198016]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Label_Header"
 text = " 1. Please Select A Source Area..."
 
-[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1" unique_id=2114531703]
 visible = false
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
@@ -62,32 +62,32 @@ texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step1/step1" unique_id=522717006]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="step2" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="step2" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=975023779]
 visible = false
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
-[node name="step2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step2"]
+[node name="step2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step2" unique_id=1935937513]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2" unique_id=930843056]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Label_Header"
 text = " 2. Please Select A Destination Area..."
 
-[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2" unique_id=1511181061]
 visible = false
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_type_variation = &"TextureButton_icon"
 tooltip_text = "Open Cortical Area Explorer to pick one or more destinations"
+theme_type_variation = &"TextureButton_icon"
 texture_normal = ExtResource("2_3u6kv")
 texture_pressed = ExtResource("3_atlgv")
 texture_hover = ExtResource("4_d1vcp")
@@ -95,25 +95,25 @@ texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step2/step2" unique_id=321792920]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="step3" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="step3" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1549735776]
 visible = false
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
-[node name="step3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step3"]
+[node name="step3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/step3" unique_id=1575947327]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3" unique_id=1929679761]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Label_Header"
 text = " 3. Please Select A Connectivity Rule..."
 
-[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
+[node name="TextureButton" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3" unique_id=1710935569]
 visible = false
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
@@ -127,56 +127,56 @@ texture_disabled = ExtResource("5_udoep")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3"]
+[node name="Control" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/step3/step3" unique_id=174551419]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="CoreConnectivityRulesLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="CoreConnectivityRulesLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1499262496]
 visible = false
 layout_mode = 2
-theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
 text = "Core connectivity rules"
 
-[node name="CoreMorphologiesBar" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="CoreMorphologiesBar" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1863491781]
 visible = false
 custom_minimum_size = Vector2(0, 232)
 layout_mode = 2
 horizontal_scroll_mode = 2
 vertical_scroll_mode = 0
 
-[node name="Icons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/CoreMorphologiesBar"]
+[node name="Icons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/CoreMorphologiesBar" unique_id=2054771650]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
 
-[node name="MorphologyInfoContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="MorphologyInfoContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=586044232]
 visible = false
 layout_mode = 2
 
-[node name="MorphologyInfo" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer"]
+[node name="MorphologyInfo" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer" unique_id=1675170712]
 layout_mode = 2
 
-[node name="MorphologyScroll" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("3_ftgka")]
+[node name="MorphologyScroll" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" unique_id=1177064440 instance=ExtResource("3_ftgka")]
 custom_minimum_size = Vector2(250, 300)
 layout_mode = 2
 
-[node name="SmartMorphologyView" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("8_i85u6")]
+[node name="SmartMorphologyView" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" unique_id=1195069247 instance=ExtResource("8_i85u6")]
 layout_mode = 2
 editing_allowed_from_this_window = false
 
-[node name="MorphologyGenericDetails" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" instance=ExtResource("9_fi7li")]
+[node name="MorphologyGenericDetails" parent="WindowPanel/WindowMargin/WindowInternals/MorphologyInfoContainer/MorphologyInfo" unique_id=88515171 instance=ExtResource("9_fi7li")]
 layout_mode = 2
 
-[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=880739194]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[node name="QuickConnectAdvancedMapping" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("10_adv")]
+[node name="QuickConnectAdvancedMapping" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1859306509 instance=ExtResource("10_adv")]
 visible = false
 layout_mode = 2
 
-[node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Establish" type="Button" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1074508717]
 layout_mode = 2
 theme_type_variation = &"Button_Tall"
 disabled = true

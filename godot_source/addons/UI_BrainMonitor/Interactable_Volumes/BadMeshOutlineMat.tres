@@ -1,4 +1,4 @@
-[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://db0w3vdli2oo5"]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://db0w3vdli2oo5"]
 
 [ext_resource type="Shader" uid="uid://cl0o0rbi5y5hp" path="res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutline.gdshader" id="1_36ca1"]
 
@@ -6,4 +6,4 @@
 render_priority = 0
 shader = ExtResource("1_36ca1")
 shader_parameter/outline_color = Color(0.4, 0.4, 0.8, 1)
-shader_parameter/thickness = 0.1
+shader_parameter/thickness_scaling = Vector3(1, 1, 1)

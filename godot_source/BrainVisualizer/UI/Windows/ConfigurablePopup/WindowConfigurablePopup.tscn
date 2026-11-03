@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://pg6obfpceakc"]
+[gd_scene format=3 uid="uid://pg6obfpceakc"]
 
 [ext_resource type="Script" uid="uid://c1r6wtx4sftia" path="res://BrainVisualizer/UI/Windows/ConfigurablePopup/WindowConfigurablePopup.gd" id="1_7ua63"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_1dl3f"]
 
-[node name="ConfigurablePopup" type="VBoxContainer"]
+[node name="ConfigurablePopup" type="VBoxContainer" unique_id=764094297]
 offset_right = 126.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
@@ -12,36 +12,36 @@ theme_override_constants/separation = 0
 script = ExtResource("1_7ua63")
 window_spawn_location = null
 
-[node name="TitleBar" parent="." instance=ExtResource("2_1dl3f")]
+[node name="TitleBar" parent="." unique_id=1227503275 instance=ExtResource("2_1dl3f")]
 layout_mode = 2
 title = "EXAMPLE WINDOW"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1657551247]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=472088506]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1848510716]
 layout_mode = 2
 
-[node name="gap1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1838720232]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 
-[node name="Message" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Message" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1254920606]
 layout_mode = 2
-horizontal_alignment = 0
+focus_mode = 2
 fit_content = true
 scroll_active = false
 selection_enabled = true
 
-[node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1702681007]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1807997481]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 2

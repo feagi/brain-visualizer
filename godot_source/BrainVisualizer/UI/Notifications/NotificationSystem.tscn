@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://fksp0qyuwqxy"]
+[gd_scene format=3 uid="uid://fksp0qyuwqxy"]
 
 [ext_resource type="Script" uid="uid://colmextct6vko" path="res://BrainVisualizer/UI/Notifications/NotificationSystem.gd" id="1_1qnei"]
 
-[node name="NotificationSystem" type="VBoxContainer"]
+[node name="NotificationSystem" type="VBoxContainer" unique_id=918173737]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0

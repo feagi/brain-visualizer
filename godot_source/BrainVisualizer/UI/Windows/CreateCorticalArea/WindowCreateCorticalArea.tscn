@@ -1,18 +1,18 @@
-[gd_scene load_steps=12 format=3 uid="uid://ctyho04m7lek6"]
+[gd_scene format=3 uid="uid://ctyho04m7lek6"]
 
 [ext_resource type="Script" uid="uid://bif8q2q1ox70w" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/WindowCreateCorticalArea.gd" id="1_0kirv"]
 [ext_resource type="Script" uid="uid://bqk1iuq2kpmvd" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaSelection.gd" id="2_xy23b"]
 [ext_resource type="PackedScene" uid="uid://lbyao7dlu4ga" path="res://BrainVisualizer/UI/GenericElements/Buttons/PanelContainerButton/PanelContainerButton.tscn" id="4_5clbj"]
-[ext_resource type="Texture2D" uid="uid://4nqvb666obtc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="4_5utqj"]
-[ext_resource type="Texture2D" uid="uid://dxocxtd21klr" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="5_ffsab"]
-[ext_resource type="Texture2D" uid="uid://tmxdeqcuseud" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/interconnected.png" id="7_hbdve"]
-[ext_resource type="Texture2D" uid="uid://dxk8pm0n4pg3j" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png" id="8_miahu"]
+[ext_resource type="Texture2D" uid="uid://nwad0he8yiho" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="4_5utqj"]
+[ext_resource type="Texture2D" uid="uid://bmdymoiobbjfi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="5_ffsab"]
+[ext_resource type="Texture2D" uid="uid://drh2ogjujtab6" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/interconnected.png" id="7_hbdve"]
+[ext_resource type="Texture2D" uid="uid://b16bpctgckmhp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png" id="8_miahu"]
 [ext_resource type="PackedScene" uid="uid://craawda1yun5y" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaIOPU.tscn" id="9_54gus"]
 [ext_resource type="PackedScene" uid="uid://vm8thgnbjojc" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaCustom.tscn" id="10_vsdc8"]
 [ext_resource type="PackedScene" uid="uid://csvjqt8dbo5ec" path="res://BrainVisualizer/UI/Windows/CreateCorticalArea/Parts/PartSpawnCorticalAreaMemory.tscn" id="11_leunr"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="12_qi3gl"]
 
-[node name="WindowSpawnCorticalArea" type="VBoxContainer"]
+[node name="WindowSpawnCorticalArea" type="VBoxContainer" unique_id=218590299]
 offset_right = 396.0
 offset_bottom = 223.0
 size_flags_horizontal = 0
@@ -20,54 +20,54 @@ size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_0kirv")
 
-[node name="TitleBar" parent="." instance=ExtResource("12_qi3gl")]
+[node name="TitleBar" parent="." unique_id=1028885307 instance=ExtResource("12_qi3gl")]
 layout_mode = 2
 title = "Add Cortical Area"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1990638015]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=432142888]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1408410385]
 layout_mode = 2
 
-[node name="header" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="header" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=867963611]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/header"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/header" unique_id=571146134]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="icon" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/header"]
+[node name="icon" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/header" unique_id=791505932]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 expand_mode = 1
 
-[node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Selection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1539443750]
 layout_mode = 2
 
-[node name="options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection"]
+[node name="options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection" unique_id=462290962]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_fatherest"
 script = ExtResource("2_xy23b")
 
-[node name="Input" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("4_5clbj")]
+[node name="Input" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" unique_id=1227675202 instance=ExtResource("4_5clbj")]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input"]
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input" unique_id=1002834946]
 layout_mode = 2
 
-[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input/MarginContainer"]
+[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input/MarginContainer" unique_id=1257616375]
 layout_mode = 2
 alignment = 1
 vertical = true
 
-[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input/MarginContainer/BoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input/MarginContainer/BoxContainer" unique_id=592238436]
 custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -75,29 +75,29 @@ size_flags_vertical = 4
 texture = ExtResource("4_5utqj")
 expand_mode = 1
 
-[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input/MarginContainer/BoxContainer"]
+[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input/MarginContainer/BoxContainer" unique_id=347692542]
 layout_mode = 2
 mouse_filter = 1
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input/MarginContainer/BoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Input/MarginContainer/BoxContainer" unique_id=1169611709]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_MainText"
 text = "Input"
 horizontal_alignment = 1
 
-[node name="Output" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("4_5clbj")]
+[node name="Output" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" unique_id=1249801774 instance=ExtResource("4_5clbj")]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output"]
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output" unique_id=1445186091]
 layout_mode = 2
 
-[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output/MarginContainer"]
+[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output/MarginContainer" unique_id=1885896320]
 layout_mode = 2
 alignment = 1
 vertical = true
 
-[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output/MarginContainer/BoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output/MarginContainer/BoxContainer" unique_id=1610718854]
 custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -105,29 +105,29 @@ size_flags_vertical = 4
 texture = ExtResource("5_ffsab")
 expand_mode = 1
 
-[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output/MarginContainer/BoxContainer"]
+[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output/MarginContainer/BoxContainer" unique_id=1271017041]
 layout_mode = 2
 mouse_filter = 1
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output/MarginContainer/BoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Output/MarginContainer/BoxContainer" unique_id=120183619]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_MainText"
 text = "Output"
 horizontal_alignment = 1
 
-[node name="Custom" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("4_5clbj")]
+[node name="Custom" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" unique_id=1349016655 instance=ExtResource("4_5clbj")]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom"]
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom" unique_id=632003460]
 layout_mode = 2
 
-[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom/MarginContainer"]
+[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom/MarginContainer" unique_id=2137060420]
 layout_mode = 2
 alignment = 1
 vertical = true
 
-[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom/MarginContainer/BoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom/MarginContainer/BoxContainer" unique_id=1840424314]
 custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -135,29 +135,29 @@ size_flags_vertical = 4
 texture = ExtResource("7_hbdve")
 expand_mode = 1
 
-[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom/MarginContainer/BoxContainer"]
+[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom/MarginContainer/BoxContainer" unique_id=1520916539]
 layout_mode = 2
 mouse_filter = 1
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom/MarginContainer/BoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Custom/MarginContainer/BoxContainer" unique_id=1848731230]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_MainText"
 text = "Interconnect"
 horizontal_alignment = 1
 
-[node name="Memory" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" instance=ExtResource("4_5clbj")]
+[node name="Memory" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options" unique_id=1273922450 instance=ExtResource("4_5clbj")]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory"]
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory" unique_id=397675297]
 layout_mode = 2
 
-[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory/MarginContainer"]
+[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory/MarginContainer" unique_id=84177329]
 layout_mode = 2
 alignment = 1
 vertical = true
 
-[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory/MarginContainer/BoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory/MarginContainer/BoxContainer" unique_id=1208979570]
 custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -165,11 +165,11 @@ size_flags_vertical = 4
 texture = ExtResource("8_miahu")
 expand_mode = 1
 
-[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory/MarginContainer/BoxContainer"]
+[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory/MarginContainer/BoxContainer" unique_id=713871138]
 layout_mode = 2
 mouse_filter = 1
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory/MarginContainer/BoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Selection/options/Memory/MarginContainer/BoxContainer" unique_id=1434625587]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_MainText"
@@ -177,19 +177,19 @@ text = "Memory
 "
 horizontal_alignment = 1
 
-[node name="Definition_IOPU" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("9_54gus")]
+[node name="Definition_IOPU" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=185871841 instance=ExtResource("9_54gus")]
 visible = false
 layout_mode = 2
 
-[node name="Definition_Custom" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("10_vsdc8")]
+[node name="Definition_Custom" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=421568377 instance=ExtResource("10_vsdc8")]
 visible = false
 layout_mode = 2
 
-[node name="Definition_Memory" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("11_leunr")]
+[node name="Definition_Memory" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1588264045 instance=ExtResource("11_leunr")]
 visible = false
 layout_mode = 2
 
-[node name="ValidationMessageRow" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ValidationMessageRow" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=757948293]
 visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 4
@@ -197,34 +197,34 @@ theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 4
 
-[node name="ValidationMessageLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ValidationMessageRow"]
+[node name="ValidationMessageLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ValidationMessageRow" unique_id=1264341150]
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
-autowrap_mode = 3
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 3
 
-[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1479669688]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=361636529]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Back"
 
-[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=773774283]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=1762775553]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
-[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=135525178]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

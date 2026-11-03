@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://c3ashc408js2c"]
+[gd_scene format=3 uid="uid://c3ashc408js2c"]
 
 [ext_resource type="Script" uid="uid://duqdc3uisb4h" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeBrainRegion/CBNodeRegion.gd" id="1_yxq37"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="2_oj6qo"]
+[ext_resource type="Texture2D" uid="uid://cmtbytx0rklss" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="2_oj6qo"]
 
-[node name="CBNodeBrainRegion" type="GraphNode"]
+[node name="CBNodeBrainRegion" type="GraphNode" unique_id=1727806988]
 custom_minimum_size = Vector2(350, 50)
 offset_right = 250.0
 offset_bottom = 78.0
@@ -40,32 +40,32 @@ slot/2/right_icon = null
 slot/2/draw_stylebox = true
 script = ExtResource("1_yxq37")
 
-[node name="Top_Connector" type="HBoxContainer" parent="."]
+[node name="Top_Connector" type="HBoxContainer" parent="." unique_id=1460256300]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Top_Connector"]
+[node name="Label" type="Label" parent="Top_Connector" unique_id=1469533109]
 layout_mode = 2
 text = "Add Input"
 
-[node name="Temp_region_Icon" type="TextureRect" parent="Top_Connector"]
+[node name="Temp_region_Icon" type="TextureRect" parent="Top_Connector" unique_id=1331352220]
 layout_mode = 2
 size_flags_horizontal = 3
 texture = ExtResource("2_oj6qo")
 expand_mode = 2
 stretch_mode = 5
 
-[node name="Label2" type="Label" parent="Top_Connector"]
+[node name="Label2" type="Label" parent="Top_Connector" unique_id=280154319]
 layout_mode = 2
 text = "Add Output"
 horizontal_alignment = 2
 
-[node name="Inputs" type="VBoxContainer" parent="."]
+[node name="Inputs" type="VBoxContainer" parent="." unique_id=683617207]
 layout_mode = 2
 size_flags_vertical = 0
 theme_type_variation = &"VBoxContainer_far"
 
-[node name="Outputs" type="VBoxContainer" parent="."]
+[node name="Outputs" type="VBoxContainer" parent="." unique_id=300573543]
 layout_mode = 2
 size_flags_vertical = 0
 theme_type_variation = &"VBoxContainer_far"

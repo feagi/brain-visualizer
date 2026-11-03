@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://bq4c4j2yujcwt"]
+[gd_scene format=3 uid="uid://bq4c4j2yujcwt"]
 
 [ext_resource type="Script" uid="uid://ndrapxomkjhp" path="res://BrainVisualizer/UI/Windows/MappingEditor/WindowMappingEditor.gd" id="1_cwaox"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_y8w4n"]
@@ -7,7 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://c7ov4mq4cau4l" path="res://BrainVisualizer/UI/Windows/MappingEditor/MappingEditorMemoryMapping.tscn" id="4_vr6mc"]
 [ext_resource type="PackedScene" uid="uid://bifi2v0y8l2bl" path="res://BrainVisualizer/UI/Windows/MappingEditor/generic_mapping_detail_settings_partial.tscn" id="6_yr7ns"]
 
-[node name="WindowMappingEditor" type="VBoxContainer"]
+[node name="WindowMappingEditor" type="VBoxContainer" unique_id=2007365268]
 offset_right = 1452.0
 offset_bottom = 703.0
 size_flags_horizontal = 0
@@ -15,84 +15,84 @@ size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_cwaox")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_y8w4n")]
+[node name="TitleBar" parent="." unique_id=825907805 instance=ExtResource("2_y8w4n")]
 layout_mode = 2
 enforce_bottom_bound = false
 enforce_left_bound = false
 enforce_right_bound = false
 title = "Cortical Mapping Editor"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1503497334]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=891646938]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1128914699]
 layout_mode = 2
 
-[node name="ends" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ends" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=570584623]
 layout_mode = 2
 alignment = 1
 
-[node name="Source" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
+[node name="Source" parent="WindowPanel/WindowMargin/WindowInternals/ends" unique_id=370371212 instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
 
-[node name="Arrow" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/ends"]
+[node name="Arrow" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/ends" unique_id=647770899]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Destination" parent="WindowPanel/WindowMargin/WindowInternals/ends" instance=ExtResource("3_ewhco")]
+[node name="Destination" parent="WindowPanel/WindowMargin/WindowInternals/ends" unique_id=2048316769 instance=ExtResource("3_ewhco")]
 custom_minimum_size = Vector2(256, 64)
 layout_mode = 2
 
-[node name="Invalid" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Invalid" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=2123543130]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Invalid"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Invalid" unique_id=9979990]
 layout_mode = 2
 size_flags_vertical = 3
 text = "Please ensure both ends of the connection are valid!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="MappingEditorMemoryMapping" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_vr6mc")]
+[node name="MappingEditorMemoryMapping" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1109307571 instance=ExtResource("4_vr6mc")]
 visible = false
 layout_mode = 2
 
-[node name="GenericMappingDetailSettings" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("4_n57ep")]
+[node name="GenericMappingDetailSettings" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=893255528 instance=ExtResource("4_n57ep")]
 visible = false
 custom_minimum_size = Vector2(2032, 0)
 layout_mode = 2
 
-[node name="GenericMappingDetailSettingsPartial" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_yr7ns")]
+[node name="GenericMappingDetailSettingsPartial" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1246793073 instance=ExtResource("6_yr7ns")]
 visible = false
 layout_mode = 2
 
-[node name="ButtonSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ButtonSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=591824299]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1763788953]
 layout_mode = 2
 alignment = 2
 
-[node name="CancelButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="CancelButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1076340936]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = " Cancel "
 
-[node name="ButtonSpacing" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="ButtonSpacing" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=640994520]
 custom_minimum_size = Vector2(16, 0)
 layout_mode = 2
 
-[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1083746807]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

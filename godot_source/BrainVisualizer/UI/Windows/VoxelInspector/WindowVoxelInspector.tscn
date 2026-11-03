@@ -1,15 +1,15 @@
-[gd_scene load_steps=9 format=3 uid="uid://bvxvoxelinspector01"]
+[gd_scene format=3 uid="uid://ba2chvpy3cg0w"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.gd" id="1_voxel"]
+[ext_resource type="Script" uid="uid://duejy0fb0aqbd" path="res://BrainVisualizer/UI/Windows/VoxelInspector/WindowVoxelInspector.gd" id="1_voxel"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/CorticalDropDown.gd" id="3_cortical"]
+[ext_resource type="Script" uid="uid://7xygvrncscwh" path="res://BrainVisualizer/UI/GenericElements/DropDown/CorticalDropDown.gd" id="3_cortical"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="4_v3"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="5_toggle_off"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="6_toggle_btn"]
+[ext_resource type="Texture2D" uid="uid://6i7uwkjq3mto" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="5_toggle_off"]
+[ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="6_toggle_btn"]
 [ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="7_int_in"]
 [ext_resource type="Script" uid="uid://bdkrgojqbrto0" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/FloatInput.gd" id="8_float_in"]
 
-[node name="WindowVoxelInspector" type="VBoxContainer"]
+[node name="WindowVoxelInspector" type="VBoxContainer" unique_id=718044323]
 custom_minimum_size = Vector2(780, 980)
 offset_right = 780.0
 offset_bottom = 760.0
@@ -19,27 +19,27 @@ theme_override_constants/separation = 0
 script = ExtResource("1_voxel")
 window_spawn_location = Vector2i(160, 120)
 
-[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+[node name="TitleBar" parent="." unique_id=52741076 instance=ExtResource("2_titlebar")]
 layout_mode = 2
 title = "Voxel Inspector"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=258343011]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=657603728]
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"MarginContainer_WindowBorder"
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1048502276]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
 
-[node name="HintLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" index="0"]
+[node name="HintLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1659147369]
 custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
 text = "Pick a cortical area and voxel, then click Inspect.
@@ -48,43 +48,45 @@ Live neuron inspector shows the summary above the cursor while hovering voxels.
 Live synapse inspector draws that voxel's synapses while hovering."
 autowrap_mode = 3
 
-[node name="InspectorControls" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ControlsDivider" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1401214160]
+layout_mode = 2
+
+[node name="InspectorControls" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1234978620]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="CorticalRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+[node name="CorticalRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls" unique_id=1431517376]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="CorticalLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/CorticalRow"]
+[node name="CorticalLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/CorticalRow" unique_id=1408312981]
 layout_mode = 2
 text = "Cortical area"
 
-[node name="CorticalAreaDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/CorticalRow"]
+[node name="CorticalAreaDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/CorticalRow" unique_id=1674928374]
 custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("3_cortical")
 
-[node name="VoxelCoords" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls" instance=ExtResource("4_v3")]
+[node name="VoxelCoords" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls" unique_id=1453889292 instance=ExtResource("4_v3")]
 layout_mode = 2
-initial_vector = Vector3i(0, 0, 0)
 
-[node name="InspectButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+[node name="InspectButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls" unique_id=1376816938]
 layout_mode = 2
 text = "Inspect"
 
-[node name="VoxelSynapseRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+[node name="VoxelSynapseRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls" unique_id=227638511]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="VoxelSynapseLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow"]
+[node name="VoxelSynapseLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow" unique_id=1554175195]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 1
 text = "Show voxel synapse connections (3D)"
 
-[node name="VoxelSynapseToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow"]
+[node name="VoxelSynapseToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/VoxelSynapseRow" unique_id=1628336435]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 texture_normal = ExtResource("5_toggle_off")
@@ -92,17 +94,17 @@ ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("6_toggle_btn")
 
-[node name="LiveInspectorRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+[node name="LiveInspectorRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls" unique_id=1283812546]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="LiveInspectorLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveInspectorRow"]
+[node name="LiveInspectorLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveInspectorRow" unique_id=526051716]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 1
 text = "Live neuron inspector"
 
-[node name="LiveInspectorToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveInspectorRow"]
+[node name="LiveInspectorToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveInspectorRow" unique_id=1007608366]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 texture_normal = ExtResource("5_toggle_off")
@@ -110,17 +112,17 @@ ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("6_toggle_btn")
 
-[node name="LiveSynapseInspectorRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls"]
+[node name="LiveSynapseInspectorRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls" unique_id=971349464]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="LiveSynapseInspectorLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveSynapseInspectorRow"]
+[node name="LiveSynapseInspectorLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveSynapseInspectorRow" unique_id=2085715034]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 1
 text = "Live synapse inspector"
 
-[node name="LiveSynapseInspectorToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveSynapseInspectorRow"]
+[node name="LiveSynapseInspectorToggle" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/InspectorControls/LiveSynapseInspectorRow" unique_id=855865276]
 custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 texture_normal = ExtResource("5_toggle_off")
@@ -128,172 +130,169 @@ ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("6_toggle_btn")
 
-[node name="ControlsDivider" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals" index="1"]
-layout_mode = 2
-
-[node name="SummarySection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="SummarySection" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=350469313]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="SummaryHeading" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="SummaryHeading" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=1749061051]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Summary"
 
-[node name="NeuronCountRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="NeuronCountRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=1319364878]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/NeuronCountRow"]
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/NeuronCountRow" unique_id=1796073564]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Neuron Count"
 
-[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/NeuronCountRow"]
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/NeuronCountRow" unique_id=1382129007]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("7_int_in")
 
-[node name="MembraneRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="MembraneRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=447388391]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/MembraneRow"]
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/MembraneRow" unique_id=233872625]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Membrane Potential"
 
-[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/MembraneRow"]
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/MembraneRow" unique_id=1809652885]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("8_float_in")
 number_decimal_places = 4
 
-[node name="IncomingRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="IncomingRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=1715516542]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/IncomingRow"]
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/IncomingRow" unique_id=1435684324]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Incoming Synapse Count"
 
-[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/IncomingRow"]
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/IncomingRow" unique_id=964836155]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("7_int_in")
 
-[node name="OutgoingRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="OutgoingRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=1258968180]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/OutgoingRow"]
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/OutgoingRow" unique_id=1370986382]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Outgoing Synapse Count"
 
-[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/OutgoingRow"]
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/OutgoingRow" unique_id=1771283895]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("7_int_in")
 
-[node name="FiringThresholdRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="FiringThresholdRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=459232295]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/FiringThresholdRow"]
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/FiringThresholdRow" unique_id=303559464]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Firing Threshold"
 
-[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/FiringThresholdRow"]
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/FiringThresholdRow" unique_id=690772137]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("8_float_in")
 number_decimal_places = 4
 
-[node name="RefractoryCountdownRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="RefractoryCountdownRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=391447216]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/RefractoryCountdownRow"]
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/RefractoryCountdownRow" unique_id=55140225]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Refractory Countdown"
 
-[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/RefractoryCountdownRow"]
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/RefractoryCountdownRow" unique_id=765640227]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("7_int_in")
 
-[node name="ConsecutiveFiresRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="ConsecutiveFiresRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=1766997645]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/ConsecutiveFiresRow"]
+[node name="Name" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/ConsecutiveFiresRow" unique_id=1955218955]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Consecutive Fires"
 
-[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/ConsecutiveFiresRow"]
+[node name="Value" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection/ConsecutiveFiresRow" unique_id=82189389]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 editable = false
 script = ExtResource("7_int_in")
 
-[node name="DynamicsHeading" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="DynamicsHeading" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=282170381]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Neuron dynamics"
 
-[node name="DynamicsRowsHost" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection"]
+[node name="DynamicsRowsHost" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/SummarySection" unique_id=2039063160]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="SummaryDivider" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="SummaryDivider" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=408012276]
 layout_mode = 2
 
-[node name="PaginationRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="PaginationRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=654610460]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="NeuronDetailsTitleInline" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+[node name="NeuronDetailsTitleInline" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow" unique_id=382798142]
 layout_mode = 2
 text = "Neuron details"
 
-[node name="PaginationSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+[node name="PaginationSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow" unique_id=2133358264]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SynapsePageLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+[node name="SynapsePageLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow" unique_id=780118918]
 layout_mode = 2
 text = "Data page:"
 
-[node name="PagePrevButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+[node name="PagePrevButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow" unique_id=377122855]
 layout_mode = 2
 disabled = true
 text = "Previous"
 
-[node name="PageValueLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+[node name="PageValueLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow" unique_id=461291293]
 layout_mode = 2
 text = "0"
 
-[node name="PageNextButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow"]
+[node name="PageNextButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/PaginationRow" unique_id=376068351]
 layout_mode = 2
 disabled = true
 text = "Next"
 
-[node name="JsonText" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="JsonText" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1740325444]
 custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
 size_flags_vertical = 3
+placeholder_text = "Inspect results appear here."
 editable = false
 wrap_mode = 1
-placeholder_text = "Inspect results appear here."

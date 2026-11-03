@@ -555,4 +555,3 @@ func _apply_named_metric(name_label: Label, value_ctrl: AbstractLineInput, label
 		_set_summary_lineedit_placeholder(value_ctrl)
 		return
 	value_ctrl.set_value_from_text(value_text)
-

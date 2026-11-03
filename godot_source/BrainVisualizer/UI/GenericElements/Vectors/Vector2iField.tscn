@@ -1,38 +1,38 @@
-[gd_scene load_steps=3 format=3 uid="uid://bua3t8kprcx3n"]
+[gd_scene format=3 uid="uid://bua3t8kprcx3n"]
 
 [ext_resource type="Script" uid="uid://dad5bkqcp7cm7" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iField.gd" id="1_2rlsy"]
 [ext_resource type="Script" uid="uid://b2x7frsukqro5" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntInput.gd" id="3_v6mub"]
 
-[node name="Vector2iField" type="BoxContainer"]
+[node name="Vector2iField" type="BoxContainer" unique_id=1615291191]
 offset_right = 126.0
 offset_bottom = 22.0
 theme_type_variation = &"BoxContainer_far"
 script = ExtResource("1_2rlsy")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1338882976]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LabelX" type="Label" parent="HBoxContainer"]
+[node name="LabelX" type="Label" parent="HBoxContainer" unique_id=125954235]
 layout_mode = 2
 theme_type_variation = &"Label_UniformWidth"
 text = "X"
 
-[node name="IntX" type="LineEdit" parent="HBoxContainer"]
+[node name="IntX" type="LineEdit" parent="HBoxContainer" unique_id=22064526]
 layout_mode = 2
 alignment = 1
 script = ExtResource("3_v6mub")
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="." unique_id=1075211938]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LabelY" type="Label" parent="HBoxContainer2"]
+[node name="LabelY" type="Label" parent="HBoxContainer2" unique_id=2059001372]
 layout_mode = 2
 theme_type_variation = &"Label_UniformWidth"
 text = "Y"
 
-[node name="IntY" type="LineEdit" parent="HBoxContainer2"]
+[node name="IntY" type="LineEdit" parent="HBoxContainer2" unique_id=1352466117]
 layout_mode = 2
 alignment = 1
 script = ExtResource("3_v6mub")

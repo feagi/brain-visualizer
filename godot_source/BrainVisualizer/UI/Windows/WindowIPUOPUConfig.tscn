@@ -1,163 +1,155 @@
-[gd_scene load_steps=3 format=3 uid="uid://ipu_opu_config_window"]
+[gd_scene format=3 uid="uid://bfliv54fkruc7"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.gd" id="1_ipuopu"]
+[ext_resource type="Script" uid="uid://b6xr3esosyi71" path="res://BrainVisualizer/UI/Windows/WindowIPUOPUConfig.gd" id="1_ipuopu"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
 
-[node name="WindowIPUOPUConfig" type="VBoxContainer"]
+[node name="WindowIPUOPUConfig" type="VBoxContainer" unique_id=1698712812]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 script = ExtResource("1_ipuopu")
 window_spawn_location = Vector2i(140, 100)
 
-[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+[node name="TitleBar" parent="." unique_id=1889062143 instance=ExtResource("2_titlebar")]
 layout_mode = 2
 title = "Sensorimotor Configuration"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1664326531]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=420368192]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1793673925]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="HeaderPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HeaderPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=920298502]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HeaderMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel"]
+[node name="HeaderMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel" unique_id=1524742385]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="HeaderRow" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin"]
+[node name="HeaderRow" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin" unique_id=1079758663]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="AgentPanel" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+[node name="AgentPanel" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow" unique_id=1626022211]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="AgentLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
+[node name="AgentLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel" unique_id=2123049333]
 layout_mode = 2
-text = "Agent"
 theme_override_font_sizes/font_size = 24
+text = "Agent"
 
-[node name="AgentDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel"]
+[node name="AgentDropdown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/AgentPanel" unique_id=748902738]
 custom_minimum_size = Vector2(220, 36)
 layout_mode = 2
 
-[node name="InputsPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+[node name="InputsPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow" unique_id=1906877923]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
 
-[node name="InputsMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel"]
+[node name="InputsMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel" unique_id=162803024]
 layout_mode = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="InputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin"]
+[node name="InputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin" unique_id=2092999197]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="InputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin/InputsRow"]
-layout_mode = 2
+[node name="InputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin/InputsRow" unique_id=1712558917]
 custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
 text = "Inputs"
-theme_override_font_sizes/font_size = 24
 
-[node name="InputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin/InputsRow"]
+[node name="InputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/InputsPanel/InputsMargin/InputsRow" unique_id=2072281766]
 layout_mode = 2
 columns = 4
-theme_override_constants/separation = 8
 
-[node name="OutputsPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow"]
+[node name="OutputsPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow" unique_id=383727568]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
 
-[node name="OutputsMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel"]
+[node name="OutputsMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel" unique_id=565475820]
 layout_mode = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="OutputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin"]
+[node name="OutputsRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin" unique_id=769892150]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="OutputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin/OutputsRow"]
-layout_mode = 2
+[node name="OutputsLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin/OutputsRow" unique_id=1674328602]
 custom_minimum_size = Vector2(140, 0)
-text = "Outputs"
+layout_mode = 2
 theme_override_font_sizes/font_size = 24
+text = "Outputs"
 
-[node name="OutputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin/OutputsRow"]
+[node name="OutputsGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/HeaderPanel/HeaderMargin/HeaderRow/OutputsPanel/OutputsMargin/OutputsRow" unique_id=13344666]
 layout_mode = 2
 columns = 4
-theme_override_constants/separation = 8
 
-[node name="SectionSeparator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="SectionSeparator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=919250630]
 layout_mode = 2
 
-[node name="BodyPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="BodyPanel" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1538575903]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="BodyMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel"]
+[node name="BodyMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel" unique_id=1536007902]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="BodyContent" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin"]
+[node name="BodyContent" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin" unique_id=588426690]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="StatusLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent"]
+[node name="StatusLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent" unique_id=2107247878]
 layout_mode = 2
 text = "Select a device to configure."
 
-[node name="ConfigScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent"]
+[node name="ConfigScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent" unique_id=1119042633]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ConfigContent" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ConfigScroll"]
+[node name="ConfigContent" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ConfigScroll" unique_id=1799968166]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="ButtonRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent"]
+[node name="ButtonRow" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent" unique_id=390067168]
 layout_mode = 2
-alignment = 2
 theme_override_constants/separation = 12
+alignment = 2
 
-[node name="IgnoreChangesButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow"]
+[node name="IgnoreChangesButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow" unique_id=1340898370]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Ignore changes"
 
-[node name="SaveButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow"]
+[node name="SaveButton" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/BodyPanel/BodyMargin/BodyContent/ButtonRow" unique_id=1386442718]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

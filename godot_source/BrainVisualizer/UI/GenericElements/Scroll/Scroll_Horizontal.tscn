@@ -1,11 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://ddbex88mr6v4h"]
+[gd_scene format=3 uid="uid://ddbex88mr6v4h"]
 
 [ext_resource type="Script" uid="uid://b478frjgoweiv" path="res://BrainVisualizer/UI/GenericElements/Scroll/BaseScroll.gd" id="1_bevrw"]
 
-[node name="Scroll_Horizontal" type="ScrollContainer"]
+[node name="Scroll_Horizontal" type="ScrollContainer" unique_id=1200839937]
 offset_right = 32.0
 offset_bottom = 35.0
 script = ExtResource("1_bevrw")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=757684394]
 layout_mode = 2

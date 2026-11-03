@@ -1,19 +1,18 @@
-[gd_scene load_steps=2 format=3 uid="uid://bv_device_enum"]
+[gd_scene format=3 uid="uid://c0kerxpkb2k18"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditEnumParameter.gd" id="1_enum"]
+[ext_resource type="Script" uid="uid://dfjqayrnm84u5" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditEnumParameter.gd" id="1_enum"]
 
-[node name="Enum" type="HBoxContainer"]
+[node name="Enum" type="HBoxContainer" unique_id=1762269822]
 script = ExtResource("1_enum")
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=1891988891]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
-mouse_filter = 1
 size_flags_horizontal = 0
-horizontal_alignment = 0
+mouse_filter = 1
 text = "NAME: "
 
-[node name="Value" type="OptionButton" parent="."]
+[node name="Value" type="OptionButton" parent="." unique_id=1991852255]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_horizontal = 3

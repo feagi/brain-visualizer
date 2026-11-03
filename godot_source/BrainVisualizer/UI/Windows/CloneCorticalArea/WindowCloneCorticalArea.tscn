@@ -1,14 +1,14 @@
-[gd_scene load_steps=7 format=3 uid="uid://b2knwu28hl12b"]
+[gd_scene format=3 uid="uid://b2knwu28hl12b"]
 
 [ext_resource type="Script" uid="uid://bp4dpwx14ihku" path="res://BrainVisualizer/UI/Windows/CloneCorticalArea/WindowCloneCorticalArea.gd" id="2_8fxof"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="5_6v723"]
 [ext_resource type="PackedScene" uid="uid://brwx50pyfywb7" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector2iSpinBoxField.tscn" id="6_sl08t"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="6_t2gp1"]
-[ext_resource type="Texture2D" uid="uid://ch54esboqsyem" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="7_taa4s"]
+[ext_resource type="Texture2D" uid="uid://6i7uwkjq3mto" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/toggle_off.png" id="7_taa4s"]
 [ext_resource type="Script" uid="uid://dpa1l80uisixv" path="res://BrainVisualizer/UI/GenericElements/Buttons/ToggleButton.gd" id="8_tgbtn"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="10_smykg"]
 
-[node name="WindowCloneCorticalArea" type="VBoxContainer"]
+[node name="WindowCloneCorticalArea" type="VBoxContainer" unique_id=1485861497]
 offset_right = 126.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
@@ -17,89 +17,87 @@ theme_override_constants/separation = 0
 script = ExtResource("2_8fxof")
 window_spawn_location = Vector2i(900, 400)
 
-[node name="TitleBar" parent="." instance=ExtResource("10_smykg")]
+[node name="TitleBar" parent="." unique_id=1791509581 instance=ExtResource("10_smykg")]
 layout_mode = 2
 title = "Clone Cortical Area"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1755887708]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=125986449]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1381707729]
 layout_mode = 2
 
-[node name="gap1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1949017644]
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1590398318]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1790518085]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cortical Name"
 
-[node name="Cortical_Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Cortical_Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=870777539]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 placeholder_text = "Friendly Name"
 max_length = 16
 script = ExtResource("5_6v723")
 
-[node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=544211349]
 custom_minimum_size = Vector2(0, 3)
 layout_mode = 2
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1162421227]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" unique_id=885557297]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "3D Coordinates"
 
-[node name="Coordinates_3D" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" instance=ExtResource("6_t2gp1")]
+[node name="Coordinates_3D" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" unique_id=419344430 instance=ExtResource("6_t2gp1")]
 layout_mode = 2
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1057573222]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3" unique_id=1146972837]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "2D Coordinates"
 
-[node name="Coordinates_2D" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3" instance=ExtResource("6_sl08t")]
+[node name="Coordinates_2D" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3" unique_id=359093748 instance=ExtResource("6_sl08t")]
 layout_mode = 2
 
-[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=62489104]
 custom_minimum_size = Vector2(0, 3)
 layout_mode = 2
 
-[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=536941502]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4" unique_id=866596451]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 4
 text = "Auto wire mappings"
 
-[node name="AutoWiring" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+[node name="AutoWiring" type="TextureButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4" unique_id=1792286670]
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 theme_type_variation = &"ToggleButton"
 texture_normal = ExtResource("7_taa4s")
 ignore_texture_size = true
 stretch_mode = 0
-button_pressed = true
 script = ExtResource("8_tgbtn")
 
-[node name="Clone_button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Clone_button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=448566261]
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Clone Cortical Area"

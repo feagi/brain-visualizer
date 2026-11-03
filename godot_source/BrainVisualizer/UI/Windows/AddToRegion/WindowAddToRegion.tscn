@@ -1,11 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://box6tl4h5wf3d"]
+[gd_scene format=3 uid="uid://box6tl4h5wf3d"]
 
 [ext_resource type="Script" uid="uid://ccq3yp5o1u521" path="res://BrainVisualizer/UI/Windows/AddToRegion/WindowAddToRegion.gd" id="1_mvyuv"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_qajk0"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_wcnhn"]
 [ext_resource type="PackedScene" uid="uid://b1lf2ayhmnh34" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGenomeObjectSelector/ScrollGenomeObjectSelector.tscn" id="3_xpgkm"]
 
-[node name="WindowAddToRegion" type="VBoxContainer"]
+[node name="WindowAddToRegion" type="VBoxContainer" unique_id=2010748936]
 offset_right = 632.0
 offset_bottom = 455.0
 size_flags_horizontal = 0
@@ -13,56 +13,56 @@ size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_mvyuv")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_qajk0")]
+[node name="TitleBar" parent="." unique_id=93838705 instance=ExtResource("2_qajk0")]
 layout_mode = 2
 title = "Select Target Neural Circuit"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=600591013]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=509483655]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=852618505]
 layout_mode = 2
 
-[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1956192703]
 layout_mode = 2
 placeholder_text = "Filter..."
 script = ExtResource("3_wcnhn")
 
-[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=441408779]
 layout_mode = 2
 
-[node name="ScrollGenomeObjectSelector" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_xpgkm")]
+[node name="ScrollGenomeObjectSelector" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1008848660 instance=ExtResource("3_xpgkm")]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=15139209]
 layout_mode = 2
 text = "No Circuit Selected"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=741754214]
 layout_mode = 2
 alignment = 2
 
-[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=907216889]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = " Create Neural Circuit "
 
-[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=622759401]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=2103694577]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
-[node name="Select" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Select" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1098876932]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

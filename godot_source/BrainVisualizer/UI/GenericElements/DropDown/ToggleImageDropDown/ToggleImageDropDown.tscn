@@ -1,20 +1,19 @@
-[gd_scene load_steps=2 format=3 uid="uid://mwx2wythpo1l"]
+[gd_scene format=3 uid="uid://mwx2wythpo1l"]
 
 [ext_resource type="Script" uid="uid://ihoiptfwbds" path="res://BrainVisualizer/UI/GenericElements/DropDown/ToggleImageDropDown/ToggleImageDropDown.gd" id="1_ghidh"]
 
-[node name="ToggleImageDropDown" type="TextureButton"]
+[node name="ToggleImageDropDown" type="TextureButton" unique_id=873894231]
 ignore_texture_size = true
 stretch_mode = 0
 script = ExtResource("1_ghidh")
 
-[node name="PanelContainer" type="PopupPanel" parent="."]
-visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="PanelContainer" type="PopupPanel" parent="." unique_id=1817023990]
 
-[node name="BoxContainer" type="BoxContainer" parent="PanelContainer"]
-layout_mode = 2
+[node name="BoxContainer" type="BoxContainer" parent="PanelContainer" unique_id=323948181]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 96.0
+offset_bottom = 96.0
 vertical = true
 
 [connection signal="pressed" from="." to="." method="dropdown_toggle"]

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://vrmdr5go1rne"]
 
-[node name="CBNodeRegionIO" type="GraphNode"]
+[node name="CBNodeRegionIO" type="GraphNode" unique_id=1578290449]
 custom_minimum_size = Vector2(150, 0)
 offset_right = 150.0
 offset_bottom = 78.0
@@ -42,31 +42,31 @@ slot/3/right_color = Color(1, 1, 1, 1)
 slot/3/right_icon = null
 slot/3/draw_stylebox = true
 
-[node name="Top_Connector" type="HBoxContainer" parent="."]
+[node name="Top_Connector" type="HBoxContainer" parent="." unique_id=787880821]
 visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Top_Connector"]
+[node name="Label" type="Label" parent="Top_Connector" unique_id=1633657816]
 layout_mode = 2
 text = "Add Input"
 
-[node name="Control" type="Control" parent="Top_Connector"]
+[node name="Control" type="Control" parent="Top_Connector" unique_id=110800082]
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label2" type="Label" parent="Top_Connector"]
+[node name="Label2" type="Label" parent="Top_Connector" unique_id=583989932]
 layout_mode = 2
 text = "Add Output"
 horizontal_alignment = 2
 
-[node name="Recursive" type="VBoxContainer" parent="."]
+[node name="Recursive" type="VBoxContainer" parent="." unique_id=307864714]
 layout_mode = 2
 alignment = 1
 
-[node name="Inputs" type="VBoxContainer" parent="."]
+[node name="Inputs" type="VBoxContainer" parent="." unique_id=2091170792]
 layout_mode = 2
 
-[node name="Outputs" type="VBoxContainer" parent="."]
+[node name="Outputs" type="VBoxContainer" parent="." unique_id=1294842588]
 layout_mode = 2
 alignment = 2

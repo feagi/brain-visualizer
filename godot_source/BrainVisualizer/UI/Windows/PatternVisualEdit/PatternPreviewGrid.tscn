@@ -1,7 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://bpatprevgrid01"]
+[gd_scene format=3 uid="uid://cvxaopufy2uwu"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/PatternVisualEdit/PatternPreviewGrid.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ree0ewvqq41n" path="res://BrainVisualizer/UI/Windows/PatternVisualEdit/PatternPreviewGrid.gd" id="1_script"]
 
-[node name="PatternPreviewGrid" type="Control"]
+[node name="PatternPreviewGrid" type="Control" unique_id=149582368]
 custom_minimum_size = Vector2(360, 360)
+layout_mode = 3
+anchors_preset = 0
 script = ExtResource("1_script")

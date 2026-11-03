@@ -1,6 +1,6 @@
-[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://f5p27r75ddeg"]
 
-[ext_resource type="Shader" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/BitVisualizationRayMarch.gdshader" id="1_bitvis"]
+[ext_resource type="Shader" uid="uid://clvw2oci035lv" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/BitVisualizationRayMarch.gdshader" id="1_bitvis"]
 
 [resource]
 render_priority = 0
@@ -12,3 +12,5 @@ shader_parameter/read_start_byte_index = -1
 shader_parameter/voxel_opacity = 0.15
 shader_parameter/voxel_color = Color(0.172451, 0.315246, 0.861982, 1)
 shader_parameter/shared_SVO_depth = 1
+shader_parameter/activation_min_red = 0.3
+shader_parameter/edge_thickness = 0.008

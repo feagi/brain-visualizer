@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://c0jx2mt0ww2xs"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/Keybinds/WindowKeybinds.gd" id="1_keybinds"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
+[ext_resource type="Script" uid="uid://1ftc7ff0cca0" path="res://BrainVisualizer/UI/Windows/Keybinds/WindowKeybinds.gd" id="1_keybinds"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
 
-[node name="WindowKeybinds" type="VBoxContainer"]
+[node name="WindowKeybinds" type="VBoxContainer" unique_id=607460341]
 custom_minimum_size = Vector2(640, 360)
 offset_right = 860.0
 offset_bottom = 640.0
@@ -13,20 +13,20 @@ theme_override_constants/separation = 0
 script = ExtResource("1_keybinds")
 window_spawn_location = Vector2i(240, 80)
 
-[node name="TitleBar" parent="." instance=ExtResource("2_title")]
+[node name="TitleBar" parent="." unique_id=355370132 instance=ExtResource("2_title")]
 layout_mode = 2
 title = "Keyboard shortcuts"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=609723486]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=614176561]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=906522447]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

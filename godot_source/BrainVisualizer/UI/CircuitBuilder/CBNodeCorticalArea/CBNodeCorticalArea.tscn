@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://cg1e0kfbqg2px"]
+[gd_scene format=3 uid="uid://cg1e0kfbqg2px"]
 
 [ext_resource type="Script" uid="uid://wqdr37405sdi" path="res://BrainVisualizer/UI/CircuitBuilder/CBNodeCorticalArea/CBNodeCorticalArea.gd" id="1_7xng6"]
 
-[node name="CbNodeCorticalArea" type="GraphNode"]
+[node name="CbNodeCorticalArea" type="GraphNode" unique_id=1884289288]
 custom_minimum_size = Vector2(250, 0)
 offset_right = 250.0
 offset_bottom = 78.0
@@ -45,33 +45,33 @@ slot/3/right_icon = null
 slot/3/draw_stylebox = true
 script = ExtResource("1_7xng6")
 
-[node name="Top_Connector" type="HBoxContainer" parent="."]
+[node name="Top_Connector" type="HBoxContainer" parent="." unique_id=656519781]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Top_Connector"]
+[node name="Label" type="Label" parent="Top_Connector" unique_id=452461150]
 layout_mode = 2
 text = "Add Input"
 
-[node name="Control" type="Control" parent="Top_Connector"]
+[node name="Control" type="Control" parent="Top_Connector" unique_id=1525903624]
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label2" type="Label" parent="Top_Connector"]
+[node name="Label2" type="Label" parent="Top_Connector" unique_id=1223377320]
 layout_mode = 2
 text = "Add Output"
 horizontal_alignment = 2
 
-[node name="Recursive" type="VBoxContainer" parent="."]
+[node name="Recursive" type="VBoxContainer" parent="." unique_id=1405423866]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_far"
 alignment = 1
 
-[node name="Inputs" type="VBoxContainer" parent="."]
+[node name="Inputs" type="VBoxContainer" parent="." unique_id=1168563215]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_far"
 
-[node name="Outputs" type="VBoxContainer" parent="."]
+[node name="Outputs" type="VBoxContainer" parent="." unique_id=303380621]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_far"
 alignment = 2

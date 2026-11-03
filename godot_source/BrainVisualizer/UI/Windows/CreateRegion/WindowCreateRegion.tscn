@@ -1,18 +1,18 @@
-[gd_scene load_steps=12 format=3 uid="uid://cmrolnqpu52u8"]
+[gd_scene format=3 uid="uid://cmrolnqpu52u8"]
 
 [ext_resource type="Script" uid="uid://dtojt2bfjiv8i" path="res://BrainVisualizer/UI/Windows/CreateRegion/WindowCreateRegion.gd" id="1_bf8xt"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_xhweg"]
 [ext_resource type="Script" uid="uid://balvp4h3lg0j" path="res://BrainVisualizer/UI/GenericElements/DropDown/RegionDropDown.gd" id="3_16rxf"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_yyqls"]
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="4_whcst"]
-[ext_resource type="Texture2D" uid="uid://car1lnufwslyi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="5_l1778"]
+[ext_resource type="Texture2D" uid="uid://crmsk82gu4mji" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="5_l1778"]
 [ext_resource type="Script" uid="uid://dfllqleqyhqy4" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="6_jyl4e"]
-[ext_resource type="Texture2D" uid="uid://cdje4hcnt8pai" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="7_2mkb4"]
-[ext_resource type="Texture2D" uid="uid://clqnxjuyb23y1" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="8_87g4j"]
-[ext_resource type="Texture2D" uid="uid://rm1jtcuu60vc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="9_vy0mh"]
+[ext_resource type="Texture2D" uid="uid://t3s8chta6i04" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="7_2mkb4"]
+[ext_resource type="Texture2D" uid="uid://05m4faw18ba2" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="8_87g4j"]
+[ext_resource type="Texture2D" uid="uid://celkulxou7o3s" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="9_vy0mh"]
 [ext_resource type="PackedScene" uid="uid://b4cfpdwwgj8q8" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGeneric.tscn" id="10_d4k8w"]
 
-[node name="WindowCreateRegion" type="VBoxContainer"]
+[node name="WindowCreateRegion" type="VBoxContainer" unique_id=1166574309]
 offset_right = 572.0
 offset_bottom = 330.0
 size_flags_horizontal = 0
@@ -20,71 +20,71 @@ size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_bf8xt")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_xhweg")]
+[node name="TitleBar" parent="." unique_id=370414114 instance=ExtResource("2_xhweg")]
 layout_mode = 2
 title = "Create New Circuit"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=641013432]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1304598050]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1398739673]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=865984665]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1071374812]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Circuit Name"
 
-[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="TextInput" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=464008286]
 custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 script = ExtResource("3_yyqls")
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=245581694]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3" unique_id=1919834356]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Parent Circuit"
 
-[node name="RegionDropDown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+[node name="RegionDropDown" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3" unique_id=1731957539]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 script = ExtResource("3_16rxf")
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1864206731]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" unique_id=1147336955]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "3D Position"
 
-[node name="Vector3fField" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" instance=ExtResource("4_whcst")]
+[node name="Vector3fField" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" unique_id=2001466926 instance=ExtResource("4_whcst")]
 layout_mode = 2
 
-[node name="ScrollSectionGenericTemplate" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ScrollSectionGenericTemplate" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=464736592]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate" unique_id=2087014961]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer" unique_id=2047539353]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Define Internals"
 
-[node name="Add" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer"]
-layout_mode = 2
+[node name="Add" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/HBoxContainer" unique_id=442194383]
 custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 texture = ExtResource("5_l1778")
@@ -96,45 +96,44 @@ texture_pressed = ExtResource("7_2mkb4")
 texture_hover = ExtResource("8_87g4j")
 texture_disabled = ExtResource("9_vy0mh")
 
-[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate"]
+[node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate" unique_id=425605566]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/PanelContainer" instance=ExtResource("10_d4k8w")]
+[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericTemplate/PanelContainer" unique_id=406948031 instance=ExtResource("10_d4k8w")]
 layout_mode = 2
 
-[node name="ValidationMessageRow" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="ValidationMessageRow" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=106207493]
 visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 4
 
-[node name="ValidationMessageLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ValidationMessageRow"]
+[node name="ValidationMessageLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/ValidationMessageRow" unique_id=222044278]
 layout_mode = 2
 size_flags_horizontal = 3
-text = ""
 
-[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=79242995]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=1297762101]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Back"
 
-[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=1345276749]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=604325979]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
-[node name="Create" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Create" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=604969655]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

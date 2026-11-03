@@ -181,7 +181,3 @@ func _on_edit_pressed() -> void:
 func _on_mapping_delete_press() -> void:
 	_row_container.visible = false
 	user_changed_something.emit()
-
-
-
-

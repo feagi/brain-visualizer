@@ -16,5 +16,3 @@ func setup(morphology: BaseMorphology = null) -> void:
 
 func load_morphology(morphology: BaseMorphology) -> void:
 	_UI_morphology_overviews.load_morphology(morphology, true)
-
-

@@ -73,4 +73,3 @@ func _background_pressed() -> void:
 
 func _updated_name(text: StringName) -> void:
 	_name.text = text
-

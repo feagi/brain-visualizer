@@ -1,13 +1,13 @@
-[gd_scene load_steps=2 format=3 uid="uid://ch82fu6g530dm"]
+[gd_scene format=3 uid="uid://ch82fu6g530dm"]
 
 [ext_resource type="Script" uid="uid://dwno3bntukm6v" path="res://BrainVisualizer/UI/GenericElements/BooleanIndicator/BooleanIndicator.gd" id="1_vvts3"]
 
-[node name="BooleanIndicator" type="MarginContainer"]
+[node name="BooleanIndicator" type="MarginContainer" unique_id=309637243]
 offset_right = 26.0
 offset_bottom = 27.0
 theme_type_variation = &"MarginContainer_TopBarIndicator"
 script = ExtResource("1_vvts3")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1371941223]
 layout_mode = 2
 theme_type_variation = &"ColorRect_TopBarIndicator"

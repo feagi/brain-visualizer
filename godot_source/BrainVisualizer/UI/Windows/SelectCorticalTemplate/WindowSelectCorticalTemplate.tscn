@@ -1,71 +1,69 @@
-[gd_scene load_steps=3 format=3 uid="uid://select_ct_template"]
+[gd_scene format=3 uid="uid://bmx4nv0bli47q"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/SelectCorticalTemplate/WindowSelectCorticalTemplate.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+[ext_resource type="Script" uid="uid://d1a6gkmdbnxjq" path="res://BrainVisualizer/UI/Windows/SelectCorticalTemplate/WindowSelectCorticalTemplate.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
 
-[node name="WindowSelectCorticalTemplate" type="VBoxContainer"]
+[node name="WindowSelectCorticalTemplate" type="VBoxContainer" unique_id=852598382]
+custom_minimum_size = Vector2(980, 800)
 offset_right = 600.0
 offset_bottom = 520.0
-custom_minimum_size = Vector2(980, 800)
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+[node name="TitleBar" parent="." unique_id=729543283 instance=ExtResource("2_titlebar")]
 layout_mode = 2
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=2041820192]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1290552775]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_right = 20
 theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 16
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1879071542]
 layout_mode = 2
 
-[node name="Scroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Scroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=898843915]
 custom_minimum_size = Vector2(0, 720)
 layout_mode = 2
-horizontal_scroll_mode = 0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll"]
+[node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll" unique_id=1246241470]
 layout_mode = 2
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_right = 32
 theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
 theme_override_constants/margin_bottom = 28
 
-[node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll/ContentMargin"]
+[node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll/ContentMargin" unique_id=897493436]
 layout_mode = 2
-columns = 4
 theme_override_constants/h_separation = 52
 theme_override_constants/v_separation = 26
+columns = 4
 
-[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1891339392]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Help" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Help" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=159975469]
 custom_minimum_size = Vector2(128, 48)
 layout_mode = 2
-theme_type_variation = &"Button_big"
 tooltip_text = "Open the user guide section for this window"
+theme_type_variation = &"Button_big"
 text = "Help"
 
-[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=1950096771]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=2025238494]
 custom_minimum_size = Vector2(128, 48)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
-
-

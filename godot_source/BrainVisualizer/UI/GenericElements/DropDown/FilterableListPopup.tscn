@@ -1,26 +1,31 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://detmhcpll2q5c"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.gd" id="1_filter_popup"]
-[ext_resource type="Texture2D" uid="uid://bfbn48vfkob24" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/info_S.png" id="2_info_s"]
-[ext_resource type="Texture2D" uid="uid://cqgoavod05a23" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/info_C.png" id="3_info_c"]
-[ext_resource type="Texture2D" uid="uid://2akieetyflvb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/info_H.png" id="4_info_h"]
-[ext_resource type="Texture2D" uid="uid://dfw657p1q61uv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/info_D.png" id="5_info_d"]
+[ext_resource type="Script" uid="uid://cpv1uwr7i2m4l" path="res://BrainVisualizer/UI/GenericElements/DropDown/FilterableListPopup.gd" id="1_filter_popup"]
+[ext_resource type="Texture2D" uid="uid://4m0aqb6j5q61" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/info_S.png" id="2_info_s"]
+[ext_resource type="Texture2D" uid="uid://dc2kcrop6d34q" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/info_C.png" id="3_info_c"]
+[ext_resource type="Texture2D" uid="uid://bmmchbmkg0r3r" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/info_H.png" id="4_info_h"]
+[ext_resource type="Texture2D" uid="uid://23uhsp278g7s" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/info_D.png" id="5_info_d"]
 
-[node name="FilterableListPopup" type="PopupPanel"]
+[node name="FilterableListPopup" type="PopupPanel" unique_id=1307816182]
+oversampling_override = 1.0
+visible = true
 script = ExtResource("1_filter_popup")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
-layout_mode = 2
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1612404557]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 96.0
+offset_bottom = 96.0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1957405369]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="AddRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+[node name="AddRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=2108403300]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="GuideButton" type="TextureButton" parent="MarginContainer/VBoxContainer/AddRow"]
+[node name="GuideButton" type="TextureButton" parent="MarginContainer/VBoxContainer/AddRow" unique_id=878050991]
 visible = false
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -33,16 +38,16 @@ texture_disabled = ExtResource("5_info_d")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="AddNew" type="Button" parent="MarginContainer/VBoxContainer/AddRow"]
+[node name="AddNew" type="Button" parent="MarginContainer/VBoxContainer/AddRow" unique_id=703006679]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Add new"
 
-[node name="FilterLine" type="LineEdit" parent="MarginContainer/VBoxContainer"]
+[node name="FilterLine" type="LineEdit" parent="MarginContainer/VBoxContainer" unique_id=772133688]
 layout_mode = 2
 placeholder_text = "Filter..."
 
-[node name="ItemList" type="ItemList" parent="MarginContainer/VBoxContainer"]
+[node name="ItemList" type="ItemList" parent="MarginContainer/VBoxContainer" unique_id=591193721]
 layout_mode = 2
 size_flags_vertical = 3

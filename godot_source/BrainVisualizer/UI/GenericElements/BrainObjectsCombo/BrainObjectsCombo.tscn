@@ -1,63 +1,63 @@
-[gd_scene load_steps=29 format=3]
+[gd_scene format=3 uid="uid://bg5u2ajqxdnx0"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.gd" id="1_script"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_basebtn"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="3_icon_region"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/interconnected.png" id="4_icon_interconnect"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="5_plus_s"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_plus_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="5_plus_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_plus_d"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrange_S.jpg" id="9_arrange_s"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrange_C.jpg" id="10_arrange_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrange_H.jpg" id="11_arrange_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrange_D.jpg" id="12_arrange_d"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="7_icon_input"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_icon_output"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png" id="6_icon_memory"]
-[ext_resource type="PackedScene" uid="uid://cm2activityvizdd1" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.tscn" id="16_activity_dd"]
+[ext_resource type="Script" uid="uid://c3l2jvqaydm4o" path="res://BrainVisualizer/UI/GenericElements/BrainObjectsCombo/BrainObjectsCombo.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://dqxgqll112i2k" path="res://BrainVisualizer/UI/GenericElements/Buttons/BasePanelContainerButton.gd" id="2_basebtn"]
+[ext_resource type="Texture2D" uid="uid://cmtbytx0rklss" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/architecture.png" id="3_icon_region"]
+[ext_resource type="Texture2D" uid="uid://drh2ogjujtab6" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/interconnected.png" id="4_icon_interconnect"]
+[ext_resource type="Texture2D" uid="uid://t3s8chta6i04" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_C.png" id="5_plus_c"]
+[ext_resource type="Texture2D" uid="uid://celkulxou7o3s" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_D.png" id="5_plus_d"]
+[ext_resource type="Texture2D" uid="uid://05m4faw18ba2" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_H.png" id="5_plus_h"]
+[ext_resource type="Texture2D" uid="uid://crmsk82gu4mji" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Plus_S.png" id="5_plus_s"]
+[ext_resource type="Texture2D" uid="uid://b16bpctgckmhp" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/memory-game.png" id="6_icon_memory"]
+[ext_resource type="Texture2D" uid="uid://nwad0he8yiho" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/input.png" id="7_icon_input"]
+[ext_resource type="Texture2D" uid="uid://bmdymoiobbjfi" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/output.png" id="8_icon_output"]
+[ext_resource type="Texture2D" uid="uid://cfgqeb0eyj5f0" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrange_S.jpg" id="9_arrange_s"]
+[ext_resource type="Texture2D" uid="uid://1unbtqkiaquv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrange_C.jpg" id="10_arrange_c"]
+[ext_resource type="Texture2D" uid="uid://b7m5orhymbi7r" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrange_H.jpg" id="11_arrange_h"]
+[ext_resource type="Texture2D" uid="uid://cbn7xka3i3t5n" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/arrange_D.jpg" id="12_arrange_d"]
+[ext_resource type="PackedScene" uid="uid://dqs0m5wfk2cvk" path="res://BrainVisualizer/UI/Top_Bar/ActivityVisualizationDropDown/ActivityVisualizationDropDown.tscn" id="16_activity_dd"]
 [ext_resource type="Script" uid="uid://dfllqleqyhqy4" path="res://BrainVisualizer/UI/GenericElements/Buttons/ButtonTextureRectScaling.gd" id="17_btn_tex_scale"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_S.jpg" id="18_cam_s"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="19_cam_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="20_cam_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="21_cam_d"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/List_S.png" id="22_list_s"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/List_C.png" id="23_list_c"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/List_H.png" id="24_list_h"]
-[ext_resource type="Texture2D" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/List_D.png" id="25_list_d"]
+[ext_resource type="Texture2D" uid="uid://ec17uhndijxf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_S.jpg" id="18_cam_s"]
+[ext_resource type="Texture2D" uid="uid://dvvb52cu7epn3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_H.jpg" id="19_cam_h"]
+[ext_resource type="Texture2D" uid="uid://y1ojng5lscqk" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_C.jpg" id="20_cam_c"]
+[ext_resource type="Texture2D" uid="uid://cimbp81v8sdey" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/camera_D.jpg" id="21_cam_d"]
+[ext_resource type="Texture2D" uid="uid://d0s2k7qpvp8cb" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/List_S.png" id="22_list_s"]
+[ext_resource type="Texture2D" uid="uid://drxkg2a64hp83" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/List_C.png" id="23_list_c"]
+[ext_resource type="Texture2D" uid="uid://decj7b5v0mrh3" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/List_H.png" id="24_list_h"]
+[ext_resource type="Texture2D" uid="uid://decp4csrwnnno" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/List_D.png" id="25_list_d"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_connectome_plate"]
-bg_color = Color(0.262745, 0.262745, 0.262745, 1)
 content_margin_left = 12.0
 content_margin_top = 0.0
 content_margin_right = 12.0
 content_margin_bottom = 0.0
+bg_color = Color(0.262745, 0.262745, 0.262745, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_combo_row"]
-bg_color = Color(0.262745, 0.262745, 0.262745, 1)
 content_margin_left = 12.0
 content_margin_top = 0.0
 content_margin_right = 12.0
 content_margin_bottom = 0.0
+bg_color = Color(0.262745, 0.262745, 0.262745, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_title"]
 
-[node name="BrainObjectsCombo" type="HBoxContainer"]
-mouse_filter = 1
+[node name="BrainObjectsCombo" type="HBoxContainer" unique_id=1865586075]
 size_flags_vertical = 4
 theme_type_variation = &"HBoxContainer_far"
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
-[node name="ConnectomeGroup" type="HBoxContainer" parent="."]
+[node name="ConnectomeGroup" type="HBoxContainer" parent="." unique_id=298695459]
 unique_name_in_owner = true
+layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 0
 
-[node name="ConnectomeButton" type="PanelContainer" parent="ConnectomeGroup"]
+[node name="ConnectomeButton" type="PanelContainer" parent="ConnectomeGroup" unique_id=2056869772]
 unique_name_in_owner = true
+layout_mode = 2
 size_flags_vertical = 4
-clip_contents = false
 theme_type_variation = &"BasePanelContainerButton"
 theme_override_styles/panel = SubResource("StyleBoxFlat_connectome_plate")
 script = ExtResource("2_basebtn")
@@ -66,375 +66,424 @@ metadata/plate_color = Color(0.262745, 0.262745, 0.262745, 1)
 metadata/plate_padding_x = 12
 metadata/plate_padding_y = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeButton"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeButton" unique_id=1814716029]
+layout_mode = 2
 mouse_filter = 2
-alignment = 1
 theme_override_constants/separation = 6
+alignment = 1
 
-[node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeButton/HBoxContainer"]
+[node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeButton/HBoxContainer" unique_id=881527978]
+layout_mode = 2
 theme_type_variation = &"Label_Header"
-vertical_alignment = 1
 text = "Elements"
+vertical_alignment = 1
 
-[node name="ConnectomeMenu" type="PopupPanel" parent="ConnectomeGroup"]
+[node name="ConnectomeMenu" type="PopupPanel" parent="ConnectomeGroup" unique_id=2083719155]
 unique_name_in_owner = true
-visible = false
-unresizable = true
 
-[node name="MarginContainer" type="MarginContainer" parent="ConnectomeGroup/ConnectomeMenu"]
+[node name="MarginContainer" type="MarginContainer" parent="ConnectomeGroup/ConnectomeMenu" unique_id=906509033]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 260.0
+offset_bottom = 156.0
 size_flags_horizontal = 3
 theme_type_variation = &"MarginContainer_far"
 theme_override_constants/margin_left = 8
-theme_override_constants/margin_right = 8
 theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="MenuItems" type="VBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer"]
+[node name="MenuItems" type="VBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer" unique_id=2052447693]
 unique_name_in_owner = true
+layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
 theme_override_constants/separation = 6
 
-[node name="BrainRegionsRow" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems"]
+[node name="BrainRegionsRow" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems" unique_id=2035989689]
 unique_name_in_owner = true
-mouse_filter = 2
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_combo_row")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow"]
-mouse_filter = 2
+[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow" unique_id=1210576789]
+layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="BrainRegionsList" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer"]
-mouse_filter = 2
+[node name="BrainRegionsList" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer" unique_id=100520040]
+layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-clip_contents = false
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_title")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer/BrainRegionsList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer/BrainRegionsList" unique_id=1907618495]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="TextureRect" type="TextureRect" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer/BrainRegionsList/HBoxContainer"]
-mouse_filter = 2
+[node name="TextureRect" type="TextureRect" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer/BrainRegionsList/HBoxContainer" unique_id=924353147]
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_filter = 2
 texture = ExtResource("3_icon_region")
 expand_mode = 1
 metadata/category_icon = true
 
-[node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer/BrainRegionsList/HBoxContainer"]
-mouse_filter = 2
+[node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer/BrainRegionsList/HBoxContainer" unique_id=1526228474]
+layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Circuits"
 
-[node name="RowGap" type="Control" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer"]
-mouse_filter = 2
+[node name="RowGap" type="Control" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer" unique_id=859978761]
+layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 
-[node name="TextureButton_BrainRegionsList" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer"]
+[node name="TextureButton_BrainRegionsList" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer" unique_id=575941502]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
+focus_mode = 0
 texture_normal = ExtResource("22_list_s")
 texture_pressed = ExtResource("23_list_c")
 texture_hover = ExtResource("24_list_h")
 texture_disabled = ExtResource("25_list_d")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 
-[node name="TextureButton_BrainRegions" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer"]
+[node name="TextureButton_BrainRegions" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/BrainRegionsRow/HBoxContainer" unique_id=1657686048]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
+focus_mode = 0
 texture_normal = ExtResource("5_plus_s")
 texture_pressed = ExtResource("5_plus_c")
 texture_hover = ExtResource("5_plus_h")
 texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 metadata/plus_icon = true
-[node name="InterconnectAreasRow" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems"]
+
+[node name="InterconnectAreasRow" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems" unique_id=1293065399]
 unique_name_in_owner = true
-mouse_filter = 2
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_combo_row")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow"]
-mouse_filter = 2
+[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow" unique_id=861007564]
+layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="InterconnectAreasList" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer"]
-mouse_filter = 2
+[node name="InterconnectAreasList" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer" unique_id=1588167379]
+layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-clip_contents = false
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_title")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList" unique_id=1901266752]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="TextureRect" type="TextureRect" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList/HBoxContainer"]
-mouse_filter = 2
+[node name="TextureRect" type="TextureRect" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList/HBoxContainer" unique_id=489487233]
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_filter = 2
 texture = ExtResource("4_icon_interconnect")
 expand_mode = 1
 metadata/category_icon = true
 metadata/full_bleed_icon = true
 
-[node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList/HBoxContainer"]
-mouse_filter = 2
+[node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer/InterconnectAreasList/HBoxContainer" unique_id=1906956059]
+layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Interconnect Areas"
 
-[node name="RowGap" type="Control" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer"]
-mouse_filter = 2
+[node name="RowGap" type="Control" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer" unique_id=136500235]
+layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 
-[node name="TextureButton_InterconnectList" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer"]
+[node name="TextureButton_InterconnectList" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer" unique_id=2053373184]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
+focus_mode = 0
 texture_normal = ExtResource("22_list_s")
 texture_pressed = ExtResource("23_list_c")
 texture_hover = ExtResource("24_list_h")
 texture_disabled = ExtResource("25_list_d")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 
-[node name="TextureButton_Interconnect" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer"]
+[node name="TextureButton_Interconnect" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/InterconnectAreasRow/HBoxContainer" unique_id=213009635]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
+focus_mode = 0
 texture_normal = ExtResource("5_plus_s")
 texture_pressed = ExtResource("5_plus_c")
 texture_hover = ExtResource("5_plus_h")
 texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 metadata/plus_icon = true
-[node name="MemoryAreasRow" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems"]
+
+[node name="MemoryAreasRow" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems" unique_id=747689635]
 unique_name_in_owner = true
-mouse_filter = 2
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_combo_row")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow"]
-mouse_filter = 2
+[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow" unique_id=2141293892]
+layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="MemoryAreasList" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer"]
-mouse_filter = 2
+[node name="MemoryAreasList" type="PanelContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer" unique_id=574484279]
+layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-clip_contents = false
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_title")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList" unique_id=643102475]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="TextureRect" type="TextureRect" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList/HBoxContainer"]
-mouse_filter = 2
+[node name="TextureRect" type="TextureRect" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList/HBoxContainer" unique_id=274135145]
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_filter = 2
 texture = ExtResource("6_icon_memory")
 expand_mode = 1
 metadata/category_icon = true
 
-[node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList/HBoxContainer"]
-mouse_filter = 2
+[node name="Label" type="Label" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer/MemoryAreasList/HBoxContainer" unique_id=318511521]
+layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Memory Areas"
 
-[node name="RowGap" type="Control" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer"]
-mouse_filter = 2
+[node name="RowGap" type="Control" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer" unique_id=702718861]
+layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 
-[node name="TextureButton_MemoryList" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer"]
+[node name="TextureButton_MemoryList" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer" unique_id=1262747449]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
+focus_mode = 0
 texture_normal = ExtResource("22_list_s")
 texture_pressed = ExtResource("23_list_c")
 texture_hover = ExtResource("24_list_h")
 texture_disabled = ExtResource("25_list_d")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 
-[node name="TextureButton_Memory" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer"]
+[node name="TextureButton_Memory" type="TextureButton" parent="ConnectomeGroup/ConnectomeMenu/MarginContainer/MenuItems/MemoryAreasRow/HBoxContainer" unique_id=930686925]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
+focus_mode = 0
 texture_normal = ExtResource("5_plus_s")
 texture_pressed = ExtResource("5_plus_c")
 texture_hover = ExtResource("5_plus_h")
 texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 metadata/plus_icon = true
-[node name="Spacer_AfterConnectome" type="Control" parent="."]
+
+[node name="Spacer_AfterConnectome" type="Control" parent="." unique_id=1202389945]
 custom_minimum_size = Vector2(5, 0)
+layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="MainGroup" type="PanelContainer" parent="."]
+[node name="MainGroup" type="PanelContainer" parent="." unique_id=1636131575]
+layout_mode = 2
 size_flags_vertical = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="MainGroup"]
+[node name="MarginContainer" type="MarginContainer" parent="MainGroup" unique_id=2026321503]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_far"
 theme_override_constants/margin_left = 0
-theme_override_constants/margin_right = 0
 theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 
-[node name="ButtonsRow" type="HBoxContainer" parent="MainGroup/MarginContainer"]
+[node name="ButtonsRow" type="HBoxContainer" parent="MainGroup/MarginContainer" unique_id=807031309]
 layout_mode = 2
 theme_type_variation = &"HBoxContainer_farther"
 theme_override_constants/separation = 0
 
-[node name="InputsRow" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow"]
+[node name="InputsRow" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow" unique_id=1821128209]
 unique_name_in_owner = true
-mouse_filter = 2
+layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_combo_row")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow" unique_id=1148461131]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="InputsList" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer"]
+[node name="InputsList" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer" unique_id=326189102]
 unique_name_in_owner = true
+layout_mode = 2
 size_flags_vertical = 4
-clip_contents = false
 script = ExtResource("2_basebtn")
 metadata/flat_on_backdrop = true
 metadata/disable_hover_scale = true
 metadata/plate_padding_x = 0
 metadata/plate_padding_y = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList" unique_id=966037907]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="TextureRect" type="TextureRect" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList/HBoxContainer"]
-mouse_filter = 2
+[node name="TextureRect" type="TextureRect" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList/HBoxContainer" unique_id=1304432852]
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_filter = 2
 texture = ExtResource("7_icon_input")
 expand_mode = 1
 metadata/category_icon = true
 
-[node name="Label" type="Label" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList/HBoxContainer"]
+[node name="Label" type="Label" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer/InputsList/HBoxContainer" unique_id=97366612]
+layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Inputs"
 
-[node name="TextureButton_Inputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer"]
+[node name="TextureButton_Inputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow/InputsRow/HBoxContainer" unique_id=1412007182]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
 size_flags_vertical = 4
+focus_mode = 0
 texture_normal = ExtResource("5_plus_s")
 texture_pressed = ExtResource("5_plus_c")
 texture_hover = ExtResource("5_plus_h")
 texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 metadata/plus_icon = true
-[node name="Spacer_AfterAddInputs" type="Control" parent="MainGroup/MarginContainer/ButtonsRow"]
+
+[node name="Spacer_AfterAddInputs" type="Control" parent="MainGroup/MarginContainer/ButtonsRow" unique_id=1627793572]
 custom_minimum_size = Vector2(5, 0)
+layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="OutputsRow" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow"]
+[node name="OutputsRow" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow" unique_id=645694708]
 unique_name_in_owner = true
-mouse_filter = 2
+layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_combo_row")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow" unique_id=1309081918]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="OutputsList" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer"]
+[node name="OutputsList" type="PanelContainer" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer" unique_id=449450472]
 unique_name_in_owner = true
+layout_mode = 2
 size_flags_vertical = 4
-clip_contents = false
 script = ExtResource("2_basebtn")
 metadata/flat_on_backdrop = true
 metadata/disable_hover_scale = true
 metadata/plate_padding_x = 0
 metadata/plate_padding_y = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList" unique_id=826067570]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="TextureRect" type="TextureRect" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList/HBoxContainer"]
-mouse_filter = 2
+[node name="TextureRect" type="TextureRect" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList/HBoxContainer" unique_id=1652289998]
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_filter = 2
 texture = ExtResource("8_icon_output")
 expand_mode = 1
 metadata/category_icon = true
 
-[node name="Label" type="Label" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList/HBoxContainer"]
+[node name="Label" type="Label" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer/OutputsList/HBoxContainer" unique_id=1500881338]
+layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"Label_Header"
 text = "Outputs"
 
-[node name="TextureButton_Outputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer"]
+[node name="TextureButton_Outputs" type="TextureButton" parent="MainGroup/MarginContainer/ButtonsRow/OutputsRow/HBoxContainer" unique_id=1662138031]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
 size_flags_vertical = 4
+focus_mode = 0
 texture_normal = ExtResource("5_plus_s")
 texture_pressed = ExtResource("5_plus_c")
 texture_hover = ExtResource("5_plus_h")
 texture_disabled = ExtResource("5_plus_d")
 ignore_texture_size = true
 stretch_mode = 0
-focus_mode = 0
 metadata/plus_icon = true
-[node name="Spacer_BeforeRearrange" type="Control" parent="."]
+
+[node name="Spacer_BeforeRearrange" type="Control" parent="." unique_id=1628031790]
 custom_minimum_size = Vector2(2, 0)
+layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="RearrangePanel" type="PanelContainer" parent="."]
+[node name="RearrangePanel" type="PanelContainer" parent="." unique_id=851823491]
+layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="RearrangePanel"]
+[node name="MarginContainer" type="MarginContainer" parent="RearrangePanel" unique_id=589397683]
 layout_mode = 2
-theme_type_variation = &"MarginContainer_far"
 mouse_filter = 2
+theme_type_variation = &"MarginContainer_far"
 theme_override_constants/margin_left = 0
-theme_override_constants/margin_right = 0
 theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 
-[node name="TextureButton_Rearrange" type="TextureButton" parent="RearrangePanel/MarginContainer"]
+[node name="TextureButton_Rearrange" type="TextureButton" parent="RearrangePanel/MarginContainer" unique_id=1787413123]
 custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
 size_flags_vertical = 4
 theme_type_variation = &"TextureButton_TopBar"
 texture_normal = ExtResource("9_arrange_s")
@@ -445,25 +494,28 @@ ignore_texture_size = true
 stretch_mode = 0
 metadata/ignore_parent_press = true
 
-[node name="Spacer_AfterRearrange" type="Control" parent="."]
+[node name="Spacer_AfterRearrange" type="Control" parent="." unique_id=1690944013]
 custom_minimum_size = Vector2(5, 0)
+layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="Spacer_BeforeMonitorTools" type="Control" parent="."]
+[node name="Spacer_BeforeMonitorTools" type="Control" parent="." unique_id=680589045]
 visible = false
 custom_minimum_size = Vector2(2, 0)
+layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="ActivityVisualizationDropDown" parent="." instance=ExtResource("16_activity_dd")]
+[node name="ActivityVisualizationDropDown" parent="." unique_id=1006432292 instance=ExtResource("16_activity_dd")]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Inspectors"
 
-[node name="CameraAnimations" type="TextureRect" parent="."]
+[node name="CameraAnimations" type="TextureRect" parent="." unique_id=226223011]
 visible = false
 custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 tooltip_text = "Camera Animations"

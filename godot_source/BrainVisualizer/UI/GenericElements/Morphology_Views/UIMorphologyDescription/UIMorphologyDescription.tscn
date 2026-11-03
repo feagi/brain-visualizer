@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://c5m4dalq0ept6"]
+[gd_scene format=3 uid="uid://c5m4dalq0ept6"]
 
 [ext_resource type="Script" uid="uid://4fh87r3epjnx" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDescription/UIMorphologyDescription.gd" id="1_bmr3o"]
 
-[node name="UIMorphologyDescription" type="TextEdit"]
+[node name="UIMorphologyDescription" type="TextEdit" unique_id=319688943]
 offset_right = 231.0
 offset_bottom = 64.0
 placeholder_text = "No Description Found!"

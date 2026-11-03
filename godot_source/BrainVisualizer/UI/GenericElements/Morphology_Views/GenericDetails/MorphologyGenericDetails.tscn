@@ -1,30 +1,30 @@
-[gd_scene load_steps=2 format=3 uid="uid://geytg8x6c7no"]
+[gd_scene format=3 uid="uid://geytg8x6c7no"]
 
 [ext_resource type="Script" uid="uid://dxv0xrs3xmbyk" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/GenericDetails/MorphologyGenericDetails.gd" id="1_1ma3u"]
 
-[node name="MorphologyGenericDetails" type="VBoxContainer"]
+[node name="MorphologyGenericDetails" type="VBoxContainer" unique_id=1882081295]
 script = ExtResource("1_1ma3u")
 
-[node name="UsageAndImage" type="HBoxContainer" parent="."]
+[node name="UsageAndImage" type="HBoxContainer" parent="." unique_id=1083939781]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UsageAndImage"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UsageAndImage" unique_id=686807489]
 layout_mode = 2
 
-[node name="Current_Usage" type="Label" parent="UsageAndImage/VBoxContainer"]
+[node name="Current_Usage" type="Label" parent="UsageAndImage/VBoxContainer" unique_id=190043475]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 text = "Current Usage:"
 
-[node name="Usage" type="TextEdit" parent="UsageAndImage/VBoxContainer"]
+[node name="Usage" type="TextEdit" parent="UsageAndImage/VBoxContainer" unique_id=597415043]
 custom_minimum_size = Vector2(300, 256)
 layout_mode = 2
 editable = false
 
-[node name="Description_Label" type="Label" parent="."]
+[node name="Description_Label" type="Label" parent="." unique_id=782091778]
 layout_mode = 2
 text = "Description:"
 
-[node name="Description" type="TextEdit" parent="."]
+[node name="Description" type="TextEdit" parent="." unique_id=1051187742]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2

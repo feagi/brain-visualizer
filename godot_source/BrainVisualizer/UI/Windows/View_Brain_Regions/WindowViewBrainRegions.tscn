@@ -1,10 +1,10 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://ksvwfqd48hr5"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/View_Brain_Regions/WindowViewBrainRegions.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericWithFilter.tscn" id="3_scroll"]
+[ext_resource type="Script" uid="uid://c33vyb0ggg1r2" path="res://BrainVisualizer/UI/Windows/View_Brain_Regions/WindowViewBrainRegions.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_title"]
+[ext_resource type="PackedScene" uid="uid://bang2hiadhcuc" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericWithFilter.tscn" id="3_scroll"]
 
-[node name="WindowViewBrainRegions" type="VBoxContainer"]
+[node name="WindowViewBrainRegions" type="VBoxContainer" unique_id=1207551971]
 offset_right = 250.0
 offset_bottom = 444.0
 size_flags_horizontal = 0
@@ -12,39 +12,37 @@ size_flags_vertical = 0
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_title")]
+[node name="TitleBar" parent="." unique_id=703673256 instance=ExtResource("2_title")]
 layout_mode = 2
 title = "View Circuits"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1885793827]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=878696498]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=419591947]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_far"
 
-[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Button" type="Button" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1418139987]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 theme_type_variation = &"Button_Tall"
 text = "Add Circuit..."
 
-[node name="ScrollSectionGenericWithFilter" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("3_scroll")]
+[node name="ScrollSectionGenericWithFilter" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1363748674 instance=ExtResource("3_scroll")]
 layout_mode = 2
 
-[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter" index="1"]
+[node name="ScrollSectionGeneric" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter" index="1" unique_id=1078399853]
 custom_minimum_size = Vector2(0, 200)
 horizontal_scroll_mode = 0
 
-[node name="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter/ScrollSectionGeneric" index="0"]
+[node name="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter/ScrollSectionGeneric" index="0" unique_id=1832814612]
 size_flags_horizontal = 3
 
 [connection signal="pressed" from="WindowPanel/WindowMargin/WindowInternals/Button" to="." method="_press_add_region"]
 
 [editable path="WindowPanel/WindowMargin/WindowInternals/ScrollSectionGenericWithFilter"]
-
-

@@ -1,80 +1,79 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://7ekbltca0nvr"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/SelectRegionTemplate/WindowSelectRegionTemplate.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
+[ext_resource type="Script" uid="uid://cjm6x8j50dwut" path="res://BrainVisualizer/UI/Windows/SelectRegionTemplate/WindowSelectRegionTemplate.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
 
-[node name="WindowSelectRegionTemplate" type="VBoxContainer"]
+[node name="WindowSelectRegionTemplate" type="VBoxContainer" unique_id=1910809049]
+custom_minimum_size = Vector2(640, 800)
 offset_right = 600.0
 offset_bottom = 520.0
-custom_minimum_size = Vector2(640, 800)
 theme_override_constants/separation = 0
 script = ExtResource("1_script")
 
-[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+[node name="TitleBar" parent="." unique_id=1922083492 instance=ExtResource("2_titlebar")]
 layout_mode = 2
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1082914857]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=669208177]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_right = 20
 theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 16
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1117465667]
 layout_mode = 2
 
-[node name="Scroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Scroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1954033790]
 custom_minimum_size = Vector2(0, 720)
 layout_mode = 2
-horizontal_scroll_mode = 0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll"]
+[node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll" unique_id=1761408099]
 layout_mode = 2
 theme_override_constants/margin_left = 0
-theme_override_constants/margin_right = 20
 theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 0
 
-[node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll/ContentMargin"]
+[node name="IconGrid" type="GridContainer" parent="WindowPanel/WindowMargin/WindowInternals/Scroll/ContentMargin" unique_id=150504098]
 layout_mode = 2
-columns = 4
 theme_override_constants/h_separation = 30
 theme_override_constants/v_separation = 13
+columns = 4
 
-[node name="FooterNote" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="FooterNote" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1739891498]
 layout_mode = 2
 theme_override_constants/separation = 6
 alignment = 1
 
-[node name="Prefix" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/FooterNote"]
+[node name="Prefix" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/FooterNote" unique_id=967505755]
 layout_mode = 2
 theme_type_variation = &"Label_Small"
 text = "More at"
 
-[node name="HubLink" type="LinkButton" parent="WindowPanel/WindowMargin/WindowInternals/FooterNote"]
+[node name="HubLink" type="LinkButton" parent="WindowPanel/WindowMargin/WindowInternals/FooterNote" unique_id=694042960]
 layout_mode = 2
 text = "hub.BrainsForRobots.com"
-underline = 0
 
-[node name="FooterSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="FooterSpacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1704936974]
 custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
 
-[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=467737007]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=72747815]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=1485402911]
 custom_minimum_size = Vector2(128, 48)
 layout_mode = 2
 theme_type_variation = &"Button_big"

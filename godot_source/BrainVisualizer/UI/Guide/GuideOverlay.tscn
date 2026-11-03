@@ -1,31 +1,32 @@
-[gd_scene load_steps=3 format=3 uid="uid://c4q5m1v1d2j0x"]
+[gd_scene format=3 uid="uid://c4q5m1v1d2j0x"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Guide/GuideOverlay.gd" id="1_guide_overlay"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Guide/GuideMarkdownView.gd" id="2_guide_markdown"]
+[ext_resource type="Script" uid="uid://b6j3alg6h06ti" path="res://BrainVisualizer/UI/Guide/GuideOverlay.gd" id="1_guide_overlay"]
+[ext_resource type="Script" uid="uid://cm0gvrco51um3" path="res://BrainVisualizer/UI/Guide/GuideMarkdownView.gd" id="2_guide_markdown"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_guide_panel"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
 bg_color = Color(0.08, 0.1, 0.14, 0.58)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-content_margin_left = 6
-content_margin_top = 6
-content_margin_right = 6
-content_margin_bottom = 6
 
-[node name="GuideOverlay" type="Control"]
+[node name="GuideOverlay" type="Control" unique_id=1708667852]
+z_index = 200
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-z_index = 200
 script = ExtResource("1_guide_overlay")
 
-[node name="Backdrop" type="ColorRect" parent="."]
-anchors_preset = 15
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1574335227]
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -33,8 +34,8 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0.15)
 
-[node name="OverlayPanel" type="PanelContainer" parent="."]
-anchors_preset = 15
+[node name="OverlayPanel" type="PanelContainer" parent="." unique_id=1462565278]
+layout_mode = 0
 anchor_left = 0.05
 anchor_top = 0.05
 anchor_right = 0.95
@@ -43,73 +44,72 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_guide_panel")
 
-[node name="PanelMargin" type="MarginContainer" parent="OverlayPanel"]
+[node name="PanelMargin" type="MarginContainer" parent="OverlayPanel" unique_id=1470605923]
 layout_mode = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="PanelContent" type="VBoxContainer" parent="OverlayPanel/PanelMargin"]
+[node name="PanelContent" type="VBoxContainer" parent="OverlayPanel/PanelMargin" unique_id=810231199]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="Header" type="HBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent"]
+[node name="Header" type="HBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent" unique_id=1660911849]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="OverlayPanel/PanelMargin/PanelContent/Header"]
+[node name="TitleLabel" type="Label" parent="OverlayPanel/PanelMargin/PanelContent/Header" unique_id=482267871]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Label_Header"
 text = "User Guide"
 
-[node name="CloseButton" type="Button" parent="OverlayPanel/PanelMargin/PanelContent/Header"]
+[node name="CloseButton" type="Button" parent="OverlayPanel/PanelMargin/PanelContent/Header" unique_id=1220781931]
 layout_mode = 2
 text = "Close"
 
-[node name="GuideContent" type="HBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent"]
+[node name="GuideContent" type="HBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent" unique_id=433381342]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
 
-[node name="GuideSidebar" type="VBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent"]
+[node name="GuideSidebar" type="VBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent" unique_id=817828542]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_stretch_ratio = 0.0
 theme_override_constants/separation = 12
 
-[node name="SearchBar" type="LineEdit" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar"]
+[node name="SearchBar" type="LineEdit" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar" unique_id=1120377354]
 layout_mode = 2
 placeholder_text = "Search guides..."
 
-[node name="TopicsScroll" type="ScrollContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar"]
+[node name="TopicsScroll" type="ScrollContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar" unique_id=1641766502]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TopicsList" type="VBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar/TopicsScroll"]
+[node name="TopicsList" type="VBoxContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideSidebar/TopicsScroll" unique_id=369686981]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="GuideBody" type="PanelContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent"]
+[node name="GuideBody" type="PanelContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent" unique_id=368777946]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
 
-[node name="ContentScroll" type="ScrollContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody"]
+[node name="ContentScroll" type="ScrollContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody" unique_id=479576402]
 layout_mode = 2
 
-[node name="ContentMargin" type="MarginContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody/ContentScroll"]
+[node name="ContentMargin" type="MarginContainer" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody/ContentScroll" unique_id=512118647]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="GuideMarkdownView" type="RichTextLabel" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody/ContentScroll/ContentMargin"]
-layout_mode = 2
+[node name="GuideMarkdownView" type="RichTextLabel" parent="OverlayPanel/PanelMargin/PanelContent/GuideContent/GuideBody/ContentScroll/ContentMargin" unique_id=2063424139]
 custom_minimum_size = Vector2(600, 400)
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 bbcode_enabled = true

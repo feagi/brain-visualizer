@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://dkkxhbpiojfme"]
+[gd_scene format=3 uid="uid://dkkxhbpiojfme"]
 
 [ext_resource type="Script" uid="uid://diqy6s5641du7" path="res://BrainVisualizer/UI/Windows/AmalgamationRequest/WindowAmalgamationRequest.gd" id="2_wg6iy"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="4_1iehj"]
@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://ci8uvawjvxfax" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinBoxField.tscn" id="5_2iifs"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="8_gn5it"]
 
-[node name="WindowAmalgamationRequest" type="VBoxContainer"]
+[node name="WindowAmalgamationRequest" type="VBoxContainer" unique_id=826983517]
 offset_right = 126.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
@@ -15,60 +15,59 @@ theme_override_constants/separation = 0
 script = ExtResource("2_wg6iy")
 window_spawn_location = null
 
-[node name="TitleBar" parent="." instance=ExtResource("8_gn5it")]
+[node name="TitleBar" parent="." unique_id=59629373 instance=ExtResource("8_gn5it")]
 layout_mode = 2
 title = "Import a Circuit"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=267237109]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1247851289]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1772385069]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1537106563]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=110376201]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Title"
 
-[node name="AmalgamationTitle" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
+[node name="AmalgamationTitle" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer" unique_id=1425351943]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 max_length = 16
-editable = true
 script = ExtResource("4_1iehj")
 
-[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer4" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=21735559]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4" unique_id=412756315]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Parent Circuit"
 
-[node name="GenomeObjectSelectorButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4" instance=ExtResource("4_a0con")]
+[node name="GenomeObjectSelectorButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer4" unique_id=21823911 instance=ExtResource("4_a0con")]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 
-[node name="HBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer5" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=33058654]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5" unique_id=1209066936]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "External Wiring Mode"
 
-[node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5"]
+[node name="OptionButton" type="OptionButton" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer5" unique_id=1377631785]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-item_count = 3
 selected = 0
+item_count = 3
 popup/item_0/text = "All Items"
 popup/item_0/id = 0
 popup/item_1/text = "System Areas Only"
@@ -76,34 +75,34 @@ popup/item_1/id = 1
 popup/item_2/text = "None"
 popup/item_2/id = 2
 
-[node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1269001220]
 custom_minimum_size = Vector2(0, 3)
 layout_mode = 2
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1887991260]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" unique_id=2105850985]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "3D Coordinates"
 
-[node name="Coordinates_3D" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" instance=ExtResource("5_2iifs")]
+[node name="Coordinates_3D" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer2" unique_id=185148640 instance=ExtResource("5_2iifs")]
 layout_mode = 2
 
-[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1190223696]
 custom_minimum_size = Vector2(0, 3)
 layout_mode = 2
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1216221468]
 layout_mode = 2
 
-[node name="cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+[node name="cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3" unique_id=590261793]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cancel"
 
-[node name="import" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3"]
+[node name="import" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer3" unique_id=1216644000]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Import"

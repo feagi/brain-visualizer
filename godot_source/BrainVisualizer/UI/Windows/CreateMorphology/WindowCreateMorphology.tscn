@@ -1,18 +1,18 @@
-[gd_scene load_steps=12 format=3 uid="uid://bvdaq4i6y2aer"]
+[gd_scene format=3 uid="uid://bvdaq4i6y2aer"]
 
 [ext_resource type="Script" uid="uid://b76krgy0y45vn" path="res://BrainVisualizer/UI/Windows/CreateMorphology/WindowCreateMorphology.gd" id="1_w1bco"]
 [ext_resource type="Script" uid="uid://b21ym0wrmksji" path="res://BrainVisualizer/UI/Windows/CreateMorphology/PartWindowCreateMorphologyOptions.gd" id="3_2s0i3"]
 [ext_resource type="Script" uid="uid://dg0vj5dqxb606" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/TextInput.gd" id="3_6i23i"]
-[ext_resource type="Texture2D" uid="uid://cv6b1xt333m5g" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vectors.png" id="4_0ajep"]
+[ext_resource type="Texture2D" uid="uid://dv02ytkhu53y" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/vectors.png" id="4_0ajep"]
 [ext_resource type="PackedScene" uid="uid://lbyao7dlu4ga" path="res://BrainVisualizer/UI/GenericElements/Buttons/PanelContainerButton/PanelContainerButton.tscn" id="4_ujsmp"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="5_6juqf"]
-[ext_resource type="Texture2D" uid="uid://bkfmctgfc4nce" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/patterns.png" id="5_63qii"]
+[ext_resource type="Texture2D" uid="uid://copeeogmti6jf" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/patterns.png" id="5_63qii"]
 [ext_resource type="PackedScene" uid="uid://dbmhqblcfnapj" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Composite/ElementMorphologyCompositeView.tscn" id="5_k76mc"]
 [ext_resource type="PackedScene" uid="uid://d1tg3odgc36tb" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Vectors/ElementMorphologyVectorsView.tscn" id="6_c1klg"]
 [ext_resource type="PackedScene" uid="uid://ddn8pt45rca4n" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyDefinition/Specific_Types/Pattern/ElementMorphologyPatternView.tscn" id="7_w3816"]
 [ext_resource type="Script" uid="uid://bdii5h3dsyuhi" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/MultiLineTextInput.gd" id="12_koy8n"]
 
-[node name="WindowCreateMorphology" type="VBoxContainer"]
+[node name="WindowCreateMorphology" type="VBoxContainer" unique_id=406193198]
 offset_right = 126.0
 offset_bottom = 40.0
 size_flags_horizontal = 0
@@ -21,53 +21,53 @@ theme_override_constants/separation = 0
 script = ExtResource("1_w1bco")
 window_spawn_location = Vector2i(400, 200)
 
-[node name="TitleBar" parent="." instance=ExtResource("5_6juqf")]
+[node name="TitleBar" parent="." unique_id=1714344282 instance=ExtResource("5_6juqf")]
 layout_mode = 2
 title = "Create Connectivity Rule"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=110813638]
 layout_mode = 2
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=1603609957]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1027926842]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Header" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Header" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=366923417]
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Select Connectivity Rule Type:"
 
-[node name="Separator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Separator" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1984372777]
 layout_mode = 2
 
-[node name="CoreConnectivityRulesLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="CoreConnectivityRulesLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=2052582714]
 layout_mode = 2
-theme_type_variation = &"Label_Header"
 size_flags_horizontal = 3
+theme_type_variation = &"Label_Header"
 text = "Core connectivity rules"
 
-[node name="Options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Options" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=896034985]
 layout_mode = 2
-alignment = 1
 theme_override_constants/separation = 12
+alignment = 1
 script = ExtResource("3_2s0i3")
 
-[node name="Vector" parent="WindowPanel/WindowMargin/WindowInternals/Options" instance=ExtResource("4_ujsmp")]
+[node name="Vector" parent="WindowPanel/WindowMargin/WindowInternals/Options" unique_id=870957952 instance=ExtResource("4_ujsmp")]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector"]
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector" unique_id=996979285]
 layout_mode = 2
 
-[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer"]
+[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer" unique_id=348376032]
 layout_mode = 2
 alignment = 1
 vertical = true
 
-[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer" unique_id=1868105195]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -76,22 +76,22 @@ texture = ExtResource("4_0ajep")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer" unique_id=2042391728]
 layout_mode = 2
 mouse_filter = 1
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer" unique_id=1472202305]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_MainText"
 text = "Vectors"
 horizontal_alignment = 1
 
-[node name="g2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+[node name="g2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer" unique_id=1458570895]
 layout_mode = 2
 mouse_filter = 1
 
-[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer"]
+[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Vector/MarginContainer/BoxContainer" unique_id=252097043]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_DescriptionFont"
@@ -99,20 +99,19 @@ text = "Vectors use magnitude and direction
 to define how neurons from source
 and destination connect."
 horizontal_alignment = 1
-autowrap_mode = 0
 
-[node name="Pattern" parent="WindowPanel/WindowMargin/WindowInternals/Options" instance=ExtResource("4_ujsmp")]
+[node name="Pattern" parent="WindowPanel/WindowMargin/WindowInternals/Options" unique_id=1656561124 instance=ExtResource("4_ujsmp")]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern"]
+[node name="MarginContainer" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern" unique_id=894094266]
 layout_mode = 2
 
-[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer"]
+[node name="BoxContainer" type="BoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer" unique_id=547715487]
 layout_mode = 2
 alignment = 1
 vertical = true
 
-[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer" unique_id=1758067087]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -121,22 +120,22 @@ texture = ExtResource("5_63qii")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+[node name="g1" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer" unique_id=134901001]
 layout_mode = 2
 mouse_filter = 1
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer" unique_id=1549838622]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_MainText"
 text = "Patterns"
 horizontal_alignment = 1
 
-[node name="g2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+[node name="g2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer" unique_id=1065475916]
 layout_mode = 2
 mouse_filter = 1
 
-[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer"]
+[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Options/Pattern/MarginContainer/BoxContainer" unique_id=1170541941]
 layout_mode = 2
 mouse_filter = 1
 theme_type_variation = &"DetailedPanelContainerButton_DescriptionFont"
@@ -144,76 +143,75 @@ text = "Patterns leverage wildcards to
 define how source neurons reach
 their destinations."
 horizontal_alignment = 1
-autowrap_mode = 0
 
-[node name="Name" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Name" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1763153800]
 visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Name"]
+[node name="Label" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/Name" unique_id=1413863608]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Label_Header"
 text = "Rule Name"
 
-[node name="Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Name"]
+[node name="Name" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/Name" unique_id=595445494]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 placeholder_text = "Type rule name..."
 script = ExtResource("3_6i23i")
 
-[node name="ElementMorphologyVectorsView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("6_c1klg")]
+[node name="ElementMorphologyVectorsView" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=3136144 instance=ExtResource("6_c1klg")]
 visible = false
 layout_mode = 2
 
-[node name="ElementMorphologyPatternView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("7_w3816")]
+[node name="ElementMorphologyPatternView" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=2115413157 instance=ExtResource("7_w3816")]
 visible = false
 layout_mode = 2
 
-[node name="ElementMorphologyCompositeView" parent="WindowPanel/WindowMargin/WindowInternals" instance=ExtResource("5_k76mc")]
+[node name="ElementMorphologyCompositeView" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1219916322 instance=ExtResource("5_k76mc")]
 visible = false
 layout_mode = 2
 
-[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Description" type="Label" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1064108507]
 visible = false
 layout_mode = 2
 theme_type_variation = &"Label_Header"
 text = "Description"
 
-[node name="Description_text" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Description_text" type="TextEdit" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1807653484]
 visible = false
 custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
 placeholder_text = "Type your custom description here..."
 script = ExtResource("12_koy8n")
 
-[node name="SeparatorButtons" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="SeparatorButtons" type="HSeparator" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=540764466]
 visible = false
 layout_mode = 2
 
-[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="Buttons" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=2044826747]
 visible = false
 layout_mode = 2
-alignment = 2
 theme_override_constants/separation = 8
+alignment = 2
 
-[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Back" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=1456438381]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Back"
 
-[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Gap" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=2043882223]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Cancel" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=746086984]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = "Cancel"
 
-[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons"]
+[node name="Add" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/Buttons" unique_id=277522069]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"

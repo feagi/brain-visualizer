@@ -1,10 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://guide_window_scene"]
+[gd_scene format=3 uid="uid://44444tcfit87"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.gd" id="1_guide"]
+[ext_resource type="Script" uid="uid://dcibbqsuaeelj" path="res://BrainVisualizer/UI/Windows/GuideWindow/WindowGuide.gd" id="1_guide"]
 [ext_resource type="PackedScene" uid="uid://c10sw6pgpfy48" path="res://BrainVisualizer/UI/GenericElements/TitleBar/TitleBar.tscn" id="2_titlebar"]
-[ext_resource type="Script" path="res://BrainVisualizer/UI/Guide/GuideMarkdownView.gd" id="3_markdown"]
+[ext_resource type="Script" uid="uid://cm0gvrco51um3" path="res://BrainVisualizer/UI/Guide/GuideMarkdownView.gd" id="3_markdown"]
 
-[node name="WindowGuide" type="VBoxContainer"]
+[node name="WindowGuide" type="VBoxContainer" unique_id=849067606]
 custom_minimum_size = Vector2(960, 560)
 offset_right = 1320.0
 offset_bottom = 860.0
@@ -14,79 +14,78 @@ theme_override_constants/separation = 0
 script = ExtResource("1_guide")
 window_spawn_location = Vector2i(140, 100)
 
-[node name="TitleBar" parent="." instance=ExtResource("2_titlebar")]
+[node name="TitleBar" parent="." unique_id=193883041 instance=ExtResource("2_titlebar")]
 layout_mode = 2
 title = "User Guide"
 
-[node name="WindowPanel" type="PanelContainer" parent="."]
+[node name="WindowPanel" type="PanelContainer" parent="." unique_id=1827871316]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="WindowMargin" type="MarginContainer" parent="WindowPanel"]
+[node name="WindowMargin" type="MarginContainer" parent="WindowPanel" unique_id=464931045]
 layout_mode = 2
 theme_type_variation = &"MarginContainer_WindowBorder"
 
-[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin"]
+[node name="WindowInternals" type="VBoxContainer" parent="WindowPanel/WindowMargin" unique_id=1632533187]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="GuideToolbar" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="GuideToolbar" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=115791974]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="SearchBar" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+[node name="SearchBar" type="LineEdit" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar" unique_id=1990940163]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search guides..."
 
-[node name="FontSizeLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+[node name="FontSizeLabel" type="Label" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar" unique_id=1654194996]
 layout_mode = 2
 text = "Text Size:"
 vertical_alignment = 1
 
-[node name="FontSizeDecrease" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+[node name="FontSizeDecrease" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar" unique_id=122907054]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Decrease text size"
 text = "A"
 
-[node name="FontSizeIncrease" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar"]
+[node name="FontSizeIncrease" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/GuideToolbar" unique_id=822348211]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 tooltip_text = "Increase text size"
 text = "A"
 
-[node name="GuideContent" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+[node name="GuideContent" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals" unique_id=1239539393]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
 
-[node name="GuideSidebar" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent"]
+[node name="GuideSidebar" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent" unique_id=1583754086]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_constants/separation = 12
 
-[node name="TopicsScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar"]
+[node name="TopicsScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar" unique_id=90026399]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TopicsList" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar/TopicsScroll"]
+[node name="TopicsList" type="VBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideSidebar/TopicsScroll" unique_id=823869609]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="GuideBody" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent"]
+[node name="GuideBody" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent" unique_id=61871469]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
 
-[node name="ContentScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody"]
+[node name="ContentScroll" type="ScrollContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody" unique_id=182046580]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody/ContentScroll"]
+[node name="ContentMargin" type="MarginContainer" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody/ContentScroll" unique_id=328646546]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -95,12 +94,10 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="GuideMarkdownView" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody/ContentScroll/ContentMargin"]
+[node name="GuideMarkdownView" type="RichTextLabel" parent="WindowPanel/WindowMargin/WindowInternals/GuideContent/GuideBody/ContentScroll/ContentMargin" unique_id=1773642239]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 bbcode_enabled = true
-fit_content = false
 scroll_active = false
-clip_contents = true
 script = ExtResource("3_markdown")

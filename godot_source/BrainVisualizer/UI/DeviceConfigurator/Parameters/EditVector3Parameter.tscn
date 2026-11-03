@@ -1,18 +1,17 @@
-[gd_scene load_steps=2 format=3 uid="uid://bv_device_vector3"]
+[gd_scene format=3 uid="uid://b1rf5xowacqm7"]
 
-[ext_resource type="Script" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditVector3Parameter.gd" id="1_vector3"]
+[ext_resource type="Script" uid="uid://b6sndsr6p2ud4" path="res://BrainVisualizer/UI/DeviceConfigurator/Parameters/EditVector3Parameter.gd" id="1_vector3"]
 
-[node name="Vector3" type="HBoxContainer"]
+[node name="Vector3" type="HBoxContainer" unique_id=883782957]
 script = ExtResource("1_vector3")
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=461462418]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 size_flags_horizontal = 0
-horizontal_alignment = 0
 text = "NAME: "
 
-[node name="x" type="SpinBox" parent="."]
+[node name="x" type="SpinBox" parent="." unique_id=1327923210]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -21,7 +20,7 @@ max_value = 9999.0
 step = 0.0
 custom_arrow_step = 0.25
 
-[node name="y" type="SpinBox" parent="."]
+[node name="y" type="SpinBox" parent="." unique_id=224026411]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -30,7 +29,7 @@ max_value = 9999.0
 step = 0.0
 custom_arrow_step = 0.25
 
-[node name="z" type="SpinBox" parent="."]
+[node name="z" type="SpinBox" parent="." unique_id=1324078819]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_horizontal = 3

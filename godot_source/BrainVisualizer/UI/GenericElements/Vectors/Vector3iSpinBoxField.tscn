@@ -1,55 +1,55 @@
-[gd_scene load_steps=3 format=3 uid="uid://ci8uvawjvxfax"]
+[gd_scene format=3 uid="uid://ci8uvawjvxfax"]
 
 [ext_resource type="Script" uid="uid://c4slalg53c3wd" path="res://BrainVisualizer/UI/GenericElements/Vectors/Vector3iSpinboxField.gd" id="1_2xsvd"]
 [ext_resource type="Script" uid="uid://df4suo645fuq3" path="res://BrainVisualizer/UI/GenericElements/TextBoxes/IntSpinBox.gd" id="5_4kv8p"]
 
-[node name="Vector3fField" type="BoxContainer"]
+[node name="Vector3fField" type="BoxContainer" unique_id=984247]
 offset_right = 279.0
 offset_bottom = 23.0
 theme_type_variation = &"BoxContainer_far"
 script = ExtResource("1_2xsvd")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=450359246]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LabelX" type="Label" parent="HBoxContainer"]
+[node name="LabelX" type="Label" parent="HBoxContainer" unique_id=178009431]
 layout_mode = 2
 theme_type_variation = &"Label_UniformWidth"
 text = "X"
 
-[node name="IntX" type="SpinBox" parent="HBoxContainer"]
+[node name="IntX" type="SpinBox" parent="HBoxContainer" unique_id=51211449]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 1
 script = ExtResource("5_4kv8p")
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="." unique_id=71461885]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LabelY" type="Label" parent="HBoxContainer2"]
+[node name="LabelY" type="Label" parent="HBoxContainer2" unique_id=7449578]
 layout_mode = 2
 theme_type_variation = &"Label_UniformWidth"
 text = "Y"
 
-[node name="IntY" type="SpinBox" parent="HBoxContainer2"]
+[node name="IntY" type="SpinBox" parent="HBoxContainer2" unique_id=1835138777]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 1
 script = ExtResource("5_4kv8p")
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="."]
+[node name="HBoxContainer3" type="HBoxContainer" parent="." unique_id=511256092]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LabelZ" type="Label" parent="HBoxContainer3"]
+[node name="LabelZ" type="Label" parent="HBoxContainer3" unique_id=1803479356]
 layout_mode = 2
 theme_type_variation = &"Label_UniformWidth"
 text = "Z
 "
 
-[node name="IntZ" type="SpinBox" parent="HBoxContainer3"]
+[node name="IntZ" type="SpinBox" parent="HBoxContainer3" unique_id=1607783958]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 1

@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://kvolmoptsp33"]
+[gd_scene format=3 uid="uid://kvolmoptsp33"]
 
 [ext_resource type="Script" uid="uid://dgtdk6df6icss" path="res://BrainVisualizer/UI/GenericElements/Scroll/ScrollGeneric/ScrollSectionGenericItem.gd" id="1_oexre"]
 
-[node name="ScrollSectionGenericItem" type="HBoxContainer"]
+[node name="ScrollSectionGenericItem" type="HBoxContainer" unique_id=958689647]
 offset_bottom = 161.0
 size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_adjacent"

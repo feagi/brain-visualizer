@@ -1,8 +1,9 @@
-[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://2611xrn10hbl"]
 
-[ext_resource type="Shader" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilSpikes.gdshader" id="1"]
+[ext_resource type="Shader" uid="uid://bg2v8sb3cykpy" path="res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DirectPoints/TeslaCoilSpikes.gdshader" id="1"]
 
 [resource]
+render_priority = 0
 shader = ExtResource("1")
 shader_parameter/spike_intensity = 2.0
 shader_parameter/spike_speed = 5.0

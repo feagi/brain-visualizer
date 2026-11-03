@@ -1,33 +1,33 @@
-[gd_scene load_steps=6 format=3 uid="uid://cya0u5xbn7bro"]
+[gd_scene format=3 uid="uid://cya0u5xbn7bro"]
 
 [ext_resource type="Script" uid="uid://b0muh8q27irp2" path="res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsable.gd" id="1_sojnc"]
-[ext_resource type="Texture2D" uid="uid://cdw8h0p4qimnm" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png" id="2_3wwet"]
-[ext_resource type="Texture2D" uid="uid://ddb5s2cvfwoxv" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_C.png" id="3_vtgcq"]
-[ext_resource type="Texture2D" uid="uid://ddxcyg0m3lsnc" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_H.png" id="4_owng8"]
-[ext_resource type="Texture2D" uid="uid://bft3bw2c8v6nq" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_D.png" id="5_c7usd"]
+[ext_resource type="Texture2D" uid="uid://d3a2nv245kafu" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_S.png" id="2_3wwet"]
+[ext_resource type="Texture2D" uid="uid://ct5su0y73p1q6" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_C.png" id="3_vtgcq"]
+[ext_resource type="Texture2D" uid="uid://cqcf3xlqal73r" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_H.png" id="4_owng8"]
+[ext_resource type="Texture2D" uid="uid://crhnw4k1w5ncj" path="res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_D.png" id="5_c7usd"]
 
-[node name="Section" type="PanelContainer"]
+[node name="Section" type="PanelContainer" unique_id=784777678]
 offset_right = 111.0
 offset_bottom = 48.0
 script = ExtResource("1_sojnc")
 
-[node name="VerticalCollapsible" type="VBoxContainer" parent="."]
+[node name="VerticalCollapsible" type="VBoxContainer" parent="." unique_id=1130822093]
 layout_mode = 2
 theme_type_variation = &"VBoxContainer_adjacent"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VerticalCollapsible"]
+[node name="HBoxContainer" type="HBoxContainer" parent="VerticalCollapsible" unique_id=2130949949]
 layout_mode = 2
 size_flags_vertical = 0
 
-[node name="gap" type="Control" parent="VerticalCollapsible/HBoxContainer"]
+[node name="gap" type="Control" parent="VerticalCollapsible/HBoxContainer" unique_id=2075880522]
 layout_mode = 2
 
-[node name="Section_Title" type="Label" parent="VerticalCollapsible/HBoxContainer"]
+[node name="Section_Title" type="Label" parent="VerticalCollapsible/HBoxContainer" unique_id=146301148]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "SECTION"
 
-[node name="Collapsible_Toggle" type="TextureButton" parent="VerticalCollapsible/HBoxContainer"]
+[node name="Collapsible_Toggle" type="TextureButton" parent="VerticalCollapsible/HBoxContainer" unique_id=1062828004]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 size_flags_horizontal = 8
@@ -39,8 +39,8 @@ texture_disabled = ExtResource("5_c7usd")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="PanelContainer" type="PanelContainer" parent="VerticalCollapsible"]
+[node name="PanelContainer" type="PanelContainer" parent="VerticalCollapsible" unique_id=818719618]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="VerticalCollapsible/PanelContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="VerticalCollapsible/PanelContainer" unique_id=989480043]
 layout_mode = 2

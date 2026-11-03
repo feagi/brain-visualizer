@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=27 format=3 uid="uid://e4w3qtf2gyyi"]
+[gd_resource type="Theme" format=3 uid="uid://e4w3qtf2gyyi"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8j6la"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -66,9 +66,9 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.270588, 0.337255, 0.431373, 0.9)
+shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 8
 shadow_offset = Vector2(0, 2)
-shadow_color = Color(0, 0, 0, 0.35)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i680b"]
 bg_color = Color(0.117647, 0.14902, 0.203922, 1)
@@ -100,20 +100,11 @@ border_width_top = 2
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.5, 0.5, 0.6, 0.5)
+shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 6
 shadow_offset = Vector2(0, 2)
-shadow_color = Color(0, 0, 0, 0.4)
-anti_aliasing = true
 
 [resource]
-SplitContainer/colors/touch_dragger_color = Color(0.82, 0.84, 0.88, 0.38)
-SplitContainer/colors/touch_dragger_hover_color = Color(0.9, 0.92, 0.96, 0.52)
-SplitContainer/colors/touch_dragger_pressed_color = Color(0.97, 0.98, 0.99, 0.68)
-SplitContainer/constants/autohide = 0
-SplitContainer/constants/separation = 20
-HSplitContainer/constants/separation = 20
-VSplitContainer/constants/separation = 20
-SplitContainer/constants/minimum_grab_thickness = 14
 BasePanelContainerButton/base_type = &"PanelContainer"
 BasePanelContainerButton/styles/panel = SubResource("StyleBoxFlat_8j6la")
 BasePanelContainerButton/styles/panel_disabled = SubResource("StyleBoxFlat_fesjy")
@@ -173,8 +164,8 @@ HBoxContainer_farther/base_type = &"HBoxContainer"
 HBoxContainer_farther/constants/separation = 24
 HBoxContainer_fatherest/base_type = &"HBoxContainer"
 HBoxContainer_fatherest/constants/separation = 32
+HSplitContainer/constants/separation = 20
 Label/font_sizes/font_size = 20
-TooltipLabel/font_sizes/font_size = 22
 Label_Header/base_type = &"Label"
 Label_Header/font_sizes/font_size = 25
 Label_Title/base_type = &"Label"
@@ -237,6 +228,12 @@ RichTextLabel/font_sizes/bold_italics_font_size = 20
 RichTextLabel/font_sizes/italics_font_size = 20
 RichTextLabel/font_sizes/mono_font_size = 20
 RichTextLabel/font_sizes/normal_font_size = 20
+SplitContainer/colors/touch_dragger_color = Color(0.82, 0.84, 0.88, 0.38)
+SplitContainer/colors/touch_dragger_hover_color = Color(0.9, 0.92, 0.96, 0.52)
+SplitContainer/colors/touch_dragger_pressed_color = Color(0.97, 0.98, 0.99, 0.68)
+SplitContainer/constants/autohide = 0
+SplitContainer/constants/minimum_grab_thickness = 14
+SplitContainer/constants/separation = 20
 TabContainer/font_sizes/font_size = 20
 TextEdit/font_sizes/font_size = 20
 TextEdit/styles/normal = SubResource("StyleBoxFlat_242sy")
@@ -256,12 +253,12 @@ TextureButton_icon/constants/size_x = 40
 TextureButton_icon/constants/size_y = 40
 TextureRect/constants/size_x = 80
 TextureRect/constants/size_y = 80
-TextureRect_Icon/base_type = &"TextureRect"
-TextureRect_Icon/constants/size_x = 40
-TextureRect_Icon/constants/size_y = 40
 TextureRect_ConnectivityRule/base_type = &"TextureRect"
 TextureRect_ConnectivityRule/constants/size_x = 160
 TextureRect_ConnectivityRule/constants/size_y = 160
+TextureRect_Icon/base_type = &"TextureRect"
+TextureRect_Icon/constants/size_x = 40
+TextureRect_Icon/constants/size_y = 40
 TextureRect_wide/base_type = &"TextureRect"
 TextureRect_wide/constants/size_x = 80
 TextureRect_wide/constants/size_y = 40
@@ -270,6 +267,7 @@ TitleBarContainer/styles/panel = SubResource("StyleBoxFlat_i4413")
 ToggleButton/base_type = &"TextureButton"
 ToggleButton/constants/size_x = 80
 ToggleButton/constants/size_y = 40
+TooltipLabel/font_sizes/font_size = 22
 VBoxContainer/constants/separation = 4
 VBoxContainer_adjacent/base_type = &"VBoxContainer"
 VBoxContainer_adjacent/constants/separation = 0
@@ -277,5 +275,6 @@ VBoxContainer_far/base_type = &"VBoxContainer"
 VBoxContainer_far/constants/separation = 8
 VBoxContainer_farther/base_type = &"VBoxContainer"
 VBoxContainer_farther/constants/separation = 24
+VSplitContainer/constants/separation = 20
 generic_scale/constants/size_x = 5
 generic_scale/constants/size_y = 5

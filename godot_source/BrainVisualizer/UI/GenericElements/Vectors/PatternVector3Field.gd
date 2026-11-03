@@ -65,4 +65,3 @@ func _ready():
 func _emit_new_vector(_dont_care: PatternVal) -> void:
 	user_updated_vector.emit(current_vector) # already builds a new object, avoiding reference conflict
 	
-

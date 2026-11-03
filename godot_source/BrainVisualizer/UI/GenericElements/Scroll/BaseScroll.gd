@@ -77,4 +77,3 @@ func _add_button_proxy() -> void:
 
 func _show_empty_button_if_empty(_irrelevant, offset: int) -> void:
 	_add_button_container.visible = get_number_of_children() + offset == 0
-

@@ -45,6 +45,3 @@ func _sync_index_with_loaded_theme() -> void:
 		if abs(BV.UI.possible_UI_scales[i] - current_scale) < 0.0001:
 			_index_scale = i
 			return
-
-
-

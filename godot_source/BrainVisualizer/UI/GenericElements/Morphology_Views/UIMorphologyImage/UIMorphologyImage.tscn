@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://dyagjs5244b30"]
+[gd_scene format=3 uid="uid://dyagjs5244b30"]
 
 [ext_resource type="Script" uid="uid://cd4lanofkgxmu" path="res://BrainVisualizer/UI/GenericElements/Morphology_Views/UIMorphologyImage/UIMorphologyImage.gd" id="1_73tow"]
 
-[node name="UIMorphologyImage" type="TextureRect"]
+[node name="UIMorphologyImage" type="TextureRect" unique_id=1245997401]
 custom_minimum_size = Vector2(256, 256)
 expand_mode = 4
 script = ExtResource("1_73tow")
