@@ -35,6 +35,7 @@ func _initialize_references() -> void:
 	_inhibitory = $RowContainer/Inhibitory
 	_plasticity = $RowContainer/Plasticity
 	_plasticity_window = $RowContainer/Plasticity_Window
+	_plasticity_window.min_value = SingleMappingDefinition.MIN_PLASTICITY_WINDOW
 	_plasticity_constant = $RowContainer/Plasticity_Constant
 	_LTP_multiplier = $RowContainer/LTP_Multiplier
 	_LTD_multiplier = $RowContainer/LTD_Multiplier
@@ -155,7 +156,7 @@ func export_mappings() -> Array[SingleMappingDefinition]:
 		PSP = -PSP
 	var is_plastic: bool = _plasticity.button_pressed
 	var plasticity_constant: float = _plasticity_constant.current_float
-	var plasticity_window: int = _plasticity_window.current_int
+	var plasticity_window: int = maxi(SingleMappingDefinition.MIN_PLASTICITY_WINDOW, _plasticity_window.current_int)
 	var LTP_multiplier: float = _LTP_multiplier.current_float
 	var LTD_multiplier: float = _LTD_multiplier.current_float
 	var delay_bursts: int = maxi(1, _synaptic_delay.current_int)

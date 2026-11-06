@@ -166,10 +166,11 @@ custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-tooltip_text = "Plasticity Window (bursts)"
+tooltip_text = "Window (bursts): a synapse is potentiated or depressed only if its source and destination neurons fired within the last Window bursts. Whole number, minimum 1."
 alignment = 1
 script = ExtResource("15_8f0j2")
 initial_int = 3
+min_value = 1
 
 [node name="Label_Constant" type="Label" parent="SubRow/Panel/Fields"]
 layout_mode = 2

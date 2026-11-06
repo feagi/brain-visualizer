@@ -129,10 +129,11 @@ text = "Window"
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Plasticity window in bursts"
+tooltip_text = "Plasticity window in bursts. Whole number, minimum 1."
 alignment = 1
 script = ExtResource("3_int")
 initial_int = 3
+min_value = 1
 
 [node name="LTPLabel" type="Label" parent="AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows"]
 layout_mode = 2

@@ -277,7 +277,7 @@ To delete all connections:
 When deleting a cortical area:
 - All mappings to/from it are automatically deleted
 - You'll see a confirmation showing affected mappings
-- This cannot be undone
+- **Ctrl+Z** (Cmd+Z on macOS) puts the area and its mappings back, but not learned synapse weights
 
 ## Connection Patterns
 

@@ -30,7 +30,7 @@ const CLASSIFIER_GUIDE_HEADING: String = "Edit a Classifier"
 const BOTTOM_HUD_CLEARANCE_PX: int = 8
 
 const ASSOCIATIVE_FIELD_SPECS: Array[Dictionary] = [
-	{"key": "plasticity_window", "label": "Plasticity Window", "kind": "int", "min": 1, "default": 1, "tooltip": "Bursts of co-activity used when reward learning is off and the associative mapping learns by spike timing. With reward learning on, FEAGI sets the eligibility window from the classifier's answer delay instead."},
+	{"key": "plasticity_window", "label": "Plasticity Window", "kind": "int", "min": 1, "default": 1, "tooltip": "Bursts of co-activity used when reward learning is off and the associative mapping learns by spike timing. Whole number, minimum 1. With reward learning on, FEAGI sets the eligibility window from the classifier's answer delay instead."},
 	{"key": "plasticity_constant", "label": "Plasticity Constant", "kind": "float", "default": 1, "tooltip": "Base size of one weight step on the associative mapping. With reward learning on, a Reward modulator commits LTP steps and a Punishment modulator LTD steps."},
 	{"key": "ltp_multiplier", "label": "LTP Multiplier", "kind": "float", "default": 1, "tooltip": "Scale of one strengthening step. With reward learning on, links active while a Reward modulator fires are strengthened by this step. With it off, it scales co-activation potentiation."},
 	{"key": "ltd_multiplier", "label": "LTD Multiplier", "kind": "float", "default": 1, "tooltip": "Scale of one weakening step. With reward learning on, links active while a Punishment modulator fires are weakened by this step."},

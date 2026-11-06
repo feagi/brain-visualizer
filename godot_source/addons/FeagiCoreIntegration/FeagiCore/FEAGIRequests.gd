@@ -1813,11 +1813,11 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 		push_error("FEAGI Requests: No such classifier ID %s to edit!" % editing_classifier.classifier_id)
 		return FeagiRequestOutput.requirement_fail("ID_NOT_FOUND")
 	var edit_address: StringName = StringName(String(FeagiCore.network.http_API.address_list.PUT_genome_classifier).replace("{classifier_id}", str(editing_classifier.classifier_id)))
-	var dict_to_send: Dictionary = {
-		"name": trimmed_name,
-		"coordinates_3d": FEAGIUtils.vector3i_to_array(coordinates_3d),
-		"parent_region_id": String(parent_region_id),
-	}
+	var dict_to_send: Dictionary = editing_classifier.identity_put_fields(
+		trimmed_name,
+		FEAGIUtils.vector3i_to_array(coordinates_3d),
+		String(parent_region_id)
+	)
 	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(edit_address, dict_to_send)
 	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
 	await HTTP_FEAGI_request_worker.worker_done

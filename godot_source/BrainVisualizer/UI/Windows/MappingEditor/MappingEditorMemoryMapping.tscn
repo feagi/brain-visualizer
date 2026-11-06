@@ -136,7 +136,7 @@ size_flags_horizontal = 0
 custom_minimum_size = Vector2(150, 48)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "Plasticity Window"
+tooltip_text = "Plasticity window in bursts. Whole number, minimum 1. This memory mapping does not edit it here."
 mouse_filter = 1
 text = "Plasticity Window"
 horizontal_alignment = 0
@@ -318,12 +318,13 @@ size_flags_horizontal = 0
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 0
-tooltip_text = "Plasticity Window"
+tooltip_text = "Plasticity window in bursts. Whole number, minimum 1. This memory mapping does not edit it here."
 alignment = 1
 editable = false
 modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("5_7qf8u")
 initial_int = 3
+min_value = 1
 
 [node name="Spacer_BetweenPlasticityWindowAndConst" type="Control" parent="RowContainer"]
 custom_minimum_size = Vector2(8, 0)

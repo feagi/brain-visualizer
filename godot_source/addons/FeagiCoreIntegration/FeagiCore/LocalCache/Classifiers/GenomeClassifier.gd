@@ -181,14 +181,41 @@ func apply_feagi_dict(data: Dictionary) -> void:
 	_error_area_id = StringName(str(data.get("error_area_id", "")).strip_edges())
 	_sample_area_ids = _id_list_from_feagi(data.get("sample_area_ids", []))
 	_class_bindings = _class_bindings_from_feagi(data.get("class_bindings", []))
-	_reward_training = bool(data.get("reward_training", false))
-	_answer_feedback_area_id = _optional_id(data.get("answer_feedback_area_id", null))
-	_answer_latency_bursts = int(data.get("answer_latency_bursts", 0))
-	_learn_area_id = _optional_id(data.get("learn_area_id", null))
-	_confidence_area_id = _optional_id(data.get("confidence_area_id", null))
-	_correct_area_id = _optional_id(data.get("correct_area_id", null))
-	_reward_modulator_ids = _id_list_from_feagi(data.get("reward_modulator_ids", []))
+	# A partial record must not wipe reward settings a previous response already stored.
+	if data.has("reward_training"):
+		_reward_training = bool(data["reward_training"])
+	if data.has("answer_feedback_area_id"):
+		_answer_feedback_area_id = _optional_id(data["answer_feedback_area_id"])
+	if data.has("answer_latency_bursts"):
+		_answer_latency_bursts = int(data["answer_latency_bursts"])
+	if data.has("learn_area_id"):
+		_learn_area_id = _optional_id(data["learn_area_id"])
+	if data.has("confidence_area_id"):
+		_confidence_area_id = _optional_id(data["confidence_area_id"])
+	if data.has("correct_area_id"):
+		_correct_area_id = _optional_id(data["correct_area_id"])
+	if data.has("reward_modulator_ids"):
+		_reward_modulator_ids = _id_list_from_feagi(data["reward_modulator_ids"])
 	sync_layout_from_stamp()
+
+
+## Name, position, and parent, plus the reward list already on this classifier.
+## The follow-up save after Update has to carry that list or the mapping write drops it.
+func identity_put_fields(classifier_name: String, coordinates_3d: Array, parent_region_id: String) -> Dictionary:
+	var modulator_ids: Array = []
+	for modulator_id in _reward_modulator_ids:
+		modulator_ids.append(String(modulator_id))
+	return {
+		"name": classifier_name.strip_edges(),
+		"coordinates_3d": coordinates_3d,
+		"parent_region_id": parent_region_id.strip_edges(),
+		"reward_training": _reward_training,
+		"reward_modulator_ids": modulator_ids,
+		"answer_feedback_area_id": String(_answer_feedback_area_id),
+		"answer_latency_bursts": _answer_latency_bursts,
+		"learn_area_id": String(_learn_area_id),
+		"confidence_area_id": String(_confidence_area_id),
+	}
 
 
 ## Copy 2D layout from the wobbly stamp host (sample memory) when it exists in cache.

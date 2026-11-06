@@ -15,7 +15,6 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Jump to an output area** -> Hover Outputs on the root scene top bar (or on a main-circuit tab) -> choose area
 - **Jump to an interconnect or memory area** -> Hover that title on a Circuit Builder or Brain Monitor tab bar -> choose area
 - **Open one connectivity rule** -> Hover Connectivity Rules on the root scene top bar -> choose rule. The manager opens on that rule.
-- **Focus selected region/area in active views** -> Select object, then press F
 - **Deselect voxels and cortical areas** -> Escape. Also stops continuous voxel fire and closes the quick menu. If a move, resize, or box select is in progress, Escape cancels that instead. With nothing selected, Escape closes the front window.
 
 ## 2D Navigation
@@ -23,7 +22,6 @@ Use this quick lookup for navigation and camera actions currently implemented in
 - **Pan** -> Middle Drag or Shift + Left Drag
 - **Zoom** -> Mouse Wheel
 - **Fit all objects** -> Right-click empty space -> Fit All
-- **Focus on selected cortical area/region** -> Select node, then press F
 - **Open region in Brain Monitor** -> Right-click region -> Open 3D Tab
 
 ## 3D Camera Controls

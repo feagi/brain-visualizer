@@ -118,6 +118,7 @@ Hold **Shift** to keep those lines after the pointer leaves the area. While Shif
 - **Incoming connections**: Lines from other areas to this
 - **Connection strength**: Line thickness or opacity
 - **Connection type**: Green is excitatory, red is inhibitory, yellow is episodic (`episodic_memory` and `episodic_scan`). Dashed lines are plastic.
+- **Mixed polarity**: Brain Monitor does not roll the colour up into one. If the mappings between two areas differ in polarity, it draws one arc for each polarity present. Circuit Builder draws a single line instead, see [Circuit Builder](circuit_builder.md)
 
 ### Brain Circuits
 

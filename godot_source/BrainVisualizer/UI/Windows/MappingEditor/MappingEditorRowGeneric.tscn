@@ -166,10 +166,11 @@ custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-tooltip_text = "Window (bursts): a synapse is potentiated or depressed only if its source/destination neurons fired within the last Window bursts.\nBoth fired: trace += Constant x LTP x. Only one fired: trace -= Constant x LTD x."
+tooltip_text = "Window (bursts): a synapse is potentiated or depressed only if its source/destination neurons fired within the last Window bursts. Whole number, minimum 1.\nBoth fired: trace += Constant x LTP x. Only one fired: trace -= Constant x LTD x."
 alignment = 1
 script = ExtResource("15_7qf8u")
 initial_int = 3
+min_value = 1
 
 [node name="Label_Constant" type="Label" parent="SubRow/Panel/Fields"]
 layout_mode = 2

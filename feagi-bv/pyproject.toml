@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "feagi-bv"
-version = "2.11.0"
+version = "2.12.0"
 description = "Brain Visualizer runtime package for FEAGI"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "feagi-core==2.2.2",
+    "feagi-core==2.6.13",
     "toml>=0.10.2",
 ]
 

@@ -56,6 +56,11 @@ Lines between nodes represent neural mappings:
 - **Yellow**: episodic (`episodic_memory` and `episodic_scan`)
 - Dashed lines are plastic
 
+One line stands for every mapping between the two areas, and its look is rolled up from all of them:
+- **Yellow** if every mapping is episodic. Otherwise **red** if any mapping has a negative PSP multiplier. Otherwise **green**
+- **Dashed** if any mapping is plastic
+- The button shows how many mappings the line covers
+
 ## Basic Operations
 
 ### Creating Cortical Areas

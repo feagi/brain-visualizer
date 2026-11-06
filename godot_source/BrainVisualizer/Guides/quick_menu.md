@@ -224,8 +224,8 @@ See [Brain Circuits](brain_circuits.md) for more details.
 
 **What It Does:**
 - Resets all neuron values to initial state
-- Clears learned synaptic weights (if plastic)
-- Resets activity patterns
+- Keeps learned synaptic weights
+- Clears pending input and memory neurons
 - Does NOT delete the area or connections
 
 **Confirmation:**

@@ -270,7 +270,7 @@ A comprehensive reference of terms used in Brain Visualizer and FEAGI.
 - How data is encoded/decoded between external format and neural activity
 - For IPU: converts sensor data to firing patterns
 - For OPU: converts firing patterns to actuator commands
-- Includes signage (positive/negative/both), behavior (rate/phase/burst), type (intensity/position/motion)
+- Includes the data type, Absolute or Incremental, and Linear or Fractional positioning
 - See also: [IPU](#i), [OPU](#o)
 
 **Neurons Per Voxel**
