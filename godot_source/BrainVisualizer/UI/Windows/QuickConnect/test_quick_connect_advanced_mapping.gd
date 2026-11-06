@@ -18,6 +18,7 @@ func _run_tests() -> void:
 	failures += await _test_associative_memory_stays_plastic()
 	failures += await _test_same_rule_keeps_edits()
 	failures += await _test_restrictions_disable_fields()
+	failures += await _test_plasticity_window_is_at_least_one()
 	failures += _test_episodic_memory_and_classifier_hide_advanced()
 	failures += _test_quick_menu_two_rows_only_for_cortical_areas()
 	if failures == 0:
@@ -108,6 +109,48 @@ func _test_inhibitory_negates_psp_and_plasticity_exports_stdp() -> int:
 		return 1
 	if payload.has("modulators") or payload.has("morphology_scalar") == false:
 		push_error("compact form must keep scalar and omit modulators")
+		panel.queue_free()
+		return 1
+	panel.queue_free()
+	return 0
+
+
+func _test_plasticity_window_is_at_least_one() -> int:
+	var panel: QuickConnectAdvancedMapping = await _spawn_panel()
+	var morphology: BaseMorphology = BaseMorphology.new(&"block_to_block", true, BaseMorphology.MORPHOLOGY_INTERNAL_CLASS.CORE)
+	panel.load_for_morphology(morphology)
+	var window: IntInput = panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/PlasticityRows/PlasticityWindow")
+	if window.min_value != SingleMappingDefinition.MIN_PLASTICITY_WINDOW:
+		push_error("plasticity window minimum must be 1, got %s" % str(window.min_value))
+		panel.queue_free()
+		return 1
+	window.current_int = 0
+	if window.current_int != 1:
+		push_error("setting plasticity window to 0 must clamp to 1, got %s" % str(window.current_int))
+		panel.queue_free()
+		return 1
+	window.current_int = -4
+	if window.current_int != 1:
+		push_error("setting plasticity window below 0 must clamp to 1, got %s" % str(window.current_int))
+		panel.queue_free()
+		return 1
+	window.current_int = 6
+	window.text = "1.5"
+	window._on_exiting_typing_mode()
+	if window.current_int != 6:
+		push_error("a fractional plasticity window must be rejected, got %s" % str(window.current_int))
+		panel.queue_free()
+		return 1
+	window.text = "0"
+	window._on_exiting_typing_mode()
+	if window.current_int != 1:
+		push_error("confirming plasticity window 0 must become 1, got %s" % str(window.current_int))
+		panel.queue_free()
+		return 1
+	panel.get_node("AdvancedSection/VerticalCollapsible/PanelContainer/PutThingsHere/Rows/Primary/Plasticity").button_pressed = true
+	var mapping: SingleMappingDefinition = panel.export_mapping(morphology)
+	if mapping == null or mapping.plasticity_window != 1:
+		push_error("export must keep plasticity window at 1 or above")
 		panel.queue_free()
 		return 1
 	panel.queue_free()

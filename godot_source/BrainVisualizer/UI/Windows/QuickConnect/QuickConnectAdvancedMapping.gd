@@ -39,6 +39,7 @@ func _ready() -> void:
 	_plasticity = get_node(NodePath(str(_ROWS) + "/Primary/Plasticity"))
 	_plasticity_constant = get_node(NodePath(str(_ROWS) + "/PlasticityRows/PlasticityConstant"))
 	_plasticity_window = get_node(NodePath(str(_ROWS) + "/PlasticityRows/PlasticityWindow"))
+	_plasticity_window.min_value = SingleMappingDefinition.MIN_PLASTICITY_WINDOW
 	_ltp_multiplier = get_node(NodePath(str(_ROWS) + "/PlasticityRows/LTP"))
 	_ltd_multiplier = get_node(NodePath(str(_ROWS) + "/PlasticityRows/LTD"))
 	_plasticity.toggled.connect(_on_plasticity_toggled)
@@ -141,7 +142,7 @@ func export_mapping(morphology: BaseMorphology) -> SingleMappingDefinition:
 		_plasticity_constant.current_float,
 		_ltp_multiplier.current_float,
 		_ltd_multiplier.current_float,
-		_plasticity_window.current_int,
+		maxi(SingleMappingDefinition.MIN_PLASTICITY_WINDOW, _plasticity_window.current_int),
 		maxi(1, _synaptic_delay.current_int),
 		mode,
 	)

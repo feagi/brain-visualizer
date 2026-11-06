@@ -11,6 +11,8 @@ const DEFAULT_PLASTICITY_CONSTANT: float = 1.0
 const DEFAULT_LTP_MULTIPLIER: float = 1.0
 const DEFAULT_LTD_MULTIPLIER: float = 1.0
 const DEFAULT_PLASTICITY_WINDOW: int = 3
+## Smallest plasticity window the editors may store. FEAGI rejects 0.
+const MIN_PLASTICITY_WINDOW: int = 1
 ## Whole bursts from presynaptic fire until PSP is applied (minimum 1; genome / API key: synaptic_delay_bursts).
 const DEFAULT_SYNAPTIC_DELAY_BURSTS: int = 1
 

@@ -29,9 +29,8 @@ Choosing the right connectivity rule is crucial for your genome's function.
 **Purpose**: Combines multiple simpler connectivity rules
 
 **Characteristics:**
-- Contains multiple sub-connectivity rules
-- Can create complex connection patterns
-- Most flexible type
+- A seed position, a list of source offsets, and a second rule that maps from there
+- Fields: source seed, source pattern, mapper rule
 
 **Use Cases:**
 - Combining feedforward and lateral connections
@@ -39,12 +38,11 @@ Choosing the right connectivity rule is crucial for your genome's function.
 - Hierarchical connection structures
 
 ### Function Connectivity Rule
-**Purpose**: Connections defined by mathematical functions
+**Purpose**: Connections defined by a built-in algorithm
 
 **Characteristics:**
-- Formula-based connection rules
-- Parametric control
-- Precise spatial relationships
+- Chosen by name from the built-in functions
+- Has no editable parameters
 
 **Use Cases:**
 - Gaussian receptive fields
@@ -55,7 +53,7 @@ Choosing the right connectivity rule is crucial for your genome's function.
 **Purpose**: Per-neuron destination offset `[dx, dy, dz]`
 
 **Characteristics:**
-- Each source neuron connects to dest at `(src + dx, src + dy, src + dz)`
+- Each source neuron connects to dest at `(src_x + dx, src_y + dy, src_z + dz)`
 - `[0, 0, 0]` is identity (same as core `block_to_block`)
 - Out-of-bounds destinations produce no synapse
 
@@ -350,27 +348,14 @@ Duplicate and modify:
 
 ### Composite Connectivity Rule
 
-**Sub-Connectivity Rules:**
-- Add multiple component connectivity rules
-- Each contributes to overall pattern
-- Order and composition matters
-
-**Combining Modes:**
-- Additive: Combine all connections
-- Override: Later connectivity rules override earlier
-- Blend: Weighted combination
+**Fields:**
+- Source seed: the starting position (X, Y, Z)
+- Source pattern: a list of source offsets
+- Mapper rule: the connectivity rule that maps from there
 
 ### Function Connectivity Rule
 
-**Formula Definition:**
-- Mathematical expression for connectivity
-- Variables: source position, target position, distance
-- Output: Connection strength or boolean
-
-**Parameters:**
-- Function-specific parameters
-- Ranges and scales
-- Threshold values
+A function rule is a built-in algorithm picked by name. It has no formula or parameters to edit.
 
 ### Patterns Connectivity Rule
 
@@ -413,14 +398,9 @@ Duplicate and modify:
 ### Vectors Connectivity Rule
 
 **Connection Specification:**
-- Define source → target pairs
-- Explicit connection list
-- Full manual control
-
-**Format:**
-- Source coordinates (X, Y, Z)
-- Target coordinates (X, Y, Z)
-- Connection weight (optional)
+- A list of offsets `[dx, dy, dz]`
+- Each source neuron connects to the neuron at its own position plus the offset
+- Not a list of source → target coordinate pairs, and it has no weight column
 
 ## Editing Connectivity Rules
 
@@ -443,23 +423,6 @@ To avoid affecting existing mappings:
 3. Manually update specific mappings to use the clone
 
 ## Connectivity Rule Parameters
-
-### Common Parameters
-
-**Spatial Parameters:**
-- **Offset**: Shift connection pattern
-- **Scale**: Expand or contract pattern
-- **Rotation**: Rotate connection pattern
-
-**Density Parameters:**
-- **Connection Probability**: Chance of connection
-- **Max Connections**: Limit per neuron
-- **Min Connections**: Ensure minimum
-
-**Learning Parameters:**
-- **Plasticity**: Enable/disable learning
-- **Learning Rate**: Speed of adaptation
-- **Hebbian Rules**: Strengthen/weaken based on activity
 
 ### Type-Specific Parameters
 

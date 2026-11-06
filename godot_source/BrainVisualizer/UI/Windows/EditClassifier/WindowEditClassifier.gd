@@ -695,7 +695,7 @@ func _mapping_with_associative_overrides(mapping: SingleMappingDefinition, overr
 		float(overrides.get("plasticity_constant", mapping.plasticity_constant)),
 		float(overrides.get("ltp_multiplier", mapping.LTP_multiplier)),
 		float(overrides.get("ltd_multiplier", mapping.LTD_multiplier)),
-		int(overrides.get("plasticity_window", mapping.plasticity_window)),
+		maxi(SingleMappingDefinition.MIN_PLASTICITY_WINDOW, int(overrides.get("plasticity_window", mapping.plasticity_window))),
 		int(overrides.get("synaptic_delay_bursts", mapping.synaptic_delay_bursts)),
 		mapping.plasticity_mode,
 		mapping.eligibility_decay_bursts,

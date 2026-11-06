@@ -53,6 +53,7 @@ func _ready() -> void:
 	_modulators = $MainRow/Modulators
 	_plasticity_mode = $MainRow/Plasticity_Mode
 	_plasticity_window = $SubRow/Panel/Fields/Plasticity_Window
+	_plasticity_window.min_value = SingleMappingDefinition.MIN_PLASTICITY_WINDOW
 	_plasticity_constant = $SubRow/Panel/Fields/Plasticity_Constant
 	_LTP_multiplier = $SubRow/Panel/Fields/LTP_Multiplier
 	_LTD_multiplier = $SubRow/Panel/Fields/LTD_Multiplier
@@ -262,7 +263,7 @@ func export_mapping() -> SingleMappingDefinition:
 
 	var is_plastic: bool = mode_index != _MODE_OFF
 	var plasticity_constant: float = _plasticity_constant.current_float
-	var plasticity_window: int = _plasticity_window.current_int
+	var plasticity_window: int = maxi(SingleMappingDefinition.MIN_PLASTICITY_WINDOW, _plasticity_window.current_int)
 	var LTP_multiplier: float = _LTP_multiplier.current_float
 	var LTD_multiplier: float = _LTD_multiplier.current_float
 	var delay_bursts: int = maxi(1, _synaptic_delay.current_int)

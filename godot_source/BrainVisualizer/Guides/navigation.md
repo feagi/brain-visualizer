@@ -290,8 +290,6 @@ Selections and focus sync between views:
 **Example Workflow:**
 1. Click cortical area in Circuit Builder
 2. It highlights in Brain Monitor too
-3. Press F to focus
-4. Both views frame the object
 
 This tight integration helps you understand both structure and spatial layout.
 
@@ -531,6 +529,6 @@ Access via **Options** → **Display** or **Developer Options**.
 - [Circuit Builder](circuit_builder.md) - 2D navigation and editing
 - [Brain Monitor](brain_monitor.md) - 3D visualization and navigation
 - [Mapping Connections](mapping_connections.md) - Quick Connect and mapping workflows
-- [Keyboard Shortcuts](keyboard_shortcuts.md) - Complete shortcut reference
+- [Navigation Actions Reference](navigation_actions_reference.md) - Complete shortcut reference
 
 [Back to Overview](index.md)

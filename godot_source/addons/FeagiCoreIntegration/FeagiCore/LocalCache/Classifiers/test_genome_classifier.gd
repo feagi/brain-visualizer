@@ -27,6 +27,7 @@ func _initialize() -> void:
 	failures += _test_classifier_circuit_interior_stays_closed()
 	failures += _test_classifier_plate_faces()
 	failures += _test_ipu_and_opu_can_feed_classifier()
+	failures += _test_identity_put_keeps_reward_modulators()
 	if failures == 0:
 		print("GenomeClassifier object-model tests: PASS")
 		quit(0)
@@ -53,6 +54,37 @@ func _make_classifier() -> GenomeClassifier:
 		"correct_area_id": "ok",
 	})
 	return classifier
+
+
+func _test_identity_put_keeps_reward_modulators() -> int:
+	var classifier := _make_classifier()
+	classifier.apply_feagi_dict({
+		"name": "DemoClassifier",
+		"reward_training": true,
+		"reward_modulator_ids": ["joy", "ouch"],
+		"answer_feedback_area_id": "answer",
+		"answer_latency_bursts": 3,
+		"learn_area_id": "gate",
+		"confidence_area_id": "conf",
+	})
+	var body: Dictionary = classifier.identity_put_fields("DemoClassifier", [4, 5, 6], "parent-region")
+	if body["reward_training"] != true:
+		push_error("identity save dropped reward training")
+		return 1
+	if body["reward_modulator_ids"] != ["joy", "ouch"]:
+		push_error("identity save dropped the reward and punishment modulators")
+		return 1
+	if str(body["answer_feedback_area_id"]) != "answer" or int(body["answer_latency_bursts"]) != 3:
+		push_error("identity save dropped the answer timing")
+		return 1
+	classifier.apply_feagi_dict({"name": "Renamed"})
+	var kept: Array = []
+	for modulator_id in classifier.reward_modulator_ids:
+		kept.append(String(modulator_id))
+	if not classifier.reward_training or kept != ["joy", "ouch"]:
+		push_error("a name-only record wiped the stored reward list")
+		return 1
+	return 0
 
 
 func _test_ipu_and_opu_can_feed_classifier() -> int:

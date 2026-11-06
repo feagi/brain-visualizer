@@ -89,7 +89,7 @@ Three sections start collapsed. **Update** sends a section only when you changed
 
 These rows are always shown:
 
-- **Plasticity Window** is how many bursts of co-activity count when reward learning is off. With reward learning on, FEAGI sets the eligibility window from the classifier's answer delay.
+- **Plasticity Window** is how many bursts of co-activity count when reward learning is off. It is a whole number, and the minimum is 1. With reward learning on, FEAGI sets the eligibility window from the classifier's answer delay.
 - **Plasticity Constant** is the base size of one weight step.
 - **LTP Multiplier** scales a strengthening step. With reward training on, a Reward modulator commits it.
 - **LTD Multiplier** scales a weakening step. With reward training on, a Punishment modulator commits it.

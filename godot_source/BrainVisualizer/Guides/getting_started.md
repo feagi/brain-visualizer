@@ -69,7 +69,7 @@ When Brain Visualizer loads, you'll see:
 - **Zoom**: Mouse wheel
 - **Select**: Left-click a cortical area
 - **Multi-select**: Ctrl + Click to add or remove an area, or **Shift + Left Drag** a rectangle around several areas
-- **Focus**: Click on a cortical area, then press F
+- **Front view**: Press F with the pointer over Brain Monitor
 - **Search**: **Ctrl+S** (**Cmd+S** on macOS). Type a name to find a core, input, output, memory area, interconnect, modulator, circuit, connectivity rule, or classifier. Choosing an area moves the camera to it. An area inside a sub-circuit opens that circuit first
 - **Area titles**: Hidden until the pointer is over an area. Hold **Shift** over one 3D view to show every title in that view. Other views stay unlabeled
 - **Mapping lines**: Hover a cortical area to see its connections. Hold **Shift** to keep those lines, then click the count in the middle of a line to open the mapping editor
@@ -138,8 +138,6 @@ To see your genome in action:
 2. Open the **Brain Monitor** (3D view)
 3. Neural activity will appear as colored highlights on cortical areas
 4. Hover over areas to see their connections
-
-See [Neural Activity](neural_activity.md) for more information.
 
 ## Using Split View
 

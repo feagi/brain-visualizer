@@ -122,32 +122,22 @@ When editing **Position** or **Dimensions**, a live preview appears in the Brain
 
 Controls how sensory data is encoded into neural activity (IPU) or decoded from neural activity (OPU).
 
-### Coding Format
+### Data Type
 
-Determines how values are interpreted:
-- **Positive** - Only positive values
-- **Negative** - Only negative values
-- **Both** - Bipolar encoding (positive and negative)
+What kind of value the area carries, for example a percentage, a signed percentage, or a picture. It sets the shape of the area.
 
-**Example:**
-- Camera RGB values: Positive
-- Motor control (forward/reverse): Both
-- Inhibitory signals: Negative
+### Absolute or Incremental
 
-### Coding Behavior
+- **Absolute** - The reading or command right now
+- **Incremental** - A change since the last reading
 
-Controls when neurons fire:
-- **Rate** - Fire frequency encodes value
-- **Phase** - Fire timing encodes value
-- **Burst** - Fire patterns encode value
+### Linear or Fractional
 
-### Coding Type
+How a percentage is laid out along Z:
+- **Linear** - One neuron fires, and its position along Z is the value
+- **Fractional** - Several Z neurons can fire, each worth half of the one before it
 
-The data representation format:
-- **Intensity** - Scalar values (brightness, temperature)
-- **Position** - Spatial coordinates
-- **Motion** - Velocity/movement vectors
-- **Pattern** - Complex data structures
+See [Cortical Areas](cortical_areas.md) for how each is encoded.
 
 **Note:** Changing coding parameters will update the Cortical ID automatically to reflect the new encoding scheme.
 
@@ -163,8 +153,10 @@ Controls the fundamental behavior of individual neurons - how they accumulate ch
 
 **Toggle:** ON/OFF
 
-- **ON** - Neurons accumulate charge over time until threshold is reached
-- **OFF** - Each input triggers immediate evaluation
+- **ON** - Negative input is ignored, so inhibition cannot push the membrane potential below where it already is
+- **OFF** - Negative input lowers the membrane potential like any other input
+
+Charge builds up over bursts the same way in both modes. The toggle only decides what happens to negative input.
 
 Most areas use **ON** for temporal integration of signals.
 
@@ -181,10 +173,10 @@ The membrane potential level at which a neuron fires:
 
 **Range:** Integer value
 
-Maximum threshold a neuron can reach:
-- Prevents runaway threshold increases
-- Maintains network stability
-- Higher values allow greater adaptation range
+The highest membrane potential at which a neuron can still fire:
+- A neuron fires only when threshold <= potential <= threshold limit
+- If the input pushes the potential above the limit, the spike is blocked and the neuron keeps its charge
+- The default (the largest value) means there is no upper bound
 
 ### Neuron Excitability
 
@@ -244,10 +236,10 @@ Rest time after reaching consecutive fire limit:
 
 **3D Vector:** (x, y, z) values
 
-How threshold increases after each firing:
-- Implements spike-frequency adaptation
-- Can vary by spatial dimension
-- Creates homeostatic regulation
+How much the firing threshold grows with a neuron's position in the area:
+- A neuron's threshold is the base threshold + x * X increment + y * Y increment + z * Z increment
+- Neurons further along an axis are harder to fire
+- The threshold does not change as a neuron fires
 
 ---
 
@@ -478,18 +470,20 @@ Resets neural state to initial conditions:
 **What gets reset:**
 - All neuron membrane potentials → 0
 - All neuron activation states → inactive
-- Accumulated charges cleared
-- Refractory states cleared
-- Memory traces (for Memory areas)
+- Accumulated charges and pending input cleared
+- Refractory and consecutive-fire counters cleared
+- Outgoing PSP restored to the area's configured value
+- Memory neurons (for Memory areas)
 
 **What is preserved:**
 - All connections
 - All parameter values
+- Learned synaptic weights
 - Position and dimensions
 - Cortical area structure
 
 **Use cases:**
-- Clear learned patterns
+- Clear memory neurons and leftover activity
 - Start fresh training
 - Remove corrupted neural states
 - Debugging network behavior

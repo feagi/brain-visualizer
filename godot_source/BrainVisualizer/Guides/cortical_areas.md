@@ -271,7 +271,7 @@ A modulator changes neurons or synapses while its driver neuron is firing. A neu
 
 Each modulator is one instance of a built-in type. The instance has its own name, magnitude, and timing. Creating one also creates a 1x1x1 driver area in the main circuit. That area has a single neuron. The modulator is active on the bursts that neuron fires.
 
-Magnitude is a signed percent. A positive value strengthens the target parameter. A negative value weakens it. When several modulators affect the same target, their factors multiply, and the result stays inside that parameter's allowed range.
+Magnitude is a signed percent. A positive value strengthens the target parameter. A negative value weakens it. When several modulators affect the same target, their factors multiply, and the result stays inside that parameter's allowed range. Two exceptions: reward signals add up, and gates use the strongest signal, so a mapping passes spikes if any of its gates is open.
 
 ### Types
 
@@ -282,6 +282,7 @@ The type list in **Add modulator** uses these ids:
 - **neuro.firing_probability**: raises or lowers the chance a neuron fires when it is able to
 - **synaptic.transmission_gain**: raises or lowers the postsynaptic effect of a mapping
 - **synaptic.reward**: sends a reward signal into R-STDP learning on a mapping. Positive magnitude is pleasure. Negative magnitude is pain
+- **synaptic.gate**: lets a mapping pass spikes only while its driver neuron is firing
 - **synaptic.learning_rate**: raises or lowers the learning rate of a mapping
 - **memory.formation**: on a memory area, a magnitude of -100% (0x) stops new memory neurons forming. Existing memories still fire and age
 
@@ -414,7 +415,7 @@ Default connectivity rule for connections:
 - **Parameters**: Shape and density
 - Can be overridden per connection
 
-See [Connectivity Rules](connectivity rules.md) for details.
+See [Connectivity Rules](connectivity_rules.md) for details.
 
 ## Viewing and Editing Properties
 
@@ -564,7 +565,7 @@ Connections are NOT cloned (area starts unconnected).
 
 ### Resetting
 
-Clear all neural state (neuron values, learning):
+Clear all neural state (membrane potentials, refractory counters, pending input, memory neurons; learned synaptic weights stay):
 
 1. Right-click → **Reset**
 2. Confirm the reset
@@ -666,9 +667,8 @@ Before creating areas:
 
 ## Related Topics
 
-- [Cortical Area Types](cortical_area_types.md) - Detailed type information
 - [Mapping Connections](mapping_connections.md) - Connecting areas
-- [Connectivity Rules](connectivity rules.md) - Connection structures
+- [Connectivity Rules](connectivity_rules.md) - Connection structures
 - [Brain Circuits](brain_circuits.md) - Organizing areas
 - [Circuit Builder](circuit_builder.md) - 2D editing interface
 - [Brain Monitor](brain_monitor.md) - 3D visualization
