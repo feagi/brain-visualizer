@@ -46,7 +46,11 @@ var _edit: TextureButton
 var _sub_row_top_gap: Control
 var _sub_row_bottom_gap: Control
 var _eligibility_gap: Control
-var _learning_check: CheckBox
+var _learning_check: ToggleButton
+## Label + toggle pair at the start of the learning sub-row; this is what is shown or hidden.
+var _learning_group: HBoxContainer
+var _learning_state_label: Label
+var _learning_gap: Control
 ## True only when the owner knows the area pair (two cortical areas) and so can send the Learning request.
 var _learning_available: bool = false
 
@@ -189,20 +193,46 @@ func _build_sub_row_spacing() -> void:
 		if next_name == "EligibilityGroup":
 			_eligibility_gap = gap
 
-## Learning checkbox at the start of the learning sub-row. Hidden (not disabled) while Plasticity Mode is Off or
-## when the area pair is unknown. Built in code so the row scene and its Partial copy stay unchanged.
+## Learning switch at the start of the learning sub-row: "Learning" label plus the same ToggleButton the memory area
+## window uses, so both places match. Hidden (not disabled) while Plasticity Mode is Off or when the area pair is
+## unknown. Built in code so the row scene and its Partial copy stay unchanged.
 func _build_learning_check() -> void:
-	_learning_check = CheckBox.new()
+	const TOGGLE_SIZE: Vector2 = Vector2(40, 21) # matches the 486x256 toggle art; scaled with the UI theme
+	_learning_group = HBoxContainer.new()
+	_learning_group.name = "LearningGroup"
+	_learning_group.add_theme_constant_override(&"separation", 6)
+	_learning_group.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_learning_group.tooltip_text = LEARNING_TOOLTIP
+	_learning_group.visible = false
+	var label := Label.new()
+	label.text = "Learning"
+	label.mouse_filter = Control.MOUSE_FILTER_PASS
+	_learning_group.add_child(label)
+	_learning_check = ToggleButton.new()
 	_learning_check.name = "Learning"
-	_learning_check.text = "Learning"
+	_learning_check.theme_type_variation = &"ToggleButton"
+	_learning_check.ignore_texture_size = true
+	_learning_check.stretch_mode = TextureButton.STRETCH_SCALE
+	_learning_check.custom_minimum_size = TOGGLE_SIZE
+	_learning_check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_learning_check.button_pressed = true # ON = learns (default)
 	_learning_check.tooltip_text = LEARNING_TOOLTIP
-	_learning_check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_learning_check.visible = false
 	_learning_check.toggled.connect(_on_learning_check_toggled)
+	_learning_group.add_child(_learning_check)
+	_learning_state_label = Label.new()
+	_learning_state_label.text = "On"
+	_learning_state_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	_learning_group.add_child(_learning_state_label)
 	var fields: HBoxContainer = $SubRow/Panel/Fields
-	fields.add_child(_learning_check)
-	fields.move_child(_learning_check, 0)
+	fields.add_child(_learning_group)
+	fields.move_child(_learning_group, 0)
+	# Same 4px spacer + two 6px separations = 16px pair-to-pair gap as between Window/Constant/LTP/LTD.
+	_learning_gap = Control.new()
+	_learning_gap.name = "Gap_Learning"
+	_learning_gap.custom_minimum_size = Vector2(4, 0)
+	_learning_gap.visible = false
+	fields.add_child(_learning_gap)
+	fields.move_child(_learning_gap, 1)
 
 func _on_learning_check_toggled(learning_on: bool) -> void:
 	learning_toggled.emit(learning_on)
@@ -214,15 +244,17 @@ func set_learning_available(available: bool) -> void:
 
 ## Owner call: shows the confirmed state without emitting [signal learning_toggled].
 func set_learning_state(learning_on: bool) -> void:
-	_learning_check.set_pressed_no_signal(learning_on)
+	_learning_check.set_toggle_no_signal(learning_on)
+	_learning_state_label.text = "On" if learning_on else "Off"
 
 ## Owner call: blocks a second click while a request is in flight.
 func set_learning_busy(busy: bool) -> void:
 	_learning_check.disabled = busy
 
 func _refresh_learning_visibility() -> void:
-	if _learning_check != null:
-		_learning_check.visible = _learning_available and _sub_row != null and _sub_row.visible
+	if _learning_group != null:
+		_learning_group.visible = _learning_available and _sub_row != null and _sub_row.visible
+		_learning_gap.visible = _learning_group.visible
 
 ## Row of the editable columns that the table header aligns to (the sub-row is excluded).
 func get_main_row() -> HBoxContainer:

@@ -2300,32 +2300,57 @@ func _init_memory() -> void:
 	_button_memory_send.pressed.connect(_send_update.bind(_button_memory_send))
 	_init_learning_row()
 
-## Learning on/off for memory areas, shown above the Memory Tunables panel (always visible). Runtime state of the running
-## brain, not a genome property, so it applies at once (PUT, then refresh) and is not part of "Apply Update".
-## Row is built in code to keep the scene untouched.
+## Learning on/off for memory areas: a Summary row right after Neuron Count (visible in simple mode too, since the
+## Summary panel is). Runtime state of the running brain, not a genome property, so it applies at once (PUT, then
+## refresh) and is not part of "Apply Update". Row is built in code to keep the scene untouched; it copies the Summary
+## rows' layout (label expands, control sits in a value column of the same minimum width as the count fields).
 const _LEARNING_TOOLTIP: String = "Learning on: this memory area keeps learning. Turn off to keep what it has learned. Applies to this running brain only. Saved in brain snapshots, cleared when the genome is reloaded."
-var _learning_check: CheckBox
+const _LEARNING_TOGGLE_SIZE: Vector2 = Vector2(54, 28) # matches the 486x256 toggle art
+const _LEARNING_ON_TEXT: String = "On"
+const _LEARNING_OFF_TEXT: String = "Off - kept as learned"
+var _learning_check: ToggleButton
+var _learning_state_label: Label
 var _learning_request_in_flight: bool = false
 
 func _init_learning_row() -> void:
-	if _learning_check != null or _section_memory == null:
+	if _learning_check != null or _line_neuron_count == null:
 		return
+	var neuron_row: Node = _line_neuron_count.get_parent()
+	var container: Node = neuron_row.get_parent()
 	var row := HBoxContainer.new()
-	row.name = "learning"
+	row.name = "Row_Learning"
 	row.tooltip_text = _LEARNING_TOOLTIP
 	var label := Label.new()
 	label.text = "Learning"
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(label)
-	_learning_check = CheckBox.new()
+	var value_column := HBoxContainer.new()
+	value_column.name = "Value"
+	value_column.custom_minimum_size = Vector2(maxf(_line_neuron_count.custom_minimum_size.x, MIN_COUNT_FIELD_WIDTH_PX), 0)
+	value_column.add_theme_constant_override(&"separation", 8)
+	value_column.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.add_child(value_column)
+	_learning_check = ToggleButton.new()
+	_learning_check.name = "Learning"
+	_learning_check.theme_type_variation = &"ToggleButton"
+	_learning_check.ignore_texture_size = true
+	_learning_check.stretch_mode = TextureButton.STRETCH_SCALE
+	_learning_check.custom_minimum_size = _LEARNING_TOGGLE_SIZE # read by ToggleButton as its base size for theme scaling
+	_learning_check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_learning_check.button_pressed = true # ON = learns (default)
 	_learning_check.tooltip_text = _LEARNING_TOOLTIP
 	_learning_check.toggled.connect(_on_learning_check_toggled)
-	row.add_child(_learning_check)
-	# Sits just above the Memory Tunables panel, outside it, so it stays visible in simple mode too.
-	var container: Node = _section_memory.get_parent()
+	value_column.add_child(_learning_check)
+	_learning_state_label = Label.new()
+	_learning_state_label.text = _LEARNING_ON_TEXT
+	_learning_state_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_learning_state_label.clip_text = true
+	_learning_state_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_learning_state_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	value_column.add_child(_learning_state_label)
 	container.add_child(row)
-	container.move_child(row, _section_memory.get_index())
+	container.move_child(row, neuron_row.get_index() + 1)
 	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
 		FeagiCore.feagi_local_cache.learning_frozen_changed.connect(_sync_learning_check)
 		_sync_learning_check()
@@ -2339,8 +2364,10 @@ func _sync_learning_check() -> void:
 	for area in _cortical_area_refs:
 		if FeagiCore.feagi_local_cache.is_memory_area_learning_frozen(area.cortical_ID):
 			learning_on = false
-	_learning_check.set_pressed_no_signal(learning_on)
+	_learning_check.set_toggle_no_signal(learning_on)
 	_learning_check.disabled = _learning_request_in_flight
+	if _learning_state_label != null:
+		_learning_state_label.text = _LEARNING_ON_TEXT if learning_on else _LEARNING_OFF_TEXT
 
 func _on_learning_check_toggled(learning_on: bool) -> void:
 	if _learning_request_in_flight:
