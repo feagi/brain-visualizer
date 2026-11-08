@@ -9,6 +9,11 @@ class_name MappingEditorRowGeneric
 
 ## Emitted when the learning sub-row is shown or hidden so the list can refit its height.
 signal sub_row_visibility_changed()
+## Emitted when the user flips the Learning checkbox. [param learning_on] is the requested new state.
+## The owner sends it to FEAGI and then pushes the confirmed state back with [method set_learning_state].
+signal learning_toggled(learning_on: bool)
+
+const LEARNING_TOOLTIP: String = "Learning on: this connection keeps learning. Turn off to keep what it has learned. Applies to this running brain only. Saved in brain snapshots, cleared when the genome is reloaded.\nCovers every learning rule between these two areas."
 
 # Indices match the OptionButton items in MappingEditorRowGeneric.tscn.
 const _MODE_OFF: int = 0
@@ -41,6 +46,13 @@ var _edit: TextureButton
 var _sub_row_top_gap: Control
 var _sub_row_bottom_gap: Control
 var _eligibility_gap: Control
+var _learning_check: ToggleButton
+## Label + toggle pair at the start of the learning sub-row; this is what is shown or hidden.
+var _learning_group: HBoxContainer
+var _learning_state_label: Label
+var _learning_gap: Control
+## True only when the owner knows the area pair (two cortical areas) and so can send the Learning request.
+var _learning_available: bool = false
 
 func _ready() -> void:
 	_main_row = $MainRow
@@ -67,6 +79,7 @@ func _ready() -> void:
 	_style_sub_row()
 	_build_sub_row_spacing()
 	_modulators.subscriptions_changed.connect(_refresh_reward_warning)
+	_build_learning_check()
 
 	# Populate the plasticity-mode dropdown. We do this in code (rather than in the .tscn)
 	# to match the convention used by the rest of the editor, where OptionButtons are
@@ -179,6 +192,69 @@ func _build_sub_row_spacing() -> void:
 		fields.move_child(gap, next_node.get_index())
 		if next_name == "EligibilityGroup":
 			_eligibility_gap = gap
+
+## Learning switch at the start of the learning sub-row: "Learning" label plus the same ToggleButton the memory area
+## window uses, so both places match. Hidden (not disabled) while Plasticity Mode is Off or when the area pair is
+## unknown. Built in code so the row scene and its Partial copy stay unchanged.
+func _build_learning_check() -> void:
+	const TOGGLE_SIZE: Vector2 = Vector2(40, 21) # matches the 486x256 toggle art; scaled with the UI theme
+	_learning_group = HBoxContainer.new()
+	_learning_group.name = "LearningGroup"
+	_learning_group.add_theme_constant_override(&"separation", 6)
+	_learning_group.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_learning_group.tooltip_text = LEARNING_TOOLTIP
+	_learning_group.visible = false
+	var label := Label.new()
+	label.text = "Learning"
+	label.mouse_filter = Control.MOUSE_FILTER_PASS
+	_learning_group.add_child(label)
+	_learning_check = ToggleButton.new()
+	_learning_check.name = "Learning"
+	_learning_check.theme_type_variation = &"ToggleButton"
+	_learning_check.ignore_texture_size = true
+	_learning_check.stretch_mode = TextureButton.STRETCH_SCALE
+	_learning_check.custom_minimum_size = TOGGLE_SIZE
+	_learning_check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_learning_check.button_pressed = true # ON = learns (default)
+	_learning_check.tooltip_text = LEARNING_TOOLTIP
+	_learning_check.toggled.connect(_on_learning_check_toggled)
+	_learning_group.add_child(_learning_check)
+	_learning_state_label = Label.new()
+	_learning_state_label.text = "On"
+	_learning_state_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	_learning_group.add_child(_learning_state_label)
+	var fields: HBoxContainer = $SubRow/Panel/Fields
+	fields.add_child(_learning_group)
+	fields.move_child(_learning_group, 0)
+	# Same 4px spacer + two 6px separations = 16px pair-to-pair gap as between Window/Constant/LTP/LTD.
+	_learning_gap = Control.new()
+	_learning_gap.name = "Gap_Learning"
+	_learning_gap.custom_minimum_size = Vector2(4, 0)
+	_learning_gap.visible = false
+	fields.add_child(_learning_gap)
+	fields.move_child(_learning_gap, 1)
+
+func _on_learning_check_toggled(learning_on: bool) -> void:
+	learning_toggled.emit(learning_on)
+
+## Owner call: whether this row can offer Learning (the area pair is known). Shown only while a plastic mode is selected.
+func set_learning_available(available: bool) -> void:
+	_learning_available = available
+	_refresh_learning_visibility()
+
+## Owner call: shows the confirmed state without emitting [signal learning_toggled].
+func set_learning_state(learning_on: bool) -> void:
+	_learning_check.set_toggle_no_signal(learning_on)
+	_learning_state_label.text = "On" if learning_on else "Off"
+
+## Owner call: blocks a second click while a request is in flight.
+func set_learning_busy(busy: bool) -> void:
+	_learning_check.disabled = busy
+
+func _refresh_learning_visibility() -> void:
+	if _learning_group != null:
+		_learning_group.visible = _learning_available and _sub_row != null and _sub_row.visible
+		_learning_gap.visible = _learning_group.visible
 
 ## Row of the editable columns that the table header aligns to (the sub-row is excluded).
 func get_main_row() -> HBoxContainer:
@@ -396,6 +472,7 @@ func _apply_mode_field_state(mode_index: int) -> void:
 	if _eligibility_gap != null:
 		_eligibility_gap.visible = rstdp_active
 	_eligibility_group.visible = rstdp_active
+	_refresh_learning_visibility()
 	_refresh_reward_warning()
 	if visibility_changed:
 		sub_row_visibility_changed.emit()

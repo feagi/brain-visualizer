@@ -90,6 +90,7 @@ custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = " Cancel "
+tooltip_text = "Close without applying any change to the mapping rules."
 
 [node name="ButtonSpacing" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/HBoxContainer"]
 custom_minimum_size = Vector2(16, 0)
@@ -100,6 +101,7 @@ custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
 text = " Set Mapping "
+tooltip_text = "Apply the mapping rules in this window to FEAGI. The Learning checkbox is separate and takes effect when clicked."
 
 [connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Source" to="." method="_source_button_picked"]
 [connection signal="object_selected" from="WindowPanel/WindowMargin/WindowInternals/ends/Destination" to="." method="_destination_button_picked"]

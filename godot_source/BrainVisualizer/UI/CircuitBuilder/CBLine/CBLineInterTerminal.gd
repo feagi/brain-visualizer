@@ -133,8 +133,9 @@ func _on_full_mapping_change(mapping_ref: InterCorticalMappingSet) -> void:
 		_request_dispose()
 		return
 	_button.text = "  " + str(mapping_ref.number_mappings) + "  "
-	_apply_polarity_color(mapping_ref.is_every_mapping_episodic(), mapping_ref.is_any_PSP_multiplier_negative(), 1.0)
+	_apply_polarity_color(mapping_ref.is_every_mapping_memory_kind(), mapping_ref.is_any_PSP_multiplier_negative(), 1.0)
 	set_line_dashing(mapping_ref.is_any_mapping_plastic())
+	set_line_wavy(mapping_ref.is_any_mapping_associative_memory())
 
 func _on_partial_mapping(partial_mapping: PartialMappingSet) -> void:
 	# Partial chains previously hardcoded "0", so every hint looked like a phantom even when rules existed.
@@ -142,8 +143,9 @@ func _on_partial_mapping(partial_mapping: PartialMappingSet) -> void:
 		_request_dispose()
 		return
 	_button.text = "  " + str(partial_mapping.number_mappings) + "  "
-	_apply_polarity_color(partial_mapping.is_every_mapping_episodic(), partial_mapping.is_any_PSP_multiplier_negative(), LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY)
+	_apply_polarity_color(partial_mapping.is_every_mapping_memory_kind(), partial_mapping.is_any_PSP_multiplier_negative(), LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY)
 	set_line_dashing(partial_mapping.is_any_mapping_plastic())
+	set_line_wavy(partial_mapping.is_any_mapping_associative_memory())
 
 ## Excitatory is green, inhibitory is red, and a fully episodic mapping set is yellow.
 func _apply_polarity_color(every_episodic: bool, any_inhibitory: bool, alpha: float) -> void:

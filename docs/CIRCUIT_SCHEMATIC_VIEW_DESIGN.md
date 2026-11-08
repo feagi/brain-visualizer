@@ -223,6 +223,28 @@ New frames are inserted before the layer, and new areas after it.
 - Hit testing for hover and click finds the nearest curve within 6 px of the cursor, using a simple
   spatial grid of line bounding boxes.
 
+**Hover dims the unrelated (implemented).** Hovering a cortical area box dims everything not related
+to it; the mouse leaving restores it. Only area boxes react, not classifier or region boxes.
+
+- Related = the directed closure: every item that reaches the hovered area through any chain of
+  mappings (upstream), plus every item it reaches (downstream), and only the mappings on those chains.
+  A mapping is lit when both its ends are in the forward set (hovered area included) or both are in the
+  backward set. With u->h, h->v and u->v, the u->v mapping stays dim. An item only reachable against an
+  arrow stays dim.
+- The graph is `SchematicModel.mappings`, already resolved to items by `SchematicTreeBuilder`
+  (the FEAGI cache is not read again). `SchematicReachability` builds forward and backward
+  adjacency once per model build. Closed regions and classifiers are single merged nodes in that graph,
+  so paths through them are approximate: they follow the merged ends, not the areas inside.
+- Unrelated boxes get alpha 0.25; unrelated lines and their count labels get alpha 0.2. Open region
+  frames never dim; a closed region or classifier box stays lit when it stands for a related item.
+  A line is lit when any mapping it merges is lit (`group_lines` returns those mapping indices as the
+  7th element).
+- `SchematicEdgeLayer.set_highlight()` regroups the stored per-line segments into lit and dim
+  batches (no new curves) and redraws. Hover state is held as the area object, so it is reapplied
+  after a rebuild or an open/close, and dropped if the area is gone or hidden.
+- The export never shows dimming: export-mode instances do not connect hover signals.
+- Mouse only; touch emulation is off.
+
 There are no per-line nodes, buttons or terminals. Line ends attach to the side of the target box
 (right edge for outputs, left edge for inputs), so no ports are needed.
 
@@ -281,7 +303,7 @@ Correctness checks:
 | 0. Spike (2-3 days) | Stress-genome generator. Prove the single-`_draw()` line layer sits under GraphElements and stays smooth. Test 1,500 GraphElements in a GraphEdit at the fps target. | Spike numbers written into this doc. Go or no-go on GraphEdit (fallback in §9). |
 | 1. Tree + layout | `SchematicTree`, `SchematicLayout`, pull out `LayeredGraphLayout` (CB layout unchanged). Static view of everything open, for testing only. | Layout tests pass. CB before/after positions identical. |
 | 2. Lazy loading | `SchematicLOD`, batched adds, node pool, node cap, coarse/full area looks. | §6 performance targets met on the stress genome. |
-| 3. Lines | `SchematicEdges` + `SchematicEdgeLayer`, merged counts, badges, hover tooltips. | Count check passes. Hover hit test works within 6 px. |
+| 3. Lines | `SchematicEdges` + `SchematicEdgeLayer`, merged counts, badges, hover tooltips, hover dim of unrelated items. | Count check passes. Hover hit test works within 6 px. |
 | 4. Interaction | Shared selection, double-click zoom, Open in CB, search fly-to, breadcrumb, pinning, top-bar button. | Manual walkthrough on a real genome. Selecting in the schematic highlights in the Brain Monitor. |
 | 5. Live updates | Signal hookup, stale-region relayout, reload keeps position. | Adding/removing an area or mapping through FEAGI updates the open schematic within 500 ms. |
 

@@ -34,8 +34,8 @@ func _sample() -> Dictionary:
 	ids.gait = model.add_item(SchematicModel.KIND.REGION, "gait", ids.motor)
 	ids.d = model.add_item(SchematicModel.KIND.AREA, "d", ids.gait, null, {"column": LayeredGraphLayout.COLUMN.OUTPUT})
 	model.add_mapping(ids.a, ids.b, SchematicModel.LINE_KIND.EXCITATORY)
-	model.add_mapping(ids.b, ids.c, SchematicModel.LINE_KIND.EXCITATORY)
-	model.add_mapping(ids.b, ids.d, SchematicModel.LINE_KIND.INHIBITORY)
+	model.add_mapping(ids.b, ids.c, SchematicModel.LINE_KIND.EXCITATORY, true, false)
+	model.add_mapping(ids.b, ids.d, SchematicModel.LINE_KIND.INHIBITORY, false, true)
 	model.add_mapping(ids.c, ids.d, SchematicModel.LINE_KIND.EXCITATORY)
 	model.add_mapping(ids.d, ids.d, SchematicModel.LINE_KIND.EXCITATORY) # recursive: ignored
 	model.finish()
@@ -88,6 +88,9 @@ func _test_lines_merge_at_closed_regions() -> int:
 	var line: Array = grouped.lines[0]
 	if line[0] != ids.vision or line[1] != ids.motor or line[2] != 2 or line[3] != SchematicModel.LINE_KIND.MIXED:
 		push_error("Merged line must be vision->motor x2 mixed, got %s" % [line])
+		failed = 1
+	if line.size() != 7 or line[6] != PackedInt32Array([1, 2]) or line[4] != true or line[5] != true:
+		push_error("Merged line must OR plastic and associative flags: %s" % [line])
 		failed = 1
 	if grouped.inside.get(ids.vision, 0) != 1 or grouped.inside.get(ids.motor, 0) != 1:
 		push_error("a->b hides in vision and c->d in motor: %s" % [grouped.inside])

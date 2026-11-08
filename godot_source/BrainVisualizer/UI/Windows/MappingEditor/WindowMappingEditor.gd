@@ -58,6 +58,8 @@ func setup(source: GenomeObject, destination: GenomeObject, partial_mapping: Par
 
 func set_ends(source: GenomeObject, destination: GenomeObject, partial_mapping: PartialMappingSet = null) -> void:
 	_classifier_destination = null
+	# Learning needs a plain cortical-area pair; cleared here, set again below for that case only.
+	_generic_mapping_settings.set_learning_pair(null, null)
 	if _reset_weights_button != null:
 		_reset_weights_button.disabled = not (source is AbstractCorticalArea and destination is AbstractCorticalArea)
 	_source_button.update_selection_no_signal(source)
@@ -144,6 +146,7 @@ func set_ends(source: GenomeObject, destination: GenomeObject, partial_mapping: 
 	else:
 		_generic_mapping_settings.visible = true
 		_memory_mapping_setting.visible = false
+		_generic_mapping_settings.set_learning_pair(source as AbstractCorticalArea, destination as AbstractCorticalArea)
 		_generic_mapping_settings.load_mappings(current_mappings, restrictions, defaults)
 
 

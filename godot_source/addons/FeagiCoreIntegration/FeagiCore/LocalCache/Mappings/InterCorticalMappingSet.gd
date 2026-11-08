@@ -85,6 +85,13 @@ func is_any_mapping_plastic() -> bool:
 			return true
 	return false
 
+## True when any mapping's rule is the associative memory morphology (a directed, learned link).
+func is_any_mapping_associative_memory() -> bool:
+	for mapping: SingleMappingDefinition in _mappings:
+		if mapping.morphology_used != null and mapping.morphology_used.name == &"associative_memory":
+			return true
+	return false
+
 ## Returns true if any mapping's PSP multiplier is positive
 func is_any_PSP_multiplier_positive() -> bool:
 	for mapping: SingleMappingDefinition in _mappings:
@@ -108,6 +115,16 @@ func is_every_mapping_episodic() -> bool:
 		return false
 	for mapping: SingleMappingDefinition in _mappings:
 		if not mapping.is_episodic_mapping():
+			return false
+	return true
+
+## True when every mapping's rule is episodic or the associative memory morphology (drawn yellow).
+func is_every_mapping_memory_kind() -> bool:
+	if _mappings.is_empty():
+		return false
+	for mapping: SingleMappingDefinition in _mappings:
+		var associative: bool = mapping.morphology_used != null and mapping.morphology_used.name == &"associative_memory"
+		if not mapping.is_episodic_mapping() and not associative:
 			return false
 	return true
 

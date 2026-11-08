@@ -413,10 +413,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4a07205888379459eb2c6c7896cee28d4074f354326ff7b8e0ec332b030ebe7"
 dependencies = [
  "base64",
- "feagi-io",
- "feagi-sensorimotor",
- "feagi-serialization",
- "feagi-structures",
+ "feagi-io 0.0.35",
+ "feagi-sensorimotor 0.0.35",
+ "feagi-serialization 0.0.35",
+ "feagi-structures 0.0.35",
+ "serde",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
+name = "feagi-agent"
+version = "0.0.56"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b09839806d0cdeb4c0d2fabf5330aa32eb46f27195e290a7942ded6d8a129605"
+dependencies = [
+ "base64",
+ "feagi-io 0.0.56",
+ "feagi-sensorimotor 0.0.56",
+ "feagi-serialization 0.0.56",
+ "feagi-structures 0.0.56",
  "serde",
  "serde_json",
  "tracing",
@@ -429,7 +445,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "588343716d9502e0c52da0de1157d2db16745950bc2a6c7ee35a1f74a9a4abbc"
 dependencies = [
  "base64",
- "feagi-serialization",
+ "feagi-serialization 0.0.35",
+ "getrandom 0.2.17",
+ "serde",
+ "tungstenite",
+ "zmq",
+]
+
+[[package]]
+name = "feagi-io"
+version = "0.0.56"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37be7ce583753fadf8ef8857dd51cd0399cdf1073d268ef3565148373d203347"
+dependencies = [
+ "base64",
+ "feagi-serialization 0.0.56",
  "getrandom 0.2.17",
  "serde",
  "tungstenite",
@@ -442,8 +472,25 @@ version = "0.0.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4ab5750fae9a41026fcc3efabd5e372a9f00f854d512d41e2142037c5f377f8"
 dependencies = [
- "feagi-serialization",
- "feagi-structures",
+ "feagi-serialization 0.0.35",
+ "feagi-structures 0.0.35",
+ "image",
+ "ndarray",
+ "paste",
+ "rayon",
+ "serde",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
+name = "feagi-sensorimotor"
+version = "0.0.56"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b2984e412e67b1d580c1c1ee3f3e5998b6e1423101b72e7c81fe4ff325d3ba2"
+dependencies = [
+ "feagi-serialization 0.0.56",
+ "feagi-structures 0.0.56",
  "image",
  "ndarray",
  "paste",
@@ -460,7 +507,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0182e66a7da7095330f7ae8fc8ca38fc79d7087878cbcffb6b27e9ef0d40574c"
 dependencies = [
  "byteorder",
- "feagi-structures",
+ "feagi-structures 0.0.35",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "feagi-serialization"
+version = "0.0.56"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7c7fd971258129a1ce7b7c0e49cf6e756ef1f4e8893f8fc2c997459d4d0c963"
+dependencies = [
+ "byteorder",
+ "feagi-structures 0.0.56",
  "serde",
  "serde_json",
 ]
@@ -481,13 +540,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "feagi-structures"
+version = "0.0.56"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d91920004ba7812faded95b9413bd803cce10a678a1d0d47aa09d17d39e352dc"
+dependencies = [
+ "base64",
+ "ndarray",
+ "paste",
+ "rayon",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "feagi_agent_client"
 version = "0.1.4"
 dependencies = [
  "base64",
- "feagi-agent",
- "feagi-io",
- "feagi-serialization",
+ "feagi-agent 0.0.35",
+ "feagi-agent 0.0.56",
+ "feagi-io 0.0.35",
+ "feagi-io 0.0.56",
+ "feagi-serialization 0.0.35",
  "godot",
 ]
 

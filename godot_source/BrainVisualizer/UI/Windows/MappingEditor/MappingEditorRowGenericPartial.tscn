@@ -55,6 +55,7 @@ texture_hover = ExtResource("5_n8ivj")
 texture_disabled = ExtResource("6_p1hfv")
 ignore_texture_size = true
 stretch_mode = 0
+tooltip_text = "Edit this morphology (connectivity rule): opens its parameters. Changes the wiring pattern between the two areas."
 
 [node name="Scalar" parent="MainRow" instance=ExtResource("7_jxrt1")]
 layout_mode = 2
@@ -107,6 +108,7 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("10_mpnb3")
 enable_autoscaling_with_theme = false
+tooltip_text = "Inhibitory toggle: ON makes every synapse of this mapping subtract (sign -1) instead of add; the drive is weight x PSP x sign."
 
 [node name="Modulators" type="HBoxContainer" parent="MainRow"]
 layout_mode = 2
@@ -119,7 +121,7 @@ layout_mode = 2
 size_flags_vertical = 4
 size_flags_horizontal = 0
 tooltip_text = "Plasticity mode for this rule:
-  Off    - synaptic weights are frozen
+  Off    - not plastic; the learning settings are removed
   STDP   - classical spike-timing dependent plasticity
   R-STDP - reward-modulated STDP (needs a synaptic.reward modulator subscribed)"
 clip_text = true
@@ -137,6 +139,7 @@ texture_hover = ExtResource("13_bhqih")
 texture_disabled = ExtResource("14_naw4t")
 ignore_texture_size = true
 stretch_mode = 0
+tooltip_text = "Add this rule to the mapping between the two areas."
 
 [node name="SubRow" type="HBoxContainer" parent="."]
 visible = false

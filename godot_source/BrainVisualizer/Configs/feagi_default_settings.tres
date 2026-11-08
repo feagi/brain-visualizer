@@ -6,6 +6,8 @@
 script = ExtResource("1_6xmmx")
 seconds_between_latency_pings = 5.0
 seconds_between_healthcheck_pings = 5.0
+seconds_between_agent_heartbeats = 5.0
+max_missed_agent_heartbeat_acks = 3
 number_of_times_to_retry_HTTP_connections = 5
 number_of_times_to_retry_WS_connections = 500
 allow_developer_menu = false

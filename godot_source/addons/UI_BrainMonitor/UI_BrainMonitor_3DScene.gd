@@ -11,6 +11,7 @@ const QuickConnectDestinationPickLib = preload("res://BrainVisualizer/UI/Windows
 const IsolatedAreaInspectLib = preload("res://addons/UI_BrainMonitor/IsolatedAreaInspect.gd")
 const GenomeClassifierLib = preload("res://addons/FeagiCoreIntegration/FeagiCore/LocalCache/Classifiers/GenomeClassifier.gd")
 const MappingHoverHold = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_MappingHoverHold.gd")
+const ExternalRegionIOLib = preload("res://addons/UI_BrainMonitor/ExternalRegionIO.gd")
 
 @export var multi_select_key: Key = KEY_SHIFT
 
@@ -4788,11 +4789,49 @@ func _quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vecto
 #region Invariant core cluster layout (power anchor + fixed row; binder plate)
 
 func _can_apply_core_cluster_layout() -> bool:
+	return _monitor_is_root_scene()
+
+
+## True for the root 3D scene. External-connection plates stay off this scene.
+## Uses the same test as the core row: live root id, or a top-level region whose parent is null
+## when [method BrainRegion.is_root_region] still disagrees with that id.
+func _monitor_is_root_scene() -> bool:
 	if _representing_region == null:
 		return false
-	if _brain_monitor_viewing_feagi_root_region():
-		return true
-	return _representing_region.current_parent_region == null
+	return ExternalRegionIOLib.monitor_is_root_scene(
+		_brain_monitor_viewing_feagi_root_region(),
+		_representing_region.current_parent_region == null
+	)
+
+
+## IPU and OPU volumes on the root scene. A drifted parent id must not hide them.
+func _should_show_root_io_volume(area: AbstractCorticalArea) -> bool:
+	if area == null:
+		return false
+	var is_io := (
+		area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU
+		or area.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU
+	)
+	return ExternalRegionIOLib.should_draw_io_volume_on_monitor(_monitor_is_root_scene(), false, is_io)
+
+
+## Draws every live IPU and OPU on the root scene. Returns true when a volume was missing.
+func _add_root_io_volumes_from_cache() -> bool:
+	if not _monitor_is_root_scene():
+		return false
+	if _node_3D_root == null or FeagiCore == null or FeagiCore.feagi_local_cache == null:
+		return false
+	if FeagiCore.feagi_local_cache.cortical_areas == null:
+		return false
+	var added_any := false
+	for ca in FeagiCore.feagi_local_cache.cortical_areas.available_cortical_areas.values():
+		var area := ca as AbstractCorticalArea
+		if not _should_show_root_io_volume(area):
+			continue
+		if area.cortical_ID not in _cortical_visualizations_by_ID:
+			added_any = true
+		_add_cortical_area(area)
+	return added_any
 
 func _find_power_core_area_in_cache() -> AbstractCorticalArea:
 	if FeagiCore == null or FeagiCore.feagi_local_cache == null:
@@ -5047,9 +5086,10 @@ func _add_cortical_area(area: AbstractCorticalArea, allow_external: bool = false
 	var is_io_of_this_region = _is_area_input_output_of_region(area)
 	# Reserved system core areas (power, death, fatigue, ...) when parented under FEAGI root or monitor shows root plate.
 	var is_special_invariant_core: bool = _should_show_feagi_invariant_core_in_this_monitor(area)
+	var is_root_io_volume: bool = _should_show_root_io_volume(area)
 
-	# Create if: direct member of this circuit, an I/O bridge, or an invariant core on the root monitor.
-	if not isolated_target and not allow_external and not is_subtree_ok and not is_io_of_child_region and not is_io_of_this_region and not is_special_invariant_core:
+	# Create if: direct member of this circuit, an I/O bridge, a root IPU/OPU, or an invariant core on the root monitor.
+	if not isolated_target and not allow_external and not is_subtree_ok and not is_io_of_child_region and not is_io_of_this_region and not is_special_invariant_core and not is_root_io_volume:
 		return null
 
 	var rendering_area: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
@@ -5179,8 +5219,10 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 	_schedule_core_cluster_layout_refresh()
 
 func _ensure_external_io_plates() -> void:
-	if _representing_region == null or _node_3D_root == null or _representing_region.is_root_region():
+	if _representing_region == null or _node_3D_root == null or not ExternalRegionIOLib.should_build_external_io_plates(_monitor_is_root_scene()):
 		_clear_external_io_plates()
+		if _node_3D_root != null and _monitor_is_root_scene():
+			_add_root_io_volumes_from_cache()
 		return
 	if _external_io_plates != null and is_instance_valid(_external_io_plates):
 		var bound: BrainRegion = _external_io_plates.representing_region
@@ -5640,8 +5682,9 @@ func _add_missing_cortical_area_visualizations() -> void:
 		var is_io_child = _is_area_input_output_of_child_region(area)
 		var is_io_self = _is_area_input_output_of_region(area)
 		var is_reserved_core: bool = _should_show_feagi_invariant_core_in_this_monitor(area)
+		var is_root_io_volume: bool = _should_show_root_io_volume(area)
 		var kept_on_external_plates: bool = _external_io_plates != null and is_instance_valid(_external_io_plates) and _external_io_plates.holds_external_area(area)
-		if not subtree_keeps_viz and not is_io_child and not is_io_self and not is_reserved_core and not kept_on_external_plates:
+		if not subtree_keeps_viz and not is_io_child and not is_io_self and not is_reserved_core and not is_root_io_volume and not kept_on_external_plates:
 			_remove_cortical_area(area)
 
 	# Add areas directly in this region
@@ -5710,6 +5753,9 @@ func _add_missing_cortical_area_visualizations() -> void:
 			if _should_show_feagi_invariant_core_in_this_monitor(area):
 				added_any = true
 				_add_cortical_area(area)
+
+	if _add_root_io_volumes_from_cache():
+		added_any = true
 
 	if added_any:
 		# Preserve user camera state during cache-driven add/remove updates.

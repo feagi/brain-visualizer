@@ -41,7 +41,7 @@ static func build_from_cache() -> SchematicModel:
 			var to: int = _item_for(destination, index_of, cache)
 			if from == -1 or to == -1:
 				continue
-			model.add_mapping(from, to, _line_kind(mapping_set))
+			model.add_mapping(from, to, _line_kind(mapping_set), mapping_set.is_any_mapping_plastic(), mapping_set.is_any_mapping_associative_memory())
 	model.finish()
 	return model
 
@@ -85,9 +85,9 @@ static func _item_for(object: GenomeObject, index_of: Dictionary, cache: FEAGILo
 	return -1
 
 
-## Matches Circuit Builder's line colours: episodic first, then any negative weight, else excitatory.
+## Matches Circuit Builder's line colours: episodic or associative memory first, then any negative weight, else excitatory.
 static func _line_kind(mapping_set: InterCorticalMappingSet) -> SchematicModel.LINE_KIND:
-	if mapping_set.is_every_mapping_episodic():
+	if mapping_set.is_every_mapping_memory_kind():
 		return SchematicModel.LINE_KIND.EPISODIC
 	if mapping_set.is_any_PSP_multiplier_negative():
 		return SchematicModel.LINE_KIND.INHIBITORY

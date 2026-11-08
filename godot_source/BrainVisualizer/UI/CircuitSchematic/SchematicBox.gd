@@ -6,6 +6,9 @@ class_name SchematicBox
 
 signal double_clicked(item_index: int)
 signal shift_clicked(item_index: int)
+## Mouse enters or leaves an area box (never emitted for classifiers or regions).
+signal hovered(item_index: int)
+signal unhovered(item_index: int)
 
 enum LOOK { LEAF, BLOCK, FRAME }
 
@@ -17,6 +20,8 @@ const SUBTEXT_COLOR: Color = Color(0.72, 0.75, 0.82)
 const TITLE_FONT_SIZE: int = 18
 const SUBTITLE_FONT_SIZE: int = 14
 const LEAF_FONT_SIZE: int = 16
+## Alpha of a box that is not related to the hovered area.
+const DIM_ALPHA: float = 0.25
 
 var item_index: int = -1
 var look: LOOK = LOOK.LEAF
@@ -69,7 +74,15 @@ func setup(index: int, item: Dictionary, box_look: LOOK, hidden_mappings: int) -
 	if look != LOOK.LEAF and not item["closed_only"]:
 		tip += "\nShift-click to open in Circuit Builder and Brain Monitor"
 	tooltip_text = tip
+	if look == LOOK.LEAF and item["object"] is AbstractCorticalArea:
+		mouse_entered.connect(hovered.emit.bind(index))
+		mouse_exited.connect(unhovered.emit.bind(index))
 	queue_redraw()
+
+
+## Dims the box (alpha 0.25) when [param lit] is false. Open frames never dim.
+func set_lit(lit: bool) -> void:
+	modulate.a = 1.0 if lit or look == LOOK.FRAME else DIM_ALPHA
 
 
 func _draw() -> void:

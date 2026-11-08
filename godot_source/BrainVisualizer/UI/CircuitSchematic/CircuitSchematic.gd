@@ -3,7 +3,10 @@ class_name CircuitSchematic
 ## Read-only view of the whole genome in one scene. Every brain region is a box around its contents:
 ## the root is open, its regions start as closed blocks, and double-clicking a block opens it in place
 ## (the header of an open frame closes it again); Show all and Hide all open or close every region at
-## once. Shift-clicking a region opens it in Circuit Builder
+## once. Hovering a cortical area box dims everything not related to it: the areas upstream that reach it
+## and downstream that it reaches through any chain of mappings, and only the mappings on those chains
+## (see [SchematicReachability]); the mouse leaving restores everything. Region frames never dim, and the
+## export never shows the dimming. Shift-clicking a region opens it in Circuit Builder
 ## and Brain Monitor, and the Export menu saves the whole view as PNG, JPG or PDF. Mappings are merged
 ## into one line per pair of visible ends, with a count when more than one mapping is merged. Editing
 ## stays in Circuit Builder.
@@ -47,6 +50,10 @@ var _order: Array = [] ## child order: open frames, the line layer, then the oth
 var _edge_layer: SchematicEdgeLayer
 var _rebuild_timer: Timer
 var _fit_pending: bool = true
+var _reachability: SchematicReachability
+var _item_of_area: Dictionary = {} ## AbstractCorticalArea -> item index
+## The area box under the mouse. Held as the object, not an index, so it survives rebuilds.
+var _hovered_area: AbstractCorticalArea
 
 
 func _ready() -> void:
@@ -96,6 +103,12 @@ func rebuild() -> void:
 		remove_child(box)
 		box.queue_free()
 	_boxes.clear()
+	_hovered_area = null
+	_reachability = SchematicReachability.new(_model)
+	_item_of_area.clear()
+	for i in _model.items.size():
+		if _model.items[i]["object"] is AbstractCorticalArea:
+			_item_of_area[_model.items[i]["object"]] = i
 	set_open_region_ids(open_ids)
 	if first_build and not export_mode:
 		request_initial_fit()
@@ -174,6 +187,9 @@ func _sync_nodes() -> void:
 		box.raise_request.connect(_restore_order, CONNECT_DEFERRED)
 		box.double_clicked.connect(_on_box_double_clicked)
 		box.shift_clicked.connect(_on_box_shift_clicked)
+		if not export_mode:
+			box.hovered.connect(_on_box_hovered)
+			box.unhovered.connect(_on_box_unhovered)
 		_boxes[index] = box
 	_order.clear()
 	for index in visible:
@@ -185,6 +201,49 @@ func _sync_nodes() -> void:
 			_order.append(_boxes[index])
 	_restore_order()
 	_edge_layer.set_lines(_model, grouped.lines)
+	_apply_highlight(grouped.lines)
+
+
+func _on_box_hovered(item_index: int) -> void:
+	var object: Object = _model.items[item_index]["object"]
+	if not object is AbstractCorticalArea:
+		return
+	_hovered_area = object as AbstractCorticalArea
+	_apply_highlight(_model.group_lines(_open).lines)
+
+
+func _on_box_unhovered(item_index: int) -> void:
+	if _hovered_area == null or _item_of_area.get(_hovered_area, -1) != item_index:
+		return
+	_hovered_area = null
+	_apply_highlight(_model.group_lines(_open).lines)
+
+
+## Dims every box and line not related to the hovered area, or lights everything when none is hovered.
+## A box is lit when the item it shows (an item, or the closed region or classifier that stands for it)
+## is related. Open frames are never dimmed. [param lines] is from [method SchematicModel.group_lines].
+func _apply_highlight(lines: Array) -> void:
+	var hovered_item: int = _item_of_area.get(_hovered_area, -1) if _hovered_area != null else -1
+	if hovered_item == -1 or not _boxes.has(hovered_item):
+		_hovered_area = null
+		for box: SchematicBox in _boxes.values():
+			box.set_lit(true)
+		_edge_layer.set_highlight(null)
+		return
+	var related: Dictionary = _reachability.related_to(hovered_item)
+	var lit_ends: Dictionary = {}
+	for item: int in related.items:
+		lit_ends[_model.visible_end(item, _open)] = true
+	for index: int in _boxes:
+		(_boxes[index] as SchematicBox).set_lit(lit_ends.has(index))
+	var lit_lines: PackedByteArray = PackedByteArray()
+	lit_lines.resize(lines.size())
+	for i in lines.size():
+		for mapping_index: int in lines[i][6]:
+			if related.mappings.has(mapping_index):
+				lit_lines[i] = 1
+				break
+	_edge_layer.set_highlight(lit_lines)
 
 
 ## Open frames first (parents before children), then the line layer, then every other box.

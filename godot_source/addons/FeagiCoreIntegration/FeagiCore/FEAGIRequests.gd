@@ -2635,6 +2635,67 @@ func reset_mapping_weights(src: AbstractCorticalArea, dst: AbstractCorticalArea)
 		push_error("FEAGI Requests: Unable to reset mapping weights!")
 	return FEAGI_response_data
 
+## Reads which memory areas and which area-to-area mappings have learning turned off on the running brain,
+## and refreshes the local cache. A failed read is logged and leaves the cache as it was.
+func refresh_learning_frozen() -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_GET_call(FeagiCore.network.http_API.address_list.GET_connectome_learningFrozen)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		_log_learning_call_failure("read learning state", FEAGI_response_data)
+		return FEAGI_response_data
+	var body: Dictionary = FEAGI_response_data.decode_response_as_dict()
+	var memory_ids: Array = body.get("memory_areas", []) if body.get("memory_areas", []) is Array else []
+	var mapping_pairs: Array = body.get("mappings", []) if body.get("mappings", []) is Array else []
+	FeagiCore.feagi_local_cache.update_learning_frozen(memory_ids, mapping_pairs)
+	return FEAGI_response_data
+
+## Turns learning off (frozen = true) or on for every plastic rule between two areas on the running brain,
+## then refreshes the cache. Not stored in the genome or the mapping rules.
+func set_mapping_plasticity_frozen(src: AbstractCorticalArea, dst: AbstractCorticalArea, frozen: bool) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var dict_to_send: Dictionary = {
+		"src_cortical_area": String(src.cortical_ID),
+		"dst_cortical_area": String(dst.cortical_ID),
+		"frozen": frozen
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalMapping_plasticityFrozen, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		_log_learning_call_failure("set mapping learning", FEAGI_response_data)
+		return FEAGI_response_data
+	await refresh_learning_frozen()
+	return FEAGI_response_data
+
+## Turns learning off (frozen = true) or on for one memory area on the running brain, then refreshes the cache.
+## FEAGI answers 400 for non-memory areas. Not stored in the genome.
+func set_memory_area_learning_frozen(area: AbstractCorticalArea, frozen: bool) -> FeagiRequestOutput:
+	if !FeagiCore.can_interact_with_feagi():
+		return FeagiRequestOutput.requirement_fail("NOT_READY")
+	var dict_to_send: Dictionary = {
+		"cortical_area": String(area.cortical_ID),
+		"frozen": frozen
+	}
+	var FEAGI_request: APIRequestWorkerDefinition = APIRequestWorkerDefinition.define_single_PUT_call(FeagiCore.network.http_API.address_list.PUT_corticalArea_learningFrozen, dict_to_send)
+	var HTTP_FEAGI_request_worker: APIRequestWorker = FeagiCore.network.http_API.make_HTTP_call(FEAGI_request)
+	await HTTP_FEAGI_request_worker.worker_done
+	var FEAGI_response_data: FeagiRequestOutput = HTTP_FEAGI_request_worker.retrieve_output_and_close()
+	if _return_if_HTTP_failed_and_automatically_handle(FEAGI_response_data):
+		_log_learning_call_failure("set memory area learning", FEAGI_response_data)
+		return FEAGI_response_data
+	await refresh_learning_frozen()
+	return FEAGI_response_data
+
+## Logs a failed learning call (status + body) for developers; the UI shows only a plain message.
+func _log_learning_call_failure(what: String, output: FeagiRequestOutput) -> void:
+	push_error("FEAGI Requests: Unable to %s (HTTP %d, timed out: %s): %s" % [what, output.response_code, str(output.has_timed_out), output.decode_response_as_string()])
+
 ## Reset learned synapse weights of ALL incoming mappings of each given area.
 ## Response: {results: [{cortical_id, mappings_reset, synapses_reset}]}.
 func reset_area_incoming_weights(cortical_areas: Array[AbstractCorticalArea]) -> FeagiRequestOutput:

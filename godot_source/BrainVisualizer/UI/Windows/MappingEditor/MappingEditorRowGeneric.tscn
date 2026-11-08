@@ -120,7 +120,7 @@ script = ExtResource("mod_chips")
 layout_mode = 2
 size_flags_vertical = 4
 size_flags_horizontal = 0
-tooltip_text = "Plasticity mode for this mapping (changes synapse WEIGHT only, never PSP):\n  Off    - weights stay fixed\n  STDP   - trace is rebuilt each burst; weight += eta x trace\n  R-STDP - trace persists (decays by Eligibility Decay); weight += eta x (reward - punishment) x trace. Needs a synaptic.reward modulator."
+tooltip_text = "Plasticity mode for this mapping (changes synapse WEIGHT only, never PSP):\n  Off    - not plastic; the learning settings are removed\n  STDP   - trace is rebuilt each burst; weight += eta x trace\n  R-STDP - trace persists (decays by Eligibility Decay); weight += eta x (reward - punishment) x trace. Needs a synaptic.reward modulator."
 clip_text = true
 fit_to_longest_item = false
 

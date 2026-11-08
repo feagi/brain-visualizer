@@ -31,6 +31,10 @@ var _established_scroll_viewport: Control
 var _header_row_wrapper: HBoxContainer
 var _scroll: ScrollSectionGeneric
 var _empty_state: VBoxContainer
+## Area pair whose learning state the rows show; null when the pair is unknown (classifier, region partials).
+var _learning_source: AbstractCorticalArea = null
+var _learning_destination: AbstractCorticalArea = null
+var _learning_request_in_flight: bool = false
 
 func _ready() -> void:
 	_established_scroll_viewport = $EstablishedScrollViewport
@@ -89,6 +93,54 @@ func _apply_header_column_layout() -> void:
 func clear() -> void:
 	_scroll.remove_all_items()
 
+## Tells the rows which area pair they belong to so the Learning checkbox can act on it (null clears it).
+## Set before [method load_mappings]. Refreshes the frozen sets from FEAGI, then syncs every row.
+func set_learning_pair(source: AbstractCorticalArea, destination: AbstractCorticalArea) -> void:
+	_learning_source = source
+	_learning_destination = destination
+	_sync_learning_rows()
+	if source == null or destination == null or FeagiCore == null or FeagiCore.requests == null:
+		return
+	if not FeagiCore.feagi_local_cache.learning_frozen_changed.is_connected(_sync_learning_rows):
+		FeagiCore.feagi_local_cache.learning_frozen_changed.connect(_sync_learning_rows)
+	await FeagiCore.requests.refresh_learning_frozen()
+	_sync_learning_rows()
+
+func _all_rows() -> Array[MappingEditorRowGeneric]:
+	var rows: Array[MappingEditorRowGeneric] = []
+	for item in _scroll.get_all_spawned_children_of_container():
+		var row := item.get_control() as MappingEditorRowGeneric
+		if row != null:
+			rows.append(row)
+	return rows
+
+## Shows the cached per-pair state on every row (flipping one row flips them all).
+func _sync_learning_rows() -> void:
+	var has_pair: bool = _learning_source != null and _learning_destination != null
+	var learning_on: bool = true
+	if has_pair:
+		learning_on = not FeagiCore.feagi_local_cache.is_mapping_plasticity_frozen(_learning_source.cortical_ID, _learning_destination.cortical_ID)
+	for row in _all_rows():
+		_apply_learning_to_row(row, has_pair, learning_on)
+
+func _apply_learning_to_row(row: MappingEditorRowGeneric, has_pair: bool, learning_on: bool) -> void:
+	row.set_learning_available(has_pair)
+	row.set_learning_state(learning_on)
+	row.set_learning_busy(_learning_request_in_flight)
+
+## Row checkbox flipped: PUT, then refresh. On failure every row goes back to the cached state and a plain message shows.
+func _on_row_learning_toggled(learning_on: bool) -> void:
+	if _learning_source == null or _learning_destination == null or _learning_request_in_flight:
+		_sync_learning_rows()
+		return
+	_learning_request_in_flight = true
+	_sync_learning_rows() # pushes the busy flag to every row
+	var out: FeagiRequestOutput = await FeagiCore.requests.set_mapping_plasticity_frozen(_learning_source, _learning_destination, not learning_on)
+	_learning_request_in_flight = false
+	if out == null or not out.success:
+		BV.NOTIF.add_notification("Could not change learning for this connection. Try again.")
+	_sync_learning_rows() # on success the cache was refreshed by the request; on failure it reverts the toggle
+
 func load_mappings(mappings: Array[SingleMappingDefinition], restrictions: MappingRestrictionCorticalMorphology, defaults: MappingRestrictionDefault) -> void:
 	clear()
 	_restrictions = restrictions
@@ -134,8 +186,10 @@ func _import_single_mapping_no_refit(mapping: SingleMappingDefinition) -> void:
 	var item: ScrollSectionGenericItem = _scroll.add_generic_item(row, null, "") #NOTE: Doing this first so _ready has a chance to run
 	row.sub_row_visibility_changed.connect(_queue_refit_established_scroll_viewport)
 	row.minimum_size_changed.connect(_queue_refit_established_scroll_viewport)
+	row.learning_toggled.connect(_on_row_learning_toggled)
 	row.load_settings(_restrictions, _defaults)
 	row.load_mapping(mapping)
+	_sync_learning_rows()
 	item.about_to_be_deleted.connect(_on_row_deletion)
 
 func _add_mapping_row() -> void:
@@ -145,7 +199,9 @@ func _add_mapping_row() -> void:
 	item.about_to_be_deleted.connect(_on_row_deletion)
 	row.sub_row_visibility_changed.connect(_queue_refit_established_scroll_viewport)
 	row.minimum_size_changed.connect(_queue_refit_established_scroll_viewport)
+	row.learning_toggled.connect(_on_row_learning_toggled)
 	row.load_settings(_restrictions, _defaults)
+	_sync_learning_rows()
 	if _restrictions != null and _restrictions.has_max_number_mappings():
 		_add_button.disabled = _restrictions.max_number_mappings >= _scroll.get_item_count()
 	_queue_refit_established_scroll_viewport()

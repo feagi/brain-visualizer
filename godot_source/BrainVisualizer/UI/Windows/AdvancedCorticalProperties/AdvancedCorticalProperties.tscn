@@ -561,6 +561,7 @@ texture_hover = ExtResource("6_cyt0s")
 texture_disabled = ExtResource("7_8r6dk")
 ignore_texture_size = true
 stretch_mode = 0
+tooltip_text = "Show or hide the memory settings."
 
 [node name="PanelContainer" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals/Memory/VerticalCollapsible"]
 layout_mode = 2
@@ -715,6 +716,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Apply Update"
+tooltip_text = "Send the changed memory settings to FEAGI. The Learning checkbox is separate and takes effect when clicked."
 
 [node name="Neuron_Firing" type="PanelContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2

@@ -54,8 +54,9 @@ static func mapping_entries(for_schematic: bool) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = [
 		{"label": "Excitatory", "color": CBLineInterTerminal.LINE_COLOR_PSPP, "dashed": false, "tip": "A mapping that excites its destination. Solid green."},
 		{"label": "Inhibitory", "color": CBLineInterTerminal.LINE_COLOR_PSPN, "dashed": false, "tip": "A mapping with a negative weight, unless every rule on it is episodic. Solid red."},
-		{"label": "Episodic", "color": CBLineInterTerminal.LINE_COLOR_EPISODIC, "dashed": false, "tip": "Every rule on the mapping is episodic. Solid yellow, ahead of the red inhibitory color."},
+		{"label": "Episodic", "color": CBLineInterTerminal.LINE_COLOR_EPISODIC, "dashed": false, "tip": "Every rule on the mapping is episodic or associative memory. Yellow, ahead of the red inhibitory color."},
 		{"label": "Plastic", "color": CBLineInterTerminal.LINE_COLOR_PSPP, "dashed": true, "tip": "At least one rule on the mapping can learn. The line is dashed. Its color is still excitatory, inhibitory, or episodic."},
+		{"label": "Associative", "color": CBLineInterTerminal.LINE_COLOR_EPISODIC, "dashed": true, "wavy": true, "tip": "At least one rule on the mapping is associative memory. The line is wavy and dashed. Yellow, like episodic, when every rule is memory."},
 	]
 	if for_schematic:
 		rows.append({"label": "Mixed", "color": SchematicEdgeLayer.MIXED_COLOR, "dashed": false, "tip": "One schematic line stands for mappings of more than one kind. Solid gray."})
@@ -145,6 +146,7 @@ func _line_row(entry: Dictionary) -> HBoxContainer:
 	var mark := LineMark.new()
 	mark.line_color = entry["color"]
 	mark.dashed = entry["dashed"]
+	mark.wavy = bool(entry.get("wavy", false))
 	mark.custom_minimum_size = Vector2(28, SWATCH)
 	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -180,23 +182,28 @@ func _row(entry: Dictionary) -> HBoxContainer:
 
 
 class LineMark extends Control:
-	## A short solid or dashed sample of a mapping line.
+	## A short sample of a mapping line, drawn with [MappingLineStyle] like the real lines.
+
+	const SAMPLE_POINTS: int = 24
+	const WAVE_AMPLITUDE: float = 3.0
+	const WAVE_LENGTH: float = 10.0
+	const DASH_LENGTH: float = 5.0
+	const DASH_GAP: float = 3.0
 
 	var line_color: Color = Color.WHITE
 	var dashed: bool = false
+	var wavy: bool = false
 
 	func _draw() -> void:
 		var y := size.y * 0.5
-		if not dashed:
-			draw_line(Vector2(0, y), Vector2(size.x, y), line_color, 2.0)
-			return
-		var x := 0.0
-		var draw_on := true
-		while x < size.x:
-			var step := 5.0 if draw_on else 3.0
-			var next := minf(x + step, size.x)
-			if draw_on:
-				draw_line(Vector2(x, y), Vector2(next, y), line_color, 2.0)
-			x = next
-			draw_on = not draw_on
-
+		var points := PackedVector2Array()
+		for i in SAMPLE_POINTS:
+			points.append(Vector2(size.x * float(i) / float(SAMPLE_POINTS - 1), y))
+		if wavy:
+			points = MappingLineStyle.wave_points(points, WAVE_AMPLITUDE, WAVE_LENGTH)
+		if dashed or wavy:
+			var segments := MappingLineStyle.dash_segments(points, DASH_LENGTH, DASH_GAP)
+			if not segments.is_empty():
+				draw_multiline(segments, line_color, 2.0)
+		else:
+			draw_polyline(points, line_color, 2.0)

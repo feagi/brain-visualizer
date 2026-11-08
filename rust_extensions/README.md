@@ -83,6 +83,18 @@ Deployment targets:
 - `feagi_shared_video` -> `addons/feagi_shared_video`
 - `feagi_agent_client` -> `addons/FeagiCoreIntegration` (including Windows `target/x86_64-pc-windows-msvc/{debug,release}` paths)
 
+### feagi_agent_client heartbeat
+
+After `register_via_websocket(url, descriptor, token, heartbeat_interval_s, max_missed_heartbeat_acks)`
+succeeds, a background worker owned by the `FeagiAgentClient` instance keeps the registered
+session alive: one heartbeat in flight, the next sent only after FEAGI's ack. Both settings come from
+BV config (`FeagiGeneralSettings`) and must be > 0; there are no defaults. The worker marks the session
+dead after `max_missed_heartbeat_acks` consecutive intervals without an ack or on a socket error;
+GDScript polls `is_heartbeat_alive()` / `get_heartbeat_error()` and re-registers. `stop_heartbeat()` (and
+dropping the client) stops the worker within one interval. The crate is desktop-only (no web entry in
+its `.gdextension`). Tests: `cargo test` in `feagi_agent_client` (unit tests plus an integration test
+against a real `feagi-agent` 0.0.56 server on an OS-assigned port).
+
 ### Manual Build (Advanced)
 
 If you need to build a specific extension manually:
