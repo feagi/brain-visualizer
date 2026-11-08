@@ -19,7 +19,7 @@ const LAYER_GAP: float = 120.0
 ## One Dictionary per item. Keys: kind, name, object, parent, children, depth, size, local, global,
 ## column, priority, saved_position, color, closed_only, area_count, region_count.
 var items: Array[Dictionary] = []
-## Each mapping as [source item, destination item, LINE_KIND].
+## Each mapping as [source item, destination item, LINE_KIND, plastic (0/1), associative (0/1)].
 var mappings: Array[PackedInt32Array] = []
 ## Per item: its ancestor regions, root first.
 var ancestors: Array[PackedInt32Array] = []
@@ -45,10 +45,10 @@ func add_item(kind: KIND, item_name: String, parent: int, object: Object = null,
 
 
 ## Mappings whose ends are the same item are not drawn and are ignored.
-func add_mapping(source: int, destination: int, line_kind: LINE_KIND) -> void:
+func add_mapping(source: int, destination: int, line_kind: LINE_KIND, plastic: bool = false, associative: bool = false) -> void:
 	if source == destination:
 		return
-	mappings.append(PackedInt32Array([source, destination, line_kind]))
+	mappings.append(PackedInt32Array([source, destination, line_kind, int(plastic), int(associative)]))
 
 
 func is_region(index: int) -> bool:
@@ -127,11 +127,14 @@ func visible_end(index: int, open: PackedByteArray) -> int:
 
 
 ## Merges mappings by their visible ends.
-## Returns {"lines": [[from, to, count, LINE_KIND]], "inside": {closed region: mappings hidden inside it}}.
+## Plastic and associative flags are ORed across the mappings a line merges.
+## Each line ends with the indices into [member mappings] that it merges.
+## Returns {"lines": [[from, to, count, LINE_KIND, plastic, associative, mapping indices]], "inside": {closed region: mappings hidden inside it}}.
 func group_lines(open: PackedByteArray) -> Dictionary:
 	var groups: Dictionary = {}
 	var inside: Dictionary = {}
-	for mapping in mappings:
+	for mapping_index in mappings.size():
+		var mapping: PackedInt32Array = mappings[mapping_index]
 		var from: int = visible_end(mapping[0], open)
 		var to: int = visible_end(mapping[1], open)
 		if from == to:
@@ -139,9 +142,12 @@ func group_lines(open: PackedByteArray) -> Dictionary:
 			continue
 		var key: int = from * items.size() + to
 		if not groups.has(key):
-			groups[key] = [from, to, 0, mapping[2]]
+			groups[key] = [from, to, 0, mapping[2], false, false, PackedInt32Array()]
 		var group: Array = groups[key]
 		group[2] += 1
+		group[6].append(mapping_index)
+		group[4] = group[4] or mapping[3] == 1
+		group[5] = group[5] or mapping[4] == 1
 		if group[3] != mapping[2]:
 			group[3] = LINE_KIND.MIXED
 	return {"lines": groups.values(), "inside": inside}

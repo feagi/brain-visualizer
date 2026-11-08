@@ -103,13 +103,13 @@ Encoded as a Boolean. A firing neuron is on. Silence is off. The size stays 1 x 
 
 Use this when you want the raw motion sensors, not a fused orientation. Acceleration, rotation rate, and magnetic field stay separate so the brain can learn each.
 
-Encoded as three areas. In order they are accelerometer, gyroscope, and magnetometer. Each area is three signed axes on X, and the signed percentage of that axis is encoded along Z. The default depth is 10.
+Encoded as three areas. In order they are accelerometer, gyroscope, and magnetometer. Each area holds three signed axes, and each axis takes two X columns: one for the positive amount and one for the negative amount, so one device is 6 columns wide. The amount is encoded along Z. The default depth is 10.
 
 #### Smart IMU
 
 Use this when the device, or the controller, has already fused the sensors into an orientation.
 
-Encoded as one area with four signed axes on X: w, x, y, and z of the unit quaternion. Each axis is a signed percentage along Z. The default depth is 10.
+Encoded as one area with four signed axes: w, x, y, and z of the unit quaternion. Each axis takes two X columns, positive then negative, so one device is 8 columns wide. The amount is encoded along Z. The default depth is 10.
 
 #### Cartesian Position Sensor
 
@@ -133,7 +133,7 @@ An output area is where the genome leaves the brain. Firing here is what a motor
 
 You choose a template in **Add Output Cortical Area**. Size rules match inputs: the template sets the shape, device count repeats width along X, and only the axes the template leaves open can be edited.
 
-Decoding uses the same layouts as encoding. The controller looks at which neurons fired and rebuilds the command. A quiet output is a zero command, a blank image, or no token, depending on the template.
+Decoding uses the same layouts as encoding. The controller looks at which neurons fired and rebuilds the command. What a quiet output means depends on the template. Percentage outputs, such as motors, servos, counts and pointers in absolute mode, keep their last value until a neuron fires again. An incremental column that stays quiet adds no motion. Audio is silent, and text emits no token.
 
 **Output templates**
 

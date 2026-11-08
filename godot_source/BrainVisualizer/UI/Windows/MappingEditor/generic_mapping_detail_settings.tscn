@@ -34,6 +34,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_type_variation = &"Button_big"
 text = " Add First Mapping "
+tooltip_text = "Add the first mapping rule between these two areas."
 
 [node name="HeaderGapTop" type="Control" parent="."]
 custom_minimum_size = Vector2(0, 4)

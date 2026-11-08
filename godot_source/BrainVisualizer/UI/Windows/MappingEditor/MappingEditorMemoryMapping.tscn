@@ -195,6 +195,7 @@ vertical_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"HBoxContainer_farther"
+tooltip_text = "Learning for this memory is set on the memory area's Learning switch."
 
 [node name="MappingDefinitionGroup" type="HBoxContainer" parent="RowContainer"]
 layout_mode = 2
@@ -308,6 +309,7 @@ disabled = true
 modulate = Color(0.5, 0.5, 0.5, 1)
 script = ExtResource("7_3sy0c")
 enable_autoscaling_with_theme = false
+tooltip_text = "Learning for this memory is set on the memory area's Learning switch."
 
 [node name="Spacer_AfterPlasticity" type="Control" parent="RowContainer"]
 custom_minimum_size = Vector2(8, 0)

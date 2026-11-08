@@ -2298,6 +2298,67 @@ func _init_memory() -> void:
 		_dropdown_ltm_eviction.option_changed.connect(_on_ltm_eviction_changed)
 	
 	_button_memory_send.pressed.connect(_send_update.bind(_button_memory_send))
+	_init_learning_row()
+
+## Learning on/off for memory areas, shown above the Memory Tunables panel (always visible). Runtime state of the running
+## brain, not a genome property, so it applies at once (PUT, then refresh) and is not part of "Apply Update".
+## Row is built in code to keep the scene untouched.
+const _LEARNING_TOOLTIP: String = "Learning on: this memory area keeps learning. Turn off to keep what it has learned. Applies to this running brain only. Saved in brain snapshots, cleared when the genome is reloaded."
+var _learning_check: CheckBox
+var _learning_request_in_flight: bool = false
+
+func _init_learning_row() -> void:
+	if _learning_check != null or _section_memory == null:
+		return
+	var row := HBoxContainer.new()
+	row.name = "learning"
+	row.tooltip_text = _LEARNING_TOOLTIP
+	var label := Label.new()
+	label.text = "Learning"
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+	_learning_check = CheckBox.new()
+	_learning_check.button_pressed = true # ON = learns (default)
+	_learning_check.tooltip_text = _LEARNING_TOOLTIP
+	_learning_check.toggled.connect(_on_learning_check_toggled)
+	row.add_child(_learning_check)
+	# Sits just above the Memory Tunables panel, outside it, so it stays visible in simple mode too.
+	var container: Node = _section_memory.get_parent()
+	container.add_child(row)
+	container.move_child(row, _section_memory.get_index())
+	if FeagiCore != null and FeagiCore.feagi_local_cache != null:
+		FeagiCore.feagi_local_cache.learning_frozen_changed.connect(_sync_learning_check)
+		_sync_learning_check()
+		await FeagiCore.requests.refresh_learning_frozen() # refresh on window open
+
+## Learning shows ON only when none of the selected memory areas is frozen.
+func _sync_learning_check() -> void:
+	if _learning_check == null or not is_instance_valid(_learning_check):
+		return
+	var learning_on: bool = true
+	for area in _cortical_area_refs:
+		if FeagiCore.feagi_local_cache.is_memory_area_learning_frozen(area.cortical_ID):
+			learning_on = false
+	_learning_check.set_pressed_no_signal(learning_on)
+	_learning_check.disabled = _learning_request_in_flight
+
+func _on_learning_check_toggled(learning_on: bool) -> void:
+	if _learning_request_in_flight:
+		_sync_learning_check()
+		return
+	_learning_request_in_flight = true
+	_sync_learning_check()
+	var all_ok: bool = true
+	for area in _cortical_area_refs:
+		var out: FeagiRequestOutput = await FeagiCore.requests.set_memory_area_learning_frozen(area, not learning_on)
+		if out == null or not out.success:
+			all_ok = false
+			break
+	_learning_request_in_flight = false
+	if not all_ok:
+		BV.NOTIF.add_notification("Could not change learning for this memory area. Try again.")
+		await FeagiCore.requests.refresh_learning_frozen() # re-read the real state; the toggle reverts to it
+	_sync_learning_check()
 
 ## One dropdown drives two mutually exclusive FEAGI keys; both are always sent together.
 func _on_mp_encoding_changed(_index: int, encoding: StringName) -> void:

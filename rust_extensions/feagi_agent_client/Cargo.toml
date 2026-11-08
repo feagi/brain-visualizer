@@ -13,8 +13,14 @@ feagi-serialization = { version = "^0.0.35" }
 feagi-io = { version = "^0.0.35", default-features = false, features = ["feagi-client", "websocket-transport-std"] }
 base64 = "0.22"
 
+# Heartbeat/session integration tests run a real FEAGI agent server of a newer feagi-core release
+# (renamed so it can sit next to the 0.0.35 client SDK above). Test-only; never part of the extension.
+[dev-dependencies]
+feagi-agent-server = { package = "feagi-agent", version = "=0.0.56", default-features = false, features = ["agent-server", "agent-transport-websocket-std"] }
+feagi-io-server = { package = "feagi-io", version = "=0.0.56", default-features = false, features = ["feagi-server", "websocket-transport-std"] }
+
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [profile.release]
 opt-level = 3

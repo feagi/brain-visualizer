@@ -63,3 +63,23 @@ static func partition_partner_ids(
 		"outputs": outputs,
 		"conflicts": conflicts,
 	}
+
+
+## The top-level monitor is FEAGI's root, or a tab whose region has no parent after the cached root id drifts.
+## [param viewing_feagi_root] is an id match against the live root region.
+## [param parent_is_null] covers that same tab when [method BrainRegion.is_root_region] is still false.
+static func monitor_is_root_scene(viewing_feagi_root: bool, parent_is_null: bool) -> bool:
+	return viewing_feagi_root or parent_is_null
+
+
+## External plates belong on a subcircuit tab. The root scene draws its own IPU and OPU volumes.
+static func should_build_external_io_plates(is_root_scene: bool) -> bool:
+	return not is_root_scene
+
+
+## An IPU or OPU is a volume on the root scene even when its parent id drifted.
+## A subcircuit draws one only when that area is a direct child of the open region.
+static func should_draw_io_volume_on_monitor(is_root_scene: bool, is_direct_child: bool, is_ipu_or_opu: bool) -> bool:
+	if not is_ipu_or_opu:
+		return false
+	return is_root_scene or is_direct_child

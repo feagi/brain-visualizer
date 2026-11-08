@@ -74,7 +74,10 @@ var _transport_mode: TRANSPORT_MODE = TRANSPORT_MODE.UNKNOWN  # Track which tran
 var _visualization_link_health: VISUALIZATION_LINK_HEALTH = VISUALIZATION_LINK_HEALTH.NO_CONNECTION
 var _feagi_protocol: FEAGI_PROTOCOL = FEAGI_PROTOCOL.UNKNOWN
 var _feagi_endpoint_details: FeagiEndpointDetails = null  # Store endpoint details for later use
-var _heartbeat_timer: Timer = null  # Timer for sending periodic heartbeats to FEAGI
+## The FeagiAgentClient of the current session. Its Rust worker sends the heartbeats; one client per session.
+var _agent_client: Object = null
+## Polls the client's heartbeat liveness every seconds_between_agent_heartbeats and re-registers when it died.
+var _heartbeat_watcher: Timer = null
 var _reconnect_timer: Timer = null
 var _reconnect_in_progress: bool = false
 var _transport_registration_failed: bool = false
@@ -303,6 +306,13 @@ func _register_agent_via_transport() -> bool:
 		_transport_registration_failed = true
 		return false
 
+	# Heartbeat timing comes from config only; a missing or invalid value fails the registration.
+	var heartbeat_settings_error: String = _get_heartbeat_settings_error()
+	if heartbeat_settings_error != "":
+		push_error("[FEAGI] [TRANSPORT] Invalid agent heartbeat settings: %s" % heartbeat_settings_error)
+		_transport_registration_failed = true
+		return false
+
 	var agent_client = ClassDB.instantiate("FeagiAgentClient")
 	if agent_client == null:
 		push_error("[FEAGI] [TRANSPORT] Failed to instantiate FeagiAgentClient.")
@@ -327,10 +337,15 @@ func _register_agent_via_transport() -> bool:
 
 	var registration_output: Dictionary
 	var registration_started_ms: int = Time.get_ticks_msec()
-	registration_output = agent_client.register_via_websocket(
+	# One client per session: stop and free the previous client (worker and socket) before the new one owns the session.
+	_release_agent_client()
+	_agent_client = agent_client
+	registration_output = _agent_client.register_via_websocket(
 		registration_ws_url,
 		descriptor_b64,
-		auth_token_b64
+		auth_token_b64,
+		FeagiCore.feagi_settings.seconds_between_agent_heartbeats,
+		FeagiCore.feagi_settings.max_missed_agent_heartbeat_acks
 	)
 	var registration_elapsed_ms: int = Time.get_ticks_msec() - registration_started_ms
 	if not bool(registration_output.get("success", false)):
@@ -355,11 +370,14 @@ func _register_agent_via_transport() -> bool:
 	else:
 		push_error("[FEAGI] [TRANSPORT] Registration succeeded but visualization_ws_url was empty.")
 		_transport_registration_failed = true
+		# The session is registered but unusable; stop its heartbeat worker instead of leaving it running.
+		_release_agent_client()
 		return false
 
 	var registered_agent_id := str(registration_output.get("agent_id_b64", "")).strip_edges()
 	if registered_agent_id != "":
 		set_meta("_registered_agent_id_b64", registered_agent_id)
+	_start_heartbeat_watcher()
 
 	return false  # Return false to continue with WebSocket connection (not using SHM)
 
@@ -745,14 +763,10 @@ func _change_connection_state(new_state: CONNECTION_STATE) -> void:
 	connection_state_changed.emit(prev_state, new_state)
 
 
-## Start sending periodic heartbeats to FEAGI
-func start_heartbeat() -> void:
-	# Agent heartbeat over REST is deprecated and intentionally disabled.
-	return
-
-
-## Deregister the current agent session from FEAGI (best effort) and clear registration metadata so the
-## next connect registers fresh. Name kept from the heartbeat era; BV sends no heartbeats.
+## Stop the agent session. Deregisters from FEAGI (best effort; over the live session socket while the
+## client's heartbeat worker is alive), stops the liveness watcher and the heartbeat worker, and clears the
+## registration metadata so the next connect registers fresh. Name kept from the heartbeat era; the
+## heartbeats themselves are sent by the Rust worker inside the FeagiAgentClient.
 func stop_heartbeat() -> void:
 	var registered_agent_id := ""
 	if has_meta("_registered_agent_id_b64"):
@@ -760,34 +774,71 @@ func stop_heartbeat() -> void:
 	var registration_ws_url := ""
 	if has_meta("_registration_ws_url"):
 		registration_ws_url = str(get_meta("_registration_ws_url")).strip_edges()
-	
+
 	# Deregister (may fail if FEAGI already deregistered us during genome reload)
-	if registered_agent_id != "" and ClassDB.class_exists("FeagiAgentClient"):
-		var agent_client = ClassDB.instantiate("FeagiAgentClient")
-		if agent_client != null:
-			if registration_ws_url != "":
-				print("[FEAGI] [TRANSPORT] Attempting deregistration (may already be deregistered by FEAGI)")
-				# Deregistration may fail if FEAGI already deregistered us (genome reload) - that's okay
-				agent_client.deregister_via_websocket(registration_ws_url, registered_agent_id)
-	
+	if registered_agent_id != "" and registration_ws_url != "" and _agent_client != null:
+		print("[FEAGI] [TRANSPORT] Attempting deregistration (may already be deregistered by FEAGI)")
+		# Deregistration may fail if FEAGI already deregistered us (genome reload) - that's okay
+		_agent_client.deregister_via_websocket(registration_ws_url, registered_agent_id)
+
 	# Always clear registration metadata to allow fresh registration
 	if has_meta("_registered_agent_id_b64"):
 		remove_meta("_registered_agent_id_b64")
 	if has_meta("_registration_ws_url"):
 		remove_meta("_registration_ws_url")
-	
-	if _heartbeat_timer != null:
-		_heartbeat_timer.stop()
-		if _heartbeat_timer.timeout.is_connected(_send_heartbeat):
-			_heartbeat_timer.timeout.disconnect(_send_heartbeat)
-		_heartbeat_timer.queue_free()
-		_heartbeat_timer = null
+
+	_release_agent_client()
 
 
-## Send a single heartbeat to FEAGI
-func _send_heartbeat() -> void:
-	# Agent heartbeat over REST is deprecated and intentionally disabled.
-	return
+## Stop the liveness watcher, stop the client's heartbeat worker (drops its socket) and free the client.
+func _release_agent_client() -> void:
+	_stop_heartbeat_watcher()
+	if _agent_client != null:
+		_agent_client.stop_heartbeat()
+		_agent_client = null
+
+
+## Returns why the configured heartbeat settings are unusable, or "" when they are valid.
+func _get_heartbeat_settings_error() -> String:
+	if FeagiCore.feagi_settings == null:
+		return "FeagiCore settings are not loaded"
+	return FeagiGeneralSettings.validate_agent_heartbeat_settings(
+		FeagiCore.feagi_settings.seconds_between_agent_heartbeats,
+		FeagiCore.feagi_settings.max_missed_agent_heartbeat_acks
+	)
+
+
+## Start the liveness watcher for the current session. Its period is the configured heartbeat interval.
+func _start_heartbeat_watcher() -> void:
+	if _heartbeat_watcher == null:
+		_heartbeat_watcher = Timer.new()
+		_heartbeat_watcher.name = "AgentHeartbeatWatcher"
+		_heartbeat_watcher.autostart = false
+		_heartbeat_watcher.one_shot = false
+		_heartbeat_watcher.timeout.connect(_on_heartbeat_watcher_timeout)
+		add_child(_heartbeat_watcher)
+	_heartbeat_watcher.wait_time = FeagiCore.feagi_settings.seconds_between_agent_heartbeats
+	_heartbeat_watcher.start()
+
+
+func _stop_heartbeat_watcher() -> void:
+	if _heartbeat_watcher != null:
+		_heartbeat_watcher.stop()
+
+
+## When the Rust heartbeat worker reports the session dead (FEAGI dropped us or stopped answering),
+## run the existing forced transport re-registration path.
+func _on_heartbeat_watcher_timeout() -> void:
+	if _agent_client == null:
+		_stop_heartbeat_watcher()
+		return
+	if _agent_client.is_heartbeat_alive():
+		return
+	if _ws_recovery_in_progress:
+		return
+	print("[FEAGI] [TRANSPORT] Agent heartbeat is dead: %s" % str(_agent_client.get_heartbeat_error()))
+	_ws_recovery_in_progress = true
+	await _recover_ws_transport_after_disconnect()
 
 ## Start auto-reconnect loop while disconnected.
 func _start_reconnect_loop() -> void:
@@ -894,6 +945,8 @@ func ensure_visualization_link_connected() -> bool:
 
 ## Re-register the agent, then rebind the stream to the fresh registration (genome reload, FEAGI restart).
 func reregister_and_rebind_visualization_stream() -> void:
+	# FEAGI refuses a new registration while this BV's current session is still live.
+	stop_heartbeat()
 	await _register_agent_via_transport()
 	await rebind_visualization_stream()
 

@@ -12,12 +12,14 @@ const MONITOR := "res://addons/UI_BrainMonitor/UI_BrainMonitor_CorticalArea.gd"
 func _initialize() -> void:
 	var failures := 0
 	failures += _require(CB_LINE, "const LINE_COLOR_EPISODIC: Color = Color(0.95, 0.82, 0.08, 1)")
-	failures += _require(CB_LINE, "is_every_mapping_episodic()")
+	failures += _require(CB_LINE, "is_every_mapping_memory_kind()")
 	failures += _require(MAPPING, "func is_episodic_mapping()")
 	failures += _require(MAPPING, "&\"episodic_memory\"")
 	failures += _require(MAPPING, "&\"episodic_scan\"")
 	failures += _require(MAPPING_SET, "func is_every_mapping_episodic()")
 	failures += _require(PARTIAL_SET, "func is_every_mapping_episodic()")
+	failures += _require(MAPPING_SET, "func is_every_mapping_memory_kind()")
+	failures += _require(PARTIAL_SET, "func is_every_mapping_memory_kind()")
 	failures += _require(MONITOR, "mapping.is_episodic_mapping()")
 	failures += _require(MONITOR, "Color(1.0, 0.92, 0.15, 0.9)")
 	for script_path in [CB_LINE, MAPPING, MAPPING_SET, PARTIAL_SET, MONITOR]:

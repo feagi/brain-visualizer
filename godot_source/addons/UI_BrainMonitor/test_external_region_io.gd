@@ -12,6 +12,7 @@ func _initialize() -> void:
 	failures += _test_outside_partners_are_split()
 	failures += _test_inside_partners_are_excluded()
 	failures += _test_conflict_is_removed_from_both_sides()
+	failures += _test_root_scene_hides_external_plates_and_draws_io()
 	if failures == 0:
 		print("External region IO tests: PASS")
 		quit(0)
@@ -86,5 +87,34 @@ func _test_conflict_is_removed_from_both_sides() -> int:
 		return 1
 	if not (partitioned["outputs"] as Array).is_empty():
 		push_error("Conflict areas must leave the output plate")
+		return 1
+	return 0
+
+
+## The cached root id can disagree with a top-level tab. That tab still must not grow external plates,
+## and its IPU and OPU volumes stay on the scene.
+func _test_root_scene_hides_external_plates_and_draws_io() -> int:
+	var drifted_root := ExternalRegionIOScript.monitor_is_root_scene(false, true)
+	if not drifted_root:
+		push_error("A top-level region with no parent is the root scene even when is_root_region is false")
+		return 1
+	if ExternalRegionIOScript.should_build_external_io_plates(drifted_root):
+		push_error("The root scene must not build subcircuit external plates")
+		return 1
+	if not ExternalRegionIOScript.should_draw_io_volume_on_monitor(drifted_root, false, true):
+		push_error("The root scene must draw an IPU or OPU whose parent id drifted")
+		return 1
+	var child_scene := ExternalRegionIOScript.monitor_is_root_scene(false, false)
+	if not ExternalRegionIOScript.should_build_external_io_plates(child_scene):
+		push_error("A subcircuit tab must keep external plates")
+		return 1
+	if ExternalRegionIOScript.should_draw_io_volume_on_monitor(child_scene, false, true):
+		push_error("A subcircuit must not draw a root IPU or OPU as its own volume")
+		return 1
+	if not ExternalRegionIOScript.should_draw_io_volume_on_monitor(true, false, true):
+		push_error("An id match against the live root must draw IPU and OPU volumes")
+		return 1
+	if ExternalRegionIOScript.should_draw_io_volume_on_monitor(true, true, false):
+		push_error("The root IO rule must not pull a non-IO area onto the scene")
 		return 1
 	return 0

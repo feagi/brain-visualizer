@@ -2586,12 +2586,9 @@ func _is_mapping_set_plastic(mapping_set: InterCorticalMappingSet) -> bool:
 
 ## True if any mapping in the set uses associative_memory morphology (directed edge; not inherently reciprocal).
 func _mapping_set_has_associative_memory(mapping_set: InterCorticalMappingSet) -> bool:
-	if mapping_set == null or mapping_set.mappings.is_empty():
+	if mapping_set == null:
 		return false
-	for mapping in mapping_set.mappings:
-		if mapping.morphology_used != null and mapping.morphology_used.name == &"associative_memory":
-			return true
-	return false
+	return mapping_set.is_any_mapping_associative_memory()
 
 ## True when destination also has a plastic efferent mapping back to source (actual reciprocal pair in the graph).
 func _mapping_has_reciprocal_plastic_pair(mapping_set: InterCorticalMappingSet) -> bool:

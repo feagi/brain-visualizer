@@ -107,6 +107,8 @@ func clear_whole_genome() -> void:
 	if _stack.size() > 1 and _stack[1] is Dictionary and (_stack[1] as Dictionary).has("source"):
 		_caller = String((_stack[1] as Dictionary)["source"])
 	
+	_frozen_memory_area_ids = {}
+	_frozen_mapping_pairs = {}
 	mapping_data.FEAGI_delete_all_mappings()
 	cortical_areas.FEAGI_hard_wipe_available_cortical_areas()
 	
@@ -720,6 +722,35 @@ func update_plasticity_queue_depth(new_depth: int) -> void:
 		return
 	_plasticity_queue_depth = new_depth
 	plasticity_queue_depth_changed.emit(new_depth)
+
+#region Learning frozen (runtime state of the running brain; not part of the genome or mapping rules)
+## Emitted after [method update_learning_frozen] replaces the cached frozen sets.
+signal learning_frozen_changed()
+
+var _frozen_memory_area_ids: Dictionary = {} # String cortical ID -> true
+var _frozen_mapping_pairs: Dictionary = {} # "src|dst" -> true
+
+## Replaces both cached sets from the GET /v1/connectome/learning_frozen payload.
+func update_learning_frozen(memory_area_ids: Array, mapping_pairs: Array) -> void:
+	_frozen_memory_area_ids = {}
+	for id in memory_area_ids:
+		_frozen_memory_area_ids[String(id)] = true
+	_frozen_mapping_pairs = {}
+	for pair in mapping_pairs:
+		if pair is Array and pair.size() == 2:
+			_frozen_mapping_pairs[_learning_pair_key(String(pair[0]), String(pair[1]))] = true
+	learning_frozen_changed.emit()
+
+func is_memory_area_learning_frozen(cortical_id: StringName) -> bool:
+	return _frozen_memory_area_ids.has(String(cortical_id))
+
+func is_mapping_plasticity_frozen(src_id: StringName, dst_id: StringName) -> bool:
+	return _frozen_mapping_pairs.has(_learning_pair_key(String(src_id), String(dst_id)))
+
+func _learning_pair_key(src_id: String, dst_id: String) -> String:
+	return src_id + "|" + dst_id
+
+#endregion
 
 func clear_configuration_jsons() -> void:
 	_configuration_jsons = []

@@ -44,6 +44,7 @@ var GET_corticalArea_corticalVisibility: StringName = '/v1/cortical_area/cortica
 var GET_system_corticalAreaVisualizationSkipRate: StringName = "/v1/system/cortical_area_visualization_skip_rate"
 var GET_system_corticalAreaVisualizationSupressionThreshold: StringName = "/v1/system/cortical_area_visualization_suppression_threshold"
 var GET_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/plasticity_queue_depth"
+var GET_connectome_learningFrozen: StringName = "/v1/connectome/learning_frozen"
 var GET_agent_list: StringName = "/v1/agent/list"
 var GET_agent_properties: StringName = "/v1/agent/properties"
 var GET_agent_capabilities_all: StringName = "/v1/agent/capabilities/all"
@@ -103,6 +104,8 @@ var PUT_neuroplasticity_plasticityQueueDepth: StringName = "/v1/neuroplasticity/
 var PUT_corticalArea_reset: StringName = "/v1/cortical_area/reset"
 var PUT_corticalMapping_resetWeights: StringName = "/v1/cortical_mapping/reset_weights"
 var PUT_corticalArea_resetWeights: StringName = "/v1/cortical_area/reset_weights"
+var PUT_corticalMapping_plasticityFrozen: StringName = "/v1/cortical_mapping/plasticity_frozen"
+var PUT_corticalArea_learningFrozen: StringName = "/v1/cortical_area/learning_frozen"
 
 # Delete Requests
 var DELETE_GE_corticalArea: StringName = "/v1/cortical_area/cortical_area"

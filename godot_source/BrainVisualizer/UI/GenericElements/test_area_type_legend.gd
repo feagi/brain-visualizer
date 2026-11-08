@@ -121,22 +121,25 @@ func _test_mapping_legend() -> int:
 		if String(row["tip"]).is_empty():
 			push_error("mapping row %s has no tooltip" % row["label"])
 			failed = 1
-	if builder_labels != PackedStringArray(["Excitatory", "Inhibitory", "Episodic", "Plastic", "Partial"]):
+	if builder_labels != PackedStringArray(["Excitatory", "Inhibitory", "Episodic", "Plastic", "Associative", "Partial"]):
 		push_error("circuit builder mapping legend: %s" % [", ".join(builder_labels)])
 		failed = 1
 	if builder[0]["color"] != CBLineInterTerminal.LINE_COLOR_PSPP or builder[1]["color"] != CBLineInterTerminal.LINE_COLOR_PSPN or builder[2]["color"] != CBLineInterTerminal.LINE_COLOR_EPISODIC:
 		push_error("mapping colors drifted from the line colors")
 		failed = 1
-	if not builder[3]["dashed"] or builder[4]["dashed"]:
+	if not builder[3]["dashed"] or builder[5]["dashed"]:
 		push_error("plastic must be dashed and partial must be solid")
 		failed = 1
-	if not is_equal_approx(builder[4]["color"].a, CBLineInterTerminal.LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY):
+	if not builder[4]["dashed"] or not builder[4].get("wavy", false) or builder[3].get("wavy", false):
+		push_error("associative must be wavy and dashed, plastic must not be wavy")
+		failed = 1
+	if not is_equal_approx(builder[5]["color"].a, CBLineInterTerminal.LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY):
 		push_error("partial legend line is not the partial-mapping fade")
 		failed = 1
 	var schematic_labels: PackedStringArray = []
 	for row: Dictionary in schematic:
 		schematic_labels.append(row["label"])
-	if schematic_labels != PackedStringArray(["Excitatory", "Inhibitory", "Episodic", "Plastic", "Mixed"]):
+	if schematic_labels != PackedStringArray(["Excitatory", "Inhibitory", "Episodic", "Plastic", "Associative", "Mixed"]):
 		push_error("schematic mapping legend: %s" % [", ".join(schematic_labels)])
 		failed = 1
 	if not schematic[3]["dashed"]:
