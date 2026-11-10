@@ -86,8 +86,16 @@ func FEAGI_set_mapping_JSON(source: AbstractCorticalArea, destination: AbstractC
 	
 	if destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
 		## Mapping exists, update it!
-		(_established_mappings[source.cortical_ID][destination.cortical_ID] as InterCorticalMappingSet).FEAGI_updated_mappings_JSON(mappings_JSON)
-		mapping_updated.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
+		var existing_set: InterCorticalMappingSet = _established_mappings[source.cortical_ID][destination.cortical_ID] as InterCorticalMappingSet
+		var parsed_rules: Array[SingleMappingDefinition] = SingleMappingDefinition.from_FEAGI_JSON_array(mappings_JSON)
+		if parsed_rules.is_empty():
+			# Same handling as InterCorticalMappingSet.FEAGI_updated_mappings_JSON: invalid rules are skipped.
+			existing_set.FEAGI_updated_mappings_JSON(mappings_JSON)
+			return
+		if existing_set.is_same_rules_as(parsed_rules):
+			return # Nothing changed, so nothing to announce
+		existing_set.FEAGI_updated_mappings(parsed_rules)
+		mapping_updated.emit(existing_set)
 		return
 	
 	## Mapping doesn't exist, create it!
@@ -107,8 +115,11 @@ func FEAGI_set_mapping(source: AbstractCorticalArea, destination: AbstractCortic
 		_established_mappings[source.cortical_ID] = {}
 	if destination.cortical_ID in _established_mappings[source.cortical_ID].keys():
 		## Mapping exists, update it!
-		(_established_mappings[source.cortical_ID][destination.cortical_ID] as InterCorticalMappingSet).FEAGI_updated_mappings(new_mappings)
-		mapping_updated.emit(_established_mappings[source.cortical_ID][destination.cortical_ID])
+		var existing_set: InterCorticalMappingSet = _established_mappings[source.cortical_ID][destination.cortical_ID] as InterCorticalMappingSet
+		if existing_set.is_same_rules_as(new_mappings):
+			return # Nothing changed, so nothing to announce
+		existing_set.FEAGI_updated_mappings(new_mappings)
+		mapping_updated.emit(existing_set)
 	else:
 		## Mapping doesn't exist, create it!	
 		_established_mappings[source.cortical_ID][destination.cortical_ID] = InterCorticalMappingSet.new(source, destination, new_mappings)

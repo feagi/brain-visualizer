@@ -57,6 +57,34 @@ static func from_FEAGI_JSON(mapping_properties_from_FEAGI: Array, source_area: A
 		return null
 	return InterCorticalMappingSet.new(source_area, destination_area, new_mappings)
 
+## True when the given rules are identical, field by field and in order, to the currently cached rules.
+## Used by [MappingsCache] to avoid re-announcing a mapping whose rules did not change.
+func is_same_rules_as(other_mappings: Array[SingleMappingDefinition]) -> bool:
+	if len(other_mappings) != len(_mappings):
+		return false
+	for i in range(len(_mappings)):
+		var a: SingleMappingDefinition = _mappings[i]
+		var b: SingleMappingDefinition = other_mappings[i]
+		if a == b:
+			continue
+		var morph_a: StringName = a.morphology_used.name if a.morphology_used != null else &""
+		var morph_b: StringName = b.morphology_used.name if b.morphology_used != null else &""
+		if morph_a != morph_b or (a.morphology_used == null) != (b.morphology_used == null):
+			return false
+		if a.scalar != b.scalar or a.is_plastic != b.is_plastic:
+			return false
+		if a.post_synaptic_current_multiplier != b.post_synaptic_current_multiplier or a.plasticity_constant != b.plasticity_constant:
+			return false
+		if a.LTP_multiplier != b.LTP_multiplier or a.LTD_multiplier != b.LTD_multiplier:
+			return false
+		if a.plasticity_window != b.plasticity_window or a.synaptic_delay_bursts != b.synaptic_delay_bursts:
+			return false
+		if a.plasticity_mode != b.plasticity_mode or a.eligibility_decay_bursts != b.eligibility_decay_bursts:
+			return false
+		if a.modulator_ids != b.modulator_ids:
+			return false
+	return true
+
 ## FEAGI responded with updated mappings
 func FEAGI_updated_mappings_JSON(FEAGI_mappings_JSON: Array) -> void:
 	var new_mappings: Array[SingleMappingDefinition] = SingleMappingDefinition.from_FEAGI_JSON_array(FEAGI_mappings_JSON)

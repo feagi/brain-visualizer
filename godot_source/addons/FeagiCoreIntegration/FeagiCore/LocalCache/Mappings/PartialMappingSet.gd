@@ -30,6 +30,9 @@ var _region: BrainRegion
 var _custom_label: StringName
 var _connection_chain: ConnectionChain
 
+## Counts hints skipped because their cortical area is not in the cache (reset by the caller that wants to know).
+static var skipped_missing_area_count: int = 0
+
 func _init(is_input_of_region: bool, mappings_suggested: Array[SingleMappingDefinition], internal_target: AbstractCorticalArea, brain_region: BrainRegion, label: StringName) -> void:
 	_is_region_input = is_input_of_region
 	_mappings = mappings_suggested
@@ -61,6 +64,7 @@ static func from_FEAGI_JSON_array(hints: Array, is_input: bool, brain_region: Br
 			var area = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(cortical_area_id)
 			if area == null:
 				push_warning("CORE: Skipping partial mapping for missing cortical area %s" % cortical_area_id)
+				skipped_missing_area_count += 1
 				continue
 			# Create a simple partial mapping set with no actual mapping data
 			# This allows I/O detection to work (log suppressed during clone)
@@ -84,6 +88,7 @@ static func from_FEAGI_JSON_array(hints: Array, is_input: bool, brain_region: Br
 			var internal: AbstractCorticalArea = FeagiCore.feagi_local_cache.cortical_areas.try_to_get_cortical_area_by_ID(internal_ID)
 			if internal == null:
 				push_error("CORE: Unable to find internal cortical ID of %s to generate PartialMappingSet!" % [internal_ID])
+				skipped_missing_area_count += 1
 				continue
 			output.append(PartialMappingSet.new(is_input, mappings_collection[internal_ID][external_ID], internal, brain_region, ""))#TODO Label fix
 	

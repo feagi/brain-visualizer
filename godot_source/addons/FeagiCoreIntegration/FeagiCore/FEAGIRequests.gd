@@ -1795,7 +1795,8 @@ func delete_classifier(deleting_classifier: GenomeClassifier) -> FeagiRequestOut
 
 
 ## PUT /v1/cortical_area/classifier/{classifier_id} — name, position, and parent circuit.
-func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: String, coordinates_3d: Vector3i, parent_region_id: StringName) -> FeagiRequestOutput:
+## [param refresh_cache] false lets a caller that sends several saves refresh once afterwards with [method refresh_after_classifier_edit].
+func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: String, coordinates_3d: Vector3i, parent_region_id: StringName, refresh_cache: bool = true) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -1827,17 +1828,8 @@ func edit_classifier(editing_classifier: GenomeClassifier, classifier_name: Stri
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	editing_classifier.apply_feagi_dict(response)
-	var cortical_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
-	if cortical_refresh == null or cortical_refresh.has_errored or not cortical_refresh.success:
-		push_warning("FEAGI REQUEST: Classifier edited, but BV could not synchronize cortical areas.")
-	await FeagiCore.feagi_local_cache.refresh_classifiers_from_feagi()
-	var mappings_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
-	if mappings_refresh == null or mappings_refresh.has_errored or not mappings_refresh.success:
-		push_warning("FEAGI REQUEST: Classifier edited, but BV could not synchronize mappings.")
-	editing_classifier.sync_layout_from_stamp()
-	var parent_region: BrainRegion = editing_classifier.current_parent_region
-	_refresh_classifier_brain_monitor_visuals(editing_classifier, parent_region)
-	_refresh_classifier_circuit_builder_visuals(editing_classifier, parent_region)
+	if refresh_cache:
+		await refresh_after_classifier_edit(editing_classifier)
 	print("FEAGI REQUEST: Successfully edited classifier %s" % editing_classifier.classifier_id)
 	return FEAGI_response_data
 
@@ -1874,7 +1866,8 @@ func ensure_classifier_answer_modulators(classifier: GenomeClassifier) -> FeagiR
 
 ## [param reward_modulator_ids]: the Reward modulators the classifier learns from. Empty with reward
 ## training on selects the classifier's correct-answer and error modulators.
-func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_training: bool, answer_feedback_area_id: String, answer_latency_bursts: int, learn_area_id: String, confidence_area_id: String, reward_modulator_ids: Array[String]) -> FeagiRequestOutput:
+## [param refresh_cache] false lets a caller that sends several saves refresh once afterwards with [method refresh_after_classifier_edit].
+func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_training: bool, answer_feedback_area_id: String, answer_latency_bursts: int, learn_area_id: String, confidence_area_id: String, reward_modulator_ids: Array[String], refresh_cache: bool = true) -> FeagiRequestOutput:
 	if !FeagiCore.can_interact_with_feagi():
 		push_error("FEAGI Requests: Not ready for requests!")
 		return FeagiRequestOutput.requirement_fail("NOT_READY")
@@ -1899,13 +1892,8 @@ func edit_classifier_reward(editing_classifier: GenomeClassifier, reward_trainin
 		return FEAGI_response_data
 	var response: Dictionary = FEAGI_response_data.decode_response_as_dict()
 	editing_classifier.apply_feagi_dict(response)
-	var cortical_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_cortical_areas_from_feagi()
-	if cortical_refresh == null or cortical_refresh.has_errored or not cortical_refresh.success:
-		push_warning("FEAGI REQUEST: Classifier reward updated, but BV could not synchronize cortical areas.")
-	await FeagiCore.feagi_local_cache.refresh_classifiers_from_feagi()
-	var mappings_refresh: FeagiRequestOutput = await FeagiCore.feagi_local_cache.refresh_mappings_from_feagi()
-	if mappings_refresh == null or mappings_refresh.has_errored or not mappings_refresh.success:
-		push_warning("FEAGI REQUEST: Classifier reward updated, but BV could not synchronize mappings.")
+	if refresh_cache:
+		await refresh_after_classifier_edit(editing_classifier)
 	print("FEAGI REQUEST: Updated reward settings for classifier %s" % editing_classifier.classifier_id)
 	return FEAGI_response_data
 
@@ -1936,6 +1924,14 @@ func map_classifier_input(classifier: GenomeClassifier, source_area: AbstractCor
 	await _refresh_after_classifier_field_change(classifier)
 	print("FEAGI REQUEST: Mapped %s onto classifier %s with %s" % [source_area.cortical_ID, classifier.classifier_id, morphology_name])
 	return mapped
+
+
+## One cache refresh (cortical areas, classifiers, mappings) plus the Brain Monitor / Circuit Builder redraw
+## that follows a classifier edit. Reload signals only fire for what actually changed.
+func refresh_after_classifier_edit(classifier: GenomeClassifier) -> void:
+	await _refresh_after_classifier_field_change(classifier)
+	if classifier != null:
+		classifier.sync_layout_from_stamp()
 
 
 func _refresh_after_classifier_field_change(classifier: GenomeClassifier) -> void:
@@ -3891,6 +3887,8 @@ func _extract_brain_regions_io_from_mapping_response(response: Dictionary) -> Di
 ## Updates brain region I/O mappings based on FEAGI response data
 func _update_brain_region_io_mappings(brain_region: BrainRegion, area_ids: Array, is_input: bool) -> void:
 	var mapping_type = "input" if is_input else "output"
+	# These partials are rewritten outside the summary refresh, so its stored signature no longer describes them.
+	FeagiCore.feagi_local_cache.invalidate_partial_mapping_signature(brain_region.region_ID)
 	print("    🔧 Updating %s mappings for region %s with %d areas" % [mapping_type, brain_region.friendly_name, area_ids.size()])
 	
 	# Clear existing partial mappings of this type

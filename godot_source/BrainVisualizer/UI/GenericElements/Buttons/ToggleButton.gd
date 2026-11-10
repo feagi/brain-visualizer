@@ -25,6 +25,13 @@ var is_inbetween: bool:
 
 var _is_inbetween: bool
 var _cached_size: Vector2i
+## toggle_mode must be on before the node enters the tree: BaseButton ignores
+## set_pressed / set_pressed_no_signal while it is off, so state set right after
+## ToggleButton.new() (before add_child) would be dropped.
+func _init() -> void:
+	toggle_mode = true
+
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	toggle_mode = true
