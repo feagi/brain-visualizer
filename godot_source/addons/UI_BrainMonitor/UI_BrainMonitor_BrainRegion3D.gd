@@ -2893,7 +2893,7 @@ func _on_global_mapping_changed(mapping: InterCorticalMappingSet) -> void:
 			touches_host = src in _representing_region.contained_cortical_areas or dst in _representing_region.contained_cortical_areas
 	if touches_host:
 		# Suppressed spam log during clone
-		_check_io_status_and_refresh()
+		_schedule_io_check()
 
 
 ## Region-level partial mappings change handler
@@ -2901,19 +2901,51 @@ func _on_global_mapping_changed(mapping: InterCorticalMappingSet) -> void:
 func _on_region_classifiers_changed(_classifier = null) -> void:
 	if not _connection_monitoring_enabled or not is_inside_tree():
 		return
-	_check_io_status_and_refresh()
+	_schedule_io_check()
 
 
 func _on_region_partial_mappings_changed(_param) -> void:
 	if not _connection_monitoring_enabled:
 		return
 	# Suppressed spam log during clone
-	_check_io_status_and_refresh()
+	_schedule_io_check()
 
 
-## Checks if I/O status has changed and refreshes if needed
+## Coalesces any number of IO-affecting events in one frame into a single deferred check.
+func _schedule_io_check() -> void:
+	if _io_check_pending:
+		return
+	if is_queued_for_deletion() or not is_inside_tree():
+		return
+	_io_check_pending = true
+	call_deferred("_check_io_status_and_refresh")
+
+
+## What the plates are built from: the input and output area lists (same sources as the plate builders,
+## including the external-anchor branch and classifier plate areas). The area object id is part of the entry,
+## so an area deleted and re-created under the same cortical ID counts as a change.
+func _compute_io_signature() -> Array:
+	var signature: Array = [[], []]
+	for area in _get_input_cortical_areas_internal():
+		(signature[0] as Array).append("%s#%d" % [area.cortical_ID, area.get_instance_id()])
+	for area in _get_output_cortical_areas_internal():
+		(signature[1] as Array).append("%s#%d" % [area.cortical_ID, area.get_instance_id()])
+	return signature
+
+
+## Checks if I/O status has changed and refreshes only if the plate inputs differ from what was last drawn.
 func _check_io_status_and_refresh() -> void:
 	_io_check_pending = false
+	if is_queued_for_deletion() or not is_inside_tree() or _representing_region == null or not is_instance_valid(_representing_region):
+		return
+	if FEAGIRequests._clone_operation_in_progress:
+		return
+	if _refresh_in_progress or _refresh_pending:
+		# A rebuild is running; re-check once it finishes (see _finish_refresh_cycle).
+		_io_recheck_after_refresh = true
+		return
+	if _compute_io_signature() == _last_rendered_io_signature:
+		return
 	force_refresh()
 
 ## Validates that all plates are properly aligned
@@ -2944,6 +2976,14 @@ func _refresh_frame_contents() -> void:
 		_refresh_pending = true
 		return
 	_refresh_in_progress = true
+	_last_rendered_io_signature = _compute_io_signature()
+	_plate_rebuild_count += 1
+	if _region_reload_debug_enabled():
+		print("[REGION-DBG][Region3D] plate rebuild #%d region=%s external_anchor=%s" % [
+			_plate_rebuild_count,
+			String(_representing_region.region_ID) if _representing_region != null else "none",
+			str(_external_io_anchor),
+		])
 	
 	# print("🔄 REFRESH: Starting frame content refresh for region '%s'" % _representing_region.friendly_name)
 	
@@ -3050,7 +3090,11 @@ func _finish_refresh_cycle() -> void:
 	_refresh_in_progress = false
 	if _refresh_pending:
 		_refresh_pending = false
+		_io_recheck_after_refresh = false
 		_refresh_frame_contents()
+	elif _io_recheck_after_refresh:
+		_io_recheck_after_refresh = false
+		_check_io_status_and_refresh()
 
 ## Fixed title under the external input/output plates. Not a region popup.
 func _place_external_io_label() -> void:
@@ -3272,6 +3316,12 @@ func _cleanup_all_children() -> void:
 var _connection_monitoring_enabled: bool = true
 var _dimension_recalc_in_progress: bool = false
 var _io_check_pending: bool = false
+## An IO check arrived while a rebuild was running; run it once the rebuild finishes.
+var _io_recheck_after_refresh: bool = false
+## Input/output area signature the plates were last built from (see _compute_io_signature).
+var _last_rendered_io_signature: Array = []
+## Number of plate rebuilds, printed under BV_REGION_RELOAD_DEBUG.
+var _plate_rebuild_count: int = 0
 var _dimension_recalc_pending: bool = false
 ## Drawn size per plate area, as last used to place it.
 var _plate_drawn_sizes: Dictionary = {}
@@ -3346,9 +3396,7 @@ func _on_area_connections_changed(_other_area: AbstractCorticalArea, _mapping_se
 		return
 		
 	# Guard prevents duplicate deferred calls when multiple connection changes arrive per frame.
-	if not _io_check_pending:
-		_io_check_pending = true
-		call_deferred("_check_io_status_and_refresh")
+	_schedule_io_check()
 
 ## Called when dimensions change for an area in this region (with monitoring control)
 func _on_area_dimensions_changed(_new_dims: Vector3i, area: AbstractCorticalArea) -> void:

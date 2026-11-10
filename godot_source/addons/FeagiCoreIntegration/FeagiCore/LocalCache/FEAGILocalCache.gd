@@ -28,6 +28,8 @@ signal cache_cleared()
 signal genome_cache_replaced()
 signal mappings_reloaded()
 signal cortical_areas_reloaded()
+## Emitted just before [signal cortical_areas_reloaded] when a cortical ID was renamed; ID-keyed visuals need a full rebuild.
+signal cortical_id_remapped()
 signal brain_regions_reloaded()
 signal morphologies_reloaded()
 signal classifiers_reloaded()
@@ -121,6 +123,11 @@ func clear_whole_genome() -> void:
 		if stale is GenomeClassifier:
 			(stale as GenomeClassifier).FEAGI_prepare_delete()
 	classifiers.clear()
+	_cortical_summary_hashes.clear()
+	_regions_summary_hash = 0
+	_partial_summary_signatures.clear()
+	_classifier_summary_hashes.clear()
+	_mapping_summary_hash_valid = false
 	
 	# Clear mapping restrictions cache
 	MappingRestrictionsAPI.clear_cache()
@@ -381,6 +388,16 @@ var _pending_hash_values: Dictionary = {}
 var _active_hash_refresh_target: Dictionary = {}
 var _hash_refresh_methods: Dictionary = {}
 var _cortical_absence_streaks: Dictionary = {}
+## Last FEAGI summary hash seen per cortical id / classifier id / regions / mappings. A hash-driven refresh only
+## emits its reload signal when one of these differs, so a no-op refresh does not rebuild the Brain Monitor.
+var _cortical_summary_hashes: Dictionary = {}
+var _regions_summary_hash: int = 0
+## Per-region signature of the raw summary inputs/outputs last established as partial mappings.
+## A region whose signature is unchanged keeps its partial mappings (no clear + re-create, no 3D rebuild).
+var _partial_summary_signatures: Dictionary = {}
+var _classifier_summary_hashes: Dictionary = {}
+var _mapping_summary_hash: int = 0
+var _mapping_summary_hash_valid: bool = false
 const HASH_REFRESH_ABSENCE_REMOVAL_THRESHOLD: int = 3
 
 var _pending_amalgamation: StringName = ""
@@ -938,6 +955,8 @@ func FEAGI_remap_cortical_id(old_id: StringName, new_id: StringName) -> void:
 		_OPU_cortical_ID_to_capability_key[new_id] = _OPU_cortical_ID_to_capability_key[old_id]
 		_OPU_cortical_ID_to_capability_key.erase(old_id)
 	# Notify BV listeners so any ID-keyed caches/visuals refresh immediately after remap.
+	_cortical_summary_hashes.erase(old_id)
+	cortical_id_remapped.emit()
 	cortical_areas_reloaded.emit()
 	mappings_reloaded.emit()
 	
@@ -984,6 +1003,7 @@ func _on_brain_region_added(region: BrainRegion) -> void:
 ## Called when a brain region is about to be removed - disconnect from its signals
 func _on_brain_region_about_to_be_removed(region: BrainRegion) -> void:
 	_cache_info("FEAGI CACHE: Disconnecting signals for brain region about to be removed: %s" % region.region_ID)
+	_partial_summary_signatures.erase(region.region_ID)
 	
 	# Disconnect from this region's signals
 	if region.cortical_area_added_to_region.is_connected(_on_cortical_area_added_to_region):
@@ -993,6 +1013,8 @@ func _on_brain_region_about_to_be_removed(region: BrainRegion) -> void:
 
 ## Called when a cortical area is added to a brain region - refresh that region's cache
 func _on_cortical_area_added_to_region(area: AbstractCorticalArea) -> void:
+	# A partial mapping may point into a sub-region or at a re-created area: re-establish on the next summary.
+	_partial_summary_signatures.clear()
 	var region = area.current_parent_region
 	if region:
 		_cache_info("FEAGI CACHE: Auto-refreshing brain region cache due to area addition: %s added to %s" % [area.cortical_ID, region.region_ID])
@@ -1000,6 +1022,7 @@ func _on_cortical_area_added_to_region(area: AbstractCorticalArea) -> void:
 
 ## Called when a cortical area is removed from a brain region - refresh that region's cache  
 func _on_cortical_area_removed_from_region(area: AbstractCorticalArea) -> void:
+	_partial_summary_signatures.clear()
 	# Note: We need to get the region from the signal context since the area might already be moved
 	# For now, we'll refresh all regions that might be affected
 	_cache_info("FEAGI CACHE: Auto-refreshing brain region caches due to area removal: %s" % area.cortical_ID)
@@ -1236,12 +1259,16 @@ func _refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
 	var area_mapping: Dictionary = {}
 	var regions_summary_for_partials: Dictionary = {}
 	var can_refresh_partials_from_summary: bool = false
+	var regions_changed: bool = false
 	var regions_output: FeagiRequestOutput = await FeagiCore.requests.get_regions_summary()
 	if regions_output.has_errored or not regions_output.success:
 		push_warning("FEAGI CACHE: Region summary failed before cortical refresh; cortical parent resolution may be incomplete.")
 	else:
 		regions_summary_for_partials = regions_output.decode_response_as_dict()
 		if brain_regions.summary_has_root_region(regions_summary_for_partials):
+			var regions_hash: int = regions_summary_for_partials.hash()
+			regions_changed = regions_hash != _regions_summary_hash
+			_regions_summary_hash = regions_hash
 			area_mapping = brain_regions.FEAGI_apply_region_summary_diff(regions_summary_for_partials)
 			_connect_to_existing_brain_region_signals()
 			can_refresh_partials_from_summary = true
@@ -1252,13 +1279,15 @@ func _refresh_cortical_areas_from_feagi() -> FeagiRequestOutput:
 	if cortical_output.has_errored or not cortical_output.success:
 		return cortical_output
 
-	_apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), area_mapping)
+	var areas_changed: bool = _apply_cortical_area_refresh(cortical_output.decode_response_as_dict(), area_mapping)
 	# Partial mappings reference cortical areas by ID; they must run after geometry refresh populates the cache
 	# (same order as _refresh_brain_regions_from_feagi).
 	if can_refresh_partials_from_summary:
 		_refresh_partial_mappings_from_summary(regions_summary_for_partials)
-	# Debug log suppressed to reduce runtime console spam.
-	cortical_areas_reloaded.emit()
+	# Only a real change (area added/removed/changed, or region summary changed) notifies listeners; a refresh
+	# that found nothing new must not make the Brain Monitor reconcile its visuals.
+	if areas_changed or regions_changed or not can_refresh_partials_from_summary:
+		cortical_areas_reloaded.emit()
 	return cortical_output
 
 ## Refresh brain geometry (positions/dimensions) from FEAGI
@@ -1298,6 +1327,8 @@ func _refresh_classifiers_from_feagi() -> FeagiRequestOutput:
 	if classifiers_output.has_errored or not classifiers_output.success:
 		return classifiers_output
 	var next_classifiers: Dictionary = {}
+	var classifiers_changed: bool = false
+	var next_hashes: Dictionary = {}
 	var decoded: Variant = classifiers_output.decode_response_as_array()
 	if decoded is Array:
 		for item in decoded:
@@ -1309,6 +1340,10 @@ func _refresh_classifiers_from_feagi() -> FeagiRequestOutput:
 			var parent_id: StringName = StringName(str(item.get("parent_region_id", "")).strip_edges())
 			var parent_region: BrainRegion = brain_regions.available_brain_regions.get(parent_id, null)
 			var existing: Variant = classifiers.get(classifier_id, null)
+			var record_hash: int = (item as Dictionary).hash()
+			next_hashes[classifier_id] = record_hash
+			if not (existing is GenomeClassifier) or int(_classifier_summary_hashes.get(classifier_id, 0)) != record_hash:
+				classifiers_changed = true
 			if existing is GenomeClassifier:
 				var existing_classifier: GenomeClassifier = existing as GenomeClassifier
 				existing_classifier.apply_feagi_dict(item)
@@ -1320,11 +1355,14 @@ func _refresh_classifiers_from_feagi() -> FeagiRequestOutput:
 	for stale_id in classifiers.keys():
 		if next_classifiers.has(stale_id):
 			continue
+		classifiers_changed = true
 		var stale: Variant = classifiers[stale_id]
 		if stale is GenomeClassifier:
 			(stale as GenomeClassifier).FEAGI_prepare_delete()
 	classifiers = next_classifiers
-	classifiers_reloaded.emit()
+	_classifier_summary_hashes = next_hashes
+	if classifiers_changed:
+		classifiers_reloaded.emit()
 	return classifiers_output
 
 
@@ -1350,7 +1388,12 @@ func _refresh_mappings_from_feagi() -> FeagiRequestOutput:
 		if areas_output.has_errored or not areas_output.success:
 			return areas_output
 	mapping_data.FEAGI_apply_mapping_summary_diff(mapping_summary)
-	mappings_reloaded.emit()
+	var mapping_hash: int = mapping_summary.hash()
+	var mappings_changed: bool = not _mapping_summary_hash_valid or mapping_hash != _mapping_summary_hash
+	_mapping_summary_hash = mapping_hash
+	_mapping_summary_hash_valid = true
+	if mappings_changed:
+		mappings_reloaded.emit()
 	return mappings_output
 
 ## Refresh agent capabilities from FEAGI
@@ -1381,7 +1424,9 @@ func _area_geometry_summary_contains_id(area_summary_data: Dictionary, cortical_
 
 
 ## Update cortical areas cache using summary data without wiping the entire genome
-func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_region_ID_mapping: Dictionary) -> void:
+## Returns true when any area was added, removed or its FEAGI summary differs from the last one applied.
+func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_region_ID_mapping: Dictionary) -> bool:
+	var any_change: bool = false
 	var previous_suppress_state = cortical_areas.suppress_update_notifications
 	cortical_areas.suppress_update_notifications = true
 	var existing_ids: Array = cortical_areas.available_cortical_areas.keys()
@@ -1404,10 +1449,13 @@ func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_regi
 		if miss_count >= HASH_REFRESH_ABSENCE_REMOVAL_THRESHOLD:
 			cortical_areas.remove_cortical_area(existing_id)
 			_cortical_absence_streaks.erase(existing_id)
+			_cortical_summary_hashes.erase(existing_id)
+			any_change = true
 	
 	for cortical_area_ID in area_summary_data.keys():
 		var area_JSON_summary: Dictionary = area_summary_data[cortical_area_ID]
 		_cortical_absence_streaks.erase(cortical_area_ID)
+		var summary_hash: int = area_JSON_summary.hash()
 		var resolved_id: Variant = cortical_area_ID
 		if not (cortical_area_ID in cortical_areas.available_cortical_areas):
 			var tid := String(cortical_area_ID).strip_edges()
@@ -1418,6 +1466,9 @@ func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_regi
 		if resolved_id in cortical_areas.available_cortical_areas:
 			# Ensure update targets the cache dictionary key (String vs StringName skew from HTTP).
 			area_JSON_summary["cortical_id"] = resolved_id
+			if int(_cortical_summary_hashes.get(resolved_id, 0)) != summary_hash:
+				any_change = true
+			_cortical_summary_hashes[resolved_id] = summary_hash
 			cortical_areas.FEAGI_update_cortical_area_from_dict(area_JSON_summary)
 		else:
 			var parent_region = _resolve_parent_region_for_area(area_JSON_summary, cortical_area_ID, area_ID_to_region_ID_mapping)
@@ -1425,7 +1476,10 @@ func _apply_cortical_area_refresh(area_summary_data: Dictionary, area_ID_to_regi
 				push_error("CORE CACHE: Unable to resolve parent region for new cortical area %s" % cortical_area_ID)
 				continue
 			cortical_areas.FEAGI_add_cortical_area_from_dict(area_JSON_summary, parent_region, cortical_area_ID)
+			_cortical_summary_hashes[cortical_area_ID] = summary_hash
+			any_change = true
 	cortical_areas.suppress_update_notifications = previous_suppress_state
+	return any_change
 
 ## Resolve parent region for a cortical area using API data or fallback mapping
 func _resolve_parent_region_for_area(area_JSON_summary: Dictionary, cortical_area_ID: StringName, area_ID_to_region_ID_mapping: Dictionary) -> BrainRegion:
@@ -1570,21 +1624,32 @@ func _clear_region_partial_mappings(region: BrainRegion) -> void:
 
 ## Rebuild IO partial mappings from a fresh `regions_members`-style summary (e.g. after designated IO preset change).
 func refresh_partial_mappings_from_regions_summary_dict(region_summary_data: Dictionary) -> void:
-	_refresh_partial_mappings_from_summary(region_summary_data)
+	_refresh_partial_mappings_from_summary(region_summary_data, true)
+
+## Forget the stored partial-mapping signature of a region (its partials were changed outside the summary refresh).
+func invalidate_partial_mapping_signature(region_id: StringName) -> void:
+	_partial_summary_signatures.erase(region_id)
 
 ## Rebuild partial mappings from region summary data (clears existing mappings first).
-func _refresh_partial_mappings_from_summary(region_summary_data: Dictionary) -> void:
+func _refresh_partial_mappings_from_summary(region_summary_data: Dictionary, force: bool = false) -> void:
 	var region_count: int = 0
 	var input_count: int = 0
 	var output_count: int = 0
+	var skipped_regions: int = 0
 	var debug_regions := _region_reload_debug_enabled()
 	for region_id in region_summary_data.keys():
 		if not brain_regions.available_brain_regions.has(region_id):
 			continue
 		region_count += 1
 		var region: BrainRegion = brain_regions.available_brain_regions[region_id]
-		_clear_region_partial_mappings(region)
 		var region_dict: Dictionary = region_summary_data[region_id]
+		var signature: int = [region_dict.get("inputs", []), region_dict.get("outputs", [])].hash()
+		if not force and _partial_summary_signatures.get(region_id, null) == signature:
+			skipped_regions += 1
+			continue # Same hints as last time: keep the existing partial mappings
+		_partial_summary_signatures.erase(region_id)
+		_clear_region_partial_mappings(region)
+		PartialMappingSet.skipped_missing_area_count = 0
 		if region_dict.has("inputs"):
 			var inputs: Array = []
 			inputs.assign(region_dict["inputs"])
@@ -1595,6 +1660,8 @@ func _refresh_partial_mappings_from_summary(region_summary_data: Dictionary) -> 
 			outputs.assign(region_dict["outputs"])
 			output_count += outputs.size()
 			region.FEAGI_establish_partial_mappings_from_JSONs(outputs, false)
+		if PartialMappingSet.skipped_missing_area_count == 0:
+			_partial_summary_signatures[region_id] = signature # Only trust it when every hint was established
 		if debug_regions:
 			print("[REGION-DBG][Cache] partials region_id=%s inputs=%d outputs=%d total_partials_now=%d" % [
 				String(region_id),
@@ -1602,7 +1669,7 @@ func _refresh_partial_mappings_from_summary(region_summary_data: Dictionary) -> 
 				int((region_dict.get("outputs", []) as Array).size()),
 				region.partial_mappings.size(),
 			])
-	print("FEAGI CACHE: Partial mappings refreshed (regions=%d, inputs=%d, outputs=%d)" % [region_count, input_count, output_count])
+	print("FEAGI CACHE: Partial mappings refreshed (regions=%d, unchanged_skipped=%d, inputs=%d, outputs=%d)" % [region_count, skipped_regions, input_count, output_count])
 
 ## Emit region_added for any regions that were introduced during refresh.
 func _emit_new_region_added_signals(previous_region_ids: Array) -> void:

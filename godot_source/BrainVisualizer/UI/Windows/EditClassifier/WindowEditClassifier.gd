@@ -803,7 +803,8 @@ func _apply_reward_section() -> bool:
 		latency,
 		learn_id,
 		confidence_id,
-		_selected_sources()
+		_selected_sources(),
+		false # _on_press_update refreshes the cache once after every save
 	)
 	if reward_result == null or reward_result.has_errored or reward_result.failed_requirement:
 		_notify_failure("Failed to update classifier reward learning.")
@@ -976,19 +977,38 @@ func _on_press_update() -> void:
 	_commit_focused_editor()
 	var next_name: String = _name_input.text if _name_input != null else String(_editing_classifier.friendly_name)
 	var coords: Vector3i = _vector.current_vector if _vector != null else _editing_classifier.coordinates_3D
+	var next_parent: StringName = _selected_region_id()
+	var identity_changed: bool = (
+		next_name.strip_edges() != String(_editing_classifier.friendly_name)
+		or coords != _editing_classifier.coordinates_3D
+		or _editing_classifier.current_parent_region == null
+		or next_parent != _editing_classifier.current_parent_region.region_ID
+	)
+	var sections_dirty: bool = not _dirty_sections.is_empty()
 	_update_button.disabled = true
 	if not await _apply_dirty_sections():
 		if is_instance_valid(self):
 			_update_button.disabled = false
 		return
-	var result: FeagiRequestOutput = await FeagiCore.requests.edit_classifier(
-		_editing_classifier,
-		next_name,
-		coords,
-		_selected_region_id()
-	)
-	if result == null or result.has_errored or result.failed_requirement:
-		_update_button.disabled = false
-		_notify_failure("Failed to update classifier.")
+	if not is_instance_valid(self):
 		return
+	if identity_changed:
+		var result: FeagiRequestOutput = await FeagiCore.requests.edit_classifier(
+			_editing_classifier,
+			next_name,
+			coords,
+			next_parent,
+			false # refreshed once below
+		)
+		if not is_instance_valid(self):
+			return
+		if result == null or result.has_errored or result.failed_requirement:
+			_update_button.disabled = false
+			_notify_failure("Failed to update classifier.")
+			return
+	if identity_changed or sections_dirty:
+		await FeagiCore.requests.refresh_after_classifier_edit(_editing_classifier)
+		if not is_instance_valid(self):
+			return
+	_editing_classifier.sync_layout_from_stamp()
 	close_window()

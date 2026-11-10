@@ -185,6 +185,12 @@ var _io_indicator_suspend_depth: int = 0
 # teardown+rebuild of every cortical area in the same frame, flooding Godot's CallQueue with deferred
 # calls (overflow crash) and leaving deferred work queued on just-freed nodes (dangling-callable crash).
 var _cache_rebuild_pending: bool = false
+## Set by genome replacement, region reloads and cortical ID remaps: the pending coalesced rebuild must be a full
+## teardown. Without it the rebuild is a partial reconcile that keeps existing visuals. A full request wins the frame.
+var _cache_full_rebuild_requested: bool = false
+## Debug counters (printed when BV_REGION_RELOAD_DEBUG is on).
+var _dbg_full_teardown_count: int = 0
+var _dbg_partial_reconcile_count: int = 0
 var _active_preview_indicators: Array[Node3D] = []
 var _last_scene_center: Vector3 = Vector3.ZERO
 var _is_mouse_hovering_viewport: bool = false
@@ -632,6 +638,8 @@ func setup(region: BrainRegion, show_combo_buttons: bool = true) -> void:
 			cache.genome_cache_replaced.connect(_on_cache_replaced_refresh_all_connections)
 		if not cache.mappings_reloaded.is_connected(_on_mappings_reloaded_refresh_connections):
 			cache.mappings_reloaded.connect(_on_mappings_reloaded_refresh_connections)
+		if not cache.cortical_id_remapped.is_connected(_on_cortical_id_remapped):
+			cache.cortical_id_remapped.connect(_on_cortical_id_remapped)
 		if not cache.cortical_areas_reloaded.is_connected(_on_cortical_areas_reloaded):
 			cache.cortical_areas_reloaded.connect(_on_cortical_areas_reloaded)
 		if not cache.brain_regions_reloaded.is_connected(_on_brain_regions_reloaded):
@@ -5544,6 +5552,9 @@ func _deferred_invoke_ws_fastpath_rebuild() -> void:
 
 ## Drops every cortical volume node and clears the ID map. Caller must call [method _add_missing_cortical_area_visualizations] next.
 func _teardown_all_cortical_area_visualizations() -> void:
+	_dbg_full_teardown_count += 1
+	if _region_reload_debug_enabled():
+		print("[REGION-DBG][3DScene] full cortical teardown #%d (partial reconciles so far: %d)" % [_dbg_full_teardown_count, _dbg_partial_reconcile_count])
 	_teardown_core_cluster_plate()
 	# Snapshot keys: do not assign dict values directly to typed vars (freed nodes throw on assignment in Godot 4.5).
 	var ids_snapshot: Array = _cortical_visualizations_by_ID.keys()
@@ -5563,7 +5574,8 @@ func _teardown_all_cortical_area_visualizations() -> void:
 	_cortical_visualizations_by_ID.clear()
 
 
-## Full cortical rebuild: same path as genome [signal genome_cache_replaced] — deterministic after hash refresh / reconnect.
+## Full cortical rebuild (teardown of every visual): only for [signal genome_cache_replaced], brain region reloads and
+## cortical ID remaps. Hash-driven cortical / classifier refreshes use [method _reconcile_cortical_visualizations_after_cache_touch].
 func _rebuild_cortical_visualizations_after_cache_touch() -> void:
 	if FeagiCore != null and FeagiCore.network != null and FeagiCore.network.visualization_sink != null:
 		FeagiCore.bv_begin_visual_rebuild_pause()
@@ -5572,13 +5584,34 @@ func _rebuild_cortical_visualizations_after_cache_touch() -> void:
 	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
 
 
+## Partial reload: keeps existing visuals; [method _add_missing_cortical_area_visualizations] removes stale / hidden
+## ones and adds missing ones. Pause/resync stay 1:1 with the full path. Returns true when the visual set changed.
+func _reconcile_cortical_visualizations_after_cache_touch() -> bool:
+	if FeagiCore != null and FeagiCore.network != null and FeagiCore.network.visualization_sink != null:
+		FeagiCore.bv_begin_visual_rebuild_pause()
+	var ids_before: Array = _cortical_visualizations_by_ID.keys()
+	_add_missing_cortical_area_visualizations()
+	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
+	var ids_after: Array = _cortical_visualizations_by_ID.keys()
+	var set_changed: bool = ids_before.size() != ids_after.size()
+	if not set_changed:
+		for vid in ids_after:
+			if not ids_before.has(vid):
+				set_changed = true
+				break
+	_dbg_partial_reconcile_count += 1
+	if _region_reload_debug_enabled():
+		print("[REGION-DBG][3DScene] partial cortical reconcile #%d visual_set_changed=%s (full teardowns so far: %d)" % [_dbg_partial_reconcile_count, str(set_changed), _dbg_full_teardown_count])
+	return set_changed
+
+
 ## Public entry for FeagiCore after transport rebind when connectome hashes did not change (e.g. embodiment / MuJoCo).
 func resync_visualization_after_transport_recovery() -> void:
 	_ensure_representing_region_from_cache()
 	_create_missing_brain_region_visualizations()
 	# Do NOT call [_rebuild_cortical_visualizations_after_cache_touch] here: it queue_frees every root cortical
 	# volume, unregisters DirectPoints on [AbstractCorticalArea], and races [method request_bv_fastpath_cache_rebuild]
-	# — the classic broken IPU / sensory state after embodiment. Full rebuild stays on hash-driven cache signals only.
+	# — the classic broken IPU / sensory state after embodiment. Full rebuild is reserved for genome replace, region reloads and ID remaps; hash-driven cortical/classifier refreshes only reconcile (and only when the cache saw a real change).
 	call_deferred("_create_missing_brain_region_visualizations")
 	# FeagiCore already requests a fast-path rebuild; one more deferred pass after this frame so new region plates register.
 	_schedule_ws_fastpath_resync_after_cortical_visuals_refresh()
@@ -5590,10 +5623,18 @@ func resync_visualization_after_transport_recovery() -> void:
 ## below (1:1 per handler), so the indicator-suspend depth stays correct regardless of how many signals fire.
 func _on_cache_replaced_refresh_all_connections() -> void:
 	_push_io_indicator_suspend()
+	_cache_full_rebuild_requested = true
 	_request_coalesced_cache_rebuild()
 	call_deferred("_release_io_indicator_suspend_after_settle")
 
 
+## A cortical ID changed: visuals are keyed by ID, so the next coalesced rebuild is a full one.
+func _on_cortical_id_remapped() -> void:
+	_cache_full_rebuild_requested = true
+
+
+## Fires only when the cache saw a real change (area added/removed/changed, regions or classifiers changed; hash-driven
+## refreshes share this path). Results in a partial reconcile unless a full rebuild was also requested this frame.
 func _on_cortical_areas_reloaded() -> void:
 	_push_io_indicator_suspend()
 	_request_coalesced_cache_rebuild()
@@ -5602,6 +5643,7 @@ func _on_cortical_areas_reloaded() -> void:
 
 func _on_brain_regions_reloaded() -> void:
 	_push_io_indicator_suspend()
+	_cache_full_rebuild_requested = true
 	if _region_reload_debug_enabled():
 		var br = FeagiCore.feagi_local_cache.brain_regions if FeagiCore != null and FeagiCore.feagi_local_cache != null else null
 		print("[REGION-DBG][3DScene] brain_regions_reloaded representing=%s available_regions=%d existing_plates=%d" % [
@@ -5629,8 +5671,15 @@ func _perform_coalesced_cache_rebuild() -> void:
 	_ensure_representing_region_from_cache()
 	# CRITICAL: Check for new brain regions that need visualization after cloning / reload.
 	_create_missing_brain_region_visualizations()
-	_rebuild_cortical_visualizations_after_cache_touch()
-	_refresh_existing_region_plates_after_cortical_rebuild()
+	var full_rebuild: bool = _cache_full_rebuild_requested
+	_cache_full_rebuild_requested = false
+	var visuals_changed: bool = true
+	if full_rebuild:
+		_rebuild_cortical_visualizations_after_cache_touch()
+	else:
+		visuals_changed = _reconcile_cortical_visualizations_after_cache_touch()
+	if visuals_changed:
+		_refresh_existing_region_plates_after_cortical_rebuild()
 	_ensure_external_io_plates()
 	# Force refresh connections for hovered areas and any Shift-held mapping lines.
 	for cortical_viz in _cortical_visualizations_by_ID.values():
