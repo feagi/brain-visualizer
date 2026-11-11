@@ -36,6 +36,7 @@ text = "Z ="
 
 [node name="ZPrev" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ZRow"]
 layout_mode = 2
+tooltip_text = "Go to the previous Z slice. Each slice holds its own vectors."
 text = "<"
 
 [node name="ZSpin" type="SpinBox" parent="WindowPanel/WindowMargin/WindowInternals/ZRow"]
@@ -44,10 +45,109 @@ layout_mode = 2
 min_value = -10.0
 max_value = 10.0
 value = 0.0
+tooltip_text = "Z slice being edited. Type a value to jump to that slice."
 
 [node name="ZNext" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ZRow"]
 layout_mode = 2
+tooltip_text = "Go to the next Z slice. Each slice holds its own vectors."
 text = ">"
+
+[node name="ToolRow" type="HFlowContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 8
+alignment = 1
+
+[node name="GridGroup" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="GridMinus" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/GridGroup"]
+layout_mode = 2
+tooltip_text = "Fewer, larger cells. Lowers grid resolution so you see less range but click more easily."
+text = "Grid -"
+
+[node name="GridPlus" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/GridGroup"]
+layout_mode = 2
+tooltip_text = "More, smaller cells. Raises grid resolution to show a wider range around the center."
+text = "Grid +"
+
+[node name="RotateGroup" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RotateCcw" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/RotateGroup"]
+layout_mode = 2
+tooltip_text = "Rotate this slice 90 degrees counter-clockwise around the center (0, 0)."
+text = "Rotate ⟲"
+
+[node name="RotateCw" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/RotateGroup"]
+layout_mode = 2
+tooltip_text = "Rotate this slice 90 degrees clockwise around the center (0, 0)."
+text = "Rotate ⟳"
+
+[node name="ScaleGroup" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Shrink" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/ScaleGroup"]
+layout_mode = 2
+tooltip_text = "Halve the distance of this slice's vectors from the center. Vectors next to the center stay; overlaps merge."
+text = "Shrink"
+
+[node name="Enlarge" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/ScaleGroup"]
+layout_mode = 2
+tooltip_text = "Double the distance of this slice's vectors from the center."
+text = "Enlarge"
+
+[node name="ClipGroup" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CopySlice" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/ClipGroup"]
+layout_mode = 2
+tooltip_text = "Copy the vectors on the Z slice you are viewing to the clipboard (Ctrl+C / Cmd+C). Disabled when the slice is empty."
+text = "Copy slice"
+
+[node name="CopyAll" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/ClipGroup"]
+layout_mode = 2
+tooltip_text = "Copy the vectors of every Z slice to the clipboard, each keeping its Z. Disabled when there are no vectors."
+text = "Copy all"
+
+[node name="Paste" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/ClipGroup"]
+layout_mode = 2
+tooltip_text = "Add the copied vectors to what is already here; nothing is removed (Ctrl+V / Cmd+V). A copied slice lands on the Z slice you are viewing; a copied rule keeps its own Z numbers. Disabled when the clipboard holds no vectors from this editor."
+text = "Paste"
+
+[node name="ClearGroup" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Clear" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/ClearGroup"]
+layout_mode = 2
+tooltip_text = "Remove every vector on the Z slice you are viewing. Other slices stay. Undo brings them back."
+text = "Clear"
+
+[node name="HistoryGroup" type="HBoxContainer" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Undo" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/HistoryGroup"]
+layout_mode = 2
+tooltip_text = "Undo the last change to the vectors (Ctrl+Z / Cmd+Z). History lasts until this window closes. Disabled when there is nothing to undo."
+text = "Undo"
+
+[node name="Redo" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ToolRow/HistoryGroup"]
+layout_mode = 2
+tooltip_text = "Redo the change you just undid (Ctrl+Shift+Z or Ctrl+Y). Disabled when there is nothing to redo."
+text = "Redo"
+
+[node name="HiddenNote" type="Label" parent="WindowPanel/WindowMargin/WindowInternals"]
+layout_mode = 2
+tooltip_text = "Vectors on this slice that lie beyond the visible grid. They are kept and saved; raise Grid + to see them."
+mouse_filter = 0
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="GridContainer" type="CenterContainer" parent="WindowPanel/WindowMargin/WindowInternals"]
 layout_mode = 2
@@ -61,6 +161,13 @@ layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 2
 
+[node name="Guide" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+tooltip_text = "Open the user guide page for vector rules at the section on this editor."
+text = "Guide"
+
 [node name="Spacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -69,10 +176,12 @@ size_flags_horizontal = 3
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
+tooltip_text = "Close without saving any changes."
 text = "Cancel"
 
 [node name="Save" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
 custom_minimum_size = Vector2(128, 64)
 layout_mode = 2
 theme_type_variation = &"Button_big"
+tooltip_text = "Save all vectors on every Z slice and close."
 text = "Save"
