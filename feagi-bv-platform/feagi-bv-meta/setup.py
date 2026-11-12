@@ -24,7 +24,7 @@ VERSION = get_version()
 
 setup(
     install_requires=[
-        "feagi-core==2.6.13",
+        "feagi-core>=2.6.13,<3",
         "toml>=0.10.2",
         f"feagi-bv-linux>={VERSION} ; sys_platform == 'linux' and platform_machine == 'x86_64'",
         f"feagi-bv-linux-arm64>={VERSION} ; sys_platform == 'linux' and platform_machine == 'aarch64'",
