@@ -179,8 +179,11 @@ func _on_item_selected(index: int) -> void:
 	hide()
 
 
-## Handle list item click (always trigger selection behavior).
-func _on_item_clicked(index: int, _at_position: Vector2, _mouse_button_index: int) -> void:
+## Handle list item click. A left click on a row selects it.
+## The wheel and other buttons are ignored because ItemList reports them as clicks too.
+func _on_item_clicked(index: int, _at_position: Vector2, mouse_button_index: int) -> void:
+	if mouse_button_index != MOUSE_BUTTON_LEFT:
+		return
 	_on_item_selected(index)
 
 
