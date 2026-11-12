@@ -30,6 +30,7 @@ var _title: String = ""
 var _subtitle: String = ""
 var _badge: String = ""
 var _style: StyleBoxFlat
+var _object: Object
 
 
 func setup(index: int, item: Dictionary, box_look: LOOK, hidden_mappings: int) -> void:
@@ -43,6 +44,7 @@ func setup(index: int, item: Dictionary, box_look: LOOK, hidden_mappings: int) -
 	custom_minimum_size = item["size"]
 	size = item["size"]
 	_title = item["name"]
+	_object = item["object"]
 	_style = StyleBoxFlat.new()
 	_style.set_corner_radius_all(8)
 	match look:
@@ -71,8 +73,8 @@ func setup(index: int, item: Dictionary, box_look: LOOK, hidden_mappings: int) -
 		tip += "\nDouble-click to open"
 	elif look == LOOK.FRAME and int(item["parent"]) != -1:
 		tip += "\nDouble-click the header to close"
-	if look != LOOK.LEAF and not item["closed_only"]:
-		tip += "\nShift-click to open in Circuit Builder and Brain Monitor"
+	if _can_shift_click():
+		tip += "\nShift-click to show it in Brain Monitor, as Search does"
 	tooltip_text = tip
 	if look == LOOK.LEAF and item["object"] is AbstractCorticalArea:
 		mouse_entered.connect(hovered.emit.bind(index))
@@ -102,13 +104,18 @@ func _draw() -> void:
 			draw_string(font, Vector2(size.x * 0.6, 30), _subtitle, HORIZONTAL_ALIGNMENT_RIGHT, size.x * 0.4 - 14, SUBTITLE_FONT_SIZE, SUBTEXT_COLOR)
 
 
+## Areas and regions (closed ones included) can be shown in the Brain Monitor; classifiers cannot.
+func _can_shift_click() -> bool:
+	return _object is AbstractCorticalArea or _object is BrainRegion
+
+
 func _gui_input(event: InputEvent) -> void:
 	var mouse: InputEventMouseButton = event as InputEventMouseButton
 	if mouse == null or mouse.button_index != MOUSE_BUTTON_LEFT or not mouse.pressed:
 		return
 	# Shift takes precedence so a shift double-click opens the tabs once and doesn't also toggle the box.
 	if mouse.shift_pressed:
-		if look != LOOK.LEAF and not mouse.double_click:
+		if _can_shift_click() and not mouse.double_click:
 			shift_clicked.emit(item_index)
 		accept_event()
 		return

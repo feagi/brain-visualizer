@@ -147,6 +147,8 @@ func _line_row(entry: Dictionary) -> HBoxContainer:
 	mark.line_color = entry["color"]
 	mark.dashed = entry["dashed"]
 	mark.wavy = bool(entry.get("wavy", false))
+	if _for_schematic:
+		mark.dashed_width = MappingLineStyle.DASHED_WIDTH_PX
 	mark.custom_minimum_size = Vector2(28, SWATCH)
 	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -193,6 +195,9 @@ class LineMark extends Control:
 	var line_color: Color = Color.WHITE
 	var dashed: bool = false
 	var wavy: bool = false
+	## Screen width of the dashes. Circuit Builder still draws dashes at the solid width, so only the
+	## schematic key passes [constant MappingLineStyle.DASHED_WIDTH_PX].
+	var dashed_width: float = MappingLineStyle.SOLID_WIDTH_PX
 
 	func _draw() -> void:
 		var y := size.y * 0.5
@@ -204,6 +209,6 @@ class LineMark extends Control:
 		if dashed or wavy:
 			var segments := MappingLineStyle.dash_segments(points, DASH_LENGTH, DASH_GAP)
 			if not segments.is_empty():
-				draw_multiline(segments, line_color, 2.0)
+				draw_multiline(segments, line_color, dashed_width)
 		else:
-			draw_polyline(points, line_color, 2.0)
+			draw_polyline(points, line_color, MappingLineStyle.SOLID_WIDTH_PX)

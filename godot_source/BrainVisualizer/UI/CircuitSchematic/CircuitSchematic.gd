@@ -6,8 +6,11 @@ class_name CircuitSchematic
 ## once. Hovering a cortical area box dims everything not related to it: the areas upstream that reach it
 ## and downstream that it reaches through any chain of mappings, and only the mappings on those chains
 ## (see [SchematicReachability]); the mouse leaving restores everything. Region frames never dim, and the
-## export never shows the dimming. Shift-clicking a region opens it in Circuit Builder
-## and Brain Monitor, and the Export menu saves the whole view as PNG, JPG or PDF. Mappings are merged
+## export never shows the dimming. The Filter box at the top left matches cortical areas and regions by
+## name (case-insensitive substring): matches stay lit, the rest dims, the regions holding a match open
+## and the view fits the matches; clearing it restores the earlier open state and the whole-genome fit.
+## Show all also covers regions created later, until Hide all. Shift-clicking an area or region shows it in the Brain
+## Monitor, as global search does when it is selected (UIManager.focus_searched_object), and the Export menu saves the whole view as PNG, JPG or PDF. Mappings are merged
 ## into one line per pair of visible ends, with a count when more than one mapping is merged. Editing
 ## stays in Circuit Builder.
 ## See docs/CIRCUIT_SCHEMATIC_VIEW_DESIGN.md.
@@ -33,6 +36,15 @@ const MENU_INSET: float = 8.0
 const MENU_GROUP_GAP: float = 8.0
 const MENU_GROUP_GAP_NAME: StringName = &"GroupGap"
 const MENU_FALLBACK_HEIGHT: float = 28.0
+const FILTER_MIN_WIDTH: float = 220.0  ## Floor; the real width is measured from the placeholder in _style_menu.
+const FILTER_WIDTH_PAD: float = 8.0
+const FILTER_DEBOUNCE_S: float = 0.15
+const FILTER_FIT_PAD: float = 64.0
+const FILTER_FOCUS_COLOR: Color = Color8(120, 160, 220)
+const FILTER_ERROR_COLOR: Color = Color8(235, 95, 95)
+const FILTER_PLACEHOLDER_COLOR: Color = Color8(140, 140, 140)
+const FILTER_TOOLTIP: String = "Type part of a cortical area or circuit name: matches stay lit, the rest dims, and regions holding a match open. Clear to restore."
+const MENU_GAP_META: StringName = &"schematic_menu_gap"
 ## Triangle icons have built-in padding, so they need more than the plus-icon share of the height.
 const MENU_ICON_SCALE: float = 0.6
 
@@ -54,6 +66,18 @@ var _reachability: SchematicReachability
 var _item_of_area: Dictionary = {} ## AbstractCorticalArea -> item index
 ## The area box under the mouse. Held as the object, not an index, so it survives rebuilds.
 var _hovered_area: AbstractCorticalArea
+## Show all stays on until Hide all, so regions created later open too.
+var _show_all_mode: bool = false
+var _known_region_ids: Dictionary = {} ## region_ID -> true for the regions of the current model
+## Name filter. The query is stored, never item indices, so it survives rebuilds.
+var _filter_edit: LineEdit
+var _filter_timer: Timer
+var _filter_query: String = ""
+var _filter_matches: Array[int] = []
+var _filter_items: Dictionary = {} ## item index -> true: a match or anything inside a matching region
+var _pre_filter_open: Dictionary = {} ## open_region_ids() from before the query became active
+var _fit_target: Rect2 = Rect2() ## zero size = the whole canvas
+var _fit_generation: int = 0
 
 
 func _ready() -> void:
@@ -75,6 +99,7 @@ func _ready() -> void:
 		return
 	_add_export_menu()
 	_add_open_all_buttons()
+	_add_filter_box()
 	_style_menu()
 	AreaTypeLegend.add_to(self, SchematicTreeBuilder.CLASSIFIER_COLOR, true)
 	if BV.UI != null:
@@ -106,9 +131,21 @@ func rebuild() -> void:
 	_hovered_area = null
 	_reachability = SchematicReachability.new(_model)
 	_item_of_area.clear()
+	var region_ids: Dictionary = {}
 	for i in _model.items.size():
-		if _model.items[i]["object"] is AbstractCorticalArea:
-			_item_of_area[_model.items[i]["object"]] = i
+		var object: Object = _model.items[i]["object"]
+		if object is AbstractCorticalArea:
+			_item_of_area[object] = i
+		elif object is BrainRegion and i > 0 and not _model.items[i]["closed_only"]:
+			var region_id: Variant = (object as BrainRegion).region_ID
+			region_ids[region_id] = true
+			if _show_all_mode and not _known_region_ids.has(region_id):
+				open_ids[region_id] = true
+				if not _filter_query.is_empty():
+					_pre_filter_open[region_id] = true
+	_known_region_ids = region_ids
+	# Rebuilds only refresh the matches and the dimming; they never re-open regions or re-fit.
+	_recompute_filter()
 	set_open_region_ids(open_ids)
 	if first_build and not export_mode:
 		request_initial_fit()
@@ -138,6 +175,8 @@ func set_open_region_ids(ids: Dictionary) -> void:
 ## Fits the whole genome once this view has a size.
 func request_initial_fit() -> void:
 	_fit_pending = true
+	_fit_target = Rect2()
+	_fit_generation += 1
 	_try_fit()
 
 
@@ -152,6 +191,7 @@ func set_region_open(item_index: int, is_open: bool) -> void:
 
 ## Opens every region that can be opened, or closes all but the root.
 func set_all_regions_open(is_open: bool) -> void:
+	_show_all_mode = is_open
 	if is_open:
 		_open.resize(_model.items.size())
 		for i in _model.items.size():
@@ -226,9 +266,12 @@ func _apply_highlight(lines: Array) -> void:
 	var hovered_item: int = _item_of_area.get(_hovered_area, -1) if _hovered_area != null else -1
 	if hovered_item == -1 or not _boxes.has(hovered_item):
 		_hovered_area = null
-		for box: SchematicBox in _boxes.values():
-			box.set_lit(true)
-		_edge_layer.set_highlight(null)
+		if _filter_items.is_empty():
+			for box: SchematicBox in _boxes.values():
+				box.set_lit(true)
+			_edge_layer.set_highlight(null)
+		else:
+			_apply_filter_highlight(lines)
 		return
 	var related: Dictionary = _reachability.related_to(hovered_item)
 	var lit_ends: Dictionary = {}
@@ -241,6 +284,25 @@ func _apply_highlight(lines: Array) -> void:
 	for i in lines.size():
 		for mapping_index: int in lines[i][6]:
 			if related.mappings.has(mapping_index):
+				lit_lines[i] = 1
+				break
+	_edge_layer.set_highlight(lit_lines)
+
+
+## The filter's lit state: a box is lit when it is where some in-filter item shows (the item itself, or
+## the closed region holding it); a line is lit when a mapping it merges has both ends in the filter.
+func _apply_filter_highlight(lines: Array) -> void:
+	var lit_ends: Dictionary = {}
+	for item: int in _filter_items:
+		lit_ends[_model.visible_end(item, _open)] = true
+	for index: int in _boxes:
+		(_boxes[index] as SchematicBox).set_lit(lit_ends.has(index))
+	var lit_lines: PackedByteArray = PackedByteArray()
+	lit_lines.resize(lines.size())
+	for i in lines.size():
+		for mapping_index: int in lines[i][6]:
+			var mapping: PackedInt32Array = _model.mappings[mapping_index]
+			if _filter_items.has(mapping[0]) and _filter_items.has(mapping[1]):
 				lit_lines[i] = 1
 				break
 	_edge_layer.set_highlight(lit_lines)
@@ -270,9 +332,11 @@ func _on_box_double_clicked(item_index: int) -> void:
 
 
 func _on_box_shift_clicked(item_index: int) -> void:
-	if not _model.is_region(item_index) or BV.UI == null:
+	if BV.UI == null:
 		return
-	BV.UI.open_region_in_circuit_builder_and_monitor(_model.items[item_index]["object"] as BrainRegion)
+	var object: Object = _model.items[item_index]["object"]
+	if object is AbstractCorticalArea or object is BrainRegion:
+		BV.UI.focus_searched_object(object)
 
 
 func _add_export_menu() -> void:
@@ -287,19 +351,116 @@ func _add_export_menu() -> void:
 		popup.add_item(SchematicImageFile.LABELS[format], format)
 	popup.id_pressed.connect(func(format: int) -> void: SchematicExporter.export_view(self, format as SchematicImageFile.FORMAT))
 	_add_menu_button(button)
-	var gap: Control = Control.new()
-	gap.name = MENU_GROUP_GAP_NAME
-	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	get_menu_hbox().add_child(gap)
+	_add_menu_gap()
 
 
 func _add_open_all_buttons() -> void:
 	for is_open: bool in [true, false]:
 		var button: Button = Button.new()
 		button.text = "Show all" if is_open else "Hide all"
-		button.tooltip_text = "Open every region to show its internals" if is_open else "Close every region"
+		button.tooltip_text = "Open every region, including ones created later, until Hide all" if is_open else "Close every region"
 		button.pressed.connect(set_all_regions_open.bind(is_open))
 		_add_menu_button(button)
+
+
+func _add_filter_box() -> void:
+	_add_menu_gap()
+	_filter_edit = LineEdit.new()
+	_filter_edit.placeholder_text = "Filter areas or circuits"
+	_filter_edit.tooltip_text = FILTER_TOOLTIP
+	_filter_edit.clear_button_enabled = true
+	_filter_edit.select_all_on_focus = true
+	_filter_edit.mouse_default_cursor_shape = Control.CURSOR_IBEAM
+	_filter_edit.add_theme_color_override("font_color", MENU_TEXT_COLOR)
+	_filter_edit.add_theme_color_override("font_placeholder_color", FILTER_PLACEHOLDER_COLOR)
+	_set_filter_error(false)
+	_filter_edit.text_changed.connect(_on_filter_text_changed)
+	get_menu_hbox().add_child(_filter_edit)
+	_filter_timer = Timer.new()
+	_filter_timer.one_shot = true
+	_filter_timer.wait_time = FILTER_DEBOUNCE_S
+	_filter_timer.timeout.connect(_apply_filter_query)
+	add_child(_filter_timer)
+
+
+## Plate like the menu buttons. A border marks focus, and a red one (with red text) marks no match.
+func _set_filter_error(is_error: bool) -> void:
+	_filter_edit.add_theme_color_override("font_color", FILTER_ERROR_COLOR if is_error else MENU_TEXT_COLOR)
+	for state: String in ["normal", "focus", "read_only"]:
+		var plate: StyleBoxFlat = StyleBoxFlat.new()
+		plate.bg_color = MENU_PLATE_COLORS["normal"]
+		plate.content_margin_left = COMBO_STYLER.ROW_PAD_X
+		plate.content_margin_right = COMBO_STYLER.ROW_PAD_X
+		if is_error:
+			plate.border_color = FILTER_ERROR_COLOR
+			plate.set_border_width_all(1)
+		elif state == "focus":
+			plate.border_color = FILTER_FOCUS_COLOR
+			plate.set_border_width_all(1)
+		_filter_edit.add_theme_stylebox_override(state, plate)
+
+
+func _on_filter_text_changed(_text: String) -> void:
+	_filter_timer.start()
+
+
+## Recomputes the matches and the open set from the query. The open set is the state from before the
+## filter plus the ancestors of the matches, rebuilt each time so keystrokes never accumulate.
+func _apply_filter_query() -> void:
+	var query: String = _filter_edit.text.strip_edges()
+	if query == _filter_query:
+		return
+	var was_active: bool = not _filter_query.is_empty()
+	_filter_query = query
+	if query.is_empty():
+		_set_filter_error(false)
+		_recompute_filter()
+		set_open_region_ids(_pre_filter_open)
+		_pre_filter_open = {}
+		request_initial_fit()
+		return
+	if not was_active:
+		_pre_filter_open = open_region_ids()
+	_recompute_filter()
+	_set_filter_error(_filter_matches.is_empty())
+	var ids: Dictionary = _pre_filter_open.duplicate()
+	var target: Rect2 = Rect2()
+	for match_index: int in _filter_matches:
+		for ancestor: int in _model.ancestors[match_index]:
+			var object: Object = _model.items[ancestor]["object"]
+			if ancestor > 0 and object is BrainRegion and not _model.items[ancestor]["closed_only"]:
+				ids[(object as BrainRegion).region_ID] = true
+		var rect: Rect2 = _model.global_rect(match_index)
+		target = rect if target.size == Vector2.ZERO else target.merge(rect)
+	set_open_region_ids(ids)
+	if not _filter_matches.is_empty():
+		_try_fit(target.grow(FILTER_FIT_PAD))
+
+
+## Matches and in-filter items from the stored query on the current model.
+func _recompute_filter() -> void:
+	_filter_matches = _model.items_matching(_filter_query)
+	_filter_items.clear()
+	var matched: Dictionary = {}
+	for index: int in _filter_matches:
+		matched[index] = true
+	for i in _model.items.size():
+		var inside: bool = matched.has(i)
+		if not inside:
+			for ancestor: int in _model.ancestors[i]:
+				if matched.has(ancestor):
+					inside = true
+					break
+		if inside:
+			_filter_items[i] = true
+
+
+func _add_menu_gap() -> void:
+	var gap: Control = Control.new()
+	gap.name = MENU_GROUP_GAP_NAME
+	gap.set_meta(MENU_GAP_META, true)
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	get_menu_hbox().add_child(gap)
 
 
 ## Menu buttons are plain plates like the Circuit Builder and Brain Monitor tab strips.
@@ -342,8 +503,27 @@ func _style_menu() -> void:
 		if button != null:
 			button.custom_minimum_size.y = height
 			button.add_theme_constant_override("icon_max_width", icon_size)
-		elif child.name == MENU_GROUP_GAP_NAME:
+		elif child.has_meta(MENU_GAP_META):
 			(child as Control).custom_minimum_size.x = MENU_GROUP_GAP
+		elif child == _filter_edit:
+			_filter_edit.custom_minimum_size.y = height
+	_filter_edit.custom_minimum_size.x = _filter_width_for_placeholder()
+
+
+## Width that fits the placeholder in the font the menu theme gives the LineEdit (never below the floor).
+func _filter_width_for_placeholder() -> float:
+	var font: Font = _filter_edit.get_theme_font("font")
+	var font_size: int = _filter_edit.get_theme_font_size("font_size")
+	if font == null:
+		return FILTER_MIN_WIDTH
+	var text_width: float = font.get_string_size(_filter_edit.placeholder_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var plate: StyleBox = _filter_edit.get_theme_stylebox("normal")
+	var margins: float = 0.0
+	if plate != null:
+		margins = plate.get_content_margin(SIDE_LEFT) + plate.get_content_margin(SIDE_RIGHT)
+	var clear_icon: Texture2D = _filter_edit.get_theme_icon("clear")
+	var clear_width: float = float(clear_icon.get_width()) if clear_icon != null else 0.0
+	return maxf(FILTER_MIN_WIDTH, ceilf(text_width + margins + clear_width + FILTER_WIDTH_PAD))
 
 
 ## Same theme as the Circuit Builder and Brain Monitor tab strips (two scale steps smaller).
@@ -364,23 +544,36 @@ func _tab_strip_button_height(strip_theme: Theme) -> float:
 	return MENU_FALLBACK_HEIGHT
 
 
-func _try_fit() -> void:
+## Fits the view to [param target] (canvas units) once this view has a size. With no target it continues
+## the pending fit, which is the whole canvas unless a filter fit was requested. A newer request
+## cancels an older one still waiting for the scroll range to settle.
+func _try_fit(target: Rect2 = Rect2()) -> void:
+	if target.size != Vector2.ZERO:
+		_fit_target = target
+		_fit_pending = true
+		_fit_generation += 1
 	if not _fit_pending or not is_visible_in_tree() or size.x <= 1.0 or size.y <= 1.0 or _model == null or _model.canvas_rect.size == Vector2.ZERO:
 		return
 	_fit_pending = false
+	var generation: int = _fit_generation
 	# GraphEdit clamps scroll_offset to its scroll range, which only catches up with newly added
 	# boxes after a couple of frames (Circuit Builder waits the same way).
 	await get_tree().process_frame
 	await get_tree().process_frame
+	if generation != _fit_generation:
+		return
 	if not is_visible_in_tree() or size.x <= 1.0 or size.y <= 1.0:
 		_fit_pending = true
 		return
 	var canvas: Rect2 = _model.canvas_rect
-	var fit_zoom: float = minf(size.x / canvas.size.x, size.y / canvas.size.y) * FIT_MARGIN
-	zoom_min = maxf(0.01, minf(fit_zoom * 0.5, 0.2))
+	var area: Rect2 = _fit_target if _fit_target.size != Vector2.ZERO else canvas
+	var canvas_zoom: float = minf(size.x / canvas.size.x, size.y / canvas.size.y) * FIT_MARGIN
+	var fit_zoom: float = minf(size.x / area.size.x, size.y / area.size.y) * FIT_MARGIN
+	# The zoom floor comes from the whole canvas, so a close-up never stops zooming back out.
+	zoom_min = maxf(0.01, minf(canvas_zoom * 0.5, 0.2))
 	zoom_max = MAX_ZOOM
 	zoom = clampf(fit_zoom, zoom_min, zoom_max)
-	scroll_offset = canvas.get_center() * zoom - size * 0.5
+	scroll_offset = area.get_center() * zoom - size * 0.5
 
 
 func _connect_cache_signals() -> void:

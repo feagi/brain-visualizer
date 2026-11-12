@@ -102,6 +102,21 @@ func default_open_mask() -> PackedByteArray:
 	return mask
 
 
+## Cortical areas and brain regions whose name contains [param query], ignoring case, in item order.
+## Classifiers and the root never match, and an empty query matches nothing.
+func items_matching(query: String) -> Array[int]:
+	var result: Array[int] = []
+	var needle: String = query.strip_edges().to_lower()
+	if needle.is_empty():
+		return result
+	for i in range(1, items.size()):
+		if items[i]["kind"] == KIND.CLASSIFIER:
+			continue
+		if str(items[i]["name"]).to_lower().contains(needle):
+			result.append(i)
+	return result
+
+
 ## Items whose ancestors are all open, parents before children.
 func visible_items(open: PackedByteArray) -> Array[int]:
 	var result: Array[int] = []
