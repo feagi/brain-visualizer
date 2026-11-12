@@ -89,8 +89,9 @@ the same as in CB.
   description and counts; a line's mapping count and rules.
 - Double-click a region (block or frame header) to animate the zoom so that region fills the view.
   It opens as a side effect of the zoom.
-- Shift-click an area or region (closed regions included) to show it in the Brain Monitor, exactly as
-  global search does when it is selected (`UIManager.focus_searched_object`). Classifiers do nothing.
+- Shift-click an area, region (closed regions included) or classifier to show it in the Brain Monitor, as
+  global search does when it is selected (`UIManager.focus_searched_object`). A classifier is shown as its
+  stamp area (sample memory); with no stamp in the cache it logs a warning.
 - Right-click a region and choose "Open in Circuit Builder" to open the existing CB tab for that
   region, which is where editing happens.
 - The Filter box in the top-left menu (see "Filter" below) lights the cortical areas and regions whose

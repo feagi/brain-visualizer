@@ -9,7 +9,7 @@ class_name CircuitSchematic
 ## export never shows the dimming. The Filter box at the top left matches cortical areas and regions by
 ## name (case-insensitive substring): matches stay lit, the rest dims, the regions holding a match open
 ## and the view fits the matches; clearing it restores the earlier open state and the whole-genome fit.
-## Show all also covers regions created later, until Hide all. Shift-clicking an area or region shows it in the Brain
+## Show all also covers regions created later, until Hide all. Shift-clicking an area, region or classifier shows it in the Brain
 ## Monitor, as global search does when it is selected (UIManager.focus_searched_object), and the Export menu saves the whole view as PNG, JPG or PDF. Mappings are merged
 ## into one line per pair of visible ends, with a count when more than one mapping is merged. Editing
 ## stays in Circuit Builder.
@@ -335,7 +335,7 @@ func _on_box_shift_clicked(item_index: int) -> void:
 	if BV.UI == null:
 		return
 	var object: Object = _model.items[item_index]["object"]
-	if object is AbstractCorticalArea or object is BrainRegion:
+	if object is AbstractCorticalArea or object is BrainRegion or object is GenomeClassifier:
 		BV.UI.focus_searched_object(object)
 
 

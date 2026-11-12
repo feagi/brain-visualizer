@@ -2345,14 +2345,22 @@ func focus_searched_cortical_area(area: AbstractCorticalArea) -> void:
 	monitor.flash_indicator_for_cortical_area(area)
 
 
-## Shows [param object] (a cortical area or a brain region) in the Brain Monitor the way global search
-## does when it is selected. Shared by global search and the circuit schematic's shift-click.
+## Shows [param object] (a cortical area, a brain region or a classifier) in the Brain Monitor the way
+## global search does when it is selected. A classifier is drawn as its stamp area (sample memory), so it
+## takes the cortical area path. Shared by global search and the circuit schematic's shift-click.
 func focus_searched_object(object: Object) -> void:
 	if object is AbstractCorticalArea:
 		focus_searched_cortical_area(object as AbstractCorticalArea)
 	elif object is BrainRegion:
 		if top_bar != null:
 			top_bar.focus_menu_region(object as BrainRegion)
+	elif object is GenomeClassifier:
+		var classifier: GenomeClassifier = object as GenomeClassifier
+		var stamp: AbstractCorticalArea = classifier.get_stamp_area()
+		if stamp == null:
+			push_warning("Show in Brain Monitor: classifier %s has no stamp area in the cache" % classifier.friendly_name)
+			return
+		focus_searched_cortical_area(stamp)
 
 
 ## Opens the circuit builder and brain monitor tabs for [param region], the same way Open Circuit does.

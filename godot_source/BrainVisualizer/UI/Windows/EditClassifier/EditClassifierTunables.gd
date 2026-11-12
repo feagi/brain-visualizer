@@ -59,6 +59,22 @@ const SETTING_TOOLTIPS: Dictionary = {
 }
 
 
+## Section open/closed state, remembered for the BV session and keyed by section title.
+## Never-toggled sections stay collapsed.
+static var _remembered_open: Dictionary = {}
+
+static func is_section_open(title: String) -> bool:
+	return bool(_remembered_open.get(title, false))
+
+
+static func remember_section_open(title: String, open: bool) -> void:
+	_remembered_open[title] = open
+
+
+static func reset_remembered_sections() -> void:
+	_remembered_open.clear()
+
+
 static func section_titles() -> PackedStringArray:
 	return PackedStringArray([SECTION_KERNEL_MEMORY, SECTION_CLASS_MEMORY, SECTION_ASSOCIATIVE, SECTION_REWARD])
 

@@ -18,6 +18,7 @@ func _run_tests() -> void:
 	failures += _test_memory_payload_filters_unknown_keys()
 	failures += _test_associative_overrides_keep_existing_rule()
 	failures += _test_collapsible_prefab_matches_cortical_details()
+	failures += _test_section_open_state_survives_rebuild()
 	failures += _test_toggle_ignores_source_texture_size()
 	failures += _test_window_fits_content_inside_available_height()
 	failures += _test_memory_count_matches_cortical_details()
@@ -249,6 +250,41 @@ func _test_collapsible_prefab_matches_cortical_details() -> int:
 			return 1
 		section.queue_free()
 	return 0
+
+
+## Mirrors WindowEditClassifier._add_collapsible: start_open from the remembered map, toggles write back.
+func _build_remembered_section(title: String) -> VerticalCollapsibleHiding:
+	var prefab: PackedScene = load("res://BrainVisualizer/UI/GenericElements/Collapsable/VerticalCollapsibleHiding.tscn")
+	var section: VerticalCollapsibleHiding = prefab.instantiate()
+	section.section_text = StringName(title)
+	section.start_open = Tunables.is_section_open(title)
+	root.add_child(section)
+	section.toggled.connect(func(open: bool) -> void: Tunables.remember_section_open(title, open))
+	return section
+
+
+func _test_section_open_state_survives_rebuild() -> int:
+	Tunables.reset_remembered_sections()
+	var first: Array[VerticalCollapsibleHiding] = []
+	for title in Tunables.section_titles():
+		first.append(_build_remembered_section(title))
+	var titles: PackedStringArray = Tunables.section_titles()
+	first[1].is_open = true
+	first[3].is_open = true
+	first[3].is_open = false
+	for section in first:
+		section.queue_free()
+	var rebuilt: Array[VerticalCollapsibleHiding] = []
+	for title in titles:
+		rebuilt.append(_build_remembered_section(title))
+	var failures: int = 0
+	for i in titles.size():
+		if rebuilt[i].is_open != (i == 1):
+			push_error("section %s open state wrong after rebuild" % titles[i])
+			failures += 1
+		rebuilt[i].queue_free()
+	Tunables.reset_remembered_sections()
+	return failures
 
 
 func _test_toggle_ignores_source_texture_size() -> int:

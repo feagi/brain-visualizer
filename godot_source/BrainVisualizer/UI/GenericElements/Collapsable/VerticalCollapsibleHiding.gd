@@ -10,6 +10,9 @@ const TRIANGLE_RIGHT_PRESSED: CompressedTexture2D = preload("res://BrainVisualiz
 const TRIANGLE_RIGHT_HOVER: CompressedTexture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_H.png")
 const TRIANGLE_RIGHT_DISABLED: CompressedTexture2D = preload("res://BrainVisualizer/UI/GenericResources/ButtonIcons/Triangle_Right_D.png")
 
+## Emitted when the open state changes after the node is ready.
+signal toggled(is_open: bool)
+
 @export var start_open: bool = true
 @export var section_text: StringName
 
@@ -19,7 +22,10 @@ var is_open: bool: ## Whether the collapsible section is open (or collapsed)
 	set(v):
 		_toggle_button_texture(v)
 		_toggle_collapsible_section(v)
+		var changed: bool = v != _is_open
 		_is_open = v
+		if changed:
+			toggled.emit(v)
 
 var _collapsing_button_toggle: TextureButton
 var _collapsing_section: PanelContainer
