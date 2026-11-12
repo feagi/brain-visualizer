@@ -89,9 +89,12 @@ the same as in CB.
   description and counts; a line's mapping count and rules.
 - Double-click a region (block or frame header) to animate the zoom so that region fills the view.
   It opens as a side effect of the zoom.
+- Shift-click an area or region (closed regions included) to show it in the Brain Monitor, exactly as
+  global search does when it is selected (`UIManager.focus_searched_object`). Classifiers do nothing.
 - Right-click a region and choose "Open in Circuit Builder" to open the existing CB tab for that
   region, which is where editing happens.
-- The search box (`BrainObjectsCombo`) flies to the object found and opens every region on its path.
+- The Filter box in the top-left menu (see "Filter" below) lights the cortical areas and regions whose
+  name matches, opens the regions holding them and fits the view to them. It replaces a fly-to search.
 - A breadcrumb in the corner shows the region path at the centre of the view.
 - Pinning: right-click a region and choose "Keep open" or "Keep closed" to override the automatic
   rule for that region.
@@ -244,6 +247,35 @@ to it; the mouse leaving restores it. Only area boxes react, not classifier or r
   after a rebuild or an open/close, and dropped if the area is gone or hidden.
 - The export never shows dimming: export-mode instances do not connect hover signals.
 - Mouse only; touch emulation is off.
+
+**Filter (implemented).** A LineEdit after Show all and Hide all, placeholder "Filter areas or circuits",
+with a clear button and a tooltip, debounced by 0.15 s. Export mode has no box and ignores the filter.
+
+- A match is a case-insensitive substring of the item name, over cortical areas and brain regions
+  (`SchematicModel.items_matching`). Classifiers and the root never match.
+- While a query is active, the open set is the open state captured when the query first went from empty
+  to non-empty, plus every ancestor region of each match. It is recomputed on each query change and
+  never accumulates across keystrokes. The view then fits the union of the matches' rectangles.
+- Clearing the query restores the captured open state and re-fits the whole genome.
+- A query with no matches tints the box red, dims nothing and leaves the open state as it was before
+  the filter.
+- The query string is stored, not item indices. A rebuild (every mapping change) recomputes the matches
+  and the dimming on the new model but does not re-open regions or re-fit.
+- One predicate, "in filter": the item, or any ancestor, is a match. With no hover, a box is lit when it
+  is where an in-filter item shows (`visible_end`), and a merged line is lit when any mapping it merges
+  has both ends in the filter. Hover takes priority while the mouse is over an area. Open frames never dim.
+- Fitting is one routine with an optional target rectangle (default: the whole canvas). It waits two
+  frames for GraphEdit's scroll range, and a newer request cancels an older pending one.
+
+**Show all stays on (implemented).** Show all sets a mode that lasts until Hide all. On each rebuild, a
+region that was not in the previous model (and is not closed-only) opens; a region the user closed by
+hand is already known, so it stays closed. While a filter is active the new regions are also added to
+the open state saved for restoring.
+
+**Line widths.** Solid lines are 2 px and dashed ones (plastic, associative) are 3 px on screen
+(`MappingLineStyle.SOLID_WIDTH_PX`, `DASHED_WIDTH_PX`). Draw order is dim solid, dim dashed, lit solid,
+lit dashed, so dashes sit on top. The schematic legend's dashed sample uses 3 px; Circuit Builder's
+legend and its shader-drawn dashes keep the solid width.
 
 There are no per-line nodes, buttons or terminals. Line ends attach to the side of the target box
 (right edge for outputs, left edge for inputs), so no ports are needed.

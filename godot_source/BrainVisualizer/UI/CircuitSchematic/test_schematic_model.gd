@@ -11,6 +11,7 @@ func _initialize() -> void:
 	failures += _test_counts_and_visible_ends()
 	failures += _test_lines_merge_at_closed_regions()
 	failures += _test_edges_order_siblings()
+	failures += _test_items_matching()
 	for seed in RANDOM_TREES:
 		failures += _test_random_tree(seed)
 	if failures == 0:
@@ -109,6 +110,31 @@ func _test_edges_order_siblings() -> int:
 		failed = 1
 	if not (model.items[ids.c]["local"].x < model.items[ids.gait]["local"].x):
 		push_error("c must be left of gait")
+		failed = 1
+	return failed
+
+
+## Case-insensitive substring over areas and regions; never the root, classifiers or an empty query.
+func _test_items_matching() -> int:
+	var sample: Dictionary = _sample()
+	var model: SchematicModel = sample.model
+	var ids: Dictionary = sample.ids
+	var classifier: int = model.add_item(SchematicModel.KIND.CLASSIFIER, "Motor reader", ids.root)
+	var failed: int = 0
+	if model.items_matching("MOT") != [ids.motor]:
+		push_error("MOT must match only the motor region (not the classifier): %s" % [model.items_matching("MOT")])
+		failed = 1
+	if model.items_matching("a") != [ids.a, ids.gait]:
+		push_error("'a' must match a and gait in item order, not root: %s" % [model.items_matching("a")])
+		failed = 1
+	if not model.items_matching("").is_empty() or not model.items_matching("   ").is_empty():
+		push_error("An empty query must match nothing")
+		failed = 1
+	if not model.items_matching("zzz").is_empty() or not model.items_matching("root").is_empty():
+		push_error("No-match query and the root name must match nothing")
+		failed = 1
+	if classifier in model.items_matching("reader"):
+		push_error("Classifiers must never match")
 		failed = 1
 	return failed
 

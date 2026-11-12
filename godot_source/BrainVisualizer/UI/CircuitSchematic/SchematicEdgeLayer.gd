@@ -11,7 +11,6 @@ const WAVE_AMPLITUDE_CANVAS: float = 6.0
 const WAVE_LENGTH_CANVAS: float = 32.0
 const DASH_LENGTH_CANVAS: float = 12.0
 const DASH_GAP_CANVAS: float = 8.0
-const SCREEN_WIDTH_PX: float = 2.0
 const LABEL_MIN_SCREEN_LENGTH_PX: float = 90.0
 const LABEL_FONT_SIZE_PX: float = 13.0
 const MIXED_COLOR: Color = Color(0.62, 0.62, 0.66)
@@ -108,14 +107,18 @@ func _process(_delta: float) -> void:
 func _draw() -> void:
 	var graph: GraphEdit = get_parent() as GraphEdit
 	var zoom: float = maxf(graph.zoom if graph != null else 1.0, 0.0001)
-	for i in _dim_batches.size():
-		if not _dim_batches[i].is_empty():
-			var color: Color = _colors[i / 2]
-			color.a = DIM_ALPHA
-			draw_multiline(_dim_batches[i], color, SCREEN_WIDTH_PX / zoom)
-	for i in _batches.size():
-		if not _batches[i].is_empty():
-			draw_multiline(_batches[i], _colors[i / 2], SCREEN_WIDTH_PX / zoom)
+	# Dim under lit, solid under dashed, so the thicker plastic dashes sit on top.
+	for dim: bool in [true, false]:
+		var batches: Array[PackedVector2Array] = _dim_batches if dim else _batches
+		for dashed in 2:
+			var width: float = (MappingLineStyle.DASHED_WIDTH_PX if dashed == 1 else MappingLineStyle.SOLID_WIDTH_PX) / zoom
+			for i in range(dashed, batches.size(), 2):
+				if batches[i].is_empty():
+					continue
+				var color: Color = _colors[i / 2]
+				if dim:
+					color.a = DIM_ALPHA
+				draw_multiline(batches[i], color, width)
 	var font: Font = get_theme_default_font()
 	var font_size: int = maxi(1, int(LABEL_FONT_SIZE_PX / zoom))
 	for line in _line_labels.size():

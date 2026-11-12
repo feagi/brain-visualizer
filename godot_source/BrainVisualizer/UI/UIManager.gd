@@ -2345,9 +2345,14 @@ func focus_searched_cortical_area(area: AbstractCorticalArea) -> void:
 	monitor.flash_indicator_for_cortical_area(area)
 
 
-## Opens [param region] in Circuit Builder and Brain Monitor, as Open Circuit does.
-func open_region_in_circuit_builder_and_monitor(region: BrainRegion) -> void:
-	_open_circuit_brain_monitor(region)
+## Shows [param object] (a cortical area or a brain region) in the Brain Monitor the way global search
+## does when it is selected. Shared by global search and the circuit schematic's shift-click.
+func focus_searched_object(object: Object) -> void:
+	if object is AbstractCorticalArea:
+		focus_searched_cortical_area(object as AbstractCorticalArea)
+	elif object is BrainRegion:
+		if top_bar != null:
+			top_bar.focus_menu_region(object as BrainRegion)
 
 
 ## Opens the circuit builder and brain monitor tabs for [param region], the same way Open Circuit does.

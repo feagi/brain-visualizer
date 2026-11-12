@@ -3,6 +3,11 @@ class_name MappingLineStyle
 ## Shared geometry for how a mapping line is drawn: a smooth static sine wave (associative memory)
 ## and dashes (plastic). Circuit Builder, the Circuit Schematic and the legend all use it so they match.
 
+## Screen widths. Dashed (plastic, associative) lines are drawn thicker than solid ones so they stay
+## readable when broken into dashes.
+const SOLID_WIDTH_PX: float = 2.0
+const DASHED_WIDTH_PX: float = 3.0
+
 
 ## Smooth sine wave along the polyline (associative memory). The line is resampled at even arc
 ## length (wavelength / 12) and each sample is offset along the local normal by

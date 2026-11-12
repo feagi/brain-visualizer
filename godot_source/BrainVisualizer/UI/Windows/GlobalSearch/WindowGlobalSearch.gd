@@ -339,11 +339,11 @@ func _run_action(action: StringName, payload: Variant) -> void:
 		GlobalSearchCatalog.ACTION_FOCUS_AREA:
 			var area := payload as AbstractCorticalArea
 			if area != null and BV != null and BV.UI != null:
-				BV.UI.focus_searched_cortical_area(area)
+				BV.UI.focus_searched_object(area)
 		GlobalSearchCatalog.ACTION_FOCUS_REGION:
 			var region := payload as BrainRegion
-			if region != null and BV != null and BV.UI != null and BV.UI.top_bar != null:
-				BV.UI.top_bar.focus_menu_region(region)
+			if region != null and BV != null and BV.UI != null:
+				BV.UI.focus_searched_object(region)
 		GlobalSearchCatalog.ACTION_OPEN_RULE:
 			var morphology := payload as BaseMorphology
 			if morphology != null and BV != null and BV.WM != null:
