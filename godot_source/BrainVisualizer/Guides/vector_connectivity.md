@@ -21,6 +21,23 @@ This is **not** a list of source-to-destination coordinate pairs. For filters
 such as "only X 1 through 98" use a [pattern rule](pattern_connectivity.md)
 with `N..M`, not a vector list.
 
+## Visual editor
+
+The visual editor shows the rule's offsets as cells on a grid, one Z slice at a time. The cross marks the center `(0, 0)`: a cell two to the right of it is the offset `2, 0`.
+
+- **Click a cell** to add or remove that offset on the current slice.
+- **Z < >** moves between slices. Each slice holds its own cells.
+- **Grid − / Grid +** shows fewer, larger cells or more, smaller cells. Cells outside the visible grid are kept, and a note counts them.
+- **Rotate** turns the current slice 90° around the center.
+- **Shrink / Enlarge** halves or doubles each cell's distance from the center. Cells next to the center stay in place when shrinking.
+- **Copy slice / Copy all / Paste** copy the current slice or every slice. Paste adds to what is there, so you can paste into another slice or another rule.
+- **Clear** empties the current slice.
+- **Undo / Redo** step through your changes since the editor opened.
+
+Shortcuts work after you click inside the editor: Ctrl+Z undo, Ctrl+Shift+Z or Ctrl+Y redo, Ctrl+C copy slice, Ctrl+V paste (Cmd on Mac).
+
+**Save** writes every slice back to the rule. **Cancel** discards all changes.
+
 ## When to use vectors
 
 - Uniform topographic shift

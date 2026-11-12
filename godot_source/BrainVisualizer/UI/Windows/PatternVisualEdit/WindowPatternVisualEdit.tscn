@@ -126,6 +126,13 @@ layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 2
 
+[node name="Guide" type="Button" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+theme_type_variation = &"Button_big"
+tooltip_text = "Open the user guide page for pattern rules: tokens, wildcards and examples."
+text = "Guide"
+
 [node name="Spacer" type="Control" parent="WindowPanel/WindowMargin/WindowInternals/ButtonRow"]
 layout_mode = 2
 size_flags_horizontal = 3

@@ -39,6 +39,7 @@ func _ready() -> void:
 	_z_dest_spin = $WindowPanel/WindowMargin/WindowInternals/GridsRow/DestSide/ZRow/ZSpin
 	_cancel_button = $WindowPanel/WindowMargin/WindowInternals/ButtonRow/Cancel
 	_save_button = $WindowPanel/WindowMargin/WindowInternals/ButtonRow/Save
+	($WindowPanel/WindowMargin/WindowInternals/ButtonRow/Guide as Button).pressed.connect(_on_guide_pressed)
 
 	_hover_hint_label = Label.new()
 	_hover_hint_label.text = "Hover over a source cell to preview its destination connections"
@@ -146,6 +147,11 @@ func _refresh_grids() -> void:
 		)
 		_grid_dest.set_reference_coordinate(ref)
 		_grid_source.mouse_default_cursor_shape = Control.CURSOR_ARROW
+
+func _on_guide_pressed() -> void:
+	if BV == null or BV.WM == null:
+		return
+	BV.WM.spawn_guide_page("pattern_connectivity.md")
 
 func _on_source_grid_input(event: InputEvent) -> void:
 	if !_hover_mode_active:

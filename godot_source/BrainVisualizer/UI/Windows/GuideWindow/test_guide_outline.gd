@@ -25,6 +25,7 @@ func _run_tests() -> void:
 	failures += _test_section_button_fits_collapsible()
 	failures += _test_opening_size_is_a_wide_reader()
 	failures += _test_resize_can_grow_and_shrink()
+	failures += _test_visual_edit_guide_links()
 	if failures == 0:
 		print("Guide outline tests: PASS")
 		quit(0)
@@ -245,3 +246,23 @@ func _test_resize_can_grow_and_shrink() -> int:
 		push_error("right edge should change width only, got %s" % wider)
 		return 1
 	return 0
+
+
+func _test_visual_edit_guide_links() -> int:
+	var dir := "res://BrainVisualizer/Guides/"
+	for file in ["pattern_connectivity.md", "vector_connectivity.md"]:
+		if not FileAccess.file_exists(dir + file):
+			push_error("guide page missing: " + file)
+			return 1
+	var heading := "Visual editor"
+	var script: Script = load("res://BrainVisualizer/UI/Windows/VisualVectorEdit/WindowVisualVectorEdit.gd")
+	if script != null and script.get_script_constant_map().has("GUIDE_HEADING"):
+		heading = str(script.get_script_constant_map()["GUIDE_HEADING"])
+	else:
+		print("note: window script not readable headless, asserting literal heading")
+	var outline: Dictionary = MarkdownView.extract_outline(FileAccess.get_file_as_string(dir + "vector_connectivity.md"))
+	for section in outline["sections"]:
+		if str(section["heading"]) == heading and heading == "Visual editor":
+			return 0
+	push_error("vector guide must contain the heading the vector editor opens: " + heading)
+	return 1

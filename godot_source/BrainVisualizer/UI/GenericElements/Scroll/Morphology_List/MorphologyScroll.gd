@@ -146,7 +146,10 @@ func _on_item_selected(index: int) -> void:
 	if refresh_morphology_from_FEAGI_on_select and not GenomeClassifier.is_input_rule(morphology.name):
 		FeagiCore.requests.get_morphology(morphology.name)
 
-func _on_item_clicked(index: int, _at_position: Vector2, _mouse_button_index: int) -> void:
+## Only a left click selects a row; ItemList also reports the wheel and other buttons as clicks.
+func _on_item_clicked(index: int, _at_position: Vector2, mouse_button_index: int) -> void:
+	if mouse_button_index != MOUSE_BUTTON_LEFT:
+		return
 	_on_item_selected(index)
 
 func _on_item_activated(index: int) -> void:
