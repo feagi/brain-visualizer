@@ -74,7 +74,7 @@ func setup(index: int, item: Dictionary, box_look: LOOK, hidden_mappings: int) -
 	elif look == LOOK.FRAME and int(item["parent"]) != -1:
 		tip += "\nDouble-click the header to close"
 	if _can_shift_click():
-		tip += "\nShift-click to show it in Brain Monitor, as Search does"
+		tip += "\nShift-click to show it in Brain Monitor"
 	tooltip_text = tip
 	if look == LOOK.LEAF and item["object"] is AbstractCorticalArea:
 		mouse_entered.connect(hovered.emit.bind(index))
@@ -104,9 +104,9 @@ func _draw() -> void:
 			draw_string(font, Vector2(size.x * 0.6, 30), _subtitle, HORIZONTAL_ALIGNMENT_RIGHT, size.x * 0.4 - 14, SUBTITLE_FONT_SIZE, SUBTEXT_COLOR)
 
 
-## Areas and regions (closed ones included) can be shown in the Brain Monitor; classifiers cannot.
+## Areas, regions (closed ones included) and classifiers can be shown in the Brain Monitor.
 func _can_shift_click() -> bool:
-	return _object is AbstractCorticalArea or _object is BrainRegion
+	return _object is AbstractCorticalArea or _object is BrainRegion or _object is GenomeClassifier
 
 
 func _gui_input(event: InputEvent) -> void:

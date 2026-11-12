@@ -278,10 +278,11 @@ func _apply_explorer_area(option: OptionButton, shared_options: Array[OptionButt
 func _add_collapsible(parent: Control, title: String, tooltip: String = "") -> Dictionary:
 	var collapsible: VerticalCollapsibleHiding = _COLLAPSIBLE_PREFAB.instantiate()
 	collapsible.section_text = StringName(title)
-	collapsible.start_open = false
+	collapsible.start_open = _Tunables.is_section_open(title)
 	collapsible.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	collapsible.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	parent.add_child(collapsible)
+	collapsible.toggled.connect(func(open: bool) -> void: _Tunables.remember_section_open(title, open))
 	var section_body: CanvasItem = collapsible.get_node("VerticalCollapsible/PanelContainer")
 	section_body.visibility_changed.connect(_fit_window_to_content)
 	var title_label: Label = collapsible.get_node("VerticalCollapsible/HBoxContainer/Section_Title")
@@ -299,9 +300,11 @@ func _add_collapsible(parent: Control, title: String, tooltip: String = "") -> D
 
 
 func _close_section(section_pack: Dictionary) -> void:
+	# Keeps the section at its remembered state (collapsed when never toggled).
 	var section: VerticalCollapsibleHiding = section_pack["section"]
-	if section.is_open:
-		section.is_open = false
+	var want_open: bool = _Tunables.is_section_open(String(section.section_text))
+	if section.is_open != want_open:
+		section.is_open = want_open
 
 
 func _fit_window_to_content() -> void:
