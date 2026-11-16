@@ -5,7 +5,22 @@ class_name UI_BrainMonitor_DDACorticalAreaRenderer
 const SceneLabel3D = preload("res://addons/UI_BrainMonitor/UI_BrainMonitor_SceneLabel3D.gd")
 const PREFAB: PackedScene = preload("res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/CorticalArea_DDA_Body.tscn")
 const WEBGL_DDA_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/Cortical_Areas/Renderer_DDA/WebGL_RayMarch.tres"
-const OUTLINE_MAT_PATH: StringName = "res://addons/UI_BrainMonitor/Interactable_Volumes/BadMeshOutlineMat.tres"
+# Wireframe edge look per state (color, alpha, width in screen pixels). Line-specific; not the fill alphas.
+const EDGE_IDLE_COLOR: Color = Color(0.45, 0.5, 0.6)
+const EDGE_IDLE_ALPHA: float = 0.85
+const EDGE_IDLE_WIDTH_PX: float = 1.25
+const EDGE_IDLE_TINY_ALPHA: float = 0.9
+const EDGE_IDLE_TINY_WIDTH_PX: float = 1.5
+const EDGE_FAR_SMALL_WIDTH_PX: float = 2.5
+const EDGE_HOVER_COLOR: Color = Color.AQUA
+const EDGE_HOVER_ALPHA: float = 0.95
+const EDGE_HOVER_WIDTH_PX: float = 1.75
+const EDGE_SELECTED_COLOR: Color = Color.ALICE_BLUE
+const EDGE_SELECTED_ALPHA: float = 0.95
+const EDGE_SELECTED_WIDTH_PX: float = 2.0
+const EDGE_BOTH_COLOR: Color = Color.WHITE_SMOKE
+const EDGE_BOTH_ALPHA: float = 1.0
+const EDGE_BOTH_WIDTH_PX: float = 2.5
 const FRIENDLY_NAME_LABEL_MAX_CHARS_PER_LINE: int = 18
 const FRIENDLY_NAME_LABEL_SMOOTH_SPEED: float = 10.0
 const FRIENDLY_NAME_LABEL_BOTTOM_GAP_MIN: float = 2.75
@@ -16,7 +31,6 @@ const FRIENDLY_NAME_LABEL_BOTTOM_GAP_SCALE: float = 0.18
 
 var _static_body: StaticBody3D
 var _DDA_mat: ShaderMaterial
-var _outline_mat: ShaderMaterial
 var _friendly_name_label: Label3D
 
 var _activation_image_dimensions: Vector2i = Vector2i(-1,-1) # ensures the first run will not have matching dimensions
@@ -46,7 +60,6 @@ func setup(area: AbstractCorticalArea) -> void:
 		_visualization_settings = VisualizationSettings.new()
 	_static_body = PREFAB.instantiate()
 	_DDA_mat = load(WEBGL_DDA_MAT_PATH).duplicate()
-	_outline_mat = load(OUTLINE_MAT_PATH).duplicate()
 	
 	(_static_body.get_node("MeshInstance3D") as MeshInstance3D).material_override = _DDA_mat
 	
@@ -125,7 +138,6 @@ func update_dimensions(new_dimensions: Vector3i) -> void:
 	var calculated_depth: int = ceili(log(float(max_dim_size)) / log(2.0)) # since log is with base e, ln(a) / ln(2) = log_base_2(a)
 	calculated_depth = maxi(calculated_depth, 1)
 	_DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
-	_outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / _static_body.scale)
 
 	_far_small_area_boost = _compute_far_small_area_boost()
 	_idle_tiny_area_outline = _compute_idle_tiny_area_outline()
@@ -335,20 +347,29 @@ func _compute_idle_tiny_area_outline() -> bool:
 	return _visualization_settings.should_apply_idle_tiny_area_outline(_dimensions)
 
 func _apply_outline_visual_state() -> void:
-	var effective_mouse_over: bool = _is_hovered_over or _far_small_area_boost
-	var effective_idle_tiny_outline: bool = _idle_tiny_area_outline and not _is_selected and not effective_mouse_over
-	if not (effective_mouse_over or _is_selected or effective_idle_tiny_outline):
-		_DDA_mat.next_pass = null
-		return
-	_DDA_mat.next_pass = _outline_mat
-	if effective_mouse_over and _is_selected:
-		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_both_color.r, cortical_area_outline_both_color.g, cortical_area_outline_both_color.b, cortical_area_outline_both_alpha))
-	elif effective_mouse_over:
-		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_mouse_over_color.r, cortical_area_outline_mouse_over_color.g, cortical_area_outline_mouse_over_color.b, cortical_area_outline_mouse_over_alpha))
-	elif effective_idle_tiny_outline:
-		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_idle_tiny_color.r, cortical_area_outline_idle_tiny_color.g, cortical_area_outline_idle_tiny_color.b, cortical_area_outline_idle_tiny_alpha))
-	else:
-		_outline_mat.set_shader_parameter("outline_color", Vector4(cortical_area_outline_select_color.r, cortical_area_outline_select_color.g, cortical_area_outline_select_color.b, cortical_area_outline_select_alpha))
+	# Priority: hover+selected > hover > selected > far-small boost > idle-tiny > idle
+	var color: Color = EDGE_IDLE_COLOR
+	var alpha: float = EDGE_IDLE_ALPHA
+	var width_px: float = EDGE_IDLE_WIDTH_PX
+	if _is_hovered_over and _is_selected:
+		color = EDGE_BOTH_COLOR
+		alpha = EDGE_BOTH_ALPHA
+		width_px = EDGE_BOTH_WIDTH_PX
+	elif _is_hovered_over:
+		color = EDGE_HOVER_COLOR
+		alpha = EDGE_HOVER_ALPHA
+		width_px = EDGE_HOVER_WIDTH_PX
+	elif _is_selected:
+		color = EDGE_SELECTED_COLOR
+		alpha = EDGE_SELECTED_ALPHA
+		width_px = EDGE_SELECTED_WIDTH_PX
+	elif _far_small_area_boost:
+		width_px = EDGE_FAR_SMALL_WIDTH_PX
+	elif _idle_tiny_area_outline:
+		alpha = EDGE_IDLE_TINY_ALPHA
+		width_px = EDGE_IDLE_TINY_WIDTH_PX
+	_DDA_mat.set_shader_parameter("edge_color", Vector4(color.r, color.g, color.b, alpha))
+	_DDA_mat.set_shader_parameter("edge_width_px", width_px)
 
 ## Creates an individual plate under this cortical area if needed
 func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:

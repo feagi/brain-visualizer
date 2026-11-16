@@ -696,11 +696,6 @@ func _on_io_cortical_area_dimensions_changed(new_dimensions: Vector3i, cortical_
 			cortical_viz._dda_renderer._DDA_mat.set_shader_parameter("shared_SVO_depth", calculated_depth)
 			# print("      🎨 Updated DDA shader parameters")
 		
-		# Update outline material scaling
-		if cortical_viz._dda_renderer._outline_mat != null:
-			cortical_viz._dda_renderer._outline_mat.set_shader_parameter("thickness_scaling", Vector3(1.0, 1.0, 1.0) / Vector3(new_dimensions))
-			# print("      🔍 Updated DDA outline scaling")
-	
 	# Update DirectPoints renderer dimensions (but preserve positioning)
 	# Use update_dimensions() method to ensure all properties are updated correctly
 	# Position is preserved because update_dimensions() uses existing _position_godot_space
