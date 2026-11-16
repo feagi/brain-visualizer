@@ -21,19 +21,16 @@ uniform sampler2D activation_SVO : hint_default_black;
 uniform sampler2D highlight_SVO: hint_default_black;
 uniform sampler2D selection_SVO: hint_default_black;
 
-// Edge visibility tuning (Option 5: distance-based scaling)
-// Goal: thin/small areas remain readable from far away without reintroducing interior artifacts.
-uniform float edge_camera_near : hint_range(0.0, 200.0) = 12.0; // Distance where edge boost begins
-uniform float edge_camera_far : hint_range(0.0, 500.0) = 80.0;  // Distance where edge boost maxes out
-uniform float edge_thickness_near : hint_range(0.001, 0.05) = 0.008; // Baseline edge thickness
-uniform float edge_thickness_far : hint_range(0.001, 0.08) = 0.02;   // Thicker edges when zoomed out
-uniform float edge_opacity_far_boost : hint_range(0.0, 0.6) = 0.25;  // Extra opacity added when zoomed out
+// Wireframe edges: constant pixel width on screen, independent of the area's size or shape.
+uniform float edge_width_px : hint_range(0.0, 10.0) = 1.25; // Line width in screen pixels
+uniform vec4 edge_color : source_color = vec4(0.45, 0.5, 0.6, 0.85); // rgb = line color, a = line opacity
+uniform float edge_max_fraction : hint_range(0.0, 1.0) = 0.25; // Cap: a line never covers more than this fraction of an axis' own extent (per side)
 
 varying vec3 local_vert_space_m05_05; // Goes from -0.5 -> 0.5  across the actual mesh surface of the cube
 //varying vec3 local_vert_space_0_1; // Goes from 0.0 -> 1.0 across the actual mesh surface of the cube
 //varying vec3 shared_SVO_vert_space; //  0.0 - 1.0, but for the size of the Sparse Voxel Octet tree cube, this means any non-2^n mesh will not reach 1.0
 varying vec3 individual_voxel_size; // Normalized (0 - 1.0) size of each voxel (mesh wise)
-varying vec3 world_pos_ws; // World-space position (interpolated) for distance-based edge scaling
+varying vec3 local_normal; // Object-space face normal (axis aligned for a box); tells which axis is the face's own
 
 // Calculates the distance the ray traveled within the entire object // TESTED, NO ARTIFACTS
 float get_distance_traveled_by_ray_in_entire_object(vec3 starting_normalized_position, vec3 normalized_ray_direction)
@@ -91,7 +88,7 @@ void vertex() {
 
 	// Constants
 	individual_voxel_size = vec3(1.0 / float(voxel_count_x), 1.0 / float(voxel_count_y), 1.0 / float(voxel_count_z));
-	world_pos_ws = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	local_normal = NORMAL;
 }
 
 
@@ -219,65 +216,28 @@ void fragment()
 	
 	float wall_transparency = voxel_opacity * shell_mask * face_alpha_scale;
 
-	// EDGE DETECTION: Detect geometric edges (where 2-3 faces meet) only
-	// These are the actual edges/corners where faces meet, not the entire surfaces
-	// Distance-based scaling: thicker + more opaque edges when camera is far away.
-	// Note: we use interpolated world_pos_ws for stable behavior.
-	float cam_dist = distance(world_pos_ws, CAMERA_POSITION_WORLD);
-	float edge_dist_t = smoothstep(edge_camera_near, edge_camera_far, cam_dist);
-
-	// Size-based cap: large cortical areas shouldn't get excessively thick edges when zoomed out.
-	// volume_log: 2 -> ~100 voxels, 4 -> ~10,000 voxels
-	float edge_large_area_t = smoothstep(2.0, 4.0, volume_log);
-	float edge_thickness_far_capped = mix(edge_thickness_far, edge_thickness_far * 0.5, edge_large_area_t);
-
-	float edge_thickness = mix(edge_thickness_near, edge_thickness_far_capped, edge_dist_t);
-	bool is_on_edge = false;
-	
-	// Count how many faces we're close to
-	int faces_close_to = 0;
-	if (distance_to_faces.x <= edge_thickness) faces_close_to++;
-	if (distance_to_faces.y <= edge_thickness) faces_close_to++;
-	if (distance_to_faces.z <= edge_thickness) faces_close_to++;
-	
-	// We're on an edge if we're close to exactly 2 faces (edge) or 3 faces (corner)
-	if (faces_close_to >= 2) {
-		is_on_edge = true;
-	}
+	// EDGE DETECTION: screen-space constant-pixel-width wireframe.
+	// Per axis: d = mesh-space distance to the nearest face along that axis, w = mesh units per screen pixel.
+	// An axis is "near" when d <= edge_width_px * w (multiplied, never divided). The line width is capped
+	// to a fraction of the axis' own extent so a tiny on-screen area never becomes all edge.
+	// The face's own axis (constant across the face, d ~ 0, w ~ 0) is skipped; an edge pixel is near on
+	// at least one in-plane axis, which together with the face's own axis makes 2+ near axes.
+	vec3 axis_pixel_size = fwidth(local_vert_space_m05_05); // mesh units per pixel, per axis
+	vec3 edge_half_width = min(vec3(edge_width_px) * axis_pixel_size, vec3(edge_max_fraction * 0.5));
+	vec3 edge_aa = max(axis_pixel_size * 0.5, vec3(1e-6)); // ~1px anti-aliasing ramp, same multiply form
+	vec3 axis_coverage = vec3(1.0) - smoothstep(edge_half_width - edge_aa, edge_half_width + edge_aa, distance_to_faces);
+	vec3 face_own_axis = step(vec3(0.5), abs(local_normal));
+	axis_coverage *= (vec3(1.0) - face_own_axis);
+	float edge_coverage = max(max(axis_coverage.x, axis_coverage.y), axis_coverage.z);
 
 	/// Calculate final pixel color - PRESERVE SHELL TRANSPARENCY
 	final_color.a = wall_transparency;
 	
-	// RENDER GEOMETRIC EDGES ONLY: Solid lines where faces meet
-	if (is_on_edge) {
-		// Edge color for clear visibility
-		final_color.rgb = vec3(0.45, 0.5, 0.6); // Gray-blue for good contrast
-		
-		// Calculate guaranteed minimum edge opacity - ensures visibility even for large transparent areas
-		float edge_opacity_min = 0.5; // Minimum guaranteed opacity for large areas (solid line)
-		float edge_opacity_max = 0.95; // Maximum opacity for small areas
-		
-		float edge_opacity;
-		if (volume_log < 1.0) {
-			// Very small areas: Near-solid edges
-			edge_opacity = edge_opacity_max;
-		} else if (volume_log < 2.0) {
-			// Small areas: High edge opacity
-			edge_opacity = 0.8 + 0.15 * (2.0 - volume_log); // 0.8 to 0.95
-		} else if (volume_log < 3.0) {
-			// Medium areas: Medium-high edge opacity
-			edge_opacity = 0.6 + 0.2 * (3.0 - volume_log); // 0.6 to 0.8
-		} else {
-			// Large areas: Guaranteed minimum visibility (solid line)
-			// Scale from edge_opacity_min up to 0.6 for medium-large
-			edge_opacity = edge_opacity_min + 0.1 * min(1.0, (4.0 - volume_log)); // 0.5 to 0.6
-		}
-
-		// Zoomed-out boost (Option 5): edges get more visible at distance.
-		edge_opacity = min(edge_opacity + (edge_opacity_far_boost * edge_dist_t), 1.0);
-		
-		// Edges always override interior transparency for visibility
-		final_color.a = max(wall_transparency, edge_opacity);
+	// Edges override interior transparency for visibility, blended by anti-aliased coverage
+	float edge_alpha = edge_color.a * edge_coverage;
+	if (edge_alpha > wall_transparency) {
+		final_color.rgb = mix(final_color.rgb, edge_color.rgb, edge_coverage);
+		final_color.a = edge_alpha;
 	}
 	
 	// Do not render the hover highlight overlay when there is any activation on this pixel ray.
