@@ -47,7 +47,7 @@ text = "Cortical Name"
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 placeholder_text = "Friendly Name"
-max_length = 16
+max_length = 32
 script = ExtResource("5_6v723")
 
 [node name="gap2" type="Control" parent="WindowPanel/WindowMargin/WindowInternals"]
