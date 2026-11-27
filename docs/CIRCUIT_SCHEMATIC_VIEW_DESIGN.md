@@ -249,7 +249,7 @@ to it; the mouse leaving restores it. Only area boxes react, not classifier or r
 - The export never shows dimming: export-mode instances do not connect hover signals.
 - Mouse only; touch emulation is off.
 
-**Filter (implemented).** A LineEdit after Show all and Hide all, placeholder "Filter areas or circuits",
+**Filter (implemented).** A LineEdit after the Show all toggle (menu order: Show all, Filter, Export; the box is 1.5x the width measured from its placeholder), placeholder "Filter areas or circuits",
 with a clear button and a tooltip, debounced by 0.15 s. Export mode has no box and ignores the filter.
 
 - A match is a case-insensitive substring of the item name, over cortical areas and brain regions
@@ -268,10 +268,11 @@ with a clear button and a tooltip, debounced by 0.15 s. Export mode has no box a
 - Fitting is one routine with an optional target rectangle (default: the whole canvas). It waits two
   frames for GraphEdit's scroll range, and a newer request cancels an older pending one.
 
-**Show all stays on (implemented).** Show all sets a mode that lasts until Hide all. On each rebuild, a
-region that was not in the previous model (and is not closed-only) opens; a region the user closed by
-hand is already known, so it stays closed. While a filter is active the new regions are also added to
-the open state saved for restoring.
+**Show all / Hide all button (implemented).** One plain action button (not a toggle). Its label is "Show all" while the mode is off and "Hide all" while on, and the tooltip flips with it (off: "Open every circuit and keep them open, including ones created later"; on: "Close every circuit"). Pressing it sets the mode to the opposite. While on, every rebuild opens every region that can
+open (not the root, not closed-only), so regions created later open too. Pressing Hide all closes every
+region. Closing a region by its header turns it off (label back to Show all) and closes only that region; opening one by header
+while off does not turn it on. While a filter is active the filter sets the open state; clearing it with
+the mode on opens every openable region. The state is not saved between sessions.
 
 **Line widths.** Solid lines are 2 px and dashed ones (plastic, associative) are 3 px on screen
 (`MappingLineStyle.SOLID_WIDTH_PX`, `DASHED_WIDTH_PX`). Draw order is dim solid, dim dashed, lit solid,

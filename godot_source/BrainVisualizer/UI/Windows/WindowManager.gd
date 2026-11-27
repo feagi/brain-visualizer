@@ -714,7 +714,6 @@ func _calculate_region_rightmost_x(region: BrainRegion) -> int:
 	# Get I/O areas for this region (we need to access the partial mappings)
 	var input_areas: Array[AbstractCorticalArea] = []
 	var output_areas: Array[AbstractCorticalArea] = []
-	var conflict_areas: Array[AbstractCorticalArea] = []
 	
 	# Get areas from the region's partial mappings
 	print("  🔍 DEBUG: Region has %d partial mappings" % region.partial_mappings.size())
@@ -732,16 +731,6 @@ func _calculate_region_rightmost_x(region: BrainRegion) -> int:
 					output_areas.append(target_area)
 					print("    📤 Added output area: %s (dims: %s)" % [target_area.cortical_ID, target_area.dimensions_3D])
 	
-	# Check for conflicts (areas in both input and output)
-	for area in input_areas:
-		if area in output_areas:
-			conflict_areas.append(area)
-	
-	# Remove conflict areas from input/output lists
-	for area in conflict_areas:
-		input_areas.erase(area)
-		output_areas.erase(area)
-	
 	# Calculate plate sizes using the same constants as UI_BrainMonitor_BrainRegion3D
 	const PLATE_SIDE_MARGIN = 1.0
 	const AREA_BUFFER_DISTANCE = 1.0
@@ -752,25 +741,17 @@ func _calculate_region_rightmost_x(region: BrainRegion) -> int:
 	
 	var input_plate_size = _calculate_plate_size_for_areas_helper(input_areas)
 	var output_plate_size = _calculate_plate_size_for_areas_helper(output_areas)
-	var conflict_plate_size = _calculate_plate_size_for_areas_helper(conflict_areas)
 	
-	print("  📐 Plate sizes - Input: %s, Output: %s, Conflict: %s" % [input_plate_size, output_plate_size, conflict_plate_size])
+	print("  📐 Plate sizes - Input: %s, Output: %s" % [input_plate_size, output_plate_size])
 	
 	# Calculate the rightmost edge by finding the end of the last plate
 	# This matches the exact logic in UI_BrainMonitor_BrainRegion3D:
 	
 	var rightmost_edge: float
 	
-	if conflict_areas.size() > 0:
-		# Conflict plate exists - it's the rightmost
-		var conflict_plate_x = input_plate_size.x + PLATE_GAP + output_plate_size.x + PLATE_GAP
-		rightmost_edge = conflict_plate_x + conflict_plate_size.x
-		print("  🔴 Conflict plate at X=%f, rightmost edge: %f" % [conflict_plate_x, rightmost_edge])
-	else:
-		# No conflict plate - output plate is rightmost
-		var output_plate_x = input_plate_size.x + PLATE_GAP
-		rightmost_edge = output_plate_x + output_plate_size.x
-		print("  🔵 Output plate at X=%f, rightmost edge: %f" % [output_plate_x, rightmost_edge])
+	var output_plate_x = input_plate_size.x + PLATE_GAP
+	rightmost_edge = output_plate_x + output_plate_size.x
+	print("  🔵 Output plate at X=%f, rightmost edge: %f" % [output_plate_x, rightmost_edge])
 	
 	# Rightmost X = region's starting X + rightmost edge position
 	var final_rightmost = int(region_x + rightmost_edge)

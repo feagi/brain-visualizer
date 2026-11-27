@@ -1,5 +1,5 @@
 extends SceneTree
-## Foreign-plate membership: outside partners only, with the existing conflict split.
+## Foreign-plate membership: outside partners only; a both-way partner is in both lists.
 ## Run: godot --headless -s res://addons/UI_BrainMonitor/test_external_region_io.gd
 
 const ExternalRegionIOScript = preload("res://addons/UI_BrainMonitor/ExternalRegionIO.gd")
@@ -11,7 +11,7 @@ func _initialize() -> void:
 	failures += _test_anchor()
 	failures += _test_outside_partners_are_split()
 	failures += _test_inside_partners_are_excluded()
-	failures += _test_conflict_is_removed_from_both_sides()
+	failures += _test_both_way_partner_is_in_both_lists()
 	failures += _test_root_scene_hides_external_plates_and_draws_io()
 	if failures == 0:
 		print("External region IO tests: PASS")
@@ -52,8 +52,8 @@ func _test_outside_partners_are_split() -> int:
 	if partitioned["outputs"] != ["receiver"]:
 		push_error("Outside receiver must land on the output plate")
 		return 1
-	if not (partitioned["conflicts"] as Array).is_empty():
-		push_error("One-way partners must not be conflicts")
+	if partitioned.has("conflicts"):
+		push_error("The partition must not report a conflict list")
 		return 1
 	return 0
 
@@ -73,20 +73,20 @@ func _test_inside_partners_are_excluded() -> int:
 	return 0
 
 
-func _test_conflict_is_removed_from_both_sides() -> int:
+func _test_both_way_partner_is_in_both_lists() -> int:
 	var partitioned: Dictionary = ExternalRegionIOScript.partition_partner_ids(
 		["inside"],
 		{"inside": ["both", "feeder"]},
 		{"inside": ["both"]},
 	)
-	if partitioned["conflicts"] != ["both"]:
-		push_error("An outside area that feeds and is fed must be a conflict")
+	if partitioned["inputs"] != ["both", "feeder"]:
+		push_error("A both-way area must stay on the input list, got %s" % [partitioned["inputs"]])
 		return 1
-	if partitioned["inputs"] != ["feeder"]:
-		push_error("Conflict areas must leave the input plate")
+	if partitioned["outputs"] != ["both"]:
+		push_error("A both-way area must also be on the output list, got %s" % [partitioned["outputs"]])
 		return 1
-	if not (partitioned["outputs"] as Array).is_empty():
-		push_error("Conflict areas must leave the output plate")
+	if partitioned.has("conflicts"):
+		push_error("The partition must not report a conflict list")
 		return 1
 	return 0
 

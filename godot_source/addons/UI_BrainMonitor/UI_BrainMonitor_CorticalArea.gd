@@ -21,6 +21,10 @@ var is_volume_moused_over: bool:
 var focus_indicator_holds_title: bool:
 	get: return _focus_title_holds > 0
 
+## True for the Outputs-plate copy of a both-way area. The Inputs-plate copy is the scene's primary copy.
+## Both copies are full, live instances of the same area. Set before [method setup].
+var is_output_twin: bool = false
+
 var _representing_cortial_area: AbstractCorticalArea
 var _dda_renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer  # For translucent voxel structure
 var _directpoints_renderer: UI_BrainMonitor_AbstractCorticalAreaRenderer  # For individual neuron firing
@@ -741,10 +745,10 @@ func _is_on_brain_region_plate() -> bool:
 		return bool(_directpoints_renderer.call("_is_on_brain_region_plate"))
 	if _dda_renderer != null and _dda_renderer.has_method("_is_on_brain_region_plate"):
 		return bool(_dda_renderer.call("_is_on_brain_region_plate"))
-	# Fallback: climb parent chain and look for plate containers (InputAreas/OutputAreas/ConflictAreas).
+	# Fallback: climb parent chain and look for plate containers (InputAreas/OutputAreas).
 	var current_parent := get_parent()
 	while current_parent != null:
-		if current_parent.name == "InputAreas" or current_parent.name == "OutputAreas" or current_parent.name == "ConflictAreas":
+		if current_parent.name == "InputAreas" or current_parent.name == "OutputAreas":
 			return true
 		current_parent = current_parent.get_parent()
 	return false
@@ -1001,6 +1005,10 @@ func _show_neural_connections() -> void:
 	
 	if source_position == Vector3.ZERO:
 		return
+	# A both-way area has two copies. Outgoing lines leave its Outputs-plate copy and
+	# incoming lines land on its Inputs-plate copy, whichever copy is hovered.
+	var outgoing_anchor: Vector3 = _output_anchor_position()
+	var incoming_anchor: Vector3 = _input_anchor_position()
 	
 	var curves_created = 0
 	
@@ -1015,7 +1023,7 @@ func _show_neural_connections() -> void:
 			
 			if destination_position != Vector3.ZERO:  # Valid position found
 				var mapping_set: InterCorticalMappingSet = efferent_mappings[destination_area]
-				var curve_node = _create_connection_curve(source_position, destination_position, visual_dest.cortical_ID, mapping_set)
+				var curve_node = _create_connection_curve(outgoing_anchor, destination_position, visual_dest.cortical_ID, mapping_set)
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
@@ -1028,11 +1036,11 @@ func _show_neural_connections() -> void:
 		for source_area: AbstractCorticalArea in afferent_mappings.keys():
 			if _is_hidden_classifier_internal_mapping(source_area, _representing_cortial_area):
 				continue
-			var source_area_position = _get_cortical_area_center_position_for_area(source_area)
+			var source_area_position = _get_cortical_area_center_position_for_area(source_area, true)
 			
 			if source_area_position != Vector3.ZERO:  # Valid position found
 				var mapping_set: InterCorticalMappingSet = afferent_mappings[source_area]
-				var curve_node = _create_connection_curve(source_area_position, source_position, source_area.cortical_ID, mapping_set)
+				var curve_node = _create_connection_curve(source_area_position, incoming_anchor, source_area.cortical_ID, mapping_set)
 				_connection_curves.append(curve_node)
 				add_child(curve_node)
 				curves_created += 1
@@ -1220,7 +1228,9 @@ func _get_cortical_area_center_position() -> Vector3:
 		return Vector3.ZERO
 
 ## Get the center position of another cortical area by finding its renderer in the scene
-func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> Vector3:
+## [param as_line_source] picks the Outputs-plate copy of a both-way [param area] (a line leaving it).
+## Otherwise the Inputs-plate copy is used (a line arriving at it).
+func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea, as_line_source: bool = false) -> Vector3:
 	# 🚨 FIX: Use main 3D scene's cortical area registry instead of parent searching
 	# This fixes connection visualization for I/O areas moved to brain region containers
 	
@@ -1240,7 +1250,11 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 	
 	# Use the 3D scene's cortical area registry to find the target
 	var lookup_area: AbstractCorticalArea = _visual_area_for_connection(area)
-	var target_visualization = main_3d_scene.get_cortical_area_visualization(lookup_area.cortical_ID)
+	var target_visualization = null
+	if as_line_source:
+		target_visualization = main_3d_scene.get_output_cortical_area_visualization(lookup_area.cortical_ID)
+	else:
+		target_visualization = main_3d_scene.get_cortical_area_visualization(lookup_area.cortical_ID)
 	
 	if target_visualization == null:
 		print("   ⚠️ Could not find cortical area visualization for: ", area.cortical_ID)
@@ -1248,6 +1262,41 @@ func _get_cortical_area_center_position_for_area(area: AbstractCorticalArea) -> 
 	
 	# Get position from the target's renderer  
 	return target_visualization._get_cortical_area_center_position()
+
+
+## Where lines that arrive at this area end: the Inputs-plate copy.
+func _input_anchor_position() -> Vector3:
+	if is_output_twin and _representing_cortial_area != null:
+		var scene: UI_BrainMonitor_3DScene = _find_3d_scene()
+		if scene != null:
+			var primary: UI_BrainMonitor_CorticalArea = scene.get_cortical_area_visualization(_representing_cortial_area.cortical_ID)
+			if primary != null and primary != self:
+				var primary_position: Vector3 = primary._get_cortical_area_center_position()
+				if primary_position != Vector3.ZERO:
+					return primary_position
+	return _get_cortical_area_center_position()
+
+
+## Where lines that leave this area start: the Outputs-plate copy.
+func _output_anchor_position() -> Vector3:
+	if not is_output_twin and _representing_cortial_area != null:
+		var scene: UI_BrainMonitor_3DScene = _find_3d_scene()
+		if scene != null:
+			var twin: UI_BrainMonitor_CorticalArea = scene.get_output_twin_visualization(_representing_cortial_area.cortical_ID)
+			if twin != null and twin != self:
+				var twin_position: Vector3 = twin._get_cortical_area_center_position()
+				if twin_position != Vector3.ZERO:
+					return twin_position
+	return _get_cortical_area_center_position()
+
+
+func _find_3d_scene() -> UI_BrainMonitor_3DScene:
+	var current_node: Node = get_parent()
+	while current_node != null:
+		if current_node is UI_BrainMonitor_3DScene:
+			return current_node as UI_BrainMonitor_3DScene
+		current_node = current_node.get_parent()
+	return null
 
 
 ## Volume center of [param area] itself. Does not remap internals onto the stamp.

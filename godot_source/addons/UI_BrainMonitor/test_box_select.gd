@@ -17,6 +17,7 @@ func _initialize() -> void:
 	failures += _test_projected_aabb_overlap_and_miss()
 	failures += _test_behind_camera_corners_are_excluded()
 	failures += _test_collect_overlapping_objects_integration()
+	failures += _test_two_copies_of_one_area_are_selected_once()
 	failures += _test_memory_area_uses_direct_points_bounds()
 	failures += _test_volume_renderer_wins_over_direct_points()
 	failures += _test_missing_renderers_have_no_bounds()
@@ -168,6 +169,29 @@ func _test_collect_overlapping_objects_integration() -> int:
 		return 1
 	if area_b in selected:
 		push_error("box must not select an area outside the rectangle")
+		return 1
+	return 0
+
+
+func _test_two_copies_of_one_area_are_selected_once() -> int:
+	var both_way: StringName = &"both_way"
+	var entries: Array = [
+		{&"object": both_way, &"bounds": Rect2(Vector2(0, 0), Vector2(10, 10))},
+		{&"object": both_way, &"bounds": Rect2(Vector2(40, 0), Vector2(10, 10))},
+	]
+	var selected: Array = BoxSelectScript.collect_overlapping_objects(
+		entries,
+		Rect2(Vector2(-5, -5), Vector2(100, 30)),
+	)
+	if selected != [both_way]:
+		push_error("both copies inside the box must select the area once, got %s" % [selected])
+		return 1
+	var one_copy: Array = BoxSelectScript.collect_overlapping_objects(
+		entries,
+		Rect2(Vector2(38, 0), Vector2(20, 10)),
+	)
+	if one_copy != [both_way]:
+		push_error("one copy inside the box must still select the area, got %s" % [one_copy])
 		return 1
 	return 0
 

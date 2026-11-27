@@ -726,7 +726,6 @@ func _confirm_establish_mapping() -> void:
 		)
 		_establishing = false
 		if out_mem.failed_requirement and out_mem.failed_requirement_key in [
-			&"USER_CANCELLED_DESIGNATION",
 			&"USER_CANCELLED_ALL_TO_ALL",
 		]:
 			return
@@ -742,7 +741,6 @@ func _confirm_establish_mapping() -> void:
 		)
 		_establishing = false
 		if out_ep.failed_requirement and out_ep.failed_requirement_key in [
-			&"USER_CANCELLED_DESIGNATION",
 			&"USER_CANCELLED_ALL_TO_ALL",
 		]:
 			return
@@ -829,7 +827,6 @@ func _confirm_establish_mapping() -> void:
 				destination_voxels_job,
 			)
 			if out_pat.failed_requirement and out_pat.failed_requirement_key in [
-				&"USER_CANCELLED_DESIGNATION",
 				&"USER_CANCELLED_ALL_TO_ALL",
 			]:
 				_establishing = false

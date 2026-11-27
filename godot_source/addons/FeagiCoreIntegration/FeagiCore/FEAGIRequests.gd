@@ -4,6 +4,9 @@ class_name FEAGIRequests
 ## Global flag to prevent region frame refresh during active clone operations
 static var _clone_operation_in_progress: bool = false
 
+## IO preset that puts one area in both designated_inputs and designated_outputs of its region.
+const IO_PRESET_INPUT_AND_OUTPUT: StringName = &"Input & output"
+
 #region Genome and FEAGI general
 
 # WARNING: You probably don't want to call this directly!
@@ -1142,6 +1145,9 @@ func update_region_designated_io(parent_region: BrainRegion, cortical_id: String
 	if preset_str == "Input":
 		inputs.append(cortical_id)
 	elif preset_str == "Output":
+		outputs.append(cortical_id)
+	elif preset_str == String(IO_PRESET_INPUT_AND_OUTPUT):
+		inputs.append(cortical_id)
 		outputs.append(cortical_id)
 
 	var payload_in: Array = []
@@ -3264,9 +3270,10 @@ func _cortical_id_in_stringname_list(cortical_id: StringName, ids: Array[StringN
 	return false
 
 
-## When mapping crosses regions, designated IO can contradict topology (e.g. Output + external afferent).
-## Returns empty dict if no conflict, else keys: kind, region, cortical_id, new_preset.
-func _detect_designation_conflict_for_new_mapping(
+## When mapping crosses regions, designated IO can differ from topology (e.g. Output + external afferent).
+## Returns empty dict if the designation already fits, else keys: kind, region, cortical_id, new_preset.
+## The new preset is Input & output, so the area keeps its current side and gains the other.
+func _detect_designation_change_for_new_mapping(
 	src: AbstractCorticalArea,
 	dst: AbstractCorticalArea,
 ) -> Dictionary:
@@ -3281,14 +3288,14 @@ func _detect_designation_conflict_for_new_mapping(
 			"kind": "output_to_input",
 			"region": dr,
 			"cortical_id": dst.cortical_ID,
-			"new_preset": &"Input",
+			"new_preset": IO_PRESET_INPUT_AND_OUTPUT,
 		}
 	if _cortical_id_in_stringname_list(src.cortical_ID, sr.designated_inputs):
 		return {
 			"kind": "input_to_output",
 			"region": sr,
 			"cortical_id": src.cortical_ID,
-			"new_preset": &"Output",
+			"new_preset": IO_PRESET_INPUT_AND_OUTPUT,
 		}
 	return {}
 
@@ -3400,57 +3407,6 @@ func _await_all_to_all_mapping_confirmation(
 	return state["accepted"]
 
 
-func _await_designation_switch_confirmation(
-	kind: String,
-	src: AbstractCorticalArea,
-	dst: AbstractCorticalArea,
-) -> bool:
-	var title := &"IO designation conflict"
-	var msg: String
-	var accept_label: String
-	if kind == "output_to_input":
-		msg = "%s is designated as Output for region \"%s\". This connection adds an input from another region, which conflicts with Output. Switch designation to Input and create the mapping?" % [
-			String(dst.friendly_name),
-			String(dst.current_parent_region.friendly_name),
-		]
-		accept_label = "Switch to Input"
-	else:
-		msg = "%s is designated as Input for region \"%s\". This connection sends output to another region, which conflicts with Input. Switch designation to Output and create the mapping?" % [
-			String(src.friendly_name),
-			String(src.current_parent_region.friendly_name),
-		]
-		accept_label = "Switch to Output"
-	# Use a Dictionary so the lambda captures a reference type and can mutate shared state.
-	# GDScript 4 captures bool/int/float by value, so plain `var done := false` would never
-	# be updated by the lambda, causing the await loop to spin forever.
-	var state := {"done": false, "accepted": false}
-	var on_accept := func() -> void:
-		state["accepted"] = true
-		state["done"] = true
-	var on_cancel := func() -> void:
-		state["accepted"] = false
-		state["done"] = true
-	var b_ok: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_action_button(
-		on_accept,
-		StringName(accept_label),
-	)
-	var b_cancel: ConfigurablePopupButtonDefinition = ConfigurablePopupDefinition.create_action_button(
-		on_cancel,
-		&"Cancel",
-	)
-	var def := ConfigurablePopupDefinition.new(
-		title,
-		StringName(msg),
-		[b_cancel, b_ok],
-	)
-	var popup_window: WindowConfigurablePopup = BV.WM.spawn_popup(def)
-	popup_window.set_enter_confirms_button(accept_label)
-	popup_window.call_deferred("focus_button_with_text", accept_label)
-	while not state["done"]:
-		await Engine.get_main_loop().process_frame
-	return state["accepted"]
-
-
 ## When the server rejects a cross-region mapping (cache missed pre-check or other client), show a clear popup.
 func _show_region_io_policy_mapping_failure_popup_if_needed(
 	output: FeagiRequestOutput,
@@ -3467,7 +3423,7 @@ func _show_region_io_policy_mapping_failure_popup_if_needed(
 	if "destination area is designated as a region output" in mlow:
 		var body: String = (
 			"Cannot create this mapping: \"%s\" is designated as a region output, so it cannot receive connections from outside its brain region. "
-			+ "Change its IO preset to Input, or remove it from designated outputs, before adding an external input."
+			+ "Change its IO preset to Input or Input & output, or remove it from designated outputs, before adding an external input."
 		) % destination_area.friendly_name
 		BV.WM.spawn_popup(
 			ConfigurablePopupDefinition.create_single_button_close_popup(
@@ -3480,7 +3436,7 @@ func _show_region_io_policy_mapping_failure_popup_if_needed(
 	if "source area is designated as a region input" in mlow:
 		var body_in: String = (
 			"Cannot create this mapping: \"%s\" is designated as a region input, so it cannot send connections outside its brain region. "
-			+ "Change its IO preset to Output, or remove it from designated inputs, before adding an external output."
+			+ "Change its IO preset to Output or Input & output, or remove it from designated inputs, before adding an external output."
 		) % source_area.friendly_name
 		BV.WM.spawn_popup(
 			ConfigurablePopupDefinition.create_single_button_close_popup(
@@ -3658,24 +3614,22 @@ func set_mappings_between_corticals(source_area: AbstractCorticalArea, destinati
 		if not all_to_all_confirmed:
 			return FeagiRequestOutput.requirement_fail(&"USER_CANCELLED_ALL_TO_ALL")
 
-	# Cross-region mapping vs declared IO: confirm before PUT (BV). Skip when removing all mappings.
+	# Cross-region mapping vs declared IO: make the area an Input & output port first, then tell the user.
+	# Skip when removing all mappings.
 	if mappings.size() > 0:
-		var conflict: Dictionary = _detect_designation_conflict_for_new_mapping(source_area, destination_area)
-		if conflict.has("kind") and String(conflict["kind"]) != "":
-			var kind_str: String = String(conflict["kind"])
-			var confirmed: bool = await _await_designation_switch_confirmation(
-				kind_str,
-				source_area,
-				destination_area,
-			)
-			if not confirmed:
-				return FeagiRequestOutput.requirement_fail(&"USER_CANCELLED_DESIGNATION")
-			var region: BrainRegion = conflict["region"]
-			var cid: StringName = conflict["cortical_id"]
-			var new_preset: StringName = conflict["new_preset"]
+		var designation_change: Dictionary = _detect_designation_change_for_new_mapping(source_area, destination_area)
+		if designation_change.has("kind") and String(designation_change["kind"]) != "":
+			var region: BrainRegion = designation_change["region"]
+			var cid: StringName = designation_change["cortical_id"]
+			var new_preset: StringName = designation_change["new_preset"]
 			var io_out: FeagiRequestOutput = await update_region_designated_io(region, cid, new_preset)
 			if io_out.has_errored or not io_out.success or io_out.failed_requirement:
 				return io_out
+			var switched_area: AbstractCorticalArea = destination_area if String(designation_change["kind"]) == "output_to_input" else source_area
+			BV.NOTIF.add_notification(
+				"%s is now an Input & output port of \"%s\"." % [String(switched_area.friendly_name), String(region.friendly_name)],
+				NotificationSystemNotification.NOTIFICATION_TYPE.INFO,
+			)
 	
 	# Define Request
 	var mapping_payload: Array[Dictionary] = SingleMappingDefinition.to_FEAGI_JSON_array(mappings)
