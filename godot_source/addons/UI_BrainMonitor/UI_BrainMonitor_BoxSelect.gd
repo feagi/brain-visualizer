@@ -112,6 +112,7 @@ static func bounds_node_for_area(volume_renderer: Node, direct_points_renderer: 
 
 
 ## [param entries] items are Dictionaries with keys `object` and `bounds` (Rect2).
+## Several entries may name the same object (the two copies of a both-way area); it is returned once.
 static func collect_overlapping_objects(entries: Array, selection: Rect2) -> Array:
 	var selected: Array = []
 	for entry in entries:
@@ -119,5 +120,7 @@ static func collect_overlapping_objects(entries: Array, selection: Rect2) -> Arr
 			continue
 		var bounds: Rect2 = entry.get(&"bounds", Rect2())
 		if screen_bounds_overlap_selection(bounds, selection):
-			selected.append(entry.get(&"object"))
+			var picked: Variant = entry.get(&"object")
+			if picked not in selected:
+				selected.append(picked)
 	return selected

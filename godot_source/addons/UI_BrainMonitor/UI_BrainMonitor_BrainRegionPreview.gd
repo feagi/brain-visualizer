@@ -14,7 +14,6 @@ const PREVIEW_PLATE_HEIGHT: float = 1.0
 const PREVIEW_PLACEHOLDER_SIZE: Vector3 = Vector3(5.0, 1.0, 5.0)
 const PREVIEW_COLOR_INPUT: Color = Color(0.1, 0.6, 0.4, 0.2)
 const PREVIEW_COLOR_OUTPUT: Color = Color(0.1, 0.35, 0.65, 0.2)
-const PREVIEW_COLOR_CONFLICT: Color = Color(0.85, 0.35, 0.1, 0.25)
 const PREVIEW_BORDER_THICKNESS: float = 0.1
 const PREVIEW_BORDER_HEIGHT: float = 0.12
 
@@ -45,22 +44,9 @@ func setup(brain_region: BrainRegion, initial_FEAGI_position: Vector3i) -> void:
 	var actual_output_width = output_plate_size.x if output_areas.size() > 0 else PREVIEW_PLACEHOLDER_SIZE.x
 	
 	# Match main BrainRegion plate style/colors ("plate shadows")
-	# Detect conflict state (areas used as both input and output)
-	var conflict = false
-	var input_ids: Array[StringName] = []
-	for a in input_areas:
-		input_ids.append(a.cortical_ID)
-	for a in output_areas:
-		if a.cortical_ID in input_ids:
-			conflict = true
-			break
-
-	# Base colors (semi-transparent greens) or red-tinted on conflict to match main scene
+	# Base colors (semi-transparent greens) to match main scene
 	var input_color = PREVIEW_COLOR_INPUT
 	var output_color = PREVIEW_COLOR_OUTPUT
-	if conflict:
-		input_color = PREVIEW_COLOR_CONFLICT
-		output_color = PREVIEW_COLOR_CONFLICT
 	var input_plate
 	if input_areas.size() > 0:
 		input_plate = _create_visible_preview_plate(input_plate_size, "InputPlatePreview", input_color)

@@ -23,7 +23,14 @@ const MIN_COUNT_FIELD_WIDTH_PX: float = CountFieldLayout.MIN_COUNT_FIELD_WIDTH_P
 const IO_PRESET_INPUT: StringName = "Input"
 const IO_PRESET_OUTPUT: StringName = "Output"
 const IO_PRESET_INTERCONNECT: StringName = "Interconnect"
-const IO_PRESET_CONFLICT: StringName = "Conflict"
+const IO_PRESET_BOTH: StringName = FEAGIRequests.IO_PRESET_INPUT_AND_OUTPUT
+## Item tooltips for the IO preset list. Each says what the role means and what picking it does.
+const IO_PRESET_TOOLTIPS: Dictionary = {
+	"Input": "Use this area as an input port of its circuit: other circuits can wire into it. Picking it stages the change; Apply Update sends it.",
+	"Output": "Use this area as an output port of its circuit: it can wire out to other circuits. Picking it stages the change; Apply Update sends it.",
+	"Interconnect": "Keep this area internal to its circuit: not an input or an output port. Picking it stages the change; Apply Update sends it.",
+	"Input & output": "Use this area as both an input and an output port of its circuit: other circuits can wire into it and out of it. Picking it stages the change; Apply Update sends it.",
+}
 const IO_PRESET_MULTI: StringName = "Multiple Selected"
 var _cortical_area_refs: Array[AbstractCorticalArea]
 var _growing_cortical_update: Dictionary = {}
@@ -1351,7 +1358,7 @@ func _compute_plate_lff_for_bm(bm: UI_BrainMonitor_3DScene, area: AbstractCortic
 				if brain_region_3d == null:
 					return {"found": false, "lff": _vector_position.current_vector}
 				var io_coords = brain_region_3d.generate_io_coordinates_for_brain_region(child_region)
-				var search_sets = [io_coords.inputs, io_coords.outputs, io_coords.conflicts]
+				var search_sets = [io_coords.inputs, io_coords.outputs]
 				for set_arr in search_sets:
 					for area_data in set_arr:
 						if area_data.area_id == area.cortical_ID:
@@ -1904,7 +1911,7 @@ func _on_io_preset_user_picked(option: StringName) -> void:
 static func io_preset_pick_dirties_apply(current_preset: StringName, picked_preset: StringName, locked: bool) -> bool:
 	if locked:
 		return false
-	if picked_preset == &"" or picked_preset == IO_PRESET_CONFLICT or picked_preset == IO_PRESET_MULTI:
+	if picked_preset == &"" or picked_preset == IO_PRESET_MULTI:
 		return false
 	return picked_preset != current_preset
 
@@ -2004,19 +2011,18 @@ func _reset_io_preset_items() -> void:
 		IO_PRESET_INPUT,
 		IO_PRESET_OUTPUT,
 		IO_PRESET_INTERCONNECT,
-		IO_PRESET_CONFLICT,
+		IO_PRESET_BOTH,
 	]
 	if _dropdown_io_preset is DropDown:
 		var dropdown: DropDown = _dropdown_io_preset
 		dropdown.options = preset_items
-		var conflict_index = dropdown.options.find(IO_PRESET_CONFLICT)
-		if conflict_index != -1:
-			dropdown.set_item_disabled(conflict_index, true)
 	else:
 		_dropdown_io_preset.clear()
 		for preset in preset_items:
 			_dropdown_io_preset.add_item(preset)
-		_dropdown_io_preset.set_item_disabled(_dropdown_io_preset.item_count - 1, true)
+	for i in range(_dropdown_io_preset.item_count):
+		_dropdown_io_preset.set_item_disabled(i, false)
+		_dropdown_io_preset.set_item_tooltip(i, String(IO_PRESET_TOOLTIPS.get(_dropdown_io_preset.get_item_text(i), "")))
 
 
 func _select_io_preset(label: StringName) -> void:
@@ -2120,17 +2126,9 @@ func _derive_io_preset_for_area(area: AbstractCorticalArea) -> Dictionary:
 	var o_in: bool = _is_region_input_area(parent_region, area)
 	var o_out: bool = _is_region_output_area(parent_region, area)
 
-	if d_in and d_out:
-		result["preset"] = IO_PRESET_CONFLICT
-		return result
-	if o_in and o_out:
-		result["preset"] = IO_PRESET_CONFLICT
-		return result
 	if (d_in or o_in) and (d_out or o_out):
-		result["preset"] = IO_PRESET_CONFLICT
-		return result
-
-	if d_in or o_in:
+		result["preset"] = IO_PRESET_BOTH
+	elif d_in or o_in:
 		result["preset"] = IO_PRESET_INPUT
 	elif d_out or o_out:
 		result["preset"] = IO_PRESET_OUTPUT

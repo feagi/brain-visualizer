@@ -2,14 +2,15 @@ extends GraphEdit
 class_name CircuitSchematic
 ## Read-only view of the whole genome in one scene. Every brain region is a box around its contents:
 ## the root is open, its regions start as closed blocks, and double-clicking a block opens it in place
-## (the header of an open frame closes it again); Show all and Hide all open or close every region at
-## once. Hovering a cortical area box dims everything not related to it: the areas upstream that reach it
+## (the header of an open frame closes it again); the Show all button opens every region and keeps them open
+## (its label then flips to Hide all, which closes them all). Hovering a cortical area box dims everything not related to it: the areas upstream that reach it
 ## and downstream that it reaches through any chain of mappings, and only the mappings on those chains
 ## (see [SchematicReachability]); the mouse leaving restores everything. Region frames never dim, and the
 ## export never shows the dimming. The Filter box at the top left matches cortical areas and regions by
 ## name (case-insensitive substring): matches stay lit, the rest dims, the regions holding a match open
 ## and the view fits the matches; clearing it restores the earlier open state and the whole-genome fit.
-## Show all also covers regions created later, until Hide all. Shift-clicking an area, region or classifier shows it in the Brain
+## While Show all is on (label Hide all) it also covers regions created later, and closing a region by its header
+## turns it off (label back to Show all). It is not saved between sessions. Shift-clicking an area, region or classifier shows it in the Brain
 ## Monitor, as global search does when it is selected (UIManager.focus_searched_object), and the Export menu saves the whole view as PNG, JPG or PDF. Mappings are merged
 ## into one line per pair of visible ends, with a count when more than one mapping is merged. Editing
 ## stays in Circuit Builder.
@@ -32,11 +33,12 @@ const MENU_PLATE_COLORS: Dictionary = {
 const MENU_TEXT_COLOR: Color = Color8(220, 220, 220)
 const MENU_TEXT_COLOR_DISABLED: Color = Color8(130, 130, 130)
 const MENU_INSET: float = 8.0
-## Export is a menu; Show all and Hide all are a pair. The wider gap separates the two.
+## Menu order: Show all / Hide all (action button), Filter box, Export (menu). A wider gap separates neighbouring groups.
 const MENU_GROUP_GAP: float = 8.0
 const MENU_GROUP_GAP_NAME: StringName = &"GroupGap"
 const MENU_FALLBACK_HEIGHT: float = 28.0
 const FILTER_MIN_WIDTH: float = 220.0  ## Floor; the real width is measured from the placeholder in _style_menu.
+const FILTER_WIDTH_SCALE: float = 1.5  ## The filter box is 50% wider than the measured width (floor included).
 const FILTER_WIDTH_PAD: float = 8.0
 const FILTER_DEBOUNCE_S: float = 0.15
 const FILTER_FIT_PAD: float = 64.0
@@ -66,9 +68,9 @@ var _reachability: SchematicReachability
 var _item_of_area: Dictionary = {} ## AbstractCorticalArea -> item index
 ## The area box under the mouse. Held as the object, not an index, so it survives rebuilds.
 var _hovered_area: AbstractCorticalArea
-## Show all stays on until Hide all, so regions created later open too.
+## Show all mode: while on, every region that can open is open after every rebuild, new ones included.
 var _show_all_mode: bool = false
-var _known_region_ids: Dictionary = {} ## region_ID -> true for the regions of the current model
+var _show_all_button: Button
 ## Name filter. The query is stored, never item indices, so it survives rebuilds.
 var _filter_edit: LineEdit
 var _filter_timer: Timer
@@ -83,7 +85,7 @@ var _fit_generation: int = 0
 func _ready() -> void:
 	name = TAB_TITLE
 	minimap_enabled = not export_mode
-	# The top-left menu holds only the Export, Show all and Hide all buttons.
+	# The top-left menu holds only the Show all / Hide all button, the filter and the Export button, in that order.
 	show_zoom_label = false
 	show_zoom_buttons = false
 	show_grid_buttons = false
@@ -97,9 +99,9 @@ func _ready() -> void:
 		_fit_pending = false
 		rebuild()
 		return
-	_add_export_menu()
-	_add_open_all_buttons()
+	_add_show_all_button()
 	_add_filter_box()
+	_add_export_menu()
 	_style_menu()
 	AreaTypeLegend.add_to(self, SchematicTreeBuilder.CLASSIFIER_COLOR, true)
 	if BV.UI != null:
@@ -131,19 +133,13 @@ func rebuild() -> void:
 	_hovered_area = null
 	_reachability = SchematicReachability.new(_model)
 	_item_of_area.clear()
-	var region_ids: Dictionary = {}
 	for i in _model.items.size():
 		var object: Object = _model.items[i]["object"]
 		if object is AbstractCorticalArea:
 			_item_of_area[object] = i
-		elif object is BrainRegion and i > 0 and not _model.items[i]["closed_only"]:
-			var region_id: Variant = (object as BrainRegion).region_ID
-			region_ids[region_id] = true
-			if _show_all_mode and not _known_region_ids.has(region_id):
-				open_ids[region_id] = true
-				if not _filter_query.is_empty():
-					_pre_filter_open[region_id] = true
-	_known_region_ids = region_ids
+	# With Show all on, everything openable is open, unless a filter is active (it sets the open state).
+	if _show_all_mode and _filter_query.is_empty():
+		open_ids = _openable_region_ids()
 	# Rebuilds only refresh the matches and the dimming; they never re-open regions or re-fit.
 	_recompute_filter()
 	set_open_region_ids(open_ids)
@@ -189,18 +185,33 @@ func set_region_open(item_index: int, is_open: bool) -> void:
 	_sync_nodes()
 
 
-## Opens every region that can be opened, or closes all but the root.
+## region_ID -> true for every region that can be opened (not the root, not closed-only).
+func _openable_region_ids() -> Dictionary:
+	var ids: Dictionary = {}
+	for i in _model.items.size():
+		var object: Object = _model.items[i]["object"]
+		if object is BrainRegion and i > 0 and not _model.items[i]["closed_only"]:
+			ids[(object as BrainRegion).region_ID] = true
+	return ids
+
+
+## Turns Show all on (opens every region that can be opened) or off (closes all but the root).
 func set_all_regions_open(is_open: bool) -> void:
 	_show_all_mode = is_open
+	_refresh_show_all_button()
 	if is_open:
-		_open.resize(_model.items.size())
-		for i in _model.items.size():
-			_open[i] = 1 if _model.is_region(i) and not _model.items[i]["closed_only"] else 0
-		if not _model.items.is_empty():
-			_open[0] = 1
+		set_open_region_ids(_openable_region_ids())
 	else:
 		_open = _model.default_open_mask()
-	_sync_nodes()
+		_sync_nodes()
+
+
+## Label and tooltip follow the mode: "Show all" while off, "Hide all" while on.
+func _refresh_show_all_button() -> void:
+	if _show_all_button == null:
+		return
+	_show_all_button.text = "Hide all" if _show_all_mode else "Show all"
+	_show_all_button.tooltip_text = "Close every circuit" if _show_all_mode else "Open every circuit and keep them open, including ones created later"
 
 
 ## Brings the live boxes in line with the open state: one box per visible item, frames for open
@@ -328,7 +339,11 @@ func _on_box_double_clicked(item_index: int) -> void:
 		if BV.NOTIF != null:
 			BV.NOTIF.add_notification(GenomeClassifier.INTEGRATED_CIRCUIT_INTERNALS_TOOLTIP)
 		return
-	set_region_open(item_index, _open[item_index] == 0)
+	var closing: bool = _open[item_index] == 1
+	if closing and _show_all_mode:
+		_show_all_mode = false
+		_refresh_show_all_button()
+	set_region_open(item_index, not closing)
 
 
 func _on_box_shift_clicked(item_index: int) -> void:
@@ -340,6 +355,7 @@ func _on_box_shift_clicked(item_index: int) -> void:
 
 
 func _add_export_menu() -> void:
+	_add_menu_gap()
 	var button: MenuButton = MenuButton.new()
 	button.text = "Export"
 	button.tooltip_text = "Save the whole schematic, with the regions open as shown"
@@ -351,16 +367,14 @@ func _add_export_menu() -> void:
 		popup.add_item(SchematicImageFile.LABELS[format], format)
 	popup.id_pressed.connect(func(format: int) -> void: SchematicExporter.export_view(self, format as SchematicImageFile.FORMAT))
 	_add_menu_button(button)
-	_add_menu_gap()
 
 
-func _add_open_all_buttons() -> void:
-	for is_open: bool in [true, false]:
-		var button: Button = Button.new()
-		button.text = "Show all" if is_open else "Hide all"
-		button.tooltip_text = "Open every region, including ones created later, until Hide all" if is_open else "Close every region"
-		button.pressed.connect(set_all_regions_open.bind(is_open))
-		_add_menu_button(button)
+func _add_show_all_button() -> void:
+	_show_all_button = Button.new()
+	_show_all_button.toggle_mode = false
+	_refresh_show_all_button()
+	_show_all_button.pressed.connect(func() -> void: set_all_regions_open(not _show_all_mode))
+	_add_menu_button(_show_all_button)
 
 
 func _add_filter_box() -> void:
@@ -415,7 +429,7 @@ func _apply_filter_query() -> void:
 	if query.is_empty():
 		_set_filter_error(false)
 		_recompute_filter()
-		set_open_region_ids(_pre_filter_open)
+		set_open_region_ids(_openable_region_ids() if _show_all_mode else _pre_filter_open)
 		_pre_filter_open = {}
 		request_initial_fit()
 		return
@@ -507,7 +521,7 @@ func _style_menu() -> void:
 			(child as Control).custom_minimum_size.x = MENU_GROUP_GAP
 		elif child == _filter_edit:
 			_filter_edit.custom_minimum_size.y = height
-	_filter_edit.custom_minimum_size.x = _filter_width_for_placeholder()
+	_filter_edit.custom_minimum_size.x = ceilf(_filter_width_for_placeholder() * FILTER_WIDTH_SCALE)
 
 
 ## Width that fits the placeholder in the font the menu theme gives the LineEdit (never below the floor).

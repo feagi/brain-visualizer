@@ -83,7 +83,10 @@ var _scene_setup_complete: bool = false
 ## Set for the floating single-area inspect view. That view shows only this area.
 var _isolated_cortical_area: AbstractCorticalArea = null
 var _world_3D: World3D # used for physics stuff
+## Primary copy of each area. For a both-way area this is the Inputs-plate copy.
 var _cortical_visualizations_by_ID: Dictionary[StringName, UI_BrainMonitor_CorticalArea]
+## Outputs-plate copy of each both-way area (a full instance, not a mirror). Untyped so a freed node cannot throw on read.
+var _cortical_visualization_twins_by_ID: Dictionary = {}
 var _brain_region_visualizations_by_ID: Dictionary  # Dictionary[StringName, UI_BrainMonitor_BrainRegion3D]
 var _external_io_plates: UI_BrainMonitor_BrainRegion3D = null
 var _active_previews: Array[UI_BrainMonitor_InteractivePreview] = []
@@ -140,7 +143,7 @@ func hide_live_voxel_inspector() -> void:
 
 ## Hides area-to-area mapping curves, or restores them on areas that are still hovered or Shift-held.
 func set_cortical_mapping_curves_suppressed(suppressed: bool) -> void:
-	for cortical_viz in _cortical_visualizations_by_ID.values():
+	for cortical_viz in _all_cortical_visualizations():
 		if cortical_viz == null or not is_instance_valid(cortical_viz):
 			continue
 		if suppressed:
@@ -342,7 +345,7 @@ func _is_region_plate_or_label_click_area(hit_body: Node) -> bool:
 	if hit_body == null:
 		return false
 	match hit_body.name:
-		"InputPlateClickArea", "OutputPlateClickArea", "ConflictPlateClickArea", "MotherPlateClickArea", "RegionLabelClickArea":
+		"InputPlateClickArea", "OutputPlateClickArea", "MotherPlateClickArea", "RegionLabelClickArea":
 			return true
 		_:
 			return false
@@ -755,7 +758,7 @@ func _release_io_indicator_suspend_after_settle() -> void:
 		_refresh_all_io_direction_indicators()
 
 func _refresh_all_io_direction_indicators() -> void:
-	for cortical_viz in _cortical_visualizations_by_ID.values():
+	for cortical_viz in _all_cortical_visualizations():
 		if cortical_viz != null and is_instance_valid(cortical_viz):
 			cortical_viz._refresh_io_direction_indicator()
 
@@ -1025,10 +1028,11 @@ func _hovered_cortical_id_for_mapping_hold() -> StringName:
 
 
 func _apply_mapping_line_pin(pinned_id: StringName) -> void:
-	for viz in _cortical_visualizations_by_ID.values():
+	for viz in _all_cortical_visualizations():
 		if viz == null or not is_instance_valid(viz):
 			continue
-		var pinned: bool = pinned_id != &"" and viz.cortical_area != null and viz.cortical_area.cortical_ID == pinned_id
+		# Only the primary copy holds the lines, so a both-way area draws them once.
+		var pinned: bool = pinned_id != &"" and not viz.is_output_twin and viz.cortical_area != null and viz.cortical_area.cortical_ID == pinned_id
 		viz.set_shift_pin_holds_connections(pinned)
 
 
@@ -1037,12 +1041,13 @@ func _sync_mapping_count_buttons(shift_held: bool) -> void:
 		return
 	var specs: Array[Dictionary] = []
 	if shift_held:
-		for viz in _cortical_visualizations_by_ID.values():
+		for viz in _all_cortical_visualizations():
 			if viz == null or not is_instance_valid(viz):
 				continue
 			if not MappingHoverHold.should_show_count_buttons(viz.neural_connections_visible(), true):
 				continue
 			specs.append_array(viz.mapping_count_button_specs())
+		specs = _dedupe_mapping_count_specs(specs)
 	_mapping_count_buttons_active = not specs.is_empty()
 	_UI_layer_for_BM.sync_mapping_count_buttons(specs, _pancake_cam)
 
@@ -1281,7 +1286,7 @@ func cancel_box_select() -> void:
 
 
 func has_selected_neurons() -> bool:
-	for area: UI_BrainMonitor_CorticalArea in _cortical_visualizations_by_ID.values():
+	for area: UI_BrainMonitor_CorticalArea in _all_cortical_visualizations():
 		if area != null and is_instance_valid(area) and not area.get_neuron_selection_states().is_empty():
 			return true
 	return false
@@ -1408,7 +1413,7 @@ func _compute_scene_aabb() -> AABB:
 	var have: bool = false
 	var merged := AABB()
 	# Merge cortical area visualizations
-	for viz in _cortical_visualizations_by_ID.values():
+	for viz in _all_cortical_visualizations():
 		if viz == null or not is_instance_valid(viz):
 			continue
 		if viz is Node:
@@ -1468,7 +1473,7 @@ func _compute_front_depth_along_forward(cam: Camera3D) -> float:
 func _compute_cortical_data_aabb() -> AABB:
 	var have := false
 	var merged := AABB()
-	for viz in _cortical_visualizations_by_ID.values():
+	for viz in _all_cortical_visualizations():
 		if viz == null or not is_instance_valid(viz):
 			continue
 		var ca = viz.get("cortical_area")
@@ -1820,7 +1825,7 @@ func _collect_labels_from_cortical_viz(viz: UI_BrainMonitor_CorticalArea, label_
 		var current_parent = label.get_parent()
 		var depth = 0
 		while current_parent != null and depth < 10:
-			if current_parent.name == "InputAreas" or current_parent.name == "OutputAreas" or current_parent.name == "ConflictAreas":
+			if current_parent.name == "InputAreas" or current_parent.name == "OutputAreas":
 				return true
 			current_parent = current_parent.get_parent()
 			depth += 1
@@ -1927,7 +1932,7 @@ func _update_label_overlap_visibility() -> void:
 	var title_pixel_size := _title_pixel_size_matching_top_bar(viewport)
 	
 	# Collect labels from main scene cortical visualizations
-	for viz in _cortical_visualizations_by_ID.values():
+	for viz in _all_cortical_visualizations():
 		if viz != null and is_instance_valid(viz):
 			_collect_labels_from_cortical_viz(viz, label_data, viewport, title_pixel_size)
 	
@@ -2026,7 +2031,7 @@ func _log_objects_relative_to_camera(context: String = "") -> void:
 	var behind: Array[String] = []
 
 	# Collect cortical area viz
-	for viz in _cortical_visualizations_by_ID.values():
+	for viz in _all_cortical_visualizations():
 		if viz == null or not is_instance_valid(viz):
 			continue
 		if viz is Node:
@@ -2142,8 +2147,11 @@ func is_connection_inspector_latched() -> bool:
 ## Draws every mapping in this scene, or returns areas to the real pointer hover.
 func set_connection_inspector_latched(enabled: bool) -> void:
 	_connection_inspector_latched = enabled
-	for viz in _cortical_visualizations_by_ID.values():
+	for viz in _all_cortical_visualizations():
 		if viz == null or not is_instance_valid(viz):
+			continue
+		if viz.is_output_twin:
+			# Both copies would draw the same lines. The primary copy carries them.
 			continue
 		if enabled or viz not in _previously_moused_over_volumes:
 			viz.set_hover_over_volume_state(enabled)
@@ -2217,7 +2225,7 @@ func _compute_selected_areas_aabb() -> AABB:
 ## Repositions cortical area labels so they remain below each area but appear at the camera-facing edge of the cortical depth.
 func _update_all_cortical_area_label_positions_to_camera_edge() -> void:
 	# Main scene cortical visualizations
-	for viz in _cortical_visualizations_by_ID.values():
+	for viz in _all_cortical_visualizations():
 		if viz == null or not is_instance_valid(viz):
 			continue
 		viz.bv_update_friendly_name_label_positions()
@@ -2269,12 +2277,23 @@ func _handle_fire_selected_neurons_key(shift_held: bool) -> void:
 ## Collects currently selected voxels across cortical visualizations in this Brain Monitor.
 func _collect_selected_neuron_coordinates_by_area() -> Dictionary[StringName, Array]:
 	var dict: Dictionary[StringName, Array] = {}
-	for BM_cortical_area in _cortical_visualizations_by_ID.values():
+	for BM_cortical_area in _all_cortical_visualizations():
 		if not is_instance_valid(BM_cortical_area) or not BM_cortical_area.cortical_area:
 			continue
 		var selected_neurons: Array[Vector3i] = BM_cortical_area.get_neuron_selection_states()
-		if !selected_neurons.is_empty():
-			dict[BM_cortical_area.cortical_area.cortical_ID] = selected_neurons
+		if selected_neurons.is_empty():
+			continue
+		var area_key: StringName = BM_cortical_area.cortical_area.cortical_ID
+		if not dict.has(area_key):
+			dict[area_key] = selected_neurons
+			continue
+		# Both copies of a both-way area may hold voxels. Count each voxel once.
+		var merged: Array[Vector3i] = []
+		merged.append_array(dict[area_key])
+		for coordinate in selected_neurons:
+			if coordinate not in merged:
+				merged.append(coordinate)
+		dict[area_key] = merged
 	return dict
 
 
@@ -2693,7 +2712,6 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					match hit_body.name:
 						"InputPlateClickArea": plate_kind = "Input plate"
 						"OutputPlateClickArea": plate_kind = "Output plate"
-						"ConflictPlateClickArea": plate_kind = "Conflict plate"
 						"MotherPlateClickArea", "RegionLabelClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
@@ -2742,13 +2760,11 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 						var hit_pos: Vector3 = hit["position"]
 						var plate_map := {
 							"Input plate": "RegionAssembly/InputPlate",
-							"Output plate": "RegionAssembly/OutputPlate",
-							"Conflict plate": "RegionAssembly/ConflictPlate"
+							"Output plate": "RegionAssembly/OutputPlate"
 						}
 						var plate_wire_map := {
 							"Input plate": "RegionAssembly/InputPlate_Wireframe",
-							"Output plate": "RegionAssembly/OutputPlate_Wireframe",
-							"Conflict plate": "RegionAssembly/ConflictPlate_Wireframe"
+							"Output plate": "RegionAssembly/OutputPlate_Wireframe"
 						}
 						for plate_label in plate_map.keys():
 							if region_frame.has_node(plate_map[plate_label]) or region_frame.has_node(plate_wire_map[plate_label]):
@@ -2775,7 +2791,7 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 										var hover_name: String = "External" if region_frame.is_external_io_anchor() else region_frame.representing_region.friendly_name
 										_UI_layer_for_BM.show_plate_hover(hover_name, plate_label)
 										break
-			# Check if we hit a plate click area (input/output/conflict/mother) or region title
+			# Check if we hit a plate click area (input/output/mother) or region title
 			elif _is_region_plate_or_label_click_area(hit_body):
 				var region_frame = hit_body.get_parent()
 				if region_frame and _UI_layer_for_BM:
@@ -2783,7 +2799,6 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 					match hit_body.name:
 						"InputPlateClickArea": plate_kind = "Input plate"
 						"OutputPlateClickArea": plate_kind = "Output plate"
-						"ConflictPlateClickArea": plate_kind = "Conflict plate"
 						"MotherPlateClickArea", "RegionLabelClickArea": plate_kind = ""
 						_:
 							plate_kind = "Plate"
@@ -2807,13 +2822,15 @@ func _process_user_input(bm_input_events: Array[UI_BrainMonitor_InputEvent_Abstr
 				return
 			if bm_input_event.button == UI_BrainMonitor_InputEvent_Abstract.CLICK_BUTTON.CLEAR_ALL_SELECTED_NEURONS && bm_input_event.button_pressed: # special case when clearing all neurons
 				_stop_continuous_selected_neuron_firing(true)
-				for bm_cortical_area in _cortical_visualizations_by_ID.values():
+				var announced_clear: Dictionary = {}
+				for bm_cortical_area in _all_cortical_visualizations():
 					# Check if the cortical area object is still valid before accessing it
 					if not is_instance_valid(bm_cortical_area):
 						continue
 					var had_selected_neurons: bool = not bm_cortical_area.get_neuron_selection_states().is_empty()
 					bm_cortical_area.clear_all_neuron_selection_states() # slow but I dont care right now
-					if had_selected_neurons and bm_cortical_area.cortical_area != null:
+					if had_selected_neurons and bm_cortical_area.cortical_area != null and not announced_clear.has(bm_cortical_area.cortical_area.cortical_ID):
+						announced_clear[bm_cortical_area.cortical_area.cortical_ID] = true
 						var cleared_selection: Array[Vector3i] = []
 						cortical_area_selected_neurons_changed.emit(bm_cortical_area.cortical_area, cleared_selection)
 				requesting_to_clear_all_selected_neurons.emit()
@@ -3016,7 +3033,7 @@ func _commit_box_select(screen_rect: Rect2) -> void:
 	if _pancake_cam == null or BV == null or BV.UI == null or BV.UI.selection_system == null:
 		return
 	var entries: Array = []
-	for viz in _cortical_visualizations_by_ID.values():
+	for viz in _all_cortical_visualizations():
 		if viz == null or not is_instance_valid(viz) or viz.cortical_area == null:
 			continue
 		var target: Node = viz.box_select_bounds_node()
@@ -3101,11 +3118,13 @@ func _process_scene_pick_click(
 
 
 func clear_all_selected_cortical_area_neurons() -> void:
-	for area: UI_BrainMonitor_CorticalArea in _cortical_visualizations_by_ID.values():
+	var announced_clear: Dictionary = {}
+	for area: UI_BrainMonitor_CorticalArea in _all_cortical_visualizations():
 		if area != null and is_instance_valid(area):
 			var had_selected_neurons: bool = not area.get_neuron_selection_states().is_empty()
 			area.clear_all_neuron_selection_states()
-			if had_selected_neurons and area.cortical_area != null:
+			if had_selected_neurons and area.cortical_area != null and not announced_clear.has(area.cortical_area.cortical_ID):
+				announced_clear[area.cortical_area.cortical_ID] = true
 				var cleared_selection: Array[Vector3i] = []
 				cortical_area_selected_neurons_changed.emit(area.cortical_area, cleared_selection)
 	requesting_to_clear_all_selected_neurons.emit()
@@ -3719,7 +3738,7 @@ func _intersect_ray_plane_param(origin: Vector3, dir: Vector3, plane_point: Vect
 ## Padded world AABBs for cortical areas and brain region frames (used for open-space placement scoring).
 func _collect_individual_occupancy_aabbs_for_placement(pad: float) -> Array[AABB]:
 	var out: Array[AABB] = []
-	for viz in _cortical_visualizations_by_ID.values():
+	for viz in _all_cortical_visualizations():
 		if viz == null or not is_instance_valid(viz):
 			continue
 		var ca = viz.get("cortical_area")
@@ -5082,6 +5101,7 @@ func _add_cortical_area(area: AbstractCorticalArea, allow_external: bool = false
 			_previously_moused_over_volumes.erase(existing_viz)
 			_previously_moused_over_cortical_area_neurons.erase(existing_viz)
 			existing_viz.queue_free()
+		release_output_twin_visualization(area.cortical_ID)
 		_cortical_visualizations_by_ID.erase(area.cortical_ID)
 	
 	# Check if this area should be created.
@@ -5149,8 +5169,13 @@ func add_external_io_cortical_area(area: AbstractCorticalArea) -> UI_BrainMonito
 func release_external_io_visualization(viz: UI_BrainMonitor_CorticalArea) -> void:
 	if viz == null or not is_instance_valid(viz):
 		return
+	if viz.is_output_twin:
+		if viz.cortical_area != null:
+			release_output_twin_visualization(viz.cortical_area.cortical_ID)
+		return
 	var area: AbstractCorticalArea = viz.cortical_area
 	if area != null:
+		release_output_twin_visualization(area.cortical_ID)
 		var current: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(area.cortical_ID)
 		if current == viz:
 			_cortical_visualizations_by_ID.erase(area.cortical_ID)
@@ -5158,6 +5183,90 @@ func release_external_io_visualization(viz: UI_BrainMonitor_CorticalArea) -> voi
 	if parent_node != null:
 		parent_node.remove_child(viz)
 	viz.queue_free()
+
+## Every live volume node: each area's primary copy (the Inputs-plate copy), then any Outputs-plate twin.
+## Use this for loops that act on volumes. A both-way area appears twice, so count by area, not by node.
+func _all_cortical_visualizations() -> Array:
+	var all_volumes: Array = []
+	for cortical_id in _cortical_visualizations_by_ID.keys():
+		var primary: UI_BrainMonitor_CorticalArea = _read_cortical_visualization(cortical_id)
+		if primary != null:
+			all_volumes.append(primary)
+	for cortical_id in _cortical_visualization_twins_by_ID.keys():
+		var twin: UI_BrainMonitor_CorticalArea = get_output_twin_visualization(cortical_id)
+		if twin != null:
+			all_volumes.append(twin)
+	return all_volumes
+
+
+## The Outputs-plate copy of a both-way area, or null when the area has no twin.
+func get_output_twin_visualization(cortical_id: Variant) -> UI_BrainMonitor_CorticalArea:
+	var twin_raw: Variant = _cortical_visualization_twins_by_ID.get(StringName(cortical_id))
+	if twin_raw == null or not is_instance_valid(twin_raw):
+		return null
+	return twin_raw as UI_BrainMonitor_CorticalArea
+
+
+## The copy that lines leave from: the Outputs-plate twin when there is one, else the primary copy.
+func get_output_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
+	var twin: UI_BrainMonitor_CorticalArea = get_output_twin_visualization(cortical_id)
+	if twin != null:
+		return twin
+	return get_cortical_area_visualization(cortical_id)
+
+
+## Creates (or returns) the Outputs-plate copy of a both-way area. The caller (a region plate) mounts it.
+func ensure_output_twin_visualization(area: AbstractCorticalArea) -> UI_BrainMonitor_CorticalArea:
+	if area == null or _node_3D_root == null:
+		return null
+	var existing: UI_BrainMonitor_CorticalArea = get_output_twin_visualization(area.cortical_ID)
+	if existing != null:
+		if existing.cortical_area == area and not existing.is_queued_for_deletion():
+			return existing
+		release_output_twin_visualization(area.cortical_ID)
+	var primary: UI_BrainMonitor_CorticalArea = get_cortical_area_visualization(String(area.cortical_ID))
+	if primary == null:
+		return null
+	var twin: UI_BrainMonitor_CorticalArea = UI_BrainMonitor_CorticalArea.new()
+	twin.is_output_twin = true
+	_node_3D_root.add_child(twin)
+	twin.setup(area)
+	_cortical_visualization_twins_by_ID[area.cortical_ID] = twin
+	return twin
+
+
+## Frees the Outputs-plate copy of an area. The primary copy stays.
+func release_output_twin_visualization(cortical_id: Variant) -> void:
+	var key: StringName = StringName(cortical_id)
+	var twin: UI_BrainMonitor_CorticalArea = get_output_twin_visualization(key)
+	_cortical_visualization_twins_by_ID.erase(key)
+	if twin == null:
+		return
+	_previously_moused_over_volumes.erase(twin)
+	_previously_moused_over_cortical_area_neurons.erase(twin)
+	var parent_node: Node = twin.get_parent()
+	if parent_node != null:
+		parent_node.remove_child(twin)
+	twin.queue_free()
+
+
+## Drops a pair of mapping count buttons that two copies of one area both reported.
+func _dedupe_mapping_count_specs(specs: Array[Dictionary]) -> Array[Dictionary]:
+	var seen: Dictionary = {}
+	var unique: Array[Dictionary] = []
+	for spec in specs:
+		var source: AbstractCorticalArea = spec.get("source") as AbstractCorticalArea
+		var destination: AbstractCorticalArea = spec.get("destination") as AbstractCorticalArea
+		if source == null or destination == null:
+			unique.append(spec)
+			continue
+		var key: String = "%s>%s" % [source.cortical_ID, destination.cortical_ID]
+		if seen.has(key):
+			continue
+		seen[key] = true
+		unique.append(spec)
+	return unique
+
 
 ## Gets an existing cortical area visualization by ID (used by brain region frames)
 func get_cortical_area_visualization(cortical_id: String) -> UI_BrainMonitor_CorticalArea:
@@ -5223,6 +5332,7 @@ func _remove_cortical_area(area: AbstractCorticalArea) -> void:
 		rendering_area.queue_free()
 	else:
 		_prune_invalid_cortical_refs_from_mouse_tracking()
+	release_output_twin_visualization(area.cortical_ID)
 	_cortical_visualizations_by_ID.erase(area.cortical_ID)
 	_schedule_core_cluster_layout_refresh()
 
@@ -5572,6 +5682,11 @@ func _teardown_all_cortical_area_visualizations() -> void:
 				area.about_to_be_deleted.disconnect(remove_callable)
 		cortical_viz.queue_free()
 	_cortical_visualizations_by_ID.clear()
+	for twin_id in _cortical_visualization_twins_by_ID.keys():
+		var twin_raw: Variant = _cortical_visualization_twins_by_ID.get(twin_id)
+		if twin_raw != null and is_instance_valid(twin_raw):
+			(twin_raw as Node).queue_free()
+	_cortical_visualization_twins_by_ID.clear()
 
 
 ## Full cortical rebuild (teardown of every visual): only for [signal genome_cache_replaced], brain region reloads and
@@ -5682,7 +5797,7 @@ func _perform_coalesced_cache_rebuild() -> void:
 		_refresh_existing_region_plates_after_cortical_rebuild()
 	_ensure_external_io_plates()
 	# Force refresh connections for hovered areas and any Shift-held mapping lines.
-	for cortical_viz in _cortical_visualizations_by_ID.values():
+	for cortical_viz in _all_cortical_visualizations():
 		if cortical_viz != null and is_instance_valid(cortical_viz):
 			cortical_viz.refresh_neural_connections_if_shown()
 	call_deferred("_update_all_cortical_area_label_positions_to_camera_edge")
@@ -5908,7 +6023,7 @@ func force_refresh_all_cortical_connections() -> void:
 
 func _on_mappings_reloaded_refresh_connections() -> void:
 	var refreshed_count = 0
-	for cortical_viz in _cortical_visualizations_by_ID.values():
+	for cortical_viz in _all_cortical_visualizations():
 		if cortical_viz != null and is_instance_valid(cortical_viz):
 			if cortical_viz.refresh_neural_connections_if_shown():
 				refreshed_count += 1
@@ -5921,7 +6036,7 @@ func force_create_missing_regions() -> void:
 	_create_missing_brain_region_visualizations()
 	
 	var refreshed_count = 0
-	for cortical_viz in _cortical_visualizations_by_ID.values():
+	for cortical_viz in _all_cortical_visualizations():
 		if cortical_viz != null and is_instance_valid(cortical_viz):
 			# Hide any existing connections
 			cortical_viz._hide_neural_connections()

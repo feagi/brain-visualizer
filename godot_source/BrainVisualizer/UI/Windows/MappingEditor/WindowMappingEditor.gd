@@ -200,7 +200,6 @@ func _user_pressed_set_mappings() -> void:
 		mappings,
 	)
 	if out.failed_requirement and out.failed_requirement_key in [
-		&"USER_CANCELLED_DESIGNATION",
 		&"USER_CANCELLED_ALL_TO_ALL",
 	]:
 		return

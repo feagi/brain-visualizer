@@ -1679,7 +1679,7 @@ func _find_parent_brain_region() -> UI_BrainMonitor_BrainRegion3D:
 		current = current.get_parent()
 	return null
 
-## Helper to find the plate node (InputPlate, OutputPlate, or ConflictPlate) for this area
+## Helper to find the plate node (InputPlate or OutputPlate) for this area
 func _find_plate_node(brain_region_viz: UI_BrainMonitor_BrainRegion3D) -> Node3D:
 	# Check which container this area is in to determine which plate to use
 	var container = get_parent()
@@ -1688,8 +1688,6 @@ func _find_plate_node(brain_region_viz: UI_BrainMonitor_BrainRegion3D) -> Node3D
 			return brain_region_viz.get_node_or_null("RegionAssembly/InputPlate") as Node3D
 		elif container.name == "OutputAreas":
 			return brain_region_viz.get_node_or_null("RegionAssembly/OutputPlate") as Node3D
-		elif container.name == "ConflictAreas":
-			return brain_region_viz.get_node_or_null("RegionAssembly/ConflictPlate") as Node3D
 		container = container.get_parent()
 	
 	# Fallback: try to find any plate
@@ -1906,7 +1904,7 @@ func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
 		return
 
 	# 2) Determine IO status from active brain regions in the scene
-	var plate_type := _determine_plate_type(area)  # "input" | "output" | "conflict" | "none"
+	var plate_type := _determine_plate_type(area)  # "input" | "output" | "none"
 	if plate_type == "none":
 		return
 
@@ -1932,8 +1930,6 @@ func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
 			material.albedo_color = Color(1.0, 0.5, 0.0, 0.2)
 		"output":
 			material.albedo_color = Color(0.0, 0.4, 0.0, 0.2)
-		"conflict":
-			material.albedo_color = Color(0.8, 0.0, 0.0, 0.2)
 
 	plate_mesh.material_override = material
 	plate_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -1945,66 +1941,22 @@ func _create_individual_plate_if_needed(area: AbstractCorticalArea) -> void:
 func _is_on_brain_region_plate() -> bool:
 	var current_parent := get_parent()
 	while current_parent != null:
-		if current_parent.name == "InputAreas" or current_parent.name == "OutputAreas" or current_parent.name == "ConflictAreas":
+		if current_parent.name == "InputAreas" or current_parent.name == "OutputAreas":
 			return true
 		current_parent = current_parent.get_parent()
 	return false
 
-## Determines what type of plate this cortical area should have based on brain region I/O lists
-func _determine_plate_type(area: AbstractCorticalArea) -> String:
-	var is_input := false
-	var is_output := false
-
-	var brain_monitor := _find_brain_monitor_scene()
-	if brain_monitor == null:
-		return "none"
-
-	var brain_regions := _find_all_brain_regions_recursive(brain_monitor)
-	for region_viz in brain_regions:
-		if region_viz == null:
-			continue
-		var br: BrainRegion = region_viz.representing_region
-		if br == null:
-			continue
-
-		# Input via chain links / partial mappings / IPU fallback
-		for link in br.input_open_chain_links:
-			if link.destination is AbstractCorticalArea and (link.destination as AbstractCorticalArea).cortical_ID == area.cortical_ID:
-				is_input = true
-				break
-		if not is_input:
-			for pm in br.partial_mappings:
-				if pm.is_region_input and pm.internal_target_cortical_area and pm.internal_target_cortical_area.cortical_ID == area.cortical_ID:
-					is_input = true
-					break
-		if not is_input:
-			for a in br.contained_cortical_areas:
-				if a.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU and a.cortical_ID == area.cortical_ID:
-					is_input = true
-					break
-
-		# Output via chain links / partial mappings / OPU fallback
-		for link2 in br.output_open_chain_links:
-			if link2.source is AbstractCorticalArea and (link2.source as AbstractCorticalArea).cortical_ID == area.cortical_ID:
-				is_output = true
-				break
-		if not is_output:
-			for pm2 in br.partial_mappings:
-				if not pm2.is_region_input and pm2.internal_target_cortical_area and pm2.internal_target_cortical_area.cortical_ID == area.cortical_ID:
-					is_output = true
-					break
-		if not is_output:
-			for a2 in br.contained_cortical_areas:
-				if a2.cortical_type == AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU and a2.cortical_ID == area.cortical_ID:
-					is_output = true
-					break
-
-	if is_input and is_output:
-		return "conflict"
-	elif is_input:
-		return "input"
-	elif is_output:
-		return "output"
+## Plate type comes from the plate container this volume sits in, never from the area id,
+## so the two copies of a both-way area each take their own plate.
+func _determine_plate_type(_area: AbstractCorticalArea) -> String:
+	var current_parent := get_parent()
+	while current_parent != null:
+		match String(current_parent.name):
+			"InputAreas":
+				return "input"
+			"OutputAreas":
+				return "output"
+		current_parent = current_parent.get_parent()
 	return "none"
 
 ## Helper to find the brain monitor scene (accept true scene or BM_* container)
