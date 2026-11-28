@@ -2,15 +2,15 @@ shader_type canvas_item;
 
 
 
-// Adds dashes to line
-vec4 dashedLine(vec4 colorIn, float UVX, float numberDivisions){
-	int segment = int(floor(UVX * numberDivisions));
-	if(segment % 2 == 0){
+// Adds dashes to line. numDivisions is how many dash-and-gap pairs fit along the line.
+// dashDuty is the lit fraction of each pair (the dash). The rest is the gap.
+vec4 dashedLine(vec4 colorIn, float along, float numberDivisions, float duty, float phase){
+	// Subtracting the phase walks the dashes toward the end of the line (source to destination).
+	float pos = fract(along * numberDivisions - phase);
+	if(pos <= duty){
 		return colorIn;
 	}
-	else{
-		return vec4(colorIn.xyz, 0.0);
-	}
+	return vec4(colorIn.xyz, 0.0);
 }
 
 // Adds an offset to the color as a linear function in mx+b form (retain alpha channel)
@@ -29,7 +29,11 @@ uniform vec4 baseColor = vec4(1,1,1,1);
 uniform vec4 colorHighLight = vec4(1,1,1,1);
 uniform bool isOutlined = false;
 uniform bool isDashed = true;
-uniform float numDivisions = 100.0;
+uniform float numDivisions = 8.0;
+// Lit fraction of each dash-and-gap. Matches MappingLineStyle dash and gap lengths.
+uniform float dashDuty = 0.5625;
+// Seconds for one dash and one gap to slide along the line. 0 holds the pattern still.
+uniform float dashCycleSeconds = 0.0;
 uniform float linConstant = 0.0;
 uniform float linSlope = 0.0;
 const float highlightLowerBound = 0.2;
@@ -46,7 +50,11 @@ void fragment() {
 	COLOR = baseColor;
 	COLOR = addLinearFunctionAmount(COLOR, UV.x, linConstant, linSlope); // Color Offset from brightning ends
 	if (isDashed) {
-		COLOR = dashedLine(COLOR, UV.x, numDivisions);
+		float phase = 0.0;
+		if (dashCycleSeconds > 0.0) {
+			phase = fract(TIME / dashCycleSeconds);
+		}
+		COLOR = dashedLine(COLOR, UV.x, numDivisions, dashDuty, phase);
 	}
 	if (isOutlined){
 		COLOR = addHighLighting(COLOR, UV.y, highlightLowerBound, highlightUpperBound, colorHighLight);

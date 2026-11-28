@@ -3,11 +3,35 @@ class_name AreaTypeLegend
 ## Color key pinned to a GraphEdit. A child that is not a GraphElement stays on screen
 ## while the graph pans and zooms, which is how Circuit Builder's object menu stays put.
 ## Bottom-left keeps it clear of that menu, the schematic toolbar, and the minimap.
+## On the schematic, hovering a row highlights that category on the graph and dims the other rows.
+## Each row's [code]key[/code] is what [method item_matches] and [method line_matches] test.
+
+signal entry_hovered(key: String)
+signal entry_unhovered(key: String)
 
 const MARGIN: float = 16.0
 const SWATCH: float = 14.0
 const TEXT_COLOR: Color = Color8(220, 220, 220)
 const HEADER_COLOR: Color = Color8(160, 164, 172)
+const CLASSIFIER_KEY: String = "classifier"
+## Other legend rows while one is hovered. Same idea as a dimmed schematic box, still readable.
+const ROW_DIM_ALPHA: float = 0.35
+## Area-row key to the cortical type whose boxes that row stands for.
+const AREA_KEY_TYPE: Dictionary = {
+	"input": AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU,
+	"output": AbstractCorticalArea.CORTICAL_AREA_TYPE.OPU,
+	"memory": AbstractCorticalArea.CORTICAL_AREA_TYPE.MEMORY,
+	"custom": AbstractCorticalArea.CORTICAL_AREA_TYPE.CUSTOM,
+	"core": AbstractCorticalArea.CORTICAL_AREA_TYPE.CORE,
+	"modulator": AbstractCorticalArea.CORTICAL_AREA_TYPE.MODULATOR,
+}
+## Mapping-row key to the merged line kind. Plastic and associative are flags, not kinds.
+const LINE_KEY_KIND: Dictionary = {
+	"excitatory": SchematicModel.LINE_KIND.EXCITATORY,
+	"inhibitory": SchematicModel.LINE_KIND.INHIBITORY,
+	"episodic": SchematicModel.LINE_KIND.EPISODIC,
+	"mixed": SchematicModel.LINE_KIND.MIXED,
+}
 
 var _classifier_color: Color = CBNodeClassifier.CLASSIFIER_BOX_COLOR
 
@@ -15,6 +39,8 @@ var _classifier_color: Color = CBNodeClassifier.CLASSIFIER_BOX_COLOR
 var _for_schematic: bool = false
 ## Export draws the key on its own, at its natural size, instead of pinning it to a graph corner.
 var _strip: bool = false
+var _rows: Array[Control] = []
+var _hovered_key: String = ""
 
 
 ## Adds the key to [param graph]. [param classifier_color] is the color that view paints classifiers.
@@ -38,13 +64,13 @@ func configure_for_export(classifier_color: Color) -> void:
 ## Label, swatch color, tooltip. Order is the order shown.
 static func entries(classifier_color: Color) -> Array[Dictionary]:
 	return [
-		{"label": "Input", "color": CBNodeCorticalArea.IPU_BOX_COLOR, "tip": "Input areas (IPU). Signals coming into the brain."},
-		{"label": "Output", "color": CBNodeCorticalArea.OPU_BOX_COLOR, "tip": "Output areas (OPU). Signals the brain sends out."},
-		{"label": "Memory", "color": CBNodeCorticalArea.MEMORY_BOX_COLOR, "tip": "Memory areas. They store a pattern and can fire it again later."},
-		{"label": "Custom", "color": CBNodeCorticalArea.CUSTOM_BOX_COLOR, "tip": "Custom areas. Processing areas you add."},
-		{"label": "Core", "color": CBNodeCorticalArea.CORE_BOX_COLOR, "tip": "Core areas. Built into the brain, such as power and death."},
-		{"label": "Modulator", "color": CBNodeCorticalArea.MODULATOR_BOX_COLOR, "tip": "Modulator areas. A small driver whose firing changes subscribed areas or connections for a few bursts."},
-		{"label": "Classifier", "color": classifier_color, "tip": "Classifiers. They read an area and name the pattern they see."},
+		{"label": "Input", "key": "input", "color": CBNodeCorticalArea.IPU_BOX_COLOR, "tip": "Input areas (IPU). Signals coming into the brain."},
+		{"label": "Output", "key": "output", "color": CBNodeCorticalArea.OPU_BOX_COLOR, "tip": "Output areas (OPU). Signals the brain sends out."},
+		{"label": "Memory", "key": "memory", "color": CBNodeCorticalArea.MEMORY_BOX_COLOR, "tip": "Memory areas. They store a pattern and can fire it again later."},
+		{"label": "Custom", "key": "custom", "color": CBNodeCorticalArea.CUSTOM_BOX_COLOR, "tip": "Custom areas. Processing areas you add."},
+		{"label": "Core", "key": "core", "color": CBNodeCorticalArea.CORE_BOX_COLOR, "tip": "Core areas. Built into the brain, such as power and death."},
+		{"label": "Modulator", "key": "modulator", "color": CBNodeCorticalArea.MODULATOR_BOX_COLOR, "tip": "Modulator areas. A small driver whose firing changes subscribed areas or connections for a few bursts."},
+		{"label": "Classifier", "key": CLASSIFIER_KEY, "color": classifier_color, "tip": "Classifiers. They read an area and name the pattern they see."},
 	]
 
 
@@ -52,18 +78,18 @@ static func entries(classifier_color: Color) -> Array[Dictionary]:
 ## partial mapping. The schematic uses gray when one line merges different kinds.
 static func mapping_entries(for_schematic: bool) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = [
-		{"label": "Excitatory", "color": CBLineInterTerminal.LINE_COLOR_PSPP, "dashed": false, "tip": "A mapping that excites its destination. Solid green."},
-		{"label": "Inhibitory", "color": CBLineInterTerminal.LINE_COLOR_PSPN, "dashed": false, "tip": "A mapping with a negative weight, unless every rule on it is episodic. Solid red."},
-		{"label": "Episodic", "color": CBLineInterTerminal.LINE_COLOR_EPISODIC, "dashed": false, "tip": "Every rule on the mapping is episodic or associative memory. Yellow, ahead of the red inhibitory color."},
-		{"label": "Plastic", "color": CBLineInterTerminal.LINE_COLOR_PSPP, "dashed": true, "tip": "At least one rule on the mapping can learn. The line is dashed. Its color is still excitatory, inhibitory, or episodic."},
-		{"label": "Associative", "color": CBLineInterTerminal.LINE_COLOR_EPISODIC, "dashed": true, "wavy": true, "tip": "At least one rule on the mapping is associative memory. The line is wavy and dashed. Yellow, like episodic, when every rule is memory."},
+		{"label": "Excitatory", "key": "excitatory", "color": CBLineInterTerminal.LINE_COLOR_PSPP, "dashed": false, "tip": "A mapping that excites its destination. Solid green."},
+		{"label": "Inhibitory", "key": "inhibitory", "color": CBLineInterTerminal.LINE_COLOR_PSPN, "dashed": false, "tip": "A mapping with a negative weight, unless every rule on it is episodic. Solid red."},
+		{"label": "Episodic", "key": "episodic", "color": CBLineInterTerminal.LINE_COLOR_EPISODIC, "dashed": false, "tip": "Every rule on the mapping is episodic or associative memory. Yellow, ahead of the red inhibitory color."},
+		{"label": "Plastic", "key": "plastic", "color": CBLineInterTerminal.LINE_COLOR_PSPP, "dashed": true, "tip": "At least one rule on the mapping can learn. The line is dashed. Its color is still excitatory, inhibitory, or episodic."},
+		{"label": "Associative", "key": "associative", "color": CBLineInterTerminal.LINE_COLOR_EPISODIC, "dashed": true, "wavy": true, "tip": "At least one rule on the mapping is associative memory. The line is wavy and dashed. Yellow, like episodic, when every rule is memory."},
 	]
 	if for_schematic:
-		rows.append({"label": "Mixed", "color": SchematicEdgeLayer.MIXED_COLOR, "dashed": false, "tip": "One schematic line stands for mappings of more than one kind. Solid gray."})
+		rows.append({"label": "Mixed", "key": "mixed", "color": SchematicEdgeLayer.MIXED_COLOR, "dashed": false, "tip": "One schematic line stands for mappings of more than one kind. Solid gray."})
 		return rows
 	var faded := CBLineInterTerminal.LINE_COLOR_PSPP
 	faded.a = CBLineInterTerminal.LINE_COLOR_PARTIAL_MAPPING_TRANSPARENCY
-	rows.append({"label": "Partial", "color": faded, "dashed": false, "tip": "A hinted mapping from an imported region, not a finished connection. Same color, drawn fainter."})
+	rows.append({"label": "Partial", "key": "partial", "color": faded, "dashed": false, "tip": "A hinted mapping from an imported region, not a finished connection. Same color, drawn fainter."})
 	return rows
 
 
@@ -149,15 +175,17 @@ func _line_row(entry: Dictionary) -> HBoxContainer:
 	mark.wavy = bool(entry.get("wavy", false))
 	if _for_schematic:
 		mark.dashed_width = MappingLineStyle.DASHED_WIDTH_PX
-	mark.custom_minimum_size = Vector2(28, SWATCH)
+	mark.custom_minimum_size = Vector2(MappingLineStyle.DASH_LENGTH_PX + MappingLineStyle.DASH_GAP_PX + 8.0, SWATCH)
 	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	mark.animate_dashes = not _strip
 	row.add_child(mark)
 	var label := Label.new()
 	label.text = entry["label"]
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_color_override("font_color", TEXT_COLOR)
 	row.add_child(label)
+	_track_row(row, entry)
 	return row
 
 
@@ -180,7 +208,68 @@ func _row(entry: Dictionary) -> HBoxContainer:
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_color_override("font_color", TEXT_COLOR)
 	row.add_child(label)
+	_track_row(row, entry)
 	return row
+
+
+## True when [param key] is an area or classifier row, so the schematic lights boxes rather than lines.
+static func is_area_key(key: String) -> bool:
+	return key == CLASSIFIER_KEY or AREA_KEY_TYPE.has(key)
+
+
+## True when an item of [param kind] is what the area-row [param key] stands for.
+## [param cortical_type] is read only for areas. Regions never match; a closed region lights
+## because the schematic lights the box where a matching item shows.
+static func item_matches(kind: SchematicModel.KIND, cortical_type: int, key: String) -> bool:
+	if key == CLASSIFIER_KEY:
+		return kind == SchematicModel.KIND.CLASSIFIER
+	if kind != SchematicModel.KIND.AREA or not AREA_KEY_TYPE.has(key):
+		return false
+	return cortical_type == int(AREA_KEY_TYPE[key])
+
+
+## True when a merged schematic line is what the mapping-row [param key] stands for.
+## Kind rows match [enum SchematicModel.LINE_KIND]. Plastic and associative match those flags,
+## so one line can match more than one row. A mixed line does not match a single kind.
+static func line_matches(line_kind: int, plastic: bool, associative: bool, key: String) -> bool:
+	if key == "plastic":
+		return plastic
+	if key == "associative":
+		return associative
+	if not LINE_KEY_KIND.has(key):
+		return false
+	return line_kind == int(LINE_KEY_KIND[key])
+
+
+func _track_row(row: Control, entry: Dictionary) -> void:
+	row.set_meta(&"legend_key", String(entry["key"]))
+	_rows.append(row)
+	if not _for_schematic or _strip:
+		return
+	row.mouse_entered.connect(_on_row_entered.bind(row))
+	row.mouse_exited.connect(_on_row_exited.bind(row))
+
+
+func _on_row_entered(row: Control) -> void:
+	var key: String = String(row.get_meta(&"legend_key"))
+	_hovered_key = key
+	_dim_other_rows()
+	entry_hovered.emit(key)
+
+
+func _on_row_exited(row: Control) -> void:
+	var key: String = String(row.get_meta(&"legend_key"))
+	if _hovered_key != key:
+		return
+	_hovered_key = ""
+	_dim_other_rows()
+	entry_unhovered.emit(key)
+
+
+func _dim_other_rows() -> void:
+	for row: Control in _rows:
+		var active: bool = _hovered_key.is_empty() or String(row.get_meta(&"legend_key")) == _hovered_key
+		row.modulate.a = 1.0 if active else ROW_DIM_ALPHA
 
 
 class LineMark extends Control:
@@ -189,15 +278,23 @@ class LineMark extends Control:
 	const SAMPLE_POINTS: int = 24
 	const WAVE_AMPLITUDE: float = 3.0
 	const WAVE_LENGTH: float = 10.0
-	const DASH_LENGTH: float = 5.0
-	const DASH_GAP: float = 3.0
-
 	var line_color: Color = Color.WHITE
 	var dashed: bool = false
 	var wavy: bool = false
 	## Screen width of the dashes. Circuit Builder still draws dashes at the solid width, so only the
 	## schematic key passes [constant MappingLineStyle.DASHED_WIDTH_PX].
 	var dashed_width: float = MappingLineStyle.SOLID_WIDTH_PX
+	## Live keys crawl with the real lines. The export strip stays on one frame.
+	var animate_dashes: bool = false
+
+	func _ready() -> void:
+		set_process(animate_dashes and (dashed or wavy) and MappingLineStyle.dash_motion_enabled())
+
+
+	func _process(_delta: float) -> void:
+		if is_visible_in_tree():
+			queue_redraw()
+
 
 	func _draw() -> void:
 		var y := size.y * 0.5
@@ -207,7 +304,8 @@ class LineMark extends Control:
 		if wavy:
 			points = MappingLineStyle.wave_points(points, WAVE_AMPLITUDE, WAVE_LENGTH)
 		if dashed or wavy:
-			var segments := MappingLineStyle.dash_segments(points, DASH_LENGTH, DASH_GAP)
+			var phase: float = MappingLineStyle.dash_phase() if animate_dashes else 0.0
+			var segments := MappingLineStyle.dash_segments(points, MappingLineStyle.DASH_LENGTH_PX, MappingLineStyle.DASH_GAP_PX, phase)
 			if not segments.is_empty():
 				draw_multiline(segments, line_color, dashed_width)
 		else:

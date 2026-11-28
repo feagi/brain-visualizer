@@ -40,6 +40,7 @@ func _initialize() -> void:
 		push_error("schematic legend must use the schematic classifier color")
 		failures += 1
 	failures += _test_mapping_legend()
+	failures += _test_legend_hover_match()
 	failures += _test_tint_keeps_padding()
 	failures += _test_header_ports_disabled()
 	failures += _test_theme_locks_graph_node()
@@ -148,4 +149,63 @@ func _test_mapping_legend() -> int:
 	if schematic[-1]["color"] != SchematicEdgeLayer.MIXED_COLOR or schematic[-1]["dashed"]:
 		push_error("mixed schematic line must be solid gray")
 		failed = 1
+	return failed
+
+
+## Legend hover matches the category the row names, not a path through the graph.
+func _test_legend_hover_match() -> int:
+	var failed := 0
+	var area := SchematicModel.KIND.AREA
+	var ipu := int(AbstractCorticalArea.CORTICAL_AREA_TYPE.IPU)
+	var excitatory := int(SchematicModel.LINE_KIND.EXCITATORY)
+	var mixed := int(SchematicModel.LINE_KIND.MIXED)
+	var episodic := int(SchematicModel.LINE_KIND.EPISODIC)
+	if not AreaTypeLegend.item_matches(area, ipu, "input"):
+		push_error("an input area must match the input row")
+		failed = 1
+	if AreaTypeLegend.item_matches(area, ipu, "output"):
+		push_error("an input area must not match the output row")
+		failed = 1
+	if AreaTypeLegend.item_matches(SchematicModel.KIND.REGION, ipu, "input"):
+		push_error("a region must not match an area row")
+		failed = 1
+	if not AreaTypeLegend.item_matches(SchematicModel.KIND.CLASSIFIER, -1, "classifier"):
+		push_error("a classifier must match the classifier row")
+		failed = 1
+	if AreaTypeLegend.item_matches(area, int(AbstractCorticalArea.CORTICAL_AREA_TYPE.INTERCONNECT), "custom"):
+		push_error("an interconnect area must not match custom")
+		failed = 1
+	if AreaTypeLegend.item_matches(area, int(AbstractCorticalArea.CORTICAL_AREA_TYPE.UNKNOWN), "custom"):
+		push_error("an unknown area must not match custom")
+		failed = 1
+	if not AreaTypeLegend.line_matches(excitatory, true, false, "excitatory") or not AreaTypeLegend.line_matches(excitatory, true, false, "plastic"):
+		push_error("a dashed green line must match both excitatory and plastic")
+		failed = 1
+	if AreaTypeLegend.line_matches(excitatory, true, false, "inhibitory") or AreaTypeLegend.line_matches(excitatory, true, false, "associative"):
+		push_error("a plastic excitatory line must not match inhibitory or associative")
+		failed = 1
+	if not AreaTypeLegend.line_matches(mixed, true, false, "mixed") or not AreaTypeLegend.line_matches(mixed, true, false, "plastic"):
+		push_error("a dashed mixed line must match mixed and plastic")
+		failed = 1
+	if AreaTypeLegend.line_matches(mixed, true, false, "excitatory"):
+		push_error("a mixed line must not match excitatory")
+		failed = 1
+	if not AreaTypeLegend.line_matches(episodic, false, true, "episodic") or not AreaTypeLegend.line_matches(episodic, false, true, "associative"):
+		push_error("an associative episodic line must match both rows")
+		failed = 1
+	if not AreaTypeLegend.is_area_key("input") or not AreaTypeLegend.is_area_key("classifier"):
+		push_error("area rows must be area keys")
+		failed = 1
+	if AreaTypeLegend.is_area_key("excitatory") or AreaTypeLegend.is_area_key("plastic") or AreaTypeLegend.line_matches(excitatory, false, false, "partial"):
+		push_error("mapping rows must not be area keys, and partial is not a schematic line")
+		failed = 1
+	for row: Dictionary in AreaTypeLegend.entries(Color.WHITE):
+		if String(row.get("key", "")).is_empty() or not AreaTypeLegend.is_area_key(String(row["key"])):
+			push_error("area legend row %s has no area key" % row["label"])
+			failed = 1
+	for row: Dictionary in AreaTypeLegend.mapping_entries(true):
+		var key := String(row.get("key", ""))
+		if key.is_empty() or AreaTypeLegend.is_area_key(key):
+			push_error("schematic mapping row %s must be a line key" % row["label"])
+			failed = 1
 	return failed

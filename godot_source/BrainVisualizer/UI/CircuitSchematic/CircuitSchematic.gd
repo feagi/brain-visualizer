@@ -5,7 +5,10 @@ class_name CircuitSchematic
 ## (the header of an open frame closes it again); the Show all button opens every region and keeps them open
 ## (its label then flips to Hide all, which closes them all). Hovering a cortical area box dims everything not related to it: the areas upstream that reach it
 ## and downstream that it reaches through any chain of mappings, and only the mappings on those chains
-## (see [SchematicReachability]); the mouse leaving restores everything. Region frames never dim, and the
+## (see [SchematicReachability]); the mouse leaving restores everything. Hovering a legend row highlights
+## that category instead: an area row lights every box of that type (a closed region stays lit when it
+## stands for one) and dims every line; a mapping row lights every line of that kind and dims every box.
+## Area hover wins over the legend, and the legend wins over the name filter. Region frames never dim, and the
 ## export never shows the dimming. The Filter box at the top left matches cortical areas and regions by
 ## name (case-insensitive substring): matches stay lit, the rest dims, the regions holding a match open
 ## and the view fits the matches; clearing it restores the earlier open state and the whole-genome fit.
@@ -68,6 +71,8 @@ var _reachability: SchematicReachability
 var _item_of_area: Dictionary = {} ## AbstractCorticalArea -> item index
 ## The area box under the mouse. Held as the object, not an index, so it survives rebuilds.
 var _hovered_area: AbstractCorticalArea
+## Legend row under the mouse. A key from [AreaTypeLegend], empty when none. Survives rebuilds.
+var _legend_key: String = ""
 ## Show all mode: while on, every region that can open is open after every rebuild, new ones included.
 var _show_all_mode: bool = false
 var _show_all_button: Button
@@ -103,7 +108,9 @@ func _ready() -> void:
 	_add_filter_box()
 	_add_export_menu()
 	_style_menu()
-	AreaTypeLegend.add_to(self, SchematicTreeBuilder.CLASSIFIER_COLOR, true)
+	var legend := AreaTypeLegend.add_to(self, SchematicTreeBuilder.CLASSIFIER_COLOR, true)
+	legend.entry_hovered.connect(_on_legend_entry_hovered)
+	legend.entry_unhovered.connect(_on_legend_entry_unhovered)
 	if BV.UI != null:
 		BV.UI.theme_changed.connect(_style_menu.unbind(1))
 	_rebuild_timer = Timer.new()
@@ -270,20 +277,44 @@ func _on_box_unhovered(item_index: int) -> void:
 	_apply_highlight(_model.group_lines(_open).lines)
 
 
-## Dims every box and line not related to the hovered area, or lights everything when none is hovered.
-## A box is lit when the item it shows (an item, or the closed region or classifier that stands for it)
-## is related. Open frames are never dimmed. [param lines] is from [method SchematicModel.group_lines].
+func _on_legend_entry_hovered(key: String) -> void:
+	_legend_key = key
+	if _model == null:
+		return
+	_apply_highlight(_model.group_lines(_open).lines)
+
+
+func _on_legend_entry_unhovered(key: String) -> void:
+	if _legend_key != key:
+		return
+	_legend_key = ""
+	if _model == null:
+		return
+	_apply_highlight(_model.group_lines(_open).lines)
+
+
+## Dims boxes and lines for the active hover, else the name filter, else lights everything.
+## Area hover wins, then a legend row, then the filter. Open frames are never dimmed.
+## [param lines] is from [method SchematicModel.group_lines].
 func _apply_highlight(lines: Array) -> void:
 	var hovered_item: int = _item_of_area.get(_hovered_area, -1) if _hovered_area != null else -1
-	if hovered_item == -1 or not _boxes.has(hovered_item):
-		_hovered_area = null
-		if _filter_items.is_empty():
-			for box: SchematicBox in _boxes.values():
-				box.set_lit(true)
-			_edge_layer.set_highlight(null)
-		else:
-			_apply_filter_highlight(lines)
+	if hovered_item != -1 and _boxes.has(hovered_item):
+		_apply_area_highlight(lines, hovered_item)
 		return
+	_hovered_area = null
+	if not _legend_key.is_empty():
+		_apply_legend_highlight(lines)
+		return
+	if _filter_items.is_empty():
+		for box: SchematicBox in _boxes.values():
+			box.set_lit(true)
+		_edge_layer.set_highlight(null)
+		return
+	_apply_filter_highlight(lines)
+
+
+## A box is lit when the item it shows (an item, or the closed region that stands for it) is related.
+func _apply_area_highlight(lines: Array, hovered_item: int) -> void:
 	var related: Dictionary = _reachability.related_to(hovered_item)
 	var lit_ends: Dictionary = {}
 	for item: int in related.items:
@@ -298,6 +329,41 @@ func _apply_highlight(lines: Array) -> void:
 				lit_lines[i] = 1
 				break
 	_edge_layer.set_highlight(lit_lines)
+
+
+## Area rows light every box of that type and dim every line. Mapping rows light every line of that
+## kind and dim every box. A closed region stays lit when it is where a matching item shows.
+func _apply_legend_highlight(lines: Array) -> void:
+	var key: String = _legend_key
+	if AreaTypeLegend.is_area_key(key):
+		var lit_ends: Dictionary = {}
+		for item_index in _model.items.size():
+			if _legend_item_matches(item_index, key):
+				lit_ends[_model.visible_end(item_index, _open)] = true
+		for index: int in _boxes:
+			(_boxes[index] as SchematicBox).set_lit(lit_ends.has(index))
+		var dim_lines := PackedByteArray()
+		dim_lines.resize(lines.size())
+		_edge_layer.set_highlight(dim_lines)
+		return
+	for index: int in _boxes:
+		(_boxes[index] as SchematicBox).set_lit(false)
+	var lit_lines := PackedByteArray()
+	lit_lines.resize(lines.size())
+	for i in lines.size():
+		var line: Array = lines[i]
+		if AreaTypeLegend.line_matches(int(line[3]), bool(line[4]), bool(line[5]), key):
+			lit_lines[i] = 1
+	_edge_layer.set_highlight(lit_lines)
+
+
+func _legend_item_matches(item_index: int, key: String) -> bool:
+	var item: Dictionary = _model.items[item_index]
+	var cortical_type: int = -1
+	var object: Object = item["object"]
+	if object is AbstractCorticalArea:
+		cortical_type = int((object as AbstractCorticalArea).cortical_type)
+	return AreaTypeLegend.item_matches(item["kind"], cortical_type, key)
 
 
 ## The filter's lit state: a box is lit when it is where some in-filter item shows (the item itself, or

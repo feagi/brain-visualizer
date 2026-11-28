@@ -4,7 +4,7 @@ class_name CBLine
 const LINE_INPUT_X_OFFSET: int = 200 # Shapes the line curvature
 const LINE_OUTPUT_X_OFFSET: int = -200 # Shapes the line curvature
 const NUM_POINTS_PER_CURVE: int = 20
-const NUM_DOTTED_LINE_DIVISIONS: int = 50
+var _last_zoom: float = -1.0
 # Must stay well above the line width (Line2D default 10 px) to read as a wave.
 const WAVE_AMPLITUDE_PX: float = 8.0
 const WAVE_LENGTH_PX: float = 40.0
@@ -25,6 +25,10 @@ func line_setup() -> void:
 	var unique_line_material: Material = mat.duplicate()
 	_line.material = unique_line_material
 	set_line_dashing(false)
+	var cycle: float = MappingLineStyle.DASH_CYCLE_S if MappingLineStyle.dash_motion_enabled() else 0.0
+	_line.material.set_shader_parameter(&"dashCycleSeconds", cycle)
+	var pair: float = MappingLineStyle.DASH_LENGTH_PX + MappingLineStyle.DASH_GAP_PX
+	_line.material.set_shader_parameter(&"dashDuty", MappingLineStyle.DASH_LENGTH_PX / pair)
 	
 	for i in NUM_POINTS_PER_CURVE: # TODO optimize! This should be static in TSCN
 		_line.add_point(Vector2(0,0))
@@ -34,6 +38,9 @@ func set_line_base_color(line_color: Color) -> void:
 
 func set_line_dashing(is_dashed: bool) -> void:
 	_line.material.set_shader_parameter(&"isDashed", is_dashed)
+	set_process(is_dashed)
+	if is_dashed:
+		_update_dash_scale()
 
 ## Sets the endpoints of the line
 func set_line_endpoints(left: Vector2, right: Vector2) -> void:
@@ -56,6 +63,42 @@ func _rebuild_points() -> void:
 	if _is_wavy:
 		points = MappingLineStyle.wave_points(points, WAVE_AMPLITUDE_PX, WAVE_LENGTH_PX)
 	_line.points = points
+	_update_dash_scale()
+
+
+## How many dash-and-gap pairs fit along the line at the current zoom, so each dash stays
+## [constant MappingLineStyle.DASH_LENGTH_PX] on screen.
+func _update_dash_scale() -> void:
+	if _line == null or _line.material == null:
+		return
+	var pair: float = MappingLineStyle.DASH_LENGTH_PX + MappingLineStyle.DASH_GAP_PX
+	var periods: float = maxf(_screen_length() / pair, 1.0)
+	_line.material.set_shader_parameter(&"numDivisions", periods)
+
+
+func _screen_length() -> float:
+	var length: float = 0.0
+	for i in range(1, _line.points.size()):
+		length += _line.points[i - 1].distance_to(_line.points[i])
+	return length * _graph_zoom()
+
+
+func _graph_zoom() -> float:
+	var node: Node = self
+	while node != null:
+		var graph: GraphEdit = node as GraphEdit
+		if graph != null:
+			return graph.zoom
+		node = node.get_parent()
+	return 1.0
+
+
+func _process(_delta: float) -> void:
+	var zoom: float = _graph_zoom()
+	if is_equal_approx(zoom, _last_zoom):
+		return
+	_last_zoom = zoom
+	_update_dash_scale()
 
 ## Sets highlighting of the line
 func set_highlighting(start_highlighted: bool, end_higlighted: bool) -> void:

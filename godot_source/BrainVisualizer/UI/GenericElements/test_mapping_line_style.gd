@@ -37,6 +37,25 @@ func _initialize() -> void:
 	if absf(total - 260.0) > 0.01:
 		push_error("dash on-length expected 260, got %s" % total)
 		failures += 1
+	if dashes[0].x != 0.0:
+		push_error("phase 0 must start the first dash at the line start")
+		failures += 1
+	var shifted: PackedVector2Array = MappingLineStyle.dash_segments(line, 20.0, 10.0, 0.25)
+	if shifted.is_empty() or absf(shifted[0].x - 7.5) > 0.05:
+		push_error("a quarter cycle must move the first dash toward the line end, got %s" % (shifted[0] if not shifted.is_empty() else Vector2.INF))
+		failures += 1
+	var wrapped: PackedVector2Array = MappingLineStyle.dash_segments(line, 20.0, 10.0, 1.0)
+	if wrapped != dashes:
+		push_error("a full cycle must land back on the phase-0 dashes")
+		failures += 1
+	var at_half: Vector2 = MappingLineStyle.dash_canvas_lengths(0.5)
+	if absf(at_half.x - MappingLineStyle.DASH_LENGTH_PX * 2.0) > 0.01 or absf(at_half.y - MappingLineStyle.DASH_GAP_PX * 2.0) > 0.01:
+		push_error("half zoom must double the canvas dash length, got %s" % at_half)
+		failures += 1
+	var phase_now: float = MappingLineStyle.dash_phase()
+	if phase_now < 0.0 or phase_now >= 1.0:
+		push_error("dash phase out of range: %s" % phase_now)
+		failures += 1
 	if failures == 0:
 		print("mapping line style: PASS")
 		quit(0)

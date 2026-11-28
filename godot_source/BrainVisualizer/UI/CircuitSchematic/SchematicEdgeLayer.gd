@@ -5,12 +5,10 @@ class_name SchematicEdgeLayer
 ## below everything else, so lines show inside frames but never over boxes.
 
 const SEGMENTS_PER_CURVE: int = 16
-## Wave and dash sizes are canvas units, so they scale with the view like the boxes do and
-## the exported image matches what is on screen.
+## The wave is in canvas units, so it scales with the boxes. Dashes are screen pixels
+## ([method MappingLineStyle.dash_canvas_lengths]) so the gaps stay visible when zoomed out.
 const WAVE_AMPLITUDE_CANVAS: float = 6.0
 const WAVE_LENGTH_CANVAS: float = 32.0
-const DASH_LENGTH_CANVAS: float = 12.0
-const DASH_GAP_CANVAS: float = 8.0
 const LABEL_MIN_SCREEN_LENGTH_PX: float = 90.0
 const LABEL_FONT_SIZE_PX: float = 13.0
 const MIXED_COLOR: Color = Color(0.62, 0.62, 0.66)
@@ -21,10 +19,13 @@ var _batches: Array[PackedVector2Array] = [] ## lit lines: index kind * 2 + dash
 var _dim_batches: Array[PackedVector2Array] = [] ## the same for lines drawn dim
 var _colors: Array[Color] = []
 var _line_points: Array[PackedVector2Array] = [] ## per line: its segment pairs, kept so highlighting never re-bezier
+var _dash_curves: Array[PackedVector2Array] = [] ## undashed curve for dashed lines; empty for solid
 var _line_slots: Array[int] = []
 var _line_labels: Array = [] ## per line: [position, text, length], or null
 var _lit_lines: Variant = null ## null = every line lit, else a PackedByteArray with one 0/1 per line
 var _last_zoom: float = -1.0
+var _has_dashes: bool = false
+var _drawn_phase: float = -1.0
 
 
 func _init() -> void:
@@ -41,9 +42,13 @@ func set_lines(model: SchematicModel, lines: Array) -> void:
 	custom_minimum_size = model.canvas_rect.size
 	size = model.canvas_rect.size
 	_line_points.clear()
+	_dash_curves.clear()
 	_line_slots.clear()
 	_line_labels.clear()
 	_lit_lines = null
+	_has_dashes = false
+	var phase: float = _dash_phase_now()
+	_drawn_phase = phase
 	for line in lines:
 		var from_rect: Rect2 = model.global_rect(line[0])
 		var to_rect: Rect2 = model.global_rect(line[1])
@@ -58,8 +63,12 @@ func set_lines(model: SchematicModel, lines: Array) -> void:
 			points = MappingLineStyle.wave_points(points, WAVE_AMPLITUDE_CANVAS, WAVE_LENGTH_CANVAS)
 		var pairs: PackedVector2Array = PackedVector2Array()
 		if dashed:
-			pairs = MappingLineStyle.dash_segments(points, DASH_LENGTH_CANVAS, DASH_GAP_CANVAS)
+			_has_dashes = true
+			_dash_curves.append(points)
+			var lengths: Vector2 = MappingLineStyle.dash_canvas_lengths(_zoom())
+			pairs = MappingLineStyle.dash_segments(points, lengths.x, lengths.y, phase)
 		else:
+			_dash_curves.append(PackedVector2Array())
 			for i in segments:
 				pairs.append(points[i])
 				pairs.append(points[i + 1])
@@ -97,11 +106,63 @@ func _rebuild_batches() -> void:
 
 
 func _process(_delta: float) -> void:
-	# Width and label size stay constant on screen, so a zoom change needs a redraw.
+	var zoom: float = _zoom()
+	var zoom_changed: bool = not is_equal_approx(zoom, _last_zoom)
+	if zoom_changed:
+		_last_zoom = zoom
+	# Width stays constant on screen, so a zoom change needs a redraw even with no dashes.
+	if not _has_dashes:
+		if zoom_changed:
+			queue_redraw()
+		return
+	if not is_visible_in_tree():
+		return
+	var phase: float = _dash_phase_now()
+	# Zoom changes the canvas length of a screen-sized dash, so rebuild even when the phase is held.
+	if not zoom_changed and is_equal_approx(phase, _drawn_phase):
+		return
+	_drawn_phase = phase
+	_apply_dash_phase(phase)
+
+
+## Export and reduced motion hold the pattern at the phase [method set_lines] already drew.
+func _dash_motion_on() -> bool:
+	var host := get_parent() as CircuitSchematic
+	if host != null and host.export_mode:
+		return false
+	return MappingLineStyle.dash_motion_enabled()
+
+
+func _zoom() -> float:
 	var graph: GraphEdit = get_parent() as GraphEdit
-	if graph != null and graph.zoom != _last_zoom:
-		_last_zoom = graph.zoom
-		queue_redraw()
+	return graph.zoom if graph != null else 1.0
+
+
+func _dash_phase_now() -> float:
+	if not _dash_motion_on():
+		return 0.0
+	return MappingLineStyle.dash_phase()
+
+
+## Slides only the dashed batches. Solid batches stay as [method set_lines] built them.
+func _apply_dash_phase(phase: float) -> void:
+	for i in _dash_curves.size():
+		if _dash_curves[i].is_empty():
+			continue
+		var lengths: Vector2 = MappingLineStyle.dash_canvas_lengths(_zoom())
+		_line_points[i] = MappingLineStyle.dash_segments(_dash_curves[i], lengths.x, lengths.y, phase)
+	for slot in range(1, _batches.size(), 2):
+		_batches[slot] = PackedVector2Array()
+		_dim_batches[slot] = PackedVector2Array()
+	for line in _line_points.size():
+		if _line_slots[line] % 2 == 0:
+			continue
+		var target: Array[PackedVector2Array] = _batches if _is_lit(line) else _dim_batches
+		var slot: int = _line_slots[line]
+		var batch: PackedVector2Array = target[slot]
+		batch.append_array(_line_points[line])
+		target[slot] = batch
+	queue_redraw()
 
 
 func _draw() -> void:

@@ -249,6 +249,12 @@ to it; the mouse leaving restores it. Only area boxes react, not classifier or r
 - The export never shows dimming: export-mode instances do not connect hover signals.
 - Mouse only; touch emulation is off.
 
+**Legend hover (implemented).** Hovering a row of the schematic legend highlights that category and dims the rest. The other legend rows dim with it. Circuit Builder's legend does not do this, and the export does not.
+
+- An area row (Input, Output, Memory, Custom, Core, Modulator, Classifier) lights every box of that type. A closed region stays lit when it is where such an item shows (`visible_end`). Every line dims.
+- A mapping row lights lines by the merged line's displayed kind. Excitatory, Inhibitory, Episodic and Mixed match `LINE_KIND`. Plastic matches the plastic flag and Associative matches the associative flag, so one line can match more than one row (a dashed green line is both Excitatory and Plastic). A mixed line matches Mixed, and Plastic or Associative only when those flags were merged onto it. It does not match Excitatory or Inhibitory. Boxes dim.
+- Open region frames never dim. Area-box hover takes priority. Otherwise a legend row takes priority over the name filter. The hovered key is a string, so a rebuild keeps it.
+
 **Filter (implemented).** A LineEdit after the Show all toggle (menu order: Show all, Filter, Export; the box is 1.5x the width measured from its placeholder), placeholder "Filter areas or circuits",
 with a clear button and a tooltip, debounced by 0.15 s. Export mode has no box and ignores the filter.
 
@@ -274,10 +280,12 @@ region. Closing a region by its header turns it off (label back to Show all) and
 while off does not turn it on. While a filter is active the filter sets the open state; clearing it with
 the mode on opens every openable region. The state is not saved between sessions.
 
-**Line widths.** Solid lines are 2 px and dashed ones (plastic, associative) are 3 px on screen
+**Line widths.** Solid lines are 2 px and dashed ones (plastic, associative) are 4 px on screen
 (`MappingLineStyle.SOLID_WIDTH_PX`, `DASHED_WIDTH_PX`). Draw order is dim solid, dim dashed, lit solid,
-lit dashed, so dashes sit on top. The schematic legend's dashed sample uses 3 px; Circuit Builder's
+lit dashed, so dashes sit on top. The schematic legend's dashed sample uses 4 px; Circuit Builder's
 legend and its shader-drawn dashes keep the solid width.
+
+**Dash crawl (implemented).** Dashes are 18 px on and 14 px off in screen pixels, at any zoom, so the gaps stay visible when the genome is fit to the window. They slide toward their destination, one dash and one gap every 0.9 s, linear. The schematic rebuilds only the dashed batches, and only while the view is on screen. A zoom change rebuilds them too, because the canvas length of a screen-sized dash changed. The legend sample uses the same size and clock. Circuit Builder's line shader uses the same duty and cycle. Export and reduced motion hold the pattern still. Solid lines do not move.
 
 There are no per-line nodes, buttons or terminals. Line ends attach to the side of the target box
 (right edge for outputs, left edge for inputs), so no ports are needed.
